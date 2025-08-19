@@ -1,0 +1,1550 @@
+[
+  {
+    "product_category_id": "VEHICLE_MAKE",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Vehicle Make",
+    "long_description": "Vehicle Make",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "VEHICLE_PROPERTIES",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Vehicle Properties",
+    "long_description": "Vehicle Properties",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "VEHICLE_MARKETING_PACKAGE",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Vehicle Marketing Package",
+    "long_description": "Vehicle Marketing Package",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "VEHICLE_TYPE",
+    "primary_parent_category_id": "VEHICLE_PROPERTIES",
+    "product_category_type_id": null,
+    "description": "Vehicle Type",
+    "long_description": "Vehicle Type",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "SEDAN",
+    "primary_parent_category_id": "VEHICLE_TYPE",
+    "product_category_type_id": null,
+    "description": "Sedan",
+    "long_description": "Sedan",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "HATCHBACK",
+    "primary_parent_category_id": "VEHICLE_TYPE",
+    "product_category_type_id": null,
+    "description": "Hatchback",
+    "long_description": "Hatchback",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "SUV",
+    "primary_parent_category_id": "VEHICLE_TYPE",
+    "product_category_type_id": null,
+    "description": "SUV",
+    "long_description": "SUV",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "VAN",
+    "primary_parent_category_id": "VEHICLE_TYPE",
+    "product_category_type_id": null,
+    "description": "Van",
+    "long_description": "Van",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "VEHICLE_TRANSMISSION_TYPE",
+    "primary_parent_category_id": "VEHICLE_PROPERTIES",
+    "product_category_type_id": null,
+    "description": "Vehicle Transmission Type",
+    "long_description": "Vehicle Transmission Type",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "MANUAL",
+    "primary_parent_category_id": "VEHICLE_TRANSMISSION_TYPE",
+    "product_category_type_id": null,
+    "description": "Manual",
+    "long_description": "Manual",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "AUTOMATIC",
+    "primary_parent_category_id": "VEHICLE_TRANSMISSION_TYPE",
+    "product_category_type_id": null,
+    "description": "Automatic",
+    "long_description": "Automatic",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "VEHICLE_INTERIOR_COLOR",
+    "primary_parent_category_id": "VEHICLE_PROPERTIES",
+    "product_category_type_id": null,
+    "description": "Vehicle Interior Color",
+    "long_description": "Vehicle Interior Color",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "BLACK",
+    "primary_parent_category_id": "VEHICLE_INTERIOR_COLOR",
+    "product_category_type_id": null,
+    "description": "Black",
+    "long_description": "Black",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "GRAY",
+    "primary_parent_category_id": "VEHICLE_INTERIOR_COLOR",
+    "product_category_type_id": null,
+    "description": "Gray",
+    "long_description": "Gray",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "WHITE",
+    "primary_parent_category_id": "VEHICLE_INTERIOR_COLOR",
+    "product_category_type_id": null,
+    "description": "White",
+    "long_description": "White",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "BEIGE",
+    "primary_parent_category_id": "VEHICLE_INTERIOR_COLOR",
+    "product_category_type_id": null,
+    "description": "Beige",
+    "long_description": "Beige",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "BROWN",
+    "primary_parent_category_id": "VEHICLE_INTERIOR_COLOR",
+    "product_category_type_id": null,
+    "description": "Brown",
+    "long_description": "Brown",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "RED",
+    "primary_parent_category_id": "VEHICLE_INTERIOR_COLOR",
+    "product_category_type_id": null,
+    "description": "Red",
+    "long_description": "Red",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "BLUE",
+    "primary_parent_category_id": "VEHICLE_INTERIOR_COLOR",
+    "product_category_type_id": null,
+    "description": "Blue",
+    "long_description": "Blue",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "VEHICLE_EXTERIOR_COLOR",
+    "primary_parent_category_id": "VEHICLE_PROPERTIES",
+    "product_category_type_id": null,
+    "description": "Vehicle Exterior Color",
+    "long_description": "Vehicle Exterior Color",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "BLACK_EX",
+    "primary_parent_category_id": "VEHICLE_EXTERIOR_COLOR",
+    "product_category_type_id": null,
+    "description": "Black",
+    "long_description": "Black",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "WHITE_EX",
+    "primary_parent_category_id": "VEHICLE_EXTERIOR_COLOR",
+    "product_category_type_id": null,
+    "description": "White",
+    "long_description": "White",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "RED_EX",
+    "primary_parent_category_id": "VEHICLE_EXTERIOR_COLOR",
+    "product_category_type_id": null,
+    "description": "Red",
+    "long_description": "Red",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "BLUE_EX",
+    "primary_parent_category_id": "VEHICLE_EXTERIOR_COLOR",
+    "product_category_type_id": null,
+    "description": "Blue",
+    "long_description": "Blue",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "SILVER_EX",
+    "primary_parent_category_id": "VEHICLE_EXTERIOR_COLOR",
+    "product_category_type_id": null,
+    "description": "Silver",
+    "long_description": "Silver",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "GRAY_EX",
+    "primary_parent_category_id": "VEHICLE_EXTERIOR_COLOR",
+    "product_category_type_id": null,
+    "description": "Gray",
+    "long_description": "Gray",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "GREEN_EX",
+    "primary_parent_category_id": "VEHICLE_EXTERIOR_COLOR",
+    "product_category_type_id": null,
+    "description": "Green",
+    "long_description": "Green",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "VEHICLE_SERVICES",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Vehicle Services",
+    "long_description": "Vehicle Services",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "MAINTENANCE_SERVICES",
+    "primary_parent_category_id": "VEHICLE_SERVICES",
+    "product_category_type_id": null,
+    "description": "Maintenance Services",
+    "long_description": "Maintenance Services",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "OIL_CHANGE",
+    "primary_parent_category_id": "MAINTENANCE_SERVICES",
+    "product_category_type_id": null,
+    "description": "Oil Change",
+    "long_description": "Routine engine oil change to maintain optimal performance",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "FILTER_CHANGE",
+    "primary_parent_category_id": "MAINTENANCE_SERVICES",
+    "product_category_type_id": null,
+    "description": "Filter Change",
+    "long_description": "Changing air, fuel, and cabin filters as necessary",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "FLUID_CHECKS",
+    "primary_parent_category_id": "MAINTENANCE_SERVICES",
+    "product_category_type_id": null,
+    "description": "Fluid Checks & Top-Ups",
+    "long_description": "Checking and topping up transmission, brake, and coolant fluids",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "TIRE_ROTATION",
+    "primary_parent_category_id": "MAINTENANCE_SERVICES",
+    "product_category_type_id": null,
+    "description": "Tire Rotation and Balancing",
+    "long_description": "Rotation and balancing of tires for even wear and longer lifespan",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "TIRE_PRESSURE_ADJUSTMENT",
+    "primary_parent_category_id": "MAINTENANCE_SERVICES",
+    "product_category_type_id": null,
+    "description": "Tire Pressure Check & Adjustment",
+    "long_description": "Checking and adjusting tire pressure to manufacturer specifications",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "WHEEL_ALIGNMENT",
+    "primary_parent_category_id": "MAINTENANCE_SERVICES",
+    "product_category_type_id": null,
+    "description": "Wheel Alignment",
+    "long_description": "Adjusting the angles of wheels to the car manufacturer specifications",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "BRAKE_MAINTENANCE",
+    "primary_parent_category_id": "MAINTENANCE_SERVICES",
+    "product_category_type_id": null,
+    "description": "Brake Inspection & Maintenance",
+    "long_description": "Checking the brake system and performing necessary maintenance",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "BATTERY_CHECK",
+    "primary_parent_category_id": "MAINTENANCE_SERVICES",
+    "product_category_type_id": null,
+    "description": "Battery Check & Replacement",
+    "long_description": "Checking the car battery and replacing if necessary",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "LIGHT_BULB_REPLACEMENT",
+    "primary_parent_category_id": "MAINTENANCE_SERVICES",
+    "product_category_type_id": null,
+    "description": "Light Bulb Replacement",
+    "long_description": "Replacement of any burnt out exterior or interior light bulbs",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "SPARK_PLUG_REPLACEMENT",
+    "primary_parent_category_id": "MAINTENANCE_SERVICES",
+    "product_category_type_id": null,
+    "description": "Spark Plug Replacement",
+    "long_description": "Replacement of worn out spark plugs for optimal engine performance",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "REPAIR_SERVICES",
+    "primary_parent_category_id": "VEHICLE_SERVICES",
+    "product_category_type_id": null,
+    "description": "Repair Services",
+    "long_description": "Repair Services",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "BRAKE_PAD_ROTOR_REPLACEMENT",
+    "primary_parent_category_id": "REPAIR_SERVICES",
+    "product_category_type_id": null,
+    "description": "Brake Pad or Rotor Replacement",
+    "long_description": "Replacement of worn out brake pads or rotors for safe and efficient braking",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "TRANSMISSION_REPAIR",
+    "primary_parent_category_id": "REPAIR_SERVICES",
+    "product_category_type_id": null,
+    "description": "Transmission Repair or Replacement",
+    "long_description": "Repair or replacement of the transmission system to ensure smooth gear shifting",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "ENGINE_REPAIR",
+    "primary_parent_category_id": "REPAIR_SERVICES",
+    "product_category_type_id": null,
+    "description": "Engine Repair or Replacement",
+    "long_description": "Repair or replacement of engine components to restore the engine performance",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "EXHAUST_SYSTEM_REPAIR",
+    "primary_parent_category_id": "REPAIR_SERVICES",
+    "product_category_type_id": null,
+    "description": "Exhaust System Repair",
+    "long_description": "Repair of the exhaust system to ensure optimal engine performance and reduced emissions",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "SUSPENSION_REPAIR",
+    "primary_parent_category_id": "REPAIR_SERVICES",
+    "product_category_type_id": null,
+    "description": "Suspension Repair or Replacement",
+    "long_description": "Repair or replacement of suspension components to maintain ride comfort and handling",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "AC_HEATER_REPAIR",
+    "primary_parent_category_id": "REPAIR_SERVICES",
+    "product_category_type_id": null,
+    "description": "AC/Heater Repair or Replacement",
+    "long_description": "Repair or replacement of AC/Heater units for comfortable driving conditions",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "ELECTRICAL_SYSTEM_REPAIR",
+    "primary_parent_category_id": "REPAIR_SERVICES",
+    "product_category_type_id": null,
+    "description": "Electrical System Repair",
+    "long_description": "Repair of car's electrical system, including battery, alternator, starter, etc.",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "WINDSHIELD_GLASS_REPAIR",
+    "primary_parent_category_id": "REPAIR_SERVICES",
+    "product_category_type_id": null,
+    "description": "Windshield/Glass Repair or Replacement",
+    "long_description": "Repair or replacement of windshield or other car glass for visibility and safety",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "TIRE_REPAIR",
+    "primary_parent_category_id": "REPAIR_SERVICES",
+    "product_category_type_id": null,
+    "description": "Tire Repair or Replacement",
+    "long_description": "Repair or replacement of damaged tires to ensure safety and performance",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "BODY_WORK",
+    "primary_parent_category_id": "REPAIR_SERVICES",
+    "product_category_type_id": null,
+    "description": "Body Work",
+    "long_description": "Repair or replacement of exterior body parts due to damage or rust",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "DETAILING_SERVICES",
+    "primary_parent_category_id": "VEHICLE_SERVICES",
+    "product_category_type_id": null,
+    "description": "Detailing Services",
+    "long_description": "Detailing Services",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "CAR_WASH",
+    "primary_parent_category_id": "DETAILING_SERVICES",
+    "product_category_type_id": null,
+    "description": "Car Wash",
+    "long_description": "Full exterior wash to remove dirt and grime",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "CAR_WAXING",
+    "primary_parent_category_id": "DETAILING_SERVICES",
+    "product_category_type_id": null,
+    "description": "Car Waxing",
+    "long_description": "Application of car wax to protect the paint and improve shine",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "INTERIOR_CLEANING",
+    "primary_parent_category_id": "DETAILING_SERVICES",
+    "product_category_type_id": null,
+    "description": "Interior Cleaning",
+    "long_description": "Deep cleaning of the car interior including seats, floor mats, and other surfaces",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "LEATHER_CLEANING_CONDITIONING",
+    "primary_parent_category_id": "DETAILING_SERVICES",
+    "product_category_type_id": null,
+    "description": "Leather Cleaning & Conditioning",
+    "long_description": "Cleaning and conditioning of leather surfaces to keep them soft and prevent cracking",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "CARPET_CLEANING",
+    "primary_parent_category_id": "DETAILING_SERVICES",
+    "product_category_type_id": null,
+    "description": "Carpet & Mat Cleaning",
+    "long_description": "Deep cleaning of carpets and floor mats to remove dirt and stains",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "ENGINE_BAY_CLEANING",
+    "primary_parent_category_id": "DETAILING_SERVICES",
+    "product_category_type_id": null,
+    "description": "Engine Bay Cleaning",
+    "long_description": "Cleaning of the engine bay to remove dirt, oil, and other grime",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "HEADLIGHT_RESTORATION",
+    "primary_parent_category_id": "DETAILING_SERVICES",
+    "product_category_type_id": null,
+    "description": "Headlight Restoration",
+    "long_description": "Restoration of the headlights to improve visibility and appearance",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "PAINT_CORRECTION",
+    "primary_parent_category_id": "DETAILING_SERVICES",
+    "product_category_type_id": null,
+    "description": "Paint Correction",
+    "long_description": "Correcting imperfections in the paint surface to restore the car's finish",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "CERAMIC_COATING",
+    "primary_parent_category_id": "DETAILING_SERVICES",
+    "product_category_type_id": null,
+    "description": "Ceramic Coating",
+    "long_description": "Application of a ceramic coating to protect the paint and improve shine",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "TIRE_SHINE",
+    "primary_parent_category_id": "DETAILING_SERVICES",
+    "product_category_type_id": null,
+    "description": "Tire Shine",
+    "long_description": "Application of a tire shine product to enhance the look of the tires",
+    "created_stamp": "2023-07-14 12:23:42.150",
+    "last_updated_stamp": "2023-07-14 12:23:42.150"
+  },
+  {
+    "product_category_id": "TOYOTA",
+    "primary_parent_category_id": "VEHICLE_MAKE",
+    "product_category_type_id": null,
+    "description": "Toyota",
+    "long_description": "Toyota",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "COROLLA",
+    "primary_parent_category_id": "TOYOTA",
+    "product_category_type_id": null,
+    "description": "Corolla",
+    "long_description": "Corolla",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "YARIS",
+    "primary_parent_category_id": "TOYOTA",
+    "product_category_type_id": null,
+    "description": "Yaris",
+    "long_description": "Yaris",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "HONDA",
+    "primary_parent_category_id": "VEHICLE_MAKE",
+    "product_category_type_id": null,
+    "description": "Honda",
+    "long_description": "Honda",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "CIVIC",
+    "primary_parent_category_id": "HONDA",
+    "product_category_type_id": null,
+    "description": "Civic",
+    "long_description": "Civic",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "OPEL",
+    "primary_parent_category_id": "VEHICLE_MAKE",
+    "product_category_type_id": null,
+    "description": "Opel",
+    "long_description": "Opel",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "ASTRA",
+    "primary_parent_category_id": "OPEL",
+    "product_category_type_id": null,
+    "description": "Astra",
+    "long_description": "Astra",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "CORSA",
+    "primary_parent_category_id": "OPEL",
+    "product_category_type_id": null,
+    "description": "Corsa",
+    "long_description": "Corsa",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "VECTRA",
+    "primary_parent_category_id": "OPEL",
+    "product_category_type_id": null,
+    "description": "Vectra",
+    "long_description": "Vectra",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "CHEVROLET",
+    "primary_parent_category_id": "VEHICLE_MAKE",
+    "product_category_type_id": null,
+    "description": "Chevrolet",
+    "long_description": "Chevrolet",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "AVEO",
+    "primary_parent_category_id": "CHEVROLET",
+    "product_category_type_id": null,
+    "description": "Aveo",
+    "long_description": "Aveo",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "OPTRA",
+    "primary_parent_category_id": "CHEVROLET",
+    "product_category_type_id": null,
+    "description": "Optra",
+    "long_description": "Optra",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "LANOS",
+    "primary_parent_category_id": "CHEVROLET",
+    "product_category_type_id": null,
+    "description": "Lanos",
+    "long_description": "Lanos",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "CAPTIVA",
+    "primary_parent_category_id": "CHEVROLET",
+    "product_category_type_id": null,
+    "description": "Captiva",
+    "long_description": "Captiva",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "SPARE_PARTS",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Spare Parts",
+    "long_description": "Spare Parts",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "EXHAUST",
+    "primary_parent_category_id": "SPARE_PARTS",
+    "product_category_type_id": null,
+    "description": "Exhaust Parts",
+    "long_description": "Parts related to the exhaust system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "EXHAUST_PIPE",
+    "primary_parent_category_id": "EXHAUST",
+    "product_category_type_id": null,
+    "description": "Exhaust Parts",
+    "long_description": "Parts related to the exhaust system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "EXHAUST_MANIFOLD",
+    "primary_parent_category_id": "EXHAUST",
+    "product_category_type_id": null,
+    "description": "Exhaust Parts",
+    "long_description": "Parts related to the exhaust system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "CATALYTIC_CONVERTER",
+    "primary_parent_category_id": "EXHAUST",
+    "product_category_type_id": null,
+    "description": "Exhaust Parts",
+    "long_description": "Parts related to the exhaust system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "MUFFLER",
+    "primary_parent_category_id": "EXHAUST",
+    "product_category_type_id": null,
+    "description": "Exhaust Parts",
+    "long_description": "Parts related to the exhaust system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "RESONATOR",
+    "primary_parent_category_id": "EXHAUST",
+    "product_category_type_id": null,
+    "description": "Exhaust Parts",
+    "long_description": "Parts related to the exhaust system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "TAILPIPE",
+    "primary_parent_category_id": "EXHAUST",
+    "product_category_type_id": null,
+    "description": "Exhaust Parts",
+    "long_description": "Parts related to the exhaust system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "ENGINE",
+    "primary_parent_category_id": "SPARE_PARTS",
+    "product_category_type_id": null,
+    "description": "Engine Parts",
+    "long_description": "Parts related to the engine of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "ENGINE_BLOCK",
+    "primary_parent_category_id": "ENGINE",
+    "product_category_type_id": null,
+    "description": "Engine Parts",
+    "long_description": "Parts related to the engine of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "ENGINE_HEAD",
+    "primary_parent_category_id": "ENGINE",
+    "product_category_type_id": null,
+    "description": "Engine Parts",
+    "long_description": "Parts related to the engine of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "PISTON",
+    "primary_parent_category_id": "ENGINE",
+    "product_category_type_id": null,
+    "description": "Engine Parts",
+    "long_description": "Parts related to the engine of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "CRANKSHAFT",
+    "primary_parent_category_id": "ENGINE",
+    "product_category_type_id": null,
+    "description": "Engine Parts",
+    "long_description": "Parts related to the engine of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "CAMSHAFT",
+    "primary_parent_category_id": "ENGINE",
+    "product_category_type_id": null,
+    "description": "Engine Parts",
+    "long_description": "Parts related to the engine of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "VALVE",
+    "primary_parent_category_id": "ENGINE",
+    "product_category_type_id": null,
+    "description": "Engine Parts",
+    "long_description": "Parts related to the engine of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "SPRING",
+    "primary_parent_category_id": "ENGINE",
+    "product_category_type_id": null,
+    "description": "Engine Parts",
+    "long_description": "Parts related to the engine of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "BEARINGS",
+    "primary_parent_category_id": "ENGINE",
+    "product_category_type_id": null,
+    "description": "Engine Parts",
+    "long_description": "Parts related to the engine of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "GASKET",
+    "primary_parent_category_id": "ENGINE",
+    "product_category_type_id": null,
+    "description": "Engine Parts",
+    "long_description": "Parts related to the engine of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "FUEL_SYSTEM",
+    "primary_parent_category_id": "SPARE_PARTS",
+    "product_category_type_id": null,
+    "description": "Fuel System Parts",
+    "long_description": "Parts related to the fuel system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "FUEL_PUMP",
+    "primary_parent_category_id": "FUEL_SYSTEM",
+    "product_category_type_id": null,
+    "description": "Fuel System Parts",
+    "long_description": "Parts related to the fuel system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "FUEL_SYSTEM_ASSEMBLIES",
+    "primary_parent_category_id": "FUEL_SYSTEM",
+    "product_category_type_id": null,
+    "description": "Fuel System Parts",
+    "long_description": "Parts related to the fuel system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "FUEL_INJECTOR",
+    "primary_parent_category_id": "FUEL_SYSTEM",
+    "product_category_type_id": null,
+    "description": "Fuel System Parts",
+    "long_description": "Parts related to the fuel system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "FUEL_FILTER",
+    "primary_parent_category_id": "FUEL_SYSTEM",
+    "product_category_type_id": null,
+    "description": "Fuel System Parts",
+    "long_description": "Parts related to the fuel system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "CARBURETORS",
+    "primary_parent_category_id": "FUEL_SYSTEM",
+    "product_category_type_id": null,
+    "description": "Fuel System Parts",
+    "long_description": "Parts related to the fuel system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "SUSPENSION",
+    "primary_parent_category_id": "SPARE_PARTS",
+    "product_category_type_id": null,
+    "description": "Suspension Parts",
+    "long_description": "Parts related to the suspension system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "SHOCK_ABSORBERS",
+    "primary_parent_category_id": "SUSPENSION",
+    "product_category_type_id": null,
+    "description": "Suspension Parts",
+    "long_description": "Parts related to the suspension system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "SPRINGS",
+    "primary_parent_category_id": "SUSPENSION",
+    "product_category_type_id": null,
+    "description": "Suspension Parts",
+    "long_description": "Parts related to the suspension system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "CONTROL_ARMS",
+    "primary_parent_category_id": "SUSPENSION",
+    "product_category_type_id": null,
+    "description": "Suspension Parts",
+    "long_description": "Parts related to the suspension system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "BALL_JOINTS",
+    "primary_parent_category_id": "SUSPENSION",
+    "product_category_type_id": null,
+    "description": "Suspension Parts",
+    "long_description": "Parts related to the suspension system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "STABILIZER_BAR_AND_LINKS",
+    "primary_parent_category_id": "SUSPENSION",
+    "product_category_type_id": null,
+    "description": "Suspension Parts",
+    "long_description": "Parts related to the suspension system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "WHEEL_BEARINGS_HUB_ASSEMBLIES",
+    "primary_parent_category_id": "SUSPENSION",
+    "product_category_type_id": null,
+    "description": "Suspension Parts",
+    "long_description": "Parts related to the suspension system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "TRANSMISSION",
+    "primary_parent_category_id": "SPARE_PARTS",
+    "product_category_type_id": null,
+    "description": "Transmission Parts",
+    "long_description": "Parts related to the transmission system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "AUTO_TRANSMISSION",
+    "primary_parent_category_id": "TRANSMISSION",
+    "product_category_type_id": null,
+    "description": "Transmission Parts",
+    "long_description": "Parts related to the transmission system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "MANUAL_TRANSMISSION",
+    "primary_parent_category_id": "TRANSMISSION",
+    "product_category_type_id": null,
+    "description": "Transmission Parts",
+    "long_description": "Parts related to the transmission system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "CV_JOINTS",
+    "primary_parent_category_id": "TRANSMISSION",
+    "product_category_type_id": null,
+    "description": "Transmission Parts",
+    "long_description": "Parts related to the transmission system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "AXLES",
+    "primary_parent_category_id": "TRANSMISSION",
+    "product_category_type_id": null,
+    "description": "Transmission Parts",
+    "long_description": "Parts related to the transmission system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "CLUTCH",
+    "primary_parent_category_id": "TRANSMISSION",
+    "product_category_type_id": null,
+    "description": "Transmission Parts",
+    "long_description": "Parts related to the transmission system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "FLYWHEEL",
+    "primary_parent_category_id": "TRANSMISSION",
+    "product_category_type_id": null,
+    "description": "Transmission Parts",
+    "long_description": "Parts related to the transmission system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "FLEXPLATE",
+    "primary_parent_category_id": "TRANSMISSION",
+    "product_category_type_id": null,
+    "description": "Transmission Parts",
+    "long_description": "Parts related to the transmission system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "BRAKES",
+    "primary_parent_category_id": "SPARE_PARTS",
+    "product_category_type_id": null,
+    "description": "Brake system Parts",
+    "long_description": "Parts related to the breaking system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "BRAKE_PAD",
+    "primary_parent_category_id": "BRAKES",
+    "product_category_type_id": null,
+    "description": "Brake system Parts",
+    "long_description": "Parts related to the breaking system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "BRAKE_SHOE",
+    "primary_parent_category_id": "BRAKES",
+    "product_category_type_id": null,
+    "description": "Brake system Parts",
+    "long_description": "Parts related to the breaking system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "ROTOR",
+    "primary_parent_category_id": "BRAKES",
+    "product_category_type_id": null,
+    "description": "Brake system Parts",
+    "long_description": "Parts related to the breaking system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "DRUM",
+    "primary_parent_category_id": "BRAKES",
+    "product_category_type_id": null,
+    "description": "Brake system Parts",
+    "long_description": "Parts related to the breaking system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "CALIPER",
+    "primary_parent_category_id": "BRAKES",
+    "product_category_type_id": null,
+    "description": "Brake system Parts",
+    "long_description": "Parts related to the breaking system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "BREAK_HOSE",
+    "primary_parent_category_id": "BRAKES",
+    "product_category_type_id": null,
+    "description": "Brake system Parts",
+    "long_description": "Parts related to the breaking system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "BREAK_LINE",
+    "primary_parent_category_id": "BRAKES",
+    "product_category_type_id": null,
+    "description": "Brake system Parts",
+    "long_description": "Parts related to the breaking system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "MASTER_CYLINDER",
+    "primary_parent_category_id": "BRAKES",
+    "product_category_type_id": null,
+    "description": "Brake system Parts",
+    "long_description": "Parts related to the breaking system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "ELECTRICAL",
+    "primary_parent_category_id": "SPARE_PARTS",
+    "product_category_type_id": null,
+    "description": "Electrical system Parts",
+    "long_description": "Parts related to the Electrical system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "ALTERNATOR",
+    "primary_parent_category_id": "ELECTRICAL",
+    "product_category_type_id": null,
+    "description": "Electrical system Parts",
+    "long_description": "Parts related to the Electrical system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "STARTER",
+    "primary_parent_category_id": "ELECTRICAL",
+    "product_category_type_id": null,
+    "description": "Electrical system Parts",
+    "long_description": "Parts related to the Electrical system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "BATTERY",
+    "primary_parent_category_id": "ELECTRICAL",
+    "product_category_type_id": null,
+    "description": "Electrical system Parts",
+    "long_description": "Parts related to the Electrical system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "IGNITION_SYSTEM",
+    "primary_parent_category_id": "ELECTRICAL",
+    "product_category_type_id": null,
+    "description": "Electrical system Parts",
+    "long_description": "Parts related to the Electrical system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "WIRING_AND_ELEC_COMP",
+    "primary_parent_category_id": "ELECTRICAL",
+    "product_category_type_id": null,
+    "description": "Electrical system Parts",
+    "long_description": "Parts related to the Electrical system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "STEERING",
+    "primary_parent_category_id": "SPARE_PARTS",
+    "product_category_type_id": null,
+    "description": "Steering system Parts",
+    "long_description": "Parts related to the steering system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "POWER_STEERING_PUMP",
+    "primary_parent_category_id": "STEERING",
+    "product_category_type_id": null,
+    "description": "Steering system Parts",
+    "long_description": "Parts related to the steering system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "STEERING_RACK",
+    "primary_parent_category_id": "STEERING",
+    "product_category_type_id": null,
+    "description": "Steering system Parts",
+    "long_description": "Parts related to the steering system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "GEAR_BOX",
+    "primary_parent_category_id": "STEERING",
+    "product_category_type_id": null,
+    "description": "Steering system Parts",
+    "long_description": "Parts related to the steering system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "TIE_ROD_ENDS",
+    "primary_parent_category_id": "STEERING",
+    "product_category_type_id": null,
+    "description": "Steering system Parts",
+    "long_description": "Parts related to the steering system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "DRAG_LINKS",
+    "primary_parent_category_id": "STEERING",
+    "product_category_type_id": null,
+    "description": "Steering system Parts",
+    "long_description": "Parts related to the steering system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "IDLER_PITMAN_ARMS",
+    "primary_parent_category_id": "STEERING",
+    "product_category_type_id": null,
+    "description": "Steering system Parts",
+    "long_description": "Parts related to the steering system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "STEERING_STABILIZER",
+    "primary_parent_category_id": "STEERING",
+    "product_category_type_id": null,
+    "description": "Steering system Parts",
+    "long_description": "Parts related to the steering system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "COOLING",
+    "primary_parent_category_id": "SPARE_PARTS",
+    "product_category_type_id": null,
+    "description": "cooling system Parts",
+    "long_description": "Parts related to the cooling system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "RADIATOR",
+    "primary_parent_category_id": "COOLING",
+    "product_category_type_id": null,
+    "description": "cooling system Parts",
+    "long_description": "Parts related to the cooling system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "THERMOSTAT",
+    "primary_parent_category_id": "COOLING",
+    "product_category_type_id": null,
+    "description": "cooling system Parts",
+    "long_description": "Parts related to the cooling system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "HOSE",
+    "primary_parent_category_id": "COOLING",
+    "product_category_type_id": null,
+    "description": "cooling system Parts",
+    "long_description": "Parts related to the cooling system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "WATER_PUMP",
+    "primary_parent_category_id": "COOLING",
+    "product_category_type_id": null,
+    "description": "cooling system Parts",
+    "long_description": "Parts related to the cooling system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "ENGINE_COOLING_FAN",
+    "primary_parent_category_id": "COOLING",
+    "product_category_type_id": null,
+    "description": "cooling system Parts",
+    "long_description": "Parts related to the cooling system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "DRIVETRAIN",
+    "primary_parent_category_id": "SPARE_PARTS",
+    "product_category_type_id": null,
+    "description": "Drivetrain system Parts",
+    "long_description": "Parts related to the Drivetrain system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "DIFFERENTIAL",
+    "primary_parent_category_id": "DRIVETRAIN",
+    "product_category_type_id": null,
+    "description": "Drivetrain system Parts",
+    "long_description": "Parts related to the Drivetrain system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "AXLES_AND_CV_JOINTS",
+    "primary_parent_category_id": "DRIVETRAIN",
+    "product_category_type_id": null,
+    "description": "Drivetrain system Parts",
+    "long_description": "Parts related to the Drivetrain system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "DRIVE_SHAFTS_AND_U_JOINTS",
+    "primary_parent_category_id": "DRIVETRAIN",
+    "product_category_type_id": null,
+    "description": "Drivetrain system Parts",
+    "long_description": "Parts related to the Drivetrain system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "TRANSFER_CASE",
+    "primary_parent_category_id": "DRIVETRAIN",
+    "product_category_type_id": null,
+    "description": "Drivetrain system Parts",
+    "long_description": "Parts related to the Drivetrain system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "TIRES_WHEELS",
+    "primary_parent_category_id": "SPARE_PARTS",
+    "product_category_type_id": null,
+    "description": "Tires/wheels system Parts",
+    "long_description": "Parts related to the Tires/wheels system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "TIRE",
+    "primary_parent_category_id": "TIRES_WHEELS",
+    "product_category_type_id": null,
+    "description": "Tires/wheels system Parts",
+    "long_description": "Parts related to the Tires/wheels system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "WHEEL",
+    "primary_parent_category_id": "TIRES_WHEELS",
+    "product_category_type_id": null,
+    "description": "Tires/wheels system Parts",
+    "long_description": "Parts related to the Tires/wheels system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "TIRE_PRESSURE_MONITORING_SYSTEM",
+    "primary_parent_category_id": "TIRES_WHEELS",
+    "product_category_type_id": null,
+    "description": "Tires/wheels system Parts",
+    "long_description": "Parts related to the Tires/wheels system of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "INTERIOR",
+    "primary_parent_category_id": "SPARE_PARTS",
+    "product_category_type_id": null,
+    "description": "Interior Parts",
+    "long_description": "Parts related to the Interior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "SEAT",
+    "primary_parent_category_id": "INTERIOR",
+    "product_category_type_id": null,
+    "description": "Interior Parts",
+    "long_description": "Parts related to the Interior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "SEAT_BELT",
+    "primary_parent_category_id": "INTERIOR",
+    "product_category_type_id": null,
+    "description": "Interior Parts",
+    "long_description": "Parts related to the Interior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "DASHBOARD",
+    "primary_parent_category_id": "INTERIOR",
+    "product_category_type_id": null,
+    "description": "Interior Parts",
+    "long_description": "Parts related to the Interior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "GAUGE",
+    "primary_parent_category_id": "INTERIOR",
+    "product_category_type_id": null,
+    "description": "Interior Parts",
+    "long_description": "Parts related to the Interior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "CARPET",
+    "primary_parent_category_id": "INTERIOR",
+    "product_category_type_id": null,
+    "description": "Interior Parts",
+    "long_description": "Parts related to the Interior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "FLOORMAT",
+    "primary_parent_category_id": "INTERIOR",
+    "product_category_type_id": null,
+    "description": "Interior Parts",
+    "long_description": "Parts related to the Interior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "STEERING_WHEEL",
+    "primary_parent_category_id": "INTERIOR",
+    "product_category_type_id": null,
+    "description": "Interior Parts",
+    "long_description": "Parts related to the Interior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "AIRBAG",
+    "primary_parent_category_id": "INTERIOR",
+    "product_category_type_id": null,
+    "description": "Interior Parts",
+    "long_description": "Parts related to the Interior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "EXTERIOR",
+    "primary_parent_category_id": "SPARE_PARTS",
+    "product_category_type_id": null,
+    "description": "Exterior Parts",
+    "long_description": "Parts related to the Exterior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "BUMPERS",
+    "primary_parent_category_id": "EXTERIOR",
+    "product_category_type_id": null,
+    "description": "Exterior Parts",
+    "long_description": "Parts related to the Exterior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "GRILLS",
+    "primary_parent_category_id": "EXTERIOR",
+    "product_category_type_id": null,
+    "description": "Exterior Parts",
+    "long_description": "Parts related to the Exterior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "HEADLIGHTS",
+    "primary_parent_category_id": "EXTERIOR",
+    "product_category_type_id": null,
+    "description": "Exterior Parts",
+    "long_description": "Parts related to the Exterior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "MIRRORS",
+    "primary_parent_category_id": "EXTERIOR",
+    "product_category_type_id": null,
+    "description": "Exterior Parts",
+    "long_description": "Parts related to the Exterior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "DOOR_HANDLES",
+    "primary_parent_category_id": "EXTERIOR",
+    "product_category_type_id": null,
+    "description": "Exterior Parts",
+    "long_description": "Parts related to the Exterior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "LOCKS",
+    "primary_parent_category_id": "EXTERIOR",
+    "product_category_type_id": null,
+    "description": "Exterior Parts",
+    "long_description": "Parts related to the Exterior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "FENDER",
+    "primary_parent_category_id": "EXTERIOR",
+    "product_category_type_id": null,
+    "description": "Exterior Parts",
+    "long_description": "Parts related to the Exterior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "QUARTER_PANEL",
+    "primary_parent_category_id": "EXTERIOR",
+    "product_category_type_id": null,
+    "description": "Exterior Parts",
+    "long_description": "Parts related to the Exterior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "CAR_SERVICE",
+    "primary_parent_category_id": "EXTERIOR",
+    "product_category_type_id": null,
+    "description": "Exterior Parts",
+    "long_description": "Parts related to the Exterior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  },
+  {
+    "product_category_id": "SERVICE_OIL",
+    "primary_parent_category_id": "EXTERIOR",
+    "product_category_type_id": null,
+    "description": "Exterior Parts",
+    "long_description": "Parts related to the Exterior of a vehicle",
+    "created_stamp": "2022-05-27 12:23:42.150",
+    "last_updated_stamp": "2022-05-27 12:23:42.150"
+  }
+]

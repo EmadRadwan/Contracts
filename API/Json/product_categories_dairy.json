@@ -1,0 +1,103 @@
+[
+  {
+    "product_category_id": "DAIRY",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "DESCRIPTION": "Dairy Product",
+    "DESCRIPTION_ARABIC": "منتجات الألبان",
+    "DESCRIPTION_TURKISH": "Süt Ürünü",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  },
+  {
+    "product_category_id": "RAW_MATERIALS",
+    "primary_parent_category_id": "DAIRY",
+    "product_category_type_id": null,
+    "description": "Raw Materials",
+    "description_arabic": "المواد الخام",
+    "description_turkish": "Ham Maddeler",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  }
+,
+  {
+    "product_category_id": "PACKAGING",
+    "primary_parent_category_id": "RAW_MATERIALS",
+    "product_category_type_id": null,
+    "DESCRIPTION": "Packaging Type",
+    "DESCRIPTION_ARABIC": "أنواع التعبئة",
+    "DESCRIPTION_TURKISH": "Ambalaj Türü",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  },
+  {
+    "product_category_id": "GRAIN",
+    "primary_parent_category_id": "RAW_MATERIALS",
+    "product_category_type_id": null,
+    "DESCRIPTION": "Grain",
+    "DESCRIPTION_ARABIC": "الحبوب",
+    "DESCRIPTION_TURKISH": "Tahıl",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  },
+  {
+    "product_category_id": "MICROBIAL_CULTURE",
+    "primary_parent_category_id": "RAW_MATERIALS",
+    "product_category_type_id": null,
+    "DESCRIPTION": "Microbial Culture",
+    "DESCRIPTION_ARABIC": "المزارع الميكروبية",
+    "DESCRIPTION_TURKISH": "Mikrobiyal Kültür",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  },
+  {
+    "product_category_id": "LABELING",
+    "primary_parent_category_id": "RAW_MATERIALS",
+    "product_category_type_id": null,
+    "DESCRIPTION": "Labeling",
+    "DESCRIPTION_ARABIC": "وضع العلامات",
+    "DESCRIPTION_TURKISH": "Etiketleme",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  },
+  {
+    "product_category_id": "DESSERT",
+    "primary_parent_category_id": "DAIRY",
+    "product_category_type_id": null,
+    "DESCRIPTION": "Dessert",
+    "DESCRIPTION_ARABIC": "الحلويات",
+    "DESCRIPTION_TURKISH": "Tatlı",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  },
+  {
+    "product_category_id": "SWEETENER",
+    "primary_parent_category_id": "RAW_MATERIALS",
+    "product_category_type_id": null,
+    "DESCRIPTION": "Sweetener",
+    "DESCRIPTION_ARABIC": "المحليات",
+    "DESCRIPTION_TURKISH": "Tatlandırıcı",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  },
+  {
+    "product_category_id": "ADDITIVES",
+    "primary_parent_category_id": "RAW_MATERIALS",
+    "product_category_type_id": null,
+    "DESCRIPTION": "Additive",
+    "DESCRIPTION_ARABIC": "الإضافات",
+    "DESCRIPTION_TURKISH": "Katkı Maddesi",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  },
+  {
+    "product_category_id": "SEASONING",
+    "primary_parent_category_id": "RAW_MATERIALS",
+    "product_category_type_id": null,
+    "DESCRIPTION": "Seasoning",
+    "DESCRIPTION_ARABIC": "التوابل",
+    "DESCRIPTION_TURKISH": "Baharat",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  }
+]

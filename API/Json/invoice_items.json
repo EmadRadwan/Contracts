@@ -1,0 +1,54 @@
+[
+  {
+    "INVOICE_ID": "8009",
+    "INVOICE_ITEM_SEQ_ID": "00001",
+    "INVOICE_ITEM_TYPE_ID": "INV_FPROD_ITEM",
+    "INVENTORY_ITEM_ID": "10271",
+    "PRODUCT_ID": "003a2b3c-4d5e-6f7a-8b9c-d0e1f2a3b4c3",
+    "QUANTITY": "2.000000",
+    "AMOUNT": "59.990",
+    "DESCRIPTION": "Paracetamol"
+  },
+  {
+    "INVOICE_ID": "8009",
+    "INVOICE_ITEM_SEQ_ID": "00002",
+    "INVOICE_ITEM_TYPE_ID": "ITM_SALES_TAX",
+    "OVERRIDE_GL_ACCOUNT_ID": "224214",
+    "PRODUCT_ID": "003a2b3c-4d5e-6f7a-8b9c-d0e1f2a3b4c3",
+    "PARENT_INVOICE_ID": "8009",
+    "PARENT_INVOICE_ITEM_SEQ_ID": "00001",
+    "QUANTITY": "1.000000",
+    "AMOUNT": "0.120",
+    "DESCRIPTION": "EgyptTaxAuth Sales Tax",
+    "TAX_AUTH_PARTY_ID": "EgyptTaxAuth",
+    "TAX_AUTH_GEO_ID": "EGY",
+    "TAX_AUTHORITY_RATE_SEQ_ID": "10000"
+  },
+  {
+    "INVOICE_ID": "8009",
+    "INVOICE_ITEM_SEQ_ID": "00005",
+    "INVOICE_ITEM_TYPE_ID": "INV_FPROD_ITEM",
+    "INVENTORY_ITEM_ID": "10281",
+    "PRODUCT_ID": "004a2b3c-4d5e-6f7a-8b9c-d0e1f2a3b4c4",
+    "QUANTITY": "1.000000",
+    "AMOUNT": "59.990",
+    "DESCRIPTION": "Amoxicillin"
+  },
+  {
+    "INVOICE_ID": "8009",
+    "INVOICE_ITEM_SEQ_ID": "00006",
+    "INVOICE_ITEM_TYPE_ID": "ITM_PROMOTION_ADJ",
+    "PRODUCT_ID": "004a2b3c-4d5e-6f7a-8b9c-d0e1f2a3b4c4",
+    "PARENT_INVOICE_ID": "8009",
+    "PARENT_INVOICE_ITEM_SEQ_ID": "00005",
+    "QUANTITY": "1.000000",
+    "AMOUNT": "-59.990"
+  },
+  {
+    "INVOICE_ID": "8009",
+    "INVOICE_ITEM_SEQ_ID": "00008",
+    "INVOICE_ITEM_TYPE_ID": "ITM_SHIPPING_CHARGES",
+    "QUANTITY": "1.000000",
+    "AMOUNT": "12.100"
+  }
+]

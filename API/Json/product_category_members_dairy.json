@@ -1,0 +1,15 @@
+[
+  {
+    "PRODUCT_CATEGORY_ID": "DAIRY",
+    "PRODUCT_ID": "001-yogurt-big",
+    "FROM_DATE": "2024-05-31 06:03:42",
+    "THRU_DATE": null,
+    "COMMENTS": null,
+    "SEQUENCE_NUM": null,
+    "QUANTITY": null,
+    "LAST_UPDATED_STAMP": "2024-05-31 06:03:42",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2024-05-31 06:03:42",
+    "CREATED_TX_STAMP": null
+  }
+]

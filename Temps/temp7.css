@@ -1,0 +1,277 @@
+:root {
+    --font-latin: 'Montserrat', 'Dosis', sans-serif;
+    --font-arabic: 'Noto Sans Arabic', -apple-system, sans-serif;
+}
+
+html {
+    font-family: var(--font-latin);
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    box-sizing: border-box;
+    text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    min-width: 320px;
+    background: #fff;
+    font-family: var(--font-latin);
+    font-size: 1rem;
+    line-height: 1.5;
+    color: rgba(0, 0, 0, 0.87);
+    font-smoothing: antialiased;
+}
+
+/* Arabic-specific styles */
+html[lang="ar"],
+html[dir="rtl"] {
+    font-family: var(--font-arabic);
+    direction: rtl;
+    text-align: right;
+    font-size: 18px; /* Default font size for Arabic */
+}
+
+/* Enhance regular text rendering for Arabic */
+html[lang="ar"] body,
+html[dir="rtl"] body {
+    font-weight: 500;
+    line-height: 1.6;
+    letter-spacing: 0;
+    font-size: 18px;
+}
+
+/* Bold text (e.g., headings) */
+html[lang="ar"] h1,
+html[lang="ar"] h2,
+html[lang="ar"] h3,
+html[lang="ar"] h4,
+html[lang="ar"] h5,
+html[lang="ar"] h6,
+html[dir="rtl"] h1,
+html[dir="rtl"] h2,
+html[dir="rtl"] h3,
+html[dir="rtl"] h4,
+html[dir="rtl"] h5,
+html[dir="rtl"] h6 {
+    font-weight: 700;
+    font-size: 1.5em;
+}
+
+/* Ensure paragraphs, spans, divs, and labels inherit */
+html[lang="ar"] p,
+html[lang="ar"] span,
+html[lang="ar"] div,
+html[lang="ar"] label.k-label,
+html[dir="rtl"] p,
+html[dir="rtl"] span,
+html[dir="rtl"] div,
+html[dir="rtl"] label.k-label {
+    font-weight: 500;
+    font-size: 18px;
+}
+
+/* Specific style for k-label in Arabic */
+html[lang="ar"] label.k-label,
+html[dir="rtl"] label.k-label {
+    font-weight: 700; /* Retain bold weight */
+    font-size: 18px !important; /* Ensure larger font size for Arabic labels */
+}
+
+.k-form, .k-form-inline {
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+body .k-menu:not(.k-context-menu) {
+    background-color: transparent;
+}
+
+body .k-menu:not(.k-context-menu) > .k-item {
+    color: #1274AC;
+}
+
+.k-grid td {
+    font-size: 13px;
+}
+
+.k-grid-header .k-header > .k-link {
+    margin: 0.75rem !important;
+}
+
+label.k-label {
+    font-weight: bold;
+}
+
+.k-notification-info {
+    border-color: #0058e9 !important;
+    font-weight: bold;
+    color: #ffffff !important;
+    background-color: #0058e9 !important;
+}
+
+.ui.tabular.menu {
+    border-bottom: none;
+}
+
+.k-notification-group {
+    padding-right: 10px;
+    z-index: 99999999999;
+}
+
+.k-grid.main-grid td {
+    padding: 0 0 0 1rem !important;
+}
+
+.ui.tabular.menu .item.productMenu,
+.ui.tabular.menu .item.fixedAssetMenu,
+.ui.tabular.menu .item.invoiceMenu {
+    color: #0058e9;
+    font-weight: bold;
+}
+
+.div-container {
+    background-color: white;
+    padding: 15px 7px 7px 7px;
+}
+
+.div-container-overflow-hidden {
+    width: 100%;
+    overflow: hidden;
+}
+
+.div-container-disabled {
+    background-color: white;
+    padding: 7px 7px 7px 7px;
+    pointer-events: none;
+}
+
+.grid-disabled {
+    pointer-events: none;
+}
+
+.grid-normal {
+    pointer-events: auto;
+}
+
+.div-centered-container-withBorderCurved {
+    background-color: white;
+    padding: 10px 7px 7px 7px;
+    border: 1px solid green;
+    border-radius: 30px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.div-container-withBorderCurved {
+    background-color: white;
+    padding: 10px 7px 7px 7px;
+    border: 1px solid green;
+    border-radius: 30px;
+}
+
+.div-container-withBorderBoxBlue {
+    background-color: white;
+    padding: 10px 7px 7px 7px;
+    border: 2px solid blue;
+}
+
+.div-container-withBorderBoxBlack {
+    background-color: white;
+    padding: 10px 7px 7px 7px;
+    border: 2px solid black;
+}
+
+.myGrid.k-grid {
+    font-family: 'sans-serif';
+}
+
+input, select, textarea, button {
+    font-family: 'Montserrat', sans-serif;
+}
+
+.div-container-withBorderCurved-wrap {
+    display: flex;
+    flex: 1;
+    white-space: normal !important;
+    flex-wrap: wrap;
+}
+
+.k-grid .k-column-title {
+    white-space: normal;
+}
+
+.k-grid td, .k-grid .k-table-td {
+    white-space: nowrap !important;
+}
+
+.invalid-row {
+    background-color: rgba(255, 0, 0, 0.2);
+}
+
+.k-menu-bar, .k-menu {
+    flex-wrap: wrap !important;
+}
+
+.no-padding-top > .MuiGrid-item {
+    padding-top: 0 !important;
+    padding-left: 25px !important;
+}
+
+.custom-menu .k-menu-item .k-menu-link-text {
+    font-weight: bold;
+    font-size: 16px;
+    color: navy;
+    text-transform: uppercase;
+}
+
+.k-treeview-item.k-parent-node {
+    font-weight: bold;
+    cursor: default;
+}
+
+.my-custom-field.no-overflow.k-dropdownlist.k-picker {
+    width: 38%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.slick-slide div {
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    height: 500px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.centered-image {
+    width: auto;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.slider-container {
+    margin-top: 20px;
+}
+
+.mermaid svg {
+    max-width: 100%;
+    height: auto;
+}
+
+.mermaid {
+    overflow-x: auto;
+}
+
+.mermaid svg[width] {
+    width: auto !important;
+    max-width: 100% !important;
+    height: auto !important;
+}

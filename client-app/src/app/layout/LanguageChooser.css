@@ -1,0 +1,12 @@
+
+.k-list-item {
+    background-color: transparent !important;
+    border: none !important;
+    outline: none !important;
+    color: black !important;
+}
+
+.k-list-item:hover {
+    border: 1px solid grey !important;
+    border-radius: 4px !important;
+}

@@ -1,0 +1,20 @@
+
+   
+    
+4 - recently added product didnt appear in purchase order products list
+7 - Complete localization
+8 - Complete accounting reports
+9 - An invoice accepted the 'To paid status' 
+    but didnt generate invoice and it was related to a billing account.
+    
+10 - Front end screen for a complete demo to be tested and completed.
+11 - configure images for the products
+12 - Configure users' roles and permissions
+13 - Prices seed data is not consistent between those in purchase order item and in BOM
+
+15 - Add code for quick close / complete for production run
+
+ - track ofbiz code for agreements and terms and how they affect furher processing
+
+    
+    

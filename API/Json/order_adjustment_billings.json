@@ -1,0 +1,14 @@
+[
+  {
+    "ORDER_ADJUSTMENT_ID": "8001",
+    "INVOICE_ID": "8009",
+    "INVOICE_ITEM_SEQ_ID": "00006",
+    "AMOUNT": "-59.99"
+  },
+  {
+    "ORDER_ADJUSTMENT_ID": "8002",
+    "INVOICE_ID": "8009",
+    "INVOICE_ITEM_SEQ_ID": "00008",
+    "AMOUNT": "12.10"
+  }
+]

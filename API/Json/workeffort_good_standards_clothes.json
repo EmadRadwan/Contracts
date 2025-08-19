@@ -1,0 +1,16 @@
+[
+  {
+    "WORK_EFFORT_ID": "10021",
+    "PRODUCT_ID": "11",
+    "WORK_EFFORT_GOOD_STD_TYPE_ID": "ROU_PROD_TEMPLATE",
+    "FROM_DATE": "2025-08-05 16:07:11",
+    "THRU_DATE": null,
+    "STATUS_ID": null,
+    "ESTIMATED_QUANTITY": null,
+    "ESTIMATED_COST": null,
+    "LAST_UPDATED_STAMP": null,
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": null,
+    "CREATED_TX_STAMP": null
+  }
+]

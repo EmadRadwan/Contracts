@@ -1,0 +1,138 @@
+[
+  {
+    "product_category_id": "MEDICATION",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Medication Category",
+    "DESCRIPTION_ARABIC": "فئة الأدوية",
+    "long_description": "All types of medications",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  },
+  {
+    "product_category_id": "RAW_MATERIALS",
+    "primary_parent_category_id": "MEDICATION",
+    "product_category_type_id": null,
+    "description": "Raw Materials",
+    "DESCRIPTION_ARABIC": "المواد الخام",
+    "long_description": "Materials used in medication manufacturing",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  },
+  {
+    "product_category_id": "ACTIVE_INGREDIENTS",
+    "primary_parent_category_id": "RAW_MATERIALS",
+    "product_category_type_id": null,
+    "description": "Active Ingredients",
+    "DESCRIPTION_ARABIC": "المكونات النشطة",
+    "long_description": "Active pharmaceutical ingredients",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  },
+  {
+    "product_category_id": "EXCIPIENTS",
+    "primary_parent_category_id": "RAW_MATERIALS",
+    "product_category_type_id": null,
+    "description": "Excipients",
+    "DESCRIPTION_ARABIC": "السواغات",
+    "long_description": "Inactive substances used in medications",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  },
+  {
+    "product_category_id": "DOSAGE_FORMS",
+    "primary_parent_category_id": "MEDICATION",
+    "product_category_type_id": null,
+    "description": "Dosage Forms",
+    "DESCRIPTION_ARABIC": "أشكال الجرعات",
+    "long_description": "Different forms of medication dosages",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  },
+  {
+    "product_category_id": "TABLETS",
+    "primary_parent_category_id": "DOSAGE_FORMS",
+    "product_category_type_id": null,
+    "description": "Tablets",
+    "DESCRIPTION_ARABIC": "الأقراص",
+    "long_description": "Medications in tablet form",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  },
+  {
+    "product_category_id": "CAPSULES",
+    "primary_parent_category_id": "DOSAGE_FORMS",
+    "product_category_type_id": null,
+    "description": "Capsules",
+    "DESCRIPTION_ARABIC": "كبسولات",
+    "long_description": "Medications in capsule form",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  },
+  {
+    "product_category_id": "SYRUPS",
+    "primary_parent_category_id": "DOSAGE_FORMS",
+    "product_category_type_id": null,
+    "description": "Syrups",
+    "DESCRIPTION_ARABIC": "الشرابات",
+    "long_description": "Medications in liquid syrup form",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  },
+  {
+    "product_category_id": "PACKAGING_MATERIALS",
+    "primary_parent_category_id": "MEDICATION",
+    "product_category_type_id": null,
+    "description": "Packaging Materials",
+    "DESCRIPTION_ARABIC": "مواد التغليف",
+    "long_description": "Materials used for packaging medications",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  },
+  {
+    "product_category_id": "LABELS",
+    "primary_parent_category_id": "PACKAGING_MATERIALS",
+    "product_category_type_id": null,
+    "description": "Labels",
+    "DESCRIPTION_ARABIC": "الملصقات",
+    "long_description": "Labels for medication packaging",
+    "created_stamp": "2024-05-28 12:00:00.000",
+    "last_updated_stamp": "2024-05-28 12:00:00.000"
+  },
+  {
+    "PRODUCT_CATEGORY_ID": "NSAIDS",
+    "PRIMARY_PARENT_CATEGORY_ID": "MEDICATION",
+    "DESCRIPTION": "NSAIDs",
+    "DESCRIPTION_ARABIC": "مضادات الالتهاب غير الستيرويدية",
+    "LONG_DESCRIPTION": "Nonsteroidal Anti-inflammatory Drugs",
+    "LAST_UPDATED_STAMP": "2024-05-31 12:00:00",
+    "CREATED_STAMP": "2024-05-31 12:00:00"
+  },
+  {
+    "PRODUCT_CATEGORY_ID": "ANALGESICS",
+    "PRIMARY_PARENT_CATEGORY_ID": "MEDICATION",
+    "DESCRIPTION": "Analgesics",
+    "DESCRIPTION_ARABIC": "المسكنات",
+    "LONG_DESCRIPTION": "Medications used for pain relief",
+    "LAST_UPDATED_STAMP": "2024-05-31 12:00:00",
+    "CREATED_STAMP": "2024-05-31 12:00:00"
+  },
+  {
+    "PRODUCT_CATEGORY_ID": "ANTIBIOTICS",
+    "PRIMARY_PARENT_CATEGORY_ID": "MEDICATION",
+    "DESCRIPTION": "Antibiotics",
+    "DESCRIPTION_ARABIC": "المضادات الحيوية",
+    "LONG_DESCRIPTION": "Medications used to treat bacterial infections",
+    "LAST_UPDATED_STAMP": "2024-05-31 12:00:00",
+    "CREATED_STAMP": "2024-05-31 12:00:00"
+  },
+  {
+    "PRODUCT_CATEGORY_ID": "ANTIHISTAMINES",
+    "PRIMARY_PARENT_CATEGORY_ID": "MEDICATION",
+    "DESCRIPTION": "Antihistamines",
+    "DESCRIPTION_ARABIC": "مضادات الهيستامين",
+    "LONG_DESCRIPTION": "Medications used to treat allergies",
+    "LAST_UPDATED_STAMP": "2024-05-31 12:00:00",
+    "CREATED_STAMP": "2024-05-31 12:00:00"
+  }
+]

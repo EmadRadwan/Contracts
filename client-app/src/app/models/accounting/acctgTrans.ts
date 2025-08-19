@@ -1,0 +1,30 @@
+export interface AcctgTrans {
+    acctgTransId?: string;
+    acctgTransTypeId?: string;
+    acctgTransTypeDescription?: string;
+    description?: string;
+    transactionDate?: Date;
+    isPosted?: string;
+    postedDate?: Date;
+    scheduledPostingDate?: Date;
+    glJournalId?: string;
+    glFiscalTypeId?: string;
+    voucherRef?: string;
+    voucherDate?: Date;
+    groupStatusId?: string;
+    fixedAssetId?: string;
+    inventoryItemId?: string;
+    physicalInventoryId?: string;
+    fromPartyId?: string;
+    roleTypeId?: string;
+    invoiceId?: string;
+    paymentId?: string;
+    productId?: string;
+    finAccountTransId?: string;
+    shipmentId?: string;
+    receiptId?: string;
+    workEffortId?: string;
+    theirAcctgTransId?: string;
+    debitGlAccountId?: string | null;
+    creditGlAccountId?: string | null;
+}

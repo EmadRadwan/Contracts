@@ -1,0 +1,322 @@
+{
+    "general": {
+      "homepage": "Tekrar Hoşgeldiniz",
+      "save": "Kaydet",
+      "cancel": "İptal",
+      "create": "Oluştur",
+      "edit": "Düzenle",
+      "delete": "Sil",
+      "actions": "Eylemler",
+      "submit": "Gönder",
+      "init": "Uygulama başlatılıyor...",
+      "find": "Bul",
+      "header": {
+        "catalog": "Katalog",
+        "facility": "Tesis",
+        "party": "Taraf",
+        "order": "Sipariş",
+        "service": "Hizmet",
+        "accounting": "Muhasebe",
+        "manufacturing": "Üretim",
+        "login": "Giriş"
+      }
+    },
+    "product": {
+      "products": {
+        "list": {
+          "title": "Ürünler",
+          "create": "Ürün Oluştur",
+          "quantity": "Miktar Ölçü Birimi",
+          "type": "Ürün Türü",
+          "category": "Ürün Kategorisi",
+          "description": "Ürün Açıklaması"
+        },
+        "form": {
+          "name": "Ürün Adı *",
+          "type": "Ürün Türü *",
+          "category": "Ürün Kategorisi *",
+          "days": "Hizmet Süresi Günleri",
+          "mileage": "Hizmet Süresi Kilometresi",
+          "uom": "Miktar Birimi",
+          "comments": "Yorumlar",
+          "processing": "Ürün İşleniyor...",
+          "new": "Yeni Ürün",
+          "menu": {
+            "associations": "İlişkiler",
+            "prices": "Fiyatlar",
+            "facilities": "Tesisler",
+            "categories": "Kategoriler",
+            "suppliers": "Tedarikçiler",
+            "inventory": "Envanter",
+            "costs": "Maliyetler",
+            "locations": "Lokasyonlar"
+          }
+        }
+      },
+      "promos": {
+        "list": {
+          "create": "Yeni Kampanya Oluştur",
+          "id": "Kampanya ID",
+          "name": "Kampanya Adı",
+          "condition": "Kampanya Şartı",
+          "input": "Girdi Parametresi Açıklaması",
+          "quantity": "Miktar",
+          "description": "Kampanya Açıklaması",
+          "amount": "İndirim Tutarı",
+          "loading": "Kampanyalar Yükleniyor..."
+        },
+        "form": {
+          "title": "Kampanya",
+          "new": "Yeni Ürün Kampanyası",
+          "id": "Kampanya ID",
+          "name": "Kampanya Adı",
+          "description": "Kampanya Açıklaması",
+          "from": "Başlangıç Tarihi",
+          "to": "Bitiş Tarihi",
+          "product": "Ürün",
+          "value": "Şart Değeri",
+          "action": "Ürün Kampanya Aksiyonu",
+          "quantity": "Miktar",
+          "amount": "Tutar",
+          "condition": "Kampanya Şartı",
+          "input": "Girdi Parametresi Açıklaması"
+        }
+      },
+      "stores": {
+        "list": {
+          "new": "Mağaza Oluştur",
+          "name": "Mağaza Adı",
+          "party": "Ödenecek Taraf",
+          "facility": "Envanter Tesisi",
+          "currency": "Para Birimi"
+        },
+        "form": {
+          "new": "Yeni Mağaza",
+          "name": "Mağaza Adı",
+          "processing": "Mağaza İşleniyor..."
+        }
+      },
+      "menu": {
+        "products": "Ürünler",
+        "promos": "Kampanyalar",
+        "stores": "Mağazalar"
+      }
+    },
+    "facility": {
+      "menu": {
+        "inventory": "Envanter",
+        "items": "Envanter Ürünleri",
+        "details": "Envanter Ürünü Detayları",
+        "receive": "Envanter Al",
+        "transfer": "Envanter Transferi",
+        "facilities": "Tesisler",
+        "locations": "Lokasyonlar",
+        "physical": "Fiziksel Envanter"
+      },
+      "list": {
+        "product": "Ürün",
+        "qoh": "QOH Toplamı",
+        "facility": "Tesis",
+        "atp": "ATP Toplamı",
+        "reorder": "Yeniden Sipariş Miktarı",
+        "minStock": "Minimum Stok",
+        "atpMinusMin": "ATP - Minimum Stok",
+        "qohMinusMin": "QOH - Minimum Stok",
+        "ordered": "Sipariş Miktarı",
+        "price": "Liste Fiyatı",
+        "loading": "Envanter Yükleniyor..."
+      },
+      "items": {
+        "item": "Envanter Ürünü",
+        "qoh": "QOH Toplamı",
+        "atp": "ATP Toplamı",
+        "product": "Ürün",
+        "facility": "Tesis",
+        "received": "Alım Zamanı",
+        "loading": "Envanter Ürünleri Yükleniyor...",
+        "supplier": "Tedarikçi",
+        "transfer": "Transfer",
+        "details": "Detaylar",
+        "clear": "Seçilen Ürünü Temizle",
+        "form": {
+          "title": "Envanter Ürünü",
+          "received": "Alım Zamanı",
+          "expire": "Son Kullanma Tarihi",
+          "product": "Ürün"
+        }
+      },
+      "details": {
+        "item": "Envanter Ürünü",
+        "order": "Sipariş ID",
+        "product": "Ürün",
+        "facility": "Tesis",
+        "qohTotal": "QOH Toplamı",
+        "atpTotal": "ATP Toplamı",
+        "qohDiff": "QOH Farkı",
+        "atpDiff": "ATP Farkı",
+        "date": "Geçerli Tarih"
+      },
+      "receive": {
+        "list": {
+          "select": "Satın Alma Siparişi Seçin *",
+          "orderItem": "Sipariş Ürünü",
+          "product": "Ürün",
+          "qtyOrdered": "Sipariş Edilen Miktar",
+          "qtyAccept": "Kabul Edilen Miktar",
+          "qtyReject": "Red Edilen Miktar",
+          "rejectReason": "Red Nedeni",
+          "facility": "Alım Tesisi",
+          "include": "Bu öğeyi dahil et",
+          "receive": "Al"
+        },
+        "menu": {
+          "receive": "Envanteri Al"
+        }
+      },
+      "transfer": {
+        "list": {
+          "invTransfer": "Envanter Transferi",
+          "item": "Envanter Ürünü",
+          "fromFacility": "Kaynak Tesis",
+          "toFacility": "Hedef Tesis",
+          "product": "Ürün",
+          "atp_qoh": "ATP/QOH",
+          "sendDate": "Gönderim Tarihi",
+          "receiveDate": "Alım Tarihi",
+          "loading": "Envanter Transferleri Yükleniyor..."
+        }
+      },
+      "facilities": {
+        "create": "Tesis Oluştur",
+        "list": {
+          "name": "Tesis Adı",
+          "type": "Tesis Türü"
+        },
+        "form": {
+          "type": "Tesis Türü",
+          "name": "Tesis Adı",
+          "description": "Açıklama"
+        }
+      },
+      "physical": {
+        "adjust": "Envanteri Düzenle",
+        "invItem": "Envanter Ürünü",
+        "itemATP": "Ürün ATP",
+        "itemQOH": "Ürün QOH",
+        "productATP": "Ürün ATP",
+        "productQOH": "Ürün QOH",
+        "loading": "Fiziksel Envanter Yükleniyor...",
+        "facility": "Tesis",
+        "product": "Ürün",
+        "form": {
+          "invItem": "Envanter Ürünü",
+          "product": "Ürün Adı",
+          "itemQOH": "Ürün QOH",
+          "itemATP": "Ürün ATP",
+          "productATP": "Ürün ATP",
+          "productQOH": "Ürün QOH",
+          "varianceReason": "Fark Nedeni",
+          "atpVar": "ATP Farkı",
+          "qohVar": "QOH Farkı"
+        }
+      }
+    },
+    "manufacturing": {
+      "menu": {
+        "jobshop": "İş Atölyesi",
+        "routing": "Rotalar",
+        "tasks": "Rota Görevleri",
+        "costs": "Maliyetler",
+        "bom": "Malzeme Listesi"
+      },
+      "jobshop": {
+        "list": {
+          "create": "Üretim Koşusu Oluştur",
+          "runId": "Üretim Koşusu ID",
+          "startDate": "Başlangıç Tarihi",
+          "product": "Ürün",
+          "runName": "Üretim Koşusu Adı",
+          "quantity": "Üretilecek Miktar",
+          "status": "Mevcut Durum",
+          "description": "Açıklama",
+          "loading": "Üretim Koşuları Yükleniyor..."
+        }
+      }
+    },
+    "order": {
+      "menu": {
+        "quote": "Teklif",
+        "order": "Sipariş",
+        "return": "İade"
+      },
+      "returns": {
+        "menu": {
+          "items": "İade Ürünleri",
+          "history": "İade Geçmişi"
+        }
+      },
+        
+        "list": {
+          "orderNumber": "Sipariş Numarası",
+          "customer": "Müşteri",
+          "amount": "Tutar",
+          "currency": "Para Birimi",
+          "orderDate": "Sipariş Tarihi",
+          "status": "Durum",
+          "type": "Tür",
+          "salesOrder": "Satış Siparişi",
+          "purchaseOrder": "Satın Alma Siparişi",
+          "new": "Yeni Sipariş"
+        }
+              
+    },
+    "accounting": {
+    "orgGL": {
+      "menu": {
+        "invoices": "Faturalar",
+        "payments": "Ödemeler",
+        "fixedAssets": "Sabit Varlıklar",
+        "taxAuthorities": "Vergi Otoriteleri",
+        "agreements": "Anlaşmalar",
+        "financialAccount": "Finansal Hesap",
+        "billingAccounts": "Faturalama Hesapları",
+        "globalGLSettings": "Küresel Genel Muhasebe Ayarları",
+        "organizationGLSettings": "Organizasyon Genel Muhasebe Ayarları"
+      },
+      "reports": {
+        "inventory-valuation": {
+          "name": "Envanter Değerlendirmesi",
+          "facility": "Tesis",
+          "product": "Ürün",
+          "date": "Tarihine Kadar",
+          "generate": "Rapor Oluştur"
+        }
+      }
+    },
+    "invoices": {
+      "list": {
+        "new": "Yeni Fatura",
+        "invoiceId": "Fatura Numarası",
+        "customer": "Müşteri",
+        "amount": "Tutar",
+        "currency": "Para Birimi",
+        "invoiceType": "Fatura Türü",
+        "from": "Gönderen",
+        "to": "Alıcı",
+        "outstanding": "Ödenmemiş Tutar",
+        "total": "Toplam Tutar",
+        "invoiceDate": "Fatura Tarihi",
+        "dueDate": "Son Ödeme Tarihi",
+        "status": "Durum",
+        "description": "Açıklama",
+        "type": "Fatura Türü",
+        "actions": {
+          "create": "Fatura Oluştur",
+          "getSummary": "Özet Al"
+        },
+        "loading": "Faturalar Yükleniyor..."
+      }
+    }
+  }
+}
+  

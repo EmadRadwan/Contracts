@@ -1,0 +1,38 @@
+[
+  {
+    "product_category_id": "CHOCOLATE",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Chocolate Category",
+    "long_description": "Chocolate Category",
+    "created_stamp": "2024-01-09 15:30:00.000",
+    "last_updated_stamp": "2024-01-09 15:30:00.000"
+  },
+  {
+    "product_category_id": "RAW_MATERIALS",
+    "primary_parent_category_id": "CHOCOLATE",
+    "product_category_type_id": null,
+    "description": "Raw Materials",
+    "long_description": "Raw Materials",
+    "created_stamp": "2024-01-09 15:30:00.000",
+    "last_updated_stamp": "2024-01-09 15:30:00.000"
+  },
+  {
+    "product_category_id": "INGREDIENTS",
+    "primary_parent_category_id": "CHOCOLATE",
+    "product_category_type_id": null,
+    "description": "Ingredients",
+    "long_description": "Ingredients",
+    "created_stamp": "2024-01-09 15:30:00.000",
+    "last_updated_stamp": "2024-01-09 15:30:00.000"
+  },
+  {
+    "product_category_id": "PACKAGING_MATERIALS",
+    "primary_parent_category_id": "CHOCOLATE",
+    "product_category_type_id": null,
+    "description": "Packaging Materials",
+    "long_description": "Packaging Materials",
+    "created_stamp": "2024-01-09 15:30:00.000",
+    "last_updated_stamp": "2024-01-09 15:30:00.000"
+  }
+]

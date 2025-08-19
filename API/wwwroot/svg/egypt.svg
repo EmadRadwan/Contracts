@@ -1,0 +1,8 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="egypt">
+  <path id="top" d="M0 0H24V8H0V0Z" fill="#D80027"/>
+  <path id="middle" d="M0 8H24V16H0V8Z" fill="#FFFFFF"/>
+  <path id="bottom" d="M0 16H24V24H0V16Z" fill="#000000"/>
+  <path id="eagle" d="M12 10C12 10 12.6 12 14 12H10C11.4 12 12 10 12 10ZM12 10L13 12.5H11L12 10Z" fill="#FFD700"/>
+</g>
+</svg>

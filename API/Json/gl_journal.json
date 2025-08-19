@@ -1,0 +1,13 @@
+[
+  {
+    "GL_JOURNAL_ID": "ERROR_JOURNAL",
+    "GL_JOURNAL_NAME": "Suspense transactions",
+    "ORGANIZATION_PARTY_ID": "Company",
+    "IS_POSTED": null,
+    "POSTED_DATE": null,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:24:31.803",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:24:28.340",
+    "CREATED_STAMP": "2022-05-27 12:24:31.803",
+    "CREATED_TX_STAMP": "2022-05-27 12:24:28.340"
+  }
+]

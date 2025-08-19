@@ -1,0 +1,24 @@
+1 - Accounting transactions when displayed with invoices and payments 
+    to be ordered by debit and credit flag
+2 - Also we need to show the total of debit and credit transactions for the above
+    
+3 - Actual const grid has the Direct labor with incorrect text.
+    
+4 - recently added product didnt appear in purchase order products list
+5 - an adjustment that has been added to a purchase order but didnt affect - (DONE)
+6 - We need to make the tax calculation as a setting in the store - (DONE)
+7 - Complete localization
+8 - Complete accounting reports
+9 - An invoice accepted the 'To paid status' 
+    but didnt generate invoice and it was related to a billing account.
+    
+10 - Front end screen for a complete demo to be tested and completed.
+11 - configure images for the products
+12 - Configure users' roles and permissions
+13 - Prices seed data is not consistent between those in purchase order item and in BOM
+14 - The Dairy customer can sell row material products
+
+15 - Add WIP Facility Type
+
+    
+    

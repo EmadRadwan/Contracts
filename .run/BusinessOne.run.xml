@@ -1,0 +1,6 @@
+<component name="ProjectRunConfigurationManager">
+    <configuration default="false" name="BusinessOne" type="CompoundRunConfigurationType">
+        <toRun name="ERP" type="LaunchSettings"/>
+        <method v="2"/>
+    </configuration>
+</component>

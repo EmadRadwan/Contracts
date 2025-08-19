@@ -1,0 +1,42 @@
+[
+  {
+    "STANDARD_ID": "f7a8b9c0-2345-4d67-8901-234567890def",
+    "ATTRIBUTE_NAME": "Mixture Weight",
+    "MEASUREMENT_TYPE": "Numeric",
+    "DESCRIPTION": "Measures the total weight of the mixed raw materials in kilograms.",
+    "LAST_UPDATED_STAMP": null,
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": null,
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "STANDARD_ID": "g8b9c0d1-3456-4e78-9012-345678901abc",
+    "ATTRIBUTE_NAME": "Ingredient Uniformity",
+    "MEASUREMENT_TYPE": "Categorical",
+    "DESCRIPTION": "Evaluates the visual consistency of the mixture, ensuring even distribution of components.",
+    "LAST_UPDATED_STAMP": null,
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": null,
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "STANDARD_ID": "h9c0d1e2-4567-4f89-0123-456789012bcd",
+    "ATTRIBUTE_NAME": "Moisture Content",
+    "MEASUREMENT_TYPE": "Numeric",
+    "DESCRIPTION": "Measures the percentage of moisture in the mixture to ensure proper blending.",
+    "LAST_UPDATED_STAMP": null,
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": null,
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "STANDARD_ID": "i0d1e2f3-5678-4a90-b123-789012345cde",
+    "ATTRIBUTE_NAME": "Mixing Completion",
+    "MEASUREMENT_TYPE": "Boolean",
+    "DESCRIPTION": "Verifies that the mixing process for raw materials is fully completed.",
+    "LAST_UPDATED_STAMP": null,
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": null,
+    "CREATED_TX_STAMP": null
+  }
+]

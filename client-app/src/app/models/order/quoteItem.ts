@@ -1,0 +1,36 @@
+export interface QuoteItem {
+    quoteId?: string;
+    quoteItemSeqId: string;
+    parentQuoteItemSeqId?: string;
+    productId: any;
+    productName?: string;
+    productTypeId?: string;
+    inventoryItemId?: string;
+    productLov?: any;
+    quoteItemProduct?: any;
+    isProductDeleted?: boolean;
+    productFeatureId?: any;
+    deliverableTypeId?: any;
+    skillTypeId?: any;
+    uomId?: any;
+    workEffortId?: any;
+    custRequestId?: any;
+    custRequestItemSeqId?: any;
+    quantity: number;
+    selectedAmount?: any;
+    collectTax?: boolean;
+    unitPrice?: any;
+    unitListPrice?: any;
+    productPromoId?: string;
+    reservStart?: any;
+    reservLength?: any;
+    reservPersons?: any;
+    configId?: any;
+    estimatedDeliveryDate?: any;
+    comments?: any;
+    isPromo?: any;
+    leadTimeDays?: any;
+    totalItemAdjustments?: number;
+    subTotal?: number;
+    price?: number
+}

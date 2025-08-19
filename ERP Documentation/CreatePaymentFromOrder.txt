@@ -1,0 +1,9 @@
+1 - get existing payment preference
+2 - git order roles BILL_FROM_VENDOR and BILL_TO_CUSTOMER
+3 - check available agreements
+4 - if there's an agreement with FIN_PAYMENT_TERM, adjust payment effective date
+5 - get amount and currency from order
+6 - create payment param object
+7 - Create payment
+8 - Create payment preference
+9 - update payment with payment preference

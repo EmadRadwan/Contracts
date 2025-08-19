@@ -1,0 +1,47 @@
+[
+  {
+    "ACCTG_TRANS_ID": "6000",
+    "ACCTG_TRANS_TYPE_ID": "CAPITALIZATION",
+    "DESCRIPTION": "Initial Capital Stock",
+    "TRANSACTION_DATE": "2025-01-01 11:17:03.511",
+    "IS_POSTED": "Y",
+    "POSTED_DATE": "2025-01-01 11:17:03.511",
+    "GL_FISCAL_TYPE_ID": "ACTUAL"
+  },
+  {
+    "ACCTG_TRANS_ID": "6001",
+    "ACCTG_TRANS_TYPE_ID": "DISBURSEMENT",
+    "DESCRIPTION": "Purchase of vehicles",
+    "TRANSACTION_DATE": "2025-01-01 11:17:03.511",
+    "IS_POSTED": "Y",
+    "POSTED_DATE": "2025-01-01 11:17:03.511",
+    "GL_FISCAL_TYPE_ID": "ACTUAL"
+  },
+  {
+    "ACCTG_TRANS_ID": "6002",
+    "ACCTG_TRANS_TYPE_ID": "DISBURSEMENT",
+    "DESCRIPTION": "Purchase of manufacturing equipment",
+    "TRANSACTION_DATE": "2025-01-01 11:17:03.511",
+    "IS_POSTED": "Y",
+    "POSTED_DATE": "2025-01-01 11:17:03.511",
+    "GL_FISCAL_TYPE_ID": "ACTUAL"
+  },
+  {
+    "ACCTG_TRANS_ID": "6003",
+    "ACCTG_TRANS_TYPE_ID": "INVENTORY",
+    "DESCRIPTION": "Set initial inventory value",
+    "TRANSACTION_DATE": "2025-01-01 11:17:03.511",
+    "IS_POSTED": "Y",
+    "POSTED_DATE": "2025-01-01 11:17:03.511",
+    "GL_FISCAL_TYPE_ID": "ACTUAL"
+  },
+  {
+    "ACCTG_TRANS_ID": "6004",
+    "ACCTG_TRANS_TYPE_ID": "INVENTORY",
+    "DESCRIPTION": "Set initial inventory value",
+    "TRANSACTION_DATE": "2025-01-01 11:17:03.511",
+    "IS_POSTED": "Y",
+    "POSTED_DATE": "2025-01-01 11:17:03.511",
+    "GL_FISCAL_TYPE_ID": "ACTUAL"
+  }
+]

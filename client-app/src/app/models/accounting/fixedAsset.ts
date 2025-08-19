@@ -1,0 +1,31 @@
+export interface FixedAsset {
+    fixedAssetId: string;
+    fixedAssetTypeId?: string;
+    parentFixedAssetId?: string;
+    instanceOfProductId?: string;
+    classEnumId?: string;
+    partyId?: string;
+    roleTypeId?: string;
+    fixedAssetName?: string;
+    acquireOrderId?: string;
+    acquireOrderItemSeqId?: string;
+    dateAcquired?: Date | null;
+    dateLastServiced?: Date | null;
+    dateNextService?: Date | null;
+    expectedEndOfLife?: Date | null;
+    actualEndOfLife?: Date | null;
+    productionCapacity?: number | null;
+    uomId?: string;
+    calendarId?: string;
+    serialNumber?: string;
+    locatedAtFacilityId?: string;
+    locatedAtLocationSeqId?: string;
+    salvageValue?: number | null;
+    depreciation?: number | null;
+    purchaseCost?: number | null;
+    purchaseCostUomId?: string;
+    lastUpdatedStamp?: Date | null;
+    lastUpdatedTxStamp?: Date | null;
+    createdStamp?: Date | null;
+    createdTxStamp?: Date | null;
+}

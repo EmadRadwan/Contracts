@@ -1,0 +1,24 @@
+Prompt for Translating OFBiz Code to C#
+Translate the provided Apache OFBiz code, which may be written in Java, Groovy, or XML Mini-Language, to C#, ensuring 100% of the logic is preserved, including all methods, classes, services, or operations, with a line-by-line translation that does not skip any code. The code relies on Apache OFBiz’s framework (e.g., Delegator, GenericValue, EntityQuery, DispatchContext in Java/Groovy, or equivalent constructs in XML Mini-Language). Replace OFBiz-specific components with Entity Framework (EF) Core, using LINQ queries and FindAsync where applicable for database access. Do not use Delegator, Dispatcher, or condition builders; instead, use LINQ exclusively for querying. Use strongly-typed C# objects and DTOs instead of Dictionary for data handling, defining clear models for entities like Product, ProductStore, TaxAuthority, etc.
+
+For each line of code, add detailed comments explaining:
+
+Technical perspective: What the code is doing and how it operates within the system, accounting for differences between Java, Groovy, or XML Mini-Language constructs.
+Business intention: The purpose of the code from the perspective of OFBiz’s accounting module, reflecting the developer’s intent (e.g., why a tax rule is applied, how it supports compliance).
+Business rationale: Why the code is written this way, including the business context or requirements that justify the approach (e.g., regulatory compliance, user experience, system integration needs, or alignment with OFBiz’s multi-tenant architecture).
+Context: How the code fits into OFBiz’s tax calculation processes and its role in the broader system, including any specific considerations for Java, Groovy, or XML Mini-Language implementations.
+Do not use Map or DispatchContext; instead, define explicit method parameters for each input (e.g., string productStoreId, string billToPartyId, ...). Translate external OFBiz utilities (e.g., UtilDateTime, Debug, UtilNumber, GeoWorker, ContactMechWorker, ProductWorker, UtilProperties, UtilGenerics, UtilMisc, UtilValidate in Java/Groovy, or equivalent service calls in XML Mini-Language) to .NET equivalents or minimal implementations, preserving their functionality. For example:
+
+Replace Debug with ILogger from Microsoft.Extensions.Logging.
+Replace UtilDateTime with DateTime.
+Replace UtilNumber with decimal and custom rounding.
+Stub utilities like GeoWorker with comments indicating their OFBiz purpose.
+For XML Mini-Language, interpret <call-service>, <entity-one>, <entity-and>, or similar operations as equivalent C# method calls or LINQ queries, preserving the intent of the service or data operation. For Groovy, treat dynamic typing and closures as strongly-typed C# equivalents, ensuring no loss of logic.
+
+Use Entity Framework Core for database operations, ensuring all queries are translated to LINQ with await and FindAsync where appropriate. Do not suggest new methods or functions beyond those in the original code. Retain the original variable and method names (e.g., rateProductTaxCalcForDisplay, taxTotal, ZERO_BASE) without modification. Use decimal instead of BigDecimal (Java) or equivalent numeric types (Groovy) for financial calculations. Replace Java/Groovy collections (List, Set, Map) or XML Mini-Language data structures with C# equivalents (List<T>, HashSet<T>, DTOs). Use CultureInfo instead of Locale.
+
+Wrap each method in a try-catch block, logging exceptions using ILogger in the catch block and returning a ServiceResult object (mimicking OFBiz’s ServiceUtil) with success or error details. Do not add Async to method names unless present in the original code. Retain the Apache License 2.0 header as a comment.
+
+Organize the code in a single C# file with clear comments for each line, ensuring the structure mirrors the original Java/Groovy class or XML Mini-Language service definition. Define all necessary DTOs and entity classes to match OFBiz’s schema (e.g., Product, TaxAuthority). Use IConfiguration for configuration settings (e.g., tax scales, rounding modes) instead of UtilProperties.
+
+Since the goal is to clone the OFBiz version, compare the translated C# code to the original Java, Groovy, or XML Mini-Language code to ensure no logic is missing or incorrectly implemented. Highlight any changes or deviations in the logic (e.g., due to EF, LINQ, or differences in language constructs) in a separate section after the code, explaining the rationale. Provide a simple usage example demonstrating one of the translated methods. Include a summary of OFBiz-to-C# mappings, noting how Java, Groovy, and XML Mini-Language components were translated to C# and EF.

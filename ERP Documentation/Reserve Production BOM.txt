@@ -1,0 +1,207 @@
+Overview of the Reservation Process
+This process is designed to reserve inventory for an ongoing production run. It ensures that all required raw materials or components from the bill of materials (BOM) are available for production. The reservation follows a prioritized approach based on product type and inventory location. If inventory is insufficient and strict reservation is required, the process halts with an error. Otherwise, it may allow partial reservations. The main entry point is the function ReserveProductionRunTask, which coordinates validation, BOM retrieval, and sequential inventory reservation through subsidiary functions.
+
+1. Entry Point – ReserveProductionRunTask
+Business Objective:
+Reserve the necessary inventory for a production run by validating the work effort status, obtaining BOM components, and ensuring each component’s inventory is reserved accordingly.
+
+Steps and Functions Executed:
+
+Fetch WorkEffort Record (Function: ReserveProductionRunTask):
+
+Purpose: The production run is represented by a WorkEffort record.
+
+Business Logic:
+
+Retrieve the work effort using the given identifier.
+
+If no record is found, the process is aborted by throwing an exception.
+
+Validate Production Run Status (Function: ReserveProductionRunTask):
+
+Purpose: Confirm that the production run is active.
+
+Business Logic:
+
+Check the status of the WorkEffort to ensure it is neither canceled nor closed.
+
+If the status is “PRUN_CANCELLED” or “PRUN_CLOSED”, reservation isn’t permitted; therefore, an exception is raised.
+
+Retrieve BOM Components (Function: ReserveProductionRunTask):
+
+Purpose: Identify the components that need reservation.
+
+Business Logic:
+
+Query the WorkEffortGoodStandards table for components that are required for production (those with status “WEGS_CREATED” and type “PRUNT_PROD_NEEDED”).
+
+If no BOM components are found, log the information and exit the function gracefully, meaning no reservation is needed.
+
+Iterate and Reserve Each BOM Component (Function: ReserveProductionRunTask):
+
+Purpose: Reserve inventory for each product component specified in the BOM.
+
+Business Logic:
+
+Loop through each BOM component.
+
+For each component, validate that it has a valid ProductId and a positive quantity.
+
+Invoke the inventory reservation function (ReserveProductionRunInventory) for each valid component.
+
+Log the reserved quantity versus the requested quantity for monitoring and potential troubleshooting.
+
+Finalize Reservation (Function: ReserveProductionRunTask):
+
+Purpose: Complete the task and log success.
+
+Business Logic:
+
+Upon processing all BOM components successfully, record a completion log indicating that the reservation for the given production run has been finalized.
+
+2. Detailed Inventory Reservation – ReserveProductionRunInventory
+Business Objective:
+Perform the detailed reservation logic for a product component by validating inputs, assessing the product type, and allocating inventory based on location priorities.
+
+Steps and Functions Executed:
+
+Input Validation (Function: ReserveProductionRunInventory):
+
+Purpose: Ensure that all necessary parameters are provided and valid.
+
+Business Logic:
+
+Verify that the work effort ID, product ID, quantity, and reservation order are provided.
+
+Substitute default values (e.g., for reserveOrderEnumId and reservedDatetime) if they are not specified.
+
+Determine Product Physicality (Function: ReserveProductionRunInventory):
+
+Purpose: Check if the product is a physical item that requires inventory reservation.
+
+Business Logic:
+
+Retrieve the product details, then the associated product type.
+
+If the product type indicates a non-physical product (i.e., no real inventory exists), the function bypasses further reservation logic and returns zero, indicating no reservation is needed.
+
+Query and Sort Inventory Items (Function: ReserveProductionRunInventory):
+
+Purpose: Build a collection of inventory items available for reservation.
+
+Business Logic:
+
+Formulate a base query for inventory items with available quantities and valid status (excluding defective items).
+
+Optionally filter by container or lot if provided.
+
+Order the inventory items based on the given reservation strategy (e.g., FIFO, LIFO, based on cost or expiry).
+
+Allocate Inventory by Location Priority (Function: ReserveProductionRunInventory):
+
+Purpose: Reserve inventory using prioritized location types.
+
+Business Logic:
+
+First, attempt to reserve from “pick locations” by calling a helper routine (e.g., ReserveFromLocationType).
+
+If there is still unmet quantity, then try “bulk” storage.
+
+Finally, if needed, try to reserve from items with no specified location via ReserveFromNoLocation.
+
+If inventory is still insufficient and strict reservation is required (indicated by requireInventory), raise an InsufficientInventoryException.
+
+Return Reservation Outcome (Function: ReserveProductionRunInventory):
+
+Purpose: Convey any remaining quantity that could not be reserved.
+
+Business Logic:
+
+A return value of zero indicates a full reservation, while any positive value represents a shortage in inventory.
+
+3. Reservation from Items Without a Designated Location – ReserveFromNoLocation
+Business Objective:
+Handle scenarios where inventory items are not tied to any specific location, ensuring that these items can still be utilized to satisfy reservations.
+
+Steps and Functions Executed:
+
+Query for Non-Located Inventory Items (Function: ReserveFromNoLocation):
+
+Purpose: Identify available inventory items with no assigned location.
+
+Business Logic:
+
+Filter the inventory items based on product ID, ensuring they have no location sequence, and validate that they have sufficient quantities and acceptable status.
+
+Loop Through Each Inventory Item (Function: ReserveFromNoLocation):
+
+Purpose: Attempt to reserve the required quantity from each found inventory item.
+
+Business Logic:
+
+For each inventory item identified, call ReserveForInventoryItemInline to process the reservation.
+
+Update and return the remaining quantity that could not be reserved after processing each item.
+
+4. Inline Inventory Reservation for a Single Item – ReserveForInventoryItemInline
+Business Objective:
+Reserve a portion of the needed quantity from a single inventory item and create supporting records to log and track the reservation.
+
+Steps and Functions Executed:
+
+Determine Reserveable Quantity (Function: ReserveForInventoryItemInline):
+
+Purpose: Calculate the maximum quantity that can be reserved from the current inventory item.
+
+Business Logic:
+
+Check the available ATP (Available To Promise) for the item.
+
+Reserve an amount equal to the lower of the required quantity and the available quantity.
+
+Adjust Inventory (Function: ReserveForInventoryItemInline):
+
+Purpose: Reflect the reservation in the inventory system.
+
+Business Logic:
+
+Decrease the item’s ATP by the reserved amount using a call to the inventory service (e.g., CreateInventoryItemDetail).
+
+This operation preserves the on-hand quantity since the product is not yet issued but merely reserved.
+
+Log the Reservation (Function: ReserveForInventoryItemInline):
+
+Purpose: Create a record that documents the reserved inventory for the production run.
+
+Business Logic:
+
+Insert a new record in the WorkEffortInventoryRes table to note the reserved quantity, along with related metadata (e.g., reserved date, priority, and promised date).
+
+Update Remaining Quantity (Function: ReserveForInventoryItemInline):
+
+Purpose: Calculate how much of the original request remains unreserved after processing the current item.
+
+Business Logic:
+
+Subtract the reserved quantity from the outstanding amount and return this new value to the calling function.
+
+Summary of the Business Process
+Initial Validation and Component Retrieval:
+The process begins with ReserveProductionRunTask, which confirms that the production run is in a valid state and retrieves all required BOM components for inventory reservation.
+
+Sequential Reservation Logic:
+Each BOM component is processed through the ReserveProductionRunInventory function that:
+
+Validates inputs and ensures the product is physical.
+
+Selects and orders available inventory items.
+
+Attempts reservations in an order of priority: pick locations, bulk storage, and finally items without a location.
+
+Detailed Reservation at the Item Level:
+For items with no designated location, ReserveFromNoLocation is used to identify candidates, and ReserveForInventoryItemInline reserves inventory from each eligible item while updating inventory availability and logging the reservation.
+
+Error Handling and Logging:
+Throughout the process, logging at key steps provides feedback on successful reservations and any issues encountered. If inventory is insufficient under strict conditions, the process raises an appropriate exception.
+
+This comprehensive breakdown focuses on the business goals—ensuring the availability of inventory for active production runs—and maps each business decision point directly to the corresponding function in the code.

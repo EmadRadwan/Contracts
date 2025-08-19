@@ -1,0 +1,16 @@
+[
+  {
+    "BILLING_ACCOUNT_TERM_ID": "BA_TERM_9010_1",
+    "BILLING_ACCOUNT_ID": "9010",
+    "TERM_TYPE_ID": "FIN_PAYMENT_TERM",
+    "TERM_VALUE": null,
+    "TERM_DAYS": 30,
+    "TEXT_VALUE": null,
+    "UOM_ID": null,
+    "DESCRIPTION": "Payment due in 30 days",
+    "FROM_DATE": "2024-10-19T00:00:00",
+    "THRU_DATE": null,
+    "CREATED_STAMP": "2024-10-19T00:00:00",
+    "LAST_UPDATED_STAMP": "2024-10-19T00:00:00"
+  }
+]

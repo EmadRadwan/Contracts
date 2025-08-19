@@ -1,0 +1,55 @@
+1 - Check if there're OrderItemBilling for the given Order
+2.1 - If not, call CreateInvoiceForAllOrderItems
+2.2 - If yes, get the OrderItemBilling and call CreateInvoiceForOrder
+3. CreateInvoiceForOrder
+3.1 - Determine invoice type from order type
+3.2 - Create an OrderReadHelper
+3.2.1 - get billToCustomerPartyId
+3.2.2 - get billFromVendorPartyId
+3.2.3 - get GetShippableTotal
+3.2.3.1 - GetOrderItemSubTotal
+
+3.3 - Get Billing Account
+3.4 - Set default invoice date
+3.5 - Check - via GetOrderTermNetDays - if there's FIN_PAYMENT_TERM
+3.6 - Adjust invoice date based on payment term
+3.7 - Create invoice
+3.8 - Handle billing account terms and roles
+3.8.1 - if billing account has terms, add it to invoice terms
+3.9 - add order terms to invoice terms
+
+4 - Process bill items - order items -
+4.1 - each bill item can bbe either orderItem,
+    itemIssuance or shipmentReceipt
+4.2 - get product
+4.3 - Calculate invoicedQuantity by summing quantities from OrderItemBilling records 
+4.4 - calculate billingQuantity
+4.5 - check if shipping applies based on invoice type
+4.6 - calculate billing amount
+4.7 - determine invoice item type from orderitem type
+    and product type
+4.8 - create invoice item
+4.9 - create orderItem billing
+
+5 - process item adjustments
+5.1 - get item - order - adjustments
+5.2 - CalculateInvoicedAdjustmentTotal to get already invoiced amount
+5.3 - calculate amountToInvoice
+5.4 - get invoice item type
+5.5 - create invoice item
+5.6 - create orderAdjustment billing
+5.7 - if OrderAdjustmentTypeId is SALES_TAX or SHIPPING_ADJUSTMENT
+    , update invoice total
+    
+6.  Process Payments
+6.1 - GetPaymentNotApplied
+6.1.2 - get payment not applied
+
+7 - Create payment application
+
+8 - set invoice status
+9 - Create Sales Invoice Accounting Transaction
+
+
+
+

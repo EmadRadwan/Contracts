@@ -1,0 +1,12 @@
+[
+  {
+    "INVOICE_ID": "8009",
+    "INVOICE_TYPE_ID": "SALES_INVOICE",
+    "PARTY_ID_FROM": "Company",
+    "PARTY_ID": "b3c01a37-b88a-4811-a052-76c72b15a0d2",
+    "STATUS_ID": "INVOICE_PAID",
+    "INVOICE_DATE": "2024-08-04 14:57:03.614",
+    "PAID_DATE": "2024-08-04 14:57:04.990",
+    "CURRENCY_UOM_ID": "EGP"
+  }
+]

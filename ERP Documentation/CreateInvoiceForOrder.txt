@@ -1,0 +1,35 @@
+1 - get order
+2 - determine invoice type
+3 - create order helper object
+4 - get current product store
+5 - check if there's a billing account linked to the order
+6 - get order term net days if any and adjust invoice date
+7 - create invoice object with status 'INVOICE_IN_PROCESS'
+8 - determine partyId and partyIfFrom based on invoice type
+9 - create invoice
+10 - create invoice status
+11 - if there's a billing account, create invoice role BILL_TO_CUSTOMER from that linked to the billing account
+12 - copy billing account terms - if any - as invoice terms
+13 - copy order roles - if any - as invoice roles
+14 - copy order terms - if any - as invoice terms
+15 - loop thru billItems
+    16 - determine billItem type; orderItem, itemIssuance or shippmentReceipt
+    17 - get order item from itemIssuance
+    18 - calculate billItem amount
+    19 - determine invoice item type
+    20 - create invoice item
+    21 - create orderItemBilling
+    22 - create shipmentItemBilling
+    
+23 - loop thru adjustments
+    24 - determine invoice item type
+    25 - create invoice item type
+    26 - create order adjustment billing
+    
+27 - get available payments
+28 - loop thru payments
+29 - GetPaymentNotApplied for the payment
+    30 - GetPaymentApplied for the payment
+    31 - get payment applications for the payment
+32 - create payment application 
+    33 -  GetInvoiceNotApplied     

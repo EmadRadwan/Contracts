@@ -1,0 +1,23 @@
+export interface FinancialAccount {
+    finAccountId: string,
+    finAccountTypeId?: string,
+    finAccountTypeDescription?: string,
+    statusId?: string,
+    finAccountName?: string,
+    finAccountCode?: string,
+    finAccountPin?: string,
+    currencyUomId?: string,
+    currencyUomDescription?: string,
+    organizationPartyId?: string,
+    organizationPartyName?: string,
+    ownerPartyId?: string,
+    ownerPartyName?: string,
+    postToGlAccountId?: string,
+    fromDate?: Date | null,
+    thruDate?: Date | null,
+    isRefundable?: string,
+    replenishPaymentId?: string | null,
+    replenishLevel?: number,
+    actualBalance?: number,
+    availableBalance?: number
+}

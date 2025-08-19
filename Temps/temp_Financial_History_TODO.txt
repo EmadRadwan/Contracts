@@ -1,0 +1,4 @@
+- return party details like name
+- preferred currency is the company currency
+    
+    

@@ -1,0 +1,856 @@
+{
+  "general": {
+    "homepage": {
+      "translation": "Tekrar Hoşgeldiniz",
+      "pronunciation": "تكرار هوشجلدنز"
+    },
+    "save": {
+      "translation": "Kaydet",
+      "pronunciation": "كايدت"
+    },
+    "cancel": {
+      "translation": "İptal",
+      "pronunciation": "إيبتال"
+    },
+    "create": {
+      "translation": "Oluştur",
+      "pronunciation": "أولوشتر"
+    },
+    "edit": {
+      "translation": "Düzenle",
+      "pronunciation": "دوزنله"
+    },
+    "delete": {
+      "translation": "Sil",
+      "pronunciation": "سيل"
+    },
+    "actions": {
+      "translation": "Eylemler",
+      "pronunciation": "أيليهملر"
+    },
+    "submit": {
+      "translation": "Gönder",
+      "pronunciation": "جوندر"
+    },
+    "init": {
+      "translation": "Uygulama başlatılıyor...",
+      "pronunciation": "أويغولاما باشلتيليور..."
+    },
+    "find": {
+      "translation": "Bul",
+      "pronunciation": "بول"
+    },
+    "header": {
+      "catalog": {
+        "translation": "Katalog",
+        "pronunciation": "كاتالوغ"
+      },
+      "facility": {
+        "translation": "Tesis",
+        "pronunciation": "تيسيس"
+      },
+      "party": {
+        "translation": "Taraf",
+        "pronunciation": "تاراف"
+      },
+      "order": {
+        "translation": "Sipariş",
+        "pronunciation": "سيباريش"
+      },
+      "service": {
+        "translation": "Hizmet",
+        "pronunciation": "هيزمت"
+      },
+      "accounting": {
+        "translation": "Muhasebe",
+        "pronunciation": "موحاسبه"
+      },
+      "manufacturing": {
+        "translation": "Üretim",
+        "pronunciation": "أوريتيم"
+      },
+      "login": {
+        "translation": "Giriş",
+        "pronunciation": "غيريش"
+      }
+    }
+  },
+  "product": {
+    "products": {
+      "list": {
+        "title": {
+          "translation": "Ürünler",
+          "pronunciation": "أورنلر"
+        },
+        "quantity": {
+          "translation": "Miktar Ölçü Birimi",
+          "pronunciation": "ميقتار أولتشو بيريمي"
+        },
+        "create": {
+          "translation": "Ürün Oluştur",
+          "pronunciation": "أورن أولوشتر"
+        },
+        "type": {
+          "translation": "Ürün Türü",
+          "pronunciation": "أورن تور"
+        },
+        "category": {
+          "translation": "Ürün Kategorisi",
+          "pronunciation": "أورن كاتغوريزي"
+        },
+        "description": {
+          "translation": "Ürün Açıklaması",
+          "pronunciation": "أورن أجيكلاماسي"
+        }
+      },
+      "form": {
+        "name": {
+          "translation": "Ürün Adı *",
+          "pronunciation": "أورن آدي *"
+        },
+        "type": {
+          "translation": "Ürün Türü *",
+          "pronunciation": "أورن تور *"
+        },
+        "category": {
+          "translation": "Ürün Kategorisi *",
+          "pronunciation": "أورن كاتغوريزي *"
+        },
+        "days": {
+          "translation": "Hizmet Süresi Günleri",
+          "pronunciation": "هيزمت سوريسي غونلري"
+        },
+        "mileage": {
+          "translation": "Hizmet Süresi Kilometresi",
+          "pronunciation": "هيزمت سوريسي كيلومتريسي"
+        },
+        "uom": {
+          "translation": "Miktar Birimi",
+          "pronunciation": "ميكتار بيريمي"
+        },
+        "comments": {
+          "translation": "Yorumlar",
+          "pronunciation": "يوروملار"
+        },
+        "processing": {
+          "translation": "Ürün İşleniyor...",
+          "pronunciation": "أورن إشليينيور..."
+        },
+        "new": {
+          "translation": "Yeni Ürün",
+          "pronunciation": "ييني أورن"
+        },
+        "menu": {
+          "associations": {
+            "translation": "İlişkiler",
+            "pronunciation": "إيليشكيليه"
+          },
+          "prices": {
+            "translation": "Fiyatlar",
+            "pronunciation": "فيياتلار"
+          },
+          "facilities": {
+            "translation": "Tesisler",
+            "pronunciation": "تيسيسلر"
+          },
+          "categories": {
+            "translation": "Kategoriler",
+            "pronunciation": "كاتغوريلر"
+          },
+          "suppliers": {
+            "translation": "Tedarikçiler",
+            "pronunciation": "تيداريكشيلر"
+          },
+          "inventory": {
+            "translation": "Envanter",
+            "pronunciation": "إنفانتير"
+          },
+          "costs": {
+            "translation": "Maliyetler",
+            "pronunciation": "مالييتلر"
+          },
+          "locations": {
+            "translation": "Lokasyonlar",
+            "pronunciation": "لوكاسيونلار"
+          }
+        }
+      }
+    },
+    "promos": {
+      "list": {
+        "create": {
+          "translation": "Yeni Kampanya Oluştur",
+          "pronunciation": "ييني كامبانيا أولوشتر"
+        },
+        "id": {
+          "translation": "Kampanya ID",
+          "pronunciation": "كامبانيا آي دي"
+        },
+        "name": {
+          "translation": "Kampanya Adı",
+          "pronunciation": "كامبانيا آدي"
+        },
+        "condition": {
+          "translation": "Kampanya Şartı",
+          "pronunciation": "كامبانيا شارطي"
+        },
+        "input": {
+          "translation": "Girdi Parametresi Açıklaması",
+          "pronunciation": "غيردي باراميتريسي أجيكلاماسي"
+        },
+        "quantity": {
+          "translation": "Miktar",
+          "pronunciation": "ميكتار"
+        },
+        "description": {
+          "translation": "Kampanya Açıklaması",
+          "pronunciation": "كامبانيا أجيكلاماسي"
+        },
+        "amount": {
+          "translation": "İndirim Tutarı",
+          "pronunciation": "إينديريم توتاري"
+        },
+        "loading": {
+          "translation": "Kampanyalar Yükleniyor...",
+          "pronunciation": "كامبانيلار يوكليينيور..."
+        }
+      },
+      "form": {
+        "title": {
+          "translation": "Kampanya",
+          "pronunciation": "كامبانيا"
+        },
+        "new": {
+          "translation": "Yeni Ürün Kampanyası",
+          "pronunciation": "ييني أورن كامبانياسي"
+        },
+        "id": {
+          "translation": "Kampanya ID",
+          "pronunciation": "كامبانيا آي دي"
+        },
+        "name": {
+          "translation": "Kampanya Adı",
+          "pronunciation": "كامبانيا آدي"
+        },
+        "description": {
+          "translation": "Kampanya Açıklaması",
+          "pronunciation": "كامبانيا أجيكلاماسي"
+        },
+        "from": {
+          "translation": "Başlangıç Tarihi",
+          "pronunciation": "باشلانغيتش تاريخي"
+        },
+        "to": {
+          "translation": "Bitiş Tarihi",
+          "pronunciation": "بيتيش تاريخي"
+        },
+        "product": {
+          "translation": "Ürün",
+          "pronunciation": "أورن"
+        },
+        "value": {
+          "translation": "Şart Değeri",
+          "pronunciation": "شارط ديغيري"
+        },
+        "action": {
+          "translation": "Ürün Kampanya Aksiyonu",
+          "pronunciation": "أورن كامبانيا أكسييوني"
+        },
+        "quantity": {
+          "translation": "Miktar",
+          "pronunciation": "ميكتار"
+        },
+        "amount": {
+          "translation": "Tutar",
+          "pronunciation": "توتار"
+        },
+        "condition": {
+          "translation": "Kampanya Şartı",
+          "pronunciation": "كامبانيا شارطي"
+        },
+        "input": {
+          "translation": "Girdi Parametresi Açıklaması",
+          "pronunciation": "غيردي باراميتريسي أجيكلاماسي"
+        }
+      }
+    },
+    "stores": {
+      "list": {
+        "new": {
+          "translation": "Mağaza Oluştur",
+          "pronunciation": "ماغازا أولوشتر"
+        },
+        "name": {
+          "translation": "Mağaza Adı",
+          "pronunciation": "ماغازا آدي"
+        },
+        "party": {
+          "translation": "Ödenecek Taraf",
+          "pronunciation": "أودينجيك تاراف"
+        },
+        "facility": {
+          "translation": "Envanter Tesisi",
+          "pronunciation": "إنفانتير تيسيسي"
+        },
+        "currency": {
+          "translation": "Para Birimi",
+          "pronunciation": "بارا بيريمي"
+        }
+      },
+      "form": {
+        "new": {
+          "translation": "Yeni Mağaza",
+          "pronunciation": "ييني ماغازا"
+        },
+        "name": {
+          "translation": "Mağaza Adı",
+          "pronunciation": "ماغازا آدي"
+        },
+        "processing": {
+          "translation": "Mağaza İşleniyor...",
+          "pronunciation": "ماغازا إشليينيور..."
+        }
+      }
+    },
+    "menu": {
+      "products": {
+        "translation": "Ürünler",
+        "pronunciation": "أورنلر"
+      },
+      "promos": {
+        "translation": "Kampanyalar",
+        "pronunciation": "كامبانيلار"
+      },
+      "stores": {
+        "translation": "Mağazalar",
+        "pronunciation": "ماغازالار"
+      }
+    }
+  },
+  "facility": {
+    "menu": {
+      "inventory": {
+        "translation": "Envanter",
+        "pronunciation": "إنفانتير"
+      },
+      "items": {
+        "translation": "Envanter Ürünleri",
+        "pronunciation": "إنفانتير أورنلري"
+      },
+      "details": {
+        "translation": "Envanter Ürünü Detayları",
+        "pronunciation": "إنفانتير أورني ديتايلاري"
+      },
+      "receive": {
+        "translation": "Envanter Al",
+        "pronunciation": "إنفانتير آل"
+      },
+      "transfer": {
+        "translation": "Envanter Transferi",
+        "pronunciation": "إنفانتير ترانسفيري"
+      },
+      "facilities": {
+        "translation": "Tesisler",
+        "pronunciation": "تيسيسلر"
+      },
+      "locations": {
+        "translation": "Lokasyonlar",
+        "pronunciation": "لوكاسيونلار"
+      },
+      "physical": {
+        "translation": "Fiziksel Envanter",
+        "pronunciation": "فيزيكسال إنفانتير"
+      }
+    },
+    "list": {
+      "product": {
+        "translation": "Ürün",
+        "pronunciation": "أورن"
+      },
+      "qoh": {
+        "translation": "QOH Toplamı",
+        "pronunciation": "كيو أو هاش توپلأمي"
+      },
+      "facility": {
+        "translation": "Tesis",
+        "pronunciation": "تيسيس"
+      },
+      "atp": {
+        "translation": "ATP Toplamı",
+        "pronunciation": "آ تي پي توپلأمي"
+      },
+      "reorder": {
+        "translation": "Yeniden Sipariş Miktarı",
+        "pronunciation": "ييني دين سيباريش ميكتاري"
+      },
+      "minStock": {
+        "translation": "Minimum Stok",
+        "pronunciation": "مينيموم ستوك"
+      },
+      "atpMinusMin": {
+        "translation": "ATP - Minimum Stok",
+        "pronunciation": "آ تي پي - مينيموم ستوك"
+      },
+      "qohMinusMin": {
+        "translation": "QOH - Minimum Stok",
+        "pronunciation": "كيو أو هاش - مينيموم ستوك"
+      },
+      "ordered": {
+        "translation": "Sipariş Miktarı",
+        "pronunciation": "سيباريش ميكتاري"
+      },
+      "price": {
+        "translation": "Liste Fiyatı",
+        "pronunciation": "ليستة فيياته"
+      },
+      "loading": {
+        "translation": "Envanter Yükleniyor...",
+        "pronunciation": "إنفانتير يوكليينيور..."
+      }
+    },
+    "items": {
+      "item": {
+        "translation": "Envanter Ürünü",
+        "pronunciation": "إنفانتير أورني"
+      },
+      "qoh": {
+        "translation": "QOH Toplamı",
+        "pronunciation": "كيو أو هاش توپلأمي"
+      },
+      "atp": {
+        "translation": "ATP Toplamı",
+        "pronunciation": "آ تي پي توپلأمي"
+      },
+      "product": {
+        "translation": "Ürün",
+        "pronunciation": "أورن"
+      },
+      "facility": {
+        "translation": "Tesis",
+        "pronunciation": "تيسيس"
+      },
+      "received": {
+        "translation": "Alım Zamanı",
+        "pronunciation": "أليم زماني"
+      },
+      "loading": {
+        "translation": "Envanter Ürünleri Yükleniyor...",
+        "pronunciation": "إنفانتير أورنلري يوكليينيور..."
+      },
+      "supplier": {
+        "translation": "Tedarikçi",
+        "pronunciation": "تيداريكجي"
+      },
+      "transfer": {
+        "translation": "Transfer",
+        "pronunciation": "ترانسفير"
+      },
+      "details": {
+        "translation": "Detaylar",
+        "pronunciation": "ديتايلار"
+      },
+      "clear": {
+        "translation": "Seçilen Ürünü Temizle",
+        "pronunciation": "سيجيلن أورني تيميزله"
+      },
+      "form": {
+        "title": {
+          "translation": "Envanter Ürünü",
+          "pronunciation": "إنفانتير أورني"
+        },
+        "received": {
+          "translation": "Alım Zamanı",
+          "pronunciation": "أليم زماني"
+        },
+        "expire": {
+          "translation": "Son Kullanma Tarihi",
+          "pronunciation": "سون كولانما تاريخي"
+        },
+        "product": {
+          "translation": "Ürün",
+          "pronunciation": "أورن"
+        }
+      }
+    },
+    "details": {
+      "item": {
+        "translation": "Envanter Ürünü",
+        "pronunciation": "إنفانتير أورني"
+      },
+      "order": {
+        "translation": "Sipariş ID",
+        "pronunciation": "سيباريش آي دي"
+      },
+      "product": {
+        "translation": "Ürün",
+        "pronunciation": "أورن"
+      },
+      "facility": {
+        "translation": "Tesis",
+        "pronunciation": "تيسيس"
+      },
+      "qohTotal": {
+        "translation": "QOH Toplamı",
+        "pronunciation": "كيو أو هاش توپلأمي"
+      },
+      "atpTotal": {
+        "translation": "ATP Toplamı",
+        "pronunciation": "آ تي پي توپلأمي"
+      },
+      "qohDiff": {
+        "translation": "QOH Farkı",
+        "pronunciation": "كيو أو هاش فارقي"
+      },
+      "atpDiff": {
+        "translation": "ATP Farkı",
+        "pronunciation": "آ تي پي فارقي"
+      },
+      "date": {
+        "translation": "Geçerli Tarih",
+        "pronunciation": "جيشرلي تاريخ"
+      }
+    },
+    "receive": {
+      "list": {
+        "select": {
+          "translation": "Satın Alma Siparişi Seçin *",
+          "pronunciation": "ساتن ألما سيباريشي سيجين *"
+        },
+        "orderItem": {
+          "translation": "Sipariş Ürünü",
+          "pronunciation": "سيباريش أورني"
+        },
+        "product": {
+          "translation": "Ürün",
+          "pronunciation": "أورن"
+        },
+        "qtyOrdered": {
+          "translation": "Sipariş Edilen Miktar",
+          "pronunciation": "سيباريش إديلين ميكتار"
+        },
+        "qtyAccept": {
+          "translation": "Kabul Edilen Miktar",
+          "pronunciation": "كابول إديلين ميكتار"
+        },
+        "qtyReject": {
+          "translation": "Red Edilen Miktar",
+          "pronunciation": "ريد إديلين ميكتار"
+        },
+        "rejectReason": {
+          "translation": "Red Nedeni",
+          "pronunciation": "ريد نيديني"
+        },
+        "facility": {
+          "translation": "Alım Tesisi",
+          "pronunciation": "أليم تيسيسي"
+        },
+        "include": {
+          "translation": "Bu öğeyi dahil et",
+          "pronunciation": "بو اويه يي داهيل ايت"
+        },
+        "receive": {
+          "translation": "Al",
+          "pronunciation": "أل"
+        }
+      },
+      "menu": {
+        "receive": {
+          "translation": "Envanteri Al",
+          "pronunciation": "إنفانتيري أل"
+        }
+      }
+    },
+    "transfer": {
+      "list": {
+        "invTransfer": {
+          "translation": "Envanter Transferi",
+          "pronunciation": "إنفانتير ترانسفيري"
+        },
+        "item": {
+          "translation": "Envanter Ürünü",
+          "pronunciation": "إنفانتير أورني"
+        },
+        "fromFacility": {
+          "translation": "Kaynak Tesis",
+          "pronunciation": "كايناك تيسيس"
+        },
+        "toFacility": {
+          "translation": "Hedef Tesis",
+          "pronunciation": "هدف تيسيس"
+        },
+        "product": {
+          "translation": "Ürün",
+          "pronunciation": "أورن"
+        },
+        "atp_qoh": {
+          "translation": "ATP/QOH",
+          "pronunciation": "آ تي پي/كيو أو هاش"
+        },
+        "sendDate": {
+          "translation": "Gönderim Tarihi",
+          "pronunciation": "غونداريم تاريخي"
+        },
+        "receiveDate": {
+          "translation": "Alım Tarihi",
+          "pronunciation": "أليم تاريخي"
+        },
+        "loading": {
+          "translation": "Envanter Transferleri Yükleniyor...",
+          "pronunciation": "إنفانتير ترانسفيرلري يوكليينيور..."
+        }
+      }
+    },
+    "facilities": {
+      "create": {
+        "translation": "Tesis Oluştur",
+        "pronunciation": "تيسيس أولوشتر"
+      },
+      "list": {
+        "name": {
+          "translation": "Tesis Adı",
+          "pronunciation": "تيسيس آدي"
+        },
+        "type": {
+          "translation": "Tesis Türü",
+          "pronunciation": "تيسيس تور"
+        }
+      },
+      "form": {
+        "type": {
+          "translation": "Tesis Türü",
+          "pronunciation": "تيسيس تور"
+        },
+        "name": {
+          "translation": "Tesis Adı",
+          "pronunciation": "تيسيس آدي"
+        },
+        "description": {
+          "translation": "Açıklama",
+          "pronunciation": "أجيكلاما"
+        }
+      }
+    },
+    "physical": {
+      "adjust": {
+        "translation": "Envanteri Düzenle",
+        "pronunciation": "إنفانتيري دوزنله"
+      },
+      "invItem": {
+        "translation": "Envanter Ürünü",
+        "pronunciation": "إنفانتير أورني"
+      },
+      "itemATP": {
+        "translation": "Ürün ATP",
+        "pronunciation": "أورن آ تي پي"
+      },
+      "itemQOH": {
+        "translation": "Ürün QOH",
+        "pronunciation": "أورن كيو أو هاش"
+      },
+      "productATP": {
+        "translation": "Ürün ATP",
+        "pronunciation": "أورن آ تي پي"
+      },
+      "productQOH": {
+        "translation": "Ürün QOH",
+        "pronunciation": "أورن كيو أو هاش"
+      },
+      "loading": {
+        "translation": "Fiziksel Envanter Yükleniyor...",
+        "pronunciation": "فيزيكسال إنفانتير يوكليينيور..."
+      },
+      "facility": {
+        "translation": "Tesis",
+        "pronunciation": "تيسيس"
+      },
+      "product": {
+        "translation": "Ürün",
+        "pronunciation": "أورن"
+      },
+      "form": {
+        "invItem": {
+          "translation": "Envanter Ürünü",
+          "pronunciation": "إنفانتير أورني"
+        },
+        "product": {
+          "translation": "Ürün Adı",
+          "pronunciation": "أورن آدي"
+        },
+        "itemQOH": {
+          "translation": "Ürün QOH",
+          "pronunciation": "أورن كيو أو هاش"
+        },
+        "itemATP": {
+          "translation": "Ürün ATP",
+          "pronunciation": "أورن آ تي پي"
+        },
+        "productATP": {
+          "translation": "Ürün ATP",
+          "pronunciation": "أورن آ تي پي"
+        },
+        "productQOH": {
+          "translation": "Ürün QOH",
+          "pronunciation": "أورن كيو أو هاش"
+        },
+        "varianceReason": {
+          "translation": "Fark Nedeni",
+          "pronunciation": "فارق نيديني"
+        },
+        "atpVar": {
+          "translation": "ATP Farkı",
+          "pronunciation": "آ تي پي فارقي"
+        },
+        "qohVar": {
+          "translation": "QOH Farkı",
+          "pronunciation": "كيو أو هاش فارقي"
+        }
+      }
+    }
+  },
+
+  "manufacturing": {
+    "menu": {
+      "jobshop": {
+        "translation": "İş Atölyesi",
+        "pronunciation": "إيش آتوليسي"
+      },
+      "routing": {
+        "translation": "Rotalar",
+        "pronunciation": "روتالار"
+      },
+      "tasks": {
+        "translation": "Rota Görevleri",
+        "pronunciation": "روتا غوريفلري"
+      },
+      "costs": {
+        "translation": "Maliyetler",
+        "pronunciation": "مالييتلر"
+      },
+      "bom": {
+        "translation": "Malzeme Listesi",
+        "pronunciation": "مالزمه ليستسي"
+      }
+    },
+    "jobshop": {
+      "list": {
+        "create": {
+          "translation": "Üretim Koşusu Oluştur",
+          "pronunciation": "أوريتيم كوشوسو أولوشتر"
+        },
+        "runId": {
+          "translation": "Üretim Koşusu ID",
+          "pronunciation": "أوريتيم كوشوسو آي دي"
+        },
+        "startDate": {
+          "translation": "Başlangıç Tarihi",
+          "pronunciation": "باشلانغيتش تاريخي"
+        },
+        "product": {
+          "translation": "Ürün",
+          "pronunciation": "أورن"
+        },
+        "runName": {
+          "translation": "Üretim Koşusu Adı",
+          "pronunciation": "أوريتيم كوشوسو آدي"
+        },
+        "quantity": {
+          "translation": "Üretilecek Miktar",
+          "pronunciation": "أوريتيله جيك ميكتار"
+        },
+        "status": {
+          "translation": "Mevcut Durum",
+          "pronunciation": "مووجود دوروم"
+        },
+        "description": {
+          "translation": "Açıklama",
+          "pronunciation": "أجيكلاما"
+        },
+        "loading": {
+          "translation": "Üretim Koşuları Yükleniyor...",
+          "pronunciation": "أوريتيم كوشولاري يوكليينيور..."
+        }
+      }
+    }
+  },
+  "order": {
+    "returns": {
+      "menu": {
+        "items": {
+          "translation": "Ürün İade",
+          "pronunciation": "أورن إياده"
+        },
+        "history": {
+          "translation": "İade Geçmişi",
+          "pronunciation": "إياده جيشميشي"
+        }
+      }
+    }
+  },
+  "accounting": {
+    "orgGL": {
+      "menu": {
+        "invoices": {
+          "translation": "Faturalar",
+          "pronunciation": "فاتورالار"
+        },
+        "payments": {
+          "translation": "Ödemeler",
+          "pronunciation": "أوديميلر"
+        },
+        "fixedAssets": {
+          "translation": "Sabit Varlıklar",
+          "pronunciation": "سابيت فارلكلار"
+        },
+        "taxAuthorities": {
+          "translation": "Vergi Otoriteleri",
+          "pronunciation": "فيرجي أوتوريتيليري"
+        },
+        "agreements": {
+          "translation": "Anlaşmalar",
+          "pronunciation": "أنلاشمالار"
+        },
+        "financialAccount": {
+          "translation": "Finansal Hesap",
+          "pronunciation": "فينانسال حيساب"
+        },
+        "billingAccounts": {
+          "translation": "Faturalama Hesapları",
+          "pronunciation": "فاتورالاما حيسابلار"
+        },
+        "globalGLSettings": {
+          "translation": "Küresel Genel Muhasebe Ayarları",
+          "pronunciation": "كويريسال جنيل موهاساب أيارلاري"
+        },
+        "organizationGLSettings": {
+          "translation": "Organizasyon Genel Muhasebe Ayarları",
+          "pronunciation": "أوغانيزاسيون جنيل موهاساب أيارلاري"
+        }
+      },
+      "reports": {
+        "inventory-valuation": {
+          "name": {
+            "translation": "Envanter Değerlendirmesi",
+            "pronunciation": "إنفانتر ديغيرلنديرمس"
+          },
+          "facility": {
+            "translation": "Tesis",
+            "pronunciation": "تيسيس"
+          },
+          "product": {
+            "translation": "Ürün",
+            "pronunciation": "أورن"
+          },
+          "date": {
+            "translation": "Tarihine Kadar",
+            "pronunciation": "تاريخينه كادر"
+          },
+          "generate": {
+            "translation": "Rapor Oluştur",
+            "pronunciation": "رابور أولوشتور"
+          }
+        }
+      }
+    }
+  }
+
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "ORDER_ID": "Demo1002",
+    "ORDER_ITEM_SEQ_ID": "00001",
+    "INVOICE_ID": "8009",
+    "INVOICE_ITEM_SEQ_ID": "00001",
+    "ITEM_ISSUANCE_ID": "9001",
+    "QUANTITY": "2.000000",
+    "AMOUNT": "59.99"
+  },
+  {
+    "ORDER_ID": "Demo1002",
+    "ORDER_ITEM_SEQ_ID": "00004",
+    "INVOICE_ID": "8009",
+    "INVOICE_ITEM_SEQ_ID": "00005",
+    "ITEM_ISSUANCE_ID": "9002",
+    "QUANTITY": "1.000000",
+    "AMOUNT": "59.99"
+  }
+]

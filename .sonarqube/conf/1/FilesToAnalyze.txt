@@ -1,0 +1,6 @@
+﻿/Users/emadradwan/Documents/ERP/BusinessOne/Persistence/DataContext.cs
+/Users/emadradwan/Documents/ERP/BusinessOne/Persistence/Migrations/20231122200728_AddedTaxAuthGlAccounts.cs
+/Users/emadradwan/Documents/ERP/BusinessOne/Persistence/Migrations/20231122200728_AddedTaxAuthGlAccounts.Designer.cs
+/Users/emadradwan/Documents/ERP/BusinessOne/Persistence/Migrations/DataContextModelSnapshot.cs
+/Users/emadradwan/Documents/ERP/BusinessOne/Persistence/Seed.cs
+/Users/emadradwan/Documents/ERP/BusinessOne/Persistence/.DS_Store

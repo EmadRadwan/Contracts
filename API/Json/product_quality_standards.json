@@ -1,0 +1,62 @@
+[
+  {
+    "PRODUCT_QUALITY_STANDARD_ID": "a1b2c3d4-5678-4e90-1234-567890abcdef",
+    "PRODUCT_ID": "001a2b3c-4d5e-6f7a-8b9c-d0e1f2a3b4c1",
+    "STANDARD_ID": "f7a8b9c0-2345-4d67-8901-234567890def",
+    "MIN_VALUE": 328.0,
+    "MAX_VALUE": 332.0,
+    "UNIT_OF_MEASURE": "kg",
+    "CATEGORICAL_VALUE": null,
+    "BOOLEAN_VALUE": null,
+    "DESCRIPTION": "Mixture weight must be between 328 and 332 kg for a standard Aspirin batch.",
+    "LAST_UPDATED_STAMP": null,
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": null,
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "PRODUCT_QUALITY_STANDARD_ID": "b2c3d4e5-6789-4f01-2345-678901bcdefa",
+    "PRODUCT_ID": "001a2b3c-4d5e-6f7a-8b9c-d0e1f2a3b4c1",
+    "STANDARD_ID": "g8b9c0d1-3456-4e78-9012-345678901abc",
+    "MIN_VALUE": null,
+    "MAX_VALUE": null,
+    "UNIT_OF_MEASURE": null,
+    "CATEGORICAL_VALUE": "Uniform",
+    "BOOLEAN_VALUE": null,
+    "DESCRIPTION": "Mixture must appear visually uniform to ensure even distribution of ingredients.",
+    "LAST_UPDATED_STAMP": null,
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": null,
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "PRODUCT_QUALITY_STANDARD_ID": "c3d4e5f6-7890-4g12-3456-789012cdefab",
+    "PRODUCT_ID": "001a2b3c-4d5e-6f7a-8b9c-d0e1f2a3b4c1",
+    "STANDARD_ID": "h9c0d1e2-4567-4f89-0123-456789012bcd",
+    "MIN_VALUE": 0.5,
+    "MAX_VALUE": 2.0,
+    "UNIT_OF_MEASURE": "%",
+    "CATEGORICAL_VALUE": null,
+    "BOOLEAN_VALUE": null,
+    "DESCRIPTION": "Moisture content of the mixture must be between 0.5% and 2.0% to ensure quality.",
+    "LAST_UPDATED_STAMP": null,
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": null,
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "PRODUCT_QUALITY_STANDARD_ID": "j1e2f3g4-6789-4b01-c234-890123456def",
+    "PRODUCT_ID": "001a2b3c-4d5e-6f7a-8b9c-d0e1f2a3b4c1",
+    "STANDARD_ID": "i0d1e2f3-5678-4a90-b123-789012345cde",
+    "MIN_VALUE": null,
+    "MAX_VALUE": null,
+    "UNIT_OF_MEASURE": null,
+    "CATEGORICAL_VALUE": null,
+    "BOOLEAN_VALUE": true,
+    "DESCRIPTION": "Mixture for Aspirin WIP must be fully completed to proceed to next task.",
+    "LAST_UPDATED_STAMP": null,
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": null,
+    "CREATED_TX_STAMP": null
+  }
+]

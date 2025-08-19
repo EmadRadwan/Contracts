@@ -1,0 +1,32 @@
+export interface OrderItem {
+    orderId?: string;
+    orderItemSeqId: string;
+    parentOrderItemSeqId?: string;
+    productPromoId?: string;
+    collectTax?: boolean;
+    productId: any;
+    productFeatureId: string;
+    productTypeId?: string;
+    statusId?: string;
+    productLov?: any;
+    orderItemProduct?: any;
+    productName?: string;
+    inventoryItemId?: string;
+    isProductDeleted?: boolean;
+    quoteId?: any;
+    quoteItemSeqId?: any;
+    quantity: number;
+    unitPrice?: any;
+    unitListPrice?: any;
+    lastPrice?: any;
+    discountAndPromotionAdjustments?: number;
+    otherAdjustments?: number;
+    subTotal?: number;
+    rejectionReasonId?: string;
+    rejectionReasonDescription?: string;
+    quantityRejected?: number;
+    quantityAccepted?: number;
+    includeThisItem?: boolean;
+    validItem?: any;
+    facilityId?: string;
+}

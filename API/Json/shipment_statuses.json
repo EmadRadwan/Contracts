@@ -1,0 +1,17 @@
+[
+  {
+    "STATUS_ID": "SHIPMENT_INPUT",
+    "SHIPMENT_ID": "9996",
+    "STATUS_DATE": "2024-08-04 16:35:36.119"
+  },
+  {
+    "STATUS_ID": "SHIPMENT_PACKED",
+    "SHIPMENT_ID": "9996",
+    "STATUS_DATE": "2024-08-04 16:35:39.627"
+  },
+  {
+    "STATUS_ID": "SHIPMENT_SHIPPED",
+    "SHIPMENT_ID": "9996",
+    "STATUS_DATE": "2024-08-04 16:35:42.707"
+  }
+]

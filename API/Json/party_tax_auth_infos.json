@@ -1,0 +1,16 @@
+[
+  {
+    "PARTY_ID": "Company",
+    "TAX_AUTH_GEO_ID": "EGY",
+    "TAX_AUTH_PARTY_ID": "EgyptTaxAuth",
+    "FROM_DATE": "2024-07-31 06:03:42",
+    "THRU_DATE": null,
+    "PARTY_TAX_ID": null,
+    "IS_EXEMPT": null,
+    "IS_NEXUS": null,
+    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2024-07-31 06:03:42",
+    "CREATED_TX_STAMP": null
+  }
+]

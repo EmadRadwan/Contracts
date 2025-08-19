@@ -1,0 +1,26 @@
+[
+  {
+    "PRODUCT_STORE_ID": "9000",
+    "PRODUCT_PROMO_ID": "9011",
+    "FROM_DATE": "2024-07-31 06:03:42",
+    "THRU_DATE": "2024-07-31 06:03:42",
+    "SEQUENCE_NUM": 1,
+    "MANUAL_ONLY": null,
+    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2024-07-31 06:03:42",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "PRODUCT_STORE_ID": "9000",
+    "PRODUCT_PROMO_ID": "9015",
+    "FROM_DATE": "2024-07-31 06:03:42",
+    "THRU_DATE": null,
+    "SEQUENCE_NUM": 1,
+    "MANUAL_ONLY": null,
+    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2024-07-31 06:03:42",
+    "CREATED_TX_STAMP": null
+  }
+]

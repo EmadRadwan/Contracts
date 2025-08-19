@@ -1,0 +1,924 @@
+{
+  "general": {
+    "homepage": "Welcome Back",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "email": "email",
+    "password": "password",
+    "signin": "Sign In",
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "actions": "Actions",
+    "submit": "Submit",
+    "init": "Initialising app...",
+    "find": "Find",
+    "remove": "Remove",
+    "processing": "Processing",
+    "add": "Add",
+    "update": "Update",
+    "close": "Close",
+    "details": "Deatils",
+    "setup": "Setup",
+    "accounting": "Accounting",
+    "generate": "Generate Report",
+    "clear": "Clear",
+    "date-range-or-month-error": "Must select month or date range for report!",
+    "loading-report": "Loading Report Data",
+    "header": {
+      "catalog": "Catalog",
+      "facility": "Facility",
+      "party": "Party",
+      "order": "Order",
+      "service": "Service",
+      "accounting": "Accounting",
+      "manufacturing": "Manufacturing",
+      "login": "Login"
+    },
+    "statuses": {
+      "new": "New",
+      "not-paid": "Not Paid",
+      "received": "Received",
+      "completed": "Completed"
+    },
+    "ms": "ms",
+    "mins": "mins"
+  },
+  "product": {
+    "products": {
+      "list": {
+        "title": "Products",
+        "quantity": "Quantity Uom",
+        "create": "Create Product",
+        "type": "Product Type",
+        "category": "Product Category",
+        "description": "Product Description"
+      },
+      "form": {
+        "name": "Product Name *",
+        "nameAr": "Product Name (Arabic) *",
+        "type": "Product Type *",
+        "category": "Product Category *",
+        "days": "Service Life Days",
+        "mileage": "Service Life Mileage",
+        "uom": "Quantity UOM",
+        "comments": "Comments",
+        "processing": "Processing Product...",
+        "new": "New Product",
+        "menu": {
+          "associations": "Associations",
+          "prices": "Prices",
+          "facilities": "Facilities",
+          "categories": "Categories",
+          "suppliers": "Suppliers",
+          "inventory": "Inventory",
+          "costs": "Costs",
+          "locations": "Locations"
+        }
+      }
+    },
+    "promos": {
+      "list": {
+        "create": "Create New Promotion",
+        "id": "Promotion ID",
+        "name": "Promotion Name",
+        "condition": "Promotion Condition",
+        "input": "Input Parameter Description",
+        "quantity": "Quantity",
+        "description": "Promotion Description",
+        "amount": "Discount Amount",
+        "loading": "Loading Promos..."
+      },
+      "form": {
+        "title": "Promotion",
+        "new": "New Product Promo",
+        "id": "Promo ID",
+        "name": "Promo Name",
+        "description": "Promo Description",
+        "from": "From Date",
+        "to": "To Date",
+        "product": "Product",
+        "value": "Condition value",
+        "action": "Product Promotion Action",
+        "quantity": "Quantity",
+        "amount": "Amount",
+        "condition": "Promotion Condition",
+        "input": "Input Parameter Description"
+      }
+    },
+    "stores": {
+      "list": {
+        "new": "Create Store",
+        "name": "Store Name",
+        "party": "Pay to Party",
+        "facility": "Inventory Facility",
+        "currency": "Currency"
+      },
+      "form": {
+        "new": "New Store",
+        "name": "Store Name",
+        "processing": "Processing Store..."
+      }
+    },
+    "menu": {
+      "products": "Products",
+      "promos": "Promos",
+      "stores": "Stores"
+    },
+    "prod-price": {
+      "list": {
+        "type": "Price Type",
+        "currency": "Currency",
+        "from":"From Date",
+        "thru": "Thru Date",
+        "price": "Price",
+        "title": "Prices for",
+        "create": "Create Product Price"
+      },
+      "form": {
+        "title-edit": "Edit Price for",
+        "title-new": "New Price for",
+        "prod-price": "Product Price *",
+        "currency": "Currency *",
+        "from": "From Date *",
+        "thru":"Thru Date",
+        "price":"Price *"
+      }
+    }
+  },
+  "facility": {
+    "menu": {
+      "inventory": "Inventory",
+      "items": "Inventory Items",
+      "details": "Inventory Item Details",
+      "receive": "Receive Inventory",
+      "transfer": "Transfer Inventory",
+      "facilities": "Facilities",
+      "locations": "Locations",
+      "physical": "Physical Inventory",
+      "pick": "Pick"
+    },
+    "list": {
+      "product": "Product",
+      "qoh": "QOH Total",
+      "facility": "Facility",
+      "atp": "ATP Total",
+      "reorder": "Reorder Quantity",
+      "minStock": "Minimum Stock",
+      "atpMinusMin": "ATP minus Minimum Stock",
+      "qohMinusMin": "QOH minus Minimum Stock",
+      "ordered": "Ordered Quantity",
+      "price": "List Price",
+      "loading": "Loading Inventory..."
+    },
+    "items": {
+      "item": "Inventory Item",
+      "qoh": "QOH Total",
+      "atp": "ATP Total",
+      "product": "Product",
+      "facility": "Facility",
+      "received": "Datetime Received",
+      "loading": "Loading Inventory Items...",
+      "supplier": "Supplier",
+      "transfer": "Transfer",
+      "details": "Deatils",
+      "clear": "Clear selected product",
+      "form": {
+        "title": "Inventory Item",
+        "received": "Datetime Received",
+        "expire": "Expire Date",
+        "product": "Product",
+        "lot": "Lot",
+        "container": "Container",
+        "facility": "Facility",
+        "location": "Facility Location",
+        "uom": "Unit of Measure",
+        "color": "Color",
+        "size": "Size",
+        "unitCost": "Unit Cost",
+        "updateSuccess": "Inventory item updated",
+        "createSuccess": "Inventory item created with ID"
+      }
+    },
+    "details": {
+      "item": "Inventory Item",
+      "order": "Order Id",
+      "product": "Product",
+      "facility": "Facility",
+      "qohTotal": "QOH Total",
+      "atpTotal": "ATP Total",
+      "qohDiff": "QOH Diff",
+      "atpDiff": "ATP Diff",
+      "date": "Effective Date"
+    },
+    "receive": {
+      "list": {
+        "select": "Select Purchase Order *",
+        "orderItem": "Order Item",
+        "product": "Product",
+        "qtyOrdered": "Quantity ordered",
+        "qtyAccept": "Quantity to accept",
+        "qtyReject": "Quantity to reject",
+        "rejectReason": "Rejection reason",
+        "facility": "Receiving facility",
+        "include": "Include this item",
+        "receive": "Edit",
+        "price": "Unit price"
+      },
+      "menu": {
+        "receive": "Receive Inventory"
+      }
+    },
+    "transfer": {
+      "list": {
+        "invTransfer": "Inventory Transfer",
+        "item": "Inventory Item",
+        "fromFacility": "From Facility",
+        "toFacility": "To Facility",
+        "product": "Product",
+        "atp_qoh": "ATP/QOH",
+        "sendDate": "Send Date",
+        "receiveDate": "Receive Date",
+        "loading": "Loading Inventory Transfers..."
+      }
+    },
+    "facilities": {
+      "create": "Create Facility",
+      "list": {
+        "name": "Facility Name",
+        "type": "Facility Type"
+      },
+      "form": {
+        "type": "Facility Type",
+        "name": "Facility Name",
+        "description": "Description"
+      }
+    },
+    "physical": {
+      "adjust": "Adjust Inventory",
+      "invItem": "Inventory Item",
+      "itemATP": "Item ATP",
+      "itemQOH": "Item QOH",
+      "productATP": "Product ATP",
+      "productQOH": "Product QOH",
+      "loading": "Loading Physical Inventory...",
+      "facility": "Facility",
+      "product": "Product",
+      "form": {
+        "invItem": "Inventory Item",
+        "product": "Product Name",
+        "itemQOH": "Item QOH",
+        "itemATP": "Item ATP",
+        "productATP": "Product ATP",
+        "productQOH": "Product QOH",
+        "varianceReason": "Variance Reason",
+        "atpVar": "ATP Variance",
+        "qohVar": "QOH Variance"
+      }
+    }
+  },
+  "manufacturing": {
+    "menu": {
+      "jobshop": "Work Orders",
+      "routing": "Routings",
+      "tasks": "Routing Tasks",
+      "costs": "Costs",
+      "bom": "Bill of Materials"
+    },
+    "jobshop": {
+      "list": {
+        "create": "Create Production Run",
+        "runId": "Production Run Id",
+        "startDate": "Start Date",
+        "product": "Product",
+        "runName": "Production Run Name",
+        "quantity": "Quantity To Produce",
+        "status": "Current Status",
+        "description": "Description",
+        "loading": "Loading Production Runs...",
+        "quickComplete": "Quick Complete",
+        "quickClose": "Quick Close",
+        "createProductionRun": "Create Production Run",
+        "materials": "Materials",
+        "parties": "Parties",
+        "actualCost": "Actual Cost"
+      },
+      "display": {
+        "actions": "Actions",
+        "createProductionRun": "Create Production Run",
+        "quickClose": "Quick Close",
+        "quickComplete": "Quick Complete",
+        "materials": "Materials",
+        "parties": "Parties",
+        "actualCost": "Actual Cost",
+        "productionRunNo": "Production Run No:",
+        "productName": "Product Name:",
+        "quantity": "Quantity:",
+        "estimatedStartDate": "Estimated Start Date:",
+        "actualStartDate": "Actual Start Date:",
+        "calculatedCompletionDate": "Calculated Completion Date:",
+        "actualCompletionDate": "Actual Completion Date:",
+        "status": "Status:",
+        "facilityName": "Facility Name:",
+        "productionRunName": "Production Run Name:",
+        "produced": "Produced:",
+        "rejected": "Rejected:"
+      },
+      "edit": {
+        "productionRunNo": "Production Run No:",
+        "newProductionRun": "New Production Run",
+        "status": "Status:",
+        "tasks": "Tasks",
+        "materials": "Materials",
+        "parties": "Parties",
+        "actions": "Actions",
+        "schedule": "Schedule",
+        "confirm": "Confirm",
+        "quickClose": "Quick Close",
+        "quickComplete": "Quick Complete",
+        "product": "Product *",
+        "startDate": "Start Date *",
+        "calculatedCompletionDate": "Calculated Completion Date:",
+        "quantityToProduce": "Quantity To Produce *",
+        "routing": "Routing *",
+        "facility": "Facility *",
+        "productionRunName": "Production Run Name *",
+        "description": "Description",
+        "factoryImage": "Factory",
+        "createProductionRun": "Create Production Run",
+        "editProductionRun": "Edit Production Run",
+        "cancel": "Cancel",
+        "processing": "Processing Production Run..."
+      },
+      "tasks": {
+        "title": "Tasks",
+        "seqNumber": "Seq. Number",
+        "routingTaskName": "Routing Task Name",
+        "fixedAsset": "Fixed Asset",
+        "startDate": "Start Date",
+        "estimatedCompletionDate": "Estimated Completion Date",
+        "estimatedSetupTime": "Estimated Setup Time",
+        "estimatedRunTime": "Estimated Run Time",
+        "loadingTasks": "Loading Tasks..."
+      },
+      "materials": {
+        "title": "Materials",
+        "productName": "Product Name",
+        "productQuantityUom": "Unit of Measure",
+        "estimatedQuantity": "Estimated Quantity",
+        "issuedQuantity": "Issued Quantity",
+        "issuedComponents": "Issued Components",
+        "loadingMaterials": "Loading Materials..."
+      },
+      "prodruntasks": {
+        "list": {
+          "title": "Production Run Tasks List",
+          "loading": "Loading Tasks...",
+          "declareButton": "Declare and Produce",
+          "currentStatusId": "Current Status",
+          "executionTime": "Execution Time",
+          "issueBOM": "Issue BOM",
+          "issuingBOM": "Issuing BOM",
+          "Staring": "Starting",
+          "start": "Start",
+          "complete": "Complete",
+          "completing": "Completing",
+          "declare": "Declare",
+          "declaring": "Declaring",
+          "sequenceNum": "Seq. Number",
+          "workEffortName": "Routing Task Name",
+          "currentStatusDescription": "Status",
+          "fixedAssetName": "Fixed Asset",
+          "estimatedCompletionDate": "Estimated Completion Date",
+          "actualSetupMillis": "Actual Setup Time",
+          "actualMilliSeconds": "Actual Run Time",
+          "quantityProduced": "Quantity Produced",
+          "declareForm": {
+            "title": "Declare Production Run Task"
+          }
+        },
+        "edit": {
+          "taskNumber": "Task Number",
+          "seqNumber": "Seq Number",
+          "taskName": "Task Name",
+          "description": "Description",
+          "calculatedCompletionDate": "Calculated Completion Date",
+          "fromDate": "From Date",
+          "toDate": "To Date",
+          "estimatedSetupTime": "Estimated Setup Time",
+          "actualSetupTime": "Actual Setup Time",
+          "addActualSetupTime": "Add Actual Setup Time (in minutes)",
+          "estimatedUnitRunTime": "Estimated Unit Run Time",
+          "actualTaskTime": "Actual Task Time",
+          "addActualTaskTime": "Add Actual Task Time (in Minutes)",
+          "qtyToProduce": "Qty To Produce",
+          "qtyProduced": "Qty Produced",
+          "addQtyProduced": "Add Qty Produced",
+          "qtyRejected": "Qty Rejected",
+          "addQtyRejected": "Add Qty Rejected",
+          "comment": "Comment"
+        },
+        "declareandproduce": {
+          "title": "Declare and Produce",
+          "quantity": "Quantity to Declare",
+          "maxQuantity": "Max Quantity: ",
+          "lotId": "Lot ID"
+        }
+      }
+    },
+    "routings": {
+      "list": {
+        "createRouting": "Create Routing",
+        "routingId": "Routing Id",
+        "routingName": "Routing Name",
+        "description": "Description",
+        "quantityToProduce": "Quantity To Produce",
+        "currentStatusId": "Current Status Id",
+        "loading": "Loading Routings..."
+      }
+    },
+    "routingTasks": {
+      "list": {
+        "createRoutingTask": "Create Routing Task",
+        "taskId": "Task Id",
+        "routingName": "Routing Name",
+        "description": "Description",
+        "taskType": "Task Type",
+        "fixedAssetId": "Fixed Asset Id",
+        "estimatedSetupTime": "Estimated Setup Time",
+        "estimatedUnitRunTime": "Estimated Unit Run Time",
+        "loading": "Loading Routing Tasks..."
+      }
+    },
+    "costs": {
+      "list": {
+        "createCostComponentCalculation": "Create Cost Component Calculation",
+        "costComponentCalcId": "Routing Id",
+        "description": "Description",
+        "fixedCost": "Fixed Cost",
+        "variableCost": "Variable Cost",
+        "perMilliSecond": "Per Milli Second",
+        "currency": "Currency",
+        "loading": "Loading Cost Components..."
+      }
+    },
+    "bom": {
+      "list": {
+        "product": "Product",
+        "uomDescription": "UOM Description",
+        "productDescription": "Product Description",
+        "bomType": "BOM Type",
+        "bomSimulation": "BOM Simulation",
+        "loading": "Loading BOM Products..."
+      },
+      "components": {
+        "product": "Product",
+        "productDescription": "Product Description",
+        "quantity": "Quantity",
+        "quantityUOM": "Quantity UOM",
+        "sequenceNum": "Sequence Num",
+        "scrapFactor": "Scrap Factor",
+        "loadingBOMProducts": "Loading BOM Products...",
+        "createBOMComponent": "Create BOM Component",
+        "billOfMaterialsFor": "Bill of Materials (Recipe) for"
+      },
+      "simulation": {
+        "bomSimulationFor": "BOM Simulation for",
+        "quantity": "BOM Quantity *",
+        "currencyUomId": "Currency UOM ID",
+        "productLevel": "Product Level",
+        "product": "Product",
+        "qoh": "Quantity on hand",
+        "cost": "Unit Cost",
+        "uom": "UOM",
+        "totalCost": "Total Cost",
+        "submit": "Submit",
+        "cancel": "Cancel",
+        "loadingBOMSimulationData": "Loading BOM Simulation Data..."
+      }
+    }
+  },
+  "order": {
+    "menu": {
+      "quote": "Quote",
+      "order": "Order",
+      "return": "Return"
+    },
+    "returns": {
+      "menu": {
+        "items": "Return Items",
+        "history": "Return History"
+      }
+    },
+    "list": {
+      "orderNumber": "Order Number",
+      "customer": "Customer",
+      "amount": "Amount",
+      "currency": "Currency",
+      "orderDate": "Order Date",
+      "status": "Status",
+      "type": "Type",
+      "salesOrder": "Sales Order",
+      "purchaseOrder": "Purchase Order",
+      "new": "New Order",
+      "loading": "Loading Orders..."
+    },
+    "totals": {
+      "sub": "Sub Total: ",
+      "tax": "Tax Total: ",
+      "discount": "Discount Total: ",
+      "adj": "Adjustments: ",
+      "otherAdj": "Other Adjustments: ",
+      "grand": "Grand Total: ",
+      "paid": "Paid Amount: ",
+      "billed": "Billed to Billing Account: "
+    },
+    "so": {
+      "form": {
+        "actions": {
+          "new": "New Order",
+          "ship": "Quick Ship Order",
+          "update": "Update Order",
+          "create": "Create Order"
+        },
+        "new": "New Sales Order",
+        "orderNo": "Sales Order No: ",
+        "tax-exempt": "Customer - Tax Exempt",
+        "customer": "Customer",
+        "new-customer": "New Customer",
+        "currency": "Currency",
+        "agreement": "Agreement",
+        "customer-remarks": "Customer Remarks",
+        "internal-remarks": "Internal Remarks",
+        "pmt": "Payment Method Type",
+        "billingAcc": "Billing Account",
+        "processing": "Processing Order..."
+      },
+      "items": {
+        "list": {
+          "add": "Add Product",
+          "adj": "Order Adjustments",
+          "terms": "Order Terms",
+          "product": "Product Name",
+          "orderItem": "Order Item",
+          "quantity": "Quantity",
+          "total": "Total",
+          "price": "Price",
+          "discount": "Discount/Tax"
+        },
+        "form": {
+          "validation": {
+            "quantityGreaterThanATP": "Quantity is greater than ATP."
+          },
+          "product": "Product *",
+          "promos": "Promotions",
+          "quantity": "Quantity *"
+        },
+        "adj": {
+          "list": {
+            "title": "Adjustments for ",
+            "add": "Add Adjustment",
+            "type": "Adjustment Type",
+            "amount": "Amount",
+            "percentage": "Percentage",
+            "userEntered": "User Entered"
+          },
+          "form": {
+            "validation": {
+              "percentRequired": "Percentage is required",
+              "percentRange": "Percentage should be between 0 and 100"
+            },
+            "type": "Adjustment Type *",
+            "amount": "Adjusment Amount *",
+            "percent": "Adjustment Percent *"
+          }
+        }
+      },
+      "adj": {
+        "list": {
+          "add": "Add Order Adjustment",
+          "amount": "Amount",
+          "type": "Adjustment Type",
+          "description": "Description",
+          "percentage": "Percentage",
+          "userEntered": "User Entered"
+        },
+        "form": {
+          "type": "Adjustment Type *",
+          "amount": "Adjusment Amount *",
+          "percent": "Adjustment Percent *"
+        }
+      },
+      "terms": {
+        "add": "Create Term",
+        "type": "Term Type",
+        "days": "Term Days",
+        "termValue": "Term Value",
+        "textValue": "Text Value",
+        "description": "Description"
+      }
+    }
+  },
+  "accounting": {
+    "menu": {
+        "invoices": "Invoices",
+        "payments": "Payments",
+        "pay-group": "Payment Groups",
+        "fixedAssets": "Fixed Assets",
+        "taxAuthorities": "Tax Authorities",
+        "agreements": "Agreements",
+        "financialAccount": "Financial Account",
+        "billingAccounts": "Billing Accounts",
+        "globalGLSettings": "Global GL Settings",
+        "organizationGLSettings": "Organization GL Settings"
+      },
+    "payments": {
+      "list": {
+        "actions": {
+          "new": "New Payment",
+          "incoming": "Incoming Payment",
+          "outgoing": "Outgoing Payment"
+        },
+        "paymentId": "Payment Number",
+        "paymentType": "Payment Type",
+        "from": "From Party",
+        "to": "To Party",
+        "date": "Payment Date",
+        "status": "Status",
+        "amount": "Amount",
+        "outstanding": "Outstanding Amount",
+        "comments": "Comments",
+        "loading": "Loading Payments..."
+      },
+      "form": {
+        "actions": {
+          "create": "Create Payment",
+          "update": "Update Payment",
+          "receive": "Status to Received",
+          "confirm": "Status to Confirmed",
+          "transactions": "Transactions",
+          "applications": "Payment Applications"
+        },
+        "new-incoming": "New Incoming Payment",
+        "new-outgoing": "New Outgoing Payment",
+        "title": "Payment No: ",
+        "status": "Status",
+        "orgPartyId": "Organization Party Id *",
+        "from": "From Party *",
+        "to": "To Party *",
+        "new-customer": "New Customer",
+        "paymentType": "Payment Type *",
+        "paymentMethod": "Payment Method *",
+        "finAccount-trans": "FinAccount Trans Id",
+        "amount": "Amount *",
+        "date": "Effective Date *",
+        "comments": "Comments",
+        "loading": "Processing Payment..."
+      }
+    },
+    "pay-groups": {
+      "list": {
+        "actions": {
+          "new": "New Payment Group"
+        },
+        "paymentGroupId": "Payment Group Number",
+        "paymentGroupType": "Payment Group Type",
+        "paymentGroupName": "Payment Group Name",
+        "loading": "Loading Payment Groups..."
+      },
+      "form": {
+        "paymentGroupId": "Payment Group Number",
+        "paymentGroupType": "Payment Group Type",
+        "paymentGroupName": "Payment Group Name",
+        "create": "Create Payment Group",
+        "update": "Update Payment Group",
+        "processing": "Processing Payment Group",
+        "cancel": "Cancel Check Run"
+      }
+    },
+    "pay-group-payments": {
+      "list": {
+        "actions": {
+          "new": "New Payment Group Member"
+        },
+        "paymentGroupId": "Payment Group Number",
+        "paymentId": "Payment Number",
+        "fromDate": "From Date",
+        "thruDate": "Thru Date",
+        "loading": "Loading Payment Group Members..."
+      },
+      "form": {
+        "paymentGroupId": "Payment Group Number",
+        "paymentGroupType": "Payment Group Type",
+        "paymentGroupName": "Payment Group Name",
+        "create": "Create Payment Group",
+        "update": "Update Payment Group",
+        "processing": "Processing Payment Group"
+      }
+    },
+    "orgGL": {
+      "dashboard": {
+        "title": "Companies",
+        "new": "Create New Accounting Company",
+        "company": "Company"
+      },
+      "menu": {
+        "createGL": "Create a GL Transaction",
+        "createInv": "Create New Invoice",
+        "createPmt": "Create New Payment"
+      },
+      "accounting": {
+        "summary": {
+          "title": "Accounting Summary for",
+          "createTxn": "Create an Accounting Transaction",
+          "unposted": "Un-posted Accounting Transactions",
+          "trial": "Trial Balance",
+          "income": "Income Statement",
+          "balanceSheet": "Balance Sheet",
+          "menu": {
+            "summary": "Summary",
+            "txns": "Accounting Transaction",
+            "txnEntries": "Accounting Transaction Entries",
+            "recon": "Account Reconciliation",
+            "reports": "Reports",
+            "checks": "Checks"
+          }
+        }
+      },
+      "reports": {
+        "title": "Select a report to display",
+        "menu": {
+          "trial-balance": "Trial Balance", 
+          "transaction-totals": "Transaction Totals",
+          "income-statement": "Income Statement",
+          "cash-flow-statement": "Cash Flow Statement",
+          "balance-sheet": "Balance Sheet", 
+          "comparative-income-statement": "Comparative Income Statement",
+          "comparative-cash-flow-statement": "Comparative Cash Flow Statement",
+          "comparative-balance-sheet": "Comparative Balance Sheet",
+          "gl-account-trial-balance": "GL Account Trial Balance",
+          "inventory-valuation": "Inventory Valuation",
+          "cost-centers": "Cost Centers"
+        },
+        "inventory-valuation": {
+          "name": "Inventory Valuation",
+          "facility": "Facility",
+          "product": "Product",
+          "date": "Date Thru"
+        },
+        "trial-balance": {
+          "title": "Trial Balance For: ",
+          "accountCode": "Account Code",
+          "accountName": "Account Name",
+          "openingBalance": "Opening Balance",
+          "postedDebits": "Debit",
+          "postedCredits": "Credit",
+          "endingBalance": "Ending Balance",
+          "loading": "Loading Report Data...",
+          "debits": "Debits total: ",
+          "credits": "Credits total: "
+        },
+        "transaction-totals": {
+          "list": {
+            "title": "Transaction Totals For: ",
+            "loading": "Loading Report...",
+            "code": "Account Code",
+            "name": "Account Name",
+            "openingD": "Opening D",
+            "openingC": "Opening C",
+            "debit": "DR",
+            "credit": "CR",
+            "balance": "Balance"
+          },
+          "form": {
+            "month": "Month",
+            "fiscalType": "GL Fiscal Type *",
+            "fromDate": "From Date",
+            "thruDate": "Thru Date"
+          }
+        },
+        "income-statement": {
+          "list": {
+            "title": "Income Statement For: ",
+            "loading": "Loading Report Data...",
+            "code": "Account Code",
+            "name": "Account Name",
+            "openingD": "Opening D",
+            "openingC": "Opening C",
+            "debit": "DR",
+            "credit": "CR",
+            "balance": "Balance"
+          }, 
+          "form": {
+            "month": "Month",
+            "fiscalType": "GL Fiscal Type *",
+            "fromDate": "From Date",
+            "thruDate": "Thru Date"
+          }
+        },
+        "cash-flow": {
+          "list": {
+            "title": "Cash Flow Statement For: ",
+            "loading": "Loading Report Data..."
+          }, 
+          "form": {
+            "month": "Month",
+            "fiscalType": "GL Fiscal Type *",
+            "fromDate": "From Date",
+            "thruDate": "Thru Date"
+          }
+        },
+        "gl-trial-balance": {
+          "title": "Gl Account Trial Balance For: ",
+          "glAccount": "GL Account",
+          "timePeriod": "Time Period",
+          "isPosted": "Is Posted"
+        },
+        "comparative-balance-sheet": {
+          "list": {
+            "title": "Income Statement For: ",
+            "loading": "Loading Report Data...",
+            "code": "Account Code",
+            "name": "Account Name",
+            "openingD": "Opening D",
+            "openingC": "Opening C",
+            "debit": "DR",
+            "credit": "CR",
+            "balance": "Balance",
+            "total": "Total Name",
+            "b1": "Period 1 Balance",
+            "b2": "Period 2 Balance"
+          }
+        }
+      }
+    },
+    "invoices": {
+      "list": {
+        "new": "New Invoice",
+        "invoiceId": "Invoice Number",
+        "customer": "Customer",
+        "invoiceType": "Invoice Type",
+        "from": "From",
+        "to": "To",
+        "outstanding": "Outstanding Amount",
+        "amount": "Amount",
+        "total": "Total",
+        "currency": "Currency",
+        "invoiceDate": "Invoice Date",
+        "dueDate": "Due Date",
+        "status": "Status",
+        "description": "Description",
+        "type": "Invoice Type",
+        "actions": {
+          "create": "Create Invoice",
+          "getSummary": "Get Summary"
+        },
+        "loading": "Loading Invoices..."
+      },
+      "display": {
+        "form": {
+          "invoice-no": "Invoice No:",
+          "invoice-type": "Invoice Type:",
+          "from-party": "From Party:",
+          "invoice-date": "Invoice Date:",
+          "total": "Total:",
+          "billing-account": "Billing Account:",
+          "status": "Status:",
+          "to-party": "Party To:",
+          "due-date": "Due Date:",
+          "paid-date": "Paid Date:",
+          "back": "Back",
+          "processing": "Processing Invoice...",
+          "error": "Something went wrong",
+          "status-changed": "Status successfully changed to {0}",
+          "actions": {
+            "new": "New Invoice",
+            "update": "Update Invoice",
+            "approve": "Status to 'Approved'",
+            "receive": "Status to 'Received'",
+            "sent": "Status to 'Sent'",
+            "ready": "Status to 'Ready'",
+            "paid": "Status to 'Paid'",
+            "writeoff": "Status to 'Writeoff'",
+            "in-process": "Status to 'In Process'",
+            "cancel": "Status to 'Cancelled'",
+            "transactions": "Transactions",
+            "payment-applications": "Payment Applications"
+          },
+          "status": {
+            "new": "New",
+            "in-process": "In Process",
+            "approved": "Approved",
+            "ready": "Ready",
+            "received": "Received",
+            "paid": "Paid",
+            "writeoff": "Write Off",
+            "cancelled": "Cancelled",
+            "unknown": "Unknown"
+          }
+        }
+      }
+    }
+  }
+}

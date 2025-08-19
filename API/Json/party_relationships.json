@@ -1,0 +1,22 @@
+[
+  {
+    "PARTY_ID_FROM": "007cb303-495c-4bdb-b532-9d9f235e69c8",
+    "PARTY_ID_TO": "29a02dc0-70ea-46d0-a687-6a72b2f91d07",
+    "ROLE_TYPE_ID_FROM": "CUSTOMER",
+    "ROLE_TYPE_ID_TO": "AGENT",
+    "FROM_DATE": "2001-05-13 00:00:00.000000000",
+    "THRU_DATE": null,
+    "STATUS_ID": null,
+    "RELATIONSHIP_NAME": null,
+    "SECURITY_GROUP_ID": null,
+    "PRIORITY_TYPE_ID": null,
+    "PARTY_RELATIONSHIP_TYPE_ID": "AGENT",
+    "PERMISSIONS_ENUM_ID": null,
+    "POSITION_TITLE": null,
+    "COMMENTS": "Allows the DemoCustAgent to purchase on behalf of DemoCustCompany, ie purchase against BillingAccount",
+    "LAST_UPDATED_STAMP": "2024-08-22 08:55:10.300000000",
+    "LAST_UPDATED_TX_STAMP": "2024-08-22 08:55:01.281000000",
+    "CREATED_STAMP": "2024-08-22 08:55:10.300000000",
+    "CREATED_TX_STAMP": "2024-08-22 08:55:01.281000000"
+  }
+]

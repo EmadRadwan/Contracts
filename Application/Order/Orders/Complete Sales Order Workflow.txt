@@ -1,0 +1,5 @@
+- create sales shipment
+- if there's a physical product, create sales shipment item
+        - create sales order shipment item
+        - create item issuance
+        - CreateAcctgTransForSalesShipmentIssuance for order item

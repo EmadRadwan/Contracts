@@ -1,0 +1,13 @@
+[
+  {
+    "BILLING_ACCOUNT_ID": "9010",
+    "ACCOUNT_LIMIT": 10000.00,
+    "ACCOUNT_CURRENCY_UOM_ID": "EGP",
+    "FROM_DATE": "2001-05-13T00:00:00",
+    "THRU_DATE": null,
+    "DESCRIPTION": "Demo Customer Billing Account",
+    "EXTERNAL_ACCOUNT_ID": null,
+    "CREATED_STAMP": "2024-08-02T00:00:00",
+    "LAST_UPDATED_STAMP": "2024-08-02T00:00:00"
+  }
+]

@@ -1,0 +1,254 @@
+dotnet ef database drop  -p Persistence -s API
+dotnet watch run
+Github token:  7fad172e9be8a33e5b1a8527a04f91d592df7881
+
+dotnet ef dbcontext scaffold server="localhost;uid=ofbiz;pwd=ofbiz;database=ofbiz;" Pomelo.EntityFrameworkCore.MySql --schema ofbiz  --context-dir Data --output-dir Models
+
+
+query = query.Where(x => _context.PartyGroupRoles
+                    .Any(b => b.AppUserId == user.Id
+                               && b.PartyGroupId == x.PartyGroupId &&
+                               b.DiRoleId == "Vetter"));
+                               
+                               
+   "DefaultConnection": "Server=localhost; DataBase=BusinessOne; Uid=appuser; Pwd=Pa$$w0rd"
+
+
+grep "SQLProcessor.prepareStatement" ofbizLogs_physicalInventory.txt > ofbiz_physical_inventory-SQL.txt
+///////////
+
+grep "ServiceDispatcher" OfbizQuickShipPurchaseOrderServices.rtf | grep -o "\[ServiceDispatcher\].*"
+
+grep "ServiceDispatcher" newfile1.txt | grep -o "Sync service \[.*\] finished in \[[0-9]*\] milliseconds"
+
+grep -E "^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} |Request Begun|ConfigXMLReader|ServiceDispatcher|RequestHandler|" newfile1.txt | sort
+
+
+2023-09-30 19:40:12 
+
+///////
+cat ofbizlogs.txt | /usr/local/Cellar/grep/3.11/bin/ggrep -oP '\|\s*([^|]+).*' > output_1.txt
+
+grep -Ev 'Permission|ConfigXMLReader|ScreenFactory|LoginWorker|ServerHitBin|PersistedServiceJob|SequenceUtil|UtilProperties' output_1.txt > output_7.txt
+
+
+
+
+    "DefaultConnection": "Data Source=localhost,1433;Initial Catalog=erp;User id=sa;Password=Pass123!;MultipleActiveResultSets=False;Connection Timeout=50; Trust Server Certificate=true;"
+
+
+-----------------------Youssef----------------------
+
+"react-scripts --openssl-legacy-provider start",
+"DefaultConnection": "server=localhost;user=root;password=baba1934;database=erp"
+dotnet ef database drop -p Persistence -s API
+dotnet ef migrations add "AddedQuotes" -p Persistence -s API
+
+//Migrations for database views:
+1 - dotnet ef migrations add CreateDatabaseViews -p Persistence -s API
+    - then add the database view creation code to the newly created migration file
+    - if view migrations to be dropped, remove their files from the migration folder
+      and from the __EFMigrationHistory table
+2 - dotnet ef database update -p Persistence -s API
+3 - if main migration is dropped, copy the view migration file first to temp and create the above after it.
+
+
+translate the code into C# using EF, don't use Dictionaries use normal objects and DTO instead.
+ With each line of code - you know everything about Ofbiz - add detailed comments that describe what the 
+ code is doing and the intention of the developer or it from both technical and business perspectives. 
+ Translate each and every line and dont skip anything. Also don't use condition builder or delegator, use LINQ instead.
+ Also dont suggest new functions or methods unless it's there in the code, just translate the code as is.
+ And in the function signature, put the params separately and not as a single object.
+Use Try Catch blocks for each function and log the exception in the catch block.
+Also, use the same variable and function names as in the code and don't change them.
+dont add 'Async' to the function name unless it's there in the code.
+dont use delegator or dispatcher, use LINQ instead.
+
+Here are my permanent instructions to you when I ask you to 
+compare and align my C# translation of an Ofbiz. service/function.
+ the Ofbiz version is the one we need to make sure C# is cloning.
+ the comparison to concentrate on any missing or incorrectly implemented in C#. Apply EF FindAsync and await where applicable. highlight any changes you make in the logic.
+
+compare this code deeply  logic wise and make sure that the C# version mirrors the ofbiz version and call all called functions
+
+PartyAndTelecomNumbers in ofbiz is a db view with the following definition, use the underlying tables and joints in the query where its mentioned
+
+FilterListByDate:
+var components = await _context.WorkEffortGoodStandards
+                .Where(wgs => wgs.WorkEffortId == workEffortId
+                              && wgs.StatusId == "WEGS_CREATED"
+                              && wgs.WorkEffortGoodStdTypeId == "PRUNT_PROD_NEEDED"
+                              && wgs.FromDate <= DateTime.UtcNow && (wgs.ThruDate == null || wgs.ThruDate >= DateTime.UtcNow))
+                .ToListAsync();
+
+
+
+jdbc:derby:/Users/emadradwan/Documents/ofbiz_runtime/data/derby/ofbiz
+to refresh the database, copy data using script ./copy_data.sh
+and re-create the database connection
+
+
+docker run -d -p 8443:8443 -v ofbiz_runtime_jdk11-5:/ofbiz/runtime -e OFBIZ_DATA_LOAD=demo --name ofbiz-docker-derby-jdk11-5 ofbiz-docker:jdk11
+
+
+//vim commands while merging git
+- i to insert
+- esc to exit insert mode
+- :wq to save and exit
+
+
+//seed
+Company need to get stamped in facilities ownerId
+
+
+i want to. refactor the create production run code by including logs using  similar syntax to this;  loggerForTransaction.Information("Creating production run for product {productId} with quantity {prQuantity}", productId, prQuantity); the main idea here is that I need after running the code and as these logs will be written to the same file to find a summary of what happened in the code that creates the production run. This will help me not only for debugging but to remind myself of the logic steps. This need that you while adding similar logs to have the text describing the task and the logged values to add context. finally, avoid logging complete objects
+
+
+
+153 -> Yousef CC
+
+var affectedRecords2 = _context.ChangeTracker
+    .Entries()
+    .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted)
+    .Select(e => new
+    {
+        TableName = e.Entity.GetType().Name,
+        State = e.State,
+        KeyValues = string.Join(", ", e.Properties
+            .Where(p => p.Metadata.IsPrimaryKey())
+            .Select(p => $"{p.Metadata.Name}: {p.CurrentValue}")),
+        Values = string.Join(", ", e.Properties
+            .Select(p => $"{p.Metadata.Name}: {p.CurrentValue}"))
+    })
+    .ToList();
+    ----------------------------------------------------------------  
+    
+   var affectedRecords4 = _context.ChangeTracker
+       .Entries<OrderItemBilling>() 
+       .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted)
+       .Select(e => new
+       {
+           TableName = e.Entity.GetType().Name,
+           State = e.State,
+           KeyValues = string.Join(", ", e.Properties
+               .Where(p => p.Metadata.IsPrimaryKey())
+               .Select(p => $"{p.Metadata.Name}: {p.CurrentValue}")),
+           Values = string.Join(", ", e.Properties
+               .Select(p => $"{p.Metadata.Name}: {p.CurrentValue}"))
+       })
+       .ToList();
+       
+          var affectedRecords = _context.ChangeTracker
+                           .Entries()
+                           .Where(e => e.State == EntityState.Added ||
+                                       e.State == EntityState.Modified ||
+                                       e.State == EntityState.Deleted)
+                           .Select(e => new ChangeRecord
+                           {
+                               TableName = e.Entity.GetType().Name,
+                               PKValues = string.Join(", ", e.Properties
+                                   .Where(p => p.Metadata.IsPrimaryKey())
+                                   .Select(p => $"{p.Metadata.Name}: {p.CurrentValue}")),
+                               Operation = e.State.ToString()
+                           })
+                           .ToList();
+       
+                       foreach (var record in affectedRecords)
+                       {
+                           Console.WriteLine(record);
+                       }
+       
+       //----------------------------------------------------------------  
+    Can you analyze the OFBiz log content to provide a chronological listing of service calls, specifically focusing on business artifacts? I would like to see the following details for each service call:
+    The name of the service.
+    Any parameters passed to the service.
+    Which service called which service.
+    Additionally, please include information about any ECA or SECA evaluations that occurred during the process:
+    The conditions that were evaluated.
+    Whether the evaluation resulted in the execution of the ECA or SECA action.
+    Any actions taken as a result of the ECA or SECA evaluation.
+    Please skip any details related to security checks or other non-business artifacts that won't affect my understanding of the code. Thank you!"
+    
+    ----------------------------------------------------------------
+
+Can you break down the number of distinct logic parts in the following Ofbiz function?
+----------------------------------------------------------------
+
+// Changes to be made in the code when configuring Process Manufacturing like Dairy. Beside the named
+// json files, we have the following changes that are hard coded in the code:
+// 1 - ListHierarchicalCategories.cs: the top category is "Dairy"
+// 2 - I modified the code in GetFinishedProductsLov.cs removing the condition that checks for the where (prd.ProductTypeId == "FINISHED_GOOD" || prd.ProductTypeId == "WIP") &&
+       as I removed finished goods to prevent products like real finished products to appear in the list of products. and only allow WIP
+       
+// steps to be taken when returning to Medications and benefit from refactoring happened in Dairy
+    // 1 - Facilities and related tables like ProductFacility, FacilityLocation, etc. should be updated to reflect the new changes
+    // 2 - Tax to be studied to reflect Egyptian rates
+    // 3 - New Medications Workeffort and related tables to include both Discrete and Process Manufacturing
+    // 4 - Cost components - especially FOH - to be reviewed as per the Cost accounting notes
+//////
+
+
+
+
+0220702027
+Select Internet
+F@mily#97@
+
+//-- copy from local to server
+./deploy_to_vm.sh
+
+
+//-----Oracle Cloud VM
+ssh ubuntu@129.146.22.240
+docker-compose -f docker-compose.vm.yml down
+docker-compose -f docker-compose.vm.yml up -d --build
+
+Portainer.io:
+http://129.146.22.240:9000
+admin / Tmbtc202500))
+
+// Cloud link: https://console.us-phoenix-1.oraclecloud.com/identity/domains/my-profile?tenant=efathyradwan67&domain=Default
+
+
+Mysql root password: Tmbtc202500
+
+docker exec -it erp-mysql mysql -u root -pTmbtc202500
+SELECT User, Host FROM mysql.user;
+
+Oracle cloud password: Tmbtc202600))
+
+Dockers:
+docker image prune -f  //remove all dangling images
+
+docker volume ls   //list all volumes
+
+docker ps -a --filter volume=erp-project_erp-mysql-volume  //list all containers using a specific volume
+
+docker volume rm erp-project_erp-mysql-volume //remove a volume
+
+///////
+New way to return meaningful
+ error codes from backend is applied in the following workflow:
+ change payment status
+ ////////
+ 
+ Troubleshoot Remote MYSQL access:
+ nc -zv 129.146.22.240 3306
+ 
+ 
+ ///Seed tables development: 
+ Products
+ ProductAssocs
+ SupplierProducts
+ WorkEfforts
+ WorkEffortAssocs
+ WorkEffortGoodStandard
+ WorkEffortCostCalcs
+ 
+ 
+ 
+ 
+ 
+ /////////Temporary data:
+
+

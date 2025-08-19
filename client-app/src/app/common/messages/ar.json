@@ -1,0 +1,966 @@
+{
+  "general": {
+    "homepage": "مرحبا بك مجددا",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "back": "الرجوع",
+    "email": "البريد الالكتروني",
+    "password": "كلمة السر",
+    "signin": "تسجيل الدخول",
+    "create": "إنشاء",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "actions": "إجراءات",
+    "submit": "حفظ",
+    "init": "جارٍ تهيئة التطبيق...",
+    "find": "بحث",
+    "remove": "حذف",
+    "processing": "جاري المعالجة...",
+    "add": "اضافة",
+    "update": "تحديث",
+    "close": "غلق",
+    "details": "التفاصيل",
+    "generate": "إنشاء التقرير",
+    "setup": "الإعداد",
+    "accounting": "المحاسبة",
+    "clear": "إخلاء",
+    "date-range-or-month-error": "يجب اختيار شهر او تاريخ من و الى",
+    "loading-report": "جارٍ تحميل بيانات التقرير ...",
+    "header": {
+      "catalog": "الأصناف",
+      "facility": "المخازن",
+      "party": "الأفراد والشركات",
+      "order": "الطلبات",
+      "service": "الخدمات",
+      "accounting": "المحاسبة",
+      "manufacturing": "التصنيع",
+      "login": "تسجيل الدخول"
+    },
+    "statuses": {
+      "new": "جديد",
+      "not-paid": "غير مدفوع",
+      "received": "تم الاستلام",
+      "completed": "مكتمل"
+    },
+    "ms": "جزء من الثانية",
+    "mins": "دقيقة"
+  },
+  "party": {
+    "parties": {
+      "list": {
+        "createCustomer": "إنشاء عميل",
+        "createSupplier": "إنشاء مورد",
+        "createEmployee": "إنشاء موظف",
+        "export": "تصدير إلى PDF",
+        "generating": "جاري إنشاء PDF...",
+        "description": "الطرف",
+        "contactNumber": "رقم الاتصال",
+        "address": "العنوان",
+        "email": "البريد الإلكتروني",
+        "partyType": "نوع الطرف",
+        "reportTitle": "تقرير الأفراد والشركات",
+        "generatedOn": "تم إنشاؤه في",
+        "noData": "لا توجد أطراف متاحة",
+        "loading": "جاري تحميل الأفراد والشركات..."
+      }
+    },
+    "customers": {
+      "form": {
+        "new": "عميل جديد",
+        "firstName": "الاسم الأول *",
+        "email": "البريد الإلكتروني",
+        "countryCode": "رمز البلد",
+        "mobileContactNumber": "رقم الاتصال المحمول *",
+        "address1": "العنوان 1",
+        "address2": "العنوان 2",
+        "submit": "حفظ",
+        "cancel": "إلغاء",
+        "loading": "جاري تحميل العميل...",
+        "processing": "جاري معالجة العميل..."
+      }
+    },
+    "suppliers": {
+      "form": {
+        "new": "مورد جديد",
+        "groupName": "اسم المورد *",
+        "email": "البريد الإلكتروني",
+        "countryCode": "رمز البلد",
+        "mobileContactNumber": "رقم الاتصال المحمول",
+        "address1": "العنوان 1",
+        "address2": "العنوان 2",
+        "submit": "حفظ",
+        "cancel": "إلغاء",
+        "loading": "جاري تحميل المورد...",
+        "processing": "جاري معالجة المورد..."
+      }
+    }
+  },
+  "product": {
+    "products": {
+      "list": {
+        "title": "المنتجات",
+        "quantity": "وحدة قياس الكمية",
+        "create": "إضافة منتج",
+        "type": "نوع المنتج",
+        "category": "فئة المنتج",
+        "description": "وصف المنتج"
+      },
+      "form": {
+        "id": "كود الصنف *",
+        "name": "اسم الصنف *",
+        "type": "نوع الصنف *",
+        "category": "فئة الصنف *",
+        "uom": "وحدة قياس الكمية",
+        "comments": "ملاحظات",
+        "trademark": "المصنع *",
+        "quantityIncluded": "الحد الادنى للبيع *",
+        "piecesIncluded": "عدد القطع فى الباكدج *",
+        "processing": "جاري حفظ الصنف...",
+        "new": "صنف جديد",
+        "menu": {
+          "associations": "المنتجات المتصلة",
+          "prices": "الأسعار",
+          "facilities": "المخازن",
+          "categories": "التصنيفات",
+          "suppliers": "الموردون",
+          "inventory": "المخزون",
+          "costs": "التكاليف",
+          "locations": "المواقع"
+        }
+      }
+    },
+    "promos": {
+      "list": {
+        "create": "إضافة عرض",
+        "id": "رقم العرض",
+        "name": "اسم العرض",
+        "condition": "شرط العرض",
+        "input": "وصف المدخلات",
+        "quantity": "الكمية",
+        "description": "وصف العرض",
+        "amount": "مبلغ الخصم",
+        "loading": "جاري تحميل العروض..."
+      },
+      "form": {
+        "title": "العرض",
+        "new": "عرض جديد",
+        "id": "رقم العرض",
+        "name": "اسم العرض",
+        "description": "وصف العرض",
+        "amount": "مبلغ الخصم",
+        "from": "من تاريخ",
+        "to": "إلى تاريخ",
+        "product": "المنتج",
+        "value": "قيمة الشرط",
+        "action": "عملية العرض",
+        "quantity": "الكمية",
+        "input": "وصف المدخلات",
+        "condition": "شرط العرض"
+      }
+    },
+    "stores": {
+      "list": {
+        "new": "إضافة متجر",
+        "name": "اسم المتجر",
+        "party": "الطرف المدفوع له",
+        "facility": "المخزن",
+        "currency": "العملة"
+      },
+      "form": {
+        "new": "إضافة متجر جديد",
+        "name": "اسم المتجر",
+        "processing": "جاري معالجة البيانات..."
+      }
+    },
+    "menu": {
+      "products": "المنتجات",
+      "promos": "العروض",
+      "stores": "المتاجر"
+    },
+    "prod-price": {
+      "list": {
+        "type": "نوع السعر",
+        "currency": "العملة",
+        "from":"من تاريخ",
+        "thru": "الى تاريخ",
+        "price": "السعر",
+        "title": "اسعار منتج: ",
+        "create": "أضافة سعر للمنتج"
+      },
+      "form": {
+        "title-edit": "تغيير تفاصيل سعر المنتج",
+        "title-new": "سعر جديد للمنتج",
+        "prod-price": "سعر المنتج *",
+        "currency": "العملة *",
+        "from": "من تاريخ *",
+        "thru":"الى تاريخ",
+        "price":"السعر *"
+      }
+    }
+  },
+  "facility": {
+    "menu": {
+      "inventory": "المخزون",
+      "items": "أصناف المخزون",
+      "details": "تفاصيل الأصناف",
+      "receive": "استلام المخزون",
+      "transfer": "تحويل المخزون",
+      "facilities": "المخازن",
+      "locations": "أماكن التخزين",
+      "physical": "الجرد الفعلي",
+      "picking": "الانتقاء",
+      "stockMoves": "نقل المخزون",
+      "pack": "صرف المخزون",
+      "issueRawMaterials": "صرف المواد الخام"
+    },
+    "list": {
+      "product": "المنتج",
+      "qoh": "الكمية المتوفرة",
+      "facility": "المنشأة",
+      "atp": "الكمية المتاحة للبيع",
+      "reorder": "إعادة الطلب عند",
+      "minStock": "الحد الأدنى للمخزون",
+      "atpMinusMin": "المتاح للبيع - الحد الأدنى",
+      "qohMinusMin": "المتوفر - الحد الأدنى",
+      "ordered": "الكمية المطلوبة",
+      "price": "السعر الفعلي",
+      "loading": "جاري تحميل المخزون..."
+    },
+    "items": {
+      "item": "عنصر المخزون",
+      "qoh": "الكمية المتوفرة",
+      "atp": "الكمية المتاحة للبيع",
+      "product": "المنتج",
+      "facility": "المنشأة",
+      "received": "تاريخ الاستلام",
+      "loading": "جاري تحميل العناصر...",
+      "supplier": "المورد",
+      "transfer": "تحويل",
+      "details": "التفاصيل",
+      "clear": "إخلاء المنتج الحالي",
+      "form": {
+        "title": "عنصر المخزون",
+        "received": "تاريخ الاستلام",
+        "expire": "تاريخ انتهاء الصلاحية",
+        "product": "المنتج",
+        "lot": "رقم اللوط",
+        "container": "الحاوية",
+        "facility": "المخزن",
+        "location": "الموقع داخل المخزن",
+        "uom": "وحدة القياس",
+        "color": "اللون",
+        "size": "الحجم",
+        "unitCost": "تكلفة الوحدة",
+        "updateSuccess": "تم تحديث عنصر المخزون بنجاح",
+        "createSuccess": "تم إنشاء عنصر المخزون بنجاح"
+      }
+    },
+    "details": {
+      "item": "عنصر المخزون",
+      "order": "رقم الطلب",
+      "product": "المنتج",
+      "facility": "المنشأة",
+      "qohTotal": "إجمالي المتوفر",
+      "atpTotal": "إجمالي المتاح للبيع",
+      "qohDiff": "فرق المتوفر",
+      "atpDiff": "فرق المتاح للبيع",
+      "date": "تاريخ السريان"
+    },
+    "receive": {
+      "list": {
+        "select": "اختر طلب الشراء *",
+        "orderItem": "عنصر الطلب",
+        "product": "المنتج",
+        "qtyOrdered": "الكمية المطلوبة",
+        "qtyAccept": "الكمية المقبولة",
+        "qtyReject": "الكمية المرفوضة",
+        "rejectReason": "سبب الرفض",
+        "facility": "المحزن المستلم",
+        "include": "شمل العنصر",
+        "receive": "استلام",
+        "price": "سعر القطعة",
+        "supplier": "المورد",
+        "ReceiveProduct": "استلام المنتج"
+      },
+      "menu": {
+        "receive": "استلام المخزون"
+      }
+    },
+    "pack": {
+      "list": {
+        "select": "اختر طلب البيع *",
+        "orderItem": "عنصر الطلب",
+        "customer": "العميل",
+        "product": "المنتج",
+        "qtyOrdered": "الكمية المطلوبة",
+        "qtyShipped": "الكمية المصروفة",
+        "qtyToShip": "الكمية المطلوب صرفها",
+        "rejectReason": "سبب الرفض",
+        "facility": "المنشأة المستلمة",
+        "include": "شمل العنصر",
+        "receive": "استلام",
+        "price": "سعر القطعة"
+      },
+      "menu": {
+        "issuceInventory": "صرف الاصناف"
+      },
+      "form": {
+        "qtyOrdered": "الكمية المطلوبة",
+        "qtyToShip": "الكمية المطلوب صرفها",
+        "expire": "تاريخ الانتهاء",
+        "product": "المنتج"
+      }
+    },
+    "transfer": {
+      "list": {
+        "invTransfer": "تحويل المخزون",
+        "item": "عنصر المخزون",
+        "fromFacility": "من المنشأة",
+        "toFacility": "إلى المنشأة",
+        "product": "المنتج",
+        "atp_qoh": "المتاح للبيع/المتوفر",
+        "sendDate": "تاريخ الإرسال",
+        "receiveDate": "تاريخ الاستلام",
+        "loading": "جاري تحميل تحويلات المخزون..."
+      }
+    },
+    "facilities": {
+      "create": "إنشاء منشأة",
+      "list": {
+        "name": "اسم المنشأة",
+        "type": "نوع المنشأة"
+      },
+      "form": {
+        "type": "نوع المنشأة",
+        "name": "اسم المنشأة",
+        "description": "الوصف"
+      }
+    },
+    "physical": {
+      "adjust": "تعديل الجرد",
+      "invItem": "عنصر المخزون",
+      "itemATP": "الكمية المتاحة للبيع للعنصر",
+      "itemQOH": "الكمية المتوفرة للعنصر",
+      "productATP": "الكمية المتاحة للبيع للمنتج",
+      "productQOH": "الكمية المتوفرة للمنتج",
+      "loading": "جاري تحميل الجرد الفعلي...",
+      "facility": "المنشأة",
+      "product": "اسم المنتج",
+      "form": {
+        "invItem": "بند المخزن",
+        "product": "المنتج",
+        "itemQOH": "كمية البند في المخزن",
+        "itemATP": "كمية البند المتاحة للبيع",
+        "productATP": "كمية المنتج المتاحة للبيع",
+        "productQOH": "كمية المنتج في المخزن",
+        "varianceReason": "سبب التغيير",
+        "atpVar": "فرق المتاح للبيع",
+        "qohVar": "فرق المخزن"
+      }
+    }
+  },
+  "manufacturing": {
+    "menu": {
+      "jobshop": "ورشة العمل",
+      "routing": "المسار الإنتاجي",
+      "tasks": "المهام التشغيلية",
+      "costs": "التكاليف",
+      "bom": "قائمة المكونات"
+    },
+    "jobshop": {
+      "list": {
+        "create": "إنشاء أمر إنتاج",
+        "runId": "رقم أمر الإنتاج",
+        "startDate": "تاريخ البدء",
+        "product": "المنتج",
+        "runName": "اسم أمر الإنتاج",
+        "quantity": "الكمية المطلوبة",
+        "status": "حالة العمل",
+        "description": "الوصف",
+        "loading": "جاري تحميل أوامر الإنتاج...",
+        "quickComplete": "إتمام سريع",
+        "quickClose": "إغلاق سريع",
+        "createProductionRun": "إنشاء أمر إنتاج",
+        "materials": "الخامات",
+        "parties": "الجهات المشاركة",
+        "actualCost": "التكلفة الحقيقية"
+      },
+      "display": {
+        "actions": "الإجراءات",
+        "createProductionRun": "إنشاء تشغيل إنتاج",
+        "quickClose": "إغلاق سريع",
+        "quickComplete": "إكمال سريع",
+        "materials": "المواد",
+        "parties": "الأطراف",
+        "actualCost": "التكلفة الفعلية",
+        "productionRunNo": "رقم تشغيل الإنتاج:",
+        "productName": "اسم المنتج:",
+        "quantity": "الكمية:",
+        "estimatedStartDate": "تاريخ البدء المتوقع:",
+        "actualStartDate": "تاريخ البدء الفعلي:",
+        "calculatedCompletionDate": "تاريخ الإكمال المحسوب:",
+        "actualCompletionDate": "تاريخ الإكمال الفعلي:",
+        "status": "الحالة:",
+        "facilityName": "اسم المنشأة:",
+        "productionRunName": "اسم تشغيل الإنتاج:",
+        "produced": "المنتج:",
+        "rejected": "المرفوض:"
+      },
+      "edit": {
+        "productionRunNo": "رقم التشغيل الإنتاجي:",
+        "newProductionRun": "تشغيل إنتاج جديد",
+        "status": "الحالة:",
+        "tasks": "المهام",
+        "materials": "الخامات",
+        "parties": "الأفراد والشركات",
+        "actions": "الإجراءات",
+        "schedule": "الجدول الزمني",
+        "confirm": "تأكيد",
+        "quickClose": "إغلاق سريع",
+        "quickComplete": "إتمام سريع",
+        "product": "المنتج *",
+        "startDate": "تاريخ البدء *",
+        "calculatedCompletionDate": "تاريخ الانتهاء المتوقع:",
+        "quantityToProduce": "كمية الإنتاج *",
+        "routing": "خطة الإنتاج *",
+        "facility": "المخزن *",
+        "productionRunName": "اسم التشغيل الإنتاجي *",
+        "description": "الوصف",
+        "factoryImage": "صورة المصنع",
+        "createProductionRun": "إنشاء تشغيل إنتاج",
+        "editProductionRun": "تعديل تشغيل إنتاج",
+        "cancel": "إلغاء",
+        "processing": "جارٍ معالجة التشغيل الإنتاجي..."
+      }
+    ,
+      "tasks": {
+        "title": "المهام",
+        "seqNumber": "رقم الترتيب",
+        "routingTaskName": "اسم مهمة التوجيه",
+        "fixedAsset": "الأصل الثابت",
+        "startDate": "تاريخ البدء",
+        "estimatedCompletionDate": "تاريخ الانتهاء المتوقع",
+        "estimatedSetupTime": "الوقت المقدر للإعداد",
+        "estimatedRunTime": "الوقت المقدر للتشغيل",
+        "loadingTasks": "جاري تحميل المهام..."
+      },
+      "materials": {
+        "title": "المواد",
+        "productName": "اسم المنتج",
+        "productQuantityUom": "وحدة القياس",
+        "estimatedQuantity": "الكمية المقدرة",
+        "issuedQuantity": "الكمية المصدرة",
+        "issuedComponents": "المكونات المصدرة",
+        "loadingMaterials": "جاري تحميل المواد..."
+      },
+      "prodruntasks": {
+        "list": {
+          "title": "قائمة مهام التشغيل الإنتاجي",
+          "loading": "جاري تحميل المهام...",
+          "declareButton": "إعلان وإنتاج",
+          "currentStatusId": "الحالة الحالية",
+          "executionTime": "وقت التنفيذ",
+          "issueBOM": "إصدار قائمة المواد",
+          "issuingBOM": "جار إصدار قائمة المواد",
+          "start": "بدء",
+          "starting": "جار البدء",
+          "complete": "إكمال",
+          "completing": "جار الإكمال",
+          "declare": "إعلان",
+          "declaring": "جار الإعلان",
+          "sequenceNum": "رقم التسلسل",
+          "workEffortName": "اسم مهمة التشغيل",
+          "currentStatusDescription": "الحالة",
+          "fixedAssetName": "الأصل الثابت",
+          "estimatedCompletionDate": "تاريخ اكتمال التقدير",
+          "actualSetupMillis": "الوقت الفعلي للإعداد",
+          "actualMilliSeconds": "الوقت الفعلي للتشغيل",
+          "quantityProduced": "الكمية المنتجة",
+          "declareForm": {
+            "title": "إعلان مهمة التشغيل الإنتاجي"
+          }
+        },
+        "edit": {
+          "taskNumber": "رقم المهمة",
+          "seqNumber": "رقم التسلسل",
+          "taskName": "اسم المهمة",
+          "description": "الوصف",
+          "calculatedCompletionDate": "تاريخ الانتهاء المتوقع",
+          "fromDate": "من تاريخ",
+          "toDate": "إلى تاريخ",
+          "estimatedSetupTime": "الوقت التقريبي للإعداد",
+          "actualSetupTime": "الوقت الفعلي للإعداد",
+          "addActualSetupTime": "أضف وقت الإعداد الفعلي (بالدقائق)",
+          "estimatedUnitRunTime": "الوقت التقريبي لتشغيل الوحدة",
+          "actualTaskTime": "الوقت الفعلي للمهمة",
+          "addActualTaskTime": "أضف وقت المهمة الفعلي (بالدقائق)",
+          "qtyToProduce": "الكمية المطلوبة للإنتاج",
+          "qtyProduced": "الكمية المنتجة",
+          "addQtyProduced": "أضف الكمية المنتجة",
+          "qtyRejected": "الكمية المرفوضة",
+          "addQtyRejected": "أضف الكمية المرفوضة",
+          "comment": "تعليق"
+        },
+
+        "declareandproduce": {
+          "title": "إعلان وإنتاج",
+          "productId": "المنتج",
+          "facilityId": "المخزن",
+          "quantity": "الكمية للإعلان",
+          "maxQuantity": "الحد الأقصى: ",
+          "lotId": "رقم الدفعة"
+        }
+      }
+    },
+    "routings": {
+      "list": {
+        "createRouting": "إنشاء مسار",
+        "routingId": "معرف المسار",
+        "routingName": "اسم المسار",
+        "description": "الوصف",
+        "quantityToProduce": "الكمية المراد إنتاجها",
+        "currentStatusId": "معرف الحالة الحالية",
+        "loading": "جارٍ تحميل المسارات..."
+      }
+    },
+    "routingTasks": {
+      "list": {
+        "createRoutingTask": "إنشاء مهمة تشغيل",
+        "taskId": "معرّف المهمة",
+        "routingName": "اسم التوجيه",
+        "description": "الوصف",
+        "taskType": "نوع المهمة",
+        "fixedAssetId": "معرّف الأصل الثابت",
+        "estimatedSetupTime": "الوقت المقدر للإعداد",
+        "estimatedUnitRunTime": "الوقت المقدر لتشغيل الوحدة",
+        "loading": "جارٍ تحميل مهام التشغيل..."
+      }
+    },
+    "costs": {
+      "list": {
+        "createCostComponentCalculation": "إنشاء حساب عنصر التكلفة",
+        "costComponentCalcId": "معرّف التوجيه",
+        "description": "الوصف",
+        "fixedCost": "التكلفة الثابتة",
+        "variableCost": "التكلفة المتغيرة",
+        "perMilliSecond": "لكل ملي ثانية",
+        "currency": "العملة",
+        "loading": "جارٍ تحميل عناصر التكلفة..."
+      }
+    },
+    "bom": {
+      "list": {
+        "product": "المنتج",
+        "uomDescription": "وصف وحدة القياس",
+        "productDescription": "وصف المنتج",
+        "bomType": "نوع قائمة المواد",
+        "bomSimulation": "محاكاة قائمة المواد",
+        "loading": "جاري تحميل المنتجات..."
+      },
+      "components": {
+        "product": "المنتج",
+        "productDescription": "وصف المنتج",
+        "quantity": "الكمية",
+        "quantityUOM": "وحدة القياس للكمية",
+        "sequenceNum": "رقم التسلسل",
+        "scrapFactor": "عامل التالف",
+        "loadingBOMProducts": "جاري تحميل المنتجات...",
+        "createBOMComponent": "إنشاء مكون قائمة مواد",
+        "billOfMaterialsFor": "قائمة المواد (الوصفة) لـ"
+      },
+      "simulation": {
+        "bomSimulationFor": "محاكاة قائمة المواد لـ",
+        "quantity": "الكمية *",
+        "currencyUomId": "وحدة قياس العملة",
+        "productLevel": "مستوى المنتج",
+        "product": "المنتج",
+        "qoh": "الكمية الموجودة",
+        "cost": "التكلفة",
+        "uom": "وحدة القياس",
+        "totalCost": "إجمالي التكلفة",
+        "submit": "إرسال",
+        "cancel": "إلغاء",
+        "loadingBOMSimulationData": "جاري تحميل بيانات محاكاة قائمة المواد..."
+      }
+    }
+  },
+  "order": {
+    "menu": {
+      "quote": "عرض سعر",
+      "order": "طلب",
+      "return": "إرجاع"
+    },
+    "returns": {
+      "menu": {
+        "items": "إرجاع العناصر",
+        "history": "سجل الإرجاعات"
+      }
+    },
+    "list": {
+      "orderNumber": "رقم الطلب",
+      "customer": "العميل",
+      "amount": "المبلغ",
+      "currency": "العملة",
+      "orderDate": "تاريخ الطلب",
+      "status": "الحالة",
+      "type": "النوع",
+      "salesOrder": "طلب المبيعات",
+      "purchaseOrder": "طلب الشراء",
+      "new": "طلب جديد",
+      "loading": "جارٍ تحميل الطلبات..."
+    },
+    "totals": {
+      "sub": "الإجمالي الفرعي: ",
+      "tax": "إجمالي الضريبة: ",
+      "discount": "إجمالي الخصم: ",
+      "adj": "التعديلات: ",
+      "otherAdj": "تعديلات أخرى: ",
+      "grand": "الإجمالي الكلي: ",
+      "paid": "المبلغ المدفوع: ",
+      "billed": "تم الفوترة إلى حساب الفواتير: "
+    },
+    "so": {
+      "form": {
+        "actions": {
+          "new": "طلب جديد",
+          "ship": "شحن الطلب بسرعة",
+          "update": "تحديث الطلب",
+          "create": "إنشاء الطلب"
+        },
+        "new": "طلب مبيعات جديد",
+        "orderNo": "رقم طلب المبيعات: ",
+        "tax-exempt": "العميل - معفى من الضريبة",
+        "customer": "العميل",
+        "new-customer": "عميل جديد",
+        "currency": "العملة",
+        "agreement": "الاتفاقية",
+        "customer-remarks": "ملاحظات العميل",
+        "internal-remarks": "ملاحظات داخلية",
+        "pmt": "طريقة الدفع",
+        "billingAccount": "حساب الأجل",
+        "processing": "جارٍ معالجة الطلب..."
+      },
+      "items": {
+        "list": {
+          "add": "إضافة منتج",
+          "adj": "تعديلات الطلب",
+          "terms": "شروط الطلب",
+          "product": "اسم المنتج",
+          "orderItem": "عنصر الطلب",
+          "quantity": "الكمية",
+          "total": "الإجمالي",
+          "price": "السعر",
+          "discount": "الخصم/الضريبة",
+          "uom": "وحدة القياس",
+          "quantityIncluded": "الحد الادنى للطلب",
+          "piecesIncluded": "عدد القطع فى الباكدج"
+        },
+        "form": {
+          "validation": {
+            "quantityGreaterThanATP": "الكمية أكبر من المتاح.",
+            "quantityLessThanIncluded": "الكمية اقل من الحد الادنى للبيع."
+          },
+          "product": "المنتج *",
+          "promos": "العروض الترويجية",
+          "quantity": "الكمية *",
+          "price": "السعر",
+          "discount": "الخصم/الضريبة",
+          "uom": "وحدة القياس",
+          "quantityIncluded": "الحد الادنى للطلب",
+          "color": "اللون",
+          "piecesIncluded": "عدد القطع فى الباكدج"
+        },
+        "adj": {
+          "list": {
+            "title": "التعديلات على ",
+            "add": "إضافة تعديل",
+            "type": "نوع التعديل",
+            "amount": "المبلغ",
+            "percentage": "النسبة المئوية",
+            "userEntered": "مدخل بواسطة المستخدم"
+          },
+          "form": {
+            "validation": {
+              "percentRequired": "النسبة المئوية مطلوبة",
+              "percentRange": "يجب أن تكون النسبة المئوية بين 0 و100"
+            },
+            "type": "نوع التعديل *",
+            "amount": "مبلغ التعديل *",
+            "percent": "نسبة التعديل *"
+          }
+        }
+      },
+      "adj": {
+        "list": {
+          "add": "إضافة تعديل الطلب",
+          "amount": "المبلغ",
+          "type": "نوع التعديل",
+          "description": "الوصف",
+          "percentage": "النسبة المئوية",
+          "userEntered": "المستخدم المدخل"
+        },
+        "form": {
+          "type": "نوع التعديل *",
+          "amount": "مبلغ التعديل *",
+          "percent": "نسبة التعديل *"
+        }
+      },
+      "terms": {
+        "add": "إنشاء شرط",
+        "type": "نوع الشرط",
+        "days": "أيام الشرط",
+        "termValue": "قيمة الشرط",
+        "textValue": "القيمة النصية",
+        "description": "الوصف"
+      }
+    }
+  },
+  "accounting": {
+    "menu": {
+      "invoices": "الفواتير",
+      "payments": "المدفوعات",
+      "pay-group": "الشيكات",
+      "fixedAssets": "الأصول الثابتة",
+      "taxAuthorities": "الهيئات الضريبية",
+      "agreements": "الاتفاقيات",
+      "financialAccount": "البنوك",
+      "billingAccounts": "حسابات الاجل",
+      "globalGLSettings": "إعدادات دفتر الأستاذ العام العالمية",
+      "organizationGLSettings": "إعدادات دفتر الأستاذ العام للمنظمة"
+    },
+    "payments": {
+      "list": {
+        "actions": {
+          "new": "دفعة جديدة",
+          "incoming": "دفعة واردة",
+          "outgoing": "دفعة صادرة"
+        },
+        "paymentId": "رقم الدفعة",
+        "paymentType": "نوع الدفعة",
+        "from": "من الطرف",
+        "to": "إلى الطرف",
+        "date": "تاريخ الدفعة",
+        "status": "الحالة",
+        "amount": "المبلغ",
+        "outstanding": "المبلغ المستحق",
+        "comments": "التعليقات",
+        "loading": "جاري تحميل الدفعات..."
+      },
+      "form": {
+        "actions": {
+          "create": "إنشاء دفعة",
+          "update": "تحديث الدفعة",
+          "receive": "تغيير الحالة إلى مستلمة",
+          "confirm": "تغيير الحالة إلى مؤكدة",
+          "transactions": "المعاملات",
+          "applications": "تطبيقات الدفع"
+        },
+        "new-incoming": "دفعة واردة جديدة",
+        "new-outgoing": "دفعة صادرة جديدة",
+        "title": "الدفعة رقم: ",
+        "status": "الحالة",
+        "orgPartyId": "معرف منظمة الطرف *",
+        "from": "من الطرف *",
+        "to": "إلى الطرف *",
+        "new-customer": "عميل جديد",
+        "paymentType": "نوع الدفعة *",
+        "paymentMethod": "طريقة الدفع *",
+        "finAccount-trans": "معرف المعاملة المالية",
+        "amount": "المبلغ *",
+        "date": "التاريخ الفعلي *",
+        "comments": "التعليقات",
+        "loading": "جاري معالجة الدفعة..."
+      }
+    },
+    "orgGL": {
+      "dashboard": {
+        "title": "الشركات",
+        "new": "إنشاء شركة محاسبة جديدة",
+        "company": "اسم الشركة"
+      },
+      "menu": {
+        "createGL": "إنشاء معاملة دفتر أستاذ",
+        "createInv": "إنشاء فاتورة جديدة",
+        "createPmt": "إنشاء دفعة جديدة"
+      },
+      "accounting": {
+        "summary": {
+          "title": "ملخص المحاسبة لـ",
+          "createTxn": "إنشاء معاملة محاسبية",
+          "qCreateTxn": "إنشاء معاملة محاسبية سريعة",
+          "unposted": "المعاملات المحاسبية غير المنشورة",
+          "trial": "ميزان المراجعة",
+          "income": "قائمة الدخل",
+          "balanceSheet": "الميزانية العمومية",
+          "menu": {
+            "summary": "الملخص",
+            "txns": "المعاملات المحاسبية",
+            "txnEntries": "إدخالات المعاملات المحاسبية",
+            "recon": "تسوية الحساب",
+            "reports": "التقارير",
+            "checks": "الشيكات"
+          }
+        }
+      },
+      "reports": {
+        "title": "اختر تقريرًا لعرضه",
+        "menu": {
+          "trial-balance": "ميزان المراجعة",
+          "transaction-totals": "إجماليات المعاملات",
+          "income-statement": "قائمة الدخل",
+          "cash-flow-statement": "بيان التدفقات النقدية",
+          "balance-sheet": "الميزانية العمومية",
+          "comparative-income-statement": "قائمة الدخل المقارنة",
+          "comparative-cash-flow-statement": "بيان التدفقات النقدية المقارن",
+          "comparative-balance-sheet": "الميزانية العمومية المقارنة",
+          "gl-account-trial-balance": "ميزان المراجعة لحساب دفتر الأستاذ",
+          "inventory-valuation": "تقييم المخزون",
+          "cost-centers": "مراكز التكلفة"
+        },
+        "inventory-valuation": {
+          "name": "تقييم المخزون",
+          "facility": "المرفق",
+          "product": "المنتج",
+          "date": "التاريخ حتى",
+          "generate": "إنشاء التقرير"
+        },
+        "trial-balance": {
+          "title": "ميزان المراجعة لـ: ",
+          "accountCode": "رمز الحساب",
+          "accountName": "اسم الحساب",
+          "openingBalance": "الرصيد الافتتاحي",
+          "postedDebits": "مدين",
+          "postedCredits": "دائن",
+          "endingBalance": "الرصيد الختامي",
+          "loading": "جارٍ تحميل بيانات التقرير...",
+          "debits": "إجمالي المدين: ",
+          "credits": "إجمالي الدائن: "
+        },
+        "transaction-totals": {
+          "list": {
+            "title": "إجمالي المعاملات لـ: ",
+            "loading": "جارٍ تحميل بيانات التقرير...",
+            "code": "رمز الحساب",
+            "name": "اسم الحساب",
+            "openingD": "الرصيد الافتتاحي (مدين)",
+            "openingC": "الرصيد الافتتاحي (دائن)",
+            "debit": "مدين",
+            "credit": "دائن",
+            "balance": "الرصيد"
+          },
+          "form": {
+            "month": "الشهر",
+            "fiscalType": "نوع السنة المالية *",
+            "fromDate": "من التاريخ",
+            "thruDate": "حتى التاريخ",
+            "generate": "توليد التقرير"
+          }
+        },
+        "income-statement": {
+          "list": {
+            "title": "بيان الدخل لـ: ",
+            "loading": "جارٍ تحميل بيانات التقرير...",
+            "code": "رمز الحساب",
+            "name": "اسم الحساب",
+            "openingD": "الرصيد الافتتاحي (مدين)",
+            "openingC": "الرصيد الافتتاحي (دائن)",
+            "debit": "مدين",
+            "credit": "دائن",
+            "balance": "الرصيد"
+          },
+          "form": {
+            "month": "الشهر",
+            "fiscalType": "نوع السنة المالية *",
+            "fromDate": "من التاريخ",
+            "thruDate": "حتى التاريخ"
+          }
+        },
+        "cash-flow": {
+          "list": {
+            "title": "قائمة التدفقات النقدية لـ: ",
+            "loading": "جارٍ تحميل بيانات التقرير..."
+          },
+          "form": {
+            "month": "الشهر",
+            "fiscalType": "نوع السنة المالية *",
+            "fromDate": "من التاريخ",
+            "thruDate": "حتى التاريخ"
+          }
+        },
+        "gl-trial-balance": {
+          "title": "ميزان مراجعة حساب الأستاذ العام لـ: ",
+          "glAccount": "حساب الأستاذ العام",
+          "timePeriod": "الفترة الزمنية",
+          "isPosted": "تم الترحيل"
+        }
+      }
+    },
+    "invoices": {
+      "list": {
+        "new": "فاتورة جديدة",
+        "invoiceId": "رقم الفاتورة",
+        "customer": "العميل",
+        "invoiceType": "نوع الفاتورة",
+        "from": "من",
+        "to": "إلى",
+        "outstanding": "المبلغ المستحق",
+        "total": "المبلغ الإجمالي",
+        "amount": "المبلغ",
+        "currency": "العملة",
+        "invoiceDate": "تاريخ الفاتورة",
+        "dueDate": "تاريخ الاستحقاق",
+        "status": "الحالة",
+        "description": "الوصف",
+        "type": "نوع الفاتورة",
+        "actions": {
+          "create": "إنشاء فاتورة",
+          "getSummary": "عرض الملخص"
+        },
+        "loading": "جاري تحميل الفواتير..."
+      },
+      "display": {
+        "form": {
+          "invoice-no": "رقم الفاتورة:",
+          "invoice-type": "نوع الفاتورة:",
+          "from-party": "من الطرف:",
+          "invoice-date": "تاريخ الفاتورة:",
+          "total": "الإجمالي:",
+          "billing-account": "حساب الفواتير:",
+          "invoice-status": "الحالة:",
+          "to-party": "إلى الطرف:",
+          "due-date": "تاريخ الاستحقاق:",
+          "paid-date": "تاريخ الدفع:",
+          "back": "الرجوع",
+          "processing": "جارٍ معالجة الفاتورة...",
+          "error": "حدث خطأ ما",
+          "status-changed": "تم تغيير الحالة بنجاح إلى {0}",
+          "actions": {
+            "new": "فاتورة جديدة",
+            "update": "تحديث الفاتورة",
+            "approve": "تغيير الحالة إلى 'موافق عليها'",
+            "receive": "تغيير الحالة إلى 'مستلمة'",
+            "sent": "تغيير الحالة إلى 'مرسلة'",
+            "ready": "تغيير الحالة إلى 'جاهزة'",
+            "paid": "تغيير الحالة إلى 'مدفوعة'",
+            "writeoff": "تغيير الحالة إلى 'مشطوبة'",
+            "in-process": "تغيير الحالة إلى 'قيد المعالجة'",
+            "cancel": "تغيير الحالة إلى 'ملغاة'",
+            "transactions": "المعاملات",
+            "payment-applications": "تطبيقات الدفع"
+          },
+          "status": {
+            "new": "جديد",
+            "in-process": "قيد المعالجة",
+            "approved": "موافق عليها",
+            "ready": "جاهزة",
+            "received": "مستلمة",
+            "paid": "مدفوعة",
+            "writeoff": "مشطوبة",
+            "cancelled": "ملغاة",
+            "unknown": "غير معروف"
+          }
+        }
+      }
+    }
+  }
+}

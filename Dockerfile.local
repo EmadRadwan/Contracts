@@ -1,0 +1,42 @@
+# Build Stage
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
+WORKDIR /src
+
+# Copy the solution and project files
+COPY ./BusinessOne.sln ./
+COPY ./API/API.csproj ./API/
+COPY ./Application/Application.csproj ./Application/
+COPY ./Infrastructure/Infrastructure.csproj ./Infrastructure/
+COPY ./Domain/Domain.csproj ./Domain/
+COPY ./Persistence/Persistence.csproj ./Persistence/
+
+# Restore dependencies
+RUN dotnet restore
+
+# Copy the entire source code
+COPY . .
+
+# Set environment variables for the build process
+ENV TokenKey=lWwMN68UKbjuEJAAYq9ke9KYtPrabUTE9kghtxPrysPDfgaezEyfV3gjoA4F90TYcgYRhH5wXC0XhR5idy1n0w==
+ENV ASPNETCORE_URLS=http://+:5000
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+# Build and publish the application
+RUN dotnet publish ./API/API.csproj -c Release -o /app/
+
+# Runtime Stage
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+
+# Copy the published application from the build stage
+COPY --from=build-env /app .
+COPY API/appsettings.json /app/appsettings.json
+COPY API/appsettings.*.json /app/
+
+
+# Expose HTTP and HTTPS ports
+EXPOSE 80
+EXPOSE 443
+
+# Run the application
+ENTRYPOINT ["dotnet", "API.dll"]

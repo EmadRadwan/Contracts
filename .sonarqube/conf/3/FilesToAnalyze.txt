@@ -1,0 +1,6 @@
+﻿/Users/emadradwan/Documents/ERP/BusinessOne/Tests/ApplicationTest/AccountingServiceTests.cs
+/Users/emadradwan/Documents/ERP/BusinessOne/Tests/ApplicationTest/GlobalUsings.cs
+/Users/emadradwan/.nuget/packages/microsoft.net.test.sdk/17.7.1/build/netcoreapp3.1/Microsoft.NET.Test.Sdk.Program.cs
+/Users/emadradwan/.nuget/packages/xunit.runner.visualstudio/2.4.5/build/netcoreapp3.1/xunit.runner.visualstudio.dotnetcore.testadapter.dll
+/Users/emadradwan/.nuget/packages/xunit.runner.visualstudio/2.4.5/build/netcoreapp3.1/xunit.runner.reporters.netcoreapp10.dll
+/Users/emadradwan/.nuget/packages/xunit.runner.visualstudio/2.4.5/build/netcoreapp3.1/xunit.runner.utility.netcoreapp10.dll

@@ -1,0 +1,22 @@
+1 - IssueProductionRunTask -> get from WorkEffortGoodStandards BOM components to be for the first workeffort
+2 - loop through the components    
+2.1 - check in WorkEffortInventoryAssigns for already assigned
+    material from the component
+2.2 - call IssueProductionRunTaskComponent for the remaining quantity
+2.3 - IssueProductionRunTaskComponent
+2.3.1 - get a list of inventoryItems for the productId and facilityId
+2.3.2 - Loop through the inventoryItems utill the quantity is met
+2.3.2.1 - call IssueProductionRunTaskComponentInline
+2.3.2.1.1 - check if the amount is met from the inventoryItem
+2.3.2.2.2 - add a record to the WorkEffortInventoryAssigns
+2.3.2.2.3 - call CreateAcctgTransForWorkEffortIssuance
+2.3.2.2.3 - create params for CreateInventoryItemDetail
+2.3.2.2.4 - call CreateInventoryItemDetail
+2.3.2.2.4.1 - create the InventoryItemDetail record
+2.3.2.2.4.2 - call UpdateInventoryItemFromDetail
+2.3.2.2.4.3 - 
+
+
+ 
+
+

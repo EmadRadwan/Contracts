@@ -1,0 +1,60 @@
+<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+    <!-- Define arrowhead marker -->
+    <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="black" />
+        </marker>
+    </defs>
+
+    <!-- Nodes -->
+    <!-- INVOICE_IN_PROCESS -->
+    <circle cx="100" cy="200" r="50" fill="green" stroke="white" stroke-width="2" />
+    <text x="100" y="195" text-anchor="middle" fill="white" font-size="12">In Process</text>
+    <text x="100" y="210" text-anchor="middle" fill="white" font-size="12">قيد المعالجة</text>
+
+    <!-- INVOICE_APPROVED -->
+    <circle cx="250" cy="200" r="50" fill="yellow" stroke="black" stroke-width="2" />
+    <text x="250" y="195" text-anchor="middle" fill="black" font-size="12">Approved</text>
+    <text x="250" y="210" text-anchor="middle" fill="black" font-size="12">موافق عليها</text>
+
+    <!-- INVOICE_READY -->
+    <circle cx="400" cy="200" r="50" fill="blue" stroke="white" stroke-width="2" />
+    <text x="400" y="195" text-anchor="middle" fill="white" font-size="12">Ready</text>
+    <text x="400" y="210" text-anchor="middle" fill="white" font-size="12">جاهزة</text>
+
+    <!-- INVOICE_PAID -->
+    <circle cx="550" cy="100" r="50" fill="green" stroke="white" stroke-width="2" />
+    <text x="550" y="95" text-anchor="middle" fill="white" font-size="12">Paid</text>
+    <text x="550" y="110" text-anchor="middle" fill="white" font-size="12">مدفوعة</text>
+
+    <!-- INVOICE_WRITEOFF -->
+    <circle cx="550" cy="200" r="50" fill="blue" stroke="white" stroke-width="2" />
+    <text x="550" y="195" text-anchor="middle" fill="white" font-size="12">Write Off</text>
+    <text x="550" y="210" text-anchor="middle" fill="white" font-size="12">مشطوبة</text>
+
+    <!-- INVOICE_CANCELLED -->
+    <circle cx="550" cy="300" r="50" fill="red" stroke="white" stroke-width="2" />
+    <text x="550" y="295" text-anchor="middle" fill="white" font-size="12">Cancelled</text>
+    <text x="550" y="310" text-anchor="middle" fill="white" font-size="12">ملغاة</text>
+
+    <!-- UNKNOWN -->
+    <circle cx="100" cy="50" r="50" fill="gray" stroke="white" stroke-width="2" />
+    <text x="100" y="45" text-anchor="middle" fill="white" font-size="12">Unknown</text>
+    <text x="100" y="60" text-anchor="middle" fill="white" font-size="12">غير معروف</text>
+
+    <!-- Arrows -->
+    <!-- INVOICE_IN_PROCESS -> INVOICE_APPROVED -->
+    <path d="M150 200 H200" stroke="black" stroke-width="2" marker-end="url(#arrowhead)" />
+
+    <!-- INVOICE_APPROVED -> INVOICE_READY -->
+    <path d="M300 200 H350" stroke="black" stroke-width="2" marker-end="url(#arrowhead)" />
+
+    <!-- INVOICE_READY -> INVOICE_PAID -->
+    <path d="M450 200 L500 110" stroke="black" stroke-width="2" marker-end="url(#arrowhead)" />
+
+    <!-- INVOICE_READY -> INVOICE_WRITEOFF -->
+    <path d="M450 200 H500" stroke="black" stroke-width="2" marker-end="url(#arrowhead)" />
+
+    <!-- INVOICE_READY -> INVOICE_CANCELLED -->
+    <path d="M450 200 L500 290" stroke="black" stroke-width="2" marker-end="url(#arrowhead)" />
+</svg>

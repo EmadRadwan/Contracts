@@ -1,0 +1,394 @@
+[
+  {
+    "SEQ_NAME": "AcctgTrans",
+    "SEQ_ID": 10750,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "Agreement",
+    "SEQ_ID": 10010,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "AgreementTerm",
+    "SEQ_ID": 10010,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "BillingAccount",
+    "SEQ_ID": 10020,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "ContactMech",
+    "SEQ_ID": 10010,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "CustomTimePeriod",
+    "SEQ_ID": 10010,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "EntityAuditLog",
+    "SEQ_ID": 12930,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "FinAccount",
+    "SEQ_ID": 10010,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "FinAccountTrans",
+    "SEQ_ID": 10030,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "GlAccount",
+    "SEQ_ID": 10010,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "GlReconciliation",
+    "SEQ_ID": 10010,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "InventoryItem",
+    "SEQ_ID": 10250,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "InventoryItemDetail",
+    "SEQ_ID": 11222,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "Invoice",
+    "SEQ_ID": 10160,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "ItemIssuance",
+    "SEQ_ID": 10420,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "JobSandbox",
+    "SEQ_ID": 25800,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "NoteData",
+    "SEQ_ID": 10070,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "OrderAdjustment",
+    "SEQ_ID": 11230,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "OrderHeader",
+    "SEQ_ID": 10670,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "OrderItemChange",
+    "SEQ_ID": 10070,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "OrderItemPriceInfo",
+    "SEQ_ID": 10310,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "OrderPaymentPreference",
+    "SEQ_ID": 10720,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "OrderStatus",
+    "SEQ_ID": 11820,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "Payment",
+    "SEQ_ID": 10600,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "PaymentApplication",
+    "SEQ_ID": 10480,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "PaymentGatewayResponse",
+    "SEQ_ID": 10040,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "PaymentGroup",
+    "SEQ_ID": 9001,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "PaymentMethod",
+    "SEQ_ID": 10030,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "Picklist",
+    "SEQ_ID": 10010,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "PicklistBin",
+    "SEQ_ID": 10010,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "Product",
+    "SEQ_ID": 10010,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "ProductPriceChange",
+    "SEQ_ID": 10010,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "ProductSearchResult",
+    "SEQ_ID": 10010,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "Quote",
+    "SEQ_ID": 10010,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "QuoteAdjustment",
+    "SEQ_ID": 10010,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "Requirement",
+    "SEQ_ID": 10060,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "ReturnAdjustment",
+    "SEQ_ID": 10040,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "ReturnHeader",
+    "SEQ_ID": 10040,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "ReturnStatus",
+    "SEQ_ID": 10090,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "RuntimeData",
+    "SEQ_ID": 16800,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "ServerHitBin",
+    "SEQ_ID": 25880,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "Shipment",
+    "SEQ_ID": 10510,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "ShipmentReceipt",
+    "SEQ_ID": 10200,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "TaxAuthorityRateProduct",
+    "SEQ_ID": 10010,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "Visit",
+    "SEQ_ID": 23500,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "Visitor",
+    "SEQ_ID": 11000,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "InventoryTransfer",
+    "SEQ_ID": 10020,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "CostComponent",
+    "SEQ_ID": 10020,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  },
+  {
+    "SEQ_NAME": "WorkEffort",
+    "SEQ_ID": 10028,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
+  }
+]

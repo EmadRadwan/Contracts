@@ -1,0 +1,36 @@
+1 - Retrieve reservation for Approved Order
+2 - Retrieve Ship group
+3 - Retrieve facility for Ship group
+4 - Create Shipment
+5 - Issue Order Item
+5.1 - Create Shipment Item
+5.2 - Create Order Shipment
+5.3 - Create Item Issuance
+5.3.1 - Create Accounting Transaction for Sales Shipment Issuance
+5.3.2 - Create Inventory Item Detail
+5.4 - Assign Packer role
+5.5 - Remove reservation
+5.6 - Update Order Item Status to Item_completed
+5.7 - Create Inventory Item Detail
+6 - Update Shipment Status to SHIPMENT_PACKED
+7 - Update Shipment Status to SHIPMENT_SHIPPED
+8 - Change Order Status to ORDER_COMPLETED
+9 - Create Payment from Order
+9.1 - Check if there are sales agreements
+9.2 - If there's a sales agreement, 
+    check if there's Order Terms of type FIN_PAYMENT_TERM
+    and set Effective Date accordingly
+9.3 - Create Payment
+10 - Create Invoice from Order
+
+11 - Reset Grand Total
+/////////////
+
+
+
+
+
+
+
+
+

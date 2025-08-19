@@ -1,0 +1,16 @@
+git commit my branch (if not master)
+git fetch origin
+git checkout branch-name (Collaborator)
+Review the Changes
+git checkout master
+git merge branch-name
+Resolve Any Merge Conflicts
+git add .
+git commit -m "Resolved merge conflicts"
+git merge my branch (if not master)
+git push origin master
+
+
+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
+
+git remote set-url origin https://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@github.com/EmadRadwan/BusinessOne.git

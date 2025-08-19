@@ -1,0 +1,194 @@
+[
+  {
+    "FIXED_ASSET_TYPE_ID": "EQUIPMENT",
+    "PARENT_TYPE_ID": null,
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Equipment",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:57.910",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57.277",
+    "CREATED_STAMP": "2022-05-27 12:23:57.910",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57.277"
+  },
+  {
+    "FIXED_ASSET_TYPE_ID": "TABLET_PRESS_MACHINE",
+    "PARENT_TYPE_ID": "EQUIPMENT",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Machine used for compressing powder into tablets.",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:58.020",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57.277",
+    "CREATED_STAMP": "2022-05-27 12:23:58.020",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57.277"
+  },
+  {
+    "FIXED_ASSET_TYPE_ID": "CAPSULE_FILLING_MACHINE",
+    "PARENT_TYPE_ID": "EQUIPMENT",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Machine used for filling capsules with medication.",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:58.020",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57.277",
+    "CREATED_STAMP": "2022-05-27 12:23:58.020",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57.277"
+  },
+  {
+    "FIXED_ASSET_TYPE_ID": "LIQUID_FILLING_MACHINE",
+    "PARENT_TYPE_ID": "EQUIPMENT",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Machine used for filling liquid medication into bottles or vials.",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:58.020",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57.277",
+    "CREATED_STAMP": "2022-05-27 12:23:58.020",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57.277"
+  },
+  {
+    "FIXED_ASSET_TYPE_ID": "BLISTER_PACKAGING_MACHINE",
+    "PARENT_TYPE_ID": "EQUIPMENT",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Machine used for packaging tablets or capsules in blister packs.",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:58.020",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57.277",
+    "CREATED_STAMP": "2022-05-27 12:23:58.020",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57.277"
+  },
+  {
+    "FIXED_ASSET_TYPE_ID": "POWDER_MIXER",
+    "PARENT_TYPE_ID": "EQUIPMENT",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Machine used for mixing powdered ingredients.",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:58.020",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57.277",
+    "CREATED_STAMP": "2022-05-27 12:23:58.020",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57.277"
+  },
+  {
+    "FIXED_ASSET_TYPE_ID": "GRANULATOR",
+    "PARENT_TYPE_ID": "EQUIPMENT",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Machine used for granulating powder to prepare it for tablet pressing.",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:58.020",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57.277",
+    "CREATED_STAMP": "2022-05-27 12:23:58.020",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57.277"
+  },
+  {
+    "FIXED_ASSET_TYPE_ID": "COATING_MACHINE",
+    "PARENT_TYPE_ID": "EQUIPMENT",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Machine used for coating tablets with a protective layer.",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:58.020",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57.277",
+    "CREATED_STAMP": "2022-05-27 12:23:58.020",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57.277"
+  },
+  {
+    "FIXED_ASSET_TYPE_ID": "STERILIZATION_UNIT",
+    "PARENT_TYPE_ID": "EQUIPMENT",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Equipment used for sterilizing tools, equipment, and sometimes the medication itself.",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:58.020",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57.277",
+    "CREATED_STAMP": "2022-05-27 12:23:58.020",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57.277"
+  },
+  {
+    "FIXED_ASSET_TYPE_ID": "QUALITY_CONTROL_EQUIPMENT",
+    "PARENT_TYPE_ID": "EQUIPMENT",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Equipment used for ensuring the quality and compliance of manufactured medications.",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:58.020",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57.277",
+    "CREATED_STAMP": "2022-05-27 12:23:58.020",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57.277"
+  },
+  {
+    "FIXED_ASSET_TYPE_ID": "WEIGHING_DISPENSING_SYSTEM",
+    "PARENT_TYPE_ID": "EQUIPMENT",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "System used for accurately weighing and dispensing raw materials for medication production.",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:58.020",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57.277",
+    "CREATED_STAMP": "2022-05-27 12:23:58.020",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57.277"
+  },
+  {
+    "FIXED_ASSET_TYPE_ID": "WEIGHING_SCALE",
+    "PARENT_TYPE_ID": "EQUIPMENT",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Scale used for accurately weighing raw materials.",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:58",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57",
+    "CREATED_STAMP": "2022-05-27 12:23:58",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57"
+  },
+  {
+    "FIXED_ASSET_TYPE_ID": "DRYER",
+    "PARENT_TYPE_ID": "EQUIPMENT",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Equipment used for drying granulated materials.",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:58",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57",
+    "CREATED_STAMP": "2022-05-27 12:23:58",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57"
+  },
+  {
+    "FIXED_ASSET_TYPE_ID": "MILLING_MACHINE",
+    "PARENT_TYPE_ID": "EQUIPMENT",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Machine used for milling granules to a desired particle size.",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:58",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57",
+    "CREATED_STAMP": "2022-05-27 12:23:58",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57"
+  },
+  {
+    "FIXED_ASSET_TYPE_ID": "BLENDER",
+    "PARENT_TYPE_ID": "EQUIPMENT",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Machine used for blending ingredients to ensure uniform distribution.",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:58",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57",
+    "CREATED_STAMP": "2022-05-27 12:23:58",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57"
+  },
+  {
+    "FIXED_ASSET_TYPE_ID": "LABELING_MACHINE",
+    "PARENT_TYPE_ID": "EQUIPMENT",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Machine used for labeling packaged medications.",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:58",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57",
+    "CREATED_STAMP": "2022-05-27 12:23:58",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57"
+  },
+  {
+    "FIXED_ASSET_TYPE_ID": "PACKAGING_MACHINE",
+    "PARENT_TYPE_ID": "EQUIPMENT",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Machine used for packaged medications.",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:58",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57",
+    "CREATED_STAMP": "2022-05-27 12:23:58",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57"
+  },
+  {
+    "FIXED_ASSET_TYPE_ID": "CAPSULE_SEALER",
+    "PARENT_TYPE_ID": "EQUIPMENT",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Machine used for packaged medications.",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:58",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57",
+    "CREATED_STAMP": "2022-05-27 12:23:58",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57"
+  },
+  {
+    "FIXED_ASSET_TYPE_ID": "CAPSULE_FILLER",
+    "PARENT_TYPE_ID": "EQUIPMENT",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Machine used for packaged medications.",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:58",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57",
+    "CREATED_STAMP": "2022-05-27 12:23:58",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57"
+  }
+]
+
+

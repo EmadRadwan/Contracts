@@ -1,0 +1,142 @@
+[
+  {
+    "product_category_id": "FINISHED_GOODS",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Finished Goods",
+    "DESCRIPTION_ARABIC": "المنتجات النهائية",
+    "long_description": "Completed products ready for sale",
+    "created_stamp": "2025-06-19 08:51:00.000",
+    "last_updated_stamp": "2025-06-19 08:51:00.000"
+  },
+  {
+    "product_category_id": "RAW_MATERIALS",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Raw Materials",
+    "DESCRIPTION_ARABIC": "المواد الخام",
+    "long_description": "Materials used in product manufacturing",
+    "created_stamp": "2025-06-19 08:51:00.000",
+    "last_updated_stamp": "2025-06-19 08:51:00.000"
+  },
+  {
+    "product_category_id": "MILTON_PLAIN",
+    "primary_parent_category_id": "RAW_MATERIALS",
+    "product_category_type_id": null,
+    "description": "Milton Plain",
+    "DESCRIPTION_ARABIC": "ميلتون ساده",
+    "long_description": "Textile materials used in production",
+    "created_stamp": "2025-07-03 19:42:00.000",
+    "last_updated_stamp": "2025-07-03 19:42:00.000"
+  },
+  {
+    "product_category_id": "MILTON_PRINTED",
+    "primary_parent_category_id": "RAW_MATERIALS",
+    "product_category_type_id": null,
+    "description": "Milton Printed",
+    "DESCRIPTION_ARABIC": "ميلتون مطبوع",
+    "long_description": "Textile materials used in production",
+    "created_stamp": "2025-07-03 19:42:00.000",
+    "last_updated_stamp": "2025-07-03 19:42:00.000"
+  },
+  {
+    "product_category_id": "DERBY_PLAIN",
+    "primary_parent_category_id": "RAW_MATERIALS",
+    "product_category_type_id": null,
+    "description": "Derby Plain",
+    "DESCRIPTION_ARABIC": "دربي ساده",
+    "long_description": "Textile materials used in production",
+    "created_stamp": "2025-07-03 19:42:00.000",
+    "last_updated_stamp": "2025-07-03 19:42:00.000"
+  },
+  {
+    "product_category_id": "DERBY_PRINTED",
+    "primary_parent_category_id": "RAW_MATERIALS",
+    "product_category_type_id": null,
+    "description": "Derby Printed",
+    "DESCRIPTION_ARABIC": "دربي مطبوع",
+    "long_description": "Textile materials used in production",
+    "created_stamp": "2025-07-03 19:42:00.000",
+    "last_updated_stamp": "2025-07-03 19:42:00.000"
+  },
+  {
+    "product_category_id": "LEKRA",
+    "primary_parent_category_id": "RAW_MATERIALS",
+    "product_category_type_id": null,
+    "description": "Lekra",
+    "DESCRIPTION_ARABIC": "ليكرا",
+    "long_description": "Textile materials used in production",
+    "created_stamp": "2025-07-03 19:42:00.000",
+    "last_updated_stamp": "2025-07-03 19:42:00.000"
+  },
+  {
+    "product_category_id": "SUMMER_MILTON",
+    "primary_parent_category_id": "RAW_MATERIALS",
+    "product_category_type_id": null,
+    "description": "Summer Milton",
+    "DESCRIPTION_ARABIC": "سمر ميلتون",
+    "long_description": "Textile materials used in production",
+    "created_stamp": "2025-07-03 19:42:00.000",
+    "last_updated_stamp": "2025-07-03 19:42:00.000"
+  },
+  {
+    "product_category_id": "ACCESSORIES",
+    "primary_parent_category_id": "RAW_MATERIALS",
+    "product_category_type_id": null,
+    "description": "Accessories",
+    "DESCRIPTION_ARABIC": "إكسسوارات",
+    "long_description": "Various accessory items used to complement products",
+    "created_stamp": "2025-07-30 18:16:00.000",
+    "last_updated_stamp": "2025-07-30 18:16:00.000"
+  },
+  {
+    "product_category_id": "GIRLS_BABY_TRACKSUIT",
+    "primary_parent_category_id": "FINISHED_GOODS",
+    "product_category_type_id": null,
+    "description": "Girls Baby Tracksuit",
+    "DESCRIPTION_ARABIC": "ترنج بناتي بيبي",
+    "long_description": "Tracksuits for baby girls",
+    "created_stamp": "2025-06-19 08:51:00.000",
+    "last_updated_stamp": "2025-06-19 08:51:00.000"
+  },
+  {
+    "product_category_id": "GIRLS_MEDIUM_TRACKSUIT",
+    "primary_parent_category_id": "FINISHED_GOODS",
+    "product_category_type_id": null,
+    "description": "Girls Medium Tracksuit",
+    "DESCRIPTION_ARABIC": "ترنج بناتي وسط",
+    "long_description": "Tracksuits for medium-sized girls",
+    "created_stamp": "2025-06-19 08:51:00.000",
+    "last_updated_stamp": "2025-06-19 08:51:00.000"
+  },
+  {
+    "product_category_id": "GIRLS_CONFUSING_TRACKSUIT",
+    "primary_parent_category_id": "FINISHED_GOODS",
+    "product_category_type_id": null,
+    "description": "Girls Confusing Tracksuit",
+    "DESCRIPTION_ARABIC": "ترنج بناتي محير",
+    "long_description": "Unique or stylish tracksuits for girls",
+    "created_stamp": "2025-06-19 08:51:00.000",
+    "last_updated_stamp": "2025-06-19 08:51:00.000"
+  },
+  {
+    "product_category_id": "BOYS_BABY_TRACKSUIT",
+    "primary_parent_category_id": "FINISHED_GOODS",
+    "product_category_type_id": null,
+    "description": "Boys Baby Tracksuit",
+    "DESCRIPTION_ARABIC": "ترنج اولادي بيبي",
+    "long_description": "Tracksuits for baby boys",
+    "created_stamp": "2025-06-19 08:51:00.000",
+    "last_updated_stamp": "2025-06-19 08:51:00.000"
+  },
+  {
+    "product_category_id": "BOYS_MEDIUM_TRACKSUIT",
+    "primary_parent_category_id": "FINISHED_GOODS",
+    "product_category_type_id": null,
+    "description": "Boys Medium Tracksuit",
+    "DESCRIPTION_ARABIC": "ترنج اولادي وسط",
+    "long_description": "Tracksuits for medium-sized boys",
+    "created_stamp": "2025-06-19 08:51:00.000",
+    "last_updated_stamp": "2025-06-19 08:51:00.000"
+  }
+]
