@@ -231,4 +231,5 @@ public class Product
     public ICollection<VendorProduct> VendorProducts { get; set; }
     public ICollection<WorkEffortGoodStandard> WorkEffortGoodStandards { get; set; }
     public virtual ICollection<ServiceSpecification> ServiceSpecifications { get; set; }
+    public ICollection<WorkEffort> WorkEfforts { get; set; }
 }

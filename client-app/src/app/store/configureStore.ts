@@ -129,6 +129,7 @@ import { paymentGroupsApi } from "./apis/payment/paymentGroupsApi";
 import {paymentGroupTypesApi} from "./apis/payment/paymentGroupTypesApi";
 import {taxApi} from "./apis/accounting/taxApi";
 import {productFeaturesApi} from "./apis/productFeaturesApi";
+import {projectsApi} from "./apis/projectsApi";
 
 
 
@@ -198,6 +199,7 @@ export const store = configureStore({
         productStoreUi: productStoreUiSlice.reducer,
         orderTermsUi: orderTermsUiSlice.reducer,
         [partiesApi.reducerPath]: partiesApi.reducer,
+        [projectsApi.reducerPath]: projectsApi.reducer,
         [vehiclesApi.reducerPath]: vehiclesApi.reducer,
         [quoteItemsApi.reducerPath]: quoteItemsApi.reducer,
         [quoteAdjustmentsApi.reducerPath]: quoteAdjustmentsApi.reducer,
@@ -293,6 +295,7 @@ export const store = configureStore({
     middleware: (getDefaultMiddleware) => {
         return getDefaultMiddleware()
             .concat(partiesApi.middleware)
+            .concat(projectsApi.middleware)
             .concat(quoteItemsApi.middleware)
             .concat(quoteAdjustmentsApi.middleware)
             .concat(vehiclesApi.middleware)
@@ -482,6 +485,8 @@ export {
     useFetchSupplierQuery,
     useFetchCompaniesQuery
 } from "./apis/partiesApi";
+
+
 
 
 export {

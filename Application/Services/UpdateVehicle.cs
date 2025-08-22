@@ -35,7 +35,7 @@ public class UpdateVehicle
 
         public async Task<Result<VehicleDto>> Handle(Command request, CancellationToken cancellationToken)
         {
-            await _vehicleService.UpdateVehicle(request.VehicleDto);
+            //await _vehicleService.UpdateVehicle(request.VehicleDto);
 
             var result = await _context.SaveChangesAsync(cancellationToken) > 0;
 

@@ -74,10 +74,4 @@ public class ProductCategory
     public virtual ICollection<ServiceSpecification> ServiceSpecificationsAsModel { get; set; }
     public virtual ICollection<ServiceRate> ServiceRatesAsMake { get; set; }
     public virtual ICollection<ServiceRate> ServiceRatesAsModel { get; set; }
-    public virtual ICollection<Vehicle> VehiclesAsMake { get; set; }
-    public virtual ICollection<Vehicle> VehiclesAsModel { get; set; }
-    public virtual ICollection<Vehicle> VehiclesAsVehicleType { get; set; }
-    public virtual ICollection<Vehicle> VehiclesAsTransmissionType { get; set; }
-    public virtual ICollection<Vehicle> VehiclesAsExteriorColor { get; set; }
-    public virtual ICollection<Vehicle> VehiclesAsInteriorColor { get; set; }
 }

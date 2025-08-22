@@ -9,5 +9,5 @@ public class Annotation
     public DateTime? LastUpdatedStamp { get; set; }
     public DateTime? CreatedStamp { get; set; }
 
-    public virtual ICollection<VehicleAnnotation> VehicleAnnotations { get; set; } = new List<VehicleAnnotation>();
+    //public virtual ICollection<VehicleAnnotation> VehicleAnnotations { get; set; } = new List<VehicleAnnotation>();
 }

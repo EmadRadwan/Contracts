@@ -15,7 +15,6 @@ public interface IProductService
     Task<decimal> GetOrderItemTotalCost(OrderItemDto2 orderItem);
     Task<string> GetProductTypeId(string productId);
     Task<bool> CheckIsPhysicalProduct(OrderItemDto2 orderItem);
-    Task<decimal> CalculateServicePrice(string productId, string vehicleId);
 
     Task<CommonItemDto> CalculatePromoProductDiscount(string productPromoId, int quantity, decimal unitPrice,
         string productId);
@@ -75,55 +74,7 @@ public class ProductService : IProductService
         return isPhysical == "Y";
     }
 
-    public async Task<decimal> CalculateServicePrice(string productId, string vehicleId)
-    {
-        try
-        {
-            // get vehicle
-            var vehicle = await _context.Vehicles.FirstOrDefaultAsync(x => x.VehicleId == vehicleId);
-
-            if (vehicle == null)
-            {
-                _logger.LogError("Vehicle not found with ID: {VehicleId}", vehicleId);
-                return 0; // or handle the error in an appropriate way
-            }
-
-            // get the hourly rate for the service
-            var serviceRate = await _context.ServiceRates.FirstOrDefaultAsync(x => x.MakeId == vehicle.MakeId
-                && x.ModelId == vehicle.ModelId);
-
-            if (serviceRate == null)
-            {
-                _logger.LogError("Service rate not found for Make ID: {MakeId}, Model ID: {ModelId}",
-                    vehicle.MakeId, vehicle.ModelId);
-                return 0; // or handle the error in an appropriate way
-            }
-
-            // get standard rate in minutes for the service / make / model
-            var serviceSpecification = await _context.ServiceSpecifications.FirstOrDefaultAsync(x =>
-                x.ProductId == productId && x.ModelId == vehicle.ModelId && x.MakeId == vehicle.MakeId);
-
-            if (serviceSpecification == null)
-            {
-                _logger.LogError("Service specification not found for Product ID: {ProductId}, " +
-                                 "Make ID: {MakeId}, Model ID: {ModelId}", productId,
-                    vehicle.MakeId, vehicle.ModelId);
-                return 0; // or handle the error in an appropriate way
-            }
-
-            // calculate service price by multiplying the hourly rate by the standard time in minutes
-            var hourlyRate = serviceRate.Rate;
-            var standardTimeInMinutes = serviceSpecification.StandardTimeInMinutes;
-            var servicePrice = hourlyRate * standardTimeInMinutes / 60;
-            return servicePrice ?? 0;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An error occurred while calculating service price.");
-            return 0; // or handle the error in an appropriate way
-        }
-    }
-
+    
     public async Task<CommonItemDto> CalculatePromoProductDiscount(string productPromoId, int quantity,
         decimal unitListPrice, string productId)
     {

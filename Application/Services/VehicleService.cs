@@ -8,7 +8,6 @@ namespace Application.Services;
 
 public interface IVehicleService
 {
-    Task<Vehicle> CreateVehicle(VehicleDto vehicleDto);
 
     /*Task<Quote> CreateJobQuote(JobQuoteDto jobQuoteDto);
     Task<Quote> UpdateJobQuote(JobQuoteDto jobQuoteDto);*/
@@ -18,7 +17,6 @@ public interface IVehicleService
     Task<ProductCategory> UpdateVehicleModel(VehicleModelDto vehicleModelDto);
     Task<ServiceRate> CreateServiceRate(ServiceRateDto serviceRateDto);
     Task<ServiceSpecification> CreateServiceSpecification(ServiceSpecificationDto serviceSpecificationDto);
-    Task<Vehicle> UpdateVehicle(VehicleDto vehicleDto);
     Task<ServiceRate> UpdateServiceRate(ServiceRateDto serviceRateDto);
     Task<ServiceSpecification> UpdateServiceSpecification(ServiceSpecificationDto serviceSpecificationDto);
 }
@@ -41,7 +39,7 @@ public class VehicleService : IVehicleService
     }
 
 
-    public async Task<Vehicle> CreateVehicle(VehicleDto vehicleDto)
+    /*public async Task<Vehicle> CreateVehicle(VehicleDto vehicleDto)
     {
         var stamp = DateTime.UtcNow;
 
@@ -94,6 +92,7 @@ public class VehicleService : IVehicleService
 
         return vehicle;
     }
+    */
 
     public async Task<ServiceRate> CreateServiceRate(ServiceRateDto serviceRateDto)
     {

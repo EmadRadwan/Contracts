@@ -337,5 +337,5 @@ public class Party
     public ICollection<WebUserPreference> WebUserPreferences { get; set; }
     public ICollection<WorkEffortEventReminder> WorkEffortEventReminders { get; set; }
     public ICollection<AppUserLogin> AppUserLogins { get; set; }
-    public virtual ICollection<Vehicle> Vehicles { get; set; }
+    public ICollection<WorkEffort> WorkEfforts { get; set; } 
 }

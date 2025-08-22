@@ -110,5 +110,5 @@ public class Content
     public ICollection<WebSiteContent> WebSiteContents { get; set; }
     public ICollection<WebSitePathAlias> WebSitePathAliases { get; set; }
     public ICollection<WorkEffortContent> WorkEffortContents { get; set; }
-    public ICollection<VehicleContent> VehicleContents { get; set; }
+    //public ICollection<VehicleContent> VehicleContents { get; set; }
 }

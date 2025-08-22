@@ -1,4 +1,4 @@
-using Application.Interfaces;
+/*using Application.Interfaces;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -60,4 +60,4 @@ public class CreateVehicle
             return Result<VehicleDto>.Success(request.VehicleDto);
         }
     }
-}
+}*/

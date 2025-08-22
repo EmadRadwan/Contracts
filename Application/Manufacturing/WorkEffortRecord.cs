@@ -60,5 +60,7 @@ public class WorkEffortRecord
     public decimal? ReservNthPPPerc { get; set; }
     public string? AccommodationMapId { get; set; }
     public string? AccommodationSpotId { get; set; }
+    public string? ProjectNum { get; set; }
+    public string? ProjectName { get; set; }
     public int? RevisionNumber { get; set; }
 }

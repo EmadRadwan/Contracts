@@ -8,11 +8,7 @@ namespace API.Controllers.Catalog;
 
 public class ProductsController : BaseApiController
 {
-    [HttpGet("getServiceProductPrice", Name = "GetServiceProductPrice")]
-    public async Task<IActionResult> GetServiceProductPrice([FromQuery] ServiceProductPriceParams param)
-    {
-        return HandleResult(await Mediator.Send(new GetServiceProductPrice.Query { Params = param }));
-    }
+   
 
     [HttpGet("getSalesProductsLov", Name = "GetSalesProductsLov")]
     public async Task<IActionResult> GetSalesProductsLov([FromQuery] ProductLovParams param)
@@ -48,11 +44,7 @@ public class ProductsController : BaseApiController
         return HandleResult(await Mediator.Send(new GetPhysicalInventoryProductsLov.Query { Params = param, Language = language }));
     }
 
-    [HttpGet("getJobQuoteProductsLov", Name = "GetJobQuoteProductsLov")]
-    public async Task<IActionResult> GetJobQuoteProductsLov([FromQuery] ProductLovParams param)
-    {
-        return HandleResult(await Mediator.Send(new GetJobQuoteProductsLov.Query { Params = param }));
-    }
+    
 
     [HttpGet("getPurchaseProductsLov", Name = "GetPurchaseProductsLov")]
     public async Task<IActionResult> GetPurchaseProductsLov([FromQuery] ProductLovParams param)

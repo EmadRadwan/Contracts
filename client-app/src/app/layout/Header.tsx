@@ -5,7 +5,7 @@ import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 // import BuildOutlinedIcon from '@mui/icons-material/BuildOutlined';
 import ReceiptOutlinedIcon from '@mui/icons-material/ReceiptOutlined';
-import BuildCircleOutlinedIcon from '@mui/icons-material/BuildCircleOutlined';
+import HomeWork from '@mui/icons-material/HomeWork';
 import {AppBar, Box, List, ListItem, ListItemIcon, ListItemText, Toolbar, Typography,} from "@mui/material";
 import SignedInMenu from "./SignedInMenu";
 import {useAppDispatch, useAppSelector} from "../store/configureStore";
@@ -29,9 +29,8 @@ const midLinks = [
     { title: "facility", path: "/facilitiesDashboard", key: "facility", icon: <StoreMallDirectory sx={{ color: "#FF4081" }} /> },
     { title: "party", path: "/parties", key: "party", icon: <GroupOutlinedIcon sx={{ color: "#00BFFF" }} /> },
     { title: "order", path: "/ordersDashboard", key: "order", icon: <AssignmentOutlinedIcon sx={{ color: "#4CAF50" }} /> },
-    // { title: "service", path: "/servicesDashboard", key: "service", icon: <BuildOutlinedIcon sx={{ color: "#FFC107" }} /> },
     { title: "accounting", path: "/invoicesDashboard", key: "accounting", icon: <ReceiptOutlinedIcon sx={{ color: "#9C27B0" }} /> },
-    { title: "manufacturing", path: "/manufacturingDashboard", key: "manufacturing", icon: <BuildCircleOutlinedIcon sx={{ color: "#03A9F4" }} /> },
+    { title: "projects", path: "/projectsDashboard", key: "projects", icon: <HomeWork sx={{ color: "#03A9F4" }} /> },
 ];
 
 

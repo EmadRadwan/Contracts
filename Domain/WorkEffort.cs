@@ -112,7 +112,36 @@ public class WorkEffort
     public DateTime? LastUpdatedTxStamp { get; set; }
     public DateTime? CreatedStamp { get; set; }
     public DateTime? CreatedTxStamp { get; set; }
+    
+    // new props for the Contracts system starts from here:
+    public string? ProjectNum { get; set; } 
+    public string? CertificateNumber { get; set; } 
+    public string? ProjectName { get; set; }
+    public decimal? TotalAmount { get; set; }
+    public string? ProjectId { get; set; } 
+    
+    public string? PartyId { get; set; }
+   
+    public string? RelatedOrderId { get; set; }
+    
+    public string? CertificateCategory { get; set; } // e.g., "مقاولة" (Contractor) or "بنود" (Items) (header only)
+    public string? SupplierOrContractorType { get; set; } // e.g., "مورد" (Supplier) or "مقاول" (Contractor) (header only)
 
+    public int? LineNumber { get; set; }
+    public decimal? Quantity { get; set; } 
+    public decimal? Rate { get; set; }
+    public decimal? CompletionPercentage { get; set; } 
+    public decimal? DueAmount { get; set; } 
+    public decimal? PaidAmount { get; set; }
+    public decimal? RemainingAmount { get; set; }
+    public string? Notes { get; set; } 
+    public string? ProductId { get; set; }
+    
+    public Party? Party { get; set; } // Navigation for PartyId (assuming PartyIdFrom)
+    public WorkEffort? Project { get; set; } // Navigation for projectId to the project WorkEffort
+    public Product? Product { get; set; } // New navigation prop for ProductId
+    public OrderHeader? RelatedPurchaseOrder { get; set; }
+    
     public AccommodationMap? AccommodationMap { get; set; }
     public AccommodationSpot? AccommodationSpot { get; set; }
     public StatusItem? CurrentStatus { get; set; }

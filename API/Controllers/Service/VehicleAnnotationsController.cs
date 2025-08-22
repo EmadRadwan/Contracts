@@ -5,11 +5,7 @@ namespace API.Controllers.Service;
 
 public class VehicleAnnotations : BaseApiController
 {
-    [HttpGet("{vehicleId}/getVehicleAnnotations")]
-    public async Task<IActionResult> GetVehicleAnnotations(string vehicleId)
-    {
-        return HandleResult(await Mediator.Send(new GetVehicleAnnotations.Query { VehicleId = vehicleId }));
-    }
+    
 
 
     /*[HttpPost("createVehicleModel", Name = "CreateVehicleModel")]

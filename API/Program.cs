@@ -170,7 +170,7 @@ using (var scope = app.Services.CreateScope())
         var userManager = services.GetRequiredService<UserManager<AppUserLogin>>();
         var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
         await context.Database.MigrateAsync();
-        await SeedClothes.SeedData(context, userManager, roleManager);
+        await SeedContracts.SeedData(context, userManager, roleManager);
     }
     catch (Exception ex)
     {

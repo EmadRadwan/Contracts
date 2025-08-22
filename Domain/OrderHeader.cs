@@ -99,7 +99,6 @@ public class OrderHeader
     public StatusItem? Status { get; set; }
     public StatusItem? SyncStatus { get; set; }
     public WebSite? WebSite { get; set; }
-    public Vehicle? Vehicle { get; set; }
 
     public ICollection<AllocationPlanItem> AllocationPlanItems { get; set; }
     public ICollection<CommunicationEventOrder> CommunicationEventOrders { get; set; }
@@ -139,4 +138,5 @@ public class OrderHeader
     public ICollection<TrackingCodeOrderReturn> TrackingCodeOrderReturns { get; set; }
     public ICollection<TrackingCodeOrder> TrackingCodeOrders { get; set; }
     public ICollection<WorkOrderItemFulfillment> WorkOrderItemFulfillments { get; set; }
+    public ICollection<WorkEffort> WorkEfforts { get; set; }
 }
