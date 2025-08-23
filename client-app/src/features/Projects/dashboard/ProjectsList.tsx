@@ -14,6 +14,8 @@ import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import {WorkEffort} from "../../../app/models/manufacturing/workEffort";
 import {useAppDispatch} from "../../../app/store/configureStore";
 import {useFetchProjectsQuery} from "../../../app/store/apis/projectsApi";
+import ProjectForm from "../form/ProjectForm";
+import ProjectMenu from "../menu/ProjectMenu";
 
 // REFACTOR: Adapted from FacilitiesList to display WorkEffort records filtered for projects (WorkEffortTypeId = "PROJECT").
 // Used consistent styling and structure with Kendo Grid and Material-UI, ensuring integration with existing RTK Query hooks.
@@ -71,7 +73,7 @@ export default function ProjectsList() {
 
     return (
         <>
-            <ProjectMenu />
+            <ProjectMenu selectedMenuItem={"projects"} />
             <Paper elevation={5} className={`div-container-withBorderCurved`}>
                 <KendoGrid
                     style={{ height: "75vh", width: "94vw", flex: 1 }}

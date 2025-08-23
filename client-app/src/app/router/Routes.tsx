@@ -121,6 +121,7 @@ import ListRoutingTaskAssoc from "../../features/manufacturing/dashboard/ListRou
 import ListRoutingProductLink from "../../features/manufacturing/dashboard/ListRoutingProductLink";
 import ListRoutingTaskCosts from "../../features/manufacturing/dashboard/ListRoutingTaskCosts";
 import EditRoutingTask from "../../features/manufacturing/form/EditRoutingTask";
+import ProjectsDashboard from "../../features/Projects/dashboard/ProjectsDashboard";
 
 // Wrapper component to extract partyId from URL
 const PartyFinancialHistoryWrapper = () => {
@@ -168,6 +169,7 @@ export const routes: RouteObject[] = [
                     {path: "quotes", element: <QuotesList/>},
                     {path: "promos", element: <PromosList/>},
                     {path: "stores", element: <StoresList/>},
+                    { path: "projects", element: <ProjectsDashboard /> },
                     {path: "payments", element: <PaymentsList/>},
                     {
                         path: "invoices",

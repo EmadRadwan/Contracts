@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import {getter} from '@progress/kendo-react-common';
+import {FieldValidatorType} from "@progress/kendo-react-form";
 
 
 const emailRegex = new RegExp(/\S+@\S+\.\S+/);
@@ -93,4 +94,27 @@ export const percentageValidator = (value) => {
     } else {
         return "";
     }
+};
+
+export const dateValidator: FieldValidatorType = (value: any, allValues: any, field?: string) => {
+    // Allow null for EstimatedCompletionDate, but require valid date for EstimatedStartDate
+    if (field === "EstimatedStartDate" && (!value || !(value instanceof Date) || isNaN(value.getTime()))) {
+        return "Please enter a valid start date.";
+    }
+    if (field === "EstimatedCompletionDate" && value && (!(value instanceof Date) || isNaN(value.getTime()))) {
+        return "Please enter a valid completion date.";
+    }
+
+    // REFACTOR: Only validate chronological order if both dates are provided, ensuring null EstimatedCompletionDate is valid.
+    if (allValues.EstimatedStartDate && allValues.EstimatedCompletionDate) {
+        const startDate = new Date(allValues.EstimatedStartDate);
+        const completionDate = new Date(allValues.EstimatedCompletionDate);
+        if (startDate instanceof Date && completionDate instanceof Date && !isNaN(startDate.getTime()) && !isNaN(completionDate.getTime())) {
+            if (completionDate < startDate) {
+                return "Completion date cannot be earlier than start date.";
+            }
+        }
+    }
+
+    return undefined; // No error
 };

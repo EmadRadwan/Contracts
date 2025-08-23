@@ -1,11 +1,11 @@
 import React from "react";
-import InvoicesList from "../accounting/invoice/dashboard/InvoicesList";
+import ProjectsList from "./ProjectsList";
 
 export default function ProjectsDashboard() {
 
     return (
         <>
-            <InvoicesList/>
+            <ProjectsList/>
         </>
 
 

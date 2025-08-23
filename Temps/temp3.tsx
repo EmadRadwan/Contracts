@@ -1,161 +1,309 @@
-import React, { useState } from "react";
-import {
-    Grid as KendoGrid,
-    GRID_COL_INDEX_ATTRIBUTE,
-    GridColumn as Column,
-    GridDataStateChangeEvent,
-    GridToolbar,
-} from "@progress/kendo-react-grid";
-import { ExcelExport } from "@progress/kendo-react-excel-export";
-import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
-import { Grid, Paper, Button } from "@mui/material";
-import { useAppDispatch, useFetchProjectsQuery } from "../../../app/store/configureStore";
-import { setProjectId } from "../slice/projectUiSlice";
-import { WorkEffort } from "../../../app/models/workEffort";
-import ProjectMenu from "../menu/ProjectMenu";
-import LoadingComponent from "../../../app/layout/LoadingComponent";
-import { State } from "@progress/kendo-data-query";
-import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
+import React from "react";
+import { createBrowserRouter, RouteObject, useParams } from "react-router-dom";
+import { Navigate, Outlet } from "react-router";
+import App from "../layout/App";
+import ServerError from "../../features/errors/ServerError";
+import NotFound from "../../features/errors/NotFound";
+import RequireAuth from "./RequireAuth";
+import FacilitiesList from "../../features/facilities/dashboard/FacilitiesList";
+import PartiesList from "../../features/parties/dashboard/PartiesList";
+import OrderDashboard from "../../features/orders/dashboard/OrderDashboard";
+import AccountingDashboard from "../../features/accounting/AccountingDashboard";
+import OrdersList from "../../features/orders/dashboard/order/OrdersList";
+import InvoicesList from "../../features/accounting/invoice/dashboard/InvoicesList";
+import PaymentsList from "../../features/accounting/payment/dashboard/PaymentsList";
+import FacilityDashboard from "../../features/facilities/dashboard/FacilityDashboard";
+import InventoryItemsList from "../../features/facilities/dashboard/InventoryItemsList";
+import ProductPricesList from "../../features/catalog/dashboard/productPrice/ProductPricesList";
+import PartyContactsList from "../../features/parties/dashboard/PartyContactsList";
+import ProductCategoriesList from "../../features/catalog/dashboard/productCategory/ProductCategoriesList";
+import ProductSuppliersList from "../../features/catalog/dashboard/productSupplier/ProductSuppliersList";
+import ProductFacilitiesList from "../../features/catalog/dashboard/productFacility/ProductFacilitiesList";
+import LoginForm from "../../features/account/LoginForm";
+import ProductsList from "../../features/catalog/dashboard/product/ProductsList";
+import PromosList from "../../features/catalog/dashboard/productPromo/PromosList";
+import StoresList from "../../features/catalog/dashboard/productStore/StoresList";
+import InventoryItemDetailsList from "../../features/facilities/dashboard/InventoryItemDetailsList";
+import ReturnsList from "../../features/orders/dashboard/return/ReturnsList";
+import ReceiveInventoryList from "../../features/facilities/dashboard/ReceiveInventoryList";
+import ServiceDashboard from "../../features/services/dashboard/ServiceDashboard";
+import ProductAssociationsList from "../../features/catalog/dashboard/productAssociation/ProductAssociationList";
+import FixedAssetsList from "../../features/accounting/fixedAssets/dashboard/FixedAssetsList";
+import TaxAuthoritiesList from "../../features/accounting/taxAuthorities/dashboard/TaxAuthoritiesList";
+import FinancialAccountsList from "../../features/accounting/financialAccount/dashboard/FinancialAccountsList";
+import BillingAccountsList from "../../features/accounting/billingAccounts/dashboard/BillingAccountList";
+import OrganizationGlSettingsList from "../../features/accounting/organizationGlSettings/dashboard/OrganizationGlSettingsList";
+import GlobalGlSettingsList from "../../features/accounting/globalGlSetting/GlobalGlSettingsList";
+import ChartOfAccountsList from "../../features/accounting/globalGlSetting/chartOfAccounts/dashboard/ChartOfAccountsList";
+import PaymentMethodTypeList from "../../features/accounting/globalGlSetting/paymentMethodType/dashboard/PaymentMethodTypeList";
+import QuotesList from "../../features/orders/dashboard/quote/QuotesList";
+import ManufacturingDashboard from "../../features/manufacturing/dashboard/ManufacturingDashboard";
+import BOMProductComponentsList from "../../features/manufacturing/dashboard/BOMProductComponentsList";
+import AgreementsList from "../../features/accounting/agreements/dashboard/AgreementsList";
+import ChartOfAccountAssignForm from "../../features/accounting/organizationGlSettings/form/ChartOfAccountAssignForm";
+import CustomTimePeriods from "../../features/accounting/globalGlSetting/customTimePeriods/dashboard/CustomTimePeriods";
+import InvoiceItemTypeList from "../../features/accounting/globalGlSetting/invoiceItemType/dashboard/InvoiceItemTypeList";
+import GlAccountTypeDefaults from "../../features/accounting/organizationGlSettings/dashboard/glAccountDefaults/GlAccountTypeDefaults";
+import InventoryTransferList from "../../features/facilities/dashboard/InventoryTransferList";
+import OrgAccountingSummary from "../../features/accounting/organizationGlSettings/dashboard/OrgAccountingSummary";
+import AccountingTransactionsList from "../../features/accounting/organizationGlSettings/dashboard/AccountingTransactionsList";
+import AccountingTransactionEntriesList from "../../features/accounting/organizationGlSettings/dashboard/AccountingTransactionEntriesList";
+import EditAcctgTrans from "../../features/accounting/transaction/form/EditAcctgTrans";
+import BOMProductsList from "../../features/manufacturing/dashboard/BOMProductsList";
+import GlVarianceReason from "../../features/accounting/organizationGlSettings/dashboard/glAccountDefaults/GlVarianceReason";
+import RoutingsList from "../../features/manufacturing/dashboard/RoutingsList";
+import RoutingTasksList from "../../features/manufacturing/dashboard/RoutingTasksList";
+import CostComponentCalcsList from "../../features/manufacturing/dashboard/CostComponentCalcsList";
+import ProductCostsList from "../../features/catalog/dashboard/productCost/ProductCostsList";
+import ForeignExchangeRatesList from "../../features/accounting/globalGlSetting/fxRates/dashboard/ForeignExchangeRatesList";
+import SalesInvoiceAccountList from "../../features/accounting/organizationGlSettings/dashboard/glAccountDefaults/SalesInvoiceAccountList";
+import PurchaseInvoiceAccountList from "../../features/accounting/organizationGlSettings/dashboard/glAccountDefaults/PurchaseInvoiceAccountList";
+import StandardCostsList from "../../features/accounting/fixedAssets/dashboard/StandardCostsList";
+import ProductionRunsList from "../../features/manufacturing/dashboard/ProductionRunsList";
+import ProductGlDefaults from "../../features/accounting/organizationGlSettings/dashboard/glAccountDefaults/ProductGlAccounts";
+import ProductCategoryGlAccounts from "../../features/accounting/organizationGlSettings/dashboard/glAccountDefaults/ProductCategoryGlAccounts";
+import FinAccountGlAccounts from "../../features/accounting/organizationGlSettings/dashboard/glAccountDefaults/FinAccountGlAccounts";
+import PartyGlAccounts from "../../features/accounting/organizationGlSettings/dashboard/glAccountDefaults/PartyGlAccounts";
+import PaymentMethodTypeGlAccounts from "../../features/accounting/organizationGlSettings/dashboard/glAccountDefaults/PaymentMethodTypeGlAccounts";
+import PaymentTypeGlAccounts from "../../features/accounting/organizationGlSettings/dashboard/glAccountDefaults/PaymentTypeGlAccounts";
+import CreditCardTypesGlAccounts from "../../features/accounting/organizationGlSettings/dashboard/glAccountDefaults/CreditCardTypesGlAccounts";
+import TaxAuthorityGlAccounts from "../../features/accounting/organizationGlSettings/dashboard/glAccountDefaults/TaxAuthorityGlAccounts";
+import FixedAssetTypeGlMappings from "../../features/accounting/organizationGlSettings/dashboard/glAccountDefaults/FixedAssetTypeGlMappings";
+import TrialBalance from "../../features/accounting/organizationGlSettings/dashboard/TrialBalance";
+import AccountingReportsDashboard from "../../features/accounting/organizationGlSettings/dashboard/AccountingReportsDashboard";
+import TransactionTotals from "../../features/accounting/organizationGlSettings/dashboard/TransactionTotals";
+import IncomeStatement from "../../features/accounting/organizationGlSettings/dashboard/IncomeStatement";
+import CashFlowStatement from "../../features/accounting/organizationGlSettings/dashboard/CashFlowStatement";
+import BalanceSheet from "../../features/accounting/organizationGlSettings/dashboard/BalanceSheet";
+import ComparativeIncomeStatement from "../../features/accounting/organizationGlSettings/dashboard/ComparativeIncomeStatement";
+import ComaparativeCashFlowStatement from "../../features/accounting/organizationGlSettings/dashboard/ComaparativeCashFlowStatement";
+import ComparativeBalanceSheet from "../../features/accounting/organizationGlSettings/dashboard/ComparativeBalanceSheet";
+import GlAccountTrialBalance from "../../features/accounting/organizationGlSettings/dashboard/GlAccountTrialBalance";
+import CostCenters from "../../features/accounting/organizationGlSettings/dashboard/CostCenters";
+import PhysicalInventoryList from "../../features/facilities/dashboard/PhysicalInventoryList";
+import FacilityLocationsList from "../../features/facilities/dashboard/FacilityLocationsList";
+import AccountingCosts from "../../features/accounting/globalGlSetting/costs/dashboard/AccountingCosts";
+import AgreementItemsList from "../../features/accounting/agreements/dashboard/AgreementItemsList";
+import AgreementTermsList from "../../features/accounting/agreements/dashboard/AgreementTermsList";
+import InventoryValuation from "../../features/accounting/organizationGlSettings/dashboard/InventoryValuation";
+import OrgSetupTimePeriodList from "../../features/accounting/organizationGlSettings/dashboard/OrgSetupTimePeriodList";
+import FacilityPickingList from "../../features/facilities/dashboard/FacilityPickingList";
+import StockMovesList from "../../features/facilities/dashboard/StockMovesList";
+import ManagePicklists from "../../features/facilities/dashboard/ManagePicklists";
+import BillingAccountInvoicesList from "../../features/accounting/billingAccounts/dashboard/BillingAccountInvoicesList";
+import BillingAccountPayments from "../../features/accounting/billingAccounts/dashboard/BillingAccountPayments";
+import BillingAccountOrders from "../../features/accounting/billingAccounts/dashboard/BillingAccountOrders";
+import FinancialAccountTransactions from "../../features/accounting/financialAccount/dashboard/FinancialAccountTransactions";
+import FinancialAccountDepositWithdrawal from "../../features/accounting/financialAccount/dashboard/FinancialAccountDepositWithdrawal";
+import BillingAccountsLayout from "../../features/accounting/billingAccounts/dashboard/BillingAccountsLayout";
+import FinancialAccountLayout from "../../features/accounting/financialAccount/dashboard/FinancialAccountLayout";
+import WorkEffortsWithReservationsList from "../../features/manufacturing/dashboard/WorkEffortsWithReservationsList";
+import QuickCreateAcctgTransForm from "../../features/accounting/transaction/form/QuickCreateAcctgTransForm";
+import CreateAcctgTransForm from "../../features/accounting/transaction/form/CreateAcctgTransForm";
+import PackingList from "../../features/facilities/dashboard/PackingList";
+import PaymentGroupsList from "../../features/accounting/paymentGroups/dashboard/PaymentGroupsList";
+import PaymentGroupLayout from "../../features/accounting/paymentGroups/dashboard/PaymentGroupLayout";
+import PaymentGroupPaymentsList from "../../features/accounting/paymentGroups/dashboard/PaymentGroupPaymentsList";
+import PartyFinancialHistory from "../../features/parties/dashboard/PartyFinancialHistory";
+import EditInvoice from "../../features/accounting/invoice/form/EditInvoice";
+import EditReturn from "../../features/orders/form/return/EditReturn";
+import OrderReturnItems from "../../features/orders/dashboard/return/OrderReturnItems";
+import InvoiceDisplayForm from "../../features/accounting/invoice/form/InvoiceDisplayForm";
+import NewInvoice from "../../features/accounting/invoice/form/NewInvoice";
+import EditRouting from "../../features/manufacturing/form/EditRouting";
+import ListRoutingTaskAssoc from "../../features/manufacturing/dashboard/ListRoutingTaskAssoc";
+import ListRoutingProductLink from "../../features/manufacturing/dashboard/ListRoutingProductLink";
+import ListRoutingTaskCosts from "../../features/manufacturing/dashboard/ListRoutingTaskCosts";
+import EditRoutingTask from "../../features/manufacturing/form/EditRoutingTask";
+import ProjectsDashboard from "../../features/projects/dashboard/ProjectsDashboard";
 
-// REFACTOR: Updated ProjectsList to use OData syntax with dataState and onDataStateChange, mirroring PartiesList for filtering, sorting, and pagination.
-// Integrated ExcelExport for grid data export, maintaining consistency with PartiesList.
-// Kept existing fields and styling, ensuring seamless integration with useFetchProjectsQuery and /odata/projectRecords endpoint.
-export default function ProjectsList() {
-    const [editMode, setEditMode] = useState(0);
-    const [project, setProject] = useState<WorkEffort | undefined>(undefined);
-    const [dataState, setDataState] = React.useState<State>({ take: 10, skip: 0 });
-    const { data: projects, isFetching } = useFetchProjectsQuery(dataState);
-    const dispatch = useAppDispatch();
-    const { getTranslatedLabel } = useTranslationHelper();
+// REFACTOR: Added ProjectsDashboard import to support /projects route.
 
-    // REFACTOR: Centralized project selection logic to dispatch projectId and navigate to edit form, consistent with PartiesList's handleSelectParty.
-    function handleSelectProject(projectId: string) {
-        const selectedProject = projects?.data.find((project: WorkEffort) => project.WorkEffortId === projectId);
-        dispatch(setProjectId(projectId));
-        setProject(selectedProject);
-        setEditMode(2); // Edit mode
-    }
+// Wrapper component to extract partyId from URL
+const PartyFinancialHistoryWrapper = () => {
+    const { partyId } = useParams<{ partyId: string }>();
+    return <PartyFinancialHistory partyId={partyId!} />;
+};
 
-    function cancelEdit() {
-        setEditMode(0);
-    }
+const InvoiceWrapper = () => {
+    const { invoiceId } = useParams<{ invoiceId: string }>();
+    return <Outlet context={{ invoiceId }} />;
+};
 
-    // REFACTOR: Added dataStateChange to update OData query parameters dynamically, enabling client-side filtering and sorting.
-    const dataStateChange = (e: GridDataStateChangeEvent) => {
-        setDataState(e.dataState);
-    };
+const RoutingWrapper = () => {
+    const { workEffortId } = useParams<{ workEffortId: string }>();
+    return <Outlet context={{ workEffortId }} />;
+};
 
-    // REFACTOR: Customized ProjectNum cell with clickable button, aligning with PartiesList's PartyDescriptionCell pattern.
-    const ProjectNumCell = (props: any) => {
-        const field = props.field || "";
-        const value = props.dataItem[field];
-        const navigationAttributes = useTableKeyboardNavigation(props.id);
-        return (
-            <td
-                className={props.className}
-                style={{ ...props.style, color: "blue" }}
-                colSpan={props.colSpan}
-                role={"gridcell"}
-                aria-colindex={props.ariaColumnIndex}
-                aria-selected={props.isSelected}
-                {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
-                {...navigationAttributes}
-            >
-                <Button onClick={() => handleSelectProject(props.dataItem.WorkEffortId)}>
-                    {props.dataItem.ProjectNum}
-                </Button>
-            </td>
-        );
-    };
+export const routes: RouteObject[] = [
+    {
+        path: "/",
+        element: <App />,
+        children: [
+            { path: "login", element: <LoginForm /> },
+            {
+                element: <RequireAuth />,
+                children: [
+                    { path: "facilities", element: <FacilitiesList /> },
+                    { path: "parties", element: <PartiesList /> },
+                    { path: "manufacturingDashboard", element: <ManufacturingDashboard /> },
+                    { path: "ordersDashboard", element: <OrderDashboard /> },
+                    { path: "facilitiesDashboard", element: <FacilityDashboard /> },
+                    { path: "servicesDashboard", element: <ServiceDashboard /> },
+                    { path: "invoicesDashboard", element: <AccountingDashboard /> },
+                    { path: "orders", element: <OrdersList /> },
+                    { path: "returns", element: <ReturnsList /> },
+                    { path: "returns/:returnId", element: <EditReturn /> },
+                    { path: "returns/:returnId/items", element: <OrderReturnItems /> },
+                    { path: "quotes", element: <QuotesList /> },
+                    { path: "promos", element: <PromosList /> },
+                    { path: "stores", element: <StoresList /> },
+                    { path: "payments", element: <PaymentsList /> },
+                    {
+                        path: "invoices",
+                        children: [
+                            { index: true, element: <InvoicesList /> },
+                            { path: "new", element: <NewInvoice /> },
+                            {
+                                path: ":invoiceId",
+                                element: <InvoiceWrapper />,
+                                children: [
+                                    { index: true, element: <InvoiceDisplayForm mode="view" /> },
+                                    { path: "edit", element: <EditInvoice /> },
+                                    { path: "items", element: <InvoiceDisplayForm mode="items" /> },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        path: "paymentGroups",
+                        element: <PaymentGroupLayout />,
+                        children: [
+                            { path: "/paymentGroups", element: <PaymentGroupsList /> },
+                            { path: "/paymentGroups/overview", element: <PaymentGroupsList /> },
+                            { path: "/paymentGroups/payments", element: <PaymentGroupPaymentsList /> },
+                        ],
+                    },
+                    { path: "facilityInventories", element: <FacilityDashboard /> },
+                    { path: "receiveInventory", element: <ReceiveInventoryList /> },
+                    { path: "products", element: <ProductsList /> },
+                    { path: "productPrices", element: <ProductPricesList /> },
+                    { path: "partyContacts", element: <PartyContactsList /> },
+                    { path: "productCategories", element: <ProductCategoriesList /> },
+                    { path: "productSuppliers", element: <ProductSuppliersList /> },
+                    { path: "productCosts", element: <ProductCostsList /> },
+                    { path: "productFacilities", element: <ProductFacilitiesList /> },
+                    { path: "inventoryItems", element: <InventoryItemsList /> },
+                    { path: "inventoryTransfer", element: <InventoryTransferList /> },
+                    { path: "inventoryItemDetails", element: <InventoryItemDetailsList /> },
+                    { path: "picking", element: <FacilityPickingList /> },
+                    { path: "productAssociations", element: <ProductAssociationsList /> },
+                    { path: "fixedAssets", element: <FixedAssetsList /> },
+                    { path: "agreements", element: <AgreementsList /> },
+                    { path: "orgGL", element: <OrganizationGlSettingsList /> },
+                    { path: "orgAccountingSummary", element: <OrgAccountingSummary /> },
+                    { path: "accountingTransaction", element: <AccountingTransactionsList /> },
+                    { path: "accountingTransactionEntries", element: <AccountingTransactionEntriesList /> },
+                    { path: "glQuickCreateAccountingTransaction", element: <QuickCreateAcctgTransForm /> },
+                    { path: "glCreateAccountingTransaction", element: <CreateAcctgTransForm /> },
+                    { path: "editAcctgTrans/:acctgTransId", element: <EditAcctgTrans /> },
+                    { path: "orgChartOfAccount", element: <ChartOfAccountAssignForm /> },
+                    { path: "gLAccountDefaults", element: <GlAccountTypeDefaults /> },
+                    { path: "varianceReasonGLAccounts", element: <GlVarianceReason /> },
+                    { path: "gLAccountTypeDefaults", element: <GlAccountTypeDefaults /> },
+                    { path: "taxAuth", element: <TaxAuthoritiesList /> },
+                    { path: "globalGL", element: <GlobalGlSettingsList /> },
+                    { path: "chartOfAccounts", element: <ChartOfAccountsList /> },
+                    { path: "paymentMethodType", element: <PaymentMethodTypeList /> },
+                    { path: "bomProductComponents", element: <BOMProductComponentsList /> },
+                    { path: "billOfMaterials", element: <BOMProductsList /> },
+                    { path: "jobShop", element: <ProductionRunsList /> },
+                    { path: "costs", element: <CostComponentCalcsList /> },
+                    {
+                        path: "routings",
+                        children: [
+                            { index: true, element: <RoutingsList /> },
+                            {
+                                path: ":workEffortId",
+                                element: <RoutingWrapper />,
+                                children: [
+                                    { path: "edit", element: <EditRouting /> },
+                                    { path: "task-assoc", element: <ListRoutingTaskAssoc /> },
+                                    { path: "product-link", element: <ListRoutingProductLink /> },
+                                    { path: "task-costs", element: <ListRoutingTaskCosts /> },
+                                    { path: "task", element: <EditRoutingTask /> },
+                                ],
+                            },
+                            { path: "new", element: <EditRouting /> },
+                        ],
+                    },
+                    { path: "routingTasks", element: <RoutingTasksList /> },
+                    { path: "customTimePeriods", element: <CustomTimePeriods /> },
+                    { path: "invoiceItemType", element: <InvoiceItemTypeList /> },
+                    { path: "FXRates", element: <ForeignExchangeRatesList /> },
+                    { path: "salesInvoiceGLAccount", element: <SalesInvoiceAccountList /> },
+                    { path: "purchaseInvoiceGLAccount", element: <PurchaseInvoiceAccountList /> },
+                    { path: "standardCosts", element: <StandardCostsList /> },
+                    { path: "productCategoryGLAccount", element: <ProductCategoryGlAccounts /> },
+                    { path: "productGLAccounts", element: <ProductGlDefaults /> },
+                    { path: "partyGLAccounts", element: <PartyGlAccounts /> },
+                    { path: "paymentMethodIDGLAccount", element: <PaymentMethodTypeGlAccounts /> },
+                    { path: "paymentTypeGLAccountTypeID", element: <PaymentTypeGlAccounts /> },
+                    { path: "creditCardTypeGLAccount", element: <CreditCardTypesGlAccounts /> },
+                    { path: "taxAuthorityGLAccounts", element: <TaxAuthorityGlAccounts /> },
+                    { path: "fixedAssetTypeGLMappings", element: <FixedAssetTypeGlMappings /> },
+                    { path: "finAccountTypeGLAccount", element: <FinAccountGlAccounts /> },
+                    { path: "trialBalance", element: <TrialBalance /> },
+                    { path: "accountingReports", element: <AccountingReportsDashboard /> },
+                    { path: "transactionTotals", element: <TransactionTotals /> },
+                    { path: "incomeStatement", element: <IncomeStatement /> },
+                    { path: "cashFlowStatement", element: <CashFlowStatement /> },
+                    { path: "balanceSheet", element: <BalanceSheet /> },
+                    { path: "comparativeIncomeStatement", element: <ComparativeIncomeStatement /> },
+                    { path: "comparativeCashFlowStatement", element: <ComaparativeCashFlowStatement /> },
+                    { path: "comparativeBalanceSheet", element: <ComparativeBalanceSheet /> },
+                    { path: "glAccountTrialBalance", element: <GlAccountTrialBalance /> },
+                    { path: "inventoryValuation", element: <InventoryValuation /> },
+                    { path: "costCenters", element: <CostCenters /> },
+                    { path: "physicalInventory", element: <PhysicalInventoryList /> },
+                    { path: "locations", element: <FacilityLocationsList /> },
+                    { path: "accountingCosts", element: <AccountingCosts /> },
+                    { path: "agreementItems", element: <AgreementItemsList /> },
+                    { path: "agreementTerms", element: <AgreementTermsList /> },
+                    { path: "timePeriod", element: <OrgSetupTimePeriodList /> },
+                    { path: "stockMoves", element: <StockMovesList /> },
+                    { path: "packing", element: <PackingList /> },
+                    { path: "managePicklists", element: <ManagePicklists /> },
+                    { path: "issueRawMaterials", element: <WorkEffortsWithReservationsList /> },
+                    // REFACTOR: Added /projects route to render ProjectsDashboard, enabling navigation from ProjectMenu.
+                    { path: "projects", element: <ProjectsDashboard /> },
+                    {
+                        path: "billingAccounts",
+                        element: <BillingAccountsLayout />,
+                        children: [
+                            { path: "/billingAccounts", element: <BillingAccountsList /> },
+                            { path: "/billingAccounts/invoices", element: <BillingAccountInvoicesList /> },
+                            { path: "/billingAccounts/payments", element: <BillingAccountPayments /> },
+                            { path: "/billingAccounts/orders", element: <BillingAccountOrders /> },
+                        ],
+                    },
+                    {
+                        path: "financialAccounts",
+                        element: <FinancialAccountLayout />,
+                        children: [
+                            { path: "/financialAccounts", element: <FinancialAccountsList /> },
+                            { path: "/financialAccounts/transactions", element: <FinancialAccountTransactions /> },
+                            { path: "/financialAccounts/depositWithdraw", element: <FinancialAccountDepositWithdrawal /> },
+                        ],
+                    },
+                    { path: "party/:partyId/financial-history", element: <PartyFinancialHistoryWrapper /> },
+                ],
+            },
+            { path: "not-found", element: <NotFound /> },
+            { path: "server-error", element: <ServerError /> },
+            { path: "*", element: <Navigate replace to="/not-found" /> },
+        ],
+    },
+];
 
-    // REFACTOR: Added ExcelExport for exporting project data, consistent with PartiesList's export functionality.
-    const dataToExport = projects ? projects.data : [];
-    const _export = React.useRef(null);
-    const excelExport = () => {
-        if (_export.current !== null) {
-            _export.current!.save();
-        }
-    };
-
-    // REFACTOR: Conditionally render ProjectForm for edit/create modes, aligning with PartiesList's form navigation.
-    if (editMode) {
-        return <ProjectForm project={project} cancelEdit={cancelEdit} editMode={editMode} />;
-    }
-
-    return (
-        <>
-            <ProjectMenu />
-            <Paper elevation={5} className={`div-container-withBorderCurved`} style={{ marginTop: 15 }}>
-                <Grid container columnSpacing={1} alignItems="center">
-                    <Grid item xs={8}>
-                        <div className="div-container">
-                            <ExcelExport data={dataToExport} ref={_export}>
-                                <KendoGrid
-                                    style={{ height: "75vh", width: "94vw", flex: 1 }}
-                                    resizable={true}
-                                    filterable={true}
-                                    sortable={true}
-                                    pageable={true}
-                                    {...dataState}
-                                    data={projects ? projects : { data: [], total: 0 }}
-                                    onDataStateChange={dataStateChange}
-                                >
-                                    <GridToolbar>
-                                        <Grid container>
-                                            <Grid item xs={5}>
-                                                <Button
-                                                    color={"secondary"}
-                                                    onClick={() => setEditMode(1)} // Create mode
-                                                    variant="outlined"
-                                                >
-                                                    {getTranslatedLabel("project.projects.create", "Create Project")}
-                                                </Button>
-                                            </Grid>
-                                        </Grid>
-                                    </GridToolbar>
-                                    <Column
-                                        field="ProjectNum"
-                                        title={getTranslatedLabel("project.projects.list.num", "Project Number")}
-                                        cell={ProjectNumCell}
-                                        width={200}
-                                        locked={true}
-                                    />
-                                    <Column
-                                        field="ProjectName"
-                                        title={getTranslatedLabel("project.projects.list.name", "Project Name")}
-                                        width={300}
-                                    />
-                                    <Column
-                                        field="PartyId"
-                                        title={getTranslatedLabel("project.projects.list.party", "Party ID")}
-                                        width={150}
-                                    />
-                                    <Column
-                                        field="CurrentStatusId"
-                                        title={getTranslatedLabel("project.projects.list.status", "Status")}
-                                        width={150}
-                                    />
-                                    <Column
-                                        field="EstimatedStartDate"
-                                        title={getTranslatedLabel("project.projects.list.startDate", "Start Date")}
-                                        format="{0:MM/dd/yyyy}"
-                                        width={150}
-                                    />
-                                    <Column
-                                        field="EstimatedCompletionDate"
-                                        title={getTranslatedLabel("project.projects.list.completionDate", "Completion Date")}
-                                        format="{0:MM/dd/yyyy}"
-                                        width={150}
-                                    />
-                                </KendoGrid>
-                            </ExcelExport>
-                            {isFetching && (
-                                <LoadingComponent message={getTranslatedLabel("project.projects.list.loading", "Loading Projects...")} />
-                            )}
-                        </div>
-                    </Grid>
-                </Grid>
-            </Paper>
-        </>
-    );
-}
+export const router = createBrowserRouter(routes);

@@ -39,12 +39,28 @@ const projectsApi = createApi({
                 },
                 providesTags: ["WorkEffort"],
             }),
+            addProject: builder.mutation<WorkEffort, Partial<WorkEffort>>({
+                query: (project) => ({
+                    url: "/projects/createProject",
+                    method: "POST",
+                    body: { ...project },
+                }),
+                invalidatesTags: ["WorkEffort"],
+            }),
+            updateProject: builder.mutation<WorkEffort, Partial<WorkEffort>>({
+                query: (project) => ({
+                    url: `/projects/${project.WorkEffortId}`,
+                    method: "PUT",
+                    body: project,
+                }),
+                invalidatesTags: ["WorkEffort"],
+            }),
             
         };
     },
 });
 
 export const {
-    useFetchProjectsQuery,
+    useFetchProjectsQuery, useAddProjectMutation, useUpdateProjectMutation
 } = projectsApi;
 export {projectsApi};

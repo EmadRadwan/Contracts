@@ -1,3 +1,6 @@
+git filter-repo --path yourfile.ext --invert-paths
+
+
 modelBuilder.Entity<WorkEffort>(entity =>
 {
     entity.ToTable("WORK_EFFORT");
