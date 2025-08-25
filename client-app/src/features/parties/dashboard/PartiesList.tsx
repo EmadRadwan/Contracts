@@ -18,6 +18,7 @@ import {useFetchPartiesQuery} from "../../../app/store/apis";
 import {Party, PartyParams} from "../../../app/models/party/party";
 import {State} from "@progress/kendo-data-query";
 import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
+import CreateContractorForm from "../form/CreateContractorForm";
 
 
 export default function PartiesList() {
@@ -103,6 +104,9 @@ export default function PartiesList() {
     if (editMode > 0 && form === 'SUPPLIER') {
         return <CreateSupplierForm party={party} cancelEdit={cancelEdit} editMode={editMode}/>
     }
+    if (editMode > 0 && form === 'CONTRACTOR') {
+        return <CreateContractorForm party={party} cancelEdit={cancelEdit} editMode={editMode}/>
+    }
 
 
     return (
@@ -153,6 +157,15 @@ export default function PartiesList() {
                                                     }}
                                                             variant="outlined">
                                                         {getTranslatedLabel("party.parties.list.createEmployee", "Create Employee")}
+                                                    </Button>
+                                                </Grid>
+                                                <Grid item xs={2}>
+                                                    <Button color={"secondary"} onClick={() => {
+                                                        setEditMode(1);
+                                                        setForm('CONTRACTOR')
+                                                    }}
+                                                            variant="outlined">
+                                                        {getTranslatedLabel("party.parties.list.createContractor", "Create Contractor")}
                                                     </Button>
                                                 </Grid>
 

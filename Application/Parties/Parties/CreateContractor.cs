@@ -1,5 +1,5 @@
-using Application.Core;
 using Application.Interfaces;
+using Application.Core;
 using Domain;
 using FluentValidation;
 using MediatR;
@@ -8,7 +8,7 @@ using Persistence;
 
 namespace Application.Parties.Parties;
 
-public class CreateSupplier
+public class CreateContractor
 {
     public class Command : IRequest<Result<PartyDto>>
     {
@@ -57,12 +57,12 @@ public class CreateSupplier
             // REFACTOR: Fetch all required role types for the party to match the first party's roles
             // Purpose: Ensure the new party is assigned all roles (ACCOUNT, BILL_FROM_VENDOR, SHIP_FROM_VENDOR, SUPPLIER, SUPPLIER_AGENT)
             // Improvement: Centralizes role fetching for consistency and prepares for adding multiple roles
-            var roleTypeIds = new[] { "SUPPLIER", "ACCOUNT", "BILL_FROM_VENDOR", "SHIP_FROM_VENDOR", "SUPPLIER_AGENT" };
+            var roleTypeIds = new[] { "CONTRACTOR", "ACCOUNT", "BILL_FROM_VENDOR", "SHIP_FROM_VENDOR", "SUPPLIER_AGENT" };
             var roleTypes = await _context.RoleTypes
                 .Where(x => roleTypeIds.Contains(x.RoleTypeId))
                 .ToListAsync(cancellationToken);
 
-            var roleTypeSupplier = roleTypes.SingleOrDefault(x => x.RoleTypeId == "SUPPLIER");
+            var roleTypeContractor = roleTypes.SingleOrDefault(x => x.RoleTypeId == "CONTRACTOR");
 
             var contactMechPurposeTypePhoneMobile = await _context.ContactMechPurposeTypes.SingleOrDefaultAsync(
                 x => x.ContactMechPurposeTypeId == "PRIMARY_PHONE");
@@ -77,21 +77,21 @@ public class CreateSupplier
                 x => x.ContactMechPurposeTypeId == "PRIMARY_EMAIL");
 
             var stamp = DateTime.Now;
-            var newPartyId = await _utilityService.GetNextSequence("Supplier");
+            var newPartyId = await _utilityService.GetNextSequence("Contractor");
 
             var party = new Party
             {
                 PartyId = newPartyId,
                 PartyType = partyType,
                 Status = partyStatusPartyEnabled,
-                MainRole = roleTypeSupplier?.RoleTypeId, // Keep SUPPLIER as MainRole
+                MainRole = roleTypeContractor?.RoleTypeId, // Keep CONTRACTOR as MainRole
                 Description = request.PartyDto.GroupName,
                 CreatedStamp = stamp,
                 LastUpdatedStamp = stamp
             };
             _context.Parties.Add(party);
 
-            // REFACTOR: Add PartyRole entries for all required roles instead of just SUPPLIER
+            // REFACTOR: Add PartyRole entries for all required roles instead of just CONTRACTOR
             // Purpose: Assigns all roles from the first party to ensure consistency
             // Improvement: Loops through roleTypes to create PartyRole entries, ensuring all roles are assigned
             foreach (var roleType in roleTypes)
@@ -153,8 +153,8 @@ public class CreateSupplier
                     CreatedStamp = stamp,
                     ContactMech = contactMech,
                     Party = party,
-                    PartyRole = _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeSupplier), // Use SUPPLIER role
-                    RoleType = roleTypeSupplier
+                    PartyRole = _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeContractor), // Use CONTRACTOR role
+                    RoleType = roleTypeContractor
                 };
                 _context.PartyContactMeches.Add(partyContactMech);
 
@@ -190,8 +190,8 @@ public class CreateSupplier
                     CreatedStamp = stamp,
                     ContactMech = contactMech,
                     Party = party,
-                    PartyRole = _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeSupplier), // Use SUPPLIER role
-                    RoleType = roleTypeSupplier
+                    PartyRole = _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeContractor), // Use Contractor role
+                    RoleType = roleTypeContractor
                 };
                 _context.PartyContactMeches.Add(partyContactMech);
 
@@ -226,8 +226,8 @@ public class CreateSupplier
                     CreatedStamp = stamp,
                     ContactMech = contactMech,
                     Party = party,
-                    PartyRole = _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeSupplier), // Use SUPPLIER role
-                    RoleType = roleTypeSupplier
+                    PartyRole = _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeContractor), // Use Contractor role
+                    RoleType = roleTypeContractor
                 };
                 _context.PartyContactMeches.Add(partyContactMech);
 
@@ -269,7 +269,7 @@ public class CreateSupplier
             if (!result)
             {
                 transaction.Rollback();
-                return Result<PartyDto>.Failure("Failed to create Supplier");
+                return Result<PartyDto>.Failure("Failed to create Contractor");
             }
 
             transaction.Commit();
@@ -277,7 +277,7 @@ public class CreateSupplier
             var partyToReturn = new PartyDto
             {
                 PartyId = newPartyId,
-                Description = request.PartyDto.FirstName + " ( " + roleTypeSupplier?.RoleTypeId + " )",
+                Description = request.PartyDto.FirstName + " ( " + roleTypeContractor?.RoleTypeId + " )",
                 PartyTypeDescription = partyStatus.PartyId
             };
             return Result<PartyDto>.Success(partyToReturn);

@@ -55,6 +55,12 @@ public class PartiesController : BaseApiController
         return HandleResult(await Mediator.Send(new GetSupplier.Query { PartyId = partyId }));
     }
 
+    [HttpGet("{partyId}/getContractor", Name = "GetContractor")]
+    public async Task<IActionResult> GetContractor(string partyId)
+    {
+        return HandleResult(await Mediator.Send(new GetContractor.Query { PartyId = partyId }));
+    }
+
     [HttpGet("getSuppliers", Name = "GetSuppliers")]
     public async Task<IActionResult> GetSuppliers()
     {
@@ -65,6 +71,12 @@ public class PartiesController : BaseApiController
     public async Task<IActionResult> CreateCustomer(PartyDto partyDto)
     {
         return HandleResult(await Mediator.Send(new CreateCustomer.Command { PartyDto = partyDto }));
+    }
+
+    [HttpPost("createContractor", Name = "CreateContractor")]
+    public async Task<IActionResult> CreateContractor(PartyDto partyDto)
+    {
+        return HandleResult(await Mediator.Send(new CreateContractor.Command { PartyDto = partyDto }));
     }
 
     [HttpPost("createSupplier", Name = "CreateSupplier")]
@@ -83,6 +95,12 @@ public class PartiesController : BaseApiController
     public async Task<IActionResult> UpdateSupplier(PartyDto partyDto)
     {
         return HandleResult(await Mediator.Send(new UpdateSupplier.Command { PartyDto = partyDto }));
+    }
+
+    [HttpPut("updateContractor", Name = "UpdateContractor")]
+    public async Task<IActionResult> UpdateContractor(PartyDto partyDto)
+    {
+        return HandleResult(await Mediator.Send(new UpdateContractor.Command { PartyDto = partyDto }));
     }
 
     [HttpGet("getCompanies")]

@@ -52,6 +52,7 @@
         "createCustomer": "إنشاء عميل",
         "createSupplier": "إنشاء مورد",
         "createEmployee": "إنشاء موظف",
+        "createContractor": "إنشاء مقاول",
         "export": "تصدير إلى PDF",
         "generating": "جاري إنشاء PDF...",
         "description": "الطرف",
@@ -93,6 +94,21 @@
         "cancel": "إلغاء",
         "loading": "جاري تحميل المورد...",
         "processing": "جاري معالجة المورد..."
+      }
+    },
+    "contractors": {
+      "form": {
+        "new": "مقاول جديد",
+        "groupName": "اسم المقاول *",
+        "email": "البريد الإلكتروني",
+        "countryCode": "رمز البلد",
+        "mobileContactNumber": "رقم الاتصال المحمول",
+        "address1": "العنوان 1",
+        "address2": "العنوان 2",
+        "submit": "حفظ",
+        "cancel": "إلغاء",
+        "loading": "جاري تحميل المقاول...",
+        "processing": "جاري معالجة المقاول..."
       }
     }
   },

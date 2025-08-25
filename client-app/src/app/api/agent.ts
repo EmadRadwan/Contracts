@@ -305,6 +305,10 @@ const Parties = {
         requests.post("/parties/createCustomer", customer),
     updateCustomer: (customer: any) =>
         requests.put(`/parties/updateCustomer`, customer),
+    createContractor: (contractor: any) =>
+        requests.post("/parties/createContractor", contractor),
+    updateContractor: (contractor: any) =>
+        requests.post("/parties/updateContractor", contractor),
     createSupplier: (supplier: any) =>
         requests.post("/parties/createSupplier", supplier),
     updateSupplier: (supplier: any) =>
