@@ -88,7 +88,6 @@ public class WorkEffort
     public string? UniversalId { get; set; }
     public string? SourceReferenceId { get; set; }
     public string? FixedAssetId { get; set; }
-    public string? FacilityId { get; set; }
     public string? InfoUrl { get; set; }
     public string? RecurrenceInfoId { get; set; }
     public string? TempExprId { get; set; }
@@ -118,8 +117,10 @@ public class WorkEffort
     public string? CertificateNumber { get; set; } 
     public string? ProjectName { get; set; }
     public decimal? TotalAmount { get; set; }
+    public decimal? DiscountAmount { get; set; }
     public string? ProjectId { get; set; } 
-    
+    public string? FacilityId { get; set; }
+
     public string? PartyId { get; set; }
    
     public string? RelatedOrderId { get; set; }
@@ -133,9 +134,13 @@ public class WorkEffort
     public decimal? CompletionPercentage { get; set; } 
     public decimal? DueAmount { get; set; } 
     public decimal? PaidAmount { get; set; }
+    public decimal? Deductions { get; set; }
+    public decimal? InsuranceAmount { get; set; }
     public decimal? RemainingAmount { get; set; }
+    public decimal? AchievementPercent { get; set; }
     public string? Notes { get; set; } 
     public string? ProductId { get; set; }
+    public string? IsProductCompanyPurchased { get; set; }
     
     public Party? Party { get; set; } // Navigation for PartyId (assuming PartyIdFrom)
     public WorkEffort? Project { get; set; } // Navigation for projectId to the project WorkEffort

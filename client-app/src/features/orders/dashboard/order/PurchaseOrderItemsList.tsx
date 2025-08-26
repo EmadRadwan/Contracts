@@ -92,8 +92,6 @@ export default function PurchaseOrderItemsList({orderFormEditMode, orderId}: Pro
         console.log('selectedOrderItem', selectedOrderItem);    
 
         console.log('orderItemToDisplay', orderItemToDisplay);
-        // set the selected order item in state and start edit mode
-        //setOrderItem(selectedOrderItem)
         setOrderItem(orderItemToDisplay);
         setEditMode(2);
         setShow(true);

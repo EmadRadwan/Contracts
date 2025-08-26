@@ -33,8 +33,7 @@ import {ColumnMenuOrderTypeFilter} from "../ColumnMenu";
 import {resetUiOrderItems, setUiOrderItems} from "../../slice/orderItemsUiSlice";
 import { resetUiOrderAdjustments, setUiOrderAdjustments } from "../../slice/orderAdjustmentsUiSlice";
 
-//todo: add  remaining payment columns
-// todo: need to handle delete order 
+
 
 export default function OrdersList() {
 

@@ -130,6 +130,8 @@ import {paymentGroupTypesApi} from "./apis/payment/paymentGroupTypesApi";
 import {taxApi} from "./apis/accounting/taxApi";
 import {productFeaturesApi} from "./apis/productFeaturesApi";
 import {projectsApi} from "./apis/projectsApi";
+import {certificateUiSlice} from "../../features/Projects/slice/certificateUiSlice";
+import {certificateItemsSlice} from "../../features/Projects/slice/certificateItemsUiSlice";
 
 
 
@@ -177,6 +179,8 @@ export const store = configureStore({
         orderItemsUi: orderItemsSlice.reducer,
         quoteItemsUi: quoteItemsSlice.reducer,
         ordersUi: ordersSlice.reducer,
+        certificateUi: certificateUiSlice.reducer,
+        certificateItemsSlice: certificateItemsSlice.reducer,
         quotesUi: quotesSlice.reducer,
         orderPaymentsUi: orderPaymentsSlice.reducer,
         orderAdjustmentsUi: orderAdjustmentsSlice.reducer,

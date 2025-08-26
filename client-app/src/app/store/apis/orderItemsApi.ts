@@ -3,7 +3,6 @@ import {store} from "../configureStore";
 import {OrderItem} from "../../models/order/orderItem";
 import {ProductLov} from "../../models/product/productLov";
 import {setUiOrderItemsFromApi} from "../../../features/orders/slice/orderItemsUiSlice";
-import {ReceiveInventoryRequest} from "./shipment/ReceiveInventoryRequest";
 
 interface ListProductLov<T> {
     data: T[];

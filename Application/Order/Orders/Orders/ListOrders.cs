@@ -19,14 +19,10 @@ public class ListOrders
     public class Handler : IRequestHandler<Query, IQueryable<OrderRecord>>
     {
         private readonly DataContext _context;
-        private readonly ILogger<Handler> _logger;
-        private readonly IUserAccessor _userAccessor;
 
-        public Handler(DataContext context, IUserAccessor userAccessor, ILogger<Handler> logger)
+        public Handler(DataContext context)
         {
             _context = context;
-            _userAccessor = userAccessor;
-            _logger = logger;
         }
 
 

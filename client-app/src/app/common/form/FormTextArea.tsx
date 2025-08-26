@@ -90,7 +90,7 @@ export const FormTextArea = (fieldRenderProps: FieldRenderProps) => {
                 onBlur={handleOnBlur}
                 {...others}
             />
-            {
+            {/*{
                 showHint &&
                 <NotificationGroup style={position.bottomRight}>
                     <Notification type={{style: 'info', icon: true}} closable={false}>
@@ -101,7 +101,7 @@ export const FormTextArea = (fieldRenderProps: FieldRenderProps) => {
             {
                 showValidationMessage &&
                 <Error id={errorId}>{validationMessage}</Error>
-            }
+            }*/}
         </FieldWrapper>
     );
 };

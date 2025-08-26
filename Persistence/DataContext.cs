@@ -62017,6 +62017,23 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
         .HasForeignKey(d => d.RelatedOrderId)
         .HasConstraintName("WK_EFFRT_RELATED_ORDER");
            
+           entity.Property(e => e.DiscountAmount)
+        .HasColumnType("decimal(18, 2)")
+        .HasColumnName("DISCOUNT_AMOUNT"); // REFACTOR: Added to track discounts, improving financial detail.
+
+    entity.Property(e => e.Deductions)
+        .HasColumnType("decimal(18, 2)")
+        .HasColumnName("DEDUCTIONS"); // REFACTOR: Added to handle deductions, enhancing financial accuracy.
+
+    entity.Property(e => e.InsuranceAmount)
+        .HasColumnType("decimal(18, 2)")
+        .HasColumnName("INSURANCE_AMOUNT"); // REFACTOR: Added to manage insurance costs, supporting risk-related tracking.
+
+entity.Property(e => e.IsProductCompanyPurchased)
+        .HasMaxLength(1)
+        .IsUnicode(false)
+        .HasColumnName("IS_PRODUCT_COMPANY_PURCHASED")
+        .IsFixedLength();
             });
 
             modelBuilder.Entity<WorkEffortAssoc>(entity =>

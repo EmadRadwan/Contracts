@@ -55,12 +55,42 @@ const projectsApi = createApi({
                 }),
                 invalidatesTags: ["WorkEffort"],
             }),
-            
+            fetchProjectCertificates: builder.query<ListResponse<WorkEffort>, State>({
+                query: (queryArgs) => {
+                    const url = `/odata/ProjectRecords?$count=true&${toODataString(queryArgs)}`;
+                    return {
+                        url,
+                        method: "GET",
+                    };
+                },
+                providesTags: ["ProjectCertificates"],
+                transformResponse: (response: any, meta, arg) => {
+                    // REFACTOR: Simplified transformResponse
+                    // Purpose: Avoid reshaping fields, expect backend DTO to match WorkEffort interface
+                    // Context: Backend query returns project_num, party_name, etc., directly
+                    const { totalCount } = JSON.parse(meta!.response!.headers.get("count")!);
+                    return {
+                        data: response,
+                        total: totalCount,
+                    };
+                },
+            }),
+            addProjectCertificate: builder.mutation<ProjectCertificateRecord, Partial<ProjectCertificateRecord>>({
+                query: (certificate) => ({
+                    url: "/project/createProjectCertificate",
+                    method: "POST",
+                    body: { ...certificate },
+                }),
+                invalidatesTags: ["WorkEffort"],
+            }),
         };
     },
 });
 
 export const {
-    useFetchProjectsQuery, useAddProjectMutation, useUpdateProjectMutation
+    useFetchProjectsQuery,
+    useAddProjectMutation,
+    useUpdateProjectMutation,
+    useFetchProjectCertificatesQuery, useAddProjectCertificateMutation
 } = projectsApi;
 export {projectsApi};

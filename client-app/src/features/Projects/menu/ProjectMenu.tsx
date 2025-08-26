@@ -16,8 +16,14 @@ const links = [
         title: "Projects",
         key: "projects",
         path: "/projects",
-        icon: <HomeWork sx={{ color: "#FF4081" }} />
-    }
+        icon: <HomeWork sx={{ color: "#FF4081" }} />,
+    },
+    {
+        title: "Project Certificates",
+        key: "projectCertificates",
+        path: "/projectCertificates",
+        icon: <ListAltOutlinedIcon sx={{ color: "#FF4081" }} />,
+    },
 ];
 
 const normalizePath = (path: string) => path.replace(/^\//, '').toLowerCase();

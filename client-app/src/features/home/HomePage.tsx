@@ -18,7 +18,7 @@ export default function HomePage() {
             <Slider {...settings}>
                 <div>
                     <img
-                        src="/images/Business_One_Dairy_ERP_with_White_BG.jpg"
+                        src="/images/BusinessOneGoldenLand.jpg"
                         alt="hero"
                         className="centered-image"
                     />

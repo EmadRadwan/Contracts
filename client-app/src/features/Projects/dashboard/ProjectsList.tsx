@@ -7,15 +7,14 @@ import {
     GridSortChangeEvent,
     GridToolbar,
 } from "@progress/kendo-react-grid";
-import { SortDescriptor, State } from "@progress/kendo-data-query";
 import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
 import { Grid, Paper, Button } from "@mui/material";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import {WorkEffort} from "../../../app/models/manufacturing/workEffort";
-import {useAppDispatch} from "../../../app/store/configureStore";
 import {useFetchProjectsQuery} from "../../../app/store/apis/projectsApi";
 import ProjectForm from "../form/ProjectForm";
 import ProjectMenu from "../menu/ProjectMenu";
+import {State} from "@progress/kendo-data-query";
 
 // REFACTOR: Adapted from FacilitiesList to display WorkEffort records filtered for projects (WorkEffortTypeId = "PROJECT").
 // Used consistent styling and structure with Kendo Grid and Material-UI, ensuring integration with existing RTK Query hooks.

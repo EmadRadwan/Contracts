@@ -9,7 +9,7 @@ import LoadingComponent from "../../../app/layout/LoadingComponent";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import {WorkEffort} from "../../../app/models/manufacturing/workEffort";
 import {useAppDispatch} from "../../../app/store/configureStore";
-import {dateValidator, requiredValidator} from "../../../app/common/form/Validators";
+import { requiredValidator} from "../../../app/common/form/Validators";
 import {toast} from "react-toastify";
 import {useAddProjectMutation, useUpdateProjectMutation} from "../../../app/store/apis/projectsApi";
 import ProjectMenu from "../menu/ProjectMenu";
@@ -27,6 +27,49 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
 
     const [buttonFlag, setButtonFlag] = useState(false);
     const { getTranslatedLabel } = useTranslationHelper();
+
+    const initialValues = editMode === 2 && project ? project : {
+        ProjectNum: null,
+        ProjectName: "",
+        EstimatedStartDate: null,
+        EstimatedCompletionDate: null,
+        CurrentStatusId: "",
+    };
+
+    // This ensures EstimatedCompletionDate is not earlier than EstimatedStartDate, aligning with Kendo Form's best practices.
+    const formValidator = (values: any) => {
+        const errors: any = {};
+
+        // Validate EstimatedStartDate
+        if (!values.EstimatedStartDate || !(values.EstimatedStartDate instanceof Date) || isNaN(values.EstimatedStartDate.getTime())) {
+            errors.EstimatedStartDate = getTranslatedLabel("project.projects.form.validation.startDate", "Please enter a valid start date.");
+        }
+
+        // Validate EstimatedCompletionDate (optional, but must be valid if provided)
+        if (values.EstimatedCompletionDate && (!(values.EstimatedCompletionDate instanceof Date) || isNaN(values.EstimatedCompletionDate.getTime()))) {
+            errors.EstimatedCompletionDate = getTranslatedLabel("project.projects.form.validation.completionDate", "Please enter a valid completion date.");
+        }
+
+        // Validate date chronology if both dates are provided
+        if (values.EstimatedStartDate && values.EstimatedCompletionDate) {
+            const startDate = new Date(values.EstimatedStartDate);
+            const completionDate = new Date(values.EstimatedCompletionDate);
+            if (
+                startDate instanceof Date &&
+                completionDate instanceof Date &&
+                !isNaN(startDate.getTime()) &&
+                !isNaN(completionDate.getTime()) &&
+                completionDate < startDate
+            ) {
+                errors.EstimatedCompletionDate = getTranslatedLabel(
+                    "project.projects.form.validation.dateOrder",
+                    "Completion date cannot be earlier than start date."
+                );
+            }
+        }
+
+        return errors;
+    };
 
     async function handleSubmitData(data: any) {
         setButtonFlag(true);
@@ -61,7 +104,8 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
                     </Typography>
                 )}
                 <Form
-                    initialValues={editMode === 2 ? project : undefined}
+                    initialValues={initialValues}
+                    validator={formValidator}
                     onSubmit={(values) => handleSubmitData(values)}
                     render={(formRenderProps) => (
                         <FormElement>
@@ -94,7 +138,6 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
                                             name={"EstimatedStartDate"}
                                             label={getTranslatedLabel("project.projects.form.startDate", "Start Date")}
                                             component={FormDatePicker}
-                                            validator={dateValidator}
                                         />
                                     </Grid>
                                     <Grid item xs={3}>
@@ -103,7 +146,6 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
                                             name={"EstimatedCompletionDate"}
                                             label={getTranslatedLabel("project.projects.form.completionDate", "Completion Date")}
                                             component={FormDatePicker}
-                                            validator={dateValidator}
                                         />
                                     </Grid>
                                     <Grid item xs={3}>
@@ -114,7 +156,7 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
                                             component={MemoizedFormDropDownList}
                                             dataItemKey={"StatusId"}
                                             textField={"Description"} // Assuming StatusItem has a Description field
-                                            data={[{ StatusId: "PRJ_ACTIVE", Description: "Active" }, { StatusId: "PRJ_COMPLETED", Description: "Completed" }]} // Placeholder, replace with useFetchStatusesQuery
+                                            data={[{ CurrentStatusId: "PRJ_ACTIVE", Description: "Active" }, { CurrentStatusId: "PRJ_COMPLETED", Description: "Completed" }]} // Placeholder, replace with useFetchStatusesQuery
                                             validator={requiredValidator}
                                         />
                                     </Grid>

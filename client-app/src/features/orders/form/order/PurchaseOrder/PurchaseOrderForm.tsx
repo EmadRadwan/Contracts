@@ -415,20 +415,6 @@ export default function PurchaseOrderForm({selectedOrder, cancelEdit, editMode}:
                                                     )}
                                                 </Grid>
                                             )}
-                                            {/*{(agreements && agreements?.length > 0 && supplierId !== undefined) && (
-                                                <Grid item xs={4}>
-                                                    <Field
-                                                        id="agreementId"
-                                                        name="agreementId"
-                                                        label={'Agreement'}
-                                                        component={MemoizedFormDropDownList2}
-                                                        data={agreements ?? []}
-                                                        disabled={formEditMode > 1}
-                                                        dataItemKey={"agreementId"}
-                                                        textField={"description"}
-                                                    />
-                                                </Grid>
-                                            )} */}
                                         </Grid>
                                         <Grid item container xs={3} spacing={2} alignItems="flex-end">
                                             {memoizedOrderTotals}
