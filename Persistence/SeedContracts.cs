@@ -196,7 +196,7 @@ public class SeedContracts
         //Product Category
         if (!context.ProductCategories.Any())
         {
-            var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/product_categories_clothes.json");
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/product_categories_contracts.json");
             var jsonData = File.ReadAllText(path);
 
             var productCategories = JsonConvert.DeserializeObject<List<ProductCategory>>(jsonData);
@@ -477,7 +477,7 @@ public class SeedContracts
 
         if (!context.Products.Any())
         {
-            var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/products_clothes.json");
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/products_contracts.json");
             var jsonData = File.ReadAllText(path);
 
             var products = JsonConvert.DeserializeObject<List<Product>>(jsonData);
@@ -496,7 +496,7 @@ public class SeedContracts
         }*/
 
 
-        if (!context.ProductAssocs.Any())
+        /*if (!context.ProductAssocs.Any())
         {
             var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/product_assocs_clothes.json");
             var jsonData = File.ReadAllText(path);
@@ -504,7 +504,7 @@ public class SeedContracts
             var productAssocs = JsonConvert.DeserializeObject<List<ProductAssoc>>(jsonData);
             await context.ProductAssocs.AddRangeAsync(productAssocs);
             await context.SaveChangesAsync();
-        }
+        }*/
 
 
         // Seeding ProductCategoryMembers
@@ -1555,7 +1555,7 @@ public class SeedContracts
 
 
         // tax authority categories
-        if (!context.TaxAuthorityCategories.Any())
+        /*if (!context.TaxAuthorityCategories.Any())
         {
             var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/tax_authority_categories_clothes.json");
             var jsonData = File.ReadAllText(path);
@@ -1563,7 +1563,7 @@ public class SeedContracts
             var taxAuthorityCategories = JsonConvert.DeserializeObject<List<TaxAuthorityCategory>>(jsonData);
             await context.TaxAuthorityCategories.AddRangeAsync(taxAuthorityCategories);
             await context.SaveChangesAsync();
-        }
+        }*/
 
         // tax authority rate types
         if (!context.TaxAuthorityRateTypes.Any())
@@ -2471,7 +2471,7 @@ public class SeedContracts
             await context.SaveChangesAsync();
         }
         
-        if (!context.SupplierProducts.Any())
+        /*if (!context.SupplierProducts.Any())
         {
             var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/supplier_products.json");
             var jsonData = File.ReadAllText(path);
@@ -2479,7 +2479,7 @@ public class SeedContracts
             var supplierProducts = JsonConvert.DeserializeObject<List<SupplierProduct>>(jsonData);
             await context.SupplierProducts.AddRangeAsync(supplierProducts);
             await context.SaveChangesAsync();
-        }
+        }*/
         
         if (!context.UserLogins.Any())
         {

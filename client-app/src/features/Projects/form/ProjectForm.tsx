@@ -24,36 +24,44 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
     const dispatch = useAppDispatch();
     const [addProject, { isLoading: isCreating }] = useAddProjectMutation();
     const [updateProject, { isLoading: isUpdating }] = useUpdateProjectMutation();
-
     const [buttonFlag, setButtonFlag] = useState(false);
     const { getTranslatedLabel } = useTranslationHelper();
 
-    const initialValues = editMode === 2 && project ? project : {
-        ProjectNum: null,
-        ProjectName: "",
-        EstimatedStartDate: null,
-        EstimatedCompletionDate: null,
-        CurrentStatusId: "",
+    // REFACTOR: Updated initialValues to use workEffortId instead of ProjectNum and lowercase field names.
+    // Ensures consistency with field naming convention and aligns with backend workEffortId usage.
+    const initialValues = editMode === 2 && project ? {
+        workEffortId: project.workEffortId,
+        projectName: project.projectName,
+        estimatedStartDate: project.estimatedStartDate,
+        estimatedCompletionDate: project.estimatedCompletionDate,
+        currentStatusId: project.currentStatusId,
+    } : {
+        workEffortId: null, // Set to null in create mode as it’s backend-generated
+        projectName: "",
+        estimatedStartDate: null,
+        estimatedCompletionDate: null,
+        currentStatusId: "",
     };
 
-    // This ensures EstimatedCompletionDate is not earlier than EstimatedStartDate, aligning with Kendo Form's best practices.
+    console.log('project', project);
+    console.log('editMode', editMode);
+
+    // REFACTOR: Updated formValidator to use lowercase field names for consistency.
+    // Maintains date validation logic while aligning with new field naming convention.
     const formValidator = (values: any) => {
         const errors: any = {};
-
-        // Validate EstimatedStartDate
-        if (!values.EstimatedStartDate || !(values.EstimatedStartDate instanceof Date) || isNaN(values.EstimatedStartDate.getTime())) {
-            errors.EstimatedStartDate = getTranslatedLabel("project.projects.form.validation.startDate", "Please enter a valid start date.");
+        // Validate estimatedStartDate
+        if (!values.estimatedStartDate || !(values.estimatedStartDate instanceof Date) || isNaN(values.estimatedStartDate.getTime())) {
+            errors.estimatedStartDate = getTranslatedLabel("project.projects.form.validation.startDate", "Please enter a valid start date.");
         }
-
-        // Validate EstimatedCompletionDate (optional, but must be valid if provided)
-        if (values.EstimatedCompletionDate && (!(values.EstimatedCompletionDate instanceof Date) || isNaN(values.EstimatedCompletionDate.getTime()))) {
-            errors.EstimatedCompletionDate = getTranslatedLabel("project.projects.form.validation.completionDate", "Please enter a valid completion date.");
+        // Validate estimatedCompletionDate (optional, but must be valid if provided)
+        if (values.estimatedCompletionDate && (!(values.estimatedCompletionDate instanceof Date) || isNaN(values.estimatedCompletionDate.getTime()))) {
+            errors.estimatedCompletionDate = getTranslatedLabel("project.projects.form.validation.completionDate", "Please enter a valid completion date.");
         }
-
         // Validate date chronology if both dates are provided
-        if (values.EstimatedStartDate && values.EstimatedCompletionDate) {
-            const startDate = new Date(values.EstimatedStartDate);
-            const completionDate = new Date(values.EstimatedCompletionDate);
+        if (values.estimatedStartDate && values.estimatedCompletionDate) {
+            const startDate = new Date(values.estimatedStartDate);
+            const completionDate = new Date(values.estimatedCompletionDate);
             if (
                 startDate instanceof Date &&
                 completionDate instanceof Date &&
@@ -61,13 +69,12 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
                 !isNaN(completionDate.getTime()) &&
                 completionDate < startDate
             ) {
-                errors.EstimatedCompletionDate = getTranslatedLabel(
+                errors.estimatedCompletionDate = getTranslatedLabel(
                     "project.projects.form.validation.dateOrder",
                     "Completion date cannot be earlier than start date."
                 );
             }
         }
-
         return errors;
     };
 
@@ -76,10 +83,18 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
         try {
             let response: WorkEffort;
             if (editMode === 2) {
+                // REFACTOR: Use workEffortId in payload for update, aligning with new field name.
                 response = await updateProject(data).unwrap();
                 toast.success(getTranslatedLabel("project.projects.form.updateSuccess", "Project updated successfully"));
             } else {
-                const newProject = { ...data, WorkEffortId: uuid(), WorkEffortTypeId: "PROJECT" };
+                // REFACTOR: Exclude workEffortId from payload in create mode, as it’s backend-generated.
+                // Maintains consistency with previous ProjectNum exclusion logic.
+                const { workEffortId, ...newProjectData } = data;
+                const newProject = {
+                    ...newProjectData,
+                    workEffortId: uuid(),
+                    workEffortTypeId: "PROJECT",
+                };
                 response = await addProject(newProject).unwrap();
                 toast.success(getTranslatedLabel("project.projects.form.createSuccess", "Project created successfully"));
             }
@@ -92,15 +107,19 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
         }
     }
 
-
     return (
         <>
             <ProjectMenu selectedMenuItem={"projects"} />
-
-            <Paper elevation={5} className={`div-container-withBorderCurved`}>
+            <Paper elevation={5} className={`div-container-withBorderCurved`} style={{ padding: '16px' }}>
                 {editMode === 1 && (
-                    <Typography variant="h4" color={"green"}>
+                    <Typography variant="h4" color={"green"} sx={{ mb: 2 }}>
                         New Project
+                    </Typography>
+                )}
+                {editMode === 2 && project?.workEffortId && (
+                    // REFACTOR: Updated to use workEffortId in title for edit mode display.
+                    <Typography variant="h4" color={"black"} sx={{ mb: 2 }}>
+                        {getTranslatedLabel("project.projects.form.editTitle", `Edit Project (${project.workEffortId})`)}
                     </Typography>
                 )}
                 <Form
@@ -110,60 +129,71 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
                     render={(formRenderProps) => (
                         <FormElement>
                             <fieldset className={"k-form-fieldset"}>
-                                <Grid container spacing={2}>
-                                    <Grid item xs={3}>
-                                        <Field
-                                            id={"ProjectNum"}
-                                            name={"ProjectNum"}
-                                            label={getTranslatedLabel("project.projects.form.num", "Project Number")}
-                                            component={FormInput}
-                                            autoComplete={"off"}
-                                            validator={requiredValidator}
-                                        />
+                                {editMode === 2 && project?.workEffortId && (
+                                    // REFACTOR: Updated to use workEffortId field with lowercase naming.
+                                    <Grid container spacing={2}>
+                                        <Grid item xs={4}>
+                                            <Field
+                                                name="workEffortId"
+                                                component={FormInput}
+                                                type="hidden"
+                                                value={project.workEffortId}
+                                            />
+                                        </Grid>
                                     </Grid>
-                                    <Grid item xs={3}>
+                                )}
+                                <Grid container spacing={2}>
+                                    <Grid item xs={4} sx={{ maxWidth: '300px' }}>
                                         <Field
-                                            id={"ProjectName"}
-                                            name={"ProjectName"}
+                                            id={"projectName"}
+                                            name={"projectName"}
                                             label={getTranslatedLabel("project.projects.form.name", "Project Name")}
                                             component={FormInput}
                                             autoComplete={"off"}
                                             validator={requiredValidator}
                                         />
                                     </Grid>
-                                    
-                                    <Grid item xs={3}>
+                                </Grid>
+                                <Grid container spacing={2}>
+                                    <Grid item xs={4} sx={{ maxWidth: '300px' }}>
                                         <Field
-                                            id={"EstimatedStartDate"}
-                                            name={"EstimatedStartDate"}
+                                            id={"estimatedStartDate"}
+                                            name={"estimatedStartDate"}
                                             label={getTranslatedLabel("project.projects.form.startDate", "Start Date")}
                                             component={FormDatePicker}
                                         />
                                     </Grid>
-                                    <Grid item xs={3}>
+                                </Grid>
+                                <Grid container spacing={2}>
+                                    <Grid item xs={4} sx={{ maxWidth: '300px' }}>
                                         <Field
-                                            id={"EstimatedCompletionDate"}
-                                            name={"EstimatedCompletionDate"}
+                                            id={"estimatedCompletionDate"}
+                                            name={"estimatedCompletionDate"}
                                             label={getTranslatedLabel("project.projects.form.completionDate", "Completion Date")}
                                             component={FormDatePicker}
                                         />
                                     </Grid>
-                                    <Grid item xs={3}>
+                                </Grid>
+                                <Grid container spacing={2}>
+                                    <Grid item xs={4} sx={{ maxWidth: '300px' }}>
                                         <Field
-                                            id={"CurrentStatusId"}
-                                            name={"CurrentStatusId"}
+                                            id={"currentStatusId"}
+                                            name={"currentStatusId"}
                                             label={getTranslatedLabel("project.projects.form.status", "Status")}
                                             component={MemoizedFormDropDownList}
-                                            dataItemKey={"StatusId"}
-                                            textField={"Description"} // Assuming StatusItem has a Description field
-                                            data={[{ CurrentStatusId: "PRJ_ACTIVE", Description: "Active" }, { CurrentStatusId: "PRJ_COMPLETED", Description: "Completed" }]} // Placeholder, replace with useFetchStatusesQuery
+                                            dataItemKey={"currentStatusId"}
+                                            textField={"Description"}
+                                            data={[
+                                                { currentStatusId: "WEPR_IN_PROGRESS", Description: "Active" },
+                                                { currentStatusId: "WEPR_COMPLETE", Description: "Completed" },
+                                            ]}
                                             validator={requiredValidator}
                                         />
                                     </Grid>
                                 </Grid>
                                 <div className="k-form-buttons">
                                     <Grid container spacing={1}>
-                                        <Grid item xs={2}>
+                                        <Grid item xs={1}>
                                             <Button
                                                 type={"submit"}
                                                 color="success"
@@ -180,7 +210,13 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
                                         </Grid>
                                     </Grid>
                                 </div>
-                                {buttonFlag && <LoadingComponent message="Processing Project..." />}
+                                {buttonFlag && (
+                                    <Grid container spacing={2}>
+                                        <Grid item xs={4}>
+                                            <LoadingComponent message="Processing Project..." />
+                                        </Grid>
+                                    </Grid>
+                                )}
                             </fieldset>
                         </FormElement>
                     )}

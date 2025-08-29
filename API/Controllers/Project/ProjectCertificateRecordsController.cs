@@ -1,5 +1,4 @@
 using API.Controllers.OData;
-using Application.ProjectCertificates;
 using Application.Projects;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Query;

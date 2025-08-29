@@ -72,9 +72,7 @@ const certificateItemsApi = createApi({
                 },
             }),
 
-// REFACTOR: Fetch product details for an item
-// Purpose: Retrieve product data for items with productId
-// Context: Mirrors fetchOrderItemProduct
+
             fetchCertificateItemProduct: builder.query<ListProductLov<ProductLov>, CertificateItem>({
                 query: (certificateItem) => ({
                     url: `/workEfforts/${certificateItem.itemId}/getCertificateItemProduct`,

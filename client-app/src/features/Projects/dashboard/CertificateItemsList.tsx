@@ -10,11 +10,7 @@ import ModalContainer from "../../../app/common/modals/ModalContainer";
 import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
 import {certificateSubTotal, nonDeletedCertificateItemsSelector} from "../slice/certificateSelectors";
 import {useFetchCertificateItemsQuery} from "../../../app/store/apis/certificateItemsApi";
-
-
-const CertificateItemFormMemo = ({ certificateItem, editMode, onClose, editMode: formEditMode, updateCertificateItems }: any) => (
-  <div>Certificate Item Form (Placeholder)</div>
-);
+import {CertificateItemFormMemo} from "../form/CertificateItemForm";
 
 
 interface Props {

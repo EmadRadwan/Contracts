@@ -180,7 +180,7 @@ export const store = configureStore({
         quoteItemsUi: quoteItemsSlice.reducer,
         ordersUi: ordersSlice.reducer,
         certificateUi: certificateUiSlice.reducer,
-        certificateItemsSlice: certificateItemsSlice.reducer,
+        certificateItemsUi: certificateItemsSlice.reducer,
         quotesUi: quotesSlice.reducer,
         orderPaymentsUi: orderPaymentsSlice.reducer,
         orderAdjustmentsUi: orderAdjustmentsSlice.reducer,

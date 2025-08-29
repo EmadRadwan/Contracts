@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import {
     Grid as KendoGrid,
     GRID_COL_INDEX_ATTRIBUTE,
@@ -14,20 +14,30 @@ import {WorkEffort} from "../../../app/models/manufacturing/workEffort";
 import {useFetchProjectsQuery} from "../../../app/store/apis/projectsApi";
 import ProjectForm from "../form/ProjectForm";
 import ProjectMenu from "../menu/ProjectMenu";
-import {State} from "@progress/kendo-data-query";
+import {DataResult, State} from "@progress/kendo-data-query";
+import {handleDatesArray} from "../../../app/util/utils";
 
-// REFACTOR: Adapted from FacilitiesList to display WorkEffort records filtered for projects (WorkEffortTypeId = "PROJECT").
-// Used consistent styling and structure with Kendo Grid and Material-UI, ensuring integration with existing RTK Query hooks.
 export default function ProjectsList() {
     const [editMode, setEditMode] = useState(0);
     const [project, setProject] = useState<WorkEffort | undefined>(undefined);
-    const { data: projects, error, isFetching, isLoading } = useFetchProjectsQuery(undefined);
-    const { getTranslatedLabel } = useTranslationHelper();
-    const [dataState, setDataState] = React.useState<State>({ take: 10, skip: 0 });
+    const [projects, setProjects] = React.useState<DataResult>({data: [], total: 0});
 
+    const [dataState, setDataState] = React.useState<State>({take: 6, skip: 0});
+    const { data, error, isFetching, isLoading } = useFetchProjectsQuery({...dataState});
+    const { getTranslatedLabel } = useTranslationHelper();
+
+    useEffect(() => {
+        if (data) {
+            // REFACTOR: Extract total as a number from data.total, handling object case
+            const total = typeof data.total === "object" ? data.total.total : data.total;
+            const adjustedData = handleDatesArray(data.data);
+            setProjects({ data: adjustedData, total: Number(total) });
+        }
+    }, [data]);
+    
     // REFACTOR: Centralized facility selection logic to handle project selection and dispatch projectId to Redux store.
     function handleSelectProject(projectId: string) {
-        const selectedProject = projects?.find((project: WorkEffort) => project.WorkEffortId === projectId);
+        const selectedProject = projects?.data?.find((project: WorkEffort) => project.WorkEffortId === projectId);
         setProject(selectedProject);
         setEditMode(2); // Edit mode
     }
@@ -58,7 +68,7 @@ export default function ProjectsList() {
                 {...navigationAttributes}
             >
                 <Button onClick={() => handleSelectProject(props.dataItem.WorkEffortId)}>
-                    {props.dataItem.ProjectNum}
+                    {props.dataItem.workEffortId}
                 </Button>
             </td>
         );
@@ -98,35 +108,30 @@ export default function ProjectsList() {
                         </Grid>
                     </GridToolbar>
                     <Column
-                        field="ProjectNum"
+                        field="workEffortId"
                         title={getTranslatedLabel("project.projects.list.num", "Project Number")}
                         cell={ProjectNumCell}
                         width={200}
                         locked={true}
                     />
                     <Column
-                        field="ProjectName"
+                        field="projectName"
                         title={getTranslatedLabel("project.projects.list.name", "Project Name")}
                         width={300}
                     />
                     <Column
-                        field="PartyId"
-                        title={getTranslatedLabel("project.projects.list.party", "Party ID")}
-                        width={150}
-                    />
-                    <Column
-                        field="CurrentStatusId"
+                        field="currentStatusDescription"
                         title={getTranslatedLabel("project.projects.list.status", "Status")}
                         width={150}
                     />
                     <Column
-                        field="EstimatedStartDate"
+                        field="estimatedStartDate"
                         title={getTranslatedLabel("project.projects.list.startDate", "Start Date")}
                         format="{0:MM/dd/yyyy}"
                         width={150}
                     />
                     <Column
-                        field="EstimatedCompletionDate"
+                        field="estimatedCompletionDate"
                         title={getTranslatedLabel("project.projects.list.completionDate", "Completion Date")}
                         format="{0:MM/dd/yyyy}"
                         width={150}

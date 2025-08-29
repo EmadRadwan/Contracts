@@ -1,4 +1,5 @@
 #nullable enable
+using Application.Core;
 using FluentValidation;
 using MediatR;
 using Persistence;
@@ -26,35 +27,35 @@ public class CreateProject
     {
         private readonly DataContext _context;
         private readonly IUserAccessor _userAccessor;
+        private readonly IUtilityService _utilityService;
 
-        public Handler(DataContext context, IUserAccessor userAccessor)
+        public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService)
         {
             _context = context;
             _userAccessor = userAccessor;
+            _utilityService = utilityService;
         }
 
         public async Task<Result<ProjectDto>> Handle(Command request, CancellationToken cancellationToken)
         {
-            // REFACTOR: Use transaction for atomicity, mirroring CreateProduct's approach.
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
+                var newProjectSerial =
+                    await _utilityService.GetNextSequence("WorkEffort");
+
                 var stamp = DateTime.UtcNow;
                 // Create WorkEffort entity
                 var project = new WorkEffort
                 {
-                    WorkEffortId = request.ProjectDto!.WorkEffortId,
-                    ProjectNum = request.ProjectDto.ProjectNum,
+                    WorkEffortId = newProjectSerial,
                     ProjectName = request.ProjectDto.ProjectName,
                     PartyId = request.ProjectDto.PartyId,
                     WorkEffortTypeId = "PROJECT",
                     CurrentStatusId = request.ProjectDto.CurrentStatusId,
                     EstimatedStartDate = request.ProjectDto.EstimatedStartDate,
                     EstimatedCompletionDate = request.ProjectDto.EstimatedCompletionDate,
-                    CreatedByUserLogin = _userAccessor.GetUsername(),
                     CreatedDate = stamp,
-                    LastModifiedByUserLogin = _userAccessor.GetUsername(),
-                    LastModifiedDate = stamp,
                     LastUpdatedStamp = stamp
                 };
 

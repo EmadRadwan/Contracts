@@ -7,6 +7,7 @@ public class ProductLovParams
     public string? VehicleId { get; set; }
     public string? FacilityId { get; set; }
     public string? ProductId { get; set; }
+    public string? CertificateType { get; set; }
     public int Skip { get; set; }
     public int PageSize { get; set; }
 }

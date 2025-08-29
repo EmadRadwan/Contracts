@@ -28,17 +28,15 @@ public class ProjectsList
         public async Task<IQueryable<WorkEffortRecord>> Handle(Query request, CancellationToken cancellationToken)
         {
             var query = from we in _context.WorkEfforts
-                join p in _context.Parties on we.PartyId equals p.PartyId into partyGroup
-                from p in partyGroup.DefaultIfEmpty()
                 join si in _context.StatusItems on we.CurrentStatusId equals si.StatusId into statusGroup
                 from si in statusGroup.DefaultIfEmpty()
                 where we.WorkEffortTypeId == "PROJECT"
                 select new WorkEffortRecord
                 {
                     WorkEffortId = we.WorkEffortId,
-                    ProjectNum = we.ProjectNum,
                     ProjectName = we.ProjectName,
                     CurrentStatusId = we.CurrentStatusId,
+                    CurrentStatusDescription = si != null ? si.Description : null,
                     EstimatedStartDate = we.EstimatedStartDate,
                     EstimatedCompletionDate = we.EstimatedCompletionDate,
                 };

@@ -8,8 +8,6 @@ namespace API.Controllers.Catalog;
 
 public class ProductsController : BaseApiController
 {
-   
-
     [HttpGet("getSalesProductsLov", Name = "GetSalesProductsLov")]
     public async Task<IActionResult> GetSalesProductsLov([FromQuery] ProductLovParams param)
     {
@@ -21,36 +19,45 @@ public class ProductsController : BaseApiController
     public async Task<IActionResult> GetFinishedProductsLov([FromQuery] ProductLovParams param)
     {
         var language = GetLanguage();
-        return HandleResult(await Mediator.Send(new GetFinishedProductsLov.Query { Params = param, Language = language }));
+        return HandleResult(
+            await Mediator.Send(new GetFinishedProductsLov.Query { Params = param, Language = language }));
     }
-    
+
     [HttpGet("getProductPrice/{productId}", Name = "GetProductPrice")]
     public async Task<IActionResult> GetProductPrice(string productId)
     {
         // REFACTOR: Simplified endpoint to pass productId directly to the query, aligning with the single-product focus of the handler.
         return HandleResult(await Mediator.Send(new GetProductPriceById.Query { ProductId = productId }));
     }
-    
+
     [HttpGet("getProductDetails/{productId}", Name = "GetProductDetails")]
     public async Task<IActionResult> GetProductDetails(string productId)
     {
-        return HandleResult(await Mediator.Send(new GetProductDetailsById.Query { ProductId = productId, Language = GetLanguage() }));
+        return HandleResult(await Mediator.Send(new GetProductDetailsById.Query
+            { ProductId = productId, Language = GetLanguage() }));
     }
-    
+
     [HttpGet("getPhysicalInventoryProductsLov", Name = "GetPhysicalInventoryProductsLov")]
     public async Task<IActionResult> GetPhysicalInventoryProductsLov([FromQuery] ProductLovParams param)
     {
         var language = GetLanguage();
-        return HandleResult(await Mediator.Send(new GetPhysicalInventoryProductsLov.Query { Params = param, Language = language }));
+        return HandleResult(await Mediator.Send(new GetPhysicalInventoryProductsLov.Query
+            { Params = param, Language = language }));
     }
 
-    
 
     [HttpGet("getPurchaseProductsLov", Name = "GetPurchaseProductsLov")]
     public async Task<IActionResult> GetPurchaseProductsLov([FromQuery] ProductLovParams param)
     {
         var language = GetLanguage();
-        return HandleResult(await Mediator.Send(new GetPurchaseProductsLov.Query { Params = param, Language = language }));
+        return HandleResult(
+            await Mediator.Send(new GetPurchaseProductsLov.Query { Params = param, Language = language }));
+    }
+    
+    [HttpGet("getSimpleProductsLov", Name = "GetSimpleProductsLov")]
+    public async Task<IActionResult> GetSimpleProductsLov([FromQuery] ProductLovParams param)
+    {
+        return HandleResult(await Mediator.Send(new GetSimpleProductsLov.Query { Params = param }));
     }
 
     [HttpGet("getInventoryItemProductsLov", Name = "GetInventoryItemProductsLov")]
@@ -64,7 +71,7 @@ public class ProductsController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new GetFacilityProductsLov.Query { Params = param }));
     }
-    
+
     [HttpGet("getAssocsProductsLov", Name = "GetAssocsProductsLov")]
     public async Task<IActionResult> GetAssocsProductsLov([FromQuery] ProductLovParams param)
     {
@@ -82,7 +89,7 @@ public class ProductsController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new GetFacilityInventoryItemProduct.Query { Params = param }));
     }
-    
+
     [HttpGet("{productId}/getInventoryItemColors", Name = "GetInventoryItemColors")]
     public async Task<IActionResult> GetInventoryItemColors([FromRoute] string productId)
     {
@@ -100,13 +107,13 @@ public class ProductsController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new GetProduct.Query { ProductId = productId }));
     }
-    
+
     [HttpGet("{productId}/getFinishedProductsForWIP")]
     public async Task<IActionResult> GetFinishedProductsForWIP(string productId)
     {
         return HandleResult(await Mediator.Send(new GetFinishedProductsForWIP.Query { ProductId = productId }));
     }
-    
+
     [HttpGet("getFinishedProductsLov2", Name = "GetFinishedProductsLov2")]
     public async Task<IActionResult> GetFinishedProductsLov2([FromQuery] ProductLovParams param)
     {
@@ -152,16 +159,16 @@ public class ProductsController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new CreateProduct.Command { ProductDto = product }));
     }
-    
+
     [HttpGet("{productId}/calculateProductCosts")]
     public async Task<IActionResult> CalculateProductCosts(string productId)
     {
         return HandleResult(await Mediator.Send(new CalculateProductCosts.Query { ProductId = productId }));
     }
-    
+
     [HttpGet("{productId}/getProductQuantityUom")]
     public async Task<IActionResult> GetProductQuantityUom(string productId)
     {
-        return HandleResult(await Mediator.Send(new GetProductQuantityUom.Query{ ProductId = productId }));
+        return HandleResult(await Mediator.Send(new GetProductQuantityUom.Query { ProductId = productId }));
     }
 }

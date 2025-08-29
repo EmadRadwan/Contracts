@@ -101,7 +101,16 @@ const requests = {
 const Uoms = {
     listCurrency: () => requests.get("/uoms/currency"),
     listQuantity: () => requests.get("/uoms/quantity"),
+    getCertificateUOMsLov: (params: URLSearchParams) =>
+        axios
+            .get<UomLov>(`/uoms/getUOMsLov`, {params})
+            .then(responseBody),
 };
+
+export interface UomLov {
+    uomId: string;
+    description: string
+}
 
 const PartyTypes = {
     list: () => requests.get("/partyTypes"),
@@ -187,6 +196,10 @@ const Products = {
     getPurchaseProductsLov: (params: URLSearchParams) =>
         axios
             .get<ProductLov>(`/products/getPurchaseProductsLov`, {params})
+            .then(responseBody),
+    getSimpleProductsLov: (params: URLSearchParams) =>
+        axios
+            .get<ProductLov>(`/products/getSimpleProductsLov`, {params})
             .then(responseBody),
     getInventoryItemProductsLov: (params: URLSearchParams) =>
         axios
@@ -288,6 +301,10 @@ const Parties = {
     getSuppliersLov: (params: URLSearchParams) =>
         axios
             .get<Party[]>(`/parties/getSuppliersLov`, {params})
+            .then(responseBody),
+    getContractorsLov: (params: URLSearchParams) =>
+        axios
+            .get<Party[]>(`/parties/getContractorsLov`, {params})
             .then(responseBody),
     getPartiesLov: (params: URLSearchParams) =>
         axios
@@ -435,6 +452,11 @@ const VehicleContents = {
     deleteFile: (id: string) => requests.del(`/content/${id}`),
 };
 
+const Projects = {
+    getProjectsLov: (params: URLSearchParams) =>
+        axios.get<ProjectLov>("/project/getProjectsLov", { params }).then(responseBody),
+};
+
 const agent = {
     Account,
     Parties,
@@ -459,7 +481,13 @@ const agent = {
     Accounting,
     VehicleContents,
     Services,
-    BillingAccounts, WorkEfforts,
+    BillingAccounts, WorkEfforts, Projects
 };
 
 export default agent;
+
+
+interface ProjectLov {
+    projects: { workEffortId: string; projectName: string }[];
+    projectCount: number;
+}

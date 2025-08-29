@@ -1,0 +1,72 @@
+[
+  {
+    "product_category_id": "SITE_WORKS",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Site Works",
+    "DESCRIPTION_ARABIC": "أعمال الموقع",
+    "long_description": "Site preparation and surveying works",
+    "created_stamp": "2025-08-27 15:35:00.000",
+    "last_updated_stamp": "2025-08-27 15:35:00.000"
+  },
+  {
+    "product_category_id": "CONCRETE_WORKS",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Concrete and Structural Works",
+    "DESCRIPTION_ARABIC": "الأعمال الإنشائية والخرسانية",
+    "long_description": "Construction of reinforced concrete structures and masonry",
+    "created_stamp": "2025-08-27 15:35:00.000",
+    "last_updated_stamp": "2025-08-27 15:35:00.000"
+  },
+  {
+    "product_category_id": "FINISHING_WORKS",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Finishing Works",
+    "DESCRIPTION_ARABIC": "أعمال التشطيبات",
+    "long_description": "Interior and exterior finishing, including plastering, flooring, and painting",
+    "created_stamp": "2025-08-27 15:35:00.000",
+    "last_updated_stamp": "2025-08-27 15:35:00.000"
+  },
+  {
+    "product_category_id": "ELECTROMECHANICAL",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Electromechanical Works",
+    "DESCRIPTION_ARABIC": "الأعمال الكهروميكانيكية",
+    "long_description": "Electrical, plumbing, and HVAC installations",
+    "created_stamp": "2025-08-27 15:35:00.000",
+    "last_updated_stamp": "2025-08-27 15:35:00.000"
+  },
+  {
+    "product_category_id": "INSULATION",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Insulation Works",
+    "DESCRIPTION_ARABIC": "أعمال العزل",
+    "long_description": "Waterproofing and thermal insulation for roofs and walls",
+    "created_stamp": "2025-08-27 15:35:00.000",
+    "last_updated_stamp": "2025-08-27 15:35:00.000"
+  },
+  {
+    "product_category_id": "EXTERIOR_WORKS",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Exterior Works",
+    "DESCRIPTION_ARABIC": "الأعمال الخارجية",
+    "long_description": "Exterior cladding, landscaping, and fencing",
+    "created_stamp": "2025-08-27 15:35:00.000",
+    "last_updated_stamp": "2025-08-27 15:35:00.000"
+  },
+  {
+    "product_category_id": "RAW_MATERIALS",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Raw Materials",
+    "DESCRIPTION_ARABIC": "مواد خام",
+    "long_description": "Construction materials used in building, including bricks, cement, and rebar",
+    "created_stamp": "2025-08-27 14:28:00.000",
+    "last_updated_stamp": "2025-08-27 14:28:00.000"
+  }
+]

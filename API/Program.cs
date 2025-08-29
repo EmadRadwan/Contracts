@@ -12,7 +12,6 @@ using Application.Shipments.InvoiceItemTypes;
 using Application.Shipments.Invoices;
 using Application.Shipments.OrganizationGlSettings;
 using Application.Shipments.PaymentMethodTypes;
-using Application.Shipments.Payments;
 using Application.Shipments.Taxes;
 using Application.Shipments.Transactions;
 using Application.Catalog.Products;
@@ -23,7 +22,9 @@ using Application.Order.Orders;
 using Application.Order.Orders.Returns;
 using Application.Order.Quotes;
 using Application.Parties.Parties;
+using Application.Projects;
 using Microsoft.AspNetCore.OData;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
 using Serilog;
@@ -61,6 +62,13 @@ Log.Logger = new LoggerConfiguration()
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<GzipCompressionProvider>();
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "text/css", "application/javascript" });
+});
 
 // ✅ Disable HTTPS configuration in Development mode
 if (builder.Environment.IsProduction())
@@ -118,13 +126,21 @@ app.UseSerilogRequestLogging(options =>
     };
 });
 
+app.UseResponseCompression();
 app.UseStaticFiles(new StaticFileOptions
 {
     OnPrepareResponse = ctx =>
     {
-        ctx.Context.Response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate");
-        ctx.Context.Response.Headers.Append("Pragma", "no-cache");
-        ctx.Context.Response.Headers.Append("Expires", "0");
+        if (ctx.File.Name.EndsWith(".css") || ctx.File.Name.EndsWith(".js"))
+        {
+            ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=31536000");
+        }
+        else
+        {
+            ctx.Context.Response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate");
+            ctx.Context.Response.Headers.Append("Pragma", "no-cache");
+            ctx.Context.Response.Headers.Append("Expires", "0");
+        }
     }
 });
 app.UseCors("CorsPolicy");
@@ -157,7 +173,6 @@ app.UseEndpoints(endpoints =>
 
 // SPECIAL REMARK: Fallback to index.html for non-API routes (if needed)
 app.UseDefaultFiles();
-app.UseStaticFiles();
 app.MapFallbackToFile("index.html");
 
 using (var scope = app.Services.CreateScope())
@@ -212,6 +227,7 @@ static IEdmModel GetEdmModel()
     modelBuilder.EntitySet<AccountingTransactionRecord>("AccountingTransactionRecord");
     modelBuilder.EntitySet<AccountingTransactionEntryRecord>("AccountingTransactionEntryRecord");
     modelBuilder.EntitySet<WorkEffortReservationSummaryRecord>("WorkEffortReservationSummaryRecord");
+    modelBuilder.EntitySet<ProjectCertificateRecord>("ProjectCertificateRecord");
     modelBuilder.EntitySet<WorkEffortRecord>("WorkEffortRecord");
     modelBuilder.EntitySet<CostComponentCalcRecord>("CostComponentCalcRecord");
     modelBuilder.EntitySet<CostComponentRecord>("CostComponentRecord");

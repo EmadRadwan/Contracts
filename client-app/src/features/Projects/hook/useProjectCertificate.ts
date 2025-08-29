@@ -100,16 +100,16 @@ const useProjectCertificate = ({
       if (actionType === "Create Certificate") {
         return await createCertificate(newCertificate);
       } else if (actionType === "Update Certificate") {
-        return await updateOrApproveCertificate(newCertificate, "UPDATE");
+        //return await updateOrApproveCertificate(newCertificate, "UPDATE");
       } else if (actionType === "Approve Certificate") {
-        return await updateOrApproveCertificate(newCertificate, "APPROVE");
+        //return await updateOrApproveCertificate(newCertificate, "APPROVE");
       } else {
         toast.error("Invalid action type");
         setIsLoading(false);
         return;
       }
     },
-    [createCertificate, updateOrApproveCertificate, formEditMode, certificate, nonDeletedCertificateItems]
+    [createCertificate, formEditMode, certificate, nonDeletedCertificateItems]
   );
 
   return {

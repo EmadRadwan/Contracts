@@ -8,16 +8,16 @@ import { resetCertificateUi, setCertificateFormEditMode } from "../slice/certifi
 
 import LoadingComponent from "../../../app/layout/LoadingComponent";
 import { FormTextArea } from "../../../app/common/form/FormTextArea";
-import { MemoizedFormDropDownList2 } from "../../../app/common/form/MemoizedFormDropDownList2";
 import { requiredValidator } from "../../../app/common/form/Validators";
 import { toast } from "react-toastify";
 import {useAddProjectCertificateMutation} from "../../../app/store/apis/projectsApi";
 import {FormComboBoxVirtualSupplier} from "../../../app/common/form/FormComboBoxVirtualSupplier";
-import {FormComboBoxVirtualCustomer} from "../../../app/common/form/FormComboBoxVirtualCustomer";
 import FormDatePicker from "../../../app/common/form/FormDatePicker";
 import ProjectMenu from "../menu/ProjectMenu";
 import useProjectCertificate from "../hook/useProjectCertificate";
 import {CertificateItemsListMemo} from "../dashboard/CertificateItemsList";
+import {FormComboBoxVirtualProject} from "../../../app/common/form/FormComboBoxVirtualProject";
+import {FormComboBoxVirtualContractor} from "../../../app/common/form/FormComboBoxVirtualContractor";
 
 
 interface ProjectCertificateFormProps {
@@ -63,34 +63,30 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
         selectedCertificate,
         setIsLoading,
     });
-    const initialFormValues = useMemo(
-        () => ({
+    
+    const initialFormValues = useMemo(() => {
+        if (editMode === 1) {
+            const now = new Date();
+            const oneWeekAgo = new Date(now);
+            oneWeekAgo.setDate(now.getDate() - 7);
+            return {
+                description: "",
+                projectId: "",
+                partyId: "",
+                estimatedStartDate: oneWeekAgo,
+                estimatedCompletionDate: now,
+            };
+        }
+        return {
             description: selectedCertificate?.description || "",
             projectId: selectedCertificate?.projectName || "",
             partyId: selectedCertificate?.partyId || "",
             estimatedStartDate: selectedCertificate?.estimatedStartDate ? new Date(selectedCertificate.estimatedStartDate) : null,
-            estimatedCompletionDate: selectedCertificate?.estimatedCompletionDate
-                ? new Date(selectedCertificate.estimatedCompletionDate)
-                : null,
-        }),
-        [selectedCertificate]
-    );
+            estimatedCompletionDate: selectedCertificate?.estimatedCompletionDate ? new Date(selectedCertificate.estimatedCompletionDate) : null,
+        };
+    }, [editMode, selectedCertificate]);
 
-  // Purpose: Placeholder for dropdowns, dynamic based on certificate type
-  // Context: Replace with API calls (e.g., useFetchProjectsQuery, useFetchPartiesQuery)
-  const projects = [
-    { id: "PROJ1", name: "Project Alpha" },
-    { id: "PROJ2", name: "Project Beta" },
-  ];
-  const parties = currentCertificateType === "PROCUREMENT_CERTIFICATE"
-    ? [
-        { id: "SUPP1", name: "Supplier A" },
-        { id: "SUPP2", name: "Supplier B" },
-      ]
-    : [
-        { id: "CONT1", name: "Contractor X" },
-        { id: "CONT2", name: "Contractor Y" },
-      ];
+    
 
   const formKey = useMemo(() => formRef2.current.toString(), [formRef2.current]);
 
@@ -156,6 +152,13 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
     }
   }, [selectedCertificate]);
 
+    const getCertificateTypeDisplayText = (type: string) => {
+        return type
+            .split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+    };
+
   if (isAdding ) {
     return <LoadingComponent message={getTranslatedLabel("certificate.form.saving", "Saving Certificate...")} />;
   }
@@ -167,13 +170,16 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
               <Grid container spacing={2} alignItems="center" position="relative">
                   <Grid item xs={10}>
                       <Box display="flex" justifyContent="space-between">
+                          {/* REFACTOR: Updated title to include human-readable certificate type
+                 Purpose: Display a user-friendly certificate type (e.g., "Procurement Certificate") in the title
+                 Context: Uses getCertificateTypeDisplayText to convert code to readable text, maintaining existing title logic */}
                           <Typography
                               sx={{ fontWeight: "bold", paddingLeft: 3, fontSize: "18px", color: editMode === 1 ? "green" : "black" }}
                               variant="h6"
                           >
                               {selectedCertificate?.projectNum
-                                  ? `${getTranslatedLabel("certificate.form.title", "Project Certificate No")}: ${selectedCertificate.projectNum}`
-                                  : getTranslatedLabel("certificate.form.new", "New Project Certificate")}
+                                  ? `${getTranslatedLabel("certificate.form.title", "Project Certificate No")}: ${selectedCertificate.projectNum} (${getCertificateTypeDisplayText(currentCertificateType)})`
+                                  : `${getTranslatedLabel("certificate.form.new", "New Project Certificate")} (${getCertificateTypeDisplayText(currentCertificateType)})`}
                           </Typography>
                       </Box>
                   </Grid>
@@ -187,16 +193,15 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
                       <FormElement>
                           <fieldset className="k-form-fieldset">
                               <Grid container alignItems="start" justifyContent="start" spacing={1}>
-                                  <Grid container spacing={2} alignItems="center" justifyContent="flex-start" xs={12} sx={{ paddingLeft: 3 }}>
+                                  <Grid container spacing={2} alignItems="center" justifyContent="flex-start" sx={{ paddingLeft: 3 }}>
                                       <Grid item xs={3} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
                                           <Field
-                                              id="projectId"
-                                              name="projectId"
-                                              component={MemoizedFormDropDownList2}
-                                              data={projects}
+                                              id="workEffortId"
+                                              name="workEffortId"
+                                              component={FormComboBoxVirtualProject}
                                               label={getTranslatedLabel("certificate.form.project", "Project")}
-                                              dataItemKey="id"
-                                              textField="name"
+                                              dataItemKey="workEffortId"
+                                              textField="ProjectName"
                                               validator={requiredValidator}
                                               disabled={editMode > 3}
                                           />
@@ -209,9 +214,8 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
                                               component={
                                                   currentCertificateType === "PROCUREMENT_CERTIFICATE"
                                                       ? FormComboBoxVirtualSupplier
-                                                      : FormComboBoxVirtualCustomer
+                                                      : FormComboBoxVirtualContractor
                                               }
-                                              data={parties}
                                               label={getTranslatedLabel(
                                                   "certificate.form.party",
                                                   currentCertificateType === "PROCUREMENT_CERTIFICATE" ? "Supplier" : "Contractor"

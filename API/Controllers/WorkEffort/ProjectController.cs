@@ -1,6 +1,7 @@
 using Application.Catalog.Products;
 using Application.Manufacturing;
-using Application.ProjectCertificates;
+using Application.Parties.Parties;
+using Application.Project;
 using Application.Projects;
 using Application.WorkEfforts;
 using Microsoft.AspNetCore.Mvc;
@@ -32,5 +33,18 @@ public class ProjectController : BaseApiController
     {
         var result = await Mediator.Send(new CreateProjectCertificate.Command { Certificate = certificate });
         return HandleResult(result);
+    }
+    
+    [HttpGet("{workEffortId}/getCertificateItems")]
+    public async Task<IActionResult> GetCertificateItems(string workEffortId)
+    {
+        var language = GetLanguage();
+        return HandleResult(await Mediator.Send(new ListCertificateItems.Query { WorkEffortId = workEffortId, Language = language }));
+    }
+    
+    [HttpGet("getProjectsLov", Name = "GetProjectsLov")]
+    public async Task<IActionResult> GetProjectsLov([FromQuery] PartyLovParams param)
+    {
+        return HandleResult(await Mediator.Send(new GetProjectsLov.Query { Params = param }));
     }
 }

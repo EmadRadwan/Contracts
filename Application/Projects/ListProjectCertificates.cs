@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 
-namespace Application.ProjectCertificates
+namespace Application.Projects
 {
     public class ListProjectCertificates
     {

@@ -16,8 +16,13 @@ const projectsApi = createApi({
         prepareHeaders: (headers, {getState}) => {
             // By default, if we have a token in the store, let's use that for authenticated requests
             const token = store.getState().account.user?.token;
+            const lang = store.getState().localization.language;
+
             if (token) {
                 headers.set("authorization", `Bearer ${token}`);
+            }
+            if (lang) {
+                headers.set("Accept-Language", lang);
             }
             return headers;
         },
@@ -41,7 +46,7 @@ const projectsApi = createApi({
             }),
             addProject: builder.mutation<WorkEffort, Partial<WorkEffort>>({
                 query: (project) => ({
-                    url: "/projects/createProject",
+                    url: "/project/createProject",
                     method: "POST",
                     body: { ...project },
                 }),
@@ -49,7 +54,7 @@ const projectsApi = createApi({
             }),
             updateProject: builder.mutation<WorkEffort, Partial<WorkEffort>>({
                 query: (project) => ({
-                    url: `/projects/${project.WorkEffortId}`,
+                    url: `/project/${project.WorkEffortId}`,
                     method: "PUT",
                     body: project,
                 }),
@@ -57,7 +62,7 @@ const projectsApi = createApi({
             }),
             fetchProjectCertificates: builder.query<ListResponse<WorkEffort>, State>({
                 query: (queryArgs) => {
-                    const url = `/odata/ProjectRecords?$count=true&${toODataString(queryArgs)}`;
+                    const url = `/odata/ProjectCertificateRecords?$count=true&${toODataString(queryArgs)}`;
                     return {
                         url,
                         method: "GET",
@@ -65,9 +70,6 @@ const projectsApi = createApi({
                 },
                 providesTags: ["ProjectCertificates"],
                 transformResponse: (response: any, meta, arg) => {
-                    // REFACTOR: Simplified transformResponse
-                    // Purpose: Avoid reshaping fields, expect backend DTO to match WorkEffort interface
-                    // Context: Backend query returns project_num, party_name, etc., directly
                     const { totalCount } = JSON.parse(meta!.response!.headers.get("count")!);
                     return {
                         data: response,

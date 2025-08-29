@@ -1,4 +1,6 @@
+using Application.Catalog.Products;
 using Application.Common.Uoms;
+using Application.Common.UOMs;
 using Application.Uoms;
 using Microsoft.AspNetCore.Mvc;
 
@@ -24,5 +26,16 @@ public class UomsController : BaseApiController
     public async Task<IActionResult> ListConversionDated()
     {
         return HandleResult(await Mediator.Send(new ListConversionDated.Query()));
+    }
+    
+    [HttpGet("getUOMsLov", Name = "GetUOMsLov")]
+    public async Task<IActionResult> GetUOMsLov([FromQuery] ProductLovParams param)
+    {
+        // REFACTOR: Extract language from Accept-Language header
+        // Purpose: Pass language preference to the handler for multilingual support
+        // Context: Retrieves Accept-Language header set by axios client
+        var language = Request.Headers["Accept-Language"].ToString() ?? "en";
+
+        return HandleResult(await Mediator.Send(new GetUOMsLov.Query { Params = param, Language = language }));
     }
 }
