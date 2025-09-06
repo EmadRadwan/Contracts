@@ -106,42 +106,51 @@ public class ListSalesOrderItems
                 }
 
                 var orderItemProduct = await (from prd in _context.Products.AsNoTracking()
-                                             join inv in _context.InventoryItems.AsNoTracking() on prd.ProductId equals inv.ProductId into invGroup
-                                             from inv in invGroup.DefaultIfEmpty()
-                                             join uom in _context.Uoms.AsNoTracking() on prd.QuantityUomId equals uom.UomId into uomGroup
-                                             from uom in uomGroup.DefaultIfEmpty()
-                                             // REFACTOR: Added joins for color feature
-                                             // Purpose: Fetches ColorDescription to concatenate with ProductName and include separately
-                                             // Why: Matches ListPurchaseOrderItems behavior
-                                             join iif in _context.InventoryItemFeatures.AsNoTracking() on prd.ProductId equals iif.ProductId into iifGroup
-                                             from iif in iifGroup.DefaultIfEmpty()
-                                             join pf in _context.ProductFeatures.AsNoTracking()
-                                                 .Where(pf => pf.ProductFeatureTypeId == "COLOR") on iif != null ? iif.ProductFeatureId : null equals pf.ProductFeatureId into pfGroup
-                                             from pf in pfGroup.DefaultIfEmpty()
-                                             where prd.ProductId == orderItem.ProductId
-                                             select new ProductLovDto
-                                             {
-                                                 ProductId = prd.ProductId,
-                                                 // REFACTOR: Use language-specific ProductName
-                                                 // Purpose: Ensures ProductName matches the requested language
-                                                 ProductName = prd.ProductName,
-                                                 // REFACTOR: Added ColorDescription to projection
-                                                 // Purpose: Explicitly includes language-specific color description
-                                                 // Why: Matches ListPurchaseOrderItems structure
-                                                 ColorDescription = pf != null ? (language == "ar" ? pf.DescriptionArabic : pf.Description) : null,
-                                                 QuantityOnHandTotal = inv != null ? inv.QuantityOnHandTotal : 0,
-                                                 AvailableToPromiseTotal = inv != null ? inv.AvailableToPromiseTotal : 0,
-                                                 QuantityUom = uom != null ? uom.UomId : null,
-                                                 // REFACTOR: Maintain language-specific UomDescription
-                                                 // Purpose: Ensures UomDescription matches the requested language
-                                                 UomDescription = uom != null ? (language == "ar" ? uom.DescriptionArabic : uom.Description) : null
-                                             }).FirstOrDefaultAsync(cancellationToken);
+                    join inv in _context.InventoryItems.AsNoTracking() on prd.ProductId equals inv.ProductId into
+                        invGroup
+                    from inv in invGroup.DefaultIfEmpty()
+                    join uom in _context.Uoms.AsNoTracking() on prd.QuantityUomId equals uom.UomId into uomGroup
+                    from uom in uomGroup.DefaultIfEmpty()
+                    // REFACTOR: Added joins for color feature
+                    // Purpose: Fetches ColorDescription to concatenate with ProductName and include separately
+                    // Why: Matches ListPurchaseOrderItems behavior
+                    join iif in _context.InventoryItemFeatures.AsNoTracking() on prd.ProductId equals iif.ProductId into
+                        iifGroup
+                    from iif in iifGroup.DefaultIfEmpty()
+                    join pf in _context.ProductFeatures.AsNoTracking()
+                            .Where(pf => pf.ProductFeatureTypeId == "COLOR") on iif != null
+                            ? iif.ProductFeatureId
+                            : null
+                        equals pf.ProductFeatureId into pfGroup
+                    from pf in pfGroup.DefaultIfEmpty()
+                    where prd.ProductId == orderItem.ProductId
+                    select new ProductLovDto
+                    {
+                        ProductId = prd.ProductId,
+                        // REFACTOR: Use language-specific ProductName
+                        // Purpose: Ensures ProductName matches the requested language
+                        ProductName = prd.ProductName,
+                        // REFACTOR: Added ColorDescription to projection
+                        // Purpose: Explicitly includes language-specific color description
+                        // Why: Matches ListPurchaseOrderItems structure
+                        ColorDescription =
+                            pf != null ? (language == "ar" ? pf.DescriptionArabic : pf.Description) : null,
+                        QuantityOnHandTotal = inv != null ? inv.QuantityOnHandTotal : 0,
+                        AvailableToPromiseTotal = inv != null ? inv.AvailableToPromiseTotal : 0,
+                        QuantityUom = uom != null ? uom.UomId : null,
+                        // REFACTOR: Maintain language-specific UomDescription
+                        // Purpose: Ensures UomDescription matches the requested language
+                        UomDescription =
+                            uom != null ? (language == "ar" ? uom.DescriptionArabic : uom.Description) : null
+                    }).FirstOrDefaultAsync(cancellationToken);
 
                 if (orderItemProduct != null)
                 {
                     // REFACTOR: Update OrderItemDto2 ProductName to include color
                     // Purpose: Ensures consistency with ListPurchaseOrderItems by including color in ProductName
-                    orderItem.ProductName = orderItemProduct.ProductName + " " + (orderItemProduct.ColorDescription ?? string.Empty) + (orderItem.IsPromo == "Y" ? " (Promo)" : "");
+                    orderItem.ProductName = orderItemProduct.ProductName + " " +
+                                            (orderItemProduct.ColorDescription ?? string.Empty) +
+                                            (orderItem.IsPromo == "Y" ? " (Promo)" : "");
                     orderItem.OrderItemProduct = orderItemProduct;
                 }
 

@@ -2,25 +2,34 @@ import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
 import React, { useCallback, useState } from "react";
 import { Grid as KendoGrid, GridCellProps, GridColumn as Column, GridPageChangeEvent, GridSortChangeEvent, GridToolbar } from "@progress/kendo-react-grid";
 import { useAppDispatch, useAppSelector } from "../../../app/store/configureStore";
-import Button from "@mui/material/Button";
-import { Grid, Skeleton, Typography } from "@mui/material";
-import {CertificateItem} from "../../../app/models/project/certificateItem";
-import {setUiCertificateItems} from "../slice/certificateItemsUiSlice";
+import { Button, Grid, Skeleton, Typography } from "@mui/material";
+import { CertificateItem } from "../../../app/models/project/certificateItem";
+import { setUiCertificateItems } from "../slice/certificateItemsUiSlice";
 import ModalContainer from "../../../app/common/modals/ModalContainer";
-import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
-import {certificateSubTotal, nonDeletedCertificateItemsSelector} from "../slice/certificateSelectors";
-import {useFetchCertificateItemsQuery} from "../../../app/store/apis/certificateItemsApi";
-import {CertificateItemFormMemo} from "../form/CertificateItemForm";
+import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
+import { certificateSubTotal, displayCertificateItemsSelector, nonDeletedCertificateItemsSelector } from "../slice/certificateSelectors";
+import { useFetchCertificateItemsQuery } from "../../../app/store/apis/certificateItemsApi";
+import { CertificateItemFormMemo } from "../form/CertificateItemForm";
+import agent from "../../../app/api/agent";
 
-
-interface Props {
-  editMode: number; // 0: view, 1: create, 2: edit CREATED, 3: edit APPROVED, 4: edit COMPLETED
-  workEffortId?: string;
+interface ProductItem {
+    ProductId: string;
+    ProductName: string;
+    ProductType: string;
 }
 
+interface UOMItem {
+    UomId: string;
+    Description: string;
+}
+
+interface Props {
+    editMode: number; // 0: view, 1: create, 2: edit CREATED, 3: edit APPROVED, 4: edit COMPLETED
+    workEffortId?: string;
+}
 
 export default function CertificateItemsList({ editMode, workEffortId }: Props) {
-    const initialSort: Array<SortDescriptor> = [{ field: "description", dir: "asc" }];
+    const initialSort: Array<SortDescriptor> = [{ field: "productName", dir: "asc" }];
     const [sort, setSort] = useState(initialSort);
     const initialDataState: State = { skip: 0, take: 4 };
     const [page, setPage] = useState<State>(initialDataState);
@@ -31,49 +40,48 @@ export default function CertificateItemsList({ editMode, workEffortId }: Props) 
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = "certificate.items.list";
     const subtotal = useAppSelector(certificateSubTotal);
-
-    // REFACTOR: Fetch certificate items
-    // Purpose: Load items for the certificate
-    // Context: Uses useFetchCertificateItemsQuery from certificateItemsApi
+    const { currentCertificateType } = useAppSelector((state) => state.certificateUi);
     const { data: certificateItemsData, isFetching, isLoading } = useFetchCertificateItemsQuery(workEffortId || "", {
         skip: !workEffortId,
     });
-    const uiCertificateItems: CertificateItem[] = useAppSelector(nonDeletedCertificateItemsSelector);
+    const uiCertificateItems: CertificateItem[] = useAppSelector(displayCertificateItemsSelector);
 
-    // REFACTOR: Handle pagination
-    // Purpose: Update page state for grid
-    // Context: Matches PurchaseOrderItemsList pageChange
     const pageChange = (event: GridPageChangeEvent) => {
         setPage(event.page);
     };
 
-    // REFACTOR: Handle item selection
-    // Purpose: Open form for editing an item using workEffortId
-    // Context: Updated to use workEffortId instead of itemId
     const handleSelectCertificateItem = useCallback(
         (workEffortId: string) => {
             const selectedCertificateItem = uiCertificateItems.find((item) => item.workEffortId === workEffortId);
-            setCertificateItem(selectedCertificateItem);
+            if (!selectedCertificateItem) return;
+            const productItem: ProductItem = {
+                ProductId: selectedCertificateItem.productId,
+                ProductName: selectedCertificateItem.productName || "",
+                ProductType: "",
+            };
+            const uomItem: UOMItem = {
+                UomId: selectedCertificateItem.uomId,
+                Description: selectedCertificateItem.uomName || "",
+            };
+            setCertificateItem({
+                ...selectedCertificateItem,
+                productId: productItem,
+                uomId: uomItem,
+            });
             setItemEditMode(2);
             setShow(true);
         },
         [uiCertificateItems]
     );
 
-    // REFACTOR: Custom cell for description
-    // Purpose: Make description clickable to edit item
-    // Context: Updated to pass workEffortId
     const descriptionCell = (props: GridCellProps) => (
         <td>
             <Button onClick={() => handleSelectCertificateItem(props.dataItem.workEffortId)}>
-                {props.dataItem.description}
+                {props.dataItem.productName}
             </Button>
         </td>
     );
 
-    // REFACTOR: Custom cell for delete button
-    // Purpose: Allow soft deletion of items
-    // Context: Uses editMode for disabling
     const DeleteCertificateItemCell = (props: GridCellProps) => (
         <td className="k-command-cell">
             <Button
@@ -87,37 +95,28 @@ export default function CertificateItemsList({ editMode, workEffortId }: Props) 
         </td>
     );
 
-    // REFACTOR: Delete logic
-    // Purpose: Mark item as deleted using workEffortId
-    // Context: Updated to use workEffortId
     const remove = useCallback(
         (dataItem: CertificateItem) => {
-            const newCertificateItems = uiCertificateItems.map((item) =>
+            const originalItems = useAppSelector(nonDeletedCertificateItemsSelector);
+            const newCertificateItems = originalItems.map((item) =>
                 item.workEffortId === dataItem.workEffortId ? { ...item, isDeleted: true } : item
             );
             dispatch(setUiCertificateItems(newCertificateItems));
         },
-        [uiCertificateItems, dispatch]
+        [dispatch]
     );
 
-    // REFACTOR: Command cell
-    // Purpose: Render delete button
-    // Context: Mirrors CommandCell
     const CommandCell = (props: GridCellProps) => <DeleteCertificateItemCell {...props} remove={remove} />;
 
-    // REFACTOR: Update items
-    // Purpose: Add or update items in Redux store using workEffortId
-    // Context: Updated to use workEffortId for updates
     const updateCertificateItems = useCallback(
         (certificateItem: CertificateItem, editMode: number) => {
+            const originalItems = useAppSelector(nonDeletedCertificateItemsSelector);
             let newCertificateItems: CertificateItem[];
             try {
                 if (editMode === 1) {
-                    // Add new item
-                    newCertificateItems = uiCertificateItems ? [...uiCertificateItems, certificateItem] : [certificateItem];
+                    newCertificateItems = originalItems ? [...originalItems, certificateItem] : [certificateItem];
                 } else {
-                    // Update existing item
-                    newCertificateItems = uiCertificateItems.map((item) =>
+                    newCertificateItems = originalItems.map((item) =>
                         item.workEffortId === certificateItem.workEffortId ? certificateItem : item
                     );
                 }
@@ -126,15 +125,62 @@ export default function CertificateItemsList({ editMode, workEffortId }: Props) 
                 console.error("Error updating certificate items:", e);
             }
         },
-        [uiCertificateItems, dispatch]
+        [dispatch]
     );
 
-    // REFACTOR: Close modal
-    // Purpose: Hide form modal
-    // Context: Mirrors memoizedOnClose
     const memoizedOnClose = useCallback(() => {
         setShow(false);
     }, []);
+
+    // REFACTOR: Updated column rendering logic to support the five new certificate types.
+    // Purpose: Replaces PROCUREMENTS and CONTRACTING checks with logic for supply-related (SUPPLY_PROCUREMENT_CERTIFICATE, EXTERNAL_SUPPLY_SALE_CERTIFICATE) and contracting-related (WORKMANSHIP_CONTRACTING_CERTIFICATE, CONTRACTOR_PURCHASE_CERTIFICATE, COMPANY_SUPPLY_SALE_CERTIFICATE) types.
+    // Context: Ensures relevant fields (e.g., discount for supply types, deductions for contracting types) are displayed based on the certificate type, aligning with the sheet’s context.
+    const isSupplyType = ["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
+    const isContractingType = [
+        "WORKMANSHIP_CONTRACTING_CERTIFICATE",
+        "CONTRACTOR_PURCHASE_CERTIFICATE",
+        "COMPANY_SUPPLY_SALE_CERTIFICATE",
+    ].includes(currentCertificateType);
+
+    const columns = [
+        {
+            field: "productName",
+            title: getTranslatedLabel(`${localizationKey}.description`, "Description"),
+            cell: descriptionCell,
+            width: 280,
+        },
+        { field: "quantity", title: getTranslatedLabel(`${localizationKey}.quantity`, "Quantity") },
+        { field: "unitPrice", title: getTranslatedLabel(`${localizationKey}.unitPrice`, "Unit Price"), format: "{0:n2}" },
+        { field: "displayTotal", title: getTranslatedLabel(`${localizationKey}.totalAmount`, "Total Amount"), format: "{0:n2}" },
+        ...(isSupplyType
+            ? [
+                { field: "discount", title: getTranslatedLabel(`${localizationKey}.discount`, "Discount"), format: "{0:n2}" },
+                {
+                    field: "formattedProcurementDate",
+                    title: getTranslatedLabel(`${localizationKey}.procurementDate`, "Procurement Date"),
+                },
+                { field: "facilityName", title: getTranslatedLabel(`${localizationKey}.facilityName`, "Facility") },
+            ]
+            : []),
+        ...(isContractingType
+            ? [
+                { field: "deductions", title: getTranslatedLabel(`${localizationKey}.deductions`, "Deductions"), format: "{0:n2}" },
+                { field: "deserved", title: getTranslatedLabel(`${localizationKey}.deserved`, "Deserved"), format: "{0:n2}" },
+                { field: "insurance", title: getTranslatedLabel(`${localizationKey}.insurance`, "Insurance"), format: "{0:n2}" },
+                { field: "net", title: getTranslatedLabel(`${localizationKey}.net`, "Net"), format: "{0:n2}" },
+                {
+                    field: "isContractorPurchased",
+                    title: getTranslatedLabel(`${localizationKey}.isContractorPurchased`, "Contractor Purchased"),
+                },
+                {
+                    field: "achievementPercentage",
+                    title: getTranslatedLabel(`${localizationKey}.achievementPercentage`, "Achievement %"),
+                    format: "{0:n0}",
+                },
+            ]
+            : []),
+        { cell: CommandCell },
+    ];
 
     return (
         <>
@@ -145,7 +191,6 @@ export default function CertificateItemsList({ editMode, workEffortId }: Props) 
                         editMode={itemEditMode}
                         onClose={memoizedOnClose}
                         formEditMode={editMode}
-                        updateCertificateItems={updateCertificateItems}
                     />
                 </ModalContainer>
             )}
@@ -201,12 +246,9 @@ export default function CertificateItemsList({ editMode, workEffortId }: Props) 
                                         </Grid>
                                     </Grid>
                                 </GridToolbar>
-                                <Column field="description" title={getTranslatedLabel(`${localizationKey}.description`, "Description")} cell={descriptionCell} width={280} />
-                                <Column field="quantity" title={getTranslatedLabel(`${localizationKey}.quantity`, "Quantity")} />
-                                <Column field="unitPrice" title={getTranslatedLabel(`${localizationKey}.unitPrice`, "Unit Price")} format="{0:n2}" />
-                                <Column field="totalAmount" title={getTranslatedLabel(`${localizationKey}.totalAmount`, "Total Amount")} format="{0:n2}" />
-                                <Column field="completionPercentage" title={getTranslatedLabel(`${localizationKey}.completionPercentage`, "Completion %")} format="{0:n0}" />
-                                <Column cell={CommandCell} />
+                                {columns.map((column, index) => (
+                                    <Column key={index} {...column} />
+                                ))}
                             </KendoGrid>
                         </Grid>
                     )}
@@ -216,7 +258,4 @@ export default function CertificateItemsList({ editMode, workEffortId }: Props) 
     );
 }
 
-// REFACTOR: Memoize component
-// Purpose: Optimize performance by preventing unnecessary re-renders
-// Context: Matches PurchaseOrderItemsListMemo
 export const CertificateItemsListMemo = React.memo(CertificateItemsList);

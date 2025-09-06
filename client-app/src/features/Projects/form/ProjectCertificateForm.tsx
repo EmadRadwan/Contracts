@@ -7,7 +7,6 @@ import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import { resetCertificateUi, setCertificateFormEditMode } from "../slice/certificateUiSlice";
 
 import LoadingComponent from "../../../app/layout/LoadingComponent";
-import { FormTextArea } from "../../../app/common/form/FormTextArea";
 import { requiredValidator } from "../../../app/common/form/Validators";
 import { toast } from "react-toastify";
 import {useAddProjectCertificateMutation} from "../../../app/store/apis/projectsApi";
@@ -18,6 +17,8 @@ import useProjectCertificate from "../hook/useProjectCertificate";
 import {CertificateItemsListMemo} from "../dashboard/CertificateItemsList";
 import {FormComboBoxVirtualProject} from "../../../app/common/form/FormComboBoxVirtualProject";
 import {FormComboBoxVirtualContractor} from "../../../app/common/form/FormComboBoxVirtualContractor";
+import FormInput from "../../../app/common/form/FormInput";
+import {resetUiCertificateItems} from "../slice/certificateItemsUiSlice";
 
 
 interface ProjectCertificateFormProps {
@@ -89,62 +90,54 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
     
 
   const formKey = useMemo(() => formRef2.current.toString(), [formRef2.current]);
+    const isSupplierType = ["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
 
-  const handleSubmit = useCallback(
-    async (formProps: any) => {
-      if (!formProps.isValid) {
-        toast.error(getTranslatedLabel("certificate.form.invalid", "Form is invalid"));
-        setIsSubmitting(false);
-        return false;
-      }
-      if (isSubmitting) return false;
-      setIsSubmitting(true);
+    // In ProjectCertificateForm.tsx
+    const handleSubmit = useCallback(
+        async (formProps: any) => {
+            if (!formProps.isValid) {
+                toast.error(getTranslatedLabel("certificate.form.invalid", "Form is invalid"));
+                setIsSubmitting(false);
+                return false;
+            }
+            if (isSubmitting) return false;
+            setIsSubmitting(true);
 
-      const certificateData = {
-        work_effort_type_id: currentCertificateType,
-        description: formProps.values.description,
-        project_name: formProps.values.projectId,
-        party_id: formProps.values.partyId,
-        estimated_start_date: formProps.values.estimatedStartDate || null,
-        estimated_completion_date: formProps.values.estimatedCompletionDate || null,
-      };
+            const certificateData = {
+                values: {
+                    workEffortTypeId: currentCertificateType,
+                    description: formProps.values.description,
+                    projectId: formProps.values.projectId,
+                    partyId: formProps.values.partyId,
+                    estimatedStartDate: formProps.values.estimatedStartDate || null,
+                    estimatedCompletionDate: formProps.values.estimatedCompletionDate || null,
+                },
+                selectedMenuItem: editMode === 1 ? "Create Certificate" : "Update Certificate",
+            };
 
-      try {
-        if (editMode === 1) {
-          // Create mode
-          const result = await addProjectCertificate(certificateData).unwrap();
-          dispatch(setCertificateFormEditMode(0));
-          // TODO: Navigate to items list after creation
-          // navigate(`/projectCertificates/${result.work_effort_id}/items`);
-        } else if (editMode >= 2) {
-          // Edit mode
-         /* await updateProjectCertificate({
-            work_effort_id: selectedCertificate!.workEffortId,
-            ...certificateData,
-          }).unwrap();*/
-          dispatch(setCertificateFormEditMode(0));
-        }
+            try {
+                await handleCreate(certificateData);
+                dispatch(setCertificateFormEditMode(0));
+                cancelEdit();
+            } catch (error) {
+                toast.error(getTranslatedLabel("certificate.form.error", "Failed to save certificate"));
+            } finally {
+                setIsSubmitting(false);
+            }
+        },
+        [handleCreate, currentCertificateType, editMode, dispatch, cancelEdit, getTranslatedLabel]
+    );
+
+    const handleCancel = useCallback(() => {
+        formRef2.current = !formRef2.current; // Update formRef2 to force formKey change
+        dispatch(resetCertificateUi());
+        dispatch(setCertificateFormEditMode(0));
+        dispatch(resetUiCertificateItems()); // Clear certificateItemsList data
         cancelEdit();
-      } catch (error) {
-        toast.error(getTranslatedLabel("certificate.form.error", "Failed to save certificate"));
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-    [addProjectCertificate, currentCertificateType, editMode, dispatch, cancelEdit, selectedCertificate, getTranslatedLabel]
-  );
+    }, [dispatch, cancelEdit]);
 
-  // Purpose: Reset form and return to list view
-  // Context: Matches PurchaseOrderForm's cancel logic
-  const handleCancel = useCallback(() => {
-    dispatch(resetCertificateUi());
-    dispatch(setCertificateFormEditMode(0));
-    formRef2.current = !formRef2.current;
-    cancelEdit();
-  }, [dispatch, cancelEdit]);
-  
 
-  // Purpose: Initialize form with selected certificate data
+    // Purpose: Initialize form with selected certificate data
   // Context: Matches PurchaseOrderForm's selectedOrder logic
   useEffect(() => {
     if (selectedCertificate) {
@@ -170,9 +163,6 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
               <Grid container spacing={2} alignItems="center" position="relative">
                   <Grid item xs={10}>
                       <Box display="flex" justifyContent="space-between">
-                          {/* REFACTOR: Updated title to include human-readable certificate type
-                 Purpose: Display a user-friendly certificate type (e.g., "Procurement Certificate") in the title
-                 Context: Uses getCertificateTypeDisplayText to convert code to readable text, maintaining existing title logic */}
                           <Typography
                               sx={{ fontWeight: "bold", paddingLeft: 3, fontSize: "18px", color: editMode === 1 ? "green" : "black" }}
                               variant="h6"
@@ -196,11 +186,11 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
                                   <Grid container spacing={2} alignItems="center" justifyContent="flex-start" sx={{ paddingLeft: 3 }}>
                                       <Grid item xs={3} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
                                           <Field
-                                              id="workEffortId"
-                                              name="workEffortId"
+                                              id="projectId"
+                                              name="projectId"
                                               component={FormComboBoxVirtualProject}
                                               label={getTranslatedLabel("certificate.form.project", "Project")}
-                                              dataItemKey="workEffortId"
+                                              dataItemKey="projectId"
                                               textField="ProjectName"
                                               validator={requiredValidator}
                                               disabled={editMode > 3}
@@ -211,14 +201,10 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
                                           <Field
                                               id="partyId"
                                               name="partyId"
-                                              component={
-                                                  currentCertificateType === "PROCUREMENT_CERTIFICATE"
-                                                      ? FormComboBoxVirtualSupplier
-                                                      : FormComboBoxVirtualContractor
-                                              }
+                                              component={isSupplierType ? FormComboBoxVirtualSupplier : FormComboBoxVirtualContractor}
                                               label={getTranslatedLabel(
                                                   "certificate.form.party",
-                                                  currentCertificateType === "PROCUREMENT_CERTIFICATE" ? "Supplier" : "Contractor"
+                                                  isSupplierType ? "Supplier" : "Contractor"
                                               )}
                                               valueField="partyId"
                                               textField="partyName"
@@ -251,7 +237,7 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
                                               id="description"
                                               name="description"
                                               label={getTranslatedLabel("certificate.form.description", "Description")}
-                                              component={FormTextArea}
+                                              component={FormInput}
                                               validator={requiredValidator}
                                               disabled={editMode > 3}
                                           />

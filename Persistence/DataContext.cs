@@ -61994,6 +61994,9 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
     entity.HasIndex(e => e.PartyId, "WK_EFFRT_PARTY");
     entity.HasIndex(e => e.RelatedOrderId, "WK_EFFRT_RELATED_ORDER");
     entity.HasIndex(e => e.ProductId, "WK_EFFRT_PRODUCT");
+    entity.HasIndex(e => e.CertificateNumber, "WK_EFFRT_CERT_NUM");
+    entity.HasIndex(e => new { e.PartyId, e.CertificateCategory }, "WK_EFFRT_PARTY_CERTCAT")
+          .IsUnique(false); // Non-unique index for filtering
 
    entity.HasOne(d => d.Party)
         .WithMany(p => p.WorkEfforts) // Updated to use the new WorkEfforts collection
@@ -62029,10 +62032,10 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
         .HasColumnType("decimal(18, 2)")
         .HasColumnName("INSURANCE_AMOUNT"); // REFACTOR: Added to manage insurance costs, supporting risk-related tracking.
 
-entity.Property(e => e.IsProductCompanyPurchased)
+entity.Property(e => e.IsContractorPurchased)
         .HasMaxLength(1)
         .IsUnicode(false)
-        .HasColumnName("IS_PRODUCT_COMPANY_PURCHASED")
+        .HasColumnName("IS_CONTRACTOR_PURCHASED")
         .IsFixedLength();
             });
 

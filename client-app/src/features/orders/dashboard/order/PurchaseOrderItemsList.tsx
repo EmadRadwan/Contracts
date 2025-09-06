@@ -8,7 +8,12 @@ import {
     GridSortChangeEvent,
     GridToolbar
 } from "@progress/kendo-react-grid";
-import {useAppDispatch, useAppSelector, useFetchPurchaseOrderItemsQuery} from "../../../../app/store/configureStore";
+import {
+    useAppDispatch,
+    useAppSelector,
+    useFetchOrderAdjustmentsQuery,
+    useFetchPurchaseOrderItemsQuery
+} from "../../../../app/store/configureStore";
 import Button from "@mui/material/Button";
 import {Grid, Skeleton} from "@mui/material";
 import {OrderItem} from "../../../../app/models/order/orderItem";
@@ -61,6 +66,8 @@ export default function PurchaseOrderItemsList({orderFormEditMode, orderId}: Pro
 
     const {data: orderItemsData, error, isFetching, isLoading} = useFetchPurchaseOrderItemsQuery(orderId,
         {skip: orderId === undefined});
+    const { data: orderAdjustmentsData, isLoading: isLoadingAdjustments } = useFetchOrderAdjustmentsQuery(orderId, { skip: orderId === undefined });
+
 
     const dispatch = useAppDispatch();
     const localizationKey = 'order.po.items.list'

@@ -6,7 +6,10 @@ public class ProjectCertificateRecord
 {
     [Key]
     public string WorkEffortId { get; set; }
-    public string ProjectNum { get; set; }
+    public string CertificateNumber { get; set; }
+    public string CertificateCategory { get; set; }
+    public string CertificateCategoryDescription { get; set; }
+    public string ProjectId { get; set; }
     public string ProjectName { get; set; }
     public string PartyId { get; set; }
     public string PartyName { get; set; }

@@ -15,9 +15,9 @@ interface OrderMenuProps {
 }
 
 const links = [
-    { title: "quote", key: "quote", path: "/quotes", icon: <FormatQuoteIcon sx={{ color: "#FFA500" }} /> },
+    //{ title: "quote", key: "quote", path: "/quotes", icon: <FormatQuoteIcon sx={{ color: "#FFA500" }} /> },
     { title: "order", key: "order", path: "/orders", icon: <LocalMallIcon sx={{ color: "#FF4081" }} /> },
-    { title: "return", key: "return", path: "/returns", icon: <AssignmentReturnIcon sx={{ color: "#00BFFF" }} /> },
+    //{ title: "return", key: "return", path: "/returns", icon: <AssignmentReturnIcon sx={{ color: "#00BFFF" }} /> },
 ];
 
 const normalizePath = (path: string) => path.replace(/^\//, '').toLowerCase();

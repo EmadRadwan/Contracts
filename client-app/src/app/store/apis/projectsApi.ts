@@ -11,6 +11,7 @@ interface ListResponse<T> {
 
 const projectsApi = createApi({
     reducerPath: "projects",
+    tagTypes: ["WorkEffort", "ProjectCertificates"],
     baseQuery: fetchBaseQuery({
         baseUrl: import.meta.env.VITE_API_URL,
         prepareHeaders: (headers, {getState}) => {
@@ -83,7 +84,15 @@ const projectsApi = createApi({
                     method: "POST",
                     body: { ...certificate },
                 }),
-                invalidatesTags: ["WorkEffort"],
+                invalidatesTags: ["ProjectCertificates"],
+            }),
+            updateProjectCertificate: builder.mutation<ProjectCertificateRecord, Partial<ProjectCertificateRecord>>({
+                query: (certificate) => ({
+                    url: `/project/certificate/${certificate.WorkEffortId}`,
+                    method: "PUT",
+                    body: { ...certificate },
+                }),
+                invalidatesTags: ["ProjectCertificates"],
             }),
         };
     },
@@ -93,6 +102,7 @@ export const {
     useFetchProjectsQuery,
     useAddProjectMutation,
     useUpdateProjectMutation,
-    useFetchProjectCertificatesQuery, useAddProjectCertificateMutation
+    useFetchProjectCertificatesQuery,
+    useAddProjectCertificateMutation, useUpdateProjectCertificateMutation,
 } = projectsApi;
 export {projectsApi};

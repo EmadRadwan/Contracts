@@ -54,3 +54,40 @@ export const certificateItemSubTotal = createSelector(
         return filteredItems.reduce((sum, item) => sum + (item?.totalAmount || 0), 0);
     }
 );
+
+// Purpose: Calculate final total (totalAmount - discount) for PROCUREMENT_CERTIFICATE and format procurementDate
+// Context: Creates display-specific data with displayTotal and formattedProcurementDate
+export const displayCertificateItemsSelector = createSelector(
+    nonDeletedCertificateItemsSelector,
+    (state: RootState) => state.certificateUi.currentCertificateType,
+    (certificateItems, currentCertificateType) =>
+        certificateItems.map((item) => {
+            const displayTotal =
+                currentCertificateType === "PROCUREMENT_CERTIFICATE" && item.discount
+                    ? item.totalAmount - item.discount
+                    : item.totalAmount || 0;
+
+            // REFACTOR: Calculate net for CONTRACTING_CERTIFICATE
+            // Purpose: Ensure net (deserved - insurance) is included for grid display
+            // Context: Matches calculation in CertificateItemForm
+            const net =
+                currentCertificateType === "CONTRACTING_CERTIFICATE"
+                    ? Math.max(0, Math.round(((item.deserved || 0) - (item.insurance || 0)) * 100) / 100)
+                    : displayTotal;
+
+            const formattedProcurementDate = item.procurementDate
+                ? new Date(item.procurementDate).toLocaleDateString("en-US", {
+                    month: "2-digit",
+                    day: "2-digit",
+                    year: "numeric",
+                })
+                : "";
+
+            return {
+                ...item,
+                displayTotal: +displayTotal.toFixed(2), // Round to 2 decimal places
+                net: +net.toFixed(2), // Round to 2 decimal places
+                formattedProcurementDate, // Formatted date for display
+            };
+        })
+);

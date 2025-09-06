@@ -1,18 +1,15 @@
+// certificate.ts
+import {CertificateItem} from "./certificateItem";
 
-// REFACTOR: Define CertificateItem
-// Purpose: Model for certificate item data
-// Context: Updated to include fields for both PROCUREMENT_CERTIFICATE and CONTRACTING_CERTIFICATE
-export interface CertificateItem {
-  productId: any | null;
-  uomId: string | null;
-  quantity: number;
-  unitPrice: number;
-  procurementDate?: Date | null;
-  facilityId?: string | null;
-  discount?: number;
-  total: number;
-  deductions?: number;
-  deserved?: number;
-  insurance?: number;
-  net?: number;
+export interface Certificate {
+  workEffortId?: string; // Maps to WorkEffort.WorkEffortId
+  workEffortTypeId: string; // Maps to WorkEffort.WorkEffortTypeId (e.g., "PROCUREMENT_CERTIFICATE" or "CONTRACTING_CERTIFICATE")
+  projectId?: string; // Maps to WorkEffort.WorkEffortName
+  projectName?: string; // Maps to WorkEffort.ProjectName
+  partyId?: string; // Maps to WorkEffort.PartyId
+  description?: string; // Maps to WorkEffort.Description
+  estimatedStartDate?: string | null; // Maps to WorkEffort.EstimatedStartDate (ISO string)
+  estimatedCompletionDate?: string | null; // Maps to WorkEffort.EstimatedCompletionDate (ISO string)
+  statusDescription?: string; // Maps to WorkEffort.StatusDescription
+  certificateItems?: CertificateItem[]; // Array of associated items
 }

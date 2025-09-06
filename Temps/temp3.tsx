@@ -1,393 +1,189 @@
-import { Field, Form, FormElement, FormRenderProps } from "@progress/kendo-react-form";
-import React, { useCallback, useRef, useState, useEffect } from "react";
-import { Button, FormControlLabel, Grid, Radio, RadioGroup } from "@mui/material";
+import { Form, FormRenderProps } from "@progress/kendo-react-form";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import { useAppSelector, useFetchFacilitiesQuery } from "../../../app/store/configureStore";
+import { CertificateItem } from "../../../app/models/project/certificateItem";
+import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import useCertificateItem from "../hook/useCertificateItem";
 import { percentageValidator, requiredValidator } from "../../../app/common/form/Validators";
-import { useAppSelector, useFetchFacilitiesQuery } from "../../../app/store/configureStore";
-import FormDatePicker from "../../../app/common/form/FormDatePicker";
-import FormNumericTextBox from "../../../app/common/form/FormNumericTextBox";
-import { FormSimpleComboBoxVirtualProduct } from "../../../app/common/form/FormSimpleComboBoxVirtualProduct";
-import { CertificateItem } from "../../../app/models/project/certificateItem";
-import { FormComboBoxVirtualUOM } from "../../../app/common/form/FormComboBoxVirtualUOM";
-import { MemoizedFormDropDownList2 } from "../../../app/common/form/MemoizedFormDropDownList2";
-import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
+import ProcurementForm from "./ProcurementForm";
+import ContractingForm from "./ContractingForm";
 
 interface Props {
-  certificateItem?: CertificateItem;
-  editMode: number; // 1: add, 2: edit
-  onClose: () => void;
-  formEditMode: number; // 0: view, 1: create, 2: CREATED, 3: APPROVED, 4: COMPLETED
-  updateCertificateItems: (certificateItem: CertificateItem, editMode: number) => void;
+    certificateItem?: CertificateItem;
+    editMode: number; // 1: add, 2: edit
+    onClose: () => void;
+    formEditMode: number; // 0: view, 1: create, 2: CREATED, 3: APPROVED, 4: COMPLETED
 }
 
 export default function CertificateItemForm({
-                                              certificateItem,
-                                              editMode,
-                                              onClose,
-                                              formEditMode,
-                                              updateCertificateItems,
+                                                certificateItem,
+                                                editMode,
+                                                onClose,
+                                                formEditMode,
                                             }: Props) {
-  const MyForm = useRef<any>(null);
-  const [formKey, setFormKey] = useState(1);
-  const [initValue, setInitValue] = useState<CertificateItem | undefined>(certificateItem);
-  const { handleSubmitData } = useCertificateItem({
-    certificateItem,
-    editMode,
-    setFormKey,
-    setInitValue,
-    updateCertificateItems,
-  });
-  const { currentCertificateType } = useAppSelector((state) => state.certificateUi);
-  const [discountMode, setDiscountMode] = useState<"value" | "percentage">("value");
-  const { data: facilities, isFetching, isLoading } = useFetchFacilitiesQuery(undefined);
-  const { getTranslatedLabel } = useTranslationHelper();
+    const deserializedInitValue = certificateItem
+        ? {
+            ...certificateItem,
+            procurementDate: certificateItem.procurementDate
+                ? new Date(certificateItem.procurementDate)
+                : undefined,
+        }
+        : undefined;
 
-  const calculateTotals = (valueGetter: FormRenderProps["valueGetter"]) => {
-    const quantity = valueGetter("quantity") || 0;
-    const price = valueGetter("unitPrice") || 0;
-    const total = Math.round(quantity * price * 100) / 100;
-    let finalTotal = total;
+    const MyForm = useRef<Form>(null);
+    const [formKey, setFormKey] = useState(1);
+    const [initValue, setInitValue] = useState<CertificateItem | undefined>(deserializedInitValue);
+    const { currentCertificateType } = useAppSelector((state) => state.certificateUi);
+    const [discountMode, setDiscountMode] = useState<"value" | "percentage">("value");
+    const [insuranceMode, setInsuranceMode] = useState<"value" | "percentage">("value");
+    const [calculatedInsurance, setCalculatedInsurance] = useState(0);
+    const { data: facilities = [] } = useFetchFacilitiesQuery(undefined); // REFACTOR: Default to empty array to simplify null checks
+    const { getTranslatedLabel } = useTranslationHelper();
+    const { handleSubmitData } = useCertificateItem({
+        certificateItem,
+        editMode,
+        setFormKey,
+        setInitValue,
+        discountMode,
+        insuranceMode,
+    });
 
-    if (currentCertificateType === "PROCUREMENT_CERTIFICATE") {
-      const discount = valueGetter("discount") || 0;
-      finalTotal = discountMode === "value" ? total - discount : total * (1 - discount / 100);
-    }
-
-    const net =
-        currentCertificateType === "CONTRACTING_CERTIFICATE"
-            ? Math.round(
-            (total - (valueGetter("deductions") || 0) - (valueGetter("insurance") || 0) + (valueGetter("deserved") || 0)) * 100
-        ) / 100
-            : finalTotal;
-
-    return { total, finalTotal, net: net < 0 ? 0 : net };
-  };
-
-  const handleDiscountModeChange = useCallback(
-      (event: React.ChangeEvent<HTMLInputElement>, onChange: FormRenderProps["onChange"]) => {
-        setDiscountMode(event.target.value as "value" | "percentage");
-        onChange("discount", { value: 0 }); // Reset discount when mode changes
-      },
-      []
-  );
-
-  const ProcurementForm = ({ formRenderProps }: { formRenderProps: FormRenderProps }) => {
-    const { valueGetter, onChange } = formRenderProps;
-    const { finalTotal } = calculateTotals(valueGetter);
-
-    useEffect(() => {
-      onChange("total", { value: finalTotal });
-    }, [finalTotal, onChange]);
-
-    return (
-        <FormElement>
-          <fieldset className="k-form-fieldset">
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <Field
-                    id="productId"
-                    name="productId"
-                    label={getTranslatedLabel("certificate.items.form.product", "Product *")}
-                    component={FormSimpleComboBoxVirtualProduct}
-                    autoComplete="off"
-                    validator={requiredValidator}
-                    disabled={editMode === 2 || formEditMode > 3}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <Field
-                    id="uomId"
-                    name="uomId"
-                    label={getTranslatedLabel("certificate.items.form.uom", "Unit of Measure *")}
-                    component={FormComboBoxVirtualUOM}
-                    validator={requiredValidator}
-                    disabled={editMode === 2 || formEditMode > 3}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <Field
-                    id="quantity"
-                    name="quantity"
-                    label={getTranslatedLabel("certificate.items.form.quantity", "Quantity *")}
-                    component={FormNumericTextBox}
-                    format="n0"
-                    min={1}
-                    validator={requiredValidator}
-                    disabled={formEditMode > 3}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <Field
-                    id="unitPrice"
-                    name="unitPrice"
-                    label={getTranslatedLabel("certificate.items.form.price", "Price *")}
-                    component={FormNumericTextBox}
-                    format="n2"
-                    min={0}
-                    validator={requiredValidator}
-                    disabled={formEditMode > 3}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <Field
-                    id="procurementDate"
-                    name="procurementDate"
-                    label={getTranslatedLabel("certificate.items.form.procurementDate", "Procurement Date *")}
-                    component={FormDatePicker}
-                    validator={requiredValidator}
-                    disabled={formEditMode > 3}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <Field
-                    id="facilityId"
-                    name="facilityId"
-                    label={getTranslatedLabel("facility.items.form.facility", "Facility *")}
-                    component={MemoizedFormDropDownList2}
-                    data={facilities ?? []}
-                    dataItemKey="facilityId"
-                    textField="facilityName"
-                    validator={requiredValidator}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <Field
-                    id="discount"
-                    name="discount"
-                    label={getTranslatedLabel("certificate.items.form.discount", `Discount (${discountMode})`)}
-                    component={FormNumericTextBox}
-                    format={discountMode === "percentage" ? "n0" : "n2"}
-                    min={0}
-                    max={discountMode === "percentage" ? 100 : undefined}
-                    validator={discountMode === "percentage" ? percentageValidator : undefined}
-                    disabled={formEditMode > 3}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <Field
-                    id="total"
-                    name="total"
-                    label={getTranslatedLabel("certificate.items.form.total", "Total")}
-                    component={FormNumericTextBox}
-                    format="n2"
-                    value={finalTotal}
-                    disabled
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <RadioGroup
-                    row
-                    value={discountMode}
-                    onChange={(e) => handleDiscountModeChange(e, formRenderProps.onChange)}
-                >
-                  <FormControlLabel
-                      value="value"
-                      control={<Radio disabled={formEditMode > 3} />}
-                      label={getTranslatedLabel("certificate.items.form.discountValue", "Value")}
-                  />
-                  <FormControlLabel
-                      value="percentage"
-                      control={<Radio disabled={formEditMode > 3} />}
-                      label={getTranslatedLabel("certificate.items.form.discountPercentage", "Percentage")}
-                  />
-                </RadioGroup>
-              </Grid>
-              <Grid item xs={12}>
-                <div className="k-form-buttons">
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Button
-                          variant="contained"
-                          type="submit"
-                          color="success"
-                          disabled={!formRenderProps.allowSubmit || formEditMode > 3}
-                          fullWidth
-                      >
-                        {editMode === 2
-                            ? getTranslatedLabel("certificate.items.form.update", "Update")
-                            : getTranslatedLabel("certificate.items.form.add", "Add")}
-                      </Button>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Button onClick={onClose} variant="contained" color="error" fullWidth>
-                        {getTranslatedLabel("certificate.items.form.cancel", "Cancel")}
-                      </Button>
-                    </Grid>
-                  </Grid>
-                </div>
-              </Grid>
-            </Grid>
-          </fieldset>
-        </FormElement>
+    // REFACTOR: Memoize achievementPercentageValidator to prevent unnecessary re-creation
+    // Purpose: Improve performance by ensuring stable validator function
+    // Context: Used in ContractingForm, stable reference reduces re-renders
+    const achievementPercentageValidator = useMemo(
+        () => (value: number) => {
+            if (value === undefined || value === null) return "Achievement Percentage is required";
+            if (value < 1 || value > 100) return "Achievement Percentage must be between 1 and 100";
+            return undefined;
+        },
+        []
     );
-  };
 
-  const ContractingForm = ({ formRenderProps }: { formRenderProps: FormRenderProps }) => {
-    const { valueGetter, onChange } = formRenderProps;
-    const { total, net } = calculateTotals(valueGetter);
+    // REFACTOR: Memoize calculateTotals to avoid redundant calculations
+    // Purpose: Optimize performance by caching results based on inputs
+    // Context: Used frequently in form rendering, memoization reduces computation
+    const calculateTotals = useCallback(
+        (valueGetter: FormRenderProps["valueGetter"]) => {
+            const quantity = valueGetter("quantity") || 0;
+            const price = valueGetter("unitPrice") || 0;
+            const total = Math.round(quantity * price * 100) / 100;
+            let finalTotal = total;
+            let deserved = 0;
+            let insurance = 0;
+            let discount = 0;
 
-    useEffect(() => {
-      onChange("total", { value: total });
-      onChange("net", { value: net });
-    }, [total, net, onChange]);
+            if (currentCertificateType === "PROCUREMENT_CERTIFICATE") {
+                const discountInput = valueGetter("discount") || 0;
+                discount = discountMode === "value" ? discountInput : (discountInput / 100) * total;
+                finalTotal = total - discount;
+            } else if (currentCertificateType === "CONTRACTING_CERTIFICATE") {
+                deserved = Math.max(0, Math.round((total - (valueGetter("deductions") || 0)) * 100) / 100);
+                const insuranceInput = valueGetter("insurance") || 0;
+                insurance = insuranceMode === "value" ? insuranceInput : (insuranceInput / 100) * deserved;
+                insurance = Math.round(insurance * 100) / 100;
+            }
 
-    return (
-        <FormElement>
-          <fieldset className="k-form-fieldset">
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <Field
-                    id="productId"
-                    name="productId"
-                    label={getTranslatedLabel("certificate.items.form.product", "Product *")}
-                    component={FormSimpleComboBoxVirtualProduct}
-                    autoComplete="off"
-                    validator={requiredValidator}
-                    disabled={editMode === 2 || formEditMode > 3}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <Field
-                    id="uomId"
-                    name="uomId"
-                    label={getTranslatedLabel("certificate.items.form.uom", "Unit of Measure *")}
-                    component={FormComboBoxVirtualUOM}
-                    validator={requiredValidator}
-                    disabled={editMode === 2 || formEditMode > 3}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <Field
-                    id="quantity"
-                    name="quantity"
-                    label={getTranslatedLabel("certificate.items.form.quantity", "Quantity *")}
-                    component={FormNumericTextBox}
-                    format="n0"
-                    min={1}
-                    validator={requiredValidator}
-                    disabled={formEditMode > 3}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <Field
-                    id="unitPrice"
-                    name="unitPrice"
-                    label={getTranslatedLabel("certificate.items.form.price", "Price *")}
-                    component={FormNumericTextBox}
-                    format="n2"
-                    min={0}
-                    validator={requiredValidator}
-                    disabled={formEditMode > 3}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <Field
-                    id="total"
-                    name="total"
-                    label={getTranslatedLabel("certificate.items.form.total", "Total")}
-                    component={FormNumericTextBox}
-                    format="n2"
-                    value={total}
-                    disabled
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <Field
-                    id="deductions"
-                    name="deductions"
-                    label={getTranslatedLabel("certificate.items.form.deductions", "Deductions")}
-                    component={FormNumericTextBox}
-                    format="n2"
-                    min={0}
-                    disabled={formEditMode > 3}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <Field
-                    id="deserved"
-                    name="deserved"
-                    label={getTranslatedLabel("certificate.items.form.deserved", "Deserved")}
-                    component={FormNumericTextBox}
-                    format="n2"
-                    min={0}
-                    disabled={formEditMode > 3}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <Field
-                    id="insurance"
-                    name="insurance"
-                    label={getTranslatedLabel("certificate.items.form.insurance", "Insurance")}
-                    component={FormNumericTextBox}
-                    format="n2"
-                    min={0}
-                    disabled={formEditMode > 3}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <Field
-                    id="net"
-                    name="net"
-                    label={getTranslatedLabel("certificate.items.form.net", "Net")}
-                    component={FormNumericTextBox}
-                    format="n2"
-                    value={net}
-                    disabled
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <div className="k-form-buttons">
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Button
-                          variant="contained"
-                          type="submit"
-                          color="success"
-                          disabled={!formRenderProps.allowSubmit || formEditMode > 3}
-                          fullWidth
-                      >
-                        {editMode === 2
-                            ? getTranslatedLabel("certificate.items.form.update", "Update")
-                            : getTranslatedLabel("certificate.items.form.add", "Add")}
-                      </Button>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Button onClick={onClose} variant="contained" color="error" fullWidth>
-                        {getTranslatedLabel("certificate.items.form.cancel", "Cancel")}
-                      </Button>
-                    </Grid>
-                  </Grid>
-                </div>
-              </Grid>
-            </Grid>
-          </fieldset>
-        </FormElement>
+            const net =
+                currentCertificateType === "CONTRACTING_CERTIFICATE"
+                    ? Math.max(0, Math.round((deserved - insurance) * 100) / 100)
+                    : finalTotal;
+
+            setCalculatedInsurance(insurance);
+            return { total, finalTotal, net, deserved, insurance, discount };
+        },
+        [currentCertificateType, discountMode, insuranceMode]
     );
-  };
 
-  return (
-      <Form
-          ref={MyForm}
-          initialValues={initValue}
-          key={formKey}
-          onSubmit={(values) => {
-            const { total, finalTotal, net } = calculateTotals((name: string) => values[name]);
-            handleSubmitData({
-              ...values,
-              total: currentCertificateType === "PROCUREMENT_CERTIFICATE" ? finalTotal : total,
-              net,
-            } as CertificateItem);
-            onClose();
-          }}
-          render={(formRenderProps) =>
-              currentCertificateType === "PROCUREMENT_CERTIFICATE" ? (
-                  <ProcurementForm formRenderProps={formRenderProps} />
-              ) : (
-                  <ContractingForm formRenderProps={formRenderProps} />
-              )
-          }
-      />
-  );
+    const handleInsuranceModeChange = useCallback(
+        (event: React.ChangeEvent<HTMLInputElement>, onChange: FormRenderProps["onChange"]) => {
+            setInsuranceMode(event.target.value as "value" | "percentage");
+            onChange("insurance", { value: 0 });
+            setCalculatedInsurance(0);
+        },
+        []
+    );
+
+    const handleDiscountModeChange = useCallback(
+        (event: React.ChangeEvent<HTMLInputElement>, onChange: FormRenderProps["onChange"]) => {
+            setDiscountMode(event.target.value as "value" | "percentage");
+            onChange("discount", { value: 0 });
+        },
+        []
+    );
+
+    const getFacilityName = useCallback(
+        (facilityId: string | undefined) => {
+            if (!facilityId) return "";
+            const facility = facilities.find((f) => f.facilityId === facilityId);
+            return facility?.facilityName || "";
+        },
+        [facilities]
+    );
+
+    // REFACTOR: Removed console.log from onSubmit
+    // Purpose: Avoid unnecessary logging in production for performance
+    // Context: Debugging statement was redundant
+    return (
+        <Form
+            ref={MyForm}
+            initialValues={initValue}
+            key={formKey}
+            onSubmit={(values) => {
+                const { total, finalTotal, net, deserved, discount, insurance } = calculateTotals(
+                    (name: string) => values[name]
+                );
+                const serializedValues = {
+                    ...values,
+                    procurementDate:
+                        values.procurementDate instanceof Date
+                            ? values.procurementDate.toISOString()
+                            : values.procurementDate,
+                };
+                handleSubmitData({
+                    ...serializedValues,
+                    total: currentCertificateType === "PROCUREMENT_CERTIFICATE" ? finalTotal : total,
+                    net,
+                    deserved,
+                    discount: +discount.toFixed(2),
+                    insurance: +insurance.toFixed(2),
+                    isContractorPurchased: values.isContractorPurchased || false,
+                    achievementPercentage: values.achievementPercentage,
+                    facilityName: getFacilityName(values.facilityId),
+                } as CertificateItem);
+                onClose();
+            }}
+            render={(formRenderProps) =>
+                currentCertificateType === "PROCUREMENT_CERTIFICATE" ? (
+                    <ProcurementForm
+                        formRenderProps={formRenderProps}
+                        editMode={editMode}
+                        formEditMode={formEditMode}
+                        discountMode={discountMode}
+                        handleDiscountModeChange={handleDiscountModeChange}
+                        calculateTotals={calculateTotals}
+                        facilities={facilities}
+                        getTranslatedLabel={getTranslatedLabel}
+                        onClose={onClose}
+                        percentageValidator={percentageValidator} // REFACTOR: Pass percentageValidator explicitly
+                    />
+                ) : (
+                    <ContractingForm
+                        formRenderProps={formRenderProps}
+                        editMode={editMode}
+                        formEditMode={formEditMode}
+                        insuranceMode={insuranceMode}
+                        handleInsuranceModeChange={handleInsuranceModeChange}
+                        calculateTotals={calculateTotals}
+                        facilities={facilities}
+                        getTranslatedLabel={getTranslatedLabel}
+                        onClose={onClose}
+                        achievementPercentageValidator={achievementPercentageValidator}
+                    />
+                )
+            }
+        />
+    );
 }
 
 export const CertificateItemFormMemo = React.memo(CertificateItemForm);

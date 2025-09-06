@@ -21,7 +21,25 @@ export const certificateItemsSlice = createSlice({
   initialState: certificateItemsInitialState,
   reducers: {
     setUiCertificateItems: (state, action: PayloadAction<CertificateItem[]>) => {
-      certificateItemsAdapter.upsertMany(state.certificateItems, action.payload);
+      state.certificateItems = action.payload.reduce((acc, item) => {
+        acc[item.workEffortId] = item;
+        return acc;
+      }, {} as { [key: string]: CertificateItem });
+    },
+    updateCertificateItem: (
+        state,
+        action: PayloadAction<{ certificateItem: CertificateItem; editMode: number }>
+    ) => {
+      const { certificateItem, editMode } = action.payload;
+      if (editMode === 1) {
+        // Add new item
+        state.certificateItems[certificateItem.workEffortId] = certificateItem;
+      } else {
+        // Update existing item
+        if (state.certificateItems[certificateItem.workEffortId]) {
+          state.certificateItems[certificateItem.workEffortId] = certificateItem;
+        }
+      }
     },
     setProcessedCertificateItems: (state, action: PayloadAction<CertificateItem[]>) => {
       action.payload.forEach((item) => {
@@ -49,7 +67,7 @@ export const {
   setUiCertificateItems,
   setProcessedCertificateItems,
   setUiCertificateItemsFromApi,
-  resetUiCertificateItems,
+  resetUiCertificateItems, updateCertificateItem,
   setSelectedCertificateItem,
 } = certificateItemsSlice.actions;
 

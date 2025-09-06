@@ -1,128 +1,255 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { useAppDispatch } from "../../../app/store/configureStore";
-import { useSelector } from "react-redux";
+import React, { useCallback, useState } from "react";
 import { toast } from "react-toastify";
-import {Certificate} from "../../../app/models/project/certificate";
-import {useAddProjectCertificateMutation} from "../../../app/store/apis/projectsApi";
-import {CertificateItem} from "../../../app/models/project/certificateItem";
-import {certificateItemsEntities} from "../slice/certificateItemsUiSlice";
+import { Certificate } from "../../../app/models/project/certificate";
+import { CertificateItem } from "../../../app/models/project/certificateItem";
+import { useAddProjectCertificateMutation, useUpdateProjectCertificateMutation } from "../../../app/store/apis/projectsApi";
+import {certificateItemsEntities, setProcessedCertificateItems} from "../slice/certificateItemsUiSlice";
+import { setCertificateFormEditMode } from "../slice/certificateUiSlice";
+import {useAppDispatch, useAppSelector} from "../../../app/store/configureStore";
+import {useSelector} from "react-redux";
 import {nonDeletedCertificateItemsSelector} from "../slice/certificateSelectors";
 
-
-
-
 type UseProjectCertificateProps = {
-  selectedMenuItem: string;
-  formRef2: React.MutableRefObject<boolean>;
-  editMode: number;
-  selectedCertificate?: Certificate;
-  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+    selectedMenuItem: string;
+    formRef2: React.MutableRefObject<boolean>;
+    editMode: number; // 1: create, 2: edit
+    selectedCertificate?: Certificate;
+    setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const useProjectCertificate = ({
-  selectedMenuItem,
-  formRef2,
-  editMode,
-  selectedCertificate,
-  setIsLoading,
-}: UseProjectCertificateProps) => {
-  const dispatch = useAppDispatch();
-  const [addProjectCertificate, { data: certificateResults, error, isLoading: isAddCertificateLoading }] =
-    useAddProjectCertificateMutation();
-  //const [updateProjectCertificate, { isLoading: isUpdateCertificateLoading }] = useUpdateProjectCertificateMutation();
-  const [formEditMode, setFormEditMode] = useState(editMode);
-  const [certificate, setCertificate] = useState<Certificate | undefined>(selectedCertificate);
-  const certificateItemsFromUi: CertificateItem[] = useSelector(certificateItemsEntities);
-  const nonDeletedCertificateItems: CertificateItem[] = useSelector(nonDeletedCertificateItemsSelector);
+                                   selectedMenuItem,
+                                   formRef2,
+                                   editMode,
+                                   selectedCertificate,
+                                   setIsLoading,
+                               }: UseProjectCertificateProps) => {
+    const dispatch = useAppDispatch();
+    const [addProjectCertificate, { isLoading: isAddCertificateLoading }] = useAddProjectCertificateMutation();
+    const [updateProjectCertificate, { isLoading: isUpdateCertificateLoading }] = useUpdateProjectCertificateMutation();
+    const [certificate, setCertificate] = useState<Certificate | undefined>(selectedCertificate);
+    const nonDeletedCertificateItems: CertificateItem[] = useSelector(nonDeletedCertificateItemsSelector);
+    const { currentCertificateType } = useAppSelector((state) => state.certificateUi);
 
+    const certificateItemsFlat = useCallback(() => {
+        // REFACTOR: Use spread operator to copy item properties, overriding only those needing transformation
+        return nonDeletedCertificateItems.map((item: CertificateItem) => ({
+            ...item,
+            productId: typeof item.productId === "object" ? item.productId.productId : item.productId,
+            uomId: typeof item.uomId === "object" ? item.uomId.UomId : item.uomId,
+            procurementDate: item.procurementDate ? new Date(item.procurementDate).toISOString() : undefined,
+        }));
+    }, [nonDeletedCertificateItems]);
 
-  const certificateItemsFlat = certificateItemsFromUi.map((item: CertificateItem) => ({
-    ...item,
-    workEffortParentId: certificate?.workEffortId || item.workEffortParentId,
-  }));
+    // REFACTOR: Enhanced validation to match backend
+    // Purpose: Validate certificate header and items per backend rules
+    // Context: Aligns with CommandValidator in CreateProjectCertificate and UpdateProjectCertificate
+    const validateCertificate = useCallback(
+        (cert: Certificate, items: CertificateItem[]) => {
+            const isHeaderValid =
+                cert.partyId && // Required for create
+                (editMode !== 2 || cert.workEffortId); // Required for update
+            if (!isHeaderValid) {
+                toast.error(
+                    editMode === 2 ? "Work Effort ID is required" : "Party ID is required"
+                );
+                return false;
+            }
 
-  
-  const createCertificate = useCallback(
-    async (newCertificate: Certificate) => {
-      try {
-        newCertificate.certificateItems = certificateItemsFlat;
-        const createdCertificate = await addProjectCertificate(newCertificate).unwrap();
-        setCertificate({
-          workEffortId: createdCertificate.workEffortId,
-          projectNum: createdCertificate.projectNum,
-          projectName: createdCertificate.projectName,
-          partyId: createdCertificate.partyId,
-          description: createdCertificate.description,
-          estimated_start_date: createdCertificate.estimated_start_date,
-          estimated_completion_date: createdCertificate.estimated_completion_date,
-          statusDescription: createdCertificate.statusDescription,
-        });
-        setFormEditMode(2); // Move to CREATED state
-        //dispatch(setCertificateFormEditMode(2));
-        formRef2.current = !formRef2.current;
-        toast.success("Certificate Created Successfully");
-        return { workEffortId: createdCertificate.workEffortId };
-      } catch (error: any) {
-        console.error("Failed to create certificate:", error);
-        toast.error("Failed to create certificate");
-        throw error;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [addProjectCertificate, dispatch, formRef2, setIsLoading]
-  );
+            const isItemsValid = items.every((item) => {
+                const isValid =
+                    item.productId &&
+                    item.quantity > 0 &&
+                    item.unitPrice >= 0 &&
+                    (currentCertificateType !== "CONTRACTING_CERTIFICATE" ||
+                        (item.completionPercentage &&
+                            item.completionPercentage >= 1 &&
+                            item.completionPercentage <= 100));
+                if (!isValid) {
+                    toast.error(
+                        "Invalid certificate item: ensure product, quantity, price, and completion percentage (for contracting) are valid."
+                    );
+                }
+                return isValid;
+            });
 
-  
-  // REFACTOR: Handle create/update/approve actions
-  // Purpose: Centralize action logic
-  // Context: Mirrors handleCreate in usePurchaseOrder
-  const handleCreate = useCallback(
-    async (data: any) => {
-      setIsLoading(true);
-      const actionType = data.selectedMenuItem || (formEditMode === 1 ? "Create Certificate" : "Update Certificate");
-      const newCertificate: Certificate = {
-        workEffortId: formEditMode > 1 ? certificate?.workEffortId : undefined,
-        work_effort_type_id: data.values.work_effort_type_id,
-        projectName: data.values.projectId,
-        partyId: data.values.partyId,
-        description: data.values.description,
-        estimated_start_date: data.values.estimatedStartDate?.toISOString() || null,
-        estimated_completion_date: data.values.estimatedCompletionDate?.toISOString() || null,
-      };
+            return isHeaderValid && isItemsValid && items.length > 0;
+        },
+        [editMode]
+    );
 
-      if (nonDeletedCertificateItems.length === 0) {
-        toast.error("Certificate items cannot be empty");
-        setIsLoading(false);
-        return;
-      }
+    // REFACTOR: Simplified createCertificate
+    // Purpose: Streamline API call and state updates
+    // Context: Matches CreateProjectCertificate handler
+    const createCertificate = useCallback(
+        async (newCertificate: Certificate) => {
+            /*const items = certificateItemsFlat();
+            if (items.length === 0) {
+                toast.error("Certificate must have at least one item.");
+                return;
+            }
+            if (!validateCertificate(newCertificate, nonDeletedCertificateItems)) {
+                return;
+            }*/
 
-      if (actionType === "Create Certificate") {
-        return await createCertificate(newCertificate);
-      } else if (actionType === "Update Certificate") {
-        //return await updateOrApproveCertificate(newCertificate, "UPDATE");
-      } else if (actionType === "Approve Certificate") {
-        //return await updateOrApproveCertificate(newCertificate, "APPROVE");
-      } else {
-        toast.error("Invalid action type");
-        setIsLoading(false);
-        return;
-      }
-    },
-    [createCertificate, formEditMode, certificate, nonDeletedCertificateItems]
-  );
+            const certificateData = {
+                WorkEffortId: newCertificate.workEffortId,
+                CertificateCategory: currentCertificateType,
+                Description: newCertificate.description,
+                ProjectId: newCertificate.projectId,
+                PartyId: newCertificate.partyId,
+                EstimatedStartDate: newCertificate.estimatedStartDate,
+                EstimatedCompletionDate: newCertificate.estimatedCompletionDate,
+                CertificateItems: nonDeletedCertificateItems,
+            };
 
-  return {
-    certificateResults,
-    error,
-    isAddCertificateLoading,
-    //isUpdateCertificateLoading,
-    formEditMode,
-    setFormEditMode,
-    certificate,
-    setCertificate,
-    handleCreate,
-  };
+            try {
+                const createdCertificate = await addProjectCertificate(certificateData).unwrap();
+                // REFACTOR: Update state with backend response
+                // Purpose: Ensure frontend reflects backend data
+                // Context: Aligns with backend DTO
+                setCertificate({
+                    workEffortId: createdCertificate.WorkEffortId,
+                    workEffortTypeId: createdCertificate.WorkEffortTypeId,
+                    certificateNumber: createdCertificate.CertificateNumber,
+                    ProjectId: newCertificate.ProjectId,
+                    partyId: createdCertificate.PartyId,
+                    description: createdCertificate.Description,
+                    estimatedStartDate: createdCertificate.EstimatedStartDate,
+                    estimatedCompletionDate: createdCertificate.EstimatedCompletionDate,
+                    statusDescription: createdCertificate.StatusDescription,
+                    certificateItems: createdCertificate.CertificateItems,
+                });
+                dispatch(setProcessedCertificateItems(createdCertificate.CertificateItems || []));
+                dispatch(setCertificateFormEditMode(2)); // Move to CREATED state
+                formRef2.current = !formRef2.current;
+                toast.success("Certificate and items created successfully");
+                return { workEffortId: createdCertificate.WorkEffortId };
+            } catch (error: any) {
+                console.error("Failed to create certificate:", error);
+                toast.error(error?.data?.message || "Failed to create certificate and items");
+                throw error;
+            }
+        },
+        [addProjectCertificate, dispatch, formRef2, certificateItemsFlat, nonDeletedCertificateItems]
+    );
+
+    // REFACTOR: Simplified updateCertificate
+    // Purpose: Streamline API call and state updates
+    // Context: Matches UpdateProjectCertificate handler
+    const updateCertificate = useCallback(
+        async (newCertificate: Certificate) => {
+            const items = certificateItemsFlat();
+            if (items.length === 0) {
+                toast.error("Certificate must have at least one item.");
+                return;
+            }
+            if (!validateCertificate(newCertificate, nonDeletedCertificateItems)) {
+                return;
+            }
+
+            const certificateData = {
+                WorkEffortId: newCertificate.workEffortId,
+                WorkEffortTypeId: newCertificate.workEffortTypeId,
+                Description: newCertificate.description,
+                ProjectId: newCertificate.projectId,
+                PartyId: newCertificate.partyId,
+                EstimatedStartDate: newCertificate.estimatedStartDate,
+                EstimatedCompletionDate: newCertificate.estimatedCompletionDate,
+                CertificateItems: items,
+            };
+
+            try {
+                const updatedCertificate = await updateProjectCertificate(certificateData).unwrap();
+                // REFACTOR: Update state with backend response
+                // Purpose: Ensure frontend reflects backend data
+                // Context: Aligns with backend DTO
+                setCertificate({
+                    workEffortId: updatedCertificate.WorkEffortId,
+                    workEffortTypeId: updatedCertificate.WorkEffortTypeId,
+                    certificateNumber: updatedCertificate.CertificateNumber,
+                    projectId: updatedCertificate.ProjectId,
+                    partyId: updatedCertificate.PartyId,
+                    description: updatedCertificate.Description,
+                    estimatedStartDate: updatedCertificate.EstimatedStartDate,
+                    estimatedCompletionDate: updatedCertificate.EstimatedCompletionDate,
+                    statusDescription: updatedCertificate.StatusDescription,
+                    certificateItems: updatedCertificate.CertificateItems,
+                });
+                dispatch(setProcessedCertificateItems(updatedCertificate.CertificateItems || []));
+                dispatch(setCertificateFormEditMode(2)); // Stay in CREATED state
+                formRef2.current = !formRef2.current;
+                toast.success("Certificate and items updated successfully");
+                return { workEffortId: updatedCertificate.WorkEffortId };
+            } catch (error: any) {
+                console.error("Failed to update certificate:", error);
+                toast.error(error?.data?.message || "Failed to update certificate and items");
+                throw error;
+            }
+        },
+        [updateProjectCertificate, dispatch, formRef2, certificateItemsFlat, nonDeletedCertificateItems]
+    );
+
+    // REFACTOR: Centralized action handling with simplifiedbud validation
+    // Purpose: Validate and dispatch create/update actions
+    // Context: Simplifies logic and aligns with backend requirements
+    const handleCreate = useCallback(
+        async (data: any) => {
+            setIsLoading(true);
+            try {
+                const newCertificate: Certificate = {
+                  workEffortId:
+                    editMode > 1 ? certificate?.workEffortId : undefined,
+                  workEffortTypeId: data.values.workEffortTypeId,
+                  projectId: data.values.projectId.projectId,
+                  partyId: data.values.partyId.fromPartyId,
+                  description: data.values.description,
+                  estimatedStartDate:  data.values.estimatedStartDate,
+                  estimatedCompletionDate: data.values.estimatedCompletionDate,
+                  certificateItems: nonDeletedCertificateItems,
+                };
+
+                if (nonDeletedCertificateItems.length === 0) {
+                    toast.error("Certificate items cannot be empty");
+                    return;
+                }
+
+                if (selectedMenuItem === "Create Certificate" || editMode === 1) {
+                    return await createCertificate(newCertificate);
+                } else if (selectedMenuItem === "Update Certificate" || editMode === 2) {
+                    return await updateCertificate(newCertificate);
+                } else if (selectedMenuItem === "Approve Certificate") {
+                    // REFACTOR: Added placeholder for Approve action
+                    // Purpose: Provide a stub for future implementation
+                    // Context: Currently not supported by backend
+                    toast.error("Approve action not yet implemented");
+                    return;
+                } else {
+                    toast.error("Invalid action type");
+                    return;
+                }
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [
+            createCertificate,
+            updateCertificate,
+            editMode,
+            certificate,
+            nonDeletedCertificateItems,
+            selectedMenuItem,
+            setIsLoading,
+        ]
+    );
+
+    return {
+        isAddCertificateLoading,
+        isUpdateCertificateLoading,
+        certificate,
+        setCertificate,
+        handleCreate,
+    };
 };
 
 export default useProjectCertificate;

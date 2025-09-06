@@ -38,10 +38,6 @@ public class CreatePurchaseOrder
         {
             var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
-            // todo consider OrderItemPriceInfo table when applying price rules
-            //todo: create supplierProduct if price is changed than last price
-
-
             // create purchase order
             var newPurchaseOrder = await _orderService.CreatePurchaseOrder(request.OrderDto);
 

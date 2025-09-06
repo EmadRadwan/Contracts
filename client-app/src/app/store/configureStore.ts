@@ -132,6 +132,7 @@ import {productFeaturesApi} from "./apis/productFeaturesApi";
 import {projectsApi} from "./apis/projectsApi";
 import {certificateUiSlice} from "../../features/Projects/slice/certificateUiSlice";
 import {certificateItemsSlice} from "../../features/Projects/slice/certificateItemsUiSlice";
+import {certificateItemsApi} from "./apis/certificateItemsApi";
 
 
 
@@ -203,6 +204,7 @@ export const store = configureStore({
         productStoreUi: productStoreUiSlice.reducer,
         orderTermsUi: orderTermsUiSlice.reducer,
         [partiesApi.reducerPath]: partiesApi.reducer,
+        [certificateItemsApi.reducerPath]: certificateItemsApi.reducer,
         [projectsApi.reducerPath]: projectsApi.reducer,
         [vehiclesApi.reducerPath]: vehiclesApi.reducer,
         [quoteItemsApi.reducerPath]: quoteItemsApi.reducer,
@@ -305,6 +307,7 @@ export const store = configureStore({
             .concat(vehiclesApi.middleware)
             .concat(vehicleContentsApi.middleware)
             .concat(facilitiesApi.middleware)
+            .concat(certificateItemsApi.middleware)
             .concat(facilityTypesApi.middleware)
             .concat(inventoriesApi.middleware)
             .concat(productsApi.middleware)

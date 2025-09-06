@@ -6,9 +6,9 @@ import { Notification, NotificationGroup } from "@progress/kendo-react-notificat
 import agent from "../../api/agent";
 import { useAppDispatch } from "../../store/configureStore";
 
-// REFACTOR: Define interface for project items to ensure type safety and consistency
+// REFACTOR: Updated interface to use projectId instead of workEffortId for frontend consistency
 interface ProjectItem {
-    workEffortId: string;
+    projectId: string;
     projectName: string;
 }
 
@@ -27,7 +27,6 @@ export const FormComboBoxVirtualProject = (fieldRenderProps: FieldRenderProps) =
         value,
         onChange,
     } = fieldRenderProps;
-
     const editorRef = React.useRef(null);
     const [focused, setFocused] = React.useState(false);
     const dispatch = useAppDispatch();
@@ -60,8 +59,10 @@ export const FormComboBoxVirtualProject = (fieldRenderProps: FieldRenderProps) =
     }, [onBlur]);
 
     const textField = "projectName";
-    const keyField = "workEffortId";
-    const emptyItem: ProjectItem = { [textField]: "loading ...", workEffortId: "0" };
+    // REFACTOR: Changed keyField to projectId for frontend consistency
+    const keyField = "projectId";
+    // REFACTOR: Updated emptyItem to use projectId
+    const emptyItem: ProjectItem = { [textField]: "loading ...", projectId: "0" };
     const pageSize = 10;
     const loadingData: ProjectItem[] = [];
     while (loadingData.length < pageSize) {
@@ -81,7 +82,7 @@ export const FormComboBoxVirtualProject = (fieldRenderProps: FieldRenderProps) =
         dataCaching.current.length = 0;
     };
 
-    // REFACTOR: Optimized requestData to handle API calls with debouncing and proper parameter handling
+    // REFACTOR: Updated requestData to map backend workEffortId to frontend projectId
     const requestData = React.useCallback((skip: number, filter: string) => {
         if (requestStarted.current) {
             clearTimeout(pendingRequest.current);
@@ -90,7 +91,6 @@ export const FormComboBoxVirtualProject = (fieldRenderProps: FieldRenderProps) =
             }, 50);
             return;
         }
-
         requestStarted.current = true;
         const params = new URLSearchParams();
         params.append('skip', skip.toString());
@@ -104,14 +104,14 @@ export const FormComboBoxVirtualProject = (fieldRenderProps: FieldRenderProps) =
                     const items: ProjectItem[] = [];
                     json.projects.forEach((element: any, index: number) => {
                         const { workEffortId, projectName } = element;
+                        // REFACTOR: Map workEffortId to projectId for frontend use
                         const item: ProjectItem = {
-                            [keyField]: workEffortId,
+                            [keyField]: workEffortId, // Backend still uses workEffortId
                             [textField]: projectName,
                         };
                         items.push(item);
                         dataCaching.current[index + skip] = item;
                     });
-
                     if (skip === skipRef.current) {
                         setData(items);
                         setTotal(total);

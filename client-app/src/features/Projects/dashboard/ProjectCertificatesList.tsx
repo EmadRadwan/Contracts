@@ -12,18 +12,17 @@ import { Grid, Paper } from "@mui/material";
 import { Menu, MenuItem, MenuSelectEvent } from "@progress/kendo-react-layout";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-    resetCertificateUi,
-    setCertificateFormEditMode,
-    setCurrentCertificateType,
-    setSelectedCertificate
+  resetCertificateUi,
+  setCertificateFormEditMode,
+  setCurrentCertificateType,
+  setSelectedCertificate,
 } from "../slice/certificateUiSlice";
-import {useAppDispatch, useAppSelector} from "../../../app/store/configureStore";
-import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
+import { useAppDispatch, useAppSelector } from "../../../app/store/configureStore";
+import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
-import {useFetchProjectCertificatesQuery} from "../../../app/store/apis/projectsApi";
+import { useFetchProjectCertificatesQuery } from "../../../app/store/apis/projectsApi";
 import ProjectMenu from "../menu/ProjectMenu";
 import ProjectCertificateForm from "../form/ProjectCertificateForm";
-
 
 interface ProjectCertificate {
   workEffortId: string;
@@ -35,31 +34,34 @@ interface ProjectCertificate {
   estimatedStartDate: string;
   estimatedCompletionDate: string;
   statusDescription: string;
+  certificateCategoryDescription: string; // Reflects certificate type (e.g., SUPPLY_PROCUREMENT_CERTIFICATE)
 }
 
 export default function ProjectCertificatesList() {
   const [certificates, setCertificates] = useState<DataResult>({ data: [], total: 0 });
   const [dataState, setDataState] = useState<State>({ take: 6, skip: 0 });
-  const {  selectedCertificate, certificateFormEditMode } = useAppSelector((state) => state.certificateUi);
+  const { selectedCertificate, certificateFormEditMode } = useAppSelector((state) => state.certificateUi);
   const { getTranslatedLabel } = useTranslationHelper();
   const location = useLocation();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [certificate, setCertificate] = useState<ProjectCertificate | undefined>(undefined);
-
   const { data, isFetching } = useFetchProjectCertificatesQuery({ ...dataState });
 
   useEffect(() => {
     if (data) {
       const adjustedData = data.data.map((item: ProjectCertificate) => ({
         ...item,
-        estimatedStartDate: item.estimatedStartDate ? new Date(item.estimatedStartDate).toLocaleDateString("en-GB") : "",
-        estimatedCompletionDate: item.estimatedCompletionDate ? new Date(item.estimatedCompletionDate).toLocaleDateString("en-GB") : "",
+        estimatedStartDate: item.estimatedStartDate
+            ? new Date(item.estimatedStartDate).toLocaleDateString("en-GB")
+            : "",
+        estimatedCompletionDate: item.estimatedCompletionDate
+            ? new Date(item.estimatedCompletionDate).toLocaleDateString("en-GB")
+            : "",
       }));
       setCertificates({ data: adjustedData, total: data.total });
     }
   }, [data]);
-  
 
   useEffect(() => {
     if (selectedCertificate && certificates.data.length) {
@@ -71,28 +73,29 @@ export default function ProjectCertificatesList() {
     setDataState(e.dataState);
   };
 
+  // REFACTOR: Updated handleSelectCertificate to use certificateCategoryDescription for certificate type.
+  // Purpose: Removes hardcoded PROJECT_CERTIFICATE and uses the dynamic certificate type from the data, aligning with the five types from the sheet.
+  // Context: Ensures the selected certificate's type (e.g., SUPPLY_PROCUREMENT_CERTIFICATE) is set correctly in the Redux store.
   const handleSelectCertificate = useCallback(
-    (workEffortId: string, statusDescription?: string, partyId?: string) => {
-      const selectedCert: ProjectCertificate | undefined = certificates.data.find(
-        (cert: any) => cert.workEffortId === workEffortId
-      );
-      const status = statusDescription ?? selectedCert?.statusDescription;
-      const party = partyId ?? selectedCert?.partyId;
-
-      setCertificate(selectedCert);
-      dispatch(setSelectedCertificate(selectedCert));
-      dispatch(setCurrentCertificateType("PROJECT_CERTIFICATE"));
-
-      // Set edit mode based on status
-      if (status === "CREATED") {
-        dispatch(setCertificateFormEditMode(2));
-      } else if (status === "APPROVED") {
-        dispatch(setCertificateFormEditMode(3));
-      } else if (status === "COMPLETED") {
-        dispatch(setCertificateFormEditMode(4));
-      }
-    },
-    [dispatch, certificates.data]
+      (workEffortId: string, statusDescription?: string, partyId?: string) => {
+        const selectedCert: ProjectCertificate | undefined = certificates.data.find(
+            (cert: any) => cert.workEffortId === workEffortId
+        );
+        const status = statusDescription ?? selectedCert?.statusDescription;
+        const certificateType = selectedCert?.certificateCategoryDescription || "SUPPLY_PROCUREMENT_CERTIFICATE"; // Fallback to first type if undefined
+        setCertificate(selectedCert);
+        dispatch(setSelectedCertificate(selectedCert));
+        dispatch(setCurrentCertificateType(certificateType));
+        // Set edit mode based on status
+        if (status === "CREATED") {
+          dispatch(setCertificateFormEditMode(2));
+        } else if (status === "APPROVED") {
+          dispatch(setCertificateFormEditMode(3));
+        } else if (status === "COMPLETED") {
+          dispatch(setCertificateFormEditMode(4));
+        }
+      },
+      [dispatch, certificates.data]
   );
 
   const cancelEdit = useCallback(() => {
@@ -101,16 +104,35 @@ export default function ProjectCertificatesList() {
     dispatch(resetCertificateUi());
   }, [dispatch]);
 
+  // REFACTOR: Updated handleMenuSelect to support only the five certificate types from the sheet.
+  // Purpose: Replaces PROCUREMENTS and CONTRACTING with the five new types (SUPPLY_PROCUREMENT_CERTIFICATE, etc.) to align with the provided data.
+  // Context: Simplifies the menu to reflect only the types defined in the sheet, maintaining Redux dispatch for form initialization.
   const handleMenuSelect = useCallback(
       (e: MenuSelectEvent) => {
-        if (e.item.data === "procurements") {
-          dispatch(resetCertificateUi());
-          dispatch(setCurrentCertificateType("PROCUREMENT_CERTIFICATE"));
-          dispatch(setCertificateFormEditMode(1));
-        } else if (e.item.data === "contracting") {
-          dispatch(resetCertificateUi());
-          dispatch(setCurrentCertificateType("CONTRACTING_CERTIFICATE"));
-          dispatch(setCertificateFormEditMode(1));
+        dispatch(resetCertificateUi());
+        switch (e.item.data) {
+          case "supplyProcurement":
+            dispatch(setCurrentCertificateType("SUPPLY_PROCUREMENT_CERTIFICATE"));
+            dispatch(setCertificateFormEditMode(1));
+            break;
+          case "workmanshipContracting":
+            dispatch(setCurrentCertificateType("WORKMANSHIP_CONTRACTING_CERTIFICATE"));
+            dispatch(setCertificateFormEditMode(1));
+            break;
+          case "contractorPurchase":
+            dispatch(setCurrentCertificateType("CONTRACTOR_PURCHASE_CERTIFICATE"));
+            dispatch(setCertificateFormEditMode(1));
+            break;
+          case "companySupplySale":
+            dispatch(setCurrentCertificateType("COMPANY_SUPPLY_SALE_CERTIFICATE"));
+            dispatch(setCertificateFormEditMode(1));
+            break;
+          case "externalSupplySale":
+            dispatch(setCurrentCertificateType("EXTERNAL_SUPPLY_SALE_CERTIFICATE"));
+            dispatch(setCertificateFormEditMode(1));
+            break;
+          default:
+            break;
         }
       },
       [dispatch]
@@ -121,115 +143,139 @@ export default function ProjectCertificatesList() {
     const value = props.dataItem[field];
     const navigationAttributes = useTableKeyboardNavigation(props.id);
     return (
-      <td
-        className={props.className}
-        style={{ ...props.style, color: "blue" }}
-        colSpan={props.colSpan}
-        role="gridcell"
-        aria-colindex={props.ariaColumnIndex}
-        aria-selected={props.isSelected}
-        {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
-        {...navigationAttributes}
-      >
-        <Button
-          onClick={() =>
-            handleSelectCertificate(
-              props.dataItem.workEffortId,
-              props.dataItem.statusDescription,
-              props.dataItem.partyId
-            )
-          }
+        <td
+            className={props.className}
+            style={{ ...props.style, color: "blue" }}
+            colSpan={props.colSpan}
+            role="gridcell"
+            aria-colindex={props.ariaColumnIndex}
+            aria-selected={props.isSelected}
+            {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
+            {...navigationAttributes}
         >
-          {props.dataItem.projectNum}
-        </Button>
-      </td>
+          <Button
+              onClick={() =>
+                  handleSelectCertificate(
+                      props.dataItem.workEffortId,
+                      props.dataItem.statusDescription,
+                      props.dataItem.partyId
+                  )
+              }
+          >
+            {props.dataItem.certificateNumber}
+          </Button>
+        </td>
     );
   };
 
   if (certificateFormEditMode > 0) {
     return (
-      <ProjectCertificateForm
-        selectedCertificate={certificate}
-        cancelEdit={cancelEdit}
-        editMode={certificateFormEditMode}
-      />
+        <ProjectCertificateForm
+            selectedCertificate={certificate}
+            cancelEdit={cancelEdit}
+            editMode={certificateFormEditMode}
+        />
     );
   }
 
   return (
-    <>
-      <ProjectMenu />
-      <Paper elevation={5} className="div-container-withBorderCurved">
-        <Grid container columnSpacing={1} alignItems="center">
-          <Grid item xs={4}>
-            <Menu onSelect={handleMenuSelect}>
-              <MenuItem key="newCertificate" text={getTranslatedLabel("certificate.list.new", "New Certificate")}>
-                <MenuItem
-                    key="procurements"
-                    text={getTranslatedLabel("certificate.list.procurements", "Procurements")}
-                    data="procurements"
-                />
-                <MenuItem
-                    key="contracting"
-                    text={getTranslatedLabel("certificate.list.contracting", "Contracting")}
-                    data="contracting"
-                />
-              </MenuItem>
-            </Menu>
+      <>
+        <ProjectMenu />
+        <Paper elevation={5} className="div-container-withBorderCurved">
+          <Grid container columnSpacing={1} alignItems="center">
+            <Grid item xs={4}>
+              {/* REFACTOR: Updated Menu to include only the five certificate types from the sheet.
+               Purpose: Removes PROCUREMENTS and CONTRACTING MenuItems, replacing them with the five new types to match the provided data.
+               Context: Maintains translation support and menu structure while aligning with the sheet's five extract types. */}
+              <Menu onSelect={handleMenuSelect}>
+                <MenuItem key="newCertificate" text={getTranslatedLabel("certificate.list.new", "New Certificate")}>
+                  <MenuItem
+                      key="supplyProcurement"
+                      text={getTranslatedLabel("certificate.list.supplyProcurement", "Supply Procurement")}
+                      data="supplyProcurement"
+                  />
+                  <MenuItem
+                      key="workmanshipContracting"
+                      text={getTranslatedLabel("certificate.list.workmanshipContracting", "Workmanship Contracting")}
+                      data="workmanshipContracting"
+                  />
+                  <MenuItem
+                      key="contractorPurchase"
+                      text={getTranslatedLabel("certificate.list.contractorPurchase", "Contractor Purchase")}
+                      data="contractorPurchase"
+                  />
+                  <MenuItem
+                      key="companySupplySale"
+                      text={getTranslatedLabel("certificate.list.companySupplySale", "Company Supply Sale")}
+                      data="companySupplySale"
+                  />
+                  <MenuItem
+                      key="externalSupplySale"
+                      text={getTranslatedLabel("certificate.list.externalSupplySale", "External Supply Sale")}
+                      data="externalSupplySale"
+                  />
+                </MenuItem>
+              </Menu>
+            </Grid>
+            <Grid item xs={12}>
+              <div className="div-container">
+                <KendoGrid
+                    style={{ height: "65vh" }}
+                    resizable={true}
+                    filterable={true}
+                    sortable={true}
+                    pageable={true}
+                    {...dataState}
+                    data={certificates ? certificates : { data: [], total: 0 }}
+                    onDataStateChange={dataStateChange}
+                >
+                  <Column
+                      field="certificateNumber"
+                      title={getTranslatedLabel("certificate.list.projectNum", "Project Number")}
+                      width={150}
+                      locked={false}
+                      cell={ProjectNumberCell}
+                  />
+                  <Column
+                      field="projectName"
+                      title={getTranslatedLabel("certificate.list.projectName", "Project Name")}
+                  />
+                  <Column
+                      field="certificateCategoryDescription"
+                      title={getTranslatedLabel("certificate.list.partyId", "Type")}
+                  />
+                  <Column
+                      field="partyId"
+                      title={getTranslatedLabel("certificate.list.partyId", "Party ID")}
+                  />
+                  <Column
+                      field="partyName"
+                      title={getTranslatedLabel("certificate.list.partyName", "Party Name")}
+                  />
+                  <Column
+                      field="description"
+                      title={getTranslatedLabel("certificate.list.description", "Certificate Description")}
+                  />
+                  <Column
+                      field="estimatedStartDate"
+                      title={getTranslatedLabel("certificate.list.fromDate", "From Date")}
+                      format="{0: dd/MM/yyyy}"
+                  />
+                  <Column
+                      field="estimatedCompletionDate"
+                      title={getTranslatedLabel("certificate.list.toDate", "To Date")}
+                      format="{0: dd/MM/yyyy}"
+                  />
+                </KendoGrid>
+                {isFetching && (
+                    <LoadingComponent
+                        message={getTranslatedLabel("certificate.list.loading", "Loading Certificates...")}
+                    />
+                )}
+              </div>
+            </Grid>
           </Grid>
-          <Grid item xs={12}>
-            <div className="div-container">
-              <KendoGrid
-                style={{ height: "65vh" }}
-                resizable={true}
-                filterable={true}
-                sortable={true}
-                pageable={true}
-                {...dataState}
-                data={certificates ? certificates : { data: [], total: 0 }}
-                onDataStateChange={dataStateChange}
-              >
-                <Column
-                  field="projectNum"
-                  title={getTranslatedLabel("certificate.list.projectNum", "Project Number")}
-                  width={150}
-                  locked={false}
-                  cell={ProjectNumberCell}
-                />
-                <Column
-                  field="projectName"
-                  title={getTranslatedLabel("certificate.list.projectName", "Project Name")}
-                />
-                <Column
-                  field="partyId"
-                  title={getTranslatedLabel("certificate.list.partyId", "Party ID")}
-                />
-                <Column
-                  field="partyName"
-                  title={getTranslatedLabel("certificate.list.partyName", "Party Name")}
-                />
-                <Column
-                  field="description"
-                  title={getTranslatedLabel("certificate.list.description", "Certificate Description")}
-                />
-                <Column
-                  field="estimatedStartDate"
-                  title={getTranslatedLabel("certificate.list.fromDate", "From Date")}
-                  format="{0: dd/MM/yyyy}"
-                />
-                <Column
-                  field="estimatedCompletionDate"
-                  title={getTranslatedLabel("certificate.list.toDate", "To Date")}
-                  format="{0: dd/MM/yyyy}"
-                />
-              </KendoGrid>
-              {isFetching && (
-                <LoadingComponent message={getTranslatedLabel("certificate.list.loading", "Loading Certificates...")} />
-              )}
-            </div>
-          </Grid>
-        </Grid>
-      </Paper>
-    </>
+        </Paper>
+      </>
   );
-};
+}

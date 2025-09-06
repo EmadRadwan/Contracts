@@ -75,6 +75,7 @@ public class WorkEffort
     public DateTime? EstimatedCompletionDate { get; set; }
     public DateTime? ActualStartDate { get; set; }
     public DateTime? ActualCompletionDate { get; set; }
+    public DateTime? ProcurementDate { get; set; }
     public double? EstimatedMilliSeconds { get; set; }
     public double? EstimatedSetupMillis { get; set; }
     public string? EstimateCalcMethod { get; set; }
@@ -125,7 +126,7 @@ public class WorkEffort
    
     public string? RelatedOrderId { get; set; }
     
-    public string? CertificateCategory { get; set; } // e.g., "مقاولة" (Contractor) or "بنود" (Items) (header only)
+    public string? CertificateCategory { get; set; } 
     public string? SupplierOrContractorType { get; set; } // e.g., "مورد" (Supplier) or "مقاول" (Contractor) (header only)
 
     public int? LineNumber { get; set; }
@@ -140,7 +141,8 @@ public class WorkEffort
     public decimal? AchievementPercent { get; set; }
     public string? Notes { get; set; } 
     public string? ProductId { get; set; }
-    public string? IsProductCompanyPurchased { get; set; }
+    public string? QuantityUomId { get; set; }
+    public bool? IsContractorPurchased { get; set; }
     
     public Party? Party { get; set; } // Navigation for PartyId (assuming PartyIdFrom)
     public WorkEffort? Project { get; set; } // Navigation for projectId to the project WorkEffort

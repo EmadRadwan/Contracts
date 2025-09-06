@@ -1,12 +1,25 @@
 export interface CertificateItem {
-    workEffortId: string; // Maps to WorkEffort.WorkEffortId
-    workEffortParentId: string; // Maps to WorkEffort.WorkEffortParentId, links to parent certificate
-    description: string; // Maps to WorkEffort.Description
-    quantity: number; // Maps to WorkEffort.Quantity
-    unitPrice: number; // Maps to WorkEffort.Rate
-    totalAmount: number; // Maps to WorkEffort.TotalAmount
-    completionPercentage?: number; // Maps to WorkEffort.CompletionPercentage
-    productId?: string; // Maps to WorkEffort.ProductId
-    notes?: string; // Maps to WorkEffort.Notes
-    isDeleted?: boolean; // UI flag for soft deletion, not in WorkEffort
+    workEffortId?: string;
+    workEffortParentId?: string;
+    description?: string;
+    quantity?: number;
+    uomId?: number; // Aligned with provided interface
+    uomName?: string;
+    unitPrice?: number;
+    totalAmount?: number;
+    discount?: number; // Always a value (not percentage)
+    insurance?: number; // Always a value (not percentage)
+    completionPercentage?: number;
+    productId?: string;
+    productName?: string;
+    facilityId?: string;
+    facilityName?: string;
+    isContractorPurchased?: string; // Aligned with provided interface
+    notes?: string;
+    procurementDate?: string;
+    isDeleted?: boolean;
+    deductions?: number;
+    deserved?: number;
+    net?: number;
+    achievementPercentage?: number;
 }

@@ -1,7 +1,6 @@
 using Application.Catalog.Products;
 using Application.Manufacturing;
 using Application.Parties.Parties;
-using Application.Project;
 using Application.Projects;
 using Application.WorkEfforts;
 using Microsoft.AspNetCore.Mvc;
@@ -29,9 +28,17 @@ public class ProjectController : BaseApiController
     }
     
     [HttpPost("createProjectCertificate", Name = "CreateProjectCertificate")]
-    public async Task<ActionResult<ProjectCertificateRecord>> CreateProjectCertificate([FromBody] ProjectCertificateRecord certificate)
+    public async Task<ActionResult<ProjectCertificateDto>> CreateProjectCertificate([FromBody] ProjectCertificateDto certificate)
     {
         var result = await Mediator.Send(new CreateProjectCertificate.Command { Certificate = certificate });
+        return HandleResult(result);
+    }
+    
+    [HttpPut("certificate/{workEffortId}", Name = "UpdateProjectCertificate")]
+    public async Task<ActionResult<ProjectCertificateRecord>> UpdateProjectCertificate(string workEffortId, [FromBody] ProjectCertificateDto certificate)
+    {
+        certificate.WorkEffortId = workEffortId;
+        var result = await Mediator.Send(new UpdateProjectCertificate.Command { Certificate = certificate });
         return HandleResult(result);
     }
     
