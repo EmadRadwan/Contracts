@@ -156,6 +156,8 @@ public class Party
         VendorProducts = new HashSet<VendorProduct>();
         WebUserPreferences = new HashSet<WebUserPreference>();
         WorkEffortEventReminders = new HashSet<WorkEffortEventReminder>();
+        WorkEffortsAsSupplier = new HashSet<WorkEffort>();
+        WorkEffortsAsContractor = new HashSet<WorkEffort>();
     }
 
     public string PartyId { get; set; } = null!;
@@ -337,5 +339,7 @@ public class Party
     public ICollection<WebUserPreference> WebUserPreferences { get; set; }
     public ICollection<WorkEffortEventReminder> WorkEffortEventReminders { get; set; }
     public ICollection<AppUserLogin> AppUserLogins { get; set; }
-    public ICollection<WorkEffort> WorkEfforts { get; set; } 
+    public ICollection<WorkEffort> WorkEffortsAsSupplier { get; set; }
+    public ICollection<WorkEffort> WorkEffortsAsContractor { get; set; }
+   
 }

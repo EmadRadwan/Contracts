@@ -4,15 +4,28 @@ import { toast } from "react-toastify";
 import { useAppDispatch } from "../../../app/store/configureStore";
 import { nonDeletedCertificateItemsSelector } from "../slice/certificateSelectors";
 import { CertificateItem } from "../../../app/models/project/certificateItem";
-import {setProcessedCertificateItems, updateCertificateItem} from "../slice/certificateItemsUiSlice";
+import { setProcessedCertificateItems, updateCertificateItem } from "../slice/certificateItemsUiSlice";
+import { FormRenderProps } from "@progress/kendo-react-form";
 
+// Purpose: Ensure consistency with CertificateItemForm calculations including transportationExpenses and gratuities
+// Context: Avoids duplicating calculation logic and ensures correct handling of new fields
 interface UseCertificateItemProps {
     certificateItem?: CertificateItem;
     editMode: number; // 1: add, 2: edit
     setFormKey: (key: number) => void;
     setInitValue: (value: CertificateItem | undefined) => void;
-    discountMode: "value" | "percentage"; // REFACTOR: Added to track discount input mode
-    insuranceMode: "value" | "percentage"; // REFACTOR: Added to track insurance input mode
+    discountMode: "value" | "percentage";
+    insuranceMode: "value" | "percentage";
+    calculateTotals: (valueGetter: FormRenderProps["valueGetter"]) => {
+        total: number;
+        finalTotal: number;
+        net: number;
+        deserved: number;
+        insurance: number;
+        discount: number;
+        transportationExpenses: number;
+        gratuities: number;
+    };
 }
 
 export default function useCertificateItem({
@@ -22,12 +35,10 @@ export default function useCertificateItem({
                                                setInitValue,
                                                discountMode,
                                                insuranceMode,
+                                               calculateTotals,
                                            }: UseCertificateItemProps) {
     const dispatch = useAppDispatch();
     const certificateItemsFromUi: CertificateItem[] = useSelector(nonDeletedCertificateItemsSelector);
-
-    console.log("useCertificateItem initialized with editMode:", editMode);
-
 
     const logError = (error: any, defaultMessage: string) => {
         const message = error?.data?.message || error?.message || defaultMessage;
@@ -35,27 +46,20 @@ export default function useCertificateItem({
         toast.error(message);
     };
 
-
+    // REFACTOR: Removed certificate type dependency for transportationExpenses and gratuities
+    // Purpose: Allow transportationExpenses and gratuities for all certificate types, including CONTRACTOR_PURCHASE_CERTIFICATE
+    // Context: Ensures values from calculateTotals are used consistently without being forced to 0
     const createOrUpdateCertificateItem = useCallback(
-        (data: CertificateItem): CertificateItem => {
-
+        (data: CertificateItem, valueGetter: FormRenderProps["valueGetter"]): CertificateItem => {
             console.log("createOrUpdateCertificateItem called with:", data);
-
-            
-            let newCertificateItem: CertificateItem;
             const itemSeqId = certificateItemsFromUi?.length ? certificateItemsFromUi.length + 1 : 1;
+            const serializedProcurementDate = data.procurementDate instanceof Date
+                ? data.procurementDate.toISOString()
+                : data.procurementDate;
 
-            const serializedProcurementDate =
-                data.procurementDate instanceof Date ? data.procurementDate.toISOString() : data.procurementDate;
-
-            const total = data.quantity * data.unitPrice;
-            const discount =
-                discountMode === "percentage" && data.discount ? (data.discount / 100) * total : data.discount || 0;
-
-            const deserved = data.deserved || total;
-            const insurance =
-                insuranceMode === "percentage" && data.insurance ? (data.insurance / 100) * deserved : data.insurance || 0;
-            const net = Math.max(0, deserved - insurance);
+            // Use calculateTotals to get consistent values
+            const { total, finalTotal, net, deserved, insurance, discount, transportationExpenses, gratuities } =
+                calculateTotals(valueGetter);
 
             const commonFields: CertificateItem = {
                 productId: typeof data.productId === "object" ? data.productId.ProductId : data.productId,
@@ -63,82 +67,60 @@ export default function useCertificateItem({
                 uomId: typeof data.uomId === "object" ? data.uomId.UomId : data.uomId,
                 uomName: typeof data.uomId === "object" ? data.uomId.Description : data.uomName || "",
                 quantity: data.quantity,
-                unitPrice: +data.unitPrice?.toFixed(2),
-                totalAmount: +total.toFixed(2),
-                discount: +discount.toFixed(2),
-                insurance: +insurance.toFixed(2),
+                unitPrice: +data.unitPrice?.toFixed(3),
+                totalAmount: +total.toFixed(3),
+                discount: +discount.toFixed(3),
+                insurance: +insurance.toFixed(3),
                 deductions: data.deductions || 0,
-                deserved: +deserved.toFixed(2),
-                net: +net.toFixed(2), // REFACTOR: Include net field
+                deserved: +deserved.toFixed(3),
+                net: +net.toFixed(3),
                 completionPercentage: data.completionPercentage,
                 notes: data.notes,
                 procurementDate: serializedProcurementDate,
                 facilityId: data.facilityId,
                 facilityName: data.facilityName || "",
-                isContractorPurchased: data.isContractorPurchased || false,
                 isDeleted: false,
                 achievementPercentage: data.achievementPercentage,
+                transportationExpenses: +transportationExpenses.toFixed(3),
+                gratuities: +gratuities.toFixed(3),
             };
 
+            let newCertificateItem: CertificateItem;
             if (editMode === 2) {
-                // REFACTOR: Use calculated insurance and discount consistently in edit mode
-                // Purpose: Prevent overriding calculated values with raw data
-                // Context: Ensures backend receives correct absolute values
                 newCertificateItem = {
                     ...commonFields,
                     workEffortId: certificateItem?.workEffortId || "",
                     workEffortParentId: certificateItem?.workEffortParentId || "",
-                    deductions: data.deductions || 0,
-                    deserved: data.deserved || 0,
-                    achievementPercentage: data.achievementPercentage,
                 };
             } else {
-                // REFACTOR: Remove redundant discount and insurance assignments
-                // Purpose: Use calculated values from commonFields for consistency
-                // Context: Simplifies logic and avoids duplication
                 newCertificateItem = {
                     ...commonFields,
                     workEffortId: `TEMP-${itemSeqId}`,
                     workEffortParentId: "",
-                    deductions: data.deductions || 0,
-                    deserved: data.deserved || 0,
-                    achievementPercentage: data.achievementPercentage,
                 };
             }
 
             return newCertificateItem;
         },
-        [certificateItem, editMode, certificateItemsFromUi, discountMode, insuranceMode]
+        [certificateItem, editMode, certificateItemsFromUi, calculateTotals]
     );
 
-    // Purpose: Streamline submission process with all fields
-    // Context: Resets form after successful submission
-const handleSubmitData = useCallback(
-  async (data: CertificateItem) => {
-    try {
-      const newCertificateItem = createOrUpdateCertificateItem(data);
-      dispatch(setProcessedCertificateItems([newCertificateItem]));
-        dispatch(updateCertificateItem({ certificateItem: newCertificateItem, editMode }));
-      setFormKey(Math.random());
-      setInitValue(undefined);
-    } catch (error: any) {
-      // REFACTOR: Use utility function for error handling
-      // Purpose: Avoid hook-related issues by moving toast.error to a non-hook function
-      // Context: Ensures handleError logic is safe to call in async contexts
-      logError(
-        error,
-        `Failed to ${editMode === 1 ? "add" : "update"} certificate item`
-      );
-    }
-  },
-  [
-    dispatch,
-    createOrUpdateCertificateItem,
-    editMode,
-    setFormKey,
-    setInitValue,
-  ]
-);
+    // Purpose: Allow createOrUpdateCertificateItem to use calculateTotals for accurate calculations
+    // Context: Ensures transportationExpenses and gratuities are handled consistently
+    const handleSubmitData = useCallback(
+        async (data: CertificateItem, valueGetter: FormRenderProps["valueGetter"]) => {
+            try {
+                const newCertificateItem = createOrUpdateCertificateItem(data, valueGetter);
+                dispatch(setProcessedCertificateItems([newCertificateItem]));
+                dispatch(updateCertificateItem({ certificateItem: newCertificateItem, editMode }));
+                setFormKey(Math.random());
+                setInitValue(undefined);
+            } catch (error: any) {
+                logError(error, `Failed to ${editMode === 1 ? "add" : "update"} certificate item`);
+            }
+        },
+        [dispatch, createOrUpdateCertificateItem, editMode, setFormKey, setInitValue]
+    );
 
     return { handleSubmitData };
 }

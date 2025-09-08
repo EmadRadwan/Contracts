@@ -26,7 +26,8 @@ interface ProjectCertificateFormProps {
     workEffortId: string;
     projectNum: string;
     projectName: string;
-    partyId: string;
+      partyIdSupplier?: string;
+      partyIdContractor?: string; 
     partyName: string;
     description: string;
     estimatedStartDate: string;
@@ -43,8 +44,6 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
   const dispatch = useAppDispatch();
   const { getTranslatedLabel } = useTranslationHelper();
   const { currentCertificateType } = useAppSelector((state) => state.certificateUi);
-  const [addProjectCertificate, { isLoading: isAdding }] = useAddProjectCertificateMutation();
-  //const [updateProjectCertificate, { isLoading: isUpdating }] = useUpdateProjectCertificateMutation();
   const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedMenuItem, setSelectedMenuItem] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -64,7 +63,7 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
         selectedCertificate,
         setIsLoading,
     });
-    
+
     const initialFormValues = useMemo(() => {
         if (editMode === 1) {
             const now = new Date();
@@ -73,7 +72,8 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
             return {
                 description: "",
                 projectId: "",
-                partyId: "",
+                partyIdSupplier: "",
+                partyIdContractor: "",
                 estimatedStartDate: oneWeekAgo,
                 estimatedCompletionDate: now,
             };
@@ -81,16 +81,18 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
         return {
             description: selectedCertificate?.description || "",
             projectId: selectedCertificate?.projectName || "",
-            partyId: selectedCertificate?.partyId || "",
+            partyIdSupplier: currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE" || currentCertificateType === "EXTERNAL_SUPPLY_SALE_CERTIFICATE" ? selectedCertificate?.partyIdSupplier || "" : "",
+            partyIdContractor: currentCertificateType === "COMPANY_SUPPLY_SALE_CERTIFICATE" || currentCertificateType === "CONTRACTOR_PURCHASE_CERTIFICATE" || currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE" || currentCertificateType === "EXTERNAL_SUPPLY_SALE_CERTIFICATE" ? selectedCertificate?.partyIdContractor || "" : "",
             estimatedStartDate: selectedCertificate?.estimatedStartDate ? new Date(selectedCertificate.estimatedStartDate) : null,
             estimatedCompletionDate: selectedCertificate?.estimatedCompletionDate ? new Date(selectedCertificate.estimatedCompletionDate) : null,
         };
-    }, [editMode, selectedCertificate]);
+    }, [editMode, selectedCertificate, currentCertificateType]);
 
-    
 
-  const formKey = useMemo(() => formRef2.current.toString(), [formRef2.current]);
-    const isSupplierType = ["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
+
+    const formKey = useMemo(() => formRef2.current.toString(), [formRef2.current]);
+    const showSupplier = ["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
+    const showContractor = ["COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE", "WORKMANSHIP_CONTRACTING_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
 
     // In ProjectCertificateForm.tsx
     const handleSubmit = useCallback(
@@ -108,7 +110,8 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
                     workEffortTypeId: currentCertificateType,
                     description: formProps.values.description,
                     projectId: formProps.values.projectId,
-                    partyId: formProps.values.partyId,
+                    partyIdSupplier: formProps.values.partyIdSupplier || undefined,
+                    partyIdContractor: formProps.values.partyIdContractor || undefined,
                     estimatedStartDate: formProps.values.estimatedStartDate || null,
                     estimatedCompletionDate: formProps.values.estimatedCompletionDate || null,
                 },
@@ -152,142 +155,156 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
             .join(' ');
     };
 
-  if (isAdding ) {
+  if (isAddCertificateLoading ) {
     return <LoadingComponent message={getTranslatedLabel("certificate.form.saving", "Saving Certificate...")} />;
   }
 
-  return (
-      <>
-          <ProjectMenu/>
-          <Paper elevation={5} className="div-container-withBorderCurved">
-              <Grid container spacing={2} alignItems="center" position="relative">
-                  <Grid item xs={10}>
-                      <Box display="flex" justifyContent="space-between">
-                          <Typography
-                              sx={{ fontWeight: "bold", paddingLeft: 3, fontSize: "18px", color: editMode === 1 ? "green" : "black" }}
-                              variant="h6"
-                          >
-                              {selectedCertificate?.projectNum
-                                  ? `${getTranslatedLabel("certificate.form.title", "Project Certificate No")}: ${selectedCertificate.projectNum} (${getCertificateTypeDisplayText(currentCertificateType)})`
-                                  : `${getTranslatedLabel("certificate.form.new", "New Project Certificate")} (${getCertificateTypeDisplayText(currentCertificateType)})`}
-                          </Typography>
-                      </Box>
-                  </Grid>
-              </Grid>
-              <Form
-                  ref={formRef}
-                  initialValues={initialFormValues}
-                  key={formKey}
-                  onSubmitClick={handleSubmit}
-                  render={(formRenderProps) => (
-                      <FormElement>
-                          <fieldset className="k-form-fieldset">
-                              <Grid container alignItems="start" justifyContent="start" spacing={1}>
-                                  <Grid container spacing={2} alignItems="center" justifyContent="flex-start" sx={{ paddingLeft: 3 }}>
-                                      <Grid item xs={3} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
-                                          <Field
-                                              id="projectId"
-                                              name="projectId"
-                                              component={FormComboBoxVirtualProject}
-                                              label={getTranslatedLabel("certificate.form.project", "Project")}
-                                              dataItemKey="projectId"
-                                              textField="ProjectName"
-                                              validator={requiredValidator}
-                                              disabled={editMode > 3}
-                                          />
-                                      </Grid>
+    return (
+        <>
+            <ProjectMenu />
+            <Paper elevation={5} className="div-container-withBorderCurved">
+                <Grid container spacing={2} alignItems="center" position="relative">
+                    <Grid item xs={10}>
+                        <Box display="flex" justifyContent="space-between">
+                            <Typography
+                                sx={{ fontWeight: "bold", paddingLeft: 3, fontSize: "18px", color: editMode === 1 ? "green" : "black" }}
+                                variant="h6"
+                            >
+                                {selectedCertificate?.projectNum
+                                    ? `${getTranslatedLabel("certificate.form.title", "Project Certificate No")}: ${selectedCertificate.projectNum} (${getCertificateTypeDisplayText(currentCertificateType)})`
+                                    : `${getTranslatedLabel("certificate.form.new", "New Project Certificate")} (${getCertificateTypeDisplayText(currentCertificateType)})`}
+                            </Typography>
+                        </Box>
+                    </Grid>
+                </Grid>
+                <Form
+                    ref={formRef}
+                    initialValues={initialFormValues}
+                    key={formKey}
+                    onSubmitClick={handleSubmit}
+                    render={(formRenderProps) => (
+                        <FormElement>
+                            <fieldset className="k-form-fieldset">
+                                <Grid container alignItems="start" justifyContent="start" spacing={1}>
+                                    <Grid container spacing={2} alignItems="center" justifyContent="flex-start" sx={{ paddingLeft: 3 }}>
+                                        {/* REFACTOR: Reduced xs values for all fields except description */}
+                                        {/* Purpose: Minimize space usage while keeping description at xs=6 */}
+                                        {/* Context: Adjusts layout for EXTERNAL_SUPPLY_SALE_CERTIFICATE (both supplier and contractor) and other types */}
+                                        <Grid item xs={2} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
+                                            <Field
+                                                id="projectId"
+                                                name="projectId"
+                                                component={FormComboBoxVirtualProject}
+                                                label={getTranslatedLabel("certificate.form.project", "Project")}
+                                                dataItemKey="projectId"
+                                                textField="ProjectName"
+                                                validator={requiredValidator}
+                                                disabled={editMode > 3}
+                                            />
+                                        </Grid>
+                                        {showSupplier && (
+                                            <Grid item xs={showContractor ? 2 : 3} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
+                                                <Field
+                                                    id="partyIdSupplier"
+                                                    name="partyIdSupplier"
+                                                    component={FormComboBoxVirtualSupplier}
+                                                    label={getTranslatedLabel("certificate.form.supplier", "Supplier *")}
+                                                    valueField="partyId"
+                                                    textField="partyName"
+                                                    validator={requiredValidator}
+                                                    disabled={editMode > 3}
+                                                />
+                                            </Grid>
+                                        )}
+                                        {showContractor && (
+                                            <Grid item xs={showSupplier ? 2 : 3} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
+                                                <Field
+                                                    id="partyIdContractor"
+                                                    name="partyIdContractor"
+                                                    component={FormComboBoxVirtualContractor}
+                                                    label={getTranslatedLabel("certificate.form.contractor", "Contractor *")}
+                                                    valueField="partyId"
+                                                    textField="partyName"
+                                                    validator={requiredValidator}
+                                                    disabled={editMode > 3}
+                                                />
+                                            </Grid>
+                                        )}
+                                        <Grid item xs={showSupplier && showContractor ? 2 : 3} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
+                                            <Field
+                                                name="estimatedStartDate"
+                                                id="estimatedStartDate"
+                                                label={getTranslatedLabel("certificate.form.startDate", "Start Date")}
+                                                disabled={editMode > 1}
+                                                component={FormDatePicker}
+                                                validator={requiredValidator}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={showSupplier && showContractor ? 2 : 3} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
+                                            <Field
+                                                name="estimatedCompletionDate"
+                                                id="estimatedCompletionDate"
+                                                label={getTranslatedLabel("certificate.form.completionDate", "Completion Date")}
+                                                disabled={editMode > 1}
+                                                component={FormDatePicker}
+                                                validator={requiredValidator}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={6} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
+                                            <Field
+                                                id="description"
+                                                name="description"
+                                                label={getTranslatedLabel("certificate.form.description", "Description")}
+                                                component={FormInput}
+                                                validator={requiredValidator}
+                                                disabled={editMode > 3}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12}>
+                                            <Grid container spacing={1} alignItems="center" sx={{ ml: 1, mt: 3 }}>
+                                                <Grid item xs={12}>
+                                                    <CertificateItemsListMemo
+                                                        editMode={formEditMode}
+                                                        workEffortId={certificate?.workEffortId}
+                                                    />
+                                                </Grid>
+                                            </Grid>
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
 
-                                      <Grid item xs={3} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
-                                          <Field
-                                              id="partyId"
-                                              name="partyId"
-                                              component={isSupplierType ? FormComboBoxVirtualSupplier : FormComboBoxVirtualContractor}
-                                              label={getTranslatedLabel(
-                                                  "certificate.form.party",
-                                                  isSupplierType ? "Supplier" : "Contractor"
-                                              )}
-                                              valueField="partyId"
-                                              textField="partyName"
-                                              validator={requiredValidator}
-                                              disabled={editMode > 3}
-                                          />
-                                      </Grid>
-                                      <Grid item xs={3} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
-                                          <Field
-                                              name="estimatedStartDate"
-                                              id="estimatedStartDate"
-                                              label={getTranslatedLabel("certificate.form.startDate", "Start Date")}
-                                              disabled={editMode > 1}
-                                              component={FormDatePicker}
-                                              validator={requiredValidator}
-                                          />
-                                      </Grid>
-                                      <Grid item xs={3} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
-                                          <Field
-                                              name="estimatedCompletionDate"
-                                              id="estimatedCompletionDate"
-                                              label={getTranslatedLabel("certificate.form.startDate", "Start Date")}
-                                              disabled={editMode > 1}
-                                              component={FormDatePicker}
-                                              validator={requiredValidator}
-                                          />
-                                      </Grid>
-                                      <Grid item xs={6} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
-                                          <Field
-                                              id="description"
-                                              name="description"
-                                              label={getTranslatedLabel("certificate.form.description", "Description")}
-                                              component={FormInput}
-                                              validator={requiredValidator}
-                                              disabled={editMode > 3}
-                                          />
-                                      </Grid>
-                                      <Grid item xs={12}>
-                                          <Grid container spacing={1} alignItems="center" sx={{ ml: 1, mt: 3 }}>
-                                              <Grid item xs={12}>
-                                                  <CertificateItemsListMemo
-                                                      editMode={formEditMode}
-                                                      workEffortId={certificate?.workEffortId}
-                                                  />
-                                              </Grid>
-                                          </Grid>
-                                      </Grid>
-                                  </Grid>
-                              </Grid>
-
-                              {/* Purpose: Submit or cancel the form */}
-                              {/* Context: Disables submit during loading, matches PurchaseOrderForm */}
-                              <div className="k-form-buttons">
-                                  <Grid container spacing={2}>
-                                      {(editMode === 1 || editMode === 2) && (
-                                          <Grid item>
-                                              <LoadingButton
-                                                  size="large"
-                                                  type="submit"
-                                                  loading={isSubmitting || isAdding}
-                                                  variant="contained"
-                                                  onClick={() => formRef.current?.onSubmit()}
-                                              >
-                                                  {getTranslatedLabel(
-                                                      editMode === 1 ? "certificate.form.create" : "certificate.form.update",
-                                                      editMode === 1 ? "Create Certificate" : "Update Certificate"
-                                                  )}
-                                              </LoadingButton>
-                                          </Grid>
-                                      )}
-                                      <Grid item>
-                                          <Button size="large" color="error" variant="outlined" onClick={handleCancel}>
-                                              {getTranslatedLabel("certificate.form.cancel", "Cancel")}
-                                          </Button>
-                                      </Grid>
-                                  </Grid>
-                              </div>
-                          </fieldset>
-                      </FormElement>
-                  )}
-              />
-          </Paper>
-      </>
-    
-  );
+                                {/* Purpose: Submit or cancel the form */}
+                                {/* Context: Disables submit during loading, matches PurchaseOrderForm */}
+                                <div className="k-form-buttons">
+                                    <Grid container spacing={2}>
+                                        {(editMode === 1 || editMode === 2) && (
+                                            <Grid item>
+                                                <LoadingButton
+                                                    size="large"
+                                                    type="submit"
+                                                    loading={isSubmitting || isAddCertificateLoading}
+                                                    variant="contained"
+                                                    onClick={() => formRef.current?.onSubmit()}
+                                                >
+                                                    {getTranslatedLabel(
+                                                        editMode === 1 ? "certificate.form.create" : "certificate.form.update",
+                                                        editMode === 1 ? "Create Certificate" : "Update Certificate"
+                                                    )}
+                                                </LoadingButton>
+                                            </Grid>
+                                        )}
+                                        <Grid item>
+                                            <Button size="large" color="error" variant="outlined" onClick={handleCancel}>
+                                                {getTranslatedLabel("certificate.form.cancel", "Cancel")}
+                                            </Button>
+                                        </Grid>
+                                    </Grid>
+                                </div>
+                            </fieldset>
+                        </FormElement>
+                    )}
+                />
+            </Paper>
+        </>
+    );
 }

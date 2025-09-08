@@ -34,7 +34,7 @@ public class ListFacilities
                     FacilityId = x.FacilityId,
                     FacilityTypeId = x.FacilityTypeId,
                     FacilityTypeDescription = x.FacilityType!.Description,
-                    FacilityName = language == "ar" ? x.FacilityNameArabic : x.FacilityName,
+                    FacilityName = x.FacilityName,
                     Description = x.Description
                 })
                 .AsQueryable();

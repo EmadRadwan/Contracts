@@ -160,6 +160,16 @@ export default function CertificateItemsList({ editMode, workEffortId }: Props) 
                     title: getTranslatedLabel(`${localizationKey}.procurementDate`, "Procurement Date"),
                 },
                 { field: "facilityName", title: getTranslatedLabel(`${localizationKey}.facilityName`, "Facility") },
+                {
+                    field: "transportationExpenses",
+                    title: getTranslatedLabel(`${localizationKey}.transportationExpenses`, "Transportation Expenses"),
+                    format: "{0:n2}",
+                },
+                {
+                    field: "gratuities",
+                    title: getTranslatedLabel(`${localizationKey}.gratuities`, "Gratuities"),
+                    format: "{0:n2}",
+                },
             ]
             : []),
         ...(isContractingType

@@ -14362,15 +14362,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .IsUnicode(false)
                     .HasColumnName("FACILITY_NAME");
                     
-                 entity.Property(e => e.FacilityNameArabic)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("FACILITY_NAME_ARABIC");
-                    
-                entity.Property(e => e.FacilityNameTurkish)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("FACILITY_NAME_TURKISH");
+             
 
                 entity.Property(e => e.FacilitySize)
                     .HasColumnType("decimal(18, 6)")
@@ -28293,10 +28285,17 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasForeignKey(d => d.StatusId)
                     .HasConstraintName("PARTY_STATUSITM");
                     
-                    entity.HasMany(d => d.WorkEfforts)
-                    .WithOne(p => p.Party)
-                    .HasForeignKey(p => p.PartyId)
-                    .HasConstraintName("PARTY_WORK_EFFORTS");
+                    entity.HasMany(d => d.WorkEffortsAsSupplier)
+        .WithOne(p => p.SupplierParty)
+        .HasForeignKey(p => p.PartyIdSupplier)
+        .OnDelete(DeleteBehavior.Restrict)
+        .HasConstraintName("WK_EFFRT_SUPPLIER");
+
+    entity.HasMany(d => d.WorkEffortsAsContractor)
+        .WithOne(p => p.ContractorParty)
+        .HasForeignKey(p => p.PartyIdContractor)
+        .OnDelete(DeleteBehavior.Restrict)
+        .HasConstraintName("WK_EFFRT_CONTRACTOR");
             });
 
             modelBuilder.Entity<PartyAcctgPreference>(entity =>
@@ -61569,7 +61568,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasConstraintName("WEB_PREF_TYPE");
             });
 
-            modelBuilder.Entity<WorkEffort>(entity =>
+              modelBuilder.Entity<WorkEffort>(entity =>
             {
                 entity.ToTable("WORK_EFFORT");
 
@@ -61581,7 +61580,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
 
                 entity.HasIndex(e => e.EstimateCalcMethod, "WK_EFFRT_CUS_MET");
 
-                entity.HasIndex(e => e.FacilityId, "WK_EFFRT_FACILITY");
+                entity.HasIndex(e => e.FacilityId, "WK_EFFRT_FACILITY").IsUnique();
 
                 entity.HasIndex(e => e.FixedAssetId, "WK_EFFRT_FXDASST");
 
@@ -61913,132 +61912,144 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasForeignKey(d => d.WorkEffortTypeId)
                     .HasConstraintName("WK_EFFRT_TYPE");
                     
+                 
+                    
                  entity.Property(e => e.ProjectNum)
-        .HasMaxLength(60)
-        .IsUnicode(false)
-        .HasColumnName("PROJECT_NUM");
-
-    entity.Property(e => e.CertificateNumber)
+                .HasMaxLength(60)
+                .IsUnicode(false)
+                .HasColumnName("PROJECT_NUM");
+            
+                entity.Property(e => e.CertificateNumber)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("CERTIFICATE_NUMBER");
+            
+                entity.Property(e => e.ProjectName)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("PROJECT_NAME");
+            
+                entity.Property(e => e.TotalAmount)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("TOTAL_AMOUNT");
+            
+                entity.Property(e => e.ProjectId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("PROJECT_ID");
+            
+               entity.Property(e => e.PartyIdSupplier)
+        		.HasMaxLength(36)
+        		.IsUnicode(false)
+       			 .HasColumnName("PARTY_ID_SUPPLIER");
+    entity.Property(e => e.PartyIdContractor)
         .HasMaxLength(36)
         .IsUnicode(false)
-        .HasColumnName("CERTIFICATE_NUMBER");
+        .HasColumnName("PARTY_ID_CONTRACTOR");
+            
+                entity.Property(e => e.RelatedOrderId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("RELATED_ORDER_ID");
+            
+                entity.Property(e => e.CertificateCategory)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("CERTIFICATE_CATEGORY");
+            
+                entity.Property(e => e.SupplierOrContractorType)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("SUPPLIER_OR_CONTRACTOR_TYPE");
+            
+                entity.Property(e => e.LineNumber)
+                    .HasColumnName("LINE_NUMBER");
+            
+                entity.Property(e => e.Quantity)
+                    .HasColumnType("decimal(18, 6)")
+                    .HasColumnName("QUANTITY");
+            
+                entity.Property(e => e.Rate)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("RATE");
+            
+                entity.Property(e => e.CompletionPercentage)
+                    .HasColumnType("decimal(5, 2)")
+                    .HasColumnName("COMPLETION_PERCENTAGE");
+            
+                entity.Property(e => e.DueAmount)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("DUE_AMOUNT");
+            
+                entity.Property(e => e.PaidAmount)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("PAID_AMOUNT");
+            
+                entity.Property(e => e.RemainingAmount)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("REMAINING_AMOUNT");
+            
+                entity.Property(e => e.Notes)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("NOTES");
+            
+                entity.Property(e => e.ProductId)
+                    .HasColumnName("PRODUCT_ID");
+            
+                entity.HasIndex(e => e.ProjectId, "WK_EFFRT_PROJECT");
+                 entity.HasIndex(e => e.PartyIdSupplier, "WK_EFFRT_SUPPLIER");
+    entity.HasIndex(e => e.PartyIdContractor, "WK_EFFRT_CONTRACTOR");
+    entity.HasIndex(e => new { e.PartyIdSupplier, e.PartyIdContractor, e.CertificateCategory }, "WK_EFFRT_SUPPLIER_CONTRACTOR_CERTCAT").IsUnique(false);
 
-    entity.Property(e => e.ProjectName)
-        .HasMaxLength(255)
-        .IsUnicode(false)
-        .HasColumnName("PROJECT_NAME");
+                entity.HasIndex(e => e.RelatedOrderId, "WK_EFFRT_RELATED_ORDER");
+                entity.HasIndex(e => e.ProductId, "WK_EFFRT_PRODUCT");
+                entity.HasIndex(e => e.CertificateNumber, "WK_EFFRT_CERT_NUM");
+                
+            
+        entity.HasOne(d => d.SupplierParty)
+        .WithMany(p => p.WorkEffortsAsSupplier)
+        .HasForeignKey(d => d.PartyIdSupplier)
+        .HasConstraintName("WK_EFFRT_SUPPLIER");
 
-    entity.Property(e => e.TotalAmount)
-        .HasColumnType("decimal(18, 2)")
-        .HasColumnName("TOTAL_AMOUNT");
+    entity.HasOne(d => d.ContractorParty)
+        .WithMany(p => p.WorkEffortsAsContractor)
+        .HasForeignKey(d => d.PartyIdContractor)
+        .HasConstraintName("WK_EFFRT_CONTRACTOR");
+            
+                entity.HasOne(d => d.Project)
+                    .WithMany() 
+                    .HasForeignKey(d => d.ProjectId)
+                    .HasConstraintName("WK_EFFRT_PROJECT")
+                    .OnDelete(DeleteBehavior.Restrict); 
+            
+            
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.WorkEfforts)
+                    .HasForeignKey(d => d.ProductId)
+                    .HasConstraintName("WK_EFFRT_PRODUCT");
+            
+                entity.HasOne(d => d.RelatedOrder)
+                    .WithMany(p => p.WorkEfforts)
+                    .HasForeignKey(d => d.RelatedOrderId)
+                    .HasConstraintName("WK_EFFRT_RELATED_ORDER");
+                       
+                       entity.Property(e => e.DiscountAmount)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("DISCOUNT_AMOUNT"); 
+            
+                entity.Property(e => e.Deductions)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("DEDUCTIONS"); 
+            
+                entity.Property(e => e.InsuranceAmount)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("INSURANCE_AMOUNT");
+            
+ 
 
-    entity.Property(e => e.ProjectId)
-        .HasMaxLength(36)
-        .IsUnicode(false)
-        .HasColumnName("PROJECT_ID");
-
-    entity.Property(e => e.PartyId)
-        .HasColumnName("PARTY_ID");
-
-    entity.Property(e => e.RelatedOrderId)
-        .HasMaxLength(36)
-        .IsUnicode(false)
-        .HasColumnName("RELATED_ORDER_ID");
-
-    entity.Property(e => e.CertificateCategory)
-        .HasMaxLength(36)
-        .IsUnicode(false)
-        .HasColumnName("CERTIFICATE_CATEGORY");
-
-    entity.Property(e => e.SupplierOrContractorType)
-        .HasMaxLength(36)
-        .IsUnicode(false)
-        .HasColumnName("SUPPLIER_OR_CONTRACTOR_TYPE");
-
-    entity.Property(e => e.LineNumber)
-        .HasColumnName("LINE_NUMBER");
-
-    entity.Property(e => e.Quantity)
-        .HasColumnType("decimal(18, 6)")
-        .HasColumnName("QUANTITY");
-
-    entity.Property(e => e.Rate)
-        .HasColumnType("decimal(18, 2)")
-        .HasColumnName("RATE");
-
-    entity.Property(e => e.CompletionPercentage)
-        .HasColumnType("decimal(5, 2)")
-        .HasColumnName("COMPLETION_PERCENTAGE");
-
-    entity.Property(e => e.DueAmount)
-        .HasColumnType("decimal(18, 2)")
-        .HasColumnName("DUE_AMOUNT");
-
-    entity.Property(e => e.PaidAmount)
-        .HasColumnType("decimal(18, 2)")
-        .HasColumnName("PAID_AMOUNT");
-
-    entity.Property(e => e.RemainingAmount)
-        .HasColumnType("decimal(18, 2)")
-        .HasColumnName("REMAINING_AMOUNT");
-
-    entity.Property(e => e.Notes)
-        .HasMaxLength(255)
-        .IsUnicode(false)
-        .HasColumnName("NOTES");
-
-    entity.Property(e => e.ProductId)
-        .HasColumnName("PRODUCT_ID");
-
-    entity.HasIndex(e => e.ProjectId, "WK_EFFRT_PROJECT");
-    entity.HasIndex(e => e.PartyId, "WK_EFFRT_PARTY");
-    entity.HasIndex(e => e.RelatedOrderId, "WK_EFFRT_RELATED_ORDER");
-    entity.HasIndex(e => e.ProductId, "WK_EFFRT_PRODUCT");
-    entity.HasIndex(e => e.CertificateNumber, "WK_EFFRT_CERT_NUM");
-    entity.HasIndex(e => new { e.PartyId, e.CertificateCategory }, "WK_EFFRT_PARTY_CERTCAT")
-          .IsUnique(false); // Non-unique index for filtering
-
-   entity.HasOne(d => d.Party)
-        .WithMany(p => p.WorkEfforts) // Updated to use the new WorkEfforts collection
-        .HasForeignKey(d => d.PartyId)
-        .HasConstraintName("WK_EFFRT_PARTY");
-
-    entity.HasOne(d => d.Project)
-        .WithMany() // No inverse collection yet; define if needed
-        .HasForeignKey(d => d.ProjectId)
-        .HasConstraintName("WK_EFFRT_PROJECT")
-        .OnDelete(DeleteBehavior.Restrict); // Prevent cascade delete if appropriate
-
-
-    entity.HasOne(d => d.Product)
-        .WithMany(p => p.WorkEfforts)
-        .HasForeignKey(d => d.ProductId)
-        .HasConstraintName("WK_EFFRT_PRODUCT");
-
-    entity.HasOne(d => d.RelatedPurchaseOrder)
-        .WithMany(p => p.WorkEfforts)
-        .HasForeignKey(d => d.RelatedOrderId)
-        .HasConstraintName("WK_EFFRT_RELATED_ORDER");
-           
-           entity.Property(e => e.DiscountAmount)
-        .HasColumnType("decimal(18, 2)")
-        .HasColumnName("DISCOUNT_AMOUNT"); // REFACTOR: Added to track discounts, improving financial detail.
-
-    entity.Property(e => e.Deductions)
-        .HasColumnType("decimal(18, 2)")
-        .HasColumnName("DEDUCTIONS"); // REFACTOR: Added to handle deductions, enhancing financial accuracy.
-
-    entity.Property(e => e.InsuranceAmount)
-        .HasColumnType("decimal(18, 2)")
-        .HasColumnName("INSURANCE_AMOUNT"); // REFACTOR: Added to manage insurance costs, supporting risk-related tracking.
-
-entity.Property(e => e.IsContractorPurchased)
-        .HasMaxLength(1)
-        .IsUnicode(false)
-        .HasColumnName("IS_CONTRACTOR_PURCHASED")
-        .IsFixedLength();
-            });
-
+                        });
+                        
             modelBuilder.Entity<WorkEffortAssoc>(entity =>
             {
                 entity.HasKey(e => new { e.WorkEffortIdFrom, e.WorkEffortIdTo, e.WorkEffortAssocTypeId, e.FromDate });

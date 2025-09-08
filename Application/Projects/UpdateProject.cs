@@ -62,7 +62,6 @@ public class UpdateProject
                 // REFACTOR: Update project fields, using null-coalescing to preserve existing values if not provided.
                 project.ProjectNum = request.ProjectDto.ProjectNum ?? project.ProjectNum;
                 project.ProjectName = request.ProjectDto.ProjectName ?? project.ProjectName;
-                project.PartyId = request.ProjectDto.PartyId ?? project.PartyId;
                 project.WorkEffortTypeId = "PROJECT";
                 project.CurrentStatusId = request.ProjectDto.CurrentStatusId ?? project.CurrentStatusId;
                 project.EstimatedStartDate = request.ProjectDto.EstimatedStartDate ?? project.EstimatedStartDate;

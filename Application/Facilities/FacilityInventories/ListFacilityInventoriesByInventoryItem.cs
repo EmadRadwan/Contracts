@@ -60,7 +60,7 @@ public class ListFacilityInventoriesByInventoryItem
                     FacilityId = invi.FacilityId,
                     CurrencyUomId = invi.CurrencyUomId,
                     LocationSeqId = invi.LocationSeqId,
-                    FacilityName = language == "ar" ? fac.FacilityNameArabic : fac.FacilityName,
+                    FacilityName = fac.FacilityName,
                     PartyId = prty != null ? prty.PartyId : null,
                     PartyName = prty != null ? prty.Description : null,
                     // REFACTOR: Subquery for color feature with explicit typing

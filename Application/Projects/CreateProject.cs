@@ -5,6 +5,7 @@ using MediatR;
 using Persistence;
 using Domain;
 using Application.Interfaces;
+using System;
 
 namespace Application.Projects;
 
@@ -41,32 +42,46 @@ public class CreateProject
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                var newProjectSerial =
-                    await _utilityService.GetNextSequence("WorkEffort");
-
+                var newProjectSerial = await _utilityService.GetNextSequence("WorkEffort");
                 var stamp = DateTime.UtcNow;
+
+                // REFACTOR: Added Facility creation with PROJECT_FACILITY type and linked it to the project
+                // Purpose: Create a new Facility entity for the project with FacilityTypeId = 'PROJECT_FACILITY'
+                // and set its FacilityId in the WorkEffort entity to establish the relationship
+                var facilityId = Guid.NewGuid().ToString();
+                var facility = new Facility
+                {
+                    FacilityId = facilityId,
+                    FacilityTypeId = "PROJECT_FACILITY",
+                    FacilityName = request.ProjectDto!.ProjectName,
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp
+                };
+                _context.Facilities.Add(facility);
+
                 // Create WorkEffort entity
                 var project = new WorkEffort
                 {
                     WorkEffortId = newProjectSerial,
-                    ProjectName = request.ProjectDto.ProjectName,
-                    PartyId = request.ProjectDto.PartyId,
+                    ProjectName = request.ProjectDto!.ProjectName,
                     WorkEffortTypeId = "PROJECT",
                     CurrentStatusId = request.ProjectDto.CurrentStatusId,
                     EstimatedStartDate = request.ProjectDto.EstimatedStartDate,
                     EstimatedCompletionDate = request.ProjectDto.EstimatedCompletionDate,
                     CreatedDate = stamp,
-                    LastUpdatedStamp = stamp
+                    LastUpdatedStamp = stamp,
+                    // REFACTOR: Added FacilityId to link the project to the newly created facility
+                    // Purpose: Establishes a relationship between the project and its associated facility
+                    FacilityId = facilityId
                 };
-
                 _context.WorkEfforts.Add(project);
+
                 var result = await _context.SaveChangesAsync(cancellationToken) > 0;
                 if (!result)
                 {
                     await transaction.RollbackAsync(cancellationToken);
-                    return Result<ProjectDto>.Failure("Failed to create project");
+                    return Result<ProjectDto>.Failure("Failed to create project and facility");
                 }
-                
 
                 await transaction.CommitAsync(cancellationToken);
                 return Result<ProjectDto>.Success(request.ProjectDto!);
@@ -74,7 +89,7 @@ public class CreateProject
             catch (Exception ex)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                return Result<ProjectDto>.Failure($"Failed to create project: {ex.Message}");
+                return Result<ProjectDto>.Failure($"Failed to create project and facility: {ex.Message}");
             }
         }
     }

@@ -1,6 +1,6 @@
 import { Field, FormElement, FormRenderProps } from "@progress/kendo-react-form";
 import React, { useEffect } from "react";
-import { Button, Grid, Radio, RadioGroup, FormControlLabel } from "@mui/material";
+import { Grid } from "@mui/material";
 import FormDatePicker from "../../../app/common/form/FormDatePicker";
 import FormNumericTextBox from "../../../app/common/form/FormNumericTextBox";
 import { FormSimpleComboBoxVirtualProduct } from "../../../app/common/form/FormSimpleComboBoxVirtualProduct";
@@ -10,15 +10,13 @@ import { requiredValidator } from "../../../app/common/form/Validators";
 import { Facility } from "../../../app/models/facility";
 import FormButtons from "./FormButtons";
 
-// REFACTOR: Updated ProcurementFormProps to include transportationExpenses and gratuities in calculateTotals return type
-// Purpose: Ensure type safety for new fields used in calculations
-// Context: Reflects the updated calculateTotals function to include new fields for procurement-like certificates
-interface ProcurementFormProps {
+// REFACTOR: Created CompanySupplyFormProps based on ContractorPurchaseFormProps
+// Purpose: Ensure type safety for COMPANY_SUPPLY_SALE_CERTIFICATE, excluding discount fields
+// Context: Reflects the requirement that CompanySupplyForm is identical to ContractorPurchaseForm
+interface CompanySupplyFormProps {
     formRenderProps: FormRenderProps;
     editMode: number;
     formEditMode: number;
-    discountMode: "value" | "percentage";
-    handleDiscountModeChange: (event: React.ChangeEvent<HTMLInputElement>, onChange: FormRenderProps["onChange"]) => void;
     calculateTotals: (valueGetter: FormRenderProps["valueGetter"]) => {
         total: number;
         finalTotal: number;
@@ -32,27 +30,23 @@ interface ProcurementFormProps {
     facilities: Facility[];
     getTranslatedLabel: (key: string, defaultValue: string) => string;
     onClose: () => void;
-    percentageValidator: (value: number) => string | undefined;
 }
 
-const SupplyProcurementForm = ({
-                                   formRenderProps,
-                                   editMode,
-                                   formEditMode,
-                                   discountMode,
-                                   handleDiscountModeChange,
-                                   calculateTotals,
-                                   facilities,
-                                   getTranslatedLabel,
-                                   onClose,
-                                   percentageValidator,
-                               }: ProcurementFormProps) => {
+const CompanySupplyForm = ({
+                               formRenderProps,
+                               editMode,
+                               formEditMode,
+                               calculateTotals,
+                               facilities,
+                               getTranslatedLabel,
+                               onClose,
+                           }: CompanySupplyFormProps) => {
     const { valueGetter, onChange } = formRenderProps;
     const { finalTotal } = calculateTotals(valueGetter);
 
-    // REFACTOR: Optimized useEffect dependency array
-    // Purpose: Prevent unnecessary re-renders by only depending on finalTotal and onChange
-    // Context: Ensures total field updates only when finalTotal changes
+    // REFACTOR: Retained useEffect to update total field based on finalTotal
+    // Purpose: Ensure total field reflects calculated finalTotal without discount
+    // Context: Consistent with ContractorPurchaseForm, updates total when finalTotal changes
     useEffect(() => {
         onChange("total", { value: finalTotal });
     }, [finalTotal, onChange]);
@@ -129,44 +123,6 @@ const SupplyProcurementForm = ({
                         />
                     </Grid>
                     <Grid item xs={6}>
-                        {/* REFACTOR: Wrapped discount field and RadioGroup in a nested Grid container */}
-                        {/* Purpose: Visually group discount and its mode selector for better UX */}
-                        {/* Context: Ensures discount and RadioGroup are aligned together in the same column */}
-                        <Grid container direction="column" spacing={1}>
-                            <Grid item>
-                                <Field
-                                    id="discount"
-                                    name="discount"
-                                    label={getTranslatedLabel("certificate.items.form.discount", `Discount (${discountMode})`)}
-                                    component={FormNumericTextBox}
-                                    format={discountMode === "percentage" ? "n0" : "n3"}
-                                    min={0}
-                                    max={discountMode === "percentage" ? 100 : undefined}
-                                    validator={discountMode === "percentage" ? percentageValidator : undefined}
-                                    disabled={formEditMode > 3}
-                                />
-                            </Grid>
-                            <Grid item>
-                                <RadioGroup
-                                    row
-                                    value={discountMode}
-                                    onChange={(e) => handleDiscountModeChange(e, formRenderProps.onChange)}
-                                >
-                                    <FormControlLabel
-                                        value="value"
-                                        control={<Radio disabled={formEditMode > 3} />}
-                                        label={getTranslatedLabel("certificate.items.form.discountValue", "Value")}
-                                    />
-                                    <FormControlLabel
-                                        value="percentage"
-                                        control={<Radio disabled={formEditMode > 3} />}
-                                        label={getTranslatedLabel("certificate.items.form.discountPercentage", "Percentage")}
-                                    />
-                                </RadioGroup>
-                            </Grid>
-                        </Grid>
-                    </Grid>
-                    <Grid item xs={6}>
                         <Field
                             id="transportationExpenses"
                             name="transportationExpenses"
@@ -214,4 +170,4 @@ const SupplyProcurementForm = ({
     );
 };
 
-export default SupplyProcurementForm;
+export default CompanySupplyForm;

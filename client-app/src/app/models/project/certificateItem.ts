@@ -22,4 +22,6 @@ export interface CertificateItem {
     deserved?: number;
     net?: number;
     achievementPercentage?: number;
+    transportationExpenses?: number;
+    gratuities?: number;
 }

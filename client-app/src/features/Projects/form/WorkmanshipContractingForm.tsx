@@ -1,6 +1,6 @@
 import { Field, FormElement, FormRenderProps } from "@progress/kendo-react-form";
 import React, { useEffect } from "react";
-import { Button, Grid, Radio, RadioGroup, FormControlLabel, Checkbox } from "@mui/material";
+import { Button, Grid, Radio, RadioGroup, FormControlLabel } from "@mui/material";
 import FormNumericTextBox from "../../../app/common/form/FormNumericTextBox";
 import { FormSimpleComboBoxVirtualProduct } from "../../../app/common/form/FormSimpleComboBoxVirtualProduct";
 import { FormComboBoxVirtualUOM } from "../../../app/common/form/FormComboBoxVirtualUOM";
@@ -8,32 +8,7 @@ import { MemoizedFormDropDownList2 } from "../../../app/common/form/MemoizedForm
 import { percentageValidator, requiredValidator } from "../../../app/common/form/Validators";
 import { Facility } from "../../../app/models/facility";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
-import FormButtons from "./FormButtons"; // REFACTOR: Extracted button section to shared component
-
-interface FormCheckBoxProps {
-    value: boolean;
-    onChange: (event: { value: boolean }) => void;
-    disabled: boolean;
-    label: string;
-    [key: string]: any;
-}
-
-const FormCheckBox = ({ value, onChange, disabled, label, ...others }: FormCheckBoxProps) => {
-    const { getTranslatedLabel } = useTranslationHelper();
-    return (
-        <FormControlLabel
-            control={
-                <Checkbox
-                    checked={value || false}
-                    onChange={(e) => onChange({ value: e.target.checked })}
-                    disabled={disabled}
-                    {...others}
-                />
-            }
-            label={getTranslatedLabel("certificate.items.form.isContractorPurchased", label)}
-        />
-    );
-};
+import FormButtons from "./FormButtons";
 
 interface ContractingFormProps {
     formRenderProps: FormRenderProps;
@@ -56,20 +31,19 @@ interface ContractingFormProps {
 }
 
 const WorkmanshipContractingForm = ({
-                             formRenderProps,
-                             editMode,
-                             formEditMode,
-                             insuranceMode,
-                             handleInsuranceModeChange,
-                             calculateTotals,
-                             facilities,
-                             getTranslatedLabel,
-                             onClose,
-                             achievementPercentageValidator,
-                         }: ContractingFormProps) => {
+                                        formRenderProps,
+                                        editMode,
+                                        formEditMode,
+                                        insuranceMode,
+                                        handleInsuranceModeChange,
+                                        calculateTotals,
+                                        facilities,
+                                        getTranslatedLabel,
+                                        onClose,
+                                        achievementPercentageValidator,
+                                    }: ContractingFormProps) => {
     const { valueGetter, onChange } = formRenderProps;
     const { total, net, deserved } = calculateTotals(valueGetter);
-    const productType = valueGetter("productId")?.ProductType || "";
 
     // REFACTOR: Optimized useEffect dependency array
     // Purpose: Prevent unnecessary re-renders by only depending on changed values
@@ -103,15 +77,6 @@ const WorkmanshipContractingForm = ({
                             component={FormComboBoxVirtualUOM}
                             validator={requiredValidator}
                             disabled={editMode === 2 || formEditMode > 3}
-                        />
-                    </Grid>
-                    <Grid item xs={6}>
-                        <Field
-                            id="isContractorPurchased"
-                            name="isContractorPurchased"
-                            label="Contractor Purchased"
-                            component={FormCheckBox}
-                            disabled={formEditMode > 3 || productType !== "RAW_MATERIAL"}
                         />
                     </Grid>
                     <Grid item xs={6}>
@@ -172,17 +137,42 @@ const WorkmanshipContractingForm = ({
                         />
                     </Grid>
                     <Grid item xs={6}>
-                        <Field
-                            id="insurance"
-                            name="insurance"
-                            label={getTranslatedLabel("certificate.items.form.insurance", `Insurance (${insuranceMode})`)}
-                            component={FormNumericTextBox}
-                            format={insuranceMode === "percentage" ? "n0" : "n2"}
-                            min={0}
-                            max={insuranceMode === "percentage" ? 100 : undefined}
-                            validator={insuranceMode === "percentage" ? percentageValidator : undefined}
-                            disabled={formEditMode > 3}
-                        />
+                        {/* REFACTOR: Wrapped insurance field and RadioGroup in a nested Grid container */}
+                        {/* Purpose: Visually group insurance and its mode selector for better UX */}
+                        {/* Context: Places RadioGroup directly below insurance field in the same column */}
+                        <Grid container direction="column" spacing={1}>
+                            <Grid item>
+                                <Field
+                                    id="insurance"
+                                    name="insurance"
+                                    label={getTranslatedLabel("certificate.items.form.insurance", `Insurance (${insuranceMode})`)}
+                                    component={FormNumericTextBox}
+                                    format={insuranceMode === "percentage" ? "n0" : "n2"}
+                                    min={0}
+                                    max={insuranceMode === "percentage" ? 100 : undefined}
+                                    validator={insuranceMode === "percentage" ? percentageValidator : undefined}
+                                    disabled={formEditMode > 3}
+                                />
+                            </Grid>
+                            <Grid item>
+                                <RadioGroup
+                                    row
+                                    value={insuranceMode}
+                                    onChange={(e) => handleInsuranceModeChange(e, formRenderProps.onChange)}
+                                >
+                                    <FormControlLabel
+                                        value="value"
+                                        control={<Radio disabled={formEditMode > 3} />}
+                                        label={getTranslatedLabel("certificate.items.form.insuranceValue", "Value")}
+                                    />
+                                    <FormControlLabel
+                                        value="percentage"
+                                        control={<Radio disabled={formEditMode > 3} />}
+                                        label={getTranslatedLabel("certificate.items.form.insurancePercentage", "Percentage")}
+                                    />
+                                </RadioGroup>
+                            </Grid>
+                        </Grid>
                     </Grid>
                     <Grid item xs={6}>
                         <Field
@@ -194,24 +184,6 @@ const WorkmanshipContractingForm = ({
                             value={net}
                             disabled
                         />
-                    </Grid>
-                    <Grid item xs={12}>
-                        <RadioGroup
-                            row
-                            value={insuranceMode}
-                            onChange={(e) => handleInsuranceModeChange(e, formRenderProps.onChange)}
-                        >
-                            <FormControlLabel
-                                value="value"
-                                control={<Radio disabled={formEditMode > 3} />}
-                                label={getTranslatedLabel("certificate.items.form.insuranceValue", "Value")}
-                            />
-                            <FormControlLabel
-                                value="percentage"
-                                control={<Radio disabled={formEditMode > 3} />}
-                                label={getTranslatedLabel("certificate.items.form.insurancePercentage", "Percentage")}
-                            />
-                        </RadioGroup>
                     </Grid>
                     <Grid item xs={6}>
                         <Field

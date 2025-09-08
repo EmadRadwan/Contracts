@@ -59,7 +59,7 @@ public class ListFacilityByInventoryItemDetails
                     AvailableToPromiseTotal = invi.AvailableToPromiseTotal,
                     InventoryItemId = invi.InventoryItemId,
                     FacilityId = invi.FacilityId,
-                    FacilityName = language == "ar" ? fac.FacilityNameArabic : language == "tr" ? fac.FacilityNameTurkish : fac.FacilityName,
+                    FacilityName = fac.FacilityName,
                     InventoryItemDetailSeqId = invd.InventoryItemDetailSeqId,
                     EffectiveDate = invd.EffectiveDate,
                     QuantityOnHandDiff = invd.QuantityOnHandDiff,

@@ -34,7 +34,7 @@ public class ListFacilityLocations
                     select new FacilityLocationRecord
                     {
                         FacilityId = floc.FacilityId,
-                        FacilityName = language == "ar" ? fac.FacilityNameArabic : language == "tr" ? fac.FacilityNameTurkish : fac.FacilityName,
+                        FacilityName = fac.FacilityName,
                         LocationSeqId = floc.LocationSeqId,
                         LocationTypeEnumId = floc.LocationTypeEnumId,
                         LocationTypeEnumDescription = enumerations.Description,

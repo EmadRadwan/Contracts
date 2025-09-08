@@ -6,7 +6,8 @@ export interface Certificate {
   workEffortTypeId: string; // Maps to WorkEffort.WorkEffortTypeId (e.g., "PROCUREMENT_CERTIFICATE" or "CONTRACTING_CERTIFICATE")
   projectId?: string; // Maps to WorkEffort.WorkEffortName
   projectName?: string; // Maps to WorkEffort.ProjectName
-  partyId?: string; // Maps to WorkEffort.PartyId
+  partyIdSupplier?: string; // Maps to WorkEffort.PartyId
+  partyIdContractor?: string; // Maps to WorkEffort.PartyId
   description?: string; // Maps to WorkEffort.Description
   estimatedStartDate?: string | null; // Maps to WorkEffort.EstimatedStartDate (ISO string)
   estimatedCompletionDate?: string | null; // Maps to WorkEffort.EstimatedCompletionDate (ISO string)

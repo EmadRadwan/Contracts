@@ -443,7 +443,7 @@ public class SeedContracts
 
 
         // facility locations
-        if (!context.FacilityLocations.Any())
+        /*if (!context.FacilityLocations.Any())
         {
             var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/facility_locations.json");
             var jsonData = File.ReadAllText(path);
@@ -451,7 +451,7 @@ public class SeedContracts
             var facilityLocations = JsonConvert.DeserializeObject<List<FacilityLocation>>(jsonData);
             await context.FacilityLocations.AddRangeAsync(facilityLocations);
             await context.SaveChangesAsync();
-        }
+        }*/
 
         // Sequence Value Item
         if (!context.SequenceValueItems.Any())

@@ -1,4 +1,4 @@
-using Application.Core;
+/*using Application.Core;
 using Application.Order.Orders;
 using FluentValidation;
 using MediatR;
@@ -135,7 +135,6 @@ namespace Application.Projects
                             Notes = item.Notes,
                             ProcurementDate = item.ProcurementDate,
                             FacilityId = item.FacilityId,
-                            IsContractorPurchased = item.IsContractorPurchased,
                             CreatedDate = stamp,
                             LastUpdatedStamp = stamp,
                             CurrentStatusId = "WEPR_IN_PROGRESS"
@@ -261,4 +260,4 @@ namespace Application.Projects
             }
         }
     }
-}
+}*/

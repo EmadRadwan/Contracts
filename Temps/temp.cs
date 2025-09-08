@@ -1,258 +1,480 @@
-using Application.Core;
-using Application.Order.Orders;
-using FluentValidation;
-using MediatR;
-using Persistence;
-using Domain;
-using Application.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using Application.Catalog.ProductStores;
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Application.Projects
-{
-    public class CreateProjectCertificate
-    {
-        public class Command : IRequest<Result<ProjectCertificateDto>>
-        {
-            public ProjectCertificateDto? Certificate { get; set; }
-        }
-
-        public class CommandValidator : AbstractValidator<Command>
-        {
-            public CommandValidator()
+  modelBuilder.Entity<WorkEffort>(entity =>
             {
-                RuleFor(x => x.Certificate!.PartyId).NotEmpty().WithMessage("Party ID is required");
-                // REFACTOR: Validate CertificateItems for CONTRACTING_CERTIFICATE
-                // Purpose: Ensure items have required fields and valid values
-                // Context: Prevents zeroed-out items unless intentional
-                RuleFor(x => x.Certificate!.CertificateItems)
-                    .Must(items => items != null && items.Any())
-                    .WithMessage("At least one certificate item is required");
-                RuleForEach(x => x.Certificate!.CertificateItems)
-                    .Must(item => item.Quantity > 0)
-                    .WithMessage("Quantity must be greater than 0")
-                    .When(x => x.Certificate!.CertificateCategory == "CONTRACTING_CERTIFICATE");
-                RuleForEach(x => x.Certificate!.CertificateItems)
-                    .Must(item => item.UnitPrice > 0)
-                    .WithMessage("Unit price must be greater than 0")
-                    .When(x => x.Certificate!.CertificateCategory == "CONTRACTING_CERTIFICATE");
-            }
-        }
+                entity.ToTable("WORK_EFFORT");
 
-        public class Handler : IRequestHandler<Command, Result<ProjectCertificateDto>>
-        {
-            private readonly DataContext _context;
-            private readonly IUserAccessor _userAccessor;
-            private readonly IUtilityService _utilityService;
-            private readonly IOrderService _orderService;
-            private readonly IProductStoreService _productStoreService;
+                entity.HasIndex(e => e.AccommodationMapId, "WK_EFFRT_ACC_MAP");
 
-            public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService, IOrderService orderService, IProductStoreService productStoreService)
-            {
-                _context = context;
-                _userAccessor = userAccessor;
-                _utilityService = utilityService;
-                _orderService = orderService;
-                _productStoreService = productStoreService;
-            }
+                entity.HasIndex(e => e.AccommodationSpotId, "WK_EFFRT_ACC_SPOT");
 
-            public async Task<Result<ProjectCertificateDto>> Handle(Command request, CancellationToken cancellationToken)
-            {
-                await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-                try
-                {
-                    var stamp = DateTime.UtcNow;
-                    var certificate = request.Certificate!;
-                    var newWorkEffortSerial = await _utilityService.GetNextSequence("WorkEffort");
-                    string newProjectCertificateSerial;
-                    string? partyCode = null;
+                entity.HasIndex(e => e.CurrentStatusId, "WK_EFFRT_CURSTTS");
 
-                    if (certificate.CertificateCategory == "CONTRACTING_CERTIFICATE")
-                    {
-                        // REFACTOR: Optimize party query
-                        // Purpose: Reuse party entity to avoid redundant queries
-                        // Context: Improves performance and clarity
-                        var party = await _context.Parties
-                            .FirstOrDefaultAsync(p => p.PartyId == certificate.PartyId, cancellationToken);
-                        if (party == null)
-                        {
-                            await transaction.RollbackAsync(cancellationToken);
-                            return Result<ProjectCertificateDto>.Failure("Party not found");
-                        }
-                        partyCode = party.PartyId;
-                        var certificateCount = await _context.WorkEfforts
-                            .CountAsync(we => we.PartyId == certificate.PartyId && we.CertificateCategory == "CONTRACTING_CERTIFICATE", cancellationToken);
-                        newProjectCertificateSerial = $"{partyCode}-{certificateCount + 1:D4}";
-                    }
-                    else
-                    {
-                        newProjectCertificateSerial = await _utilityService.GetNextSequence("WorkEffort");
-                    }
+                entity.HasIndex(e => e.EstimateCalcMethod, "WK_EFFRT_CUS_MET");
 
-                    // Create certificate header
-                    var workEffort = new WorkEffort
-                    {
-                        WorkEffortId = newWorkEffortSerial,
-                        CertificateNumber = newProjectCertificateSerial,
-                        WorkEffortTypeId = "PROJECT_CERTIFICATE",
-                        CertificateCategory = certificate.CertificateCategory,
-                        PartyId = certificate.PartyId,
-                        ProjectId = certificate.ProjectId,
-                        Description = certificate.Description,
-                        EstimatedStartDate = certificate.EstimatedStartDate,
-                        EstimatedCompletionDate = certificate.EstimatedCompletionDate,
-                        CurrentStatusId = "WEPR_IN_PROGRESS",
-                        CreatedDate = stamp,
-                        LastUpdatedStamp = stamp
-                    };
-                    _context.WorkEfforts.Add(workEffort);
+                entity.HasIndex(e => e.FacilityId, "WK_EFFRT_FACILITY").IsUnique();
 
-                    // Create certificate items
-                    foreach (var item in certificate.CertificateItems!)
-                    {
-                        var itemWorkEffortSerial = await _utilityService.GetNextSequence("WorkEffort");
-                        var itemWorkEffort = new WorkEffort
-                        {
-                            WorkEffortId = itemWorkEffortSerial,
-                            WorkEffortParentId = newWorkEffortSerial,
-                            WorkEffortTypeId = "CERTIFICATE_ITEM",
-                            ProductId = item.ProductId,
-                            Description = item.Description,
-                            Quantity = item.Quantity,
-                            Rate = item.UnitPrice,
-                            TotalAmount = item.TotalAmount,
-                            DiscountAmount = item.Discount ?? 0,
-                            InsuranceAmount = item.Insurance ?? 0,
-                            Deductions = item.Deductions ?? 0,
-                            CompletionPercentage = item.CompletionPercentage,
-                            Notes = item.Notes,
-                            ProcurementDate = item.ProcurementDate,
-                            FacilityId = item.FacilityId,
-                            IsContractorPurchased = item.IsContractorPurchased,
-                            CreatedDate = stamp,
-                            LastUpdatedStamp = stamp,
-                            CurrentStatusId = "WEPR_IN_PROGRESS"
-                        };
-                        _context.WorkEfforts.Add(itemWorkEffort);
-                    }
+                entity.HasIndex(e => e.FixedAssetId, "WK_EFFRT_FXDASST");
 
-                    var result = await _context.SaveChangesAsync(cancellationToken) > 0;
-                    if (!result)
-                    {
-                        await transaction.RollbackAsync(cancellationToken);
-                        return Result<ProjectCertificateDto>.Failure("Failed to create certificate and items");
-                    }
+                entity.HasIndex(e => e.MoneyUomId, "WK_EFFRT_MON_UOM");
 
-                    // REFACTOR: Create Purchase Order for both certificate types with discount adjustments
-                    // Purpose: Generate a PO for contractor-purchased goods and services, handling async product type check
-                    // Context: Fixed typo in SubTotal calculation (i.Discount to item.Discount)
-                    if (certificate.CertificateCategory == "PROCUREMENT_CERTIFICATE" || 
-                        certificate.CertificateCategory == "CONTRACTING_CERTIFICATE")
-                    {
-                        // Fetch service product IDs
-                        var serviceProductIds = await _context.Products
-                            .Where(p => p.ProductTypeId == "SERVICE")
-                            .Select(p => p.ProductId)
-                            .ToListAsync(cancellationToken);
+                entity.HasIndex(e => e.NoteId, "WK_EFFRT_NOTE");
 
-                        // Filter items for PO: include all for PROCUREMENT, only services or contractor-purchased goods for CONTRACTING
-                        var poItems = certificate.CertificateCategory == "PROCUREMENT_CERTIFICATE"
-                            ? certificate.CertificateItems
-                            : certificate.CertificateItems
-                                .Where(item => item.IsContractorPurchased || // Contractor-purchased goods
-                                              serviceProductIds.Contains(item.ProductId)) // Services
-                                .ToList();
+                entity.HasIndex(e => e.WorkEffortParentId, "WK_EFFRT_PARENT");
 
-                        if (poItems.Any())
-                        {
-                            var orderAdjustments = poItems
-                                .Select((item, index) => new { Item = item, Index = index })
-                                .Where(x => x.Item.Discount.HasValue && x.Item.Discount > 0)
-                                .Select(x => new OrderAdjustmentDto2
-                                {
-                                    OrderAdjustmentId = Guid.NewGuid().ToString(),
-                                    OrderAdjustmentTypeId = "DISCOUNT_ADJUSTMENT",
-                                    OrderAdjustmentTypeDescription = "خصم",
-                                    OrderId = null, // Will be set in CreatePurchaseOrder
-                                    OrderItemSeqId = (x.Index + 1).ToString("D4"),
-                                    Amount = -x.Item.Discount.Value, // Negative for discount
-                                    CorrespondingProductId = x.Item.ProductId,
-                                    CorrespondingProductName = x.Item.ProductName,
-                                    IsManual = "Y",
-                                    CreatedDate = stamp,
-                                    IsAdjustmentDeleted = false,
-                                    SourcePercentage = x.Item.TotalAmount > 0
-                                        ? (x.Item.Discount.Value / x.Item.TotalAmount) * 100
-                                        : 0
-                                })
-                                .ToList();
+                entity.HasIndex(e => e.WorkEffortPurposeTypeId, "WK_EFFRT_PRPTYP");
 
-                            var orderDto = new OrderDto
-                            {
-                                OrderTypeId = "PURCHASE_ORDER",
-                                FromPartyId = certificate.PartyId,
-                                CurrencyUomId = await _productStoreService.GetProductStoreDefaultCurrencyId(),
-                                OrderDate = stamp,
-                                StatusId = "ORDER_CREATED",
-                                StatusDescription = "Created",
-                                InternalRemarks = $"Auto-generated from Certificate {newProjectCertificateSerial}",
-                                GrandTotal = poItems.Sum(i => i.TotalAmount - (i.Discount ?? 0)),
-                                OrderItems = poItems.Select((item, index) => new OrderItemDto2
-                                {
-                                    OrderItemSeqId = (index + 1).ToString("D4"),
-                                    ProductId = item.ProductId,
-                                    ProductName = item.ProductName,
-                                    Quantity = item.Quantity,
-                                    UnitPrice = item.UnitPrice,
-                                    SubTotal = item.TotalAmount - (item.Discount ?? 0), // REFACTOR: Fixed typo (i.Discount to item.Discount)
-                                    FacilityId = item.FacilityId,
-                                    ItemDescription = item.Description,
-                                    OrderItemTypeId = "PRODUCT_ORDER_ITEM",
-                                    StatusId = "ITEM_CREATED",
-                                    CreatedStamp = stamp,
-                                    LastUpdatedStamp = stamp
-                                }).ToList(),
-                                OrderAdjustments = orderAdjustments
-                            };
+                entity.HasIndex(e => e.RecurrenceInfoId, "WK_EFFRT_RECINFO");
 
-                            var poResult = await _orderService.CreatePurchaseOrder(orderDto);
-                            if (poResult == null)
-                            {
-                                await transaction.RollbackAsync(cancellationToken);
-                                return Result<ProjectCertificateDto>.Failure("Failed to create purchase order");
-                            }
-                        }
-                    }
+                entity.HasIndex(e => e.RuntimeDataId, "WK_EFFRT_RNTMDTA");
 
-                    await transaction.CommitAsync(cancellationToken);
+                entity.HasIndex(e => e.ScopeEnumId, "WK_EFFRT_SC_ENUM");
 
-                    // Construct response DTO
-                    var resultDto = new ProjectCertificateDto
-                    {
-                        WorkEffortId = workEffort.WorkEffortId,
-                        CertificateNumber = workEffort.CertificateNumber,
-                        WorkEffortTypeId = workEffort.WorkEffortTypeId,
-                        ProjectId = workEffort.ProjectId,
-                        PartyId = workEffort.PartyId,
-                        Description = workEffort.Description,
-                        EstimatedStartDate = workEffort.EstimatedStartDate,
-                        EstimatedCompletionDate = workEffort.EstimatedCompletionDate,
-                        StatusDescription = "CREATED",
-                        CertificateItems = certificate.CertificateItems
-                    };
+                entity.HasIndex(e => e.TempExprId, "WK_EFFRT_TEMPEXPR");
 
-                    return Result<ProjectCertificateDto>.Success(resultDto);
-                }
-                catch (Exception ex)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                    return Result<ProjectCertificateDto>.Failure($"Failed to create certificate: {ex.Message}");
-                }
-            }
-        }
-    }
-}
+                entity.HasIndex(e => e.WorkEffortTypeId, "WK_EFFRT_TYPE");
+
+                entity.HasIndex(e => e.CreatedTxStamp, "WORK_EFFORT_TXCRTS");
+
+                entity.HasIndex(e => e.LastUpdatedTxStamp, "WORK_EFFORT_TXSTMP");
+
+                entity.Property(e => e.WorkEffortId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("WORK_EFFORT_ID");
+
+                entity.Property(e => e.AccommodationMapId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("ACCOMMODATION_MAP_ID");
+
+                entity.Property(e => e.AccommodationSpotId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("ACCOMMODATION_SPOT_ID");
+
+                entity.Property(e => e.ActualCompletionDate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("ACTUAL_COMPLETION_DATE");
+
+                entity.Property(e => e.ActualMilliSeconds).HasColumnName("ACTUAL_MILLI_SECONDS");
+
+                entity.Property(e => e.ActualSetupMillis).HasColumnName("ACTUAL_SETUP_MILLIS");
+
+                entity.Property(e => e.ActualStartDate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("ACTUAL_START_DATE");
+
+                entity.Property(e => e.CreatedByUserLogin)
+                    .HasMaxLength(250)
+                    .IsUnicode(false)
+                    .HasColumnName("CREATED_BY_USER_LOGIN");
+
+                entity.Property(e => e.CreatedDate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("CREATED_DATE");
+
+                entity.Property(e => e.CreatedStamp)
+                    .HasColumnType("datetime")
+                    .HasColumnName("CREATED_STAMP");
+
+                entity.Property(e => e.CreatedTxStamp)
+                    .HasColumnType("datetime")
+                    .HasColumnName("CREATED_TX_STAMP");
+
+                entity.Property(e => e.CurrentStatusId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("CURRENT_STATUS_ID");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("DESCRIPTION");
+
+                entity.Property(e => e.EstimateCalcMethod)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("ESTIMATE_CALC_METHOD");
+
+                entity.Property(e => e.EstimatedCompletionDate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("ESTIMATED_COMPLETION_DATE");
+
+                entity.Property(e => e.EstimatedMilliSeconds).HasColumnName("ESTIMATED_MILLI_SECONDS");
+
+                entity.Property(e => e.EstimatedSetupMillis).HasColumnName("ESTIMATED_SETUP_MILLIS");
+
+                entity.Property(e => e.EstimatedStartDate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("ESTIMATED_START_DATE");
+
+                entity.Property(e => e.FacilityId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("FACILITY_ID");
+
+                entity.Property(e => e.FixedAssetId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("FIXED_ASSET_ID");
+
+                entity.Property(e => e.InfoUrl)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("INFO_URL");
+
+                entity.Property(e => e.LastModifiedByUserLogin)
+                    .HasMaxLength(250)
+                    .IsUnicode(false)
+                    .HasColumnName("LAST_MODIFIED_BY_USER_LOGIN");
+
+                entity.Property(e => e.LastModifiedDate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("LAST_MODIFIED_DATE");
+
+                entity.Property(e => e.LastStatusUpdate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("LAST_STATUS_UPDATE");
+
+                entity.Property(e => e.LastUpdatedStamp)
+                    .HasColumnType("datetime")
+                    .HasColumnName("LAST_UPDATED_STAMP");
+
+                entity.Property(e => e.LastUpdatedTxStamp)
+                    .HasColumnType("datetime")
+                    .HasColumnName("LAST_UPDATED_TX_STAMP");
+
+                entity.Property(e => e.LocationDesc)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("LOCATION_DESC");
+
+                entity.Property(e => e.MoneyUomId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("MONEY_UOM_ID");
+
+                entity.Property(e => e.NoteId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("NOTE_ID");
+
+                entity.Property(e => e.PercentComplete).HasColumnName("PERCENT_COMPLETE");
+
+                entity.Property(e => e.Priority).HasColumnName("PRIORITY");
+
+                entity.Property(e => e.QuantityProduced)
+                    .HasColumnType("decimal(18, 6)")
+                    .HasColumnName("QUANTITY_PRODUCED");
+
+                entity.Property(e => e.QuantityRejected)
+                    .HasColumnType("decimal(18, 6)")
+                    .HasColumnName("QUANTITY_REJECTED");
+
+                entity.Property(e => e.QuantityToProduce)
+                    .HasColumnType("decimal(18, 6)")
+                    .HasColumnName("QUANTITY_TO_PRODUCE");
+
+                entity.Property(e => e.RecurrenceInfoId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("RECURRENCE_INFO_ID");
+
+                entity.Property(e => e.Reserv2ndPPPerc)
+                    .HasColumnType("decimal(18, 6)")
+                    .HasColumnName("RESERV2ND_P_P_PERC");
+
+                entity.Property(e => e.ReservNthPPPerc)
+                    .HasColumnType("decimal(18, 6)")
+                    .HasColumnName("RESERV_NTH_P_P_PERC");
+
+                entity.Property(e => e.ReservPersons)
+                    .HasColumnType("decimal(18, 6)")
+                    .HasColumnName("RESERV_PERSONS");
+
+                entity.Property(e => e.RevisionNumber).HasColumnName("REVISION_NUMBER");
+
+                entity.Property(e => e.RuntimeDataId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("RUNTIME_DATA_ID");
+
+                entity.Property(e => e.ScopeEnumId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("SCOPE_ENUM_ID");
+
+                entity.Property(e => e.SendNotificationEmail)
+                    .HasMaxLength(1)
+                    .IsUnicode(false)
+                    .HasColumnName("SEND_NOTIFICATION_EMAIL")
+                    .IsFixedLength();
+
+                entity.Property(e => e.ServiceLoaderName)
+                    .HasMaxLength(100)
+                    .IsUnicode(false)
+                    .HasColumnName("SERVICE_LOADER_NAME");
+
+                entity.Property(e => e.ShowAsEnumId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("SHOW_AS_ENUM_ID");
+
+                entity.Property(e => e.SourceReferenceId)
+                    .HasMaxLength(60)
+                    .IsUnicode(false)
+                    .HasColumnName("SOURCE_REFERENCE_ID");
+
+                entity.Property(e => e.SpecialTerms)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("SPECIAL_TERMS");
+
+                entity.Property(e => e.TempExprId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("TEMP_EXPR_ID");
+
+                entity.Property(e => e.TimeTransparency).HasColumnName("TIME_TRANSPARENCY");
+
+                entity.Property(e => e.TotalMilliSecondsAllowed).HasColumnName("TOTAL_MILLI_SECONDS_ALLOWED");
+
+                entity.Property(e => e.TotalMoneyAllowed)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("TOTAL_MONEY_ALLOWED");
+
+                entity.Property(e => e.UniversalId)
+                    .HasMaxLength(60)
+                    .IsUnicode(false)
+                    .HasColumnName("UNIVERSAL_ID");
+
+                entity.Property(e => e.WorkEffortName)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("WORK_EFFORT_NAME");
+
+                entity.Property(e => e.WorkEffortParentId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("WORK_EFFORT_PARENT_ID");
+
+                entity.Property(e => e.WorkEffortPurposeTypeId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("WORK_EFFORT_PURPOSE_TYPE_ID");
+
+                entity.Property(e => e.WorkEffortTypeId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("WORK_EFFORT_TYPE_ID");
+
+                entity.HasOne(d => d.AccommodationMap)
+                    .WithMany(p => p.WorkEfforts)
+                    .HasForeignKey(d => d.AccommodationMapId)
+                    .HasConstraintName("WK_EFFRT_ACC_MAP");
+
+                entity.HasOne(d => d.AccommodationSpot)
+                    .WithMany(p => p.WorkEfforts)
+                    .HasForeignKey(d => d.AccommodationSpotId)
+                    .HasConstraintName("WK_EFFRT_ACC_SPOT");
+
+                entity.HasOne(d => d.CurrentStatus)
+                    .WithMany(p => p.WorkEfforts)
+                    .HasForeignKey(d => d.CurrentStatusId)
+                    .HasConstraintName("WK_EFFRT_CURSTTS");
+
+                entity.HasOne(d => d.EstimateCalcMethodNavigation)
+                    .WithMany(p => p.WorkEfforts)
+                    .HasForeignKey(d => d.EstimateCalcMethod)
+                    .HasConstraintName("WK_EFFRT_CUS_MET");
+
+                entity.HasOne(d => d.Facility)
+                    .WithMany(p => p.WorkEfforts)
+                    .HasForeignKey(d => d.FacilityId)
+                    .HasConstraintName("WK_EFFRT_FACILITY");
+
+                entity.HasOne(d => d.FixedAsset)
+                    .WithMany(p => p.WorkEfforts)
+                    .HasForeignKey(d => d.FixedAssetId)
+                    .HasConstraintName("WK_EFFRT_FXDASST");
+
+                entity.HasOne(d => d.MoneyUom)
+                    .WithMany(p => p.WorkEfforts)
+                    .HasForeignKey(d => d.MoneyUomId)
+                    .HasConstraintName("WK_EFFRT_MON_UOM");
+
+                entity.HasOne(d => d.Note)
+                    .WithMany(p => p.WorkEfforts)
+                    .HasForeignKey(d => d.NoteId)
+                    .HasConstraintName("WK_EFFRT_NOTE");
+
+                entity.HasOne(d => d.RecurrenceInfo)
+                    .WithMany(p => p.WorkEfforts)
+                    .HasForeignKey(d => d.RecurrenceInfoId)
+                    .HasConstraintName("WK_EFFRT_RECINFO");
+
+                entity.HasOne(d => d.RuntimeData)
+                    .WithMany(p => p.WorkEfforts)
+                    .HasForeignKey(d => d.RuntimeDataId)
+                    .HasConstraintName("WK_EFFRT_RNTMDTA");
+
+                entity.HasOne(d => d.ScopeEnum)
+                    .WithMany(p => p.WorkEfforts)
+                    .HasForeignKey(d => d.ScopeEnumId)
+                    .HasConstraintName("WK_EFFRT_SC_ENUM");
+
+                entity.HasOne(d => d.TempExpr)
+                    .WithMany(p => p.WorkEfforts)
+                    .HasForeignKey(d => d.TempExprId)
+                    .HasConstraintName("WK_EFFRT_TEMPEXPR");
+
+                entity.HasOne(d => d.WorkEffortParent)
+                    .WithMany(p => p.InverseWorkEffortParent)
+                    .HasForeignKey(d => d.WorkEffortParentId)
+                    .HasConstraintName("WK_EFFRT_PARENT");
+
+                entity.HasOne(d => d.WorkEffortPurposeType)
+                    .WithMany(p => p.WorkEfforts)
+                    .HasForeignKey(d => d.WorkEffortPurposeTypeId)
+                    .HasConstraintName("WK_EFFRT_PRPTYP");
+
+                entity.HasOne(d => d.WorkEffortType)
+                    .WithMany(p => p.WorkEfforts)
+                    .HasForeignKey(d => d.WorkEffortTypeId)
+                    .HasConstraintName("WK_EFFRT_TYPE");
+                    
+                 
+                    
+                 entity.Property(e => e.ProjectNum)
+                .HasMaxLength(60)
+                .IsUnicode(false)
+                .HasColumnName("PROJECT_NUM");
+            
+                entity.Property(e => e.CertificateNumber)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("CERTIFICATE_NUMBER");
+            
+                entity.Property(e => e.ProjectName)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("PROJECT_NAME");
+            
+                entity.Property(e => e.TotalAmount)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("TOTAL_AMOUNT");
+            
+                entity.Property(e => e.ProjectId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("PROJECT_ID");
+            
+               entity.Property(e => e.PartyIdSupplier)
+        		.HasMaxLength(36)
+        		.IsUnicode(false)
+       			 .HasColumnName("PARTY_ID_SUPPLIER");
+    entity.Property(e => e.PartyIdContractor)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("PARTY_ID_CONTRACTOR");
+            
+                entity.Property(e => e.RelatedOrderId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("RELATED_ORDER_ID");
+            
+                entity.Property(e => e.CertificateCategory)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("CERTIFICATE_CATEGORY");
+            
+                entity.Property(e => e.SupplierOrContractorType)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("SUPPLIER_OR_CONTRACTOR_TYPE");
+            
+                entity.Property(e => e.LineNumber)
+                    .HasColumnName("LINE_NUMBER");
+            
+                entity.Property(e => e.Quantity)
+                    .HasColumnType("decimal(18, 6)")
+                    .HasColumnName("QUANTITY");
+            
+                entity.Property(e => e.Rate)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("RATE");
+            
+                entity.Property(e => e.CompletionPercentage)
+                    .HasColumnType("decimal(5, 2)")
+                    .HasColumnName("COMPLETION_PERCENTAGE");
+            
+                entity.Property(e => e.DueAmount)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("DUE_AMOUNT");
+            
+                entity.Property(e => e.PaidAmount)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("PAID_AMOUNT");
+            
+                entity.Property(e => e.RemainingAmount)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("REMAINING_AMOUNT");
+            
+                entity.Property(e => e.Notes)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("NOTES");
+            
+                entity.Property(e => e.ProductId)
+                    .HasColumnName("PRODUCT_ID");
+            
+                entity.HasIndex(e => e.ProjectId, "WK_EFFRT_PROJECT");
+                 entity.HasIndex(e => e.PartyIdSupplier, "WK_EFFRT_SUPPLIER");
+    entity.HasIndex(e => e.PartyIdContractor, "WK_EFFRT_CONTRACTOR");
+    entity.HasIndex(e => new { e.PartyIdSupplier, e.PartyIdContractor, e.CertificateCategory }, "WK_EFFRT_SUPPLIER_CONTRACTOR_CERTCAT").IsUnique(false);
+
+                entity.HasIndex(e => e.RelatedOrderId, "WK_EFFRT_RELATED_ORDER");
+                entity.HasIndex(e => e.ProductId, "WK_EFFRT_PRODUCT");
+                entity.HasIndex(e => e.CertificateNumber, "WK_EFFRT_CERT_NUM");
+                
+            
+               entity.HasOne(d => d.Party)
+        .WithMany(p => p.WorkEfforts)
+        .HasForeignKey(d => d.PartyIdSupplier)
+        .HasConstraintName("WK_EFFRT_SUPPLIER");
+    entity.HasOne(d => d.Party)
+        .WithMany(p => p.WorkEfforts)
+        .HasForeignKey(d => d.PartyIdContractor)
+        .HasConstraintName("WK_EFFRT_CONTRACTOR");
+            
+                entity.HasOne(d => d.Project)
+                    .WithMany() 
+                    .HasForeignKey(d => d.ProjectId)
+                    .HasConstraintName("WK_EFFRT_PROJECT")
+                    .OnDelete(DeleteBehavior.Restrict); 
+            
+            
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.WorkEfforts)
+                    .HasForeignKey(d => d.ProductId)
+                    .HasConstraintName("WK_EFFRT_PRODUCT");
+            
+                entity.HasOne(d => d.RelatedOrder)
+                    .WithMany(p => p.WorkEfforts)
+                    .HasForeignKey(d => d.RelatedOrderId)
+                    .HasConstraintName("WK_EFFRT_RELATED_ORDER");
+                       
+                       entity.Property(e => e.DiscountAmount)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("DISCOUNT_AMOUNT"); 
+            
+                entity.Property(e => e.Deductions)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("DEDUCTIONS"); 
+            
+                entity.Property(e => e.InsuranceAmount)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnName("INSURANCE_AMOUNT");
+            
+ 
+
+                        });

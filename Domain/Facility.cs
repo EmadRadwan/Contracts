@@ -56,8 +56,6 @@ public class Facility
     public string? OwnerPartyId { get; set; }
     public string? DefaultInventoryItemTypeId { get; set; }
     public string? FacilityName { get; set; }
-    public string? FacilityNameArabic { get; set; }
-    public string? FacilityNameTurkish { get; set; }
     public string? PrimaryFacilityGroupId { get; set; }
     public int? SquareFootage { get; set; }
     public decimal? FacilitySize { get; set; }

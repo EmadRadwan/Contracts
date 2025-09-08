@@ -1,4 +1,4 @@
-using Application.Core;
+/*using Application.Core;
 using FluentValidation;
 using MediatR;
 using Persistence;
@@ -105,7 +105,6 @@ namespace Application.Projects
                             existingItem.Notes = item.Notes;
                             existingItem.ProcurementDate = item.ProcurementDate;
                             existingItem.FacilityId = item.FacilityId;
-                            existingItem.IsContractorPurchased = item.IsContractorPurchased;
                             existingItem.LastUpdatedStamp = stamp;
                         }
                         else
@@ -176,4 +175,4 @@ namespace Application.Projects
             }
         }
     }
-}
+}*/

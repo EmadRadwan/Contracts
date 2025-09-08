@@ -113,7 +113,6 @@ public class ListCertificateItems
                             Notes = x.WorkEffort.Notes,
                             ProcurementDate = x.WorkEffort.ProcurementDate,
                             FacilityId = x.WorkEffort.FacilityId,
-                            IsContractorPurchased = (bool)x.WorkEffort.IsContractorPurchased,
                             IsDeleted = false
                         }
                     )

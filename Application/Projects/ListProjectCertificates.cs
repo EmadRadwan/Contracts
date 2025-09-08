@@ -29,9 +29,7 @@ namespace Application.Projects
                 var language = request.Language;
 
                 var query = from we in _context.WorkEfforts.AsNoTracking()
-                            join p in _context.Parties on we.PartyId equals p.PartyId into partyGroup
-                            from p in partyGroup.DefaultIfEmpty()
-                            join si in _context.StatusItems on we.CurrentStatusId equals si.StatusId into statusGroup
+                    join si in _context.StatusItems on we.CurrentStatusId equals si.StatusId into statusGroup
                             from si in statusGroup.DefaultIfEmpty()
                             join proj in _context.WorkEfforts on we.ProjectId equals proj.WorkEffortId into projectGroup
                             from proj in projectGroup.DefaultIfEmpty()
@@ -50,8 +48,6 @@ namespace Application.Projects
                                                                 "Unknown Certificate",
                                 ProjectName = proj != null ? proj.ProjectName : we.ProjectName,
                                 ProjectId = we.ProjectId,
-                                PartyId = we.PartyId,
-                                PartyName = p.Description,
                                 Description = we.Description,
                                 EstimatedStartDate = we.EstimatedStartDate,
                                 EstimatedCompletionDate = we.EstimatedCompletionDate,

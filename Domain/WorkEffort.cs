@@ -119,15 +119,18 @@ public class WorkEffort
     public string? ProjectName { get; set; }
     public decimal? TotalAmount { get; set; }
     public decimal? DiscountAmount { get; set; }
+    public decimal? TransportationExpenses { get; set; }
+    public decimal? Gratuities { get; set; }
     public string? ProjectId { get; set; } 
     public string? FacilityId { get; set; }
 
-    public string? PartyId { get; set; }
+    public string? PartyIdSupplier { get; set; }
+    public string? PartyIdContractor { get; set; }
    
     public string? RelatedOrderId { get; set; }
     
     public string? CertificateCategory { get; set; } 
-    public string? SupplierOrContractorType { get; set; } // e.g., "مورد" (Supplier) or "مقاول" (Contractor) (header only)
+    public string? SupplierOrContractorType { get; set; } 
 
     public int? LineNumber { get; set; }
     public decimal? Quantity { get; set; } 
@@ -142,12 +145,13 @@ public class WorkEffort
     public string? Notes { get; set; } 
     public string? ProductId { get; set; }
     public string? QuantityUomId { get; set; }
-    public bool? IsContractorPurchased { get; set; }
     
-    public Party? Party { get; set; } // Navigation for PartyId (assuming PartyIdFrom)
+    public Party? SupplierParty { get; set; }
+    public Party? ContractorParty { get; set; }
+
     public WorkEffort? Project { get; set; } // Navigation for projectId to the project WorkEffort
     public Product? Product { get; set; } // New navigation prop for ProductId
-    public OrderHeader? RelatedPurchaseOrder { get; set; }
+    public OrderHeader? RelatedOrder { get; set; }
     
     public AccommodationMap? AccommodationMap { get; set; }
     public AccommodationSpot? AccommodationSpot { get; set; }

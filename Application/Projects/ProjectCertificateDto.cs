@@ -8,7 +8,8 @@ public class ProjectCertificateDto
     public string? WorkEffortTypeId { get; set; } // Maps to WorkEffort.WorkEffortTypeId
     public string? ProjectId { get; set; } // Maps to WorkEffort.ProjectNum
     public string? CertificateCategory { get; set; } // Maps to WorkEffort.ProjectName
-    public string? PartyId { get; set; } // Maps to WorkEffort.PartyId
+    public string? PartyIdSupplier { get; set; } // Maps to WorkEffort.PartyIdSupplier
+    public string? PartyIdContractor { get; set; } // Maps to WorkEffort.PartyIdContractor
     public string? Description { get; set; } // Maps to WorkEffort.Description
     public DateTime? EstimatedStartDate { get; set; } // Maps to WorkEffort.EstimatedStartDate (ISO string)
     public DateTime? EstimatedCompletionDate { get; set; } // Maps to WorkEffort.EstimatedCompletionDate (ISO string)
