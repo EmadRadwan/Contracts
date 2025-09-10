@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../../app/store/configureStore";
 import { Field, Form, FormElement } from "@progress/kendo-react-form";
-import {Box, Button, Grid, Paper, Typography} from "@mui/material";
+import {Backdrop, Box, Button, CircularProgress, Grid, Paper, Typography} from "@mui/material";
 import LoadingButton from "@mui/lab/LoadingButton";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import { resetCertificateUi, setCertificateFormEditMode } from "../slice/certificateUiSlice";
@@ -9,7 +9,6 @@ import { resetCertificateUi, setCertificateFormEditMode } from "../slice/certifi
 import LoadingComponent from "../../../app/layout/LoadingComponent";
 import { requiredValidator } from "../../../app/common/form/Validators";
 import { toast } from "react-toastify";
-import {useAddProjectCertificateMutation} from "../../../app/store/apis/projectsApi";
 import {FormComboBoxVirtualSupplier} from "../../../app/common/form/FormComboBoxVirtualSupplier";
 import FormDatePicker from "../../../app/common/form/FormDatePicker";
 import ProjectMenu from "../menu/ProjectMenu";
@@ -22,35 +21,21 @@ import {resetUiCertificateItems} from "../slice/certificateItemsUiSlice";
 
 
 interface ProjectCertificateFormProps {
-  selectedCertificate?: {
-    workEffortId: string;
-    projectNum: string;
-    projectName: string;
-      partyIdSupplier?: string;
-      partyIdContractor?: string; 
-    partyName: string;
-    description: string;
-    estimatedStartDate: string;
-    estimatedCompletionDate: string;
-    statusDescription: string;
-  };
-  editMode: number; // 0: view, 1: create, 2: edit (CREATED), 3: edit (APPROVED), 4: edit (COMPLETED)
-  cancelEdit: () => void;
+    editMode: number; // 0: view, 1: create, 2: edit (CREATED), 3: edit (APPROVED), 4: edit (COMPLETED)
+    cancelEdit: () => void;
 }
 
-export default function ProjectCertificateForm({ selectedCertificate, editMode, cancelEdit }: ProjectCertificateFormProps) {
-  const formRef = useRef<any>(null);
-  const formRef2 = useRef<boolean>(false);
-  const dispatch = useAppDispatch();
-  const { getTranslatedLabel } = useTranslationHelper();
-  const { currentCertificateType } = useAppSelector((state) => state.certificateUi);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export default function ProjectCertificateForm({ editMode, cancelEdit }: ProjectCertificateFormProps) {
+    const formRef = useRef<any>(null);
+    const formRef2 = useRef<boolean>(false);
+    const dispatch = useAppDispatch();
+    const { getTranslatedLabel } = useTranslationHelper();
+    const { currentCertificateType, selectedCertificate } = useAppSelector((state) => state.certificateUi);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedMenuItem, setSelectedMenuItem] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
     const {
-        certificate,
-        setCertificate,
         formEditMode,
         setFormEditMode,
         handleCreate,
@@ -60,75 +45,101 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
         selectedMenuItem,
         formRef2,
         editMode,
-        selectedCertificate,
         setIsLoading,
     });
 
-    const initialFormValues = useMemo(() => {
-        if (editMode === 1) {
-            const now = new Date();
-            const oneWeekAgo = new Date(now);
-            oneWeekAgo.setDate(now.getDate() - 7);
-            return {
-                description: "",
-                projectId: "",
-                partyIdSupplier: "",
-                partyIdContractor: "",
-                estimatedStartDate: oneWeekAgo,
-                estimatedCompletionDate: now,
-            };
-        }
-        return {
-            description: selectedCertificate?.description || "",
-            projectId: selectedCertificate?.projectName || "",
-            partyIdSupplier: currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE" || currentCertificateType === "EXTERNAL_SUPPLY_SALE_CERTIFICATE" ? selectedCertificate?.partyIdSupplier || "" : "",
-            partyIdContractor: currentCertificateType === "COMPANY_SUPPLY_SALE_CERTIFICATE" || currentCertificateType === "CONTRACTOR_PURCHASE_CERTIFICATE" || currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE" || currentCertificateType === "EXTERNAL_SUPPLY_SALE_CERTIFICATE" ? selectedCertificate?.partyIdContractor || "" : "",
-            estimatedStartDate: selectedCertificate?.estimatedStartDate ? new Date(selectedCertificate.estimatedStartDate) : null,
-            estimatedCompletionDate: selectedCertificate?.estimatedCompletionDate ? new Date(selectedCertificate.estimatedCompletionDate) : null,
-        };
-    }, [editMode, selectedCertificate, currentCertificateType]);
 
 
+    console.log("Redux selectedCertificate:", selectedCertificate);
 
     const formKey = useMemo(() => formRef2.current.toString(), [formRef2.current]);
     const showSupplier = ["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
     const showContractor = ["COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE", "WORKMANSHIP_CONTRACTING_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
 
-    // In ProjectCertificateForm.tsx
+    const initialFormValues = useMemo(() => {
+        console.log("Computing initialFormValues with Redux selectedCertificate:", selectedCertificate);
+        if (editMode === 1 && !selectedCertificate?.workEffortId) {
+            const now = new Date();
+            const oneWeekAgo = new Date(now);
+            oneWeekAgo.setDate(now.getDate() - 7);
+            return {
+                description: "",
+                projectId: undefined, // Changed to undefined for consistency
+                partyIdSupplier: undefined,
+                partyIdContractor: undefined,
+                estimatedStartDate: oneWeekAgo,
+                estimatedCompletionDate: now,
+            };
+        }
+        // Purpose: Ensure FormComboBox components receive complete objects for binding
+        // Context: Matches the shape expected by FormComboBoxVirtualProject/Supplier/Contractor
+        return {
+          description: selectedCertificate?.description || "",
+          projectId: selectedCertificate?.projectId
+            ? {
+                projectId: selectedCertificate.projectId,
+                projectName: selectedCertificate.projectName || "",
+              }
+            : undefined,
+          partyIdSupplier:
+            showSupplier && selectedCertificate?.partyIdSupplier
+              ? {
+                    fromPartyId:
+                    selectedCertificate.partyIdSupplier.fromPartyId,
+                    fromPartyName:
+                    selectedCertificate.partyIdSupplier.partyName || "",
+                }
+              : undefined,
+          partyIdContractor:
+            showContractor && selectedCertificate?.partyIdContractor
+              ? {
+                    fromPartyId:
+                    selectedCertificate.partyIdContractor.fromPartyId,
+                    fromPartyName:
+                    selectedCertificate.partyIdContractor.partyName || "",
+                }
+              : undefined,
+          estimatedStartDate: selectedCertificate?.estimatedStartDate
+            ? new Date(selectedCertificate.estimatedStartDate)
+            : null,
+          estimatedCompletionDate: selectedCertificate?.estimatedCompletionDate
+            ? new Date(selectedCertificate.estimatedCompletionDate)
+            : null,
+        };
+    }, [editMode, selectedCertificate, showSupplier, showContractor]);
+
     const handleSubmit = useCallback(
         async (formProps: any) => {
             if (!formProps.isValid) {
                 toast.error(getTranslatedLabel("certificate.form.invalid", "Form is invalid"));
-                setIsSubmitting(false);
                 return false;
             }
             if (isSubmitting) return false;
             setIsSubmitting(true);
-
+            // REFACTOR: Flatten projectId, partyIdSupplier, and partyIdContractor for API
+            // Purpose: Backend expects string IDs, not full objects
+            // Context: Matches the shape used in createCertificate/updateCertificate
             const certificateData = {
                 values: {
                     workEffortTypeId: currentCertificateType,
                     description: formProps.values.description,
-                    projectId: formProps.values.projectId,
-                    partyIdSupplier: formProps.values.partyIdSupplier || undefined,
-                    partyIdContractor: formProps.values.partyIdContractor || undefined,
-                    estimatedStartDate: formProps.values.estimatedStartDate || null,
-                    estimatedCompletionDate: formProps.values.estimatedCompletionDate || null,
+                    projectId: formProps.values.projectId?.projectId || formProps.values.projectId,
+                    partyIdSupplier: formProps.values.partyIdSupplier?.fromPartyId,
+                    partyIdContractor: formProps.values.partyIdContractor?.fromPartyId,
+                    estimatedStartDate: formProps.values.estimatedStartDate,
+                    estimatedCompletionDate: formProps.values.estimatedCompletionDate,
                 },
                 selectedMenuItem: editMode === 1 ? "Create Certificate" : "Update Certificate",
             };
-
             try {
                 await handleCreate(certificateData);
-                dispatch(setCertificateFormEditMode(0));
-                cancelEdit();
             } catch (error) {
                 toast.error(getTranslatedLabel("certificate.form.error", "Failed to save certificate"));
             } finally {
                 setIsSubmitting(false);
             }
         },
-        [handleCreate, currentCertificateType, editMode, dispatch, cancelEdit, getTranslatedLabel]
+        [handleCreate, currentCertificateType, editMode, getTranslatedLabel]
     );
 
     const handleCancel = useCallback(() => {
@@ -140,13 +151,11 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
     }, [dispatch, cancelEdit]);
 
 
-    // Purpose: Initialize form with selected certificate data
-  // Context: Matches PurchaseOrderForm's selectedOrder logic
-  useEffect(() => {
-    if (selectedCertificate) {
-      formRef2.current = !formRef2.current;
-    }
-  }, [selectedCertificate]);
+    useEffect(() => {
+        if (selectedCertificate?.workEffortId) {
+            formRef2.current = !formRef2.current;
+        }
+    }, [selectedCertificate?.workEffortId]);
 
     const getCertificateTypeDisplayText = (type: string) => {
         return type
@@ -155,9 +164,7 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
             .join(' ');
     };
 
-  if (isAddCertificateLoading ) {
-    return <LoadingComponent message={getTranslatedLabel("certificate.form.saving", "Saving Certificate...")} />;
-  }
+    console.log('initialFormValues', initialFormValues)
 
     return (
         <>
@@ -209,8 +216,8 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
                                                     name="partyIdSupplier"
                                                     component={FormComboBoxVirtualSupplier}
                                                     label={getTranslatedLabel("certificate.form.supplier", "Supplier *")}
-                                                    valueField="partyId"
-                                                    textField="partyName"
+                                                    valueField="fromPartyId"
+                                                    textField="fromPartyName"
                                                     validator={requiredValidator}
                                                     disabled={editMode > 3}
                                                 />
@@ -223,8 +230,8 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
                                                     name="partyIdContractor"
                                                     component={FormComboBoxVirtualContractor}
                                                     label={getTranslatedLabel("certificate.form.contractor", "Contractor *")}
-                                                    valueField="partyId"
-                                                    textField="partyName"
+                                                    valueField="fromPartyId"
+                                                    textField="fromPartyName"
                                                     validator={requiredValidator}
                                                     disabled={editMode > 3}
                                                 />
@@ -265,7 +272,7 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
                                                 <Grid item xs={12}>
                                                     <CertificateItemsListMemo
                                                         editMode={formEditMode}
-                                                        workEffortId={certificate?.workEffortId}
+                                                        workEffortId={selectedCertificate?.workEffortId}
                                                     />
                                                 </Grid>
                                             </Grid>
@@ -305,6 +312,15 @@ export default function ProjectCertificateForm({ selectedCertificate, editMode, 
                     )}
                 />
             </Paper>
+            <Backdrop
+                sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                open={isAddCertificateLoading || isUpdateCertificateLoading}
+            >
+                <CircularProgress color="inherit" />
+                <Typography sx={{ ml: 2 }}>
+                    {getTranslatedLabel("certificate.form.saving", "Saving Certificate...")}
+                </Typography>
+            </Backdrop>
         </>
     );
 }

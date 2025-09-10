@@ -32,7 +32,7 @@ public class ListFacilityInventoriesByProduct2
                 select new FacilityInventoryRecordView()
                 {
                     FacilityId = fi.FacilityId,
-                    FacilityName = language == "ar" ? fi.FacilityNameArabic : fi.FacilityName,
+                    FacilityName = fi.FacilityName,
                     ProductId = fi.ProductId,
                     ProductName = fi.ProductName,
                     QuantityUomId = fi.QuantityUomId,

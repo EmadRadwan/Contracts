@@ -10,8 +10,7 @@ public class FacilityInventoryRecordView
     [Key]
     public string FacilityName { get; set; }
     
-    [Column("FACILITY_NAME_ARABIC")]
-    public string? FacilityNameArabic { get; set; }  // Arabic name for Facility
+    
     [Key]
     public string ProductId { get; set; }
     public string ProductName { get; set; }

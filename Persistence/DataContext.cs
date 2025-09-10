@@ -1531,7 +1531,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("ACCTG_TRANS_ENTRY_TYPE_ID");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.CreatedStamp)
@@ -1602,7 +1602,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("ORGANIZATION_PARTY_ID");
 
                 entity.Property(e => e.OrigAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ORIG_AMOUNT");
 
                 entity.Property(e => e.OrigCurrencyUomId)
@@ -3928,7 +3928,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("ACCOUNT_CURRENCY_UOM_ID");
 
                 entity.Property(e => e.AccountLimit)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ACCOUNT_LIMIT");
 
                 entity.Property(e => e.ContactMechId)
@@ -4108,7 +4108,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("TERM_TYPE_ID");
 
                 entity.Property(e => e.TermValue)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("TERM_VALUE");
 
                 entity.Property(e => e.UomId)
@@ -4361,7 +4361,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("BUDGET_ITEM_SEQ_ID");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.BudgetItemTypeId)
@@ -4788,7 +4788,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("LAST_UPDATED_TX_STAMP");
 
                 entity.Property(e => e.RevisedAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("REVISED_AMOUNT");
 
                 entity.Property(e => e.RevisionReason)
@@ -4943,7 +4943,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("BUDGET_SCENARIO_ID");
 
                 entity.Property(e => e.AmountChange)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT_CHANGE");
 
                 entity.Property(e => e.BudgetId)
@@ -5018,7 +5018,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("BUDGET_ITEM_TYPE_ID");
 
                 entity.Property(e => e.AmountChange)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT_CHANGE");
 
                 entity.Property(e => e.CreatedStamp)
@@ -5447,11 +5447,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("RESERV_START");
 
                 entity.Property(e => e.TotalWithAdjustments)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("TOTAL_WITH_ADJUSTMENTS");
 
                 entity.Property(e => e.UnitPrice)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("UNIT_PRICE");
 
                 entity.Property(e => e.WasReserved)
@@ -9199,7 +9199,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("DESCRIPTION_TURKISH");
 
                 entity.Property(e => e.FixedCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("FIXED_COST");
 
                 entity.Property(e => e.LastUpdatedStamp)
@@ -9218,7 +9218,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 entity.Property(e => e.PerMilliSecond).HasColumnName("PER_MILLI_SECOND");
 
                 entity.Property(e => e.VariableCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("VARIABLE_COST");
 
                 entity.HasOne(d => d.CostCustomMethod)
@@ -10223,7 +10223,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("LAST_UPDATED_TX_STAMP");
 
                 entity.Property(e => e.MaximumAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("MAXIMUM_AMOUNT");
 
                 entity.Property(e => e.Priority).HasColumnName("PRIORITY");
@@ -11842,7 +11842,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("DEDUCTION_ID");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.CreatedStamp)
@@ -15652,11 +15652,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("FIN_ACCOUNT_ID");
 
                 entity.Property(e => e.ActualBalance)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ACTUAL_BALANCE");
 
                 entity.Property(e => e.AvailableBalance)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AVAILABLE_BALANCE");
 
                 entity.Property(e => e.CreatedStamp)
@@ -15726,7 +15726,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("POST_TO_GL_ACCOUNT_ID");
 
                 entity.Property(e => e.ReplenishLevel)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("REPLENISH_LEVEL");
 
                 entity.Property(e => e.ReplenishPaymentId)
@@ -15845,7 +15845,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("FIN_ACCOUNT_AUTH_ID");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.AuthorizationDate)
@@ -16065,7 +16065,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("FIN_ACCOUNT_TRANS_ID");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.Comments)
@@ -16622,7 +16622,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("DATE_NEXT_SERVICE");
 
                 entity.Property(e => e.Depreciation)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("DEPRECIATION");
 
                 entity.Property(e => e.ExpectedEndOfLife)
@@ -16677,7 +16677,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("PRODUCTION_CAPACITY");
 
                 entity.Property(e => e.PurchaseCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("PURCHASE_COST");
 
                 entity.Property(e => e.PurchaseCostUomId)
@@ -16691,7 +16691,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("ROLE_TYPE_ID");
 
                 entity.Property(e => e.SalvageValue)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("SALVAGE_VALUE");
 
                 entity.Property(e => e.SerialNumber)
@@ -17531,7 +17531,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("FROM_DATE");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.AmountUomId)
@@ -18332,7 +18332,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("FULFILLMENT_ID");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.AuthCode)
@@ -18955,7 +18955,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("CREATED_TX_STAMP");
 
                 entity.Property(e => e.EndingBalance)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ENDING_BALANCE");
 
                 entity.Property(e => e.LastUpdatedStamp)
@@ -18967,15 +18967,15 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("LAST_UPDATED_TX_STAMP");
 
                 entity.Property(e => e.OpeningBalance)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("OPENING_BALANCE");
 
                 entity.Property(e => e.PostedCredits)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("POSTED_CREDITS");
 
                 entity.Property(e => e.PostedDebits)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("POSTED_DEBITS");
 
                 entity.HasOne(d => d.CustomTimePeriod)
@@ -19478,7 +19478,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("LAST_UPDATED_TX_STAMP");
 
                 entity.Property(e => e.OpeningBalance)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("OPENING_BALANCE");
 
                 entity.Property(e => e.OrganizationPartyId)
@@ -19487,7 +19487,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("ORGANIZATION_PARTY_ID");
 
                 entity.Property(e => e.ReconciledBalance)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("RECONCILED_BALANCE");
 
                 entity.Property(e => e.ReconciledDate)
@@ -19561,7 +19561,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("LAST_UPDATED_TX_STAMP");
 
                 entity.Property(e => e.ReconciledAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("RECONCILED_AMOUNT");
 
                 entity.HasOne(d => d.GlReconciliation)
@@ -21654,7 +21654,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("FROM_DATE");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.CreatedStamp)
@@ -22318,7 +22318,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("TERM_TYPE_ID");
 
                 entity.Property(e => e.TermValue)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("TERM_VALUE");
 
                 entity.Property(e => e.TextValue)
@@ -23387,11 +23387,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("MARKETING_CAMPAIGN_ID");
 
                 entity.Property(e => e.ActualCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ACTUAL_COST");
 
                 entity.Property(e => e.BudgetedCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("BUDGETED_COST");
 
                 entity.Property(e => e.CampaignName)
@@ -23427,13 +23427,13 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("CURRENCY_UOM_ID");
 
                 entity.Property(e => e.EstimatedCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ESTIMATED_COST");
 
                 entity.Property(e => e.ExpectedResponsePercent).HasColumnName("EXPECTED_RESPONSE_PERCENT");
 
                 entity.Property(e => e.ExpectedRevenue)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("EXPECTED_REVENUE");
 
                 entity.Property(e => e.FromDate)
@@ -24163,7 +24163,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("DESCRIPTION");
 
                 entity.Property(e => e.ExemptAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("EXEMPT_AMOUNT");
 
                 entity.Property(e => e.IncludeInShipping)
@@ -24420,7 +24420,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("INVOICE_ITEM_SEQ_ID");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.CreatedStamp)
@@ -25179,7 +25179,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("INTERNAL_REMARKS");
 
                 entity.Property(e => e.GrandTotal)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("GRAND_TOTAL");
 
                 entity.Property(e => e.InternalCode)
@@ -25254,7 +25254,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("PRODUCT_STORE_ID");
 
                 entity.Property(e => e.RemainingSubTotal)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("REMAINING_SUB_TOTAL");
 
                 entity.Property(e => e.SalesChannelEnumId)
@@ -25733,7 +25733,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("SYNC_STATUS_ID");
 
                 entity.Property(e => e.UnitAverageCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("UNIT_AVERAGE_COST");
 
                 entity.Property(e => e.UnitListPrice)
@@ -25745,7 +25745,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("UNIT_PRICE");
 
                 entity.Property(e => e.UnitRecurringPrice)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("UNIT_RECURRING_PRICE");
 
                 entity.HasOne(d => d.ChangeByUserLogin)
@@ -26059,7 +26059,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("INVOICE_ITEM_SEQ_ID");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.CreatedStamp)
@@ -26206,7 +26206,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("REASON_ENUM_ID");
 
                 entity.Property(e => e.UnitPrice)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("UNIT_PRICE");
 
                 entity.HasOne(d => d.ChangeTypeEnum)
@@ -27323,7 +27323,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("MANUAL_REF_NUM");
 
                 entity.Property(e => e.MaxAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("MAX_AMOUNT");
 
                 entity.Property(e => e.NeedsNsfRetry)
@@ -27817,7 +27817,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("CREATED_TX_STAMP");
 
                 entity.Property(e => e.GrossSales)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("GROSS_SALES");
 
                 entity.Property(e => e.LastUpdatedStamp)
@@ -27829,7 +27829,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("LAST_UPDATED_TX_STAMP");
 
                 entity.Property(e => e.ProductCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("PRODUCT_COST");
 
                 entity.Property(e => e.TotalQuantity)
@@ -27904,7 +27904,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 entity.Property(e => e.TermDays).HasColumnName("TERM_DAYS");
 
                 entity.Property(e => e.TermValue)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("TERM_VALUE");
 
                 entity.Property(e => e.TextValue)
@@ -28620,7 +28620,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 entity.Property(e => e.AvailableTime).HasColumnName("AVAILABLE_TIME");
 
                 entity.Property(e => e.Cost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("COST");
 
                 entity.Property(e => e.CreatedStamp)
@@ -29552,7 +29552,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("PARTY_ID");
 
                 entity.Property(e => e.AnnualRevenue)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ANNUAL_REVENUE");
 
                 entity.Property(e => e.Comments)
@@ -31338,7 +31338,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("FROM_DATE");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.Comments)
@@ -31534,7 +31534,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("PAYMENT_ID");
 
                 entity.Property(e => e.ActualCurrencyAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ACTUAL_CURRENCY_AMOUNT");
 
                 entity.Property(e => e.ActualCurrencyUomId)
@@ -31543,7 +31543,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("ACTUAL_CURRENCY_UOM_ID");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.Comments)
@@ -31728,7 +31728,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("PAYMENT_APPLICATION_ID");
 
                 entity.Property(e => e.AmountApplied)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT_APPLIED");
 
                 entity.Property(e => e.BillingAccountId)
@@ -31898,7 +31898,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("PAYMENT_ID");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.CreatedStamp)
@@ -32999,7 +32999,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("ALT_REFERENCE");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.CreatedStamp)
@@ -34011,7 +34011,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("DEDUCTION_TYPE_ID");
 
                 entity.Property(e => e.FlatAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("FLAT_AMOUNT");
 
                 entity.Property(e => e.FromDate)
@@ -36736,7 +36736,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("FACILITY_ID");
 
                 entity.Property(e => e.FixedAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("FIXED_AMOUNT");
 
                 entity.Property(e => e.HeightUomId)
@@ -39354,7 +39354,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("CREATED_TX_STAMP");
 
                 entity.Property(e => e.DefaultAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("DEFAULT_AMOUNT");
 
                 entity.Property(e => e.DefaultSequenceNum).HasColumnName("DEFAULT_SEQUENCE_NUM");
@@ -39448,7 +39448,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("FROM_DATE");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.CreatedStamp)
@@ -39473,7 +39473,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("PRODUCT_FEATURE_APPL_TYPE_ID");
 
                 entity.Property(e => e.RecurringAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("RECURRING_AMOUNT");
 
                 entity.Property(e => e.SequenceNum).HasColumnName("SEQUENCE_NUM");
@@ -41501,11 +41501,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("LAST_UPDATED_TX_STAMP");
 
                 entity.Property(e => e.OldPrice)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("OLD_PRICE");
 
                 entity.Property(e => e.Price)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("PRICE");
 
                 entity.Property(e => e.ProductId)
@@ -42639,7 +42639,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("QUANTITY_LEFT_IN_ACTIONS");
 
                 entity.Property(e => e.TotalDiscountAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("TOTAL_DISCOUNT_AMOUNT");
 
                 entity.HasOne(d => d.Order)
@@ -43827,7 +43827,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("LAST_UPDATED_TX_STAMP");
 
                 entity.Property(e => e.MinBalance)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("MIN_BALANCE");
 
                 entity.Property(e => e.PinCodeLength).HasColumnName("PIN_CODE_LENGTH");
@@ -43853,7 +43853,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("REPLENISH_METHOD_ENUM_ID");
 
                 entity.Property(e => e.ReplenishThreshold)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("REPLENISH_THRESHOLD");
 
                 entity.Property(e => e.RequirePinCode)
@@ -44582,7 +44582,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("MAX_SIZE");
 
                 entity.Property(e => e.MaxTotal)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("MAX_TOTAL");
 
                 entity.Property(e => e.MaxWeight)
@@ -44594,7 +44594,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("MIN_SIZE");
 
                 entity.Property(e => e.MinTotal)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("MIN_TOTAL");
 
                 entity.Property(e => e.MinWeight)
@@ -44602,7 +44602,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("MIN_WEIGHT");
 
                 entity.Property(e => e.MinimumPrice)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("MINIMUM_PRICE");
 
                 entity.Property(e => e.PartyId)
@@ -45586,7 +45586,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("VALID_THRU_DATE");
                     
                 entity.Property(e => e.GrandTotal)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("GRAND_TOTAL");
                     
                 entity.Property(e => e.CurrentMileage).HasColumnName("CURRENT_MILEAGE");
@@ -45656,7 +45656,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("QUOTE_ADJUSTMENT_ID");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
                     
                 entity.Property(e => e.IsManual)
@@ -45704,7 +45704,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("DESCRIPTION");
 
                 entity.Property(e => e.ExemptAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("EXEMPT_AMOUNT");
 
                 entity.Property(e => e.IncludeInShipping)
@@ -46062,11 +46062,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("QUANTITY");
 
                 entity.Property(e => e.QuoteUnitPrice)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("QUOTE_UNIT_PRICE");
                     
                 entity.Property(e => e.QuoteUnitListPrice)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("QUOTE_UNIT_LIST_PRICE");
 
                 entity.Property(e => e.ReservLength)
@@ -46645,7 +46645,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("LAST_UPDATED_TX_STAMP");
 
                 entity.Property(e => e.RateAmount1)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("RATE_AMOUNT");
 
                 entity.Property(e => e.ThruDate)
@@ -47069,7 +47069,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("DESCRIPTION");
 
                 entity.Property(e => e.EstimatedBudget)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ESTIMATED_BUDGET");
 
                 entity.Property(e => e.FacilityId)
@@ -47257,7 +47257,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("REQUIREMENT_ID");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.CreatedStamp)
@@ -47797,7 +47797,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("DESCRIPTION");
 
                 entity.Property(e => e.ExemptAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("EXEMPT_AMOUNT");
 
                 entity.Property(e => e.IncludeInShipping)
@@ -48410,7 +48410,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("RETURN_ITEM_TYPE_ID");
 
                 entity.Property(e => e.ReturnPrice)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("RETURN_PRICE");
 
                 entity.Property(e => e.ReturnQuantity)
@@ -48523,7 +48523,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("INVOICE_ITEM_SEQ_ID");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.CreatedStamp)
@@ -48640,7 +48640,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("REPLACEMENT_ORDER_ID");
 
                 entity.Property(e => e.ResponseAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("RESPONSE_AMOUNT");
 
                 entity.Property(e => e.ResponseDate)
@@ -49185,7 +49185,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("FROM_DATE");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.CreatedByUserLogin)
@@ -49292,11 +49292,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("SALES_FORECAST_ID");
 
                 entity.Property(e => e.BestCaseAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("BEST_CASE_AMOUNT");
 
                 entity.Property(e => e.ClosedAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("CLOSED_AMOUNT");
 
                 entity.Property(e => e.CreatedByUserLoginId)
@@ -49323,7 +49323,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("CUSTOM_TIME_PERIOD_ID");
 
                 entity.Property(e => e.ForecastAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("FORECAST_AMOUNT");
 
                 entity.Property(e => e.InternalPartyId)
@@ -49363,11 +49363,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("PERCENT_OF_QUOTA_FORECAST");
 
                 entity.Property(e => e.PipelineAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("PIPELINE_AMOUNT");
 
                 entity.Property(e => e.QuotaAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("QUOTA_AMOUNT");
 
                 entity.HasOne(d => d.CreatedByUserLogin)
@@ -49435,7 +49435,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("SALES_FORECAST_DETAIL_ID");
 
                 entity.Property(e => e.Amount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.CreatedStamp)
@@ -49521,7 +49521,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("SALES_FORECAST_HISTORY_ID");
 
                 entity.Property(e => e.BestCaseAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("BEST_CASE_AMOUNT");
 
                 entity.Property(e => e.ChangeNote)
@@ -49529,7 +49529,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("CHANGE_NOTE");
 
                 entity.Property(e => e.ClosedAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("CLOSED_AMOUNT");
 
                 entity.Property(e => e.CreatedStamp)
@@ -49551,7 +49551,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("CUSTOM_TIME_PERIOD_ID");
 
                 entity.Property(e => e.ForecastAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("FORECAST_AMOUNT");
 
                 entity.Property(e => e.InternalPartyId)
@@ -49595,7 +49595,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("PERCENT_OF_QUOTA_FORECAST");
 
                 entity.Property(e => e.QuotaAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("QUOTA_AMOUNT");
 
                 entity.Property(e => e.SalesForecastId)
@@ -49687,7 +49687,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("DESCRIPTION");
 
                 entity.Property(e => e.EstimatedAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ESTIMATED_AMOUNT");
 
                 entity.Property(e => e.EstimatedCloseDate)
@@ -49867,7 +49867,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("DESCRIPTION");
 
                 entity.Property(e => e.EstimatedAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ESTIMATED_AMOUNT");
 
                 entity.Property(e => e.EstimatedCloseDate)
@@ -50953,7 +50953,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("SHIPMENT_ID");
 
                 entity.Property(e => e.AdditionalShippingCharge)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ADDITIONAL_SHIPPING_CHARGE");
 
                 entity.Property(e => e.AddtlShippingChargeDesc)
@@ -51012,7 +51012,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("ESTIMATED_READY_DATE");
 
                 entity.Property(e => e.EstimatedShipCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ESTIMATED_SHIP_COST");
 
                 entity.Property(e => e.EstimatedShipDate)
@@ -51476,7 +51476,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("FEATURE_PERCENT");
 
                 entity.Property(e => e.FeaturePrice)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("FEATURE_PRICE");
 
                 entity.Property(e => e.GeoIdFrom)
@@ -51498,11 +51498,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("LAST_UPDATED_TX_STAMP");
 
                 entity.Property(e => e.OrderFlatPrice)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ORDER_FLAT_PRICE");
 
                 entity.Property(e => e.OrderItemFlatPrice)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ORDER_ITEM_FLAT_PRICE");
 
                 entity.Property(e => e.OrderPricePercent)
@@ -51510,7 +51510,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("ORDER_PRICE_PERCENT");
 
                 entity.Property(e => e.OversizePrice)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("OVERSIZE_PRICE");
 
                 entity.Property(e => e.OversizeUnit)
@@ -51528,7 +51528,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("PRICE_BREAK_ID");
 
                 entity.Property(e => e.PriceUnitPrice)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("PRICE_UNIT_PRICE");
 
                 entity.Property(e => e.PriceUomId)
@@ -51557,7 +51557,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("QUANTITY_BREAK_ID");
 
                 entity.Property(e => e.QuantityUnitPrice)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("QUANTITY_UNIT_PRICE");
 
                 entity.Property(e => e.QuantityUomId)
@@ -51585,7 +51585,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("WEIGHT_BREAK_ID");
 
                 entity.Property(e => e.WeightUnitPrice)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("WEIGHT_UNIT_PRICE");
 
                 entity.Property(e => e.WeightUomId)
@@ -52431,7 +52431,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("DIMENSION_UOM_ID");
 
                 entity.Property(e => e.InsuredValue)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("INSURED_VALUE");
 
                 entity.Property(e => e.LastUpdatedStamp)
@@ -52593,7 +52593,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("BOX_NUMBER");
 
                 entity.Property(e => e.CodAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("COD_AMOUNT");
 
                 entity.Property(e => e.CreatedStamp)
@@ -52610,7 +52610,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("CURRENCY_UOM_ID");
 
                 entity.Property(e => e.InsuredAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("INSURED_AMOUNT");
 
                 entity.Property(e => e.InternationalInvoice)
@@ -52644,15 +52644,15 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("LAST_UPDATED_TX_STAMP");
 
                 entity.Property(e => e.PackageOtherCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("PACKAGE_OTHER_COST");
 
                 entity.Property(e => e.PackageServiceCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("PACKAGE_SERVICE_COST");
 
                 entity.Property(e => e.PackageTransportCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("PACKAGE_TRANSPORT_COST");
 
                 entity.Property(e => e.TrackingCode)
@@ -52948,15 +52948,15 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("ACTUAL_ARRIVAL_DATE");
 
                 entity.Property(e => e.ActualCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ACTUAL_COST");
 
                 entity.Property(e => e.ActualOtherCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ACTUAL_OTHER_COST");
 
                 entity.Property(e => e.ActualServiceCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ACTUAL_SERVICE_COST");
 
                 entity.Property(e => e.ActualStartDate)
@@ -52964,7 +52964,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("ACTUAL_START_DATE");
 
                 entity.Property(e => e.ActualTransportCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ACTUAL_TRANSPORT_COST");
 
                 entity.Property(e => e.BillingWeight)
@@ -55787,7 +55787,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("SURVEY_OPTION_SEQ_ID");
 
                 entity.Property(e => e.AmountBase)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT_BASE");
 
                 entity.Property(e => e.AmountBaseUomId)
@@ -55989,7 +55989,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("SURVEY_MULTI_RESP_COL_ID");
 
                 entity.Property(e => e.AmountBase)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT_BASE");
 
                 entity.Property(e => e.AmountBaseUomId)
@@ -56021,7 +56021,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("CREATED_TX_STAMP");
 
                 entity.Property(e => e.CurrencyResponse)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("CURRENCY_RESPONSE");
 
                 entity.Property(e => e.Duration).HasColumnName("DURATION");
@@ -56602,11 +56602,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("LAST_UPDATED_TX_STAMP");
 
                 entity.Property(e => e.MinItemPrice)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("MIN_ITEM_PRICE");
 
                 entity.Property(e => e.MinPurchase)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("MIN_PURCHASE");
 
                 entity.Property(e => e.ProductCategoryId)
@@ -61580,7 +61580,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
 
                 entity.HasIndex(e => e.EstimateCalcMethod, "WK_EFFRT_CUS_MET");
 
-                entity.HasIndex(e => e.FacilityId, "WK_EFFRT_FACILITY").IsUnique();
+                entity.HasIndex(e => e.FacilityId, "WK_EFFRT_FACILITY");
 
                 entity.HasIndex(e => e.FixedAssetId, "WK_EFFRT_FXDASST");
 
@@ -61809,7 +61809,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 entity.Property(e => e.TotalMilliSecondsAllowed).HasColumnName("TOTAL_MILLI_SECONDS_ALLOWED");
 
                 entity.Property(e => e.TotalMoneyAllowed)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("TOTAL_MONEY_ALLOWED");
 
                 entity.Property(e => e.UniversalId)
@@ -61857,10 +61857,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasForeignKey(d => d.EstimateCalcMethod)
                     .HasConstraintName("WK_EFFRT_CUS_MET");
 
-                entity.HasOne(d => d.Facility)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.FacilityId)
-                    .HasConstraintName("WK_EFFRT_FACILITY");
+                   entity.HasOne(d => d.Facility)
+                   .WithMany(p => p.WorkEfforts)
+                   .HasForeignKey(d => d.FacilityId)
+                   .IsRequired(false) 
+                   .HasConstraintName("WK_EFFRT_FACILITY");
 
                 entity.HasOne(d => d.FixedAsset)
                     .WithMany(p => p.WorkEfforts)
@@ -61930,7 +61931,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("PROJECT_NAME");
             
                 entity.Property(e => e.TotalAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("TOTAL_AMOUNT");
             
                 entity.Property(e => e.ProjectId)
@@ -61970,7 +61971,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("QUANTITY");
             
                 entity.Property(e => e.Rate)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("RATE");
             
                 entity.Property(e => e.CompletionPercentage)
@@ -61978,15 +61979,15 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("COMPLETION_PERCENTAGE");
             
                 entity.Property(e => e.DueAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("DUE_AMOUNT");
             
                 entity.Property(e => e.PaidAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("PAID_AMOUNT");
             
                 entity.Property(e => e.RemainingAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("REMAINING_AMOUNT");
             
                 entity.Property(e => e.Notes)
@@ -62035,15 +62036,15 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasConstraintName("WK_EFFRT_RELATED_ORDER");
                        
                        entity.Property(e => e.DiscountAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("DISCOUNT_AMOUNT"); 
             
                 entity.Property(e => e.Deductions)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("DEDUCTIONS"); 
             
                 entity.Property(e => e.InsuranceAmount)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("INSURANCE_AMOUNT");
             
  
@@ -62852,7 +62853,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("FROM_DATE");
 
                 entity.Property(e => e.AllocatedCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ALLOCATED_COST");
 
                 entity.Property(e => e.AvailabilityStatusId)
@@ -62946,7 +62947,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("CREATED_TX_STAMP");
 
                 entity.Property(e => e.EstimatedCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ESTIMATED_COST");
 
                 entity.Property(e => e.EstimatedDuration).HasColumnName("ESTIMATED_DURATION");
@@ -63020,7 +63021,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("CREATED_TX_STAMP");
 
                 entity.Property(e => e.EstimatedCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ESTIMATED_COST");
 
                 entity.Property(e => e.EstimatedQuantity).HasColumnName("ESTIMATED_QUANTITY");
@@ -63861,7 +63862,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("CREATED_TX_STAMP");
 
                 entity.Property(e => e.EstimatedCost)
-                    .HasColumnType("decimal(18, 2)")
+                    .HasColumnType("decimal(18,3)")
                     .HasColumnName("ESTIMATED_COST");
 
                 entity.Property(e => e.EstimatedDuration).HasColumnName("ESTIMATED_DURATION");

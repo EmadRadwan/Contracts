@@ -1,15 +1,43 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { RootState } from "../../../app/store/configureStore";
+
+// REFACTOR: Updated SelectedCertificate to store full object structures
+// Purpose: Support FormComboBox components by storing projectId, partyIdSupplier, and partyIdContractor as objects
+// Context: Ensures form re-renders with correct values after submission
+interface SelectedCertificate {
+  workEffortId: string;
+  projectNum: string;
+  projectId: string;
+  projectName: string;
+  partyIdSupplier?: { fromPartyId: string; partyName: string };
+  partyIdContractor?: { fromPartyId: string; partyName: string };
+  description: string;
+  estimatedStartDate: string | null;
+  estimatedCompletionDate: string | null;
+  statusDescription: string;
+}
 
 interface CertificateUiState {
   currentCertificateType: string;
   certificateFormEditMode: number;
-  selectedCertificate?: any;
+  selectedCertificate: SelectedCertificate | { [key: string]: any };
 }
 
 export const certificateUiInitialState: CertificateUiState = {
   currentCertificateType: "",
   certificateFormEditMode: 0,
-  selectedCertificate: undefined,
+  selectedCertificate: {
+    workEffortId: "",
+    projectNum: "",
+    projectId: "",
+    projectName: "",
+    partyIdSupplier: undefined,
+    partyIdContractor: undefined,
+    description: "",
+    estimatedStartDate: null,
+    estimatedCompletionDate: null,
+    statusDescription: "",
+  },
 };
 
 export const certificateUiSlice = createSlice({
@@ -19,17 +47,39 @@ export const certificateUiSlice = createSlice({
     setCurrentCertificateType: (state, action: PayloadAction<string>) => {
       state.currentCertificateType = action.payload;
     },
-    
     setCertificateFormEditMode: (state, action: PayloadAction<number>) => {
       state.certificateFormEditMode = action.payload;
     },
-    setSelectedCertificate: (state, action: PayloadAction<any>) => {
-      state.selectedCertificate = action.payload;
+    setSelectedCertificate: (state, action: PayloadAction<SelectedCertificate>) => {
+      console.log("Dispatching setSelectedCertificate with payload:", action.payload);
+      state.selectedCertificate = {
+        ...action.payload,
+        estimatedStartDate: action.payload.estimatedStartDate instanceof Date
+            ? action.payload.estimatedStartDate.toISOString()
+            : action.payload.estimatedStartDate,
+        estimatedCompletionDate: action.payload.estimatedCompletionDate instanceof Date
+            ? action.payload.estimatedCompletionDate.toISOString()
+            : action.payload.estimatedCompletionDate,
+      };
     },
     resetCertificateUi: (state) => {
       state.currentCertificateType = "";
       state.certificateFormEditMode = 0;
-      state.selectedCertificate = undefined;
+      state.selectedCertificate = {
+        workEffortId: "",
+        projectNum: "",
+        projectId: "",
+        projectName: "",
+        partyIdSupplier: undefined,
+        partyIdContractor: undefined,
+        description: "",
+        estimatedStartDate: null,
+        estimatedCompletionDate: null,
+        statusDescription: "",
+      };
+    },
+    debugCertificateUiState: (state) => {
+      console.log("Current certificateUi state:", state);
     },
   },
 });
@@ -39,4 +89,14 @@ export const {
   setCertificateFormEditMode,
   setSelectedCertificate,
   resetCertificateUi,
+  debugCertificateUiState,
 } = certificateUiSlice.actions;
+
+export const certificateUiSelectors = {
+  selectCertificateUi: (state: RootState) => state.certificateUi,
+  selectCurrentCertificateType: (state: RootState) => state.certificateUi.currentCertificateType,
+  selectCertificateFormEditMode: (state: RootState) => state.certificateUi.certificateFormEditMode,
+  selectSelectedCertificate: (state: RootState) => state.certificateUi.selectedCertificate,
+};
+
+export default certificateUiSlice.reducer;

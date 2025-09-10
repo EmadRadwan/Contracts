@@ -135,6 +135,26 @@ import {certificateItemsSlice} from "../../features/Projects/slice/certificateIt
 import {certificateItemsApi} from "./apis/certificateItemsApi";
 
 
+// REFACTOR: Added logger middleware for debugging
+// Purpose: Logs actions and state changes to trace certificateUi updates
+// Context: Helps confirm if setSelectedCertificate is dispatched and state is updated
+const loggerMiddleware = (store) => (next) => (action) => {
+    console.log("Action:", action.type, "Payload:", action.payload);
+    console.log("State before:", store.getState().certificateUi);
+    const result = next(action);
+    console.log("State after:", store.getState().certificateUi);
+    return result;
+};
+
+// REFACTOR: Disabled SerializableStateInvariantMiddleware in development
+// Purpose: Bypasses serialization checks to confirm if Date objects cause DevTools visibility issue
+// Context: Temporary for debugging; re-enable after confirming serialization fixes
+const devToolsConfig = process.env.NODE_ENV !== "production" ? {
+    name: "AppStore",
+    trace: true,
+    serialize: true,
+} : false;
+
 
 const composeEnhancers = {
     features: {
@@ -299,7 +319,10 @@ export const store = configureStore({
         [paymentGroupTypesApi.reducerPath]: paymentGroupTypesApi.reducer
     },
     middleware: (getDefaultMiddleware) => {
-        return getDefaultMiddleware()
+        return getDefaultMiddleware({
+            serializableCheck: false,
+        })
+            //.concat(loggerMiddleware)
             .concat(partiesApi.middleware)
             .concat(projectsApi.middleware)
             .concat(quoteItemsApi.middleware)
@@ -389,7 +412,7 @@ export const store = configureStore({
             .concat(paymentGroupsApi.middleware)
             .concat(paymentGroupTypesApi.middleware)
     },
-    devTools: process.env.NODE_ENV !== 'production' ? {features: composeEnhancers.features} : false,
+    devTools: devToolsConfig,
 });
 setupListeners(store.dispatch);
 

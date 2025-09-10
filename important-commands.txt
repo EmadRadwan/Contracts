@@ -250,5 +250,8 @@ New way to return meaningful
  
  
  /////////Temporary data:
+ 
+ i'll share with you my code for a contracts system thats based on a ofbiz clone. this code is for the project certificate feature as i have different types of them. i have 5 types of certificates. SUPPLY_PROCUREMENT_CERTIFICATE and this is for company purchases of materials that will go either the main store or the project store. WORKMANSHIP_CONTRACTING_CERTIFICATE and this when company aquires services like SITE_WORKS. CONTRACTOR_PURCHASE_CERTIFICATE and this when the contractor purchase materials for the project. COMPANY_SUPPLY_SALE_CERTIFICATE and this is when company gives contractor materials for the froject from its own and this is not selling. EXTERNAL_SUPPLY_SALE_CERTIFICATE, and this is when company aquires material from a supplier and give it to contractor for a project in one shot.
+ i want you to assess with me the idea of Ofbiz artifacts and workflow in this case, as I thought that a project certificate and its items - as you see i stored them in the workeffort table - but ultimately I create purchase orders out of them. we'll come to the affect of purchase order on receiving and issuing inventory and the accounting part soon as in the share .cs file I only map the project certificate and its items in a purchase order and adjustments and the creation of further articats should happen with the further processing of the puechase order; i mean with chnging its state
 
 

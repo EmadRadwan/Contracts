@@ -62,7 +62,7 @@ public class GetSimpleProductsLov
                     "EXTERNAL_SUPPLY_SALE_CERTIFICATE" => new[] { "RAW_MATERIAL" },
                     "WORKMANSHIP_CONTRACTING_CERTIFICATE" => new[] { "SERVICE" },
                     "CONTRACTOR_PURCHASE_CERTIFICATE" => new[] { "RAW_MATERIAL" },
-                    "COMPANY_SUPPLY_SALE_CERTIFICATE" => new[] { "RAW_MATERIAL", "SERVICE" },
+                    "COMPANY_SUPPLY_SALE_CERTIFICATE" => new[] { "RAW_MATERIAL"},
                     _ => null
                 };
 

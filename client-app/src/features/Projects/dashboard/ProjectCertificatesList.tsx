@@ -12,6 +12,7 @@ import { Grid, Paper } from "@mui/material";
 import { Menu, MenuItem, MenuSelectEvent } from "@progress/kendo-react-layout";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
+    certificateUiSelectors,
     resetCertificateUi,
     setCertificateFormEditMode,
     setCurrentCertificateType,
@@ -40,14 +41,24 @@ interface ProjectCertificate {
 export default function ProjectCertificatesList() {
     const [certificates, setCertificates] = useState<DataResult>({ data: [], total: 0 });
     const [dataState, setDataState] = useState<State>({ take: 6, skip: 0 });
-    const { selectedCertificate, certificateFormEditMode } = useAppSelector((state) => state.certificateUi);
+    const { selectedCertificate, certificateFormEditMode } = useAppSelector(certificateUiSelectors.selectCertificateUi);
     const { getTranslatedLabel } = useTranslationHelper();
     const location = useLocation();
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
     const [certificate, setCertificate] = useState<ProjectCertificate | undefined>(undefined);
-    const { data, isFetching } = useFetchProjectCertificatesQuery({ ...dataState });
+    const { data, isFetching, refetch } = useFetchProjectCertificatesQuery({ ...dataState });
     const [editMode, setEditMode] = useState(0);
+
+    console.log("Certificates data:", data);
+
+    const debounce = (func: Function, wait: number) => {
+        let timeout: NodeJS.Timeout;
+        return (...args: any[]) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func(...args), wait);
+        };
+    };
 
     useEffect(() => {
         if (data) {
@@ -61,41 +72,68 @@ export default function ProjectCertificatesList() {
                     : "",
             }));
             setCertificates({ data: adjustedData, total: data.total });
-        }
-    }, [data]);
 
-    useEffect(() => {
-        if (selectedCertificate && certificates.data.length) {
-            handleSelectCertificate(selectedCertificate.workEffortId);
+            if (selectedCertificate?.workEffortId) {
+                const matchingCert = adjustedData.find(
+                    (cert: ProjectCertificate) => cert.workEffortId === selectedCertificate.workEffortId
+                );
+                if (matchingCert && JSON.stringify(matchingCert) !== JSON.stringify(certificate)) {
+                    console.log("Syncing certificate with new data:", matchingCert);
+                    setCertificate(matchingCert);
+                } else if (!matchingCert) {
+                    console.warn("Certificate not found for workEffortId:", selectedCertificate.workEffortId);
+                }
+            }
         }
-    }, [selectedCertificate, certificates]);
+    }, [data, selectedCertificate?.workEffortId, certificate]);
+
+
+    
 
     const dataStateChange = (e: GridDataStateChangeEvent) => {
         setDataState(e.dataState);
     };
 
-    // REFACTOR: Updated handleSelectCertificate to use certificateCategoryDescription for certificate type.
-    // Purpose: Removes hardcoded PROJECT_CERTIFICATE and uses the dynamic certificate type from the data, aligning with the five types from the sheet.
-    // Context: Ensures the selected certificate's type (e.g., SUPPLY_PROCUREMENT_CERTIFICATE) is set correctly in the Redux store.
     const handleSelectCertificate = useCallback(
-        (workEffortId: string, statusDescription?: string, partyId?: string) => {
+        debounce((workEffortId: string, statusDescription?: string, partyId?: string) => {
+            console.log("handleSelectCertificate called with workEffortId:", workEffortId);
             const selectedCert: ProjectCertificate | undefined = certificates.data.find(
                 (cert: any) => cert.workEffortId === workEffortId
             );
-            const status = statusDescription ?? selectedCert?.statusDescription;
-            const certificateType = selectedCert?.certificateCategoryDescription || "SUPPLY_PROCUREMENT_CERTIFICATE"; // Fallback to first type if undefined
+            if (!selectedCert) {
+                console.warn("No certificate found for workEffortId:", workEffortId);
+                return;
+            }
             setCertificate(selectedCert);
-            dispatch(setSelectedCertificate(selectedCert));
-            dispatch(setCurrentCertificateType(certificateType));
-            // Set edit mode based on status
-            if (status === "CREATED") {
+            dispatch(
+                setSelectedCertificate({
+                    workEffortId: selectedCert.workEffortId || "",
+                    projectNum: selectedCert.projectNum || "",
+                    projectName: selectedCert.projectName || "",
+                    partyIdSupplier: selectedCert.partyId
+                        ? { fromPartyId: selectedCert.partyId, partyName: selectedCert.partyName || "" }
+                        : undefined,
+                    partyIdContractor: undefined,
+                    partyName: selectedCert.partyName || "",
+                    description: selectedCert.description || "",
+                    estimatedStartDate: selectedCert.estimatedStartDate
+                        ? new Date(selectedCert.estimatedStartDate).toISOString()
+                        : null,
+                    estimatedCompletionDate: selectedCert.estimatedCompletionDate
+                        ? new Date(selectedCert.estimatedCompletionDate).toISOString()
+                        : null,
+                    statusDescription: statusDescription || selectedCert.statusDescription || "",
+                })
+            );
+            dispatch(setCurrentCertificateType(selectedCert.certificateCategoryDescription || "SUPPLY_PROCUREMENT_CERTIFICATE"));
+            if (statusDescription === "CREATED") {
                 dispatch(setCertificateFormEditMode(2));
-            } else if (status === "APPROVED") {
+            } else if (statusDescription === "APPROVED") {
                 dispatch(setCertificateFormEditMode(3));
-            } else if (status === "COMPLETED") {
+            } else if (statusDescription === "COMPLETED") {
                 dispatch(setCertificateFormEditMode(4));
             }
-        },
+        }, 500), // Debounce for 500ms to wait for refetch
         [dispatch, certificates.data]
     );
 

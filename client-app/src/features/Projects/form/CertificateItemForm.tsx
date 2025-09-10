@@ -63,7 +63,10 @@ export default function CertificateItemForm({
                     Math.round((total + transportationExpenses + gratuities) * 1000) / 1000
                 );
             } else if (currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE") {
-                deserved = Math.max(0, Math.round((total - Number(valueGetter("deductions") || 0)) * 1000) / 1000);
+                deserved = Math.max(
+                    0,
+                    Math.round((total - Number(valueGetter("deductions") || 0)) * 1000) / 1000
+                );
                 const insuranceInput = Number(valueGetter("insurance") || 0);
                 insurance = insuranceMode === "value" ? insuranceInput : (insuranceInput / 100) * deserved;
                 insurance = Math.round(insurance * 1000) / 1000;
@@ -75,7 +78,6 @@ export default function CertificateItemForm({
                     ? Math.max(0, Math.round((deserved - insurance) * 1000) / 1000)
                     : finalTotal;
 
-            setCalculatedInsurance(insurance);
             return {
                 total,
                 finalTotal,

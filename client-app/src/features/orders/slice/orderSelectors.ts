@@ -72,21 +72,22 @@ export const selectAdjustedOrderItemsWithMarkedForDeletionItems =
     );
 
 
+// REFACTOR: Ensure subtotal uses correct data and handles missing values
 export const orderSubTotal = createSelector(
     selectAdjustedOrderItems,
     (filteredOrderItems) => {
-        if (!filteredOrderItems) return 0; // Return 0 for falsy values
-
+        if (!filteredOrderItems) return 0;
         const subtotal = filteredOrderItems.reduce((sum: number, record: any) => {
-            let subTotalValue;
-            if (record.isPromo!  && record.isPromo === "Y") {
-                subTotalValue = record.subTotal + record.discountAndPromotionAdjustments
-            } else {
-                subTotalValue = typeof record.subTotal === 'number' ? record.subTotal : 0;
+            let subTotalValue = typeof record.subTotal === 'number' ? record.subTotal : 0;
+            // REFACTOR: Fallback to calculate subtotal if missing (e.g., quantity * unit price)
+            if (subTotalValue === 0 && record.quantity && record.unitPrice) {
+                subTotalValue = record.quantity * record.unitPrice;
+            }
+            if (record.isPromo === "Y") {
+                subTotalValue += record.discountAndPromotionAdjustments || 0;
             }
             return sum + subTotalValue;
         }, 0);
-
         return Math.round(subtotal * 100) / 100;
     }
 );

@@ -48,7 +48,7 @@ const certificateItemsApi = createApi({
             // Context: Mirrors fetchPurchaseOrderItems
             fetchCertificateItems: builder.query<CertificateItem[], string>({
                 query: (workEffortId) => ({
-                    url: `/workEfforts/${workEffortId}/getCertificateItems`,
+                    url: `/project/${workEffortId}/getCertificateItems`,
                     method: "GET",
                 }),
                 keepUnusedDataFor: 1,
