@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
 import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
 import {
     Grid as KendoGrid,
@@ -24,18 +24,26 @@ import LoadingComponent from "../../../app/layout/LoadingComponent";
 import { useFetchProjectCertificatesQuery } from "../../../app/store/apis/projectsApi";
 import ProjectMenu from "../menu/ProjectMenu";
 import ProjectCertificateForm from "../form/ProjectCertificateForm";
+import {Certificate, CertificateStatus} from "../../../app/models/project/certificate";
 
 interface ProjectCertificate {
-    workEffortId: string;
-    projectNum: string;
-    projectName: string;
-    partyId: string;
-    partyName: string; // From Party navigation
-    description: string;
-    estimatedStartDate: string;
-    estimatedCompletionDate: string;
-    statusDescription: string;
-    certificateCategoryDescription: string; // Reflects certificate type (e.g., SUPPLY_PROCUREMENT_CERTIFICATE)
+    workEffortId?: string;
+    projectNum?: string;
+    projectName?: string;
+    projectId?: string;
+    partyIdSupplier?: string; 
+    partyNameSupplier?: string;
+    partyIdContractor?: string; 
+    partyNameContractor?: string;
+    description?: string;
+    estimatedStartDate?: string;
+    estimatedCompletionDate?: string;
+    statusDescription?: string;
+    statusDescriptionArabic?: string; // Added for localization
+    currentStatusId?: CertificateStatus; // Added for consistent status handling
+    certificateCategory?: string; // Raw type ID from backend
+    certificateCategoryDescription?: string;
+    relatedOrderId?: string;
 }
 
 export default function ProjectCertificatesList() {
@@ -48,7 +56,6 @@ export default function ProjectCertificatesList() {
     const navigate = useNavigate();
     const [certificate, setCertificate] = useState<ProjectCertificate | undefined>(undefined);
     const { data, isFetching, refetch } = useFetchProjectCertificatesQuery({ ...dataState });
-    const [editMode, setEditMode] = useState(0);
 
     console.log("Certificates data:", data);
 
@@ -60,9 +67,15 @@ export default function ProjectCertificatesList() {
         };
     };
 
+    const editModeMap: { [key in CertificateStatus]: number } = useMemo(() => ({
+        [CertificateStatus.CREATED]: 2,
+        [CertificateStatus.APPROVED]: 3,
+        [CertificateStatus.COMPLETE]: 4,
+    }), []);
+
     useEffect(() => {
         if (data) {
-            const adjustedData = data.data.map((item: ProjectCertificate) => ({
+            const adjustedData = data.data.map((item: Certificate) => ({
                 ...item,
                 estimatedStartDate: item.estimatedStartDate
                     ? new Date(item.estimatedStartDate).toLocaleDateString("en-GB")
@@ -72,83 +85,115 @@ export default function ProjectCertificatesList() {
                     : "",
             }));
             setCertificates({ data: adjustedData, total: data.total });
-
             if (selectedCertificate?.workEffortId) {
                 const matchingCert = adjustedData.find(
-                    (cert: ProjectCertificate) => cert.workEffortId === selectedCertificate.workEffortId
+                    (cert: Certificate) => cert.workEffortId === selectedCertificate.workEffortId
                 );
                 if (matchingCert && JSON.stringify(matchingCert) !== JSON.stringify(certificate)) {
                     console.log("Syncing certificate with new data:", matchingCert);
                     setCertificate(matchingCert);
                 } else if (!matchingCert) {
+                    // Purpose: Prevent stale data when certificate is deleted or unavailable
+                    // Context: Ensures form resets to initial state
                     console.warn("Certificate not found for workEffortId:", selectedCertificate.workEffortId);
+                    //dispatch(resetCertificateUi());
                 }
             }
         }
-    }, [data, selectedCertificate?.workEffortId, certificate]);
+    }, [data, selectedCertificate?.workEffortId, certificate, dispatch]);
 
 
-    
 
     const dataStateChange = (e: GridDataStateChangeEvent) => {
         setDataState(e.dataState);
     };
 
     const handleSelectCertificate = useCallback(
-        debounce((workEffortId: string, statusDescription?: string, partyId?: string) => {
+        debounce((workEffortId?: string, currentStatusId?: CertificateStatus) => {
+            // Purpose: Ensure type safety and consistency with enum
+            // Context: Matches ProjectNumberCell call and backend DTO
+            if (!workEffortId) {
+                console.warn("No workEffortId provided to handleSelectCertificate");
+                return;
+            }
             console.log("handleSelectCertificate called with workEffortId:", workEffortId);
-            const selectedCert: ProjectCertificate | undefined = certificates.data.find(
-                (cert: any) => cert.workEffortId === workEffortId
+            const selectedCert: Certificate | undefined = certificates.data.find(
+                (cert: Certificate) => cert.workEffortId === workEffortId
+                // Purpose: Improve type safety; assumes backend data matches interface
+                // Context: Prevents runtime errors on field access
             );
             if (!selectedCert) {
                 console.warn("No certificate found for workEffortId:", workEffortId);
                 return;
             }
-            setCertificate(selectedCert);
+            console.log("Raw selectedCert:", selectedCert); // REFACTOR: Debug log
+
             dispatch(
                 setSelectedCertificate({
                     workEffortId: selectedCert.workEffortId || "",
                     projectNum: selectedCert.projectNum || "",
+                    projectId: selectedCert.projectId || selectedCert.projectNum || "",
                     projectName: selectedCert.projectName || "",
-                    partyIdSupplier: selectedCert.partyId
-                        ? { fromPartyId: selectedCert.partyId, partyName: selectedCert.partyName || "" }
+                    currentStatusId: selectedCert.currentStatusId || CertificateStatus.CREATED,
+                    partyIdSupplier: selectedCert.partyIdSupplier
+                        ? {
+                            fromPartyId:
+                                typeof selectedCert.partyIdSupplier === "object"
+                                    ? selectedCert.partyIdSupplier.fromPartyId
+                                    : selectedCert.partyIdSupplier,
+                            partyName: selectedCert.partyNameSupplier || "",
+                        }
                         : undefined,
-                    partyIdContractor: undefined,
-                    partyName: selectedCert.partyName || "",
+                    partyIdContractor: selectedCert.partyIdContractor
+                        ? {
+                            fromPartyId:
+                                typeof selectedCert.partyIdContractor === "object"
+                                    ? selectedCert.partyIdContractor.fromPartyId
+                                    : selectedCert.partyIdContractor, // REFACTOR: Fixed typo from partyIdContractor to contractorPartyId
+                            // Purpose: Correctly map contractor ID from query data
+                            // Context: Fixes binding for contractor ComboBox
+                            partyName: selectedCert.partyNameContractor || "",
+                        }
+                        : undefined,
                     description: selectedCert.description || "",
                     estimatedStartDate: selectedCert.estimatedStartDate
-                        ? new Date(selectedCert.estimatedStartDate).toISOString()
+                        ? (() => {
+                            const [day, month, year] = selectedCert.estimatedStartDate.split('/').map(Number);
+                            const date = new Date(year, month - 1, day);
+                            return isNaN(date.getTime()) ? null : date.toISOString();
+                        })()
                         : null,
                     estimatedCompletionDate: selectedCert.estimatedCompletionDate
-                        ? new Date(selectedCert.estimatedCompletionDate).toISOString()
+                        ? (() => {
+                            const [day, month, year] = selectedCert.estimatedCompletionDate.split('/').map(Number);
+                            const date = new Date(year, month - 1, day);
+                            return isNaN(date.getTime()) ? null : date.toISOString();
+                        })()
                         : null,
-                    statusDescription: statusDescription || selectedCert.statusDescription || "",
+                    statusDescription: selectedCert.statusDescription || "",
+                    statusDescriptionArabic: selectedCert.statusDescriptionArabic || "",
+                    relatedOrderId: selectedCert.relatedOrderId || "",
+                    workEffortTypeId: selectedCert.certificateCategory || "SUPPLY_PROCUREMENT_CERTIFICATE",
                 })
             );
-            dispatch(setCurrentCertificateType(selectedCert.certificateCategoryDescription || "SUPPLY_PROCUREMENT_CERTIFICATE"));
-            if (statusDescription === "CREATED") {
-                dispatch(setCertificateFormEditMode(2));
-            } else if (statusDescription === "APPROVED") {
-                dispatch(setCertificateFormEditMode(3));
-            } else if (statusDescription === "COMPLETED") {
-                dispatch(setCertificateFormEditMode(4));
-            }
-        }, 500), // Debounce for 500ms to wait for refetch
-        [dispatch, certificates.data]
+            dispatch(setCurrentCertificateType(selectedCert.certificateCategory || "SUPPLY_PROCUREMENT_CERTIFICATE"));
+            dispatch(setCertificateFormEditMode(editModeMap[selectedCert.currentStatusId as CertificateStatus] || 0));
+        }, 500),
+        [dispatch, certificates.data, editModeMap] 
     );
-
+    
+    
     const cancelEdit = useCallback(() => {
         setCertificate(undefined);
         dispatch(setCertificateFormEditMode(0));
         dispatch(resetCertificateUi());
     }, [dispatch]);
 
-    // REFACTOR: Updated handleMenuSelect to support only the five certificate types from the sheet.
     // Purpose: Replaces PROCUREMENTS and CONTRACTING with the five new types (SUPPLY_PROCUREMENT_CERTIFICATE, etc.) to align with the provided data.
     // Context: Simplifies the menu to reflect only the types defined in the sheet, maintaining Redux dispatch for form initialization.
     const handleMenuSelect = useCallback(
         (e: MenuSelectEvent) => {
-            dispatch(resetCertificateUi());
+            //dispatch(resetCertificateUi());
             switch (e.item.data) {
                 case "supplyProcurement":
                     dispatch(setCurrentCertificateType("SUPPLY_PROCUREMENT_CERTIFICATE"));
@@ -196,9 +241,10 @@ export default function ProjectCertificatesList() {
                     onClick={() =>
                         handleSelectCertificate(
                             props.dataItem.workEffortId,
-                            props.dataItem.statusDescription,
-                            props.dataItem.partyId
+                            props.dataItem.currentStatusId
                         )
+                        // Purpose: Align with handleSelectCertificate signature
+                        // Context: Ensures status-based editMode setting works
                     }
                 >
                     {props.dataItem.certificateNumber}
@@ -223,9 +269,6 @@ export default function ProjectCertificatesList() {
             <Paper elevation={5} className="div-container-withBorderCurved">
                 <Grid container columnSpacing={1} alignItems="center">
                     <Grid item xs={4}>
-                        {/* REFACTOR: Updated Menu to include only the five certificate types from the sheet.
-               Purpose: Removes PROCUREMENTS and CONTRACTING MenuItems, replacing them with the five new types to match the provided data.
-               Context: Maintains translation support and menu structure while aligning with the sheet's five extract types. */}
                         <Menu onSelect={handleMenuSelect}>
                             <MenuItem key="newCertificate" text={getTranslatedLabel("certificate.list.new", "New Certificate")}>
                                 <MenuItem
@@ -284,12 +327,20 @@ export default function ProjectCertificatesList() {
                                     title={getTranslatedLabel("certificate.list.partyId", "Type")}
                                 />
                                 <Column
-                                    field="partyId"
-                                    title={getTranslatedLabel("certificate.list.partyId", "Party ID")}
+                                    field="partyIdSupplier"
+                                    title={getTranslatedLabel("certificate.list.supplierPartyId", "Supplier ID")}
                                 />
                                 <Column
-                                    field="partyName"
-                                    title={getTranslatedLabel("certificate.list.partyName", "Party Name")}
+                                    field="partyNameSupplier"
+                                    title={getTranslatedLabel("certificate.list.supplierPartyName", "Supplier Name")}
+                                />
+                                <Column
+                                    field="partyIdContractor"
+                                    title={getTranslatedLabel("certificate.list.contractorPartyId", "Contractor ID")}
+                                />
+                                <Column
+                                    field="partyNameContractor"
+                                    title={getTranslatedLabel("certificate.list.contractorPartyName", "Contractor Name")}
                                 />
                                 <Column
                                     field="description"

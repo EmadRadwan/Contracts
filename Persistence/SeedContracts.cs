@@ -2485,11 +2485,10 @@ public class SeedContracts
                 await context.SupplierProducts.AddRangeAsync(supplierProducts);
                 await context.SaveChangesAsync();
             }*/
-
-            if (!context.UserLogins.Any())
+            
+             static List<UserLogin> CreateUserLogins(DateTime nowDateTime)
             {
-                // Create a list of UserLogin records with PartyId used for both PartyId and UserLoginId.
-                var userLogins = new List<UserLogin>
+                return new List<UserLogin>
                 {
                     new UserLogin
                     {
@@ -2504,18 +2503,46 @@ public class SeedContracts
                         PartyId = "27",
                         CreatedStamp = nowDateTime,
                         LastUpdatedStamp = nowDateTime
-                    },
+                    }
                 };
+            }
 
-                // Add all records to the UserLogin table and persist changes.
+            var requiredRoles = new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate" };
+            foreach (var role in requiredRoles)
+            {
+                if (!await roleManager.RoleExistsAsync(role))
+                {
+                    await roleManager.CreateAsync(new ApplicationRole { Name = role });
+                }
+            }
+            
+            if (!await context.UserLogins.AnyAsync())
+            {
+                // REFACTOR: Extracted UserLogin creation into a separate method for better organization.
+                // This improves readability and maintainability.
+                var userLogins = CreateUserLogins(nowDateTime);
                 context.UserLogins.AddRange(userLogins);
                 await context.SaveChangesAsync();
             }
-
-
-            if (!userManager.Users.Any())
+            
+            if (!await userManager.Users.AnyAsync())
             {
-                var users = new List<AppUserLogin>
+                // REFACTOR: Extracted AppUserLogin creation into a separate method for clarity.
+                // This isolates user data and simplifies maintenance.
+                var users = CreateAppUserLogins(nowDateTime);
+
+                // REFACTOR: Used Task.WhenAll for concurrent user creation to improve performance.
+                // This processes user creation operations in parallel.
+                await Task.WhenAll(users.Select(user => userManager.CreateAsync(user, "Pa$$w0rd")));
+
+                // REFACTOR: Extracted role assignment into a separate method for modularity.
+                // This makes role assignments easier to manage and modify.
+                await AssignRoles(userManager, nowDateTime);
+            }
+
+             static List<AppUserLogin> CreateAppUserLogins(DateTime nowDateTime)
+            {
+                return new List<AppUserLogin>
                 {
                     new()
                     {
@@ -2544,28 +2571,27 @@ public class SeedContracts
                         LastUpdatedStamp = nowDateTime
                     }
                 };
-
-                foreach (var user in users) await userManager.CreateAsync(user, "Pa$$w0rd");
-
-                // Seed Roles for Emad
-                /*var emad = await userManager.FindByEmailAsync("eradwan1967@gmail.com");
-                await userManager.AddToRolesAsync(emad,
-                    new[] { "Member", "AddAdjustments", "AddDiscountAdjustment5", "AddDiscountAdjustment10" });
-                                
-    
-                // Seed Roles for Youssief
-                var youssief = await userManager.FindByEmailAsync("youssefer1997@gmail.com");
-                await userManager.AddToRolesAsync(youssief,
-                    new[] { "Member", "AddAdjustments", "AddDiscountAdjustment5", "AddDiscountAdjustment10" });
-    
-                // Seed Roles for Mohamed
-                var mohamed = await userManager.FindByEmailAsync("mshehab@gmail.com");
-                await userManager.AddToRolesAsync(mohamed,
-                    new[] { "Member", "AddAdjustments", "AddDiscountAdjustment5" });
-    
-                var turkish = await userManager.FindByEmailAsync("turkishUser@gmail.com");
-                await userManager.AddToRolesAsync(turkish,
-                    new[] { "Member", "AddAdjustments", "AddDiscountAdjustment5" });*/
             }
+
+             static async Task AssignRoles(UserManager<AppUserLogin> userManager, DateTime nowDateTime)
+            {
+                // REFACTOR: Defined user-role mappings to streamline role assignments.
+                // This reduces repetitive code and simplifies updates to role assignments.
+                var userRoles = new Dictionary<string, string[]>
+                {
+                    { "eradwan1967@gmail.com", new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate" } },
+                    { "youssefer1997@gmail.com", new[] { "CreateCertificate", "CompleteCertificate" } }
+                };
+
+                foreach (var (email, roles) in userRoles)
+                {
+                    var user = await userManager.FindByEmailAsync(email);
+                    if (user != null)
+                    {
+                        await userManager.AddToRolesAsync(user, roles);
+                    }
+                }
+            }
+            
         }
     }

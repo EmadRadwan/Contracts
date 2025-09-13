@@ -78,6 +78,8 @@ public class AccountController : ControllerBase
 
     private async Task<UserDto> CreateUserObject(AppUserLogin user)
     {
+        var roles = await _userManager.GetRolesAsync(user);
+
         return new UserDto
         {
             Id = user.Id,
@@ -86,8 +88,8 @@ public class AccountController : ControllerBase
             Token = await _tokenService.CreateToken(user),
             Username = user.UserName,
             OrganizationPartyId = user.OrganizationPartyId,
-            DualLanguage = user.DualLanguage
-            //roles = await _userManager.GetRolesAsync(user)
+            DualLanguage = user.DualLanguage,
+            Roles = roles.ToArray()
         };
     }
 }

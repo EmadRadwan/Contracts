@@ -1,17 +1,18 @@
 import React, { useCallback, useState } from "react";
 import { toast } from "react-toastify";
-import { Certificate } from "../../../app/models/project/certificate";
+import { Certificate, CertificateStatus } from "../../../app/models/project/certificate";
 import { CertificateItem } from "../../../app/models/project/certificateItem";
 import {
   useAddProjectCertificateMutation,
   useFetchProjectCertificatesQuery,
   useUpdateProjectCertificateMutation
 } from "../../../app/store/apis/projectsApi";
-import { certificateItemsEntities, setProcessedCertificateItems } from "../slice/certificateItemsUiSlice";
+import { setProcessedCertificateItems } from "../slice/certificateItemsUiSlice";
 import { setCertificateFormEditMode, setSelectedCertificate } from "../slice/certificateUiSlice";
 import { useAppDispatch, useAppSelector } from "../../../app/store/configureStore";
 import { useSelector } from "react-redux";
 import { nonDeletedCertificateItemsSelector } from "../slice/certificateSelectors";
+import {useReceiveInventoryFromPurchaseOrderMutation} from "../../../app/store/apis";
 
 type UseProjectCertificateProps = {
   selectedMenuItem: string;
@@ -32,6 +33,7 @@ const useProjectCertificate = ({
   const nonDeletedCertificateItems: CertificateItem[] = useSelector(nonDeletedCertificateItemsSelector);
   const { currentCertificateType, selectedCertificate, certificateFormEditMode } = useAppSelector((state) => state.certificateUi);
   const { refetch } = useFetchProjectCertificatesQuery({ skip: 0, take: 6 });
+    const [receiveInventoryFromPurchaseOrder, { isLoading: isReceiveLoading }] = useReceiveInventoryFromPurchaseOrderMutation(); 
 
     const formEditMode = certificateFormEditMode;
     const setFormEditMode = useCallback((mode: number) => {
@@ -100,9 +102,9 @@ const useProjectCertificate = ({
                 toast.error("Certificate must have at least one item.");
                 return;
             }
-            if (!validateCertificate(newCertificate, nonDeletedCertificateItems)) {
+            /*if (!validateCertificate(newCertificate, nonDeletedCertificateItems)) {
                 return;
-            }
+            }*/
 
             const certificateData = {
                 workEffortId: newCertificate.workEffortId,
@@ -126,40 +128,51 @@ const useProjectCertificate = ({
 
             try {
                 const createdCertificate = await addProjectCertificate(certificateData).unwrap();
-                // REFACTOR: Update Redux selectedCertificate with full object structures
                 // Purpose: Ensure form re-renders with complete objects for FormComboBox components
                 // Context: API returns workEffortId and certificateNumber; other fields are from input
-                dispatch(setSelectedCertificate({
-                    workEffortId: createdCertificate.workEffortId,
-                    projectNum: createdCertificate.certificateNumber,
-                    projectId: newCertificate.projectId,
-                    projectName: newCertificate.projectName || createdCertificate.projectName || "",
-                    partyIdSupplier: newCertificate.partyIdSupplier ? {
-                        fromPartyId: typeof newCertificate.partyIdSupplier === "object"
-                            ? newCertificate.partyIdSupplier.fromPartyId
-                            : newCertificate.partyIdSupplier,
-                        partyName: newCertificate.partyIdSupplier?.partyName || createdCertificate.partyNameSupplier || "",
-                    } : undefined,
-                    partyIdContractor: newCertificate.partyIdContractor ? {
-                        fromPartyId: typeof newCertificate.partyIdContractor === "object"
-                            ? newCertificate.partyIdContractor.fromPartyId
-                            : newCertificate.partyIdContractor,
-                        partyName: newCertificate.partyIdContractor?.partyName || createdCertificate.partyNameContractor || "",
-                    } : undefined,
-                    description: newCertificate.description,
-                    estimatedStartDate: newCertificate.estimatedStartDate
-                        ? new Date(newCertificate.estimatedStartDate).toISOString()
-                        : null,
-                    estimatedCompletionDate: newCertificate.estimatedCompletionDate
-                        ? new Date(newCertificate.estimatedCompletionDate).toISOString()
-                        : null,
-                    statusDescription: createdCertificate.statusDescription,
-                }));
+                dispatch(
+                    setSelectedCertificate({
+                        workEffortId: createdCertificate.workEffortId,
+                        projectNum: createdCertificate.certificateNumber,
+                        projectId: newCertificate.projectId,
+                        projectName: newCertificate.projectName || createdCertificate.projectName || "",
+                        partyIdSupplier: newCertificate.partyIdSupplier
+                            ? {
+                                fromPartyId:
+                                    typeof newCertificate.partyIdSupplier === "object"
+                                        ? newCertificate.partyIdSupplier.fromPartyId
+                                        : newCertificate.partyIdSupplier,
+                                partyName: newCertificate.partyIdSupplier?.partyName || createdCertificate.partyNameSupplier || "",
+                            }
+                            : undefined,
+                        partyIdContractor: newCertificate.partyIdContractor
+                            ? {
+                                fromPartyId:
+                                    typeof newCertificate.partyIdContractor === "object"
+                                        ? newCertificate.partyIdContractor.fromPartyId
+                                        : newCertificate.partyIdContractor,
+                                partyName:
+                                    newCertificate.partyIdContractor?.partyName || createdCertificate.partyNameContractor || "",
+                            }
+                            : undefined,
+                        description: newCertificate.description,
+                        estimatedStartDate: newCertificate.estimatedStartDate
+                            ? new Date(newCertificate.estimatedStartDate).toISOString()
+                            : null,
+                        estimatedCompletionDate: newCertificate.estimatedCompletionDate
+                            ? new Date(newCertificate.estimatedCompletionDate).toISOString()
+                            : null,
+                        statusDescription: createdCertificate.statusDescription,
+                        currentStatusId: createdCertificate.currentStatusId || CertificateStatus.CREATED,
+                        statusDescriptionArabic: createdCertificate.statusDescriptionArabic || "",
+                        relatedOrderId: createdCertificate.orderId || "",
+                    })
+                );
                 dispatch(setCertificateFormEditMode(2));
                 dispatch(setProcessedCertificateItems(createdCertificate.certificateItems || []));
                 formRef2.current = !formRef2.current;
                 toast.success("Certificate and items created successfully");
-                refetch();
+                //refetch();
                 return { workEffortId: createdCertificate.workEffortId };
             } catch (error: any) {
                 console.error("Failed to create certificate:", error);
@@ -177,57 +190,69 @@ const useProjectCertificate = ({
                 toast.error("Certificate must have at least one item.");
                 return;
             }
-            if (!validateCertificate(newCertificate, nonDeletedCertificateItems)) {
+            /*if (!validateCertificate(newCertificate, nonDeletedCertificateItems)) {
                 return;
-            }
-
+            }*/
             const certificateData = {
                 workEffortId: newCertificate.workEffortId,
                 workEffortTypeId: newCertificate.workEffortTypeId,
                 description: newCertificate.description,
                 projectId: newCertificate.projectId,
-                partyIdSupplier: typeof newCertificate.partyIdSupplier === "object"
-                    ? newCertificate.partyIdSupplier.fromPartyId
-                    : newCertificate.partyIdSupplier,
-                partyIdContractor: typeof newCertificate.partyIdContractor === "object"
-                    ? newCertificate.partyIdContractor.fromPartyId
-                    : newCertificate.partyIdContractor,
+                partyIdSupplier:
+                    typeof newCertificate.partyIdSupplier === "object"
+                        ? newCertificate.partyIdSupplier.fromPartyId
+                        : newCertificate.partyIdSupplier,
+                partyIdContractor:
+                    typeof newCertificate.partyIdContractor === "object"
+                        ? newCertificate.partyIdContractor.fromPartyId
+                        : newCertificate.partyIdContractor,
                 estimatedStartDate: newCertificate.estimatedStartDate,
                 estimatedCompletionDate: newCertificate.estimatedCompletionDate,
                 certificateItems: items,
             };
-
             try {
                 const updatedCertificate = await updateProjectCertificate(certificateData).unwrap();
-                // REFACTOR: Update Redux selectedCertificate with full object structures
-                // Purpose: Ensure form re-renders with complete objects for FormComboBox components
-                // Context: API returns updated workEffortId and certificateNumber; other fields are from input
-                dispatch(setSelectedCertificate({
-                    workEffortId: updatedCertificate.workEffortId,
-                    projectNum: updatedCertificate.certificateNumber,
-                    projectId: newCertificate.projectId,
-                    projectName: newCertificate.projectName || updatedCertificate.projectName || "",
-                    partyIdSupplier: newCertificate.partyIdSupplier ? {
-                        fromPartyId: typeof newCertificate.partyIdSupplier === "object"
-                            ? newCertificate.partyIdSupplier.fromPartyId
-                            : newCertificate.partyIdSupplier,
-                        partyName: newCertificate.partyIdSupplier?.partyName || updatedCertificate.partyNameSupplier || "",
-                    } : undefined,
-                    partyIdContractor: newCertificate.partyIdContractor ? {
-                        fromPartyId: typeof newCertificate.partyIdContractor === "object"
-                            ? newCertificate.partyIdContractor.fromPartyId
-                            : newCertificate.partyIdContractor,
-                        partyName: newCertificate.partyIdContractor?.partyName || updatedCertificate.partyNameContractor || "",
-                    } : undefined,
-                    description: newCertificate.description,
-                    estimatedStartDate: newCertificate.estimatedStartDate
-                        ? new Date(newCertificate.estimatedStartDate).toISOString()
-                        : null,
-                    estimatedCompletionDate: newCertificate.estimatedCompletionDate
-                        ? new Date(newCertificate.estimatedCompletionDate).toISOString()
-                        : null,
-                    statusDescription: updatedCertificate.statusDescription,
-                }));
+                // REFACTOR: Use partyNameSupplier/partyNameContractor for consistency
+                // Purpose: Ensure Redux state has correct object structure for ComboBox binding
+                // Context: Matches form's initialFormValues expectations
+                dispatch(
+                    setSelectedCertificate({
+                        workEffortId: updatedCertificate.workEffortId,
+                        projectNum: updatedCertificate.certificateNumber,
+                        projectId: newCertificate.projectId,
+                        projectName: newCertificate.projectName || updatedCertificate.projectName || "",
+                        partyIdSupplier: newCertificate.partyIdSupplier
+                            ? {
+                                fromPartyId:
+                                    typeof newCertificate.partyIdSupplier === "object"
+                                        ? newCertificate.partyIdSupplier.fromPartyId
+                                        : newCertificate.partyIdSupplier,
+                                partyName: newCertificate.partyIdSupplier?.partyName || updatedCertificate.partyNameSupplier || "",
+                            }
+                            : undefined,
+                        partyIdContractor: newCertificate.partyIdContractor
+                            ? {
+                                fromPartyId:
+                                    typeof newCertificate.partyIdContractor === "object"
+                                        ? newCertificate.partyIdContractor.fromPartyId
+                                        : newCertificate.partyIdContractor,
+                                partyName:
+                                    newCertificate.partyIdContractor?.partyName || updatedCertificate.partyNameContractor || "",
+                            }
+                            : undefined,
+                        description: newCertificate.description,
+                        estimatedStartDate: newCertificate.estimatedStartDate
+                            ? new Date(newCertificate.estimatedStartDate).toISOString()
+                            : null,
+                        estimatedCompletionDate: newCertificate.estimatedCompletionDate
+                            ? new Date(newCertificate.estimatedCompletionDate).toISOString()
+                            : null,
+                        statusDescription: updatedCertificate.statusDescription,
+                        statusDescriptionArabic: updatedCertificate.statusDescriptionArabic || "",
+                        currentStatusId: updatedCertificate.currentStatusId || CertificateStatus.CREATED,
+                        relatedOrderId: updatedCertificate.orderId || "",
+                    })
+                );
                 dispatch(setProcessedCertificateItems(updatedCertificate.certificateItems || []));
                 dispatch(setCertificateFormEditMode(2));
                 formRef2.current = !formRef2.current;
@@ -247,7 +272,6 @@ const useProjectCertificate = ({
         async (data: any) => {
             setIsLoading(true);
             try {
-                // REFACTOR: Use full objects from form data for Redux
                 // Purpose: Preserve object structure for FormComboBox components
                 // Context: Flatten only for API calls, not for Redux state
                 const newCertificate: Certificate = {
@@ -268,13 +292,49 @@ const useProjectCertificate = ({
                     return;
                 }
 
-                if (selectedMenuItem === "Create Certificate" || editMode === 1) {
+                const action = data.selectedMenuItem || selectedMenuItem;
+
+                if (action === "Create Certificate" || editMode === 1) {
                     return await createCertificate(newCertificate);
-                } else if (selectedMenuItem === "Update Certificate" || editMode === 2) {
+                } else if (action === "Update Certificate") {
                     return await updateCertificate(newCertificate);
-                } else if (selectedMenuItem === "Approve Certificate") {
-                    toast.error("Approve action not yet implemented");
-                    return;
+                } else if (action === "Approve Certificate" || action === "Complete Certificate") {
+                    /* if (!validateCertificate(newCertificate, nonDeletedCertificateItems)) {
+                        return;
+                    } */
+                    const approveData = {
+                        workEffortId: data.values.workEffortId,
+                        currentStatusId: data.values.currentStatusId,
+                    };
+                    /*const updatedCertificate = await updateProjectCertificate(approveData).unwrap();
+                    // Purpose: Ensure consistent status updates in Redux state
+                    // Context: Aligns with editModeMap and backend expectations
+                    dispatch(
+                        setSelectedCertificate({
+                            ...selectedCertificate,
+                            currentStatusId: data.values.currentStatusId,
+                            relatedOrderId: updatedCertificate.orderId || selectedCertificate?.relatedOrderId || "",
+                        })
+                    );*/
+                    // Purpose: Only trigger for SUPPLY_PROCUREMENT_CERTIFICATE or EXTERNAL_SUPPLY_SALE_CERTIFICATE
+                    // Context: Matches backend logic for purchase order generation
+                    if (action === "Approve Certificate" &&
+                        ["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)) {
+                        const facilityId = nonDeletedCertificateItems[0]?.facilityId;
+                        if (selectedCertificate?.relatedOrderId && facilityId) {
+                            await receiveInventoryFromPurchaseOrder({
+                                orderId: selectedCertificate.relatedOrderId,
+                                facilityId,
+                            }).unwrap();
+                            toast.success("Inventory received successfully after approval.");
+                        } else {
+                            toast.error("Missing orderId or facilityId for receiving inventory.");
+                        }
+                    }
+                    formRef2.current = !formRef2.current;
+                    dispatch(setCertificateFormEditMode(action === "Approve Certificate" ? 3 : 4));
+                    //refetch();
+                    return //{ workEffortId: updatedCertificate.workEffortId };
                 } else {
                     toast.error("Invalid action type");
                     return;
@@ -283,15 +343,16 @@ const useProjectCertificate = ({
                 setIsLoading(false);
             }
         },
-        [createCertificate, updateCertificate, editMode, selectedCertificate, nonDeletedCertificateItems, selectedMenuItem, setIsLoading]
+        [createCertificate, updateCertificate, editMode, selectedCertificate, nonDeletedCertificateItems, selectedMenuItem, setIsLoading, updateProjectCertificate, receiveInventoryFromPurchaseOrder, currentCertificateType, dispatch, refetch]
     );
-
+    
     return {
         isAddCertificateLoading,
         isUpdateCertificateLoading,
         formEditMode,
         setFormEditMode,
         handleCreate,
+        isReceiveLoading
     };
 };
 

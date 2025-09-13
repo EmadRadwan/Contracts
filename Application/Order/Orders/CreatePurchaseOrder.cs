@@ -2,6 +2,7 @@ using Application.Interfaces;
 using Application.order.Orders;
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Persistence;
 
 namespace Application.Order.Orders;
@@ -62,6 +63,26 @@ public class CreatePurchaseOrder
                 AgreementId = request.OrderDto.AgreementId,
                 CurrencyUomId = request.OrderDto.CurrencyUomId
             };
+            
+            var affectedRecords = _context.ChangeTracker
+                .Entries()
+                .Where(e => e.State == EntityState.Added ||
+                            e.State == EntityState.Modified ||
+                            e.State == EntityState.Deleted)
+                .Select(e => new ChangeRecord
+                {
+                    TableName = e.Entity.GetType().Name,
+                    PKValues = string.Join(", ", e.Properties
+                        .Where(p => p.Metadata.IsPrimaryKey())
+                        .Select(p => $"{p.Metadata.Name}: {p.CurrentValue}")),
+                    Operation = e.State.ToString()
+                })
+                .ToList();
+       
+            foreach (var record in affectedRecords)
+            {
+                Console.WriteLine(record);
+            }
 
             return Result<OrderDto>.Success(orderToReturn);
         }

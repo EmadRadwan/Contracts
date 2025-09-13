@@ -128,6 +128,20 @@ const inventoriesApi = createApi({
                     return response;
                 },
             }),
+            receiveInventoryFromPurchaseOrder: builder.mutation({
+                invalidatesTags: ["PurchaseOrderItemsForReceive"],
+                query: (command) => {
+                    return {
+                        url: "/facilityInventories/receiveInventoryFromPurchaseOrder",
+                        method: "POST",
+                        body: { ...command },
+                    };
+                },
+                transformErrorResponse: (response, meta, arg) => {
+                    console.log("receiveInventoryFromPurchaseOrder API has been called"); // Inserted console.log
+                    return response;
+                },
+            }),
             packOrder: builder.mutation({
                 invalidatesTags: ["PackOrder"],
                 query: (order) => {
@@ -236,7 +250,9 @@ export const {
     useFetchInventoryTransferQuery,
     useReceiveInventoryProductMutation: useReceiveInventoryProductsMutation,
     useAddInventoryTransferMutation, useFetchInventoryItemLotsQuery,
-    useUpdateInventoryTransferMutation, useFetchPurchaseOrderItemsForReceiveQuery, usePackOrderMutation, useUpdateInventoryItemMutation,
+    useUpdateInventoryTransferMutation,
+    useFetchPurchaseOrderItemsForReceiveQuery, 
+    usePackOrderMutation, useUpdateInventoryItemMutation, useReceiveInventoryFromPurchaseOrderMutation
 } = inventoriesApi;
 export {inventoriesApi};
 

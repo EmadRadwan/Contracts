@@ -1,307 +1,374 @@
-import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
+import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
+import {
+    Grid as KendoGrid,
+    GRID_COL_INDEX_ATTRIBUTE,
+    GridColumn as Column,
+    GridDataStateChangeEvent,
+} from "@progress/kendo-react-grid";
+import { DataResult, State } from "@progress/kendo-data-query";
+import Button from "@mui/material/Button";
+import { Grid, Paper } from "@mui/material";
+import { Menu, MenuItem, MenuSelectEvent } from "@progress/kendo-react-layout";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+    certificateUiSelectors,
+    resetCertificateUi,
+    setCertificateFormEditMode,
+    setCurrentCertificateType,
+    setSelectedCertificate,
+} from "../slice/certificateUiSlice";
 import { useAppDispatch, useAppSelector } from "../../../app/store/configureStore";
-import { Field, Form, FormElement } from "@progress/kendo-react-form";
-import { Backdrop, Box, Button, CircularProgress, Grid, Paper, Typography } from "@mui/material";
-import LoadingButton from "@mui/lab/LoadingButton";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
-import { resetCertificateUi, setCertificateFormEditMode } from "../slice/certificateUiSlice";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
-import { requiredValidator } from "../../../app/common/form/Validators";
-import { toast } from "react-toastify";
-import { FormComboBoxVirtualSupplier } from "../../../app/common/form/FormComboBoxVirtualSupplier";
-import FormDatePicker from "../../../app/common/form/FormDatePicker";
+import { useFetchProjectCertificatesQuery } from "../../../app/store/apis/projectsApi";
 import ProjectMenu from "../menu/ProjectMenu";
-import useProjectCertificate from "../hook/useProjectCertificate";
-import { CertificateItemsListMemo } from "../dashboard/CertificateItemsList";
-import { FormComboBoxVirtualProject } from "../../../app/common/form/FormComboBoxVirtualProject";
-import { FormComboBoxVirtualContractor } from "../../../app/common/form/FormComboBoxVirtualContractor";
-import FormInput from "../../../app/common/form/FormInput";
-import { resetUiCertificateItems } from "../slice/certificateItemsUiSlice";
+import ProjectCertificateForm from "../form/ProjectCertificateForm";
+import {Certificate, CertificateStatus} from "../../../app/models/project/certificate";
 
-interface ProjectCertificateFormProps {
-    editMode: number; // 0: view, 1: create, 2: edit (CREATED), 3: edit (APPROVED), 4: edit (COMPLETED)
-    cancelEdit: () => void;
+interface ProjectCertificate {
+    workEffortId?: string;
+    projectNum?: string;
+    projectName?: string;
+    projectId?: string;
+    partyIdSupplier?: string;
+    partyNameSupplier?: string;
+    partyIdContractor?: string;
+    partyNameContractor?: string;
+    description?: string;
+    estimatedStartDate?: string;
+    estimatedCompletionDate?: string;
+    statusDescription?: string;
+    statusDescriptionArabic?: string; // Added for localization
+    currentStatusId?: CertificateStatus; // Added for consistent status handling
+    certificateCategory?: string; // Raw type ID from backend
+    certificateCategoryDescription?: string;
+    relatedOrderId?: string;
 }
 
-export default function ProjectCertificateForm({ editMode, cancelEdit }: ProjectCertificateFormProps) {
-    const formRef = useRef<any>(null);
-    const formRef2 = useRef<boolean>(false);
-    const dispatch = useAppDispatch();
+export default function ProjectCertificatesList() {
+    const [certificates, setCertificates] = useState<DataResult>({ data: [], total: 0 });
+    const [dataState, setDataState] = useState<State>({ take: 6, skip: 0 });
+    const { selectedCertificate, certificateFormEditMode } = useAppSelector(certificateUiSelectors.selectCertificateUi);
     const { getTranslatedLabel } = useTranslationHelper();
-    const { currentCertificateType, selectedCertificate } = useAppSelector((state) => state.certificateUi);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [selectedMenuItem, setSelectedMenuItem] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
+    const location = useLocation();
+    const dispatch = useAppDispatch();
+    const navigate = useNavigate();
+    const [certificate, setCertificate] = useState<ProjectCertificate | undefined>(undefined);
+    const { data, isFetching, refetch } = useFetchProjectCertificatesQuery({ ...dataState });
 
-    // REFACTOR: Removed local certificate state and dependency on useProjectCertificate
-    // Purpose: Rely entirely on Redux selectedCertificate for state management
-    // Context: Simplifies state handling and ensures single source of truth
-    const {
-        formEditMode,
-        setFormEditMode,
-        handleCreate,
-        isAddCertificateLoading,
-        isUpdateCertificateLoading,
-    } = useProjectCertificate({
-        selectedMenuItem,
-        formRef2,
-        editMode,
-        setIsLoading,
-    });
+    console.log("Certificates data:", data);
 
-    console.log("Redux selectedCertificate:", selectedCertificate);
-
-    const formKey = useMemo(() => formRef2.current.toString(), [formRef2.current]);
-    const showSupplier = ["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
-    const showContractor = ["COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE", "WORKMANSHIP_CONTRACTING_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
-
-    const initialFormValues = useMemo(() => {
-        console.log("Computing initialFormValues with Redux selectedCertificate:", selectedCertificate);
-        if (editMode === 1 && !selectedCertificate?.workEffortId) {
-            const now = new Date();
-            const oneWeekAgo = new Date(now);
-            oneWeekAgo.setDate(now.getDate() - 7);
-            return {
-                description: "",
-                projectId: undefined, // Changed to undefined for consistency
-                partyIdSupplier: undefined,
-                partyIdContractor: undefined,
-                estimatedStartDate: oneWeekAgo,
-                estimatedCompletionDate: now,
-            };
-        }
-        // REFACTOR: Use full object structures from selectedCertificate
-        // Purpose: Ensure FormComboBox components receive complete objects for binding
-        // Context: Matches the shape expected by FormComboBoxVirtualProject/Supplier/Contractor
-        return {
-            description: selectedCertificate?.description || "",
-            projectId: selectedCertificate?.projectId ? {
-                projectId: selectedCertificate.projectId,
-                projectName: selectedCertificate.projectName || "",
-            } : undefined,
-            partyIdSupplier: showSupplier && selectedCertificate?.partyIdSupplier ? {
-                fromPartyId: selectedCertificate.partyIdSupplier.fromPartyId,
-                partyName: selectedCertificate.partyIdSupplier.partyName || "",
-            } : undefined,
-            partyIdContractor: showContractor && selectedCertificate?.partyIdContractor ? {
-                fromPartyId: selectedCertificate.partyIdContractor.fromPartyId,
-                partyName: selectedCertificate.partyIdContractor.partyName || "",
-            } : undefined,
-            estimatedStartDate: selectedCertificate?.estimatedStartDate
-                ? new Date(selectedCertificate.estimatedStartDate)
-                : null,
-            estimatedCompletionDate: selectedCertificate?.estimatedCompletionDate
-                ? new Date(selectedCertificate.estimatedCompletionDate)
-                : null,
+    const debounce = (func: Function, wait: number) => {
+        let timeout: NodeJS.Timeout;
+        return (...args: any[]) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func(...args), wait);
         };
-    }, [editMode, selectedCertificate, showSupplier, showContractor]);
-
-    const handleSubmit = useCallback(
-        async (formProps: any) => {
-            if (!formProps.isValid) {
-                toast.error(getTranslatedLabel("certificate.form.invalid", "Form is invalid"));
-                return false;
-            }
-            if (isSubmitting) return false;
-            setIsSubmitting(true);
-            // REFACTOR: Flatten projectId, partyIdSupplier, and partyIdContractor for API
-            // Purpose: Backend expects string IDs, not full objects
-            // Context: Matches the shape used in createCertificate/updateCertificate
-            const certificateData = {
-                values: {
-                    workEffortTypeId: currentCertificateType,
-                    description: formProps.values.description,
-                    projectId: formProps.values.projectId?.projectId || formProps.values.projectId,
-                    partyIdSupplier: formProps.values.partyIdSupplier?.fromPartyId,
-                    partyIdContractor: formProps.values.partyIdContractor?.fromPartyId,
-                    estimatedStartDate: formProps.values.estimatedStartDate,
-                    estimatedCompletionDate: formProps.values.estimatedCompletionDate,
-                },
-                selectedMenuItem: editMode === 1 ? "Create Certificate" : "Update Certificate",
-            };
-            try {
-                await handleCreate(certificateData);
-            } catch (error) {
-                toast.error(getTranslatedLabel("certificate.form.error", "Failed to save certificate"));
-            } finally {
-                setIsSubmitting(false);
-            }
-        },
-        [handleCreate, currentCertificateType, editMode, getTranslatedLabel]
-    );
-
-    const handleCancel = useCallback(() => {
-        formRef2.current = !formRef2.current; // Update formRef2 to force formKey change
-        dispatch(resetCertificateUi());
-        dispatch(setCertificateFormEditMode(0));
-        dispatch(resetUiCertificateItems());
-        cancelEdit();
-    }, [dispatch, cancelEdit]);
-
-    useEffect(() => {
-        if (selectedCertificate?.workEffortId) {
-            formRef2.current = !formRef2.current;
-        }
-    }, [selectedCertificate?.workEffortId]);
-
-    const getCertificateTypeDisplayText = (type: string) => {
-        return type
-            .split('_')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-            .join(' ');
     };
 
-    console.log('initialFormValues', initialFormValues);
+    const editModeMap: { [key in CertificateStatus]: number } = useMemo(() => ({
+        [CertificateStatus.CREATED]: 2,
+        [CertificateStatus.APPROVED]: 3,
+        [CertificateStatus.COMPLETE]: 4,
+    }), []);
+
+    useEffect(() => {
+        if (data) {
+            const adjustedData = data.data.map((item: Certificate) => ({
+                ...item,
+                estimatedStartDate: item.estimatedStartDate
+                    ? new Date(item.estimatedStartDate).toLocaleDateString("en-GB")
+                    : "",
+                estimatedCompletionDate: item.estimatedCompletionDate
+                    ? new Date(item.estimatedCompletionDate).toLocaleDateString("en-GB")
+                    : "",
+            }));
+            setCertificates({ data: adjustedData, total: data.total });
+            if (selectedCertificate?.workEffortId) {
+                const matchingCert = adjustedData.find(
+                    (cert: Certificate) => cert.workEffortId === selectedCertificate.workEffortId
+                );
+                if (matchingCert && JSON.stringify(matchingCert) !== JSON.stringify(certificate)) {
+                    console.log("Syncing certificate with new data:", matchingCert);
+                    setCertificate(matchingCert);
+                } else if (!matchingCert) {
+                    // Purpose: Prevent stale data when certificate is deleted or unavailable
+                    // Context: Ensures form resets to initial state
+                    console.warn("Certificate not found for workEffortId:", selectedCertificate.workEffortId);
+                    //dispatch(resetCertificateUi());
+                }
+            }
+        }
+    }, [data, selectedCertificate?.workEffortId, certificate, dispatch]);
+
+
+
+    const dataStateChange = (e: GridDataStateChangeEvent) => {
+        setDataState(e.dataState);
+    };
+
+    const handleSelectCertificate = useCallback(
+        debounce((workEffortId?: string, currentStatusId?: CertificateStatus) => {
+            // Purpose: Ensure type safety and consistency with enum
+            // Context: Matches ProjectNumberCell call and backend DTO
+            if (!workEffortId) {
+                console.warn("No workEffortId provided to handleSelectCertificate");
+                return;
+            }
+            console.log("handleSelectCertificate called with workEffortId:", workEffortId);
+            const selectedCert: Certificate | undefined = certificates.data.find(
+                (cert: Certificate) => cert.workEffortId === workEffortId
+                // Purpose: Improve type safety; assumes backend data matches interface
+                // Context: Prevents runtime errors on field access
+            );
+            if (!selectedCert) {
+                console.warn("No certificate found for workEffortId:", workEffortId);
+                return;
+            }
+            console.log("Raw selectedCert:", selectedCert); // REFACTOR: Debug log
+
+            dispatch(
+                setSelectedCertificate({
+                    workEffortId: selectedCert.workEffortId || "",
+                    projectNum: selectedCert.projectNum || "",
+                    projectId: selectedCert.projectId || selectedCert.projectNum || "",
+                    projectName: selectedCert.projectName || "",
+                    currentStatusId: selectedCert.currentStatusId || CertificateStatus.CREATED,
+                    partyIdSupplier: selectedCert.partyIdSupplier
+                        ? {
+                            fromPartyId:
+                                typeof selectedCert.partyIdSupplier === "object"
+                                    ? selectedCert.partyIdSupplier.fromPartyId
+                                    : selectedCert.partyIdSupplier,
+                            partyName: selectedCert.partyNameSupplier || "",
+                        }
+                        : undefined,
+                    partyIdContractor: selectedCert.partyIdContractor
+                        ? {
+                            fromPartyId:
+                                typeof selectedCert.partyIdContractor === "object"
+                                    ? selectedCert.partyIdContractor.fromPartyId
+                                    : selectedCert.partyIdContractor, // REFACTOR: Fixed typo from partyIdContractor to contractorPartyId
+                            // Purpose: Correctly map contractor ID from query data
+                            // Context: Fixes binding for contractor ComboBox
+                            partyName: selectedCert.partyNameContractor || "",
+                        }
+                        : undefined,
+                    description: selectedCert.description || "",
+                    // REFACTOR: Parse formatted date strings back to ISO format for form compatibility
+                    // Purpose: Resolves 'Invalid time value' error by constructing valid Date objects from 'dd/MM/yyyy' strings
+                    // Context: Backend expects ISO strings; formatted dates in grid are invalid for direct Date constructor
+                    estimatedStartDate: selectedCert.estimatedStartDate
+                        ? (() => {
+                            const [day, month, year] = selectedCert.estimatedStartDate.split('/').map(Number);
+                            const date = new Date(year, month - 1, day);
+                            return isNaN(date.getTime()) ? null : date.toISOString();
+                        })()
+                        : null,
+                    estimatedCompletionDate: selectedCert.estimatedCompletionDate
+                        ? (() => {
+                            const [day, month, year] = selectedCert.estimatedCompletionDate.split('/').map(Number);
+                            const date = new Date(year, month - 1, day);
+                            return isNaN(date.getTime()) ? null : date.toISOString();
+                        })()
+                        : null,
+                    statusDescription: selectedCert.statusDescription || "",
+                    statusDescriptionArabic: selectedCert.statusDescriptionArabic || "",
+                    relatedOrderId: selectedCert.relatedOrderId || "",
+                    workEffortTypeId: selectedCert.certificateCategory || "SUPPLY_PROCUREMENT_CERTIFICATE",
+                })
+            );
+            dispatch(setCurrentCertificateType(selectedCert.certificateCategory || "SUPPLY_PROCUREMENT_CERTIFICATE"));
+            dispatch(setCertificateFormEditMode(editModeMap[selectedCert.currentStatusId as CertificateStatus] || 0));
+        }, 500),
+        [dispatch, certificates.data, editModeMap]
+    );
+
+
+    const cancelEdit = useCallback(() => {
+        setCertificate(undefined);
+        dispatch(setCertificateFormEditMode(0));
+        dispatch(resetCertificateUi());
+    }, [dispatch]);
+
+    // Purpose: Replaces PROCUREMENTS and CONTRACTING with the five new types (SUPPLY_PROCUREMENT_CERTIFICATE, etc.) to align with the provided data.
+    // Context: Simplifies the menu to reflect only the types defined in the sheet, maintaining Redux dispatch for form initialization.
+    const handleMenuSelect = useCallback(
+        (e: MenuSelectEvent) => {
+            //dispatch(resetCertificateUi());
+            switch (e.item.data) {
+                case "supplyProcurement":
+                    dispatch(setCurrentCertificateType("SUPPLY_PROCUREMENT_CERTIFICATE"));
+                    dispatch(setCertificateFormEditMode(1));
+                    break;
+                case "workmanshipContracting":
+                    dispatch(setCurrentCertificateType("WORKMANSHIP_CONTRACTING_CERTIFICATE"));
+                    dispatch(setCertificateFormEditMode(1));
+                    break;
+                case "contractorPurchase":
+                    dispatch(setCurrentCertificateType("CONTRACTOR_PURCHASE_CERTIFICATE"));
+                    dispatch(setCertificateFormEditMode(1));
+                    break;
+                case "companySupplySale":
+                    dispatch(setCurrentCertificateType("COMPANY_SUPPLY_SALE_CERTIFICATE"));
+                    dispatch(setCertificateFormEditMode(1));
+                    break;
+                case "externalSupplySale":
+                    dispatch(setCurrentCertificateType("EXTERNAL_SUPPLY_SALE_CERTIFICATE"));
+                    dispatch(setCertificateFormEditMode(1));
+                    break;
+                default:
+                    break;
+            }
+        },
+        [dispatch]
+    );
+
+    const ProjectNumberCell = (props: any) => {
+        const field = props.field || "";
+        const value = props.dataItem[field];
+        const navigationAttributes = useTableKeyboardNavigation(props.id);
+        return (
+            <td
+                className={props.className}
+                style={{ ...props.style, color: "blue" }}
+                colSpan={props.colSpan}
+                role="gridcell"
+                aria-colindex={props.ariaColumnIndex}
+                aria-selected={props.isSelected}
+                {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
+                {...navigationAttributes}
+            >
+                <Button
+                    onClick={() =>
+                        handleSelectCertificate(
+                            props.dataItem.workEffortId,
+                            props.dataItem.currentStatusId
+                        )
+                        // Purpose: Align with handleSelectCertificate signature
+                        // Context: Ensures status-based editMode setting works
+                    }
+                >
+                    {props.dataItem.certificateNumber}
+                </Button>
+            </td>
+        );
+    };
+
+    if (certificateFormEditMode > 0) {
+        return (
+            <ProjectCertificateForm
+                selectedCertificate={certificate}
+                cancelEdit={cancelEdit}
+                editMode={certificateFormEditMode}
+            />
+        );
+    }
 
     return (
         <>
             <ProjectMenu />
             <Paper elevation={5} className="div-container-withBorderCurved">
-                <Grid container spacing={2} alignItems="center" position="relative">
-                    <Grid item xs={10}>
-                        <Box display="flex" justifyContent="space-between">
-                            <Typography
-                                sx={{ fontWeight: "bold", paddingLeft: 3, fontSize: "18px", color: editMode === 1 ? "green" : "black" }}
-                                variant="h6"
+                <Grid container columnSpacing={1} alignItems="center">
+                    <Grid item xs={4}>
+                        <Menu onSelect={handleMenuSelect}>
+                            <MenuItem key="newCertificate" text={getTranslatedLabel("certificate.list.new", "New Certificate")}>
+                                <MenuItem
+                                    key="supplyProcurement"
+                                    text={getTranslatedLabel("certificate.list.supplyProcurement", "Supply Procurement")}
+                                    data="supplyProcurement"
+                                />
+                                <MenuItem
+                                    key="workmanshipContracting"
+                                    text={getTranslatedLabel("certificate.list.workmanshipContracting", "Workmanship Contracting")}
+                                    data="workmanshipContracting"
+                                />
+                                <MenuItem
+                                    key="contractorPurchase"
+                                    text={getTranslatedLabel("certificate.list.contractorPurchase", "Contractor Purchase")}
+                                    data="contractorPurchase"
+                                />
+                                <MenuItem
+                                    key="companySupplySale"
+                                    text={getTranslatedLabel("certificate.list.companySupplySale", "Company Supply Sale")}
+                                    data="companySupplySale"
+                                />
+                                <MenuItem
+                                    key="externalSupplySale"
+                                    text={getTranslatedLabel("certificate.list.externalSupplySale", "External Supply Sale")}
+                                    data="externalSupplySale"
+                                />
+                            </MenuItem>
+                        </Menu>
+                    </Grid>
+                    <Grid item xs={12}>
+                        <div className="div-container">
+                            <KendoGrid
+                                style={{ height: "65vh" }}
+                                resizable={true}
+                                filterable={true}
+                                sortable={true}
+                                pageable={true}
+                                {...dataState}
+                                data={certificates ? certificates : { data: [], total: 0 }}
+                                onDataStateChange={dataStateChange}
                             >
-                                {selectedCertificate?.projectNum
-                                    ? `${getTranslatedLabel("certificate.form.title", "Project Certificate No")}: ${selectedCertificate.projectNum} (${getCertificateTypeDisplayText(currentCertificateType)})`
-                                    : `${getTranslatedLabel("certificate.form.new", "New Project Certificate")} (${getCertificateTypeDisplayText(currentCertificateType)})`}
-                            </Typography>
-                        </Box>
+                                <Column
+                                    field="certificateNumber"
+                                    title={getTranslatedLabel("certificate.list.projectNum", "Project Number")}
+                                    width={150}
+                                    locked={false}
+                                    cell={ProjectNumberCell}
+                                />
+                                <Column
+                                    field="projectName"
+                                    title={getTranslatedLabel("certificate.list.projectName", "Project Name")}
+                                />
+                                <Column
+                                    field="certificateCategoryDescription"
+                                    title={getTranslatedLabel("certificate.list.partyId", "Type")}
+                                />
+                                <Column
+                                    field="partyIdSupplier"
+                                    title={getTranslatedLabel("certificate.list.supplierPartyId", "Supplier ID")}
+                                />
+                                <Column
+                                    field="partyNameSupplier"
+                                    title={getTranslatedLabel("certificate.list.supplierPartyName", "Supplier Name")}
+                                />
+                                <Column
+                                    field="partyIdContractor"
+                                    title={getTranslatedLabel("certificate.list.contractorPartyId", "Contractor ID")}
+                                />
+                                <Column
+                                    field="partyNameContractor"
+                                    title={getTranslatedLabel("certificate.list.contractorPartyName", "Contractor Name")}
+                                />
+                                <Column
+                                    field="description"
+                                    title={getTranslatedLabel("certificate.list.description", "Certificate Description")}
+                                />
+                                <Column
+                                    field="estimatedStartDate"
+                                    title={getTranslatedLabel("certificate.list.fromDate", "From Date")}
+                                    format="{0: dd/MM/yyyy}"
+                                />
+                                <Column
+                                    field="estimatedCompletionDate"
+                                    title={getTranslatedLabel("certificate.list.toDate", "To Date")}
+                                    format="{0: dd/MM/yyyy}"
+                                />
+                            </KendoGrid>
+                            {isFetching && (
+                                <LoadingComponent
+                                    message={getTranslatedLabel("certificate.list.loading", "Loading Certificates...")}
+                                />
+                            )}
+                        </div>
                     </Grid>
                 </Grid>
-                <Form
-                    ref={formRef}
-                    initialValues={initialFormValues}
-                    key={formKey}
-                    onSubmitClick={handleSubmit}
-                    render={(formRenderProps) => (
-                        <FormElement>
-                            <fieldset className="k-form-fieldset">
-                                <Grid container alignItems="start" justifyContent="start" spacing={1}>
-                                    <Grid container spacing={2} alignItems="center" justifyContent="flex-start" sx={{ paddingLeft: 3 }}>
-                                        <Grid item xs={2} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
-                                            <Field
-                                                id="projectId"
-                                                name="projectId"
-                                                component={FormComboBoxVirtualProject}
-                                                label={getTranslatedLabel("certificate.form.project", "Project")}
-                                                dataItemKey="projectId"
-                                                textField="projectName"
-                                                validator={requiredValidator}
-                                                disabled={editMode > 3}
-                                            />
-                                        </Grid>
-                                        {showSupplier && (
-                                            <Grid item xs={showContractor ? 2 : 3} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
-                                                <Field
-                                                    id="partyIdSupplier"
-                                                    name="partyIdSupplier"
-                                                    component={FormComboBoxVirtualSupplier}
-                                                    label={getTranslatedLabel("certificate.form.supplier", "Supplier *")}
-                                                    valueField="fromPartyId"
-                                                    textField="partyName"
-                                                    validator={requiredValidator}
-                                                    disabled={editMode > 3}
-                                                />
-                                            </Grid>
-                                        )}
-                                        {showContractor && (
-                                            <Grid item xs={showSupplier ? 2 : 3} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
-                                                <Field
-                                                    id="partyIdContractor"
-                                                    name="partyIdContractor"
-                                                    component={FormComboBoxVirtualContractor}
-                                                    label={getTranslatedLabel("certificate.form.contractor", "Contractor *")}
-                                                    valueField="fromPartyId"
-                                                    textField="partyName"
-                                                    validator={requiredValidator}
-                                                    disabled={editMode > 3}
-                                                />
-                                            </Grid>
-                                        )}
-                                        <Grid item xs={showSupplier && showContractor ? 2 : 3} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
-                                            <Field
-                                                name="estimatedStartDate"
-                                                id="estimatedStartDate"
-                                                label={getTranslatedLabel("certificate.form.startDate", "Start Date")}
-                                                disabled={editMode > 1}
-                                                component={FormDatePicker}
-                                                validator={requiredValidator}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={showSupplier && showContractor ? 2 : 3} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
-                                            <Field
-                                                name="estimatedCompletionDate"
-                                                id="estimatedCompletionDate"
-                                                label={getTranslatedLabel("certificate.form.completionDate", "Completion Date")}
-                                                disabled={editMode > 1}
-                                                component={FormDatePicker}
-                                                validator={requiredValidator}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={6} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
-                                            <Field
-                                                id="description"
-                                                name="description"
-                                                label={getTranslatedLabel("certificate.form.description", "Description")}
-                                                component={FormInput}
-                                                validator={requiredValidator}
-                                                disabled={editMode > 3}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={12}>
-                                            <Grid container spacing={1} alignItems="center" sx={{ ml: 1, mt: 3 }}>
-                                                <Grid item xs={12}>
-                                                    <CertificateItemsListMemo
-                                                        editMode={formEditMode}
-                                                        workEffortId={selectedCertificate?.workEffortId}
-                                                    />
-                                                </Grid>
-                                            </Grid>
-                                        </Grid>
-                                    </Grid>
-                                </Grid>
-                                <div className="k-form-buttons">
-                                    <Grid container spacing={2}>
-                                        {(editMode === 1 || editMode === 2) && (
-                                            <Grid item>
-                                                <LoadingButton
-                                                    size="large"
-                                                    type="submit"
-                                                    loading={isSubmitting || isAddCertificateLoading}
-                                                    variant="contained"
-                                                    onClick={() => formRef.current?.onSubmit()}
-                                                >
-                                                    {getTranslatedLabel(
-                                                        editMode === 1 ? "certificate.form.create" : "certificate.form.update",
-                                                        editMode === 1 ? "Create Certificate" : "Update Certificate"
-                                                    )}
-                                                </LoadingButton>
-                                            </Grid>
-                                        )}
-                                        <Grid item>
-                                            <Button size="large" color="error" variant="outlined" onClick={handleCancel}>
-                                                {getTranslatedLabel("certificate.form.cancel", "Cancel")}
-                                            </Button>
-                                        </Grid>
-                                    </Grid>
-                                </div>
-                            </fieldset>
-                        </FormElement>
-                    )}
-                />
             </Paper>
-            <Backdrop
-                sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-                open={isAddCertificateLoading || isUpdateCertificateLoading}
-            >
-                <CircularProgress color="inherit" />
-                <Typography sx={{ ml: 2 }}>
-                    {getTranslatedLabel("certificate.form.saving", "Saving Certificate...")}
-                </Typography>
-            </Backdrop>
         </>
     );
 }

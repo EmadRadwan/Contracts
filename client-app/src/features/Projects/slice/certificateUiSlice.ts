@@ -1,7 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../../../app/store/configureStore";
 
-// REFACTOR: Updated SelectedCertificate to store full object structures
 // Purpose: Support FormComboBox components by storing projectId, partyIdSupplier, and partyIdContractor as objects
 // Context: Ensures form re-renders with correct values after submission
 interface SelectedCertificate {
@@ -9,14 +8,16 @@ interface SelectedCertificate {
   projectNum: string;
   projectId: string;
   projectName: string;
+  currentStatusId: string;
   partyIdSupplier?: { fromPartyId: string; partyName: string };
   partyIdContractor?: { fromPartyId: string; partyName: string };
   description: string;
   estimatedStartDate: string | null;
   estimatedCompletionDate: string | null;
   statusDescription: string;
+  statusDescriptionArabic?: string; // Added for localization
+  relatedOrderId: string;
 }
-
 interface CertificateUiState {
   currentCertificateType: string;
   certificateFormEditMode: number;
@@ -37,6 +38,8 @@ export const certificateUiInitialState: CertificateUiState = {
     estimatedStartDate: null,
     estimatedCompletionDate: null,
     statusDescription: "",
+    statusDescriptionArabic: "",
+    relatedOrderId: "",
   },
 };
 
@@ -76,6 +79,8 @@ export const certificateUiSlice = createSlice({
         estimatedStartDate: null,
         estimatedCompletionDate: null,
         statusDescription: "",
+        statusDescriptionArabic: "",
+        relatedOrderId: "",
       };
     },
     debugCertificateUiState: (state) => {

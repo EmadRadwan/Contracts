@@ -3,7 +3,6 @@ import { RootState } from "../../../app/store/configureStore";
 import {certificateItemsEntities} from "./certificateItemsUiSlice";
 import {CertificateItem} from "../../../app/models/project/certificateItem";
 
-// REFACTOR: Select non-deleted certificate items
 // Purpose: Filter out items marked as deleted
 // Context: Mirrors nonDeletedOrderItemsSelector
 export const nonDeletedCertificateItemsSelector = createSelector(
@@ -14,7 +13,6 @@ export const nonDeletedCertificateItemsSelector = createSelector(
         )
 );
 
-// REFACTOR: Check if all items are deleted or none exist
 // Purpose: Determine if the certificate has no valid items
 // Context: No key dependency, unchanged
 export const allItemsAreDeletedOrNone = createSelector(
@@ -25,22 +23,29 @@ export const allItemsAreDeletedOrNone = createSelector(
     }
 );
 
-// REFACTOR: Calculate certificate subtotal
-// Purpose: Sum totalAmount of non-deleted items
-// Context: No key dependency, unchanged
+// Purpose: Ensure subtotal reflects the effective total after adjustments like discount, deductions, insurance, trans, grat.
+// Improvement: Provides accurate aggregation for display, aligning with form calculations and grid columns.
 export const certificateSubTotal = createSelector(
     nonDeletedCertificateItemsSelector,
-    (certificateItems) => {
+    (state: RootState) => state.certificateUi.currentCertificateType,
+    (certificateItems, currentCertificateType) => {
         if (!certificateItems) return 0;
-        const subtotal = certificateItems.reduce((sum, item) => {
-            const totalAmount = typeof item.totalAmount === "number" ? item.totalAmount : 0;
-            return sum + totalAmount;
+        return certificateItems.reduce((sum, item) => {
+            let amount = 0;
+            const total = item.totalAmount || 0;
+            if (["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)) {
+                amount = total - (item.discount || 0) + (item.transportationExpenses || 0) + (item.gratuities || 0);
+            } else if (["COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE"].includes(currentCertificateType)) {
+                amount = total + (item.transportationExpenses || 0) + (item.gratuities || 0);
+            } else if (currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE") {
+                const deserved = total - (item.deductions || 0);
+                amount = Math.max(0, deserved - (item.insurance || 0));
+            }
+            return sum + Math.round(amount * 100) / 100;
         }, 0);
-        return Math.round(subtotal * 100) / 100;
     }
 );
 
-// REFACTOR: Calculate selected item subtotal
 // Purpose: Get totalAmount for the selected item using workEffortId
 // Context: Updated to use workEffortId
 export const certificateItemSubTotal = createSelector(
@@ -55,26 +60,25 @@ export const certificateItemSubTotal = createSelector(
     }
 );
 
-// Purpose: Calculate final total (totalAmount - discount) for PROCUREMENT_CERTIFICATE and format procurementDate
-// Context: Creates display-specific data with displayTotal and formattedProcurementDate
+// Purpose: Replace deprecated type checks with specific includes, calculate displayTotal as gross for contracting and final for supply.
+// Improvement: Ensures grid displays accurate values, fixes missing additives, and supports dynamic column adjustments.
 export const displayCertificateItemsSelector = createSelector(
     nonDeletedCertificateItemsSelector,
     (state: RootState) => state.certificateUi.currentCertificateType,
     (certificateItems, currentCertificateType) =>
         certificateItems.map((item) => {
-            const displayTotal =
-                currentCertificateType === "PROCUREMENT_CERTIFICATE" && item.discount
-                    ? item.totalAmount - item.discount
-                    : item.totalAmount || 0;
-
-            // REFACTOR: Calculate net for CONTRACTING_CERTIFICATE
-            // Purpose: Ensure net (deserved - insurance) is included for grid display
-            // Context: Matches calculation in CertificateItemForm
-            const net =
-                currentCertificateType === "CONTRACTING_CERTIFICATE"
-                    ? Math.max(0, Math.round(((item.deserved || 0) - (item.insurance || 0)) * 100) / 100)
-                    : displayTotal;
-
+            const total = item.totalAmount || 0;
+            let displayTotal = total;
+            let net = displayTotal;
+            if (["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)) {
+                displayTotal = total - (item.discount || 0) + (item.transportationExpenses || 0) + (item.gratuities || 0);
+            } else if (["COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE"].includes(currentCertificateType)) {
+                displayTotal = total + (item.transportationExpenses || 0) + (item.gratuities || 0);
+            } else if (currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE") {
+                const deserved = Math.max(0, Math.round((total - (item.deductions || 0)) * 1000) / 1000);
+                net = Math.max(0, Math.round((deserved - (item.insurance || 0)) * 1000) / 1000);
+                displayTotal = total;
+            }
             const formattedProcurementDate = item.procurementDate
                 ? new Date(item.procurementDate).toLocaleDateString("en-US", {
                     month: "2-digit",
@@ -82,12 +86,11 @@ export const displayCertificateItemsSelector = createSelector(
                     year: "numeric",
                 })
                 : "";
-
             return {
                 ...item,
-                displayTotal: +displayTotal.toFixed(2), // Round to 2 decimal places
-                net: +net.toFixed(2), // Round to 2 decimal places
-                formattedProcurementDate, // Formatted date for display
+                displayTotal: +displayTotal.toFixed(2),
+                net: +net.toFixed(2),
+                formattedProcurementDate,
             };
         })
 );

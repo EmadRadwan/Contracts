@@ -132,44 +132,30 @@ export default function CertificateItemsList({ editMode, workEffortId }: Props) 
         setShow(false);
     }, []);
 
-    // REFACTOR: Updated column rendering logic to support the five new certificate types.
-    // Purpose: Replaces PROCUREMENTS and CONTRACTING checks with logic for supply-related (SUPPLY_PROCUREMENT_CERTIFICATE, EXTERNAL_SUPPLY_SALE_CERTIFICATE) and contracting-related (WORKMANSHIP_CONTRACTING_CERTIFICATE, CONTRACTOR_PURCHASE_CERTIFICATE, COMPANY_SUPPLY_SALE_CERTIFICATE) types.
-    // Context: Ensures relevant fields (e.g., discount for supply types, deductions for contracting types) are displayed based on the certificate type, aligning with the sheet’s context.
-    const isSupplyType = ["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
-    const isContractingType = [
-        "WORKMANSHIP_CONTRACTING_CERTIFICATE",
-        "CONTRACTOR_PURCHASE_CERTIFICATE",
-        "COMPANY_SUPPLY_SALE_CERTIFICATE",
-    ].includes(currentCertificateType);
+    const isSupplyWithDiscount = ["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
+    const isSupplyWithoutDiscount = ["COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE"].includes(currentCertificateType);
+    const isContractingType = currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE";
 
     const columns = [
-        {
-            field: "productName",
-            title: getTranslatedLabel(`${localizationKey}.description`, "Description"),
-            cell: descriptionCell,
-            width: 280,
-        },
+        { field: "productName", title: getTranslatedLabel(`${localizationKey}.description`, "Description"), cell: descriptionCell, width: 280 },
         { field: "quantity", title: getTranslatedLabel(`${localizationKey}.quantity`, "Quantity") },
         { field: "unitPrice", title: getTranslatedLabel(`${localizationKey}.unitPrice`, "Unit Price"), format: "{0:n2}" },
         { field: "displayTotal", title: getTranslatedLabel(`${localizationKey}.totalAmount`, "Total Amount"), format: "{0:n2}" },
-        ...(isSupplyType
+        ...(isSupplyWithDiscount
             ? [
                 { field: "discount", title: getTranslatedLabel(`${localizationKey}.discount`, "Discount"), format: "{0:n2}" },
-                {
-                    field: "formattedProcurementDate",
-                    title: getTranslatedLabel(`${localizationKey}.procurementDate`, "Procurement Date"),
-                },
+                { field: "formattedProcurementDate", title: getTranslatedLabel(`${localizationKey}.procurementDate`, "Procurement Date") },
                 { field: "facilityName", title: getTranslatedLabel(`${localizationKey}.facilityName`, "Facility") },
-                {
-                    field: "transportationExpenses",
-                    title: getTranslatedLabel(`${localizationKey}.transportationExpenses`, "Transportation Expenses"),
-                    format: "{0:n2}",
-                },
-                {
-                    field: "gratuities",
-                    title: getTranslatedLabel(`${localizationKey}.gratuities`, "Gratuities"),
-                    format: "{0:n2}",
-                },
+                { field: "transportationExpenses", title: getTranslatedLabel(`${localizationKey}.transportationExpenses`, "Transportation Expenses"), format: "{0:n2}" },
+                { field: "gratuities", title: getTranslatedLabel(`${localizationKey}.gratuities`, "Gratuities"), format: "{0:n2}" },
+            ]
+            : []),
+        ...(isSupplyWithoutDiscount
+            ? [
+                { field: "formattedProcurementDate", title: getTranslatedLabel(`${localizationKey}.procurementDate`, "Procurement Date") },
+                { field: "facilityName", title: getTranslatedLabel(`${localizationKey}.facilityName`, "Facility") },
+                { field: "transportationExpenses", title: getTranslatedLabel(`${localizationKey}.transportationExpenses`, "Transportation Expenses"), format: "{0:n2}" },
+                { field: "gratuities", title: getTranslatedLabel(`${localizationKey}.gratuities`, "Gratuities"), format: "{0:n2}" },
             ]
             : []),
         ...(isContractingType
@@ -178,15 +164,7 @@ export default function CertificateItemsList({ editMode, workEffortId }: Props) 
                 { field: "deserved", title: getTranslatedLabel(`${localizationKey}.deserved`, "Deserved"), format: "{0:n2}" },
                 { field: "insurance", title: getTranslatedLabel(`${localizationKey}.insurance`, "Insurance"), format: "{0:n2}" },
                 { field: "net", title: getTranslatedLabel(`${localizationKey}.net`, "Net"), format: "{0:n2}" },
-                {
-                    field: "isContractorPurchased",
-                    title: getTranslatedLabel(`${localizationKey}.isContractorPurchased`, "Contractor Purchased"),
-                },
-                {
-                    field: "achievementPercentage",
-                    title: getTranslatedLabel(`${localizationKey}.achievementPercentage`, "Achievement %"),
-                    format: "{0:n0}",
-                },
+                { field: "achievementPercentage", title: getTranslatedLabel(`${localizationKey}.achievementPercentage`, "Achievement %"), format: "{0:n0}" },
             ]
             : []),
         { cell: CommandCell },

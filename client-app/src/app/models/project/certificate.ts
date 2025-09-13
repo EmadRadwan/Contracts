@@ -2,15 +2,24 @@
 import {CertificateItem} from "./certificateItem";
 
 export interface Certificate {
-  workEffortId?: string; // Maps to WorkEffort.WorkEffortId
-  workEffortTypeId: string; // Maps to WorkEffort.WorkEffortTypeId (e.g., "PROCUREMENT_CERTIFICATE" or "CONTRACTING_CERTIFICATE")
-  projectId?: string; // Maps to WorkEffort.WorkEffortName
-  projectName?: string; // Maps to WorkEffort.ProjectName
-  partyIdSupplier?: string; // Maps to WorkEffort.PartyId
-  partyIdContractor?: string; // Maps to WorkEffort.PartyId
-  description?: string; // Maps to WorkEffort.Description
-  estimatedStartDate?: string | null; // Maps to WorkEffort.EstimatedStartDate (ISO string)
-  estimatedCompletionDate?: string | null; // Maps to WorkEffort.EstimatedCompletionDate (ISO string)
-  statusDescription?: string; // Maps to WorkEffort.StatusDescription
-  certificateItems?: CertificateItem[]; // Array of associated items
+  workEffortId?: string;
+  workEffortTypeId?: string;
+  projectId?: string;
+  projectName?: string;
+  projectNum?: string;
+  partyIdSupplier?: { fromPartyId: string; partyName: string } | string;
+  partyIdContractor?: { fromPartyId: string; partyName: string } | string;
+  description?: string;
+  estimatedStartDate?: string | Date;
+  estimatedCompletionDate?: string | Date;
+  certificateItems?: CertificateItem[];
+  currentStatusId?: CertificateStatus;
+  statusDescription?: string;
+  relatedOrderId?: string;
+}
+
+export enum CertificateStatus {
+  CREATED = "WEPR_CREATED",
+  APPROVED = "WEPR_APPROVED",
+  COMPLETE = "WEPR_COMPLETE",
 }

@@ -1,480 +1,129 @@
-  modelBuilder.Entity<WorkEffort>(entity =>
-            {
-                entity.ToTable("WORK_EFFORT");
-
-                entity.HasIndex(e => e.AccommodationMapId, "WK_EFFRT_ACC_MAP");
-
-                entity.HasIndex(e => e.AccommodationSpotId, "WK_EFFRT_ACC_SPOT");
-
-                entity.HasIndex(e => e.CurrentStatusId, "WK_EFFRT_CURSTTS");
-
-                entity.HasIndex(e => e.EstimateCalcMethod, "WK_EFFRT_CUS_MET");
-
-                entity.HasIndex(e => e.FacilityId, "WK_EFFRT_FACILITY").IsUnique();
-
-                entity.HasIndex(e => e.FixedAssetId, "WK_EFFRT_FXDASST");
-
-                entity.HasIndex(e => e.MoneyUomId, "WK_EFFRT_MON_UOM");
-
-                entity.HasIndex(e => e.NoteId, "WK_EFFRT_NOTE");
-
-                entity.HasIndex(e => e.WorkEffortParentId, "WK_EFFRT_PARENT");
-
-                entity.HasIndex(e => e.WorkEffortPurposeTypeId, "WK_EFFRT_PRPTYP");
-
-                entity.HasIndex(e => e.RecurrenceInfoId, "WK_EFFRT_RECINFO");
-
-                entity.HasIndex(e => e.RuntimeDataId, "WK_EFFRT_RNTMDTA");
-
-                entity.HasIndex(e => e.ScopeEnumId, "WK_EFFRT_SC_ENUM");
-
-                entity.HasIndex(e => e.TempExprId, "WK_EFFRT_TEMPEXPR");
-
-                entity.HasIndex(e => e.WorkEffortTypeId, "WK_EFFRT_TYPE");
-
-                entity.HasIndex(e => e.CreatedTxStamp, "WORK_EFFORT_TXCRTS");
-
-                entity.HasIndex(e => e.LastUpdatedTxStamp, "WORK_EFFORT_TXSTMP");
-
-                entity.Property(e => e.WorkEffortId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("WORK_EFFORT_ID");
-
-                entity.Property(e => e.AccommodationMapId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("ACCOMMODATION_MAP_ID");
-
-                entity.Property(e => e.AccommodationSpotId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("ACCOMMODATION_SPOT_ID");
-
-                entity.Property(e => e.ActualCompletionDate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ACTUAL_COMPLETION_DATE");
-
-                entity.Property(e => e.ActualMilliSeconds).HasColumnName("ACTUAL_MILLI_SECONDS");
-
-                entity.Property(e => e.ActualSetupMillis).HasColumnName("ACTUAL_SETUP_MILLIS");
-
-                entity.Property(e => e.ActualStartDate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ACTUAL_START_DATE");
-
-                entity.Property(e => e.CreatedByUserLogin)
-                    .HasMaxLength(250)
-                    .IsUnicode(false)
-                    .HasColumnName("CREATED_BY_USER_LOGIN");
-
-                entity.Property(e => e.CreatedDate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("CREATED_DATE");
-
-                entity.Property(e => e.CreatedStamp)
-                    .HasColumnType("datetime")
-                    .HasColumnName("CREATED_STAMP");
-
-                entity.Property(e => e.CreatedTxStamp)
-                    .HasColumnType("datetime")
-                    .HasColumnName("CREATED_TX_STAMP");
-
-                entity.Property(e => e.CurrentStatusId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("CURRENT_STATUS_ID");
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(255)
-                    .IsUnicode(false)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.EstimateCalcMethod)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("ESTIMATE_CALC_METHOD");
-
-                entity.Property(e => e.EstimatedCompletionDate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ESTIMATED_COMPLETION_DATE");
-
-                entity.Property(e => e.EstimatedMilliSeconds).HasColumnName("ESTIMATED_MILLI_SECONDS");
-
-                entity.Property(e => e.EstimatedSetupMillis).HasColumnName("ESTIMATED_SETUP_MILLIS");
-
-                entity.Property(e => e.EstimatedStartDate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ESTIMATED_START_DATE");
-
-                entity.Property(e => e.FacilityId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("FACILITY_ID");
-
-                entity.Property(e => e.FixedAssetId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("FIXED_ASSET_ID");
-
-                entity.Property(e => e.InfoUrl)
-                    .HasMaxLength(255)
-                    .IsUnicode(false)
-                    .HasColumnName("INFO_URL");
-
-                entity.Property(e => e.LastModifiedByUserLogin)
-                    .HasMaxLength(250)
-                    .IsUnicode(false)
-                    .HasColumnName("LAST_MODIFIED_BY_USER_LOGIN");
-
-                entity.Property(e => e.LastModifiedDate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("LAST_MODIFIED_DATE");
-
-                entity.Property(e => e.LastStatusUpdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("LAST_STATUS_UPDATE");
-
-                entity.Property(e => e.LastUpdatedStamp)
-                    .HasColumnType("datetime")
-                    .HasColumnName("LAST_UPDATED_STAMP");
-
-                entity.Property(e => e.LastUpdatedTxStamp)
-                    .HasColumnType("datetime")
-                    .HasColumnName("LAST_UPDATED_TX_STAMP");
-
-                entity.Property(e => e.LocationDesc)
-                    .HasMaxLength(255)
-                    .IsUnicode(false)
-                    .HasColumnName("LOCATION_DESC");
-
-                entity.Property(e => e.MoneyUomId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("MONEY_UOM_ID");
-
-                entity.Property(e => e.NoteId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("NOTE_ID");
-
-                entity.Property(e => e.PercentComplete).HasColumnName("PERCENT_COMPLETE");
-
-                entity.Property(e => e.Priority).HasColumnName("PRIORITY");
-
-                entity.Property(e => e.QuantityProduced)
-                    .HasColumnType("decimal(18, 6)")
-                    .HasColumnName("QUANTITY_PRODUCED");
-
-                entity.Property(e => e.QuantityRejected)
-                    .HasColumnType("decimal(18, 6)")
-                    .HasColumnName("QUANTITY_REJECTED");
-
-                entity.Property(e => e.QuantityToProduce)
-                    .HasColumnType("decimal(18, 6)")
-                    .HasColumnName("QUANTITY_TO_PRODUCE");
-
-                entity.Property(e => e.RecurrenceInfoId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("RECURRENCE_INFO_ID");
-
-                entity.Property(e => e.Reserv2ndPPPerc)
-                    .HasColumnType("decimal(18, 6)")
-                    .HasColumnName("RESERV2ND_P_P_PERC");
-
-                entity.Property(e => e.ReservNthPPPerc)
-                    .HasColumnType("decimal(18, 6)")
-                    .HasColumnName("RESERV_NTH_P_P_PERC");
-
-                entity.Property(e => e.ReservPersons)
-                    .HasColumnType("decimal(18, 6)")
-                    .HasColumnName("RESERV_PERSONS");
-
-                entity.Property(e => e.RevisionNumber).HasColumnName("REVISION_NUMBER");
-
-                entity.Property(e => e.RuntimeDataId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("RUNTIME_DATA_ID");
-
-                entity.Property(e => e.ScopeEnumId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("SCOPE_ENUM_ID");
-
-                entity.Property(e => e.SendNotificationEmail)
-                    .HasMaxLength(1)
-                    .IsUnicode(false)
-                    .HasColumnName("SEND_NOTIFICATION_EMAIL")
-                    .IsFixedLength();
-
-                entity.Property(e => e.ServiceLoaderName)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("SERVICE_LOADER_NAME");
-
-                entity.Property(e => e.ShowAsEnumId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("SHOW_AS_ENUM_ID");
-
-                entity.Property(e => e.SourceReferenceId)
-                    .HasMaxLength(60)
-                    .IsUnicode(false)
-                    .HasColumnName("SOURCE_REFERENCE_ID");
-
-                entity.Property(e => e.SpecialTerms)
-                    .HasMaxLength(255)
-                    .IsUnicode(false)
-                    .HasColumnName("SPECIAL_TERMS");
-
-                entity.Property(e => e.TempExprId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("TEMP_EXPR_ID");
-
-                entity.Property(e => e.TimeTransparency).HasColumnName("TIME_TRANSPARENCY");
-
-                entity.Property(e => e.TotalMilliSecondsAllowed).HasColumnName("TOTAL_MILLI_SECONDS_ALLOWED");
-
-                entity.Property(e => e.TotalMoneyAllowed)
-                    .HasColumnType("decimal(18, 2)")
-                    .HasColumnName("TOTAL_MONEY_ALLOWED");
-
-                entity.Property(e => e.UniversalId)
-                    .HasMaxLength(60)
-                    .IsUnicode(false)
-                    .HasColumnName("UNIVERSAL_ID");
-
-                entity.Property(e => e.WorkEffortName)
-                    .HasMaxLength(255)
-                    .IsUnicode(false)
-                    .HasColumnName("WORK_EFFORT_NAME");
-
-                entity.Property(e => e.WorkEffortParentId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("WORK_EFFORT_PARENT_ID");
-
-                entity.Property(e => e.WorkEffortPurposeTypeId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("WORK_EFFORT_PURPOSE_TYPE_ID");
-
-                entity.Property(e => e.WorkEffortTypeId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("WORK_EFFORT_TYPE_ID");
-
-                entity.HasOne(d => d.AccommodationMap)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.AccommodationMapId)
-                    .HasConstraintName("WK_EFFRT_ACC_MAP");
-
-                entity.HasOne(d => d.AccommodationSpot)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.AccommodationSpotId)
-                    .HasConstraintName("WK_EFFRT_ACC_SPOT");
-
-                entity.HasOne(d => d.CurrentStatus)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.CurrentStatusId)
-                    .HasConstraintName("WK_EFFRT_CURSTTS");
-
-                entity.HasOne(d => d.EstimateCalcMethodNavigation)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.EstimateCalcMethod)
-                    .HasConstraintName("WK_EFFRT_CUS_MET");
-
-                entity.HasOne(d => d.Facility)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.FacilityId)
-                    .HasConstraintName("WK_EFFRT_FACILITY");
-
-                entity.HasOne(d => d.FixedAsset)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.FixedAssetId)
-                    .HasConstraintName("WK_EFFRT_FXDASST");
-
-                entity.HasOne(d => d.MoneyUom)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.MoneyUomId)
-                    .HasConstraintName("WK_EFFRT_MON_UOM");
-
-                entity.HasOne(d => d.Note)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.NoteId)
-                    .HasConstraintName("WK_EFFRT_NOTE");
-
-                entity.HasOne(d => d.RecurrenceInfo)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.RecurrenceInfoId)
-                    .HasConstraintName("WK_EFFRT_RECINFO");
-
-                entity.HasOne(d => d.RuntimeData)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.RuntimeDataId)
-                    .HasConstraintName("WK_EFFRT_RNTMDTA");
-
-                entity.HasOne(d => d.ScopeEnum)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.ScopeEnumId)
-                    .HasConstraintName("WK_EFFRT_SC_ENUM");
-
-                entity.HasOne(d => d.TempExpr)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.TempExprId)
-                    .HasConstraintName("WK_EFFRT_TEMPEXPR");
-
-                entity.HasOne(d => d.WorkEffortParent)
-                    .WithMany(p => p.InverseWorkEffortParent)
-                    .HasForeignKey(d => d.WorkEffortParentId)
-                    .HasConstraintName("WK_EFFRT_PARENT");
-
-                entity.HasOne(d => d.WorkEffortPurposeType)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.WorkEffortPurposeTypeId)
-                    .HasConstraintName("WK_EFFRT_PRPTYP");
-
-                entity.HasOne(d => d.WorkEffortType)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.WorkEffortTypeId)
-                    .HasConstraintName("WK_EFFRT_TYPE");
-                    
-                 
-                    
-                 entity.Property(e => e.ProjectNum)
-                .HasMaxLength(60)
-                .IsUnicode(false)
-                .HasColumnName("PROJECT_NUM");
-            
-                entity.Property(e => e.CertificateNumber)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("CERTIFICATE_NUMBER");
-            
-                entity.Property(e => e.ProjectName)
-                    .HasMaxLength(255)
-                    .IsUnicode(false)
-                    .HasColumnName("PROJECT_NAME");
-            
-                entity.Property(e => e.TotalAmount)
-                    .HasColumnType("decimal(18, 2)")
-                    .HasColumnName("TOTAL_AMOUNT");
-            
-                entity.Property(e => e.ProjectId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("PROJECT_ID");
-            
-               entity.Property(e => e.PartyIdSupplier)
-        		.HasMaxLength(36)
-        		.IsUnicode(false)
-       			 .HasColumnName("PARTY_ID_SUPPLIER");
-    entity.Property(e => e.PartyIdContractor)
-        .HasMaxLength(36)
-        .IsUnicode(false)
-        .HasColumnName("PARTY_ID_CONTRACTOR");
-            
-                entity.Property(e => e.RelatedOrderId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("RELATED_ORDER_ID");
-            
-                entity.Property(e => e.CertificateCategory)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("CERTIFICATE_CATEGORY");
-            
-                entity.Property(e => e.SupplierOrContractorType)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("SUPPLIER_OR_CONTRACTOR_TYPE");
-            
-                entity.Property(e => e.LineNumber)
-                    .HasColumnName("LINE_NUMBER");
-            
-                entity.Property(e => e.Quantity)
-                    .HasColumnType("decimal(18, 6)")
-                    .HasColumnName("QUANTITY");
-            
-                entity.Property(e => e.Rate)
-                    .HasColumnType("decimal(18, 2)")
-                    .HasColumnName("RATE");
-            
-                entity.Property(e => e.CompletionPercentage)
-                    .HasColumnType("decimal(5, 2)")
-                    .HasColumnName("COMPLETION_PERCENTAGE");
-            
-                entity.Property(e => e.DueAmount)
-                    .HasColumnType("decimal(18, 2)")
-                    .HasColumnName("DUE_AMOUNT");
-            
-                entity.Property(e => e.PaidAmount)
-                    .HasColumnType("decimal(18, 2)")
-                    .HasColumnName("PAID_AMOUNT");
-            
-                entity.Property(e => e.RemainingAmount)
-                    .HasColumnType("decimal(18, 2)")
-                    .HasColumnName("REMAINING_AMOUNT");
-            
-                entity.Property(e => e.Notes)
-                    .HasMaxLength(255)
-                    .IsUnicode(false)
-                    .HasColumnName("NOTES");
-            
-                entity.Property(e => e.ProductId)
-                    .HasColumnName("PRODUCT_ID");
-            
-                entity.HasIndex(e => e.ProjectId, "WK_EFFRT_PROJECT");
-                 entity.HasIndex(e => e.PartyIdSupplier, "WK_EFFRT_SUPPLIER");
-    entity.HasIndex(e => e.PartyIdContractor, "WK_EFFRT_CONTRACTOR");
-    entity.HasIndex(e => new { e.PartyIdSupplier, e.PartyIdContractor, e.CertificateCategory }, "WK_EFFRT_SUPPLIER_CONTRACTOR_CERTCAT").IsUnique(false);
-
-                entity.HasIndex(e => e.RelatedOrderId, "WK_EFFRT_RELATED_ORDER");
-                entity.HasIndex(e => e.ProductId, "WK_EFFRT_PRODUCT");
-                entity.HasIndex(e => e.CertificateNumber, "WK_EFFRT_CERT_NUM");
-                
-            
-               entity.HasOne(d => d.Party)
-        .WithMany(p => p.WorkEfforts)
-        .HasForeignKey(d => d.PartyIdSupplier)
-        .HasConstraintName("WK_EFFRT_SUPPLIER");
-    entity.HasOne(d => d.Party)
-        .WithMany(p => p.WorkEfforts)
-        .HasForeignKey(d => d.PartyIdContractor)
-        .HasConstraintName("WK_EFFRT_CONTRACTOR");
-            
-                entity.HasOne(d => d.Project)
-                    .WithMany() 
-                    .HasForeignKey(d => d.ProjectId)
-                    .HasConstraintName("WK_EFFRT_PROJECT")
-                    .OnDelete(DeleteBehavior.Restrict); 
-            
-            
-                entity.HasOne(d => d.Product)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.ProductId)
-                    .HasConstraintName("WK_EFFRT_PRODUCT");
-            
-                entity.HasOne(d => d.RelatedOrder)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.RelatedOrderId)
-                    .HasConstraintName("WK_EFFRT_RELATED_ORDER");
-                       
-                       entity.Property(e => e.DiscountAmount)
-                    .HasColumnType("decimal(18, 2)")
-                    .HasColumnName("DISCOUNT_AMOUNT"); 
-            
-                entity.Property(e => e.Deductions)
-                    .HasColumnType("decimal(18, 2)")
-                    .HasColumnName("DEDUCTIONS"); 
-            
-                entity.Property(e => e.InsuranceAmount)
-                    .HasColumnType("decimal(18, 2)")
-                    .HasColumnName("INSURANCE_AMOUNT");
-            
- 
-
-                        });
+// REFACTOR: Updated CertificateItemDto to align with WorkEffort entity properties.
+// Purpose: Use exact prop names from WorkEffort (e.g., DiscountAmount -> discount, TransportationExpenses -> transportationExpenses); make all relevant fields nullable to match sparse CSV data.
+// Improvement: Ensures direct mapping without mismatches; supports saved non-zero values (e.g., Gratuities=0.450) by leveraging entity props, reducing frontend coercion needs.
+// Context: Based on provided WorkEffort model (snake_case JSON) and CSV analysis (82 cols, non-empties in ~col 70-76 map to AchievementPercent, DueAmount, PaidAmount, Deductions, Gratuities, etc.); query now populates from entity.
+public class CertificateItemDto
+{
+    public string WorkEffortId { get; set; }
+    public string WorkEffortParentId { get; set; }
+    public string ProductId { get; set; }
+    public ProductLovDto ProductIdObject { get; set; }
+    public string QuantityUom { get; set; }
+    public UomLovDto QuantityUomObject { get; set; }
+    public string Description { get; set; }
+    public string ProductName { get; set; }
+    public string UomDescription { get; set; }
+    public decimal? Quantity { get; set; }
+    public decimal? Rate { get; set; }  // Maps to UnitPrice in frontend
+    public decimal TotalAmount { get; set; }
+    public decimal? DiscountAmount { get; set; }  // Maps to discount
+    public decimal? InsuranceAmount { get; set; }  // Maps to insurance
+    public decimal? CompletionPercentage { get; set; }
+    public string Notes { get; set; }
+    public DateTime? ProcurementDate { get; set; }
+    public string FacilityId { get; set; }
+    public string FacilityName { get; set; }
+    public bool IsDeleted { get; set; }
+    public decimal? AchievementPercent { get; set; }  // Maps to achievementPercentage; e.g., CSV col 70: "3.000000"
+    public decimal? TransportationExpenses { get; set; }  // e.g., CSV col ~74-75: "3.000" in row 2
+    public decimal? Gratuities { get; set; }  // e.g., CSV col 76: "0.450" in row 2
+    public decimal? Deductions { get; set; }  // e.g., CSV col 75?: "0.000" defaults
+    public decimal? DueAmount { get; set; }  // Maps to deserved (calculated if null)
+    public decimal? PaidAmount { get; set; }  // Maps to net (calculated if null)
+    public decimal? RemainingAmount { get; set; }  // Optional, for future use
+    public bool? IsContractorPurchased { get; set; }  // Default false; not in CSV but kept
+}
+
+// REFACTOR: Updated Handler query to map all relevant WorkEffort properties directly.
+// Purpose: Populate type-specific fields from entity (e.g., Gratuities = we.Gratuities ?? 0); use fallbacks for calculated fields (DueAmount, PaidAmount) based on CSV sparsity.
+// Improvement: Captures saved values accurately (e.g., Gratuities=0.450 from entity prop matching CSV col 76), ensuring fetch reflects DB state without artificial nulls; efficient EF projection.
+// Context: WorkEffort model confirms props like TransportationExpenses, Gratuities, Deductions exist post "// new props for the Contracts system"; CSV non-empties align (e.g., col 71="3.000" -> AchievementPercent?); calculations for deserved/net use entity values or derive if null.
+public async Task<Result<List<CertificateItemDto>>> Handle(Query request, CancellationToken cancellationToken)
+{
+    // ... validation code unchanged ...
+
+    try
+    {
+        var certificateItems = await _context.WorkEfforts
+            .Where(we => we.WorkEffortParentId == request.WorkEffortId && we.WorkEffortTypeId == "CERTIFICATE_ITEM")
+            .GroupJoin(
+                _context.Products,
+                we => we.ProductId,
+                prd => prd.ProductId,
+                (we, prdGroup) => new { WorkEffort = we, Products = prdGroup }
+            )
+            .SelectMany(
+                x => x.Products.DefaultIfEmpty(),
+                (x, prd) => new { x.WorkEffort, Product = prd }
+            )
+            .GroupJoin(
+                _context.Uoms,
+                x => x.WorkEffort.QuantityUomId,
+                uom => uom.UomId,
+                (x, uomGroup) => new { x.WorkEffort, x.Product, Uoms = uomGroup }
+            )
+            .SelectMany(
+                x => x.Uoms.DefaultIfEmpty(),
+                (x, uom) => new { x.WorkEffort, x.Product, Uom = uom }
+            )
+            .GroupJoin(
+                _context.Facilities,
+                x => x.WorkEffort.FacilityId,
+                fac => fac.FacilityId,
+                (x, facGroup) => new { x.WorkEffort, x.Product, x.Uom, Facilities = facGroup }
+            )
+            .SelectMany(
+                x => x.Facilities.DefaultIfEmpty(),
+                (x, fac) => new CertificateItemDto
+                {
+                    WorkEffortId = x.WorkEffort.WorkEffortId,
+                    WorkEffortParentId = x.WorkEffort.WorkEffortParentId,
+                    ProductId = x.WorkEffort.ProductId,
+                    ProductIdObject = x.Product != null ? new ProductLovDto
+                    {
+                        ProductId = x.Product.ProductId,
+                        ProductName = x.Product.ProductName
+                    } : null,
+                    QuantityUom = x.WorkEffort.QuantityUomId,
+                    QuantityUomObject = x.Uom != null ? new UomLovDto
+                    {
+                        UomId = x.Uom.UomId,
+                        Description = x.Uom.Description
+                    } : null,
+                    Description = x.WorkEffort.Description,
+                    ProductName = x.Product != null ? x.Product.ProductName : null,
+                    UomDescription = x.Uom != null ? x.Uom.Description : null,
+                    Quantity = x.WorkEffort.Quantity,
+                    Rate = x.WorkEffort.Rate,  // Maps to unitPrice
+                    TotalAmount = x.WorkEffort.TotalAmount ?? ((x.WorkEffort.Quantity ?? 0m) * (x.WorkEffort.Rate ?? 0m)),
+                    DiscountAmount = x.WorkEffort.DiscountAmount,
+                    InsuranceAmount = x.WorkEffort.InsuranceAmount,
+                    CompletionPercentage = x.WorkEffort.CompletionPercentage,
+                    Notes = x.WorkEffort.Notes,
+                    ProcurementDate = x.WorkEffort.ProcurementDate ?? x.WorkEffort.CreatedDate,  // Fallback as per CSV timestamps
+                    FacilityId = x.WorkEffort.FacilityId,
+                    FacilityName = fac?.FacilityName ?? "",
+                    IsDeleted = false,
+                    // REFACTOR: Direct mapping for contracts-specific props from WorkEffort.
+                    // Purpose: Fetch saved values (e.g., Gratuities=0.450 from col 76 equivalent) without null defaults.
+                    // Improvement: Aligns with entity schema; uses null-coalescing for calculations to handle sparsity.
+                    // Context: CSV shows non-zeros in late cols (e.g., col 76="0.450" -> Gratuities); AchievementPercent ~col 70="3.000000".
+                    AchievementPercent = x.WorkEffort.AchievementPercent,
+                    TransportationExpenses = x.WorkEffort.TransportationExpenses,
+                    Gratuities = x.WorkEffort.Gratuities,  // Captures saved 0.450
+                    Deductions = x.WorkEffort.Deductions,
+                    DueAmount = x.WorkEffort.DueAmount ?? ((x.WorkEffort.Quantity ?? 0m) * (x.WorkEffort.Rate ?? 0m) - (x.WorkEffort.Deductions ?? 0m)),  // Deserved fallback
+                    PaidAmount = x.WorkEffort.PaidAmount ?? (x.WorkEffort.DueAmount ?? 0m) - (x.WorkEffort.InsuranceAmount ?? 0m),  // Net fallback
+                    RemainingAmount = x.WorkEffort.RemainingAmount,
+                    IsContractorPurchased = x.WorkEffort.SupplierOrContractorType == "CONTRACTOR"  // Derive from type if needed; default false otherwise
+                }
+            )
+            .ToListAsync(cancellationToken);
+
+        return Result<List<CertificateItemDto>>.Success(certificateItems);
+    }
+    catch (Exception ex)
+    {
+        // ... error handling unchanged ...
+    }
+}

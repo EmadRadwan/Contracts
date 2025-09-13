@@ -31,46 +31,6 @@ namespace Application.Projects
             }
         }
 
-        // REFACTOR: Updated ProjectCertificateDto to include projectName, partyNameSupplier, and partyNameContractor
-        // Purpose: Provide full object data for frontend FormComboBox components
-        // Context: Ensures Redux state can store complete objects for projectId, partyIdSupplier, and partyIdContractor
-        public class ProjectCertificateDto
-        {
-            public string WorkEffortId { get; set; }
-            public string CertificateNumber { get; set; }
-            public string WorkEffortTypeId { get; set; }
-            public string ProjectId { get; set; }
-            public string ProjectName { get; set; } // Added for frontend display
-            public string? PartyIdSupplier { get; set; }
-            public string? PartyNameSupplier { get; set; } // Added for frontend display
-            public string? PartyIdContractor { get; set; }
-            public string? PartyNameContractor { get; set; } // Added for frontend display
-            public string Description { get; set; }
-            public DateTime? EstimatedStartDate { get; set; }
-            public DateTime? EstimatedCompletionDate { get; set; }
-            public string StatusDescription { get; set; }
-            public CertificateItemDto[] CertificateItems { get; set; }
-        }
-
-        public class CertificateItemDto
-        {
-            public string ProductId { get; set; }
-            public string Description { get; set; }
-            public decimal Quantity { get; set; }
-            public decimal UnitPrice { get; set; }
-            public decimal TotalAmount { get; set; }
-            public decimal? Discount { get; set; }
-            public decimal? Insurance { get; set; }
-            public decimal? Deductions { get; set; }
-            public decimal? CompletionPercentage { get; set; }
-            public string Notes { get; set; }
-            public DateTime? ProcurementDate { get; set; }
-            public string? FacilityId { get; set; }
-            public decimal? TransportationExpenses { get; set; }
-            public decimal? Gratuities { get; set; }
-            public string ProductName { get; set; }
-        }
-
         public class Handler : IRequestHandler<Command, Result<ProjectCertificateDto>>
         {
             private readonly DataContext _context;
@@ -96,11 +56,6 @@ namespace Application.Projects
                     var stamp = DateTime.UtcNow;
                     var certificate = request.Certificate!;
 
-                    var newWorkEffortSerial = await _utilityService.GetNextSequence("WorkEffort");
-                    string newProjectCertificateSerial;
-                    string? partyCode = null;
-
-                    // REFACTOR: Unified serial generation for all certificate types using PartyIdContractor or PartyIdSupplier
                     // Purpose: Ensure consistent serial numbering based on party code; prioritize PartyIdContractor, fallback to PartyIdSupplier
                     // Context: Replaces previous logic that only used party code for WORKMANSHIP_CONTRACTING_CERTIFICATE
                     string? partyId = certificate.PartyIdContractor ?? certificate.PartyIdSupplier;
@@ -112,8 +67,12 @@ namespace Application.Projects
 
                     var certificateCount = await _context.WorkEfforts
                         .CountAsync(we => (we.PartyIdContractor == partyId || we.PartyIdSupplier == partyId) && we.CertificateCategory == certificate.CertificateCategory, cancellationToken);
-                    newProjectCertificateSerial = string.Format("{0}-{1:D4}", partyId, certificateCount + 1);
+                    var newWorkEffortSerial = await _utilityService.GetNextSequence("WorkEffort");
+                    var newProjectCertificateSerial = string.Format("{0}-{1:D4}", partyId, certificateCount + 1);
 
+                    // REFACTOR: Set CurrentStatusId to WEPR_CREATED
+                    // Purpose: Align with frontend and backend status definitions (WEPR_CREATED, WEPR_APPROVED, WEPR_COMPLETE)
+                    // Context: Ensures initial status matches editModeMap (WEPR_CREATED -> editMode: 2)
                     var workEffort = new WorkEffort
                     {
                         WorkEffortId = newWorkEffortSerial,
@@ -126,7 +85,7 @@ namespace Application.Projects
                         Description = certificate.Description,
                         EstimatedStartDate = certificate.EstimatedStartDate,
                         EstimatedCompletionDate = certificate.EstimatedCompletionDate,
-                        CurrentStatusId = "WEPR_IN_PROGRESS",
+                        CurrentStatusId = "WEPR_CREATED",
                         CreatedDate = stamp,
                         LastUpdatedStamp = stamp
                     };
@@ -136,6 +95,9 @@ namespace Application.Projects
                     foreach (var item in certificate.CertificateItems!)
                     {
                         var itemWorkEffortSerial = await _utilityService.GetNextSequence("WorkEffort");
+                        // REFACTOR: Set CurrentStatusId to WEPR_CREATED for certificate items
+                        // Purpose: Ensure consistency with certificate status
+                        // Context: Matches frontend expectation for initial item status
                         var itemWorkEffort = new WorkEffort
                         {
                             WorkEffortId = itemWorkEffortSerial,
@@ -157,11 +119,12 @@ namespace Application.Projects
                             Gratuities = item.Gratuities ?? 0,
                             CreatedDate = stamp,
                             LastUpdatedStamp = stamp,
-                            CurrentStatusId = "WEPR_IN_PROGRESS"
+                            CurrentStatusId = "WEPR_CREATED"
                         };
                         _context.WorkEfforts.Add(itemWorkEffort);
                     }
 
+                    string? generatedOrderId = null;
                     if (certificate.CertificateCategory != "COMPANY_SUPPLY_SALE_CERTIFICATE")
                     {
                         var poItems = certificate.CertificateItems.ToList();
@@ -267,7 +230,13 @@ namespace Application.Projects
                                 await transaction.RollbackAsync(cancellationToken);
                                 return Result<ProjectCertificateDto>.Failure("Failed to create purchase order");
                             }
+                            generatedOrderId = poResult.OrderId;
                         }
+                    }
+
+                    if (!string.IsNullOrEmpty(generatedOrderId))
+                    {
+                        workEffort.RelatedOrderId = generatedOrderId;
                     }
 
                     var result = await _context.SaveChangesAsync(cancellationToken) > 0;
@@ -279,27 +248,38 @@ namespace Application.Projects
 
                     await transaction.CommitAsync(cancellationToken);
 
-                    // REFACTOR: Fetch projectName, partyNameSupplier, and partyNameContractor from database
-                    // Purpose: Include names in response to support frontend FormComboBox components
-                    // Context: Ensures Redux state can be populated with full object structures
-                    var project = await _context.Projects
-                        .Where(p => p.ProjectId == certificate.ProjectId)
+                    var project = await _context.WorkEfforts
+                        .Where(p => p.WorkEffortId == certificate.ProjectId)
                         .Select(p => new { p.ProjectName })
                         .FirstOrDefaultAsync(cancellationToken);
 
                     var supplier = certificate.PartyIdSupplier != null
                         ? await _context.Parties
                             .Where(p => p.PartyId == certificate.PartyIdSupplier)
-                            .Select(p => new { p.PartyName })
+                            .Select(p => new { p.Description })
                             .FirstOrDefaultAsync(cancellationToken)
                         : null;
 
                     var contractor = certificate.PartyIdContractor != null
                         ? await _context.Parties
                             .Where(p => p.PartyId == certificate.PartyIdContractor)
-                            .Select(p => new { p.PartyName })
+                            .Select(p => new { p.Description })
                             .FirstOrDefaultAsync(cancellationToken)
                         : null;
+
+                    // REFACTOR: Set StatusDescription and StatusDescriptionArabic based on CurrentStatusId
+                    // Purpose: Use backend status object descriptions for localization
+                    // Context: Aligns with frontend renderSwitchStatus and status objects
+                    var statusDescriptions = new Dictionary<string, (string English, string Arabic)>
+                    {
+                        { "WEPR_CREATED", ("Created", "تم الإنشاء") },
+                        { "WEPR_APPROVED", ("Approved", "تمت الموافقة") },
+                        { "WEPR_COMPLETE", ("Complete", "مكتمل") }
+                    };
+
+                    var (statusDescription, statusDescriptionArabic) = statusDescriptions.ContainsKey(workEffort.CurrentStatusId)
+                        ? statusDescriptions[workEffort.CurrentStatusId]
+                        : ("Unknown", "غير معروف");
 
                     var resultDto = new ProjectCertificateDto
                     {
@@ -307,15 +287,18 @@ namespace Application.Projects
                         CertificateNumber = workEffort.CertificateNumber,
                         WorkEffortTypeId = workEffort.WorkEffortTypeId,
                         ProjectId = workEffort.ProjectId,
-                        ProjectName = project?.ProjectName ?? "", // Use fetched project name
+                        ProjectName = project?.ProjectName ?? "",
                         PartyIdSupplier = workEffort.PartyIdSupplier,
-                        PartyNameSupplier = supplier?.PartyName, // Use fetched supplier name
+                        PartyNameSupplier = supplier?.Description,
                         PartyIdContractor = workEffort.PartyIdContractor,
-                        PartyNameContractor = contractor?.PartyName, // Use fetched contractor name
+                        PartyNameContractor = contractor?.Description,
                         Description = workEffort.Description,
                         EstimatedStartDate = workEffort.EstimatedStartDate,
                         EstimatedCompletionDate = workEffort.EstimatedCompletionDate,
-                        StatusDescription = "CREATED",
+                        StatusDescription = statusDescription,
+                        StatusDescriptionArabic = statusDescriptionArabic,
+                        CurrentStatusId = workEffort.CurrentStatusId,
+                        RelatedOrderId = workEffort.RelatedOrderId,
                         CertificateItems = certificate.CertificateItems
                     };
 

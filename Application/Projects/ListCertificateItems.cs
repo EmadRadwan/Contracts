@@ -14,7 +14,6 @@ public class ListCertificateItems
         public string Language { get; set; }
     }
 
-    // REFACTOR: Add validator for Query
     // Purpose: Ensure WorkEffortId and Language are valid
     // Context: Aligns with validation in Create/Update handlers
     public class QueryValidator : AbstractValidator<Query>
@@ -30,9 +29,7 @@ public class ListCertificateItems
     {
         private readonly DataContext _context;
 
-        // REFACTOR: Remove IMapper dependency
-        // Purpose: Avoid AutoMapper as per request
-        // Context: Use manual mapping to CertificateItemDto
+
         public Handler(DataContext context)
         {
             _context = context;
@@ -40,7 +37,6 @@ public class ListCertificateItems
 
         public async Task<Result<List<CertificateItemDto>>> Handle(Query request, CancellationToken cancellationToken)
         {
-            // REFACTOR: Validate inputs
             // Purpose: Prevent invalid queries
             // Context: Matches validation pattern from Create/Update handlers
             var validator = new QueryValidator();
@@ -49,81 +45,88 @@ public class ListCertificateItems
                 return Result<List<CertificateItemDto>>.Failure(string.Join("; ",
                     validationResult.Errors.Select(e => e.ErrorMessage)));
 
-            // REFACTOR: Default to English for language
             // Purpose: Ensure consistent behavior
             // Context: Maintains original behavior with added validation
             var language = request.Language?.ToLower() == "en" ? "en" : request.Language?.ToLower() ?? "en";
 
             try
             {
-                // REFACTOR: Fetch certificate items with joins
-                // Purpose: Include product and UOM data, filter by WorkEffortParentId
-                // Context: Uses EF Core for efficient querying, supports both certificate item types
                 var certificateItems = await _context.WorkEfforts
-                    .Where(we => we.WorkEffortParentId == request.WorkEffortId &&
-                                 we.WorkEffortTypeId == "CERTIFICATE_ITEM")
-                    .GroupJoin(
-                        _context.Products,
-                        we => we.ProductId,
-                        prd => prd.ProductId,
-                        (we, prdGroup) => new { WorkEffort = we, Products = prdGroup }
-                    )
-                    .SelectMany(
-                        x => x.Products.DefaultIfEmpty(),
-                        (x, prd) => new { x.WorkEffort, Product = prd }
-                    )
-                    .GroupJoin(
-                        _context.Uoms,
-                        x => x.WorkEffort.QuantityUomId,
-                        uom => uom.UomId,
-                        (x, uomGroup) => new { x.WorkEffort, x.Product, Uoms = uomGroup }
-                    )
-                    .SelectMany(
-                        x => x.Uoms.DefaultIfEmpty(),
-                        (x, uom) => new CertificateItemDto
-                        {
-                            WorkEffortId = x.WorkEffort.WorkEffortId,
-                            WorkEffortParentId = x.WorkEffort.WorkEffortParentId,
-                            ProductId = x.WorkEffort.ProductId, // REFACTOR: Simple string from WorkEffort.ProductId
-                            ProductIdObject = x.Product != null
-                                ? new ProductLovDto
-                                {
-                                    ProductId = x.Product.ProductId,
-                                    ProductName = x.Product.ProductName
-                                }
-                                : null, // REFACTOR: Full Product details
-                            QuantityUom =
-                                x.WorkEffort.QuantityUomId, // REFACTOR: Simple string from WorkEffort.QuantityUomId
-                            QuantityUomObject = uom != null
-                                ? new UomLovDto
-                                {
-                                    UomId = uom.UomId,
-                                    Description = uom.Description
-                                }
-                                : null, // REFACTOR: Full Uom details
-                            Description = x.WorkEffort.Description,
-                            ProductName = x.Product != null ? x.Product.ProductName : null,
-                            UomDescription = uom != null ? uom.Description : null,
-                            Quantity = x.WorkEffort.Quantity ?? 0,
-                            UnitPrice = x.WorkEffort.Rate ?? 0,
-                            TotalAmount = (x.WorkEffort.Quantity ?? 0) * (x.WorkEffort.Rate ?? 0),
-                            Discount = x.WorkEffort.DiscountAmount ?? 0,
-                            Insurance = x.WorkEffort.InsuranceAmount ?? 0,
-                            CompletionPercentage = x.WorkEffort.CompletionPercentage ?? 0,
-                            Notes = x.WorkEffort.Notes,
-                            ProcurementDate = x.WorkEffort.ProcurementDate,
-                            FacilityId = x.WorkEffort.FacilityId,
-                            IsDeleted = false
-                        }
-                    )
-                    .ToListAsync(cancellationToken);
-
+            .Where(we => we.WorkEffortParentId == request.WorkEffortId && we.WorkEffortTypeId == "CERTIFICATE_ITEM")
+            .GroupJoin(
+                _context.Products,
+                we => we.ProductId,
+                prd => prd.ProductId,
+                (we, prdGroup) => new { WorkEffort = we, Products = prdGroup }
+            )
+            .SelectMany(
+                x => x.Products.DefaultIfEmpty(),
+                (x, prd) => new { x.WorkEffort, Product = prd }
+            )
+            .GroupJoin(
+                _context.Uoms,
+                x => x.WorkEffort.QuantityUomId,
+                uom => uom.UomId,
+                (x, uomGroup) => new { x.WorkEffort, x.Product, Uoms = uomGroup }
+            )
+            .SelectMany(
+                x => x.Uoms.DefaultIfEmpty(),
+                (x, uom) => new { x.WorkEffort, x.Product, Uom = uom }
+            )
+            .GroupJoin(
+                _context.Facilities,
+                x => x.WorkEffort.FacilityId,
+                fac => fac.FacilityId,
+                (x, facGroup) => new { x.WorkEffort, x.Product, x.Uom, Facilities = facGroup }
+            )
+            .SelectMany(
+                x => x.Facilities.DefaultIfEmpty(),
+                (x, fac) => new CertificateItemDto
+                {
+                    WorkEffortId = x.WorkEffort.WorkEffortId,
+                    WorkEffortParentId = x.WorkEffort.WorkEffortParentId,
+                    ProductId = x.WorkEffort.ProductId,
+                    ProductIdObject = x.Product != null ? new ProductLovDto
+                    {
+                        ProductId = x.Product.ProductId,
+                        ProductName = x.Product.ProductName
+                    } : null,
+                    QuantityUom = x.WorkEffort.QuantityUomId,
+                    QuantityUomObject = x.Uom != null ? new UomLovDto
+                    {
+                        UomId = x.Uom.UomId,
+                        Description = x.Uom.Description
+                    } : null,
+                    Description = x.WorkEffort.Description,
+                    ProductName = x.Product != null ? x.Product.ProductName : null,
+                    UomDescription = x.Uom != null ? x.Uom.Description : null,
+                    Quantity = (decimal)x.WorkEffort.Quantity,
+                    Rate = x.WorkEffort.Rate,  // Maps to unitPrice
+                    TotalAmount = x.WorkEffort.TotalAmount ?? ((x.WorkEffort.Quantity ?? 0m) * (x.WorkEffort.Rate ?? 0m)),
+                    DiscountAmount = x.WorkEffort.DiscountAmount,
+                    InsuranceAmount = x.WorkEffort.InsuranceAmount,
+                    CompletionPercentage = x.WorkEffort.CompletionPercentage,
+                    Notes = x.WorkEffort.Notes,
+                    ProcurementDate = x.WorkEffort.ProcurementDate ?? x.WorkEffort.CreatedDate,  // Fallback as per CSV timestamps
+                    FacilityId = x.WorkEffort.FacilityId,
+                    FacilityName = fac.FacilityName ?? "",
+                    IsDeleted = false,
+                    // REFACTOR: Direct mapping for contracts-specific props from WorkEffort.
+                    // Purpose: Fetch saved values (e.g., Gratuities=0.450 from col 76 equivalent) without null defaults.
+                    // Improvement: Aligns with entity schema; uses null-coalescing for calculations to handle sparsity.
+                    // Context: CSV shows non-zeros in late cols (e.g., col 76="0.450" -> Gratuities); AchievementPercent ~col 70="3.000000".
+                    AchievementPercent = x.WorkEffort.AchievementPercent,
+                    TransportationExpenses = x.WorkEffort.TransportationExpenses,
+                    Gratuities = x.WorkEffort.Gratuities,  // Captures saved 0.450
+                    Deductions = x.WorkEffort.Deductions,
+                }
+            )
+            .ToListAsync(cancellationToken);
 
                 return Result<List<CertificateItemDto>>.Success(certificateItems);
             }
             catch (Exception ex)
             {
-                // REFACTOR: Add exception handling
                 // Purpose: Provide clear error messages
                 // Context: Aligns with Create/Update handler error handling
                 return Result<List<CertificateItemDto>>.Failure($"Failed to retrieve certificate items: {ex.Message}");

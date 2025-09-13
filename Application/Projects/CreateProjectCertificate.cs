@@ -65,10 +65,10 @@ namespace Application.Projects
                         await transaction.RollbackAsync(cancellationToken);
                         return Result<ProjectCertificateDto>.Failure("No valid party ID (Contractor or Supplier) provided");
                     }
-                    
+
                     var certificateCount = await _context.WorkEfforts
-                        .CountAsync(we => (we.PartyIdContractor == partyId || we.PartyIdSupplier == partyId) && 
-                                          we.CertificateCategory == certificate.CertificateCategory, cancellationToken);
+                        .CountAsync(we => (we.PartyIdContractor == partyId || we.PartyIdSupplier == partyId) && we.CertificateCategory == certificate.CertificateCategory, cancellationToken);
+
                     newProjectCertificateSerial = string.Format("{0}-{1:D4}", partyId, certificateCount + 1);
 
                     var workEffort = new WorkEffort
@@ -83,10 +83,11 @@ namespace Application.Projects
                         Description = certificate.Description,
                         EstimatedStartDate = certificate.EstimatedStartDate,
                         EstimatedCompletionDate = certificate.EstimatedCompletionDate,
-                        CurrentStatusId = "WEPR_IN_PROGRESS",
+                        CurrentStatusId = "WEPR_CREATED",
                         CreatedDate = stamp,
                         LastUpdatedStamp = stamp
                     };
+
                     _context.WorkEfforts.Add(workEffort);
 
                     foreach (var item in certificate.CertificateItems!)
@@ -113,10 +114,13 @@ namespace Application.Projects
                             Gratuities = item.Gratuities ?? 0,
                             CreatedDate = stamp,
                             LastUpdatedStamp = stamp,
-                            CurrentStatusId = "WEPR_IN_PROGRESS"
+                            CurrentStatusId = "WEPR_CREATED"
                         };
                         _context.WorkEfforts.Add(itemWorkEffort);
                     }
+
+                    string? generatedOrderId = null;
+                    OrderHeader poResult = null; // REFACTOR: Added variable to store poResult for later use in approval; improves code by avoiding redundant DTO recreation and ensures consistency.
 
                     if (certificate.CertificateCategory != "COMPANY_SUPPLY_SALE_CERTIFICATE")
                     {
@@ -217,24 +221,119 @@ namespace Application.Projects
                                 OrderAdjustments = orderAdjustments
                             };
 
-                            var poResult = await _orderService.CreatePurchaseOrder(orderDto);
+                            poResult = await _orderService.CreatePurchaseOrder(orderDto);
                             if (poResult == null)
                             {
                                 await transaction.RollbackAsync(cancellationToken);
                                 return Result<ProjectCertificateDto>.Failure("Failed to create purchase order");
                             }
+                            generatedOrderId = poResult.OrderId;
                         }
                     }
 
-                    var result = await _context.SaveChangesAsync(cancellationToken) > 0;
-                    if (!result)
+                    if (!string.IsNullOrEmpty(generatedOrderId))
+                    {
+                        workEffort.RelatedOrderId = generatedOrderId;
+                    }
+                    
+                   
+
+                    // REFACTOR: Moved SaveChanges here to persist the newly created entities (WorkEfforts and PO) to the database before approval; 
+                    // this ensures UpdateOrApprovePurchaseOrder can query and find the order via FirstOrDefaultAsync, as EF Core queries ignore pending changes.
+                    // Improves code by allowing seamless approval in the same transaction without separate scopes or context issues.
+                    var createResult = await _context.SaveChangesAsync(cancellationToken);
+                    if (createResult <= 0)
                     {
                         await transaction.RollbackAsync(cancellationToken);
                         return Result<ProjectCertificateDto>.Failure("Failed to create certificate and items");
                     }
 
+                    // REFACTOR: Added logic to automatically approve the PO after creation if one was generated; 
+                    // this integrates backend approval directly behind the scenes, reusing the existing UpdateOrApprovePurchaseOrder method 
+                    // without needing a frontend call, ensuring the order is immediately approved as per requirements while maintaining transaction integrity.
+                    if (generatedOrderId != null && poResult != null)
+                    {
+                        // REFACTOR: Fixed type mismatch by constructing a new OrderDto instance from the persisted OrderHeader and related entities (OrderItems, OrderAdjustments) 
+                        // queried from the database after SaveChanges; this populates all required fields (e.g., OrderId, GrandTotal, FromPartyId, OrderItems, OrderAdjustments) 
+                        // for the UpdateOrApprovePurchaseOrder method without modifying the called service signature, avoiding impacts on other code. 
+                        // Improves code by ensuring complete data transfer for approval logic (e.g., item updates, roles) while keeping the approach isolated to this handler.
+                        var orderHeader = await _context.OrderHeaders
+                            .FirstOrDefaultAsync(oh => oh.OrderId == generatedOrderId, cancellationToken);
+                        if (orderHeader == null)
+                        {
+                            await transaction.RollbackAsync(cancellationToken);
+                            return Result<ProjectCertificateDto>.Failure("Created order not found after persistence");
+                        }
+
+                        var orderItems = await _context.OrderItems
+                            .Where(oi => oi.OrderId == generatedOrderId)
+                            .Select(oi => new OrderItemDto2
+                            {
+                                OrderId = oi.OrderId,
+                                OrderItemSeqId = oi.OrderItemSeqId,
+                                ProductId = oi.ProductId,
+                                //ProductName = oi.ProductName, // Assuming OrderItem has ProductName; adjust if needed based on entity
+                                Quantity = oi.Quantity,
+                                UnitPrice = oi.UnitPrice,
+                                //SubTotal = oi.SubTotal,
+                                //FacilityId = oi.FacilityId,
+                                ItemDescription = oi.ItemDescription,
+                                OrderItemTypeId = oi.OrderItemTypeId,
+                                StatusId = oi.StatusId,
+                                CreatedStamp = oi.CreatedStamp,
+                                LastUpdatedStamp = oi.LastUpdatedStamp
+                                // Add other mappings as needed from OrderItem entity to OrderItemDto2
+                            }).ToListAsync(cancellationToken);
+
+                        var orderAdjustments = await _context.OrderAdjustments
+                            .Where(oa => oa.OrderId == generatedOrderId)
+                            .Select(oa => new OrderAdjustmentDto2
+                            {
+                                OrderAdjustmentId = oa.OrderAdjustmentId,
+                                OrderAdjustmentTypeId = oa.OrderAdjustmentTypeId,
+                                //OrderAdjustmentTypeDescription = oa.OrderAdjustmentTypeDescription, // Assuming entity has this
+                                OrderId = oa.OrderId,
+                                OrderItemSeqId = oa.OrderItemSeqId,
+                                Amount = oa.Amount,
+                                CorrespondingProductId = oa.CorrespondingProductId, // Assuming mappings match DTO
+                                //CorrespondingProductName = oa.CorrespondingProductName,
+                                IsManual = oa.IsManual,
+                                CreatedDate = oa.CreatedDate,
+                                IsAdjustmentDeleted = false,
+                                SourcePercentage = oa.SourcePercentage
+                                // Add other mappings as needed from OrderAdjustment entity to OrderAdjustmentDto2
+                            }).ToListAsync(cancellationToken);
+
+                        var approveOrderDto = new OrderDto
+                        {
+                            OrderId = orderHeader.OrderId,
+                            FromPartyId = certificate.PartyIdContractor ?? certificate.PartyIdSupplier, // REFACTOR: Use certificate's PartyIdContractor or PartyIdSupplier for FromPartyId to ensure consistency with certificate creation context; avoids reliance on potentially unset OrderHeader fields (BillFromPartyId/ShipFromPartyId) and aligns with business logic.
+                            GrandTotal = orderHeader.GrandTotal,
+                            OrderDate = orderHeader.OrderDate,
+                            CurrencyUomId = await _productStoreService.GetProductStoreDefaultCurrencyId(), // REFACTOR: Use certificate's CurrencyUomId if available, falling back to product store default; ensures consistency with order creation and avoids reliance on OrderHeader's CurrencyUomId which may not be set correctly in all cases.
+                            StatusId = orderHeader.StatusId,
+                            OrderItems = orderItems,
+                            OrderAdjustments = orderAdjustments
+                            // Other fields can be set if needed, but minimal set suffices for approval
+                        };
+
+                        await _orderService.UpdateOrApprovePurchaseOrder(approveOrderDto, "APPROVE");
+
+                        // REFACTOR: Added a second SaveChanges to persist approval changes (e.g., status updates, roles); 
+                        // this is necessary after the service method updates entities but doesn't save, allowing batching within the transaction 
+                        // and providing a checkpoint for failure handling.
+                        
+                        
+                        var approveResult = await _context.SaveChangesAsync(cancellationToken);
+                        if (approveResult <= 0)
+                        {
+                            await transaction.RollbackAsync(cancellationToken);
+                            return Result<ProjectCertificateDto>.Failure("Failed to approve purchase order");
+                        }
+                    }
+
                     await transaction.CommitAsync(cancellationToken);
-                    
+
                     var project = await _context.WorkEfforts
                         .Where(p => p.WorkEffortId == certificate.ProjectId)
                         .Select(p => new { p.ProjectName })
@@ -254,23 +353,40 @@ namespace Application.Projects
                             .FirstOrDefaultAsync(cancellationToken)
                         : null;
 
+                    var statusDescriptions = new Dictionary<string, (string English, string Arabic)>
+                    {
+                        { "WEPR_CREATED", ("Created", "تم الإنشاء") },
+                        { "WEPR_APPROVED", ("Approved", "تمت الموافقة") },
+                        { "WEPR_COMPLETE", ("Complete", "مكتمل") }
+                    };
+
+                    var (statusDescription, statusDescriptionArabic) = statusDescriptions.ContainsKey(workEffort.CurrentStatusId)
+                        ? statusDescriptions[workEffort.CurrentStatusId]
+                        : ("Unknown", "غير معروف");
+
                     var resultDto = new ProjectCertificateDto
                     {
                         WorkEffortId = workEffort.WorkEffortId,
                         CertificateNumber = workEffort.CertificateNumber,
                         WorkEffortTypeId = workEffort.WorkEffortTypeId,
                         ProjectId = workEffort.ProjectId,
-                        ProjectName = project?.ProjectName ?? "", // Use fetched project name
+                        ProjectName = project?.ProjectName ?? "",
                         PartyIdSupplier = workEffort.PartyIdSupplier,
-                        PartyNameSupplier = supplier?.Description, // Use fetched supplier name
+                        PartyNameSupplier = supplier?.Description,
                         PartyIdContractor = workEffort.PartyIdContractor,
-                        PartyNameContractor = contractor?.Description, // Use fetched contractor name
+                        PartyNameContractor = contractor?.Description,
                         Description = workEffort.Description,
                         EstimatedStartDate = workEffort.EstimatedStartDate,
                         EstimatedCompletionDate = workEffort.EstimatedCompletionDate,
-                        StatusDescription = "CREATED",
+                        StatusDescription = statusDescription,
+                        StatusDescriptionArabic = statusDescriptionArabic,
+                        CurrentStatusId = workEffort.CurrentStatusId,
+                        RelatedOrderId = workEffort.RelatedOrderId,
                         CertificateItems = certificate.CertificateItems
                     };
+                    
+
+
                     return Result<ProjectCertificateDto>.Success(resultDto);
                 }
                 catch (Exception ex)

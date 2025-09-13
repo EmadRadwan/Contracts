@@ -10,4 +10,5 @@ public class UserDto
     public string Image { get; set; }
 
     public string DualLanguage { get; set; }
+    public string[] Roles { get; set; }
 }

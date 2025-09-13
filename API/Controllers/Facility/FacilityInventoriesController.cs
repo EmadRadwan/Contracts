@@ -16,6 +16,13 @@ public class FacilityInventoriesController : BaseApiController
         return HandleResult(await Mediator.Send(new ReceiveInventoryProducts.Command
             { ReceivedItems = ReceivedItems }));
     }
+    
+    [HttpPost("receiveInventoryFromPurchaseOrder", Name = "ReceiveInventoryFromPurchaseOrder")]
+    public async Task<IActionResult> ReceiveInventoryFromPurchaseOrder(ReceiveInventoryFromPurchaseOrder.Command command)
+    {
+        return HandleResult(await Mediator.Send(command));
+    }
+
 
     [HttpPost("createInventoryTransfer", Name = "CreateInventoryTransfer")]
     public async Task<IActionResult> CreateInventoryTransfer(InventoryTransferDto inventoryTransferDto)

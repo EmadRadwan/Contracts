@@ -17,9 +17,10 @@ export const signInUser = createAsyncThunk<User, FieldValues>(
   "account/signInUser",
   async (data: any, thunkAPI) => {
     try {
-      const userDto = await agent.Account.login(data);
-      const { ...user } = userDto;
-      localStorage.setItem("user", JSON.stringify(user));
+      const user = await agent.Account.login(data);
+      // REFACTOR: Log user and roles after login for debugging.
+      console.log('Logged in user:', { ...user, roles: user.roles || [] });
+      localStorage.setItem('user', JSON.stringify(user));
       return user;
     } catch (error: any) {
       return thunkAPI.rejectWithValue({ error: error.data });
@@ -32,9 +33,10 @@ export const fetchCurrentUser = createAsyncThunk<User>(
   async (_, thunkAPI) => {
     thunkAPI.dispatch(setUser(JSON.parse(localStorage.getItem("user")!)));
     try {
-      const userDto = await agent.Account.current();
-      const { ...user } = userDto;
-      localStorage.setItem("user", JSON.stringify(user));
+      const user = await agent.Account.current();
+      // REFACTOR: Log user and roles after fetching current user.
+      console.log('Current user:', { ...user, roles: user.roles || [] });
+      localStorage.setItem('user', JSON.stringify(user));
       return user;
     } catch (error: any) {
       return thunkAPI.rejectWithValue({ error: error.data });
@@ -57,13 +59,9 @@ export const accountSlice = createSlice({
       router.navigate("/");
     },
     setUser: (state, action) => {
-      const claims = JSON.parse(atob(action.payload.token.split(".")[1]));
-      const roles =
-        claims["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
-      state.user = {
-        ...action.payload,
-        roles: typeof roles === "string" ? [roles] : roles,
-      };
+      // REFACTOR: Use UserDto roles directly, with fallback to empty array.
+      state.user = { ...action.payload, roles: action.payload.roles || [] };
+      console.log('Set user:', { ...state.user, roles: state.user.roles });
     },
   },
   extraReducers: (builder) => {
@@ -74,18 +72,12 @@ export const accountSlice = createSlice({
       router.navigate("/");
     });
     builder.addMatcher(
-      isAnyOf(signInUser.fulfilled, fetchCurrentUser.fulfilled),
-      (state, action) => {
-        const claims = JSON.parse(atob(action.payload.token.split(".")[1]));
-        const parsedClaimsRoles =
-          claims.Role && claims.Role.length && claims.Role.length > 0
-            ? claims.Role.map((r: any) => JSON.parse(r))
-            : claims.Role && typeof claims.Role === "string"
-              ? JSON.parse(claims.Role)
-              : null;
-        //console.log("parsedClaimsRoles", parsedClaimsRoles);
-        state.user = { ...action.payload, roles: parsedClaimsRoles };
-      }
+        isAnyOf(signInUser.fulfilled, fetchCurrentUser.fulfilled),
+        (state, action) => {
+          // REFACTOR: Use UserDto roles, log for debugging.
+          state.user = { ...action.payload, roles: action.payload.roles || [] };
+          console.log('Updated user state:', { ...state.user, roles: state.user.roles });
+        }
     );
     builder.addMatcher(isAnyOf(signInUser.rejected), (state, action) => {
       throw action.payload;

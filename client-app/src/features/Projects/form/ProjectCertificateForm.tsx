@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../../app/store/configureStore";
 import { Field, Form, FormElement } from "@progress/kendo-react-form";
-import {Backdrop, Box, Button, CircularProgress, Grid, Paper, Typography} from "@mui/material";
+import {Box, Button, Grid, Paper, Typography} from "@mui/material";
 import LoadingButton from "@mui/lab/LoadingButton";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import { resetCertificateUi, setCertificateFormEditMode } from "../slice/certificateUiSlice";
-
+import { RibbonContainer, Ribbon } from "react-ribbons";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
 import { requiredValidator } from "../../../app/common/form/Validators";
 import { toast } from "react-toastify";
@@ -18,12 +18,98 @@ import {FormComboBoxVirtualProject} from "../../../app/common/form/FormComboBoxV
 import {FormComboBoxVirtualContractor} from "../../../app/common/form/FormComboBoxVirtualContractor";
 import FormInput from "../../../app/common/form/FormInput";
 import {resetUiCertificateItems} from "../slice/certificateItemsUiSlice";
+import { Menu, MenuItem } from '@mui/material';
+import {CertificateStatus} from "../../../app/models/project/certificate";
 
 
 interface ProjectCertificateFormProps {
     editMode: number; // 0: view, 1: create, 2: edit (CREATED), 3: edit (APPROVED), 4: edit (COMPLETED)
     cancelEdit: () => void;
 }
+
+interface CertificateActionsMenuProps {
+    workEffortId: string | undefined;
+    currentStatusId: string | undefined;
+    handleStatusUpdate: (action: string) => void;
+    disabled: boolean;
+}
+
+const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
+                                                                           workEffortId,
+                                                                           currentStatusId,
+                                                                           handleStatusUpdate,
+                                                                           disabled,
+                                                                       }) => {
+    const { user } = useAppSelector((state) => state.account);
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const open = Boolean(anchorEl);
+    const { getTranslatedLabel } = useTranslationHelper();
+
+    // Purpose: Verifies user roles for menu rendering and debugging.
+    useEffect(() => {
+        console.log('CertificateActionsMenu user:', {
+            id: user?.id,
+            username: user?.username,
+            email: user?.email,
+            roles: user?.roles || [],
+        });
+    }, [user]);
+
+    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
+    const handleApprove = () => {
+        handleStatusUpdate('Approve Certificate');
+        handleClose();
+    };
+
+    const handleComplete = () => {
+        handleStatusUpdate('Complete Certificate');
+        handleClose();
+    };
+
+    // Determine if actions are disabled based on certificate status
+    const isApproveDisabled = !workEffortId || currentStatusId === CertificateStatus.APPROVED || currentStatusId === CertificateStatus.COMPLETE;
+    const isCompleteDisabled = !workEffortId || currentStatusId === CertificateStatus.COMPLETE;
+
+    return (
+        <>
+            <Button
+                variant="contained"
+                color="primary"
+                onClick={handleClick}
+                disabled={disabled || !workEffortId}
+                sx={{ mt: 2, mr: 2 }}
+            >
+                {getTranslatedLabel('certificate.actions', 'Actions')}
+            </Button>
+            <Menu
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleClose}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                {user?.roles?.includes('ApproveCertificate') && (
+                    <MenuItem onClick={handleApprove} disabled={isApproveDisabled}>
+                        {getTranslatedLabel('certificate.approve', 'Approve Certificate')}
+                    </MenuItem>
+                )}
+                {user?.roles?.includes('CompleteCertificate') && (
+                    <MenuItem onClick={handleComplete} disabled={isCompleteDisabled}>
+                        {getTranslatedLabel('certificate.complete', 'Complete Certificate')}
+                    </MenuItem>
+                )}
+            </Menu>
+        </>
+    );
+};
+
 
 export default function ProjectCertificateForm({ editMode, cancelEdit }: ProjectCertificateFormProps) {
     const formRef = useRef<any>(null);
@@ -34,13 +120,14 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedMenuItem, setSelectedMenuItem] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-
+    const { language } = useAppSelector((state) => state.localization);
+    const {user} = useAppSelector((state) => state.account);
     const {
         formEditMode,
         setFormEditMode,
         handleCreate,
         isAddCertificateLoading,
-        isUpdateCertificateLoading,
+        isUpdateCertificateLoading,isReceiveLoading
     } = useProjectCertificate({
         selectedMenuItem,
         formRef2,
@@ -48,6 +135,35 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
         setIsLoading,
     });
 
+    const renderSwitchStatus = useCallback(() => {
+        const status = selectedCertificate?.currentStatusId || CertificateStatus.CREATED;
+        const { language } = useAppSelector((state) => state.localization);
+        // Purpose: Use descriptions from ProjectCertificateDto if available, fallback to static mapping
+        // Context: Ensures consistency with backend status objects
+        if (selectedCertificate?.statusDescription && selectedCertificate?.statusDescriptionArabic) {
+            return {
+                label: language === "ar" ? selectedCertificate.statusDescriptionArabic : selectedCertificate.statusDescription,
+                backgroundColor: status === CertificateStatus.CREATED ? "blue" : status === CertificateStatus.APPROVED ? "yellow" : "green",
+                foreColor: status === CertificateStatus.APPROVED ? "#000000" : "#ffffff"
+            };
+        }
+        // Fallback mapping
+        const statusLabels: { [key in CertificateStatus]: { en: string; ar: string } } = {
+            [CertificateStatus.CREATED]: { en: "Created", ar: "تم الإنشاء" },
+            [CertificateStatus.APPROVED]: { en: "Approved", ar: "تمت الموافقة" },
+            [CertificateStatus.COMPLETE]: { en: "Complete", ar: "مكتمل" },
+        };
+        switch (status) {
+            case CertificateStatus.CREATED:
+                return { label: language === "ar" ? statusLabels[CertificateStatus.CREATED].ar : statusLabels[CertificateStatus.CREATED].en, backgroundColor: "blue", foreColor: "#ffffff" };
+            case CertificateStatus.APPROVED:
+                return { label: language === "ar" ? statusLabels[CertificateStatus.APPROVED].ar : statusLabels[CertificateStatus.APPROVED].en, backgroundColor: "yellow", foreColor: "#000000" };
+            case CertificateStatus.COMPLETE:
+                return { label: language === "ar" ? statusLabels[CertificateStatus.COMPLETE].ar : statusLabels[CertificateStatus.COMPLETE].en, backgroundColor: "green", foreColor: "#ffffff" };
+            default:
+                return { label: language === "ar" ? "غير معروف" : "Unknown", backgroundColor: "gray", foreColor: "#ffffff" };
+        }
+    }, [selectedCertificate]);
 
 
     console.log("Redux selectedCertificate:", selectedCertificate);
@@ -56,55 +172,48 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
     const showSupplier = ["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
     const showContractor = ["COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE", "WORKMANSHIP_CONTRACTING_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
 
+    // ProjectCertificateForm.tsx
     const initialFormValues = useMemo(() => {
         console.log("Computing initialFormValues with Redux selectedCertificate:", selectedCertificate);
-        if (editMode === 1 && !selectedCertificate?.workEffortId) {
+        // Purpose: Ensure consistent object structure for form controls and handle missing data
+        // Context: Prevents errors when selectedCertificate is partially populated
+        if (editMode === 1 || !selectedCertificate?.workEffortId) {
             const now = new Date();
             const oneWeekAgo = new Date(now);
             oneWeekAgo.setDate(now.getDate() - 7);
             return {
                 description: "",
-                projectId: undefined, // Changed to undefined for consistency
+                projectId: undefined,
                 partyIdSupplier: undefined,
                 partyIdContractor: undefined,
                 estimatedStartDate: oneWeekAgo,
                 estimatedCompletionDate: now,
             };
         }
-        // Purpose: Ensure FormComboBox components receive complete objects for binding
-        // Context: Matches the shape expected by FormComboBoxVirtualProject/Supplier/Contractor
+
         return {
-          description: selectedCertificate?.description || "",
-          projectId: selectedCertificate?.projectId
-            ? {
-                projectId: selectedCertificate.projectId,
-                projectName: selectedCertificate.projectName || "",
-              }
-            : undefined,
-          partyIdSupplier:
-            showSupplier && selectedCertificate?.partyIdSupplier
-              ? {
-                    fromPartyId:
-                    selectedCertificate.partyIdSupplier.fromPartyId,
-                    fromPartyName:
-                    selectedCertificate.partyIdSupplier.partyName || "",
+            description: selectedCertificate.description || "",
+            projectId: selectedCertificate.projectId
+                ? { projectId: selectedCertificate.projectId, projectName: selectedCertificate.projectName || "" }
+                : undefined,
+            partyIdSupplier: showSupplier && selectedCertificate.partyIdSupplier
+                ? {
+                    fromPartyId: selectedCertificate.partyIdSupplier.fromPartyId || "",
+                    fromPartyName: selectedCertificate.partyIdSupplier.partyName || "",
                 }
-              : undefined,
-          partyIdContractor:
-            showContractor && selectedCertificate?.partyIdContractor
-              ? {
-                    fromPartyId:
-                    selectedCertificate.partyIdContractor.fromPartyId,
-                    fromPartyName:
-                    selectedCertificate.partyIdContractor.partyName || "",
+                : undefined,
+            partyIdContractor: showContractor && selectedCertificate.partyIdContractor
+                ? {
+                    fromPartyId: selectedCertificate.partyIdContractor.fromPartyId || "",
+                    fromPartyName: selectedCertificate.partyIdContractor.partyName || "",
                 }
-              : undefined,
-          estimatedStartDate: selectedCertificate?.estimatedStartDate
-            ? new Date(selectedCertificate.estimatedStartDate)
-            : null,
-          estimatedCompletionDate: selectedCertificate?.estimatedCompletionDate
-            ? new Date(selectedCertificate.estimatedCompletionDate)
-            : null,
+                : undefined,
+            estimatedStartDate: selectedCertificate.estimatedStartDate
+                ? new Date(selectedCertificate.estimatedStartDate)
+                : null,
+            estimatedCompletionDate: selectedCertificate.estimatedCompletionDate
+                ? new Date(selectedCertificate.estimatedCompletionDate)
+                : null,
         };
     }, [editMode, selectedCertificate, showSupplier, showContractor]);
 
@@ -116,9 +225,10 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
             }
             if (isSubmitting) return false;
             setIsSubmitting(true);
-            // REFACTOR: Flatten projectId, partyIdSupplier, and partyIdContractor for API
-            // Purpose: Backend expects string IDs, not full objects
-            // Context: Matches the shape used in createCertificate/updateCertificate
+            // Purpose: Ensure handleCreate receives the correct action type
+            // Context: Matches the expected action for createCertificate or updateCertificate
+            const action = editMode === 1 ? "Create Certificate" : "Update Certificate";
+            setSelectedMenuItem(action);
             const certificateData = {
                 values: {
                     workEffortTypeId: currentCertificateType,
@@ -129,7 +239,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                     estimatedStartDate: formProps.values.estimatedStartDate,
                     estimatedCompletionDate: formProps.values.estimatedCompletionDate,
                 },
-                selectedMenuItem: editMode === 1 ? "Create Certificate" : "Update Certificate",
+                selectedMenuItem: action,
             };
             try {
                 await handleCreate(certificateData);
@@ -137,25 +247,67 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                 toast.error(getTranslatedLabel("certificate.form.error", "Failed to save certificate"));
             } finally {
                 setIsSubmitting(false);
+                setSelectedMenuItem("");
             }
         },
         [handleCreate, currentCertificateType, editMode, getTranslatedLabel]
     );
 
+    // Purpose: Sends status update requests to useProjectCertificate hook.
+    const handleStatusUpdate = useCallback(
+        async (action: string) => {
+            if (!selectedCertificate?.workEffortId) {
+                toast.error(getTranslatedLabel("certificate.noWorkEffortId", "No certificate selected"));
+                return;
+            }
+            setIsSubmitting(true);
+            // Purpose: Ensure status transitions use WEPR_CREATED, WEPR_APPROVED, WEPR_COMPLETE
+            // Context: Aligns with editModeMap and backend expectations
+            setSelectedMenuItem(action);
+            const statusUpdate = {
+                values: {
+                    workEffortId: selectedCertificate.workEffortId,
+                    currentStatusId: action === 'Approve Certificate' ? CertificateStatus.APPROVED : CertificateStatus.COMPLETE,
+                },
+                selectedMenuItem: action,
+            };
+            try {
+                await handleCreate(statusUpdate);
+                toast.success(
+                    getTranslatedLabel(
+                        action === 'Approve Certificate' ? 'certificate.approved' : 'certificate.completed',
+                        action === 'Approve Certificate' ? 'Certificate approved' : 'Certificate completed'
+                    )
+                );
+            } catch (error) {
+                toast.error(getTranslatedLabel("certificate.statusUpdate.error", "Failed to update certificate status"));
+            } finally {
+                setIsSubmitting(false);
+                setSelectedMenuItem("");
+            }
+        },
+        [handleCreate, selectedCertificate, getTranslatedLabel]
+    );
+
     const handleCancel = useCallback(() => {
-        formRef2.current = !formRef2.current; // Update formRef2 to force formKey change
+        formRef2.current = !formRef2.current;
         dispatch(resetCertificateUi());
         dispatch(setCertificateFormEditMode(0));
-        dispatch(resetUiCertificateItems()); // Clear certificateItemsList data
+        dispatch(resetUiCertificateItems());
         cancelEdit();
+        setSelectedMenuItem("");
     }, [dispatch, cancelEdit]);
 
-
+    // ProjectCertificateForm.tsx
     useEffect(() => {
         if (selectedCertificate?.workEffortId) {
-            formRef2.current = !formRef2.current;
+            console.log("Selected certificate changed, resetting form with workEffortId:", selectedCertificate.workEffortId);
+            // Purpose: Ensure form reflects the latest selectedCertificate data
+            // Context: Prevents stale form data when switching certificates
+            formRef.current?.resetForm({ values: initialFormValues });
+            formRef2.current = !formRef2.current; // Trigger form re-render
         }
-    }, [selectedCertificate?.workEffortId]);
+    }, [selectedCertificate?.workEffortId, initialFormValues]);
 
     const getCertificateTypeDisplayText = (type: string) => {
         return type
@@ -165,23 +317,48 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
     };
 
     console.log('initialFormValues', initialFormValues)
+    const status = renderSwitchStatus();
 
     return (
         <>
             <ProjectMenu />
             <Paper elevation={5} className="div-container-withBorderCurved">
                 <Grid container spacing={2} alignItems="center" position="relative">
-                    <Grid item xs={10}>
-                        <Box display="flex" justifyContent="space-between">
+                    <Grid item xs={11}>
+                        <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ paddingLeft: 3 }}>
                             <Typography
-                                sx={{ fontWeight: "bold", paddingLeft: 3, fontSize: "18px", color: editMode === 1 ? "green" : "black" }}
+                                sx={{ fontWeight: "bold", fontSize: "18px", color: editMode === 1 ? "green" : "black" }}
                                 variant="h6"
                             >
                                 {selectedCertificate?.projectNum
                                     ? `${getTranslatedLabel("certificate.form.title", "Project Certificate No")}: ${selectedCertificate.projectNum} (${getCertificateTypeDisplayText(currentCertificateType)})`
                                     : `${getTranslatedLabel("certificate.form.new", "New Project Certificate")} (${getCertificateTypeDisplayText(currentCertificateType)})`}
                             </Typography>
+                            {editMode >= 2 && (
+                                <CertificateActionsMenu
+                                    workEffortId={selectedCertificate?.workEffortId}
+                                    currentStatusId={selectedCertificate?.currentStatusId}
+                                    handleStatusUpdate={handleStatusUpdate}
+                                    disabled={editMode < 2 || isSubmitting || isAddCertificateLoading || isUpdateCertificateLoading}
+                                />
+                            )}
                         </Box>
+                    </Grid>
+                    <Grid item xs={1}>
+                        {editMode > 1 && (
+                            <RibbonContainer>
+                                <Ribbon
+                                    side={language === "ar" ? "left" : "right"}
+                                    type="corner"
+                                    size="large"
+                                    backgroundColor={status.backgroundColor}
+                                    color={status.foreColor}
+                                    fontFamily="sans-serif"
+                                >
+                                    {status.label}
+                                </Ribbon>
+                            </RibbonContainer>
+                        )}
                     </Grid>
                 </Grid>
                 <Form
@@ -194,9 +371,6 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                             <fieldset className="k-form-fieldset">
                                 <Grid container alignItems="start" justifyContent="start" spacing={1}>
                                     <Grid container spacing={2} alignItems="center" justifyContent="flex-start" sx={{ paddingLeft: 3 }}>
-                                        {/* REFACTOR: Reduced xs values for all fields except description */}
-                                        {/* Purpose: Minimize space usage while keeping description at xs=6 */}
-                                        {/* Context: Adjusts layout for EXTERNAL_SUPPLY_SALE_CERTIFICATE (both supplier and contractor) and other types */}
                                         <Grid item xs={2} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
                                             <Field
                                                 id="projectId"
@@ -312,15 +486,13 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                     )}
                 />
             </Paper>
-            <Backdrop
-                sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-                open={isAddCertificateLoading || isUpdateCertificateLoading}
-            >
-                <CircularProgress color="inherit" />
-                <Typography sx={{ ml: 2 }}>
-                    {getTranslatedLabel("certificate.form.saving", "Saving Certificate...")}
-                </Typography>
-            </Backdrop>
+            {isAddCertificateLoading || isUpdateCertificateLoading && (
+                <LoadingComponent message={getTranslatedLabel("certificate.form.saving", "Saving Certificate...")}/>
+            )}
+            
+            {isReceiveLoading && (
+                <LoadingComponent message={getTranslatedLabel("certificate.form.saving", "Approving Certificate...")}/>
+            )}
         </>
     );
 }

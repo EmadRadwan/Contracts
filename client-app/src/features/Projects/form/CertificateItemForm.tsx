@@ -30,9 +30,6 @@ export default function CertificateItemForm({
     const { data: facilities = [] } = useFetchFacilitiesQuery(undefined);
     const { getTranslatedLabel } = useTranslationHelper();
 
-    // REFACTOR: Updated calculateTotals to handle COMPANY_SUPPLY_SALE_CERTIFICATE without discount
-    // Purpose: Align calculations with ContractorPurchaseForm for COMPANY_SUPPLY_SALE_CERTIFICATE
-    // Context: Ensures finalTotal excludes discount, matching form fields
     const calculateTotals = useCallback(
         (valueGetter: FormRenderProps["valueGetter"]) => {
             const quantity = Number(valueGetter("quantity") || 0);
@@ -42,136 +39,109 @@ export default function CertificateItemForm({
             let deserved = 0;
             let insurance = 0;
             let discount = 0;
-
-            if (currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE") {
+            if (["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)) {
                 const discountInput = Number(valueGetter("discount") || 0);
                 discount = discountMode === "value" ? discountInput : (discountInput / 100) * total;
                 const transportationExpenses = Number(valueGetter("transportationExpenses") || 0);
                 const gratuities = Number(valueGetter("gratuities") || 0);
-                finalTotal = Math.max(
-                    0,
-                    Math.round((total - discount + transportationExpenses + gratuities) * 1000) / 1000
-                );
-            } else if (
-                currentCertificateType === "COMPANY_SUPPLY_SALE_CERTIFICATE" ||
-                currentCertificateType === "CONTRACTOR_PURCHASE_CERTIFICATE"
-            ) {
+                finalTotal = Math.max(0, Math.round((total - discount + transportationExpenses + gratuities) * 1000) / 1000);
+            } else if (["COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE"].includes(currentCertificateType)) {
                 const transportationExpenses = Number(valueGetter("transportationExpenses") || 0);
                 const gratuities = Number(valueGetter("gratuities") || 0);
-                finalTotal = Math.max(
-                    0,
-                    Math.round((total + transportationExpenses + gratuities) * 1000) / 1000
-                );
+                finalTotal = Math.max(0, Math.round((total + transportationExpenses + gratuities) * 1000) / 1000);
             } else if (currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE") {
-                deserved = Math.max(
-                    0,
-                    Math.round((total - Number(valueGetter("deductions") || 0)) * 1000) / 1000
-                );
+                deserved = Math.max(0, Math.round((total - Number(valueGetter("deductions") || 0)) * 1000) / 1000);
                 const insuranceInput = Number(valueGetter("insurance") || 0);
                 insurance = insuranceMode === "value" ? insuranceInput : (insuranceInput / 100) * deserved;
                 insurance = Math.round(insurance * 1000) / 1000;
                 finalTotal = deserved;
             }
-
-            const net =
-                currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
-                    ? Math.max(0, Math.round((deserved - insurance) * 1000) / 1000)
-                    : finalTotal;
-
-            return {
-                total,
-                finalTotal,
-                net,
-                deserved,
-                insurance,
-                discount,
-                transportationExpenses: Number(valueGetter("transportationExpenses") || 0),
-                gratuities: Number(valueGetter("gratuities") || 0),
-            };
+            const net = currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                ? Math.max(0, Math.round((deserved - insurance) * 1000) / 1000)
+                : finalTotal;
+            return { total, finalTotal, net, deserved, insurance, discount, transportationExpenses: Number(valueGetter("transportationExpenses") || 0), gratuities: Number(valueGetter("gratuities") || 0) };
         },
         [currentCertificateType, discountMode, insuranceMode]
     );
 
-    // REFACTOR: Updated deserializedInitValue to dynamically set defaults for COMPANY_SUPPLY_SALE_CERTIFICATE
-    // Purpose: Ensure initial values align with CompanySupplyForm's fields (no discount)
-    // Context: Aligns with ContractorPurchaseForm’s defaults
-    const deserializedInitValue = useMemo((): Partial<CertificateItem> => {
-        const baseDefaultValues: Partial<CertificateItem> = {
-            productId: "",
-            productName: "",
-            uomId: "",
-            uomName: "",
-            quantity: 0,
-            unitPrice: 0,
-            totalAmount: 0,
-            discount: 0,
-            insurance: 0,
-            deductions: 0,
-            deserved: 0,
-            net: 0,
-            procurementDate: new Date(),
-            facilityId: "",
-            facilityName: "",
-            isContractorPurchased: false,
-            isDeleted: false,
-            achievementPercentage: 0,
-            transportationExpenses: 0,
-            gratuities: 0,
-            completionPercentage: 0,
-            notes: "",
-            workEffortId: "",
-            workEffortParentId: "",
-        };
+
 
         // Set type-specific defaults
-        const typeSpecificDefaults: Partial<CertificateItem> = {
-            ...(currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE"
-                ? {
-                    discount: 0, // Discount is used in SupplyProcurementForm
-                    transportationExpenses: 0,
-                    gratuities: 0,
-                    procurementDate: new Date(),
-                    facilityId: "",
-                    facilityName: "",
-                }
-                : currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
-                    ? {
-                        insurance: 0,
-                        deductions: 0,
-                        achievementPercentage: 0, // Achievement percentage is required
-                    }
-                    : currentCertificateType === "COMPANY_SUPPLY_SALE_CERTIFICATE" ||
-                    currentCertificateType === "CONTRACTOR_PURCHASE_CERTIFICATE"
-                        ? {
-                            transportationExpenses: 0,
-                            gratuities: 0,
-                            procurementDate: new Date(),
-                            facilityId: "",
-                            facilityName: "",
-                            discount: 0, // Explicitly set to 0 as it's not used in the form
-                            insurance: 0, // Explicitly set to 0 as it's not used in the form
-                        }
-                        : {}),
-        };
-
-        return certificateItem
-            ? {
-                ...baseDefaultValues,
-                ...certificateItem,
-                ...typeSpecificDefaults,
-                procurementDate: certificateItem.procurementDate
-                    ? new Date(certificateItem.procurementDate)
-                    : new Date(),
-                facilityName: certificateItem.facilityName || "",
+        const deserializedInitValue = useMemo((): Partial<CertificateItem> => {
+            const baseDefaultValues: Partial<CertificateItem> = {
+                productId: "",
+                productName: "",
+                uomId: "",
+                uomName: "",
+                quantity: 0,
+                unitPrice: 0,
+                totalAmount: 0,
+                discount: 0,
+                insurance: 0,
+                deductions: 0,
+                deserved: 0,
+                net: 0,
+                procurementDate: new Date(),
+                facilityId: "",
+                facilityName: "",
                 isContractorPurchased: false,
-            }
-            : {
-                ...baseDefaultValues,
-                ...typeSpecificDefaults,
+                isDeleted: false,
+                achievementPercentage: 0,
+                transportationExpenses: 0,
+                gratuities: 0,
+                completionPercentage: 0,
+                notes: "",
+                workEffortId: "",
+                workEffortParentId: "",
             };
-    }, [certificateItem, currentCertificateType]);
 
-    const MyForm = useRef<Form>(null);
+            const typeSpecificDefaults: Partial<CertificateItem> = {
+                ...(["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)
+                    ? {
+                        discount: 0,
+                        transportationExpenses: 0,
+                        gratuities: 0,
+                        procurementDate: new Date(),
+                        facilityId: "",
+                        facilityName: "",
+                    }
+                    : currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                        ? {
+                            insurance: 0,
+                            deductions: 0,
+                            achievementPercentage: 0,
+                        }
+                        : ["COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE"].includes(currentCertificateType)
+                            ? {
+                                transportationExpenses: 0,
+                                gratuities: 0,
+                                procurementDate: new Date(),
+                                facilityId: "",
+                                facilityName: "",
+                                discount: 0,
+                                insurance: 0,
+                            }
+                            : {}),
+            };
+
+            return certificateItem
+                ? {
+                    ...baseDefaultValues,
+                    ...certificateItem,
+                    ...typeSpecificDefaults,
+                    procurementDate: certificateItem.procurementDate ? new Date(certificateItem.procurementDate) : new Date(),
+                    facilityName: certificateItem.facilityName || "",
+                    isContractorPurchased: false,
+                }
+                : {
+                    ...baseDefaultValues,
+                    ...typeSpecificDefaults,
+                };
+        }, [certificateItem, currentCertificateType]);
+
+
+
+        const MyForm = useRef<Form>(null);
     const [formKey, setFormKey] = useState<number>(1);
     const [initValue, setInitValue] = useState<Partial<CertificateItem>>(deserializedInitValue);
 
@@ -185,7 +155,6 @@ export default function CertificateItemForm({
         calculateTotals,
     });
 
-    // REFACTOR: Memoize achievementPercentageValidator for stable reference
     // Purpose: Improve performance for WorkmanshipContractingForm
     // Context: Not used in ContractorPurchaseForm or CompanySupplyForm but kept for consistency
     const achievementPercentageValidator = useMemo(
