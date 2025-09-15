@@ -17,18 +17,14 @@ public class ProjectCertificateRecord
 
     public string? CurrentStatusId { get; set; }
 
-    // REFACTOR: Renamed SupplierPartyId to PartyIdSupplier
-    // Purpose: Align with WorkEffort table and frontend SelectedCertificate interface
-    // Context: Fixes binding issue in ProjectCertificateForm ComboBox
     public string? PartyIdSupplier { get; set; }
 
-    // REFACTOR: Renamed SupplierPartyName to PartyNameSupplier
     public string? PartyNameSupplier { get; set; }
 
-    // REFACTOR: Renamed ContractorPartyId to PartyIdContractor
     public string? PartyIdContractor { get; set; }
 
-    // REFACTOR: Renamed ContractorPartyName to PartyNameContractor
     public string? PartyNameContractor { get; set; }
     public string? RelatedOrderId { get; set; }
+    public string? FacilityId { get; set; }
+    public string FacilityName { get; set; }
 }

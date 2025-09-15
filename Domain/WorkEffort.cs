@@ -118,7 +118,7 @@ public class WorkEffort
     public string? CertificateNumber { get; set; } 
     public string? ProjectName { get; set; }
     public decimal? TotalAmount { get; set; }
-    public decimal? DiscountAmount { get; set; }
+    public decimal? Discount { get; set; }
     public decimal? TransportationExpenses { get; set; }
     public decimal? Gratuities { get; set; }
     public string? ProjectId { get; set; } 
@@ -139,7 +139,7 @@ public class WorkEffort
     public decimal? DueAmount { get; set; } 
     public decimal? PaidAmount { get; set; }
     public decimal? Deductions { get; set; }
-    public decimal? InsuranceAmount { get; set; }
+    public decimal? Insurance { get; set; }
     public decimal? RemainingAmount { get; set; }
     public decimal? AchievementPercent { get; set; }
     public string? Notes { get; set; } 

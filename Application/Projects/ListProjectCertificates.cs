@@ -43,44 +43,51 @@ namespace Application.Projects
                 };
             }
 
-            public async Task<IQueryable<ProjectCertificateRecord>> Handle(Query request,
-                CancellationToken cancellationToken)
+            public async Task<IQueryable<ProjectCertificateRecord>> Handle(Query request, CancellationToken cancellationToken)
             {
                 var language = request.Language;
 
-                // REFACTOR: Updated field names to PartyIdSupplier/PartyNameSupplier and PartyIdContractor/PartyNameContractor
-                // Purpose: Align with WorkEffort table and frontend expectations
-                // Context: Ensures correct data binding in ProjectCertificateForm ComboBox
+                // REFACTOR: Added join to Facilities table for FacilityId and FacilityName
+                // Purpose: Include facility data at header level in ProjectCertificateRecord
+                // Improvement: Enables frontend to display facility without additional queries
+                // Context: FacilityId moved from item to header; left join ensures null for non-facility types
                 var query = from we in _context.WorkEfforts.AsNoTracking()
-                    join si in _context.StatusItems on we.CurrentStatusId equals si.StatusId into statusGroup
-                    from si in statusGroup.DefaultIfEmpty()
-                    join proj in _context.WorkEfforts on we.ProjectId equals proj.WorkEffortId into projectGroup
-                    from proj in projectGroup.DefaultIfEmpty()
-                    join supplier in _context.Parties on we.PartyIdSupplier equals supplier.PartyId into supplierGroup
-                    from supplier in supplierGroup.DefaultIfEmpty()
-                    join contractor in _context.Parties on we.PartyIdContractor equals contractor.PartyId into
-                        contractorGroup
-                    from contractor in contractorGroup.DefaultIfEmpty()
-                    where we.WorkEffortTypeId == "PROJECT_CERTIFICATE"
-                    select new ProjectCertificateRecord
-                    {
-                        WorkEffortId = we.WorkEffortId,
-                        CertificateNumber = we.CertificateNumber,
-                        CertificateCategory = we.CertificateCategory,
-                        CertificateCategoryDescription = null, // Set to null initially; mapped in memory below
-                        ProjectId = we.ProjectId,
-                        ProjectName = proj != null ? proj.ProjectName : we.ProjectName,
-                        Description = we.Description,
-                        EstimatedStartDate = we.EstimatedStartDate,
-                        EstimatedCompletionDate = we.EstimatedCompletionDate,
-                        StatusDescription = language == "ar" ? si.DescriptionArabic : si.Description,
-                        CurrentStatusId = we.CurrentStatusId,
-                        PartyIdSupplier = supplier != null ? supplier.PartyId : null,
-                        PartyNameSupplier = supplier != null ? supplier.Description : null,
-                        PartyIdContractor = contractor != null ? contractor.PartyId : null,
-                        PartyNameContractor = contractor != null ? contractor.Description : null,
-                        RelatedOrderId = we.RelatedOrderId
-                    };
+                            join si in _context.StatusItems on we.CurrentStatusId equals si.StatusId into statusGroup
+                            from si in statusGroup.DefaultIfEmpty()
+                            join proj in _context.WorkEfforts on we.ProjectId equals proj.WorkEffortId into projectGroup
+                            from proj in projectGroup.DefaultIfEmpty()
+                            join supplier in _context.Parties on we.PartyIdSupplier equals supplier.PartyId into supplierGroup
+                            from supplier in supplierGroup.DefaultIfEmpty()
+                            join contractor in _context.Parties on we.PartyIdContractor equals contractor.PartyId into contractorGroup
+                            from contractor in contractorGroup.DefaultIfEmpty()
+                            join fac in _context.Facilities on we.FacilityId equals fac.FacilityId into facGroup
+                            from fac in facGroup.DefaultIfEmpty()
+                            where we.WorkEffortTypeId == "PROJECT_CERTIFICATE"
+                            select new ProjectCertificateRecord
+                            {
+                                WorkEffortId = we.WorkEffortId,
+                                CertificateNumber = we.CertificateNumber,
+                                CertificateCategory = we.CertificateCategory,
+                                CertificateCategoryDescription = null, // Set to null initially; mapped in memory below
+                                ProjectId = we.ProjectId,
+                                ProjectName = proj != null ? proj.ProjectName : we.ProjectName,
+                                Description = we.Description,
+                                EstimatedStartDate = we.EstimatedStartDate,
+                                EstimatedCompletionDate = we.EstimatedCompletionDate,
+                                StatusDescription = language == "ar" ? si.DescriptionArabic : si.Description,
+                                CurrentStatusId = we.CurrentStatusId,
+                                PartyIdSupplier = supplier != null ? supplier.PartyId : null,
+                                PartyNameSupplier = supplier != null ? supplier.Description : null,
+                                PartyIdContractor = contractor != null ? contractor.PartyId : null,
+                                PartyNameContractor = contractor != null ? contractor.Description : null,
+                                RelatedOrderId = we.RelatedOrderId,
+                                // REFACTOR: Added FacilityId and FacilityName to projection
+                                // Purpose: Map facility data from joined Facilities table
+                                // Improvement: Provides header-level facility info for frontend binding
+                                // Context: Matches updated ProjectCertificateRecord; null for non-facility types
+                                FacilityId = we.FacilityId,
+                                FacilityName = fac != null ? fac.FacilityName : null
+                            };
 
                 // REFACTOR: Map CertificateCategory to CertificateCategoryDescription in memory
                 // Purpose: Apply description mapping after query execution to avoid EF Core limitations
@@ -102,15 +109,17 @@ namespace Application.Projects
                     PartyNameSupplier = record.PartyNameSupplier,
                     PartyIdContractor = record.PartyIdContractor,
                     PartyNameContractor = record.PartyNameContractor,
-                    RelatedOrderId = record.RelatedOrderId
+                    RelatedOrderId = record.RelatedOrderId,
+                    FacilityId = record.FacilityId,
+                    FacilityName = record.FacilityName
                 });
 
-                // REFACTOR: Added debug logging for query result
-                // Purpose: Verify PartyIdSupplier/PartyNameSupplier presence in response
-                // Context: Helps diagnose binding issues in frontend
-                var resultList = await result.Take(10).ToListAsync(cancellationToken);
-                Console.WriteLine("ListProjectCertificates query result sample: " +
-                                  System.Text.Json.JsonSerializer.Serialize(resultList));
+                // REFACTOR: Retained debug logging for query result
+                // Purpose: Verify PartyIdSupplier/PartyNameSupplier and FacilityId/FacilityName presence in response
+                // Improvement: Helps diagnose binding issues in frontend
+                // Context: Logs sample for debugging; includes new facility fields
+                //var resultList = await result.Take(10).ToListAsync(cancellationToken);
+                //Console.WriteLine("ListProjectCertificates query result sample: " + System.Text.Json.JsonSerializer.Serialize(resultList));
 
                 return result;
             }

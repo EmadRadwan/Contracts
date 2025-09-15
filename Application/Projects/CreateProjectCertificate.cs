@@ -84,6 +84,7 @@ namespace Application.Projects
                         EstimatedStartDate = certificate.EstimatedStartDate,
                         EstimatedCompletionDate = certificate.EstimatedCompletionDate,
                         CurrentStatusId = "WEPR_CREATED",
+                        FacilityId = certificate.FacilityId,
                         CreatedDate = stamp,
                         LastUpdatedStamp = stamp
                     };
@@ -103,13 +104,12 @@ namespace Application.Projects
                             Quantity = item.Quantity,
                             Rate = item.UnitPrice,
                             TotalAmount = item.TotalAmount,
-                            DiscountAmount = item.Discount ?? 0,
-                            InsuranceAmount = item.Insurance ?? 0,
+                            Discount = item.Discount ?? 0,
+                            Insurance = item.Insurance ?? 0,
                             Deductions = item.Deductions ?? 0,
-                            CompletionPercentage = item.CompletionPercentage,
+                            AchievementPercent = item.AchievementPercentage ?? 0,
                             Notes = item.Notes,
                             ProcurementDate = item.ProcurementDate,
-                            FacilityId = string.IsNullOrWhiteSpace(item.FacilityId) ? null : item.FacilityId,
                             TransportationExpenses = item.TransportationExpenses ?? 0,
                             Gratuities = item.Gratuities ?? 0,
                             CreatedDate = stamp,
@@ -120,16 +120,26 @@ namespace Application.Projects
                     }
 
                     string? generatedOrderId = null;
-                    OrderHeader poResult = null; // REFACTOR: Added variable to store poResult for later use in approval; improves code by avoiding redundant DTO recreation and ensures consistency.
+                    OrderHeader poResult = null;
 
                     if (certificate.CertificateCategory != "COMPANY_SUPPLY_SALE_CERTIFICATE")
                     {
                         var poItems = certificate.CertificateItems.ToList();
                         if (poItems.Any())
                         {
-                            var fromPartyId = certificate.CertificateCategory is "SUPPLY_PROCUREMENT_CERTIFICATE" or "EXTERNAL_SUPPLY_SALE_CERTIFICATE"
-                                ? certificate.PartyIdSupplier
-                                : certificate.PartyIdContractor;
+                            string fromPartyId;
+                            if (certificate.CertificateCategory is "SUPPLY_PROCUREMENT_CERTIFICATE" or "EXTERNAL_SUPPLY_SALE_CERTIFICATE" or "COMPANY_SUPPLY_SALE_CERTIFICATE")
+                            {
+                                fromPartyId = certificate.PartyIdSupplier ?? throw new InvalidOperationException("PartyIdSupplier is required for supply/sale certificates");
+                            }
+                            else if (certificate.CertificateCategory is "CONTRACTOR_PURCHASE_CERTIFICATE" or "WORKMANSHIP_CONTRACTING_CERTIFICATE")
+                            {
+                                fromPartyId = certificate.PartyIdContractor ?? throw new InvalidOperationException("PartyIdContractor is required for contractor/workmanship certificates");
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException($"Unsupported certificate category: {certificate.CertificateCategory}");
+                            }
 
                             var discountAdjustments = poItems
                                 .Select((item, index) => new { Item = item, Index = index })
@@ -211,7 +221,7 @@ namespace Application.Projects
                                     Quantity = item.Quantity,
                                     UnitPrice = item.UnitPrice,
                                     SubTotal = item.TotalAmount,
-                                    FacilityId = item.FacilityId,
+                                    FacilityId = certificate.FacilityId,
                                     ItemDescription = item.Description,
                                     OrderItemTypeId = "PRODUCT_ORDER_ITEM",
                                     StatusId = "ITEM_CREATED",
@@ -238,7 +248,6 @@ namespace Application.Projects
                     
                    
 
-                    // REFACTOR: Moved SaveChanges here to persist the newly created entities (WorkEfforts and PO) to the database before approval; 
                     // this ensures UpdateOrApprovePurchaseOrder can query and find the order via FirstOrDefaultAsync, as EF Core queries ignore pending changes.
                     // Improves code by allowing seamless approval in the same transaction without separate scopes or context issues.
                     var createResult = await _context.SaveChangesAsync(cancellationToken);
@@ -248,12 +257,10 @@ namespace Application.Projects
                         return Result<ProjectCertificateDto>.Failure("Failed to create certificate and items");
                     }
 
-                    // REFACTOR: Added logic to automatically approve the PO after creation if one was generated; 
                     // this integrates backend approval directly behind the scenes, reusing the existing UpdateOrApprovePurchaseOrder method 
                     // without needing a frontend call, ensuring the order is immediately approved as per requirements while maintaining transaction integrity.
                     if (generatedOrderId != null && poResult != null)
                     {
-                        // REFACTOR: Fixed type mismatch by constructing a new OrderDto instance from the persisted OrderHeader and related entities (OrderItems, OrderAdjustments) 
                         // queried from the database after SaveChanges; this populates all required fields (e.g., OrderId, GrandTotal, FromPartyId, OrderItems, OrderAdjustments) 
                         // for the UpdateOrApprovePurchaseOrder method without modifying the called service signature, avoiding impacts on other code. 
                         // Improves code by ensuring complete data transfer for approval logic (e.g., item updates, roles) while keeping the approach isolated to this handler.
@@ -307,10 +314,10 @@ namespace Application.Projects
                         var approveOrderDto = new OrderDto
                         {
                             OrderId = orderHeader.OrderId,
-                            FromPartyId = certificate.PartyIdContractor ?? certificate.PartyIdSupplier, // REFACTOR: Use certificate's PartyIdContractor or PartyIdSupplier for FromPartyId to ensure consistency with certificate creation context; avoids reliance on potentially unset OrderHeader fields (BillFromPartyId/ShipFromPartyId) and aligns with business logic.
+                            FromPartyId = certificate.PartyIdContractor ?? certificate.PartyIdSupplier, 
                             GrandTotal = orderHeader.GrandTotal,
                             OrderDate = orderHeader.OrderDate,
-                            CurrencyUomId = await _productStoreService.GetProductStoreDefaultCurrencyId(), // REFACTOR: Use certificate's CurrencyUomId if available, falling back to product store default; ensures consistency with order creation and avoids reliance on OrderHeader's CurrencyUomId which may not be set correctly in all cases.
+                            CurrencyUomId = await _productStoreService.GetProductStoreDefaultCurrencyId(), 
                             StatusId = orderHeader.StatusId,
                             OrderItems = orderItems,
                             OrderAdjustments = orderAdjustments
@@ -319,7 +326,7 @@ namespace Application.Projects
 
                         await _orderService.UpdateOrApprovePurchaseOrder(approveOrderDto, "APPROVE");
 
-                        // REFACTOR: Added a second SaveChanges to persist approval changes (e.g., status updates, roles); 
+                        //  Added a second SaveChanges to persist approval changes (e.g., status updates, roles); 
                         // this is necessary after the service method updates entities but doesn't save, allowing batching within the transaction 
                         // and providing a checkpoint for failure handling.
                         

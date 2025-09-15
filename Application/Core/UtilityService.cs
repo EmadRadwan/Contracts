@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Application.Catalog.ProductStores;
 using Application.Errors;
 using Application.Order.Orders;
@@ -33,6 +34,8 @@ public interface IUtilityService
     Task<List<TEntity>> RetrieveLocalOrDatabaseListAsync<TEntity>(
         Func<IQueryable<TEntity>, IQueryable<TEntity>> additionalConditions = null,
         params object[] keyValues) where TEntity : class;
+    
+    Task<TEntity?> FindLocalOrDatabaseAsync2<TEntity>(Expression<Func<TEntity, bool>> predicate) where TEntity : class;
     
 }
 
@@ -393,5 +396,25 @@ public class UtilityService : IUtilityService
         }
     }
     
+    
+    public async Task<TEntity?> FindLocalOrDatabaseAsync2<TEntity>(
+        Expression<Func<TEntity, bool>> predicate)
+        where TEntity : class
+    {
+        // Check local (in-memory) added entities in the change tracker first
+        var localEntity = _context.Set<TEntity>().Local
+            .AsQueryable()
+            .FirstOrDefault(predicate);
+
+        if (localEntity != null)
+        {
+            return localEntity;
+        }
+
+        // Fall back to database query if not found in local tracker
+        return await _context.Set<TEntity>()
+            .AsQueryable()
+            .FirstOrDefaultAsync(predicate);
+    }
    
 }

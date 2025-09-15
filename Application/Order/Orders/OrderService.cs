@@ -1,8 +1,5 @@
 using API.Middleware;
 using Application._Base;
-
-
-
 using Application.Catalog.Products;
 using Application.Catalog.Products.Services.Inventory;
 using Application.Catalog.ProductStores;
@@ -432,7 +429,7 @@ public class OrderService : BaseService, IOrderService
         return orderToUpdate;
     }
 
-    
+
     public async Task<OrderAdjustment> GetOrderAdjustmentById(string orderAdjustmentId)
     {
         var orderAdjustment = await _context.OrderAdjustments.Where(x => x.OrderAdjustmentId == orderAdjustmentId)
@@ -466,7 +463,7 @@ public class OrderService : BaseService, IOrderService
         foreach (var orderItem in orderItems)
         {
             if (orderItem.IsProductDeleted) continue;
-            CreatePurchaseOrderItem(orderItem, orderId);
+            await CreatePurchaseOrderItem(orderItem, orderId);
         }
 
         await Task.CompletedTask;
@@ -535,7 +532,7 @@ public class OrderService : BaseService, IOrderService
         await Task.CompletedTask;
     }
 
-    private OrderItem CreatePurchaseOrderItem(OrderItemDto2 orderItem, string orderId)
+    private async Task<OrderItem> CreatePurchaseOrderItem(OrderItemDto2 orderItem, string orderId)
     {
         var stamp = DateTime.UtcNow;
 
@@ -555,10 +552,12 @@ public class OrderService : BaseService, IOrderService
         };
         _context.OrderItems.Add(newItem);
 
+        orderItem.OrderId = orderId;
+
         // create order_status ITEM_CREATED
         _utilityService.CreateOrderItemStatus(newItem, "ITEM_CREATED");
 
-        SetUnitPriceAsLastPrice(orderItem);
+        await SetUnitPriceAsLastPrice(orderItem);
 
         return newItem;
     }
@@ -585,14 +584,14 @@ public class OrderService : BaseService, IOrderService
             LastUpdatedStamp = stamp
         };
         _context.OrderItems.Add(newItem);
-        
+
 
         // create order_status ITEM_CREATED
         _utilityService.CreateOrderItemStatus(newItem, "ITEM_CREATED");
         orderItem.OrderId = orderId;
 
         var isPhysicalProduct = await _productService.CheckIsPhysicalProduct(orderItem);
-        
+
         if (isPhysicalProduct)
         {
             await _inventoryService.ReserveProductInventory(
@@ -773,7 +772,7 @@ public class OrderService : BaseService, IOrderService
         var savedOrderItem = await GetOrderItemById(updatedOrderItem.OrderId, updatedOrderItem.OrderItemSeqId);
         if (savedOrderItem == null)
         {
-            CreatePurchaseOrderItem(updatedOrderItem, originalOrderId);
+            await CreatePurchaseOrderItem(updatedOrderItem, originalOrderId);
             return;
         }
 
@@ -898,7 +897,7 @@ public class OrderService : BaseService, IOrderService
         var savedOrderItem = await GetOrderItemById(updatedOrderItem.OrderId, updatedOrderItem.OrderItemSeqId);
         if (savedOrderItem == null)
         {
-            CreatePurchaseOrderItem(updatedOrderItem, updatedOrderItem.OrderId);
+            await CreatePurchaseOrderItem(updatedOrderItem, updatedOrderItem.OrderId);
             return;
         }
 
@@ -982,32 +981,45 @@ public class OrderService : BaseService, IOrderService
         _context.OrderAdjustments.Remove(orderAdjustment);
     }
 
-    private void SetUnitPriceAsLastPrice(OrderItemDto2 orderItem)
+    private async Task SetUnitPriceAsLastPrice(OrderItemDto2 orderItem)
     {
-        // get product supplier from order roles
-        var productSupplierId = _context.OrderRoles
-            .Where(x => x.OrderId == orderItem.OrderId && x.RoleTypeId == "BILL_FROM_VENDOR")
-            .Select(x => x.PartyId)
-            .FirstOrDefault();
+        var orderRole = await _utilityService.FindLocalOrDatabaseAsync2<OrderRole>(
+            x => x.OrderId == orderItem.OrderId && x.RoleTypeId == "BILL_FROM_VENDOR");
+        var productSupplierId = orderRole?.PartyId;
 
-        // get order currency
-        var orderCurrency = _context.OrderHeaders
-            .Where(x => x.OrderId == orderItem.OrderId)
-            .Select(x => x.CurrencyUom)
-            .FirstOrDefault();
+        var orderHeader = await _utilityService.FindLocalOrDatabaseAsync2<OrderHeader>(
+            x => x.OrderId == orderItem.OrderId);
+        var orderCurrency = orderHeader?.CurrencyUom;
 
-        // get product supplier
+        // REFACTOR: Query moved outside of conditional logic for clarity and reusability
         var selectedProductSuppliers = _context.SupplierProducts
             .Where(ps => ps.ProductId == orderItem.ProductId
-                         && ps.PartyId == productSupplierId && ps.AvailableThruDate == null &&
-                         ps.CurrencyUomId == orderCurrency)
+                         && ps.PartyId == productSupplierId
+                         && ps.AvailableThruDate == null
+                         && ps.CurrencyUomId == orderCurrency)
             .ToList();
 
+        var nowTimestamp = DateTime.Now;
 
+        // REFACTOR: Added check for empty supplier products list to create new record if none exists
+        if (!selectedProductSuppliers.Any())
+        {
+            var newSupplierProduct = new SupplierProduct
+            {
+                ProductId = orderItem.ProductId,
+                PartyId = productSupplierId,
+                CurrencyUomId = orderCurrency,
+                LastPrice = orderItem.UnitPrice,
+                AvailableFromDate = nowTimestamp
+                // Additional required fields should be set here based on SupplierProduct schema
+            };
+            _context.Add(newSupplierProduct);
+            return;
+        }
+
+        // REFACTOR: Simplified update logic by moving it after the empty check
         foreach (var supplierProduct in selectedProductSuppliers)
         {
-            var nowTimestamp = DateTime.Now;
-
             if (orderItem.UnitPrice != supplierProduct.LastPrice)
             {
                 var newSupplierProduct = CloneSupplierProduct(supplierProduct);

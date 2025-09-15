@@ -7,10 +7,9 @@ import { FormSimpleComboBoxVirtualProduct } from "../../../app/common/form/FormS
 import { FormComboBoxVirtualUOM } from "../../../app/common/form/FormComboBoxVirtualUOM";
 import { MemoizedFormDropDownList2 } from "../../../app/common/form/MemoizedFormDropDownList2";
 import { requiredValidator } from "../../../app/common/form/Validators";
-import { Facility } from "../../../app/models/facility";
 import FormButtons from "./FormButtons";
+import FormInput from "../../../app/common/form/FormInput";
 
-// REFACTOR: Created ContractorPurchaseFormProps based on ProcurementFormProps, removing discount-related props
 // Purpose: Ensure type safety for CONTRACTOR_PURCHASE_CERTIFICATE, excluding discount fields
 // Context: Reflects the requirement that ContractorPurchaseForm does not include discount
 interface ContractorPurchaseFormProps {
@@ -27,7 +26,6 @@ interface ContractorPurchaseFormProps {
         transportationExpenses: number;
         gratuities: number;
     };
-    facilities: Facility[];
     getTranslatedLabel: (key: string, defaultValue: string) => string;
     onClose: () => void;
 }
@@ -37,14 +35,12 @@ const ContractorPurchaseForm = ({
                                     editMode,
                                     formEditMode,
                                     calculateTotals,
-                                    facilities,
                                     getTranslatedLabel,
                                     onClose,
                                 }: ContractorPurchaseFormProps) => {
     const { valueGetter, onChange } = formRenderProps;
     const { finalTotal } = calculateTotals(valueGetter);
 
-    // REFACTOR: Retained useEffect to update total field based on finalTotal
     // Purpose: Ensure total field reflects calculated finalTotal without discount
     // Context: Consistent with SupplyProcurementForm, updates total when finalTotal changes
     useEffect(() => {
@@ -74,6 +70,16 @@ const ContractorPurchaseForm = ({
                             component={FormComboBoxVirtualUOM}
                             validator={requiredValidator}
                             disabled={editMode === 2 || formEditMode > 3}
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <Field
+                            id="description"
+                            name="description"
+                            label={getTranslatedLabel("certificate.items.form.description", "Description *")}
+                            component={FormInput}
+                            validator={requiredValidator}
+                            disabled={formEditMode > 3}
                         />
                     </Grid>
                     <Grid item xs={6}>
@@ -110,18 +116,7 @@ const ContractorPurchaseForm = ({
                             disabled={formEditMode > 3}
                         />
                     </Grid>
-                    <Grid item xs={6}>
-                        <Field
-                            id="facilityId"
-                            name="facilityId"
-                            label={getTranslatedLabel("facility.items.form.facility", "Facility *")}
-                            component={MemoizedFormDropDownList2}
-                            data={facilities}
-                            dataItemKey="facilityId"
-                            textField="facilityName"
-                            validator={requiredValidator}
-                        />
-                    </Grid>
+                   
                     <Grid item xs={6}>
                         <Field
                             id="transportationExpenses"

@@ -17,6 +17,8 @@ interface SelectedCertificate {
   statusDescription: string;
   statusDescriptionArabic?: string; // Added for localization
   relatedOrderId: string;
+  facilityId?: string ;
+  facilityName?: string;
 }
 interface CertificateUiState {
   currentCertificateType: string;
@@ -40,6 +42,8 @@ export const certificateUiInitialState: CertificateUiState = {
     statusDescription: "",
     statusDescriptionArabic: "",
     relatedOrderId: "",
+    facilityId: undefined,
+    facilityName: "",
   },
 };
 
@@ -63,6 +67,8 @@ export const certificateUiSlice = createSlice({
         estimatedCompletionDate: action.payload.estimatedCompletionDate instanceof Date
             ? action.payload.estimatedCompletionDate.toISOString()
             : action.payload.estimatedCompletionDate,
+        facilityId: action.payload.facilityId || "",
+        facilityName: action.payload.facilityName || "",
       };
     },
     resetCertificateUi: (state) => {
@@ -81,6 +87,8 @@ export const certificateUiSlice = createSlice({
         statusDescription: "",
         statusDescriptionArabic: "",
         relatedOrderId: "",
+        facilityId: undefined,
+        facilityName: "",
       };
     },
     debugCertificateUiState: (state) => {

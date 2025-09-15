@@ -16,6 +16,8 @@ export interface Certificate {
   currentStatusId?: CertificateStatus;
   statusDescription?: string;
   relatedOrderId?: string;
+  facilityId?: string;
+  facilityName?: string;
 }
 
 export enum CertificateStatus {

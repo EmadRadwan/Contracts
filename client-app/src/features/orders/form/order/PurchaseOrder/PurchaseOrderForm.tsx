@@ -329,6 +329,14 @@ export default function PurchaseOrderForm({selectedOrder, cancelEdit, editMode}:
                                 {" "}
                                 {order && order?.orderId ? `Purchase Order No: ${order?.orderId}` : "New Purchase Order"}{" "}
                             </Typography>
+                            {order?.certificateNumber && (
+                                <Typography
+                                    sx={{ paddingLeft: 3, fontSize: '16px', color: 'textSecondary' }}
+                                    variant="subtitle1"
+                                >
+                                    Certificate Number: {order.certificateNumber}
+                                </Typography>
+                            )}
                         </Box>
                     </Grid>
 

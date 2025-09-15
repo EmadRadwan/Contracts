@@ -6,9 +6,9 @@ import { FormSimpleComboBoxVirtualProduct } from "../../../app/common/form/FormS
 import { FormComboBoxVirtualUOM } from "../../../app/common/form/FormComboBoxVirtualUOM";
 import { MemoizedFormDropDownList2 } from "../../../app/common/form/MemoizedFormDropDownList2";
 import { percentageValidator, requiredValidator } from "../../../app/common/form/Validators";
-import { Facility } from "../../../app/models/facility";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import FormButtons from "./FormButtons";
+import FormInput from "../../../app/common/form/FormInput";
 
 interface ContractingFormProps {
     formRenderProps: FormRenderProps;
@@ -24,7 +24,6 @@ interface ContractingFormProps {
         insurance: number;
         discount: number;
     };
-    facilities: Facility[];
     getTranslatedLabel: (key: string, defaultValue: string) => string;
     onClose: () => void;
     achievementPercentageValidator: (value: number) => string | undefined;
@@ -37,7 +36,6 @@ const WorkmanshipContractingForm = ({
                                         insuranceMode,
                                         handleInsuranceModeChange,
                                         calculateTotals,
-                                        facilities,
                                         getTranslatedLabel,
                                         onClose,
                                         achievementPercentageValidator,
@@ -45,7 +43,6 @@ const WorkmanshipContractingForm = ({
     const { valueGetter, onChange } = formRenderProps;
     const { total, net, deserved } = calculateTotals(valueGetter);
 
-    // REFACTOR: Optimized useEffect dependency array
     // Purpose: Prevent unnecessary re-renders by only depending on changed values
     // Context: Ensures total, deserved, and net fields update only when necessary
     useEffect(() => {
@@ -77,6 +74,16 @@ const WorkmanshipContractingForm = ({
                             component={FormComboBoxVirtualUOM}
                             validator={requiredValidator}
                             disabled={editMode === 2 || formEditMode > 3}
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <Field
+                            id="description"
+                            name="description"
+                            label={getTranslatedLabel("certificate.items.form.description", "Description *")}
+                            component={FormInput}
+                            validator={requiredValidator}
+                            disabled={formEditMode > 3}
                         />
                     </Grid>
                     <Grid item xs={6}>
@@ -137,7 +144,6 @@ const WorkmanshipContractingForm = ({
                         />
                     </Grid>
                     <Grid item xs={6}>
-                        {/* REFACTOR: Wrapped insurance field and RadioGroup in a nested Grid container */}
                         {/* Purpose: Visually group insurance and its mode selector for better UX */}
                         {/* Context: Places RadioGroup directly below insurance field in the same column */}
                         <Grid container direction="column" spacing={1}>

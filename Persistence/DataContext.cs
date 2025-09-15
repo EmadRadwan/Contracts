@@ -62035,17 +62035,17 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasForeignKey(d => d.RelatedOrderId)
                     .HasConstraintName("WK_EFFRT_RELATED_ORDER");
                        
-                       entity.Property(e => e.DiscountAmount)
+                       entity.Property(e => e.Discount)
                     .HasColumnType("decimal(18,3)")
-                    .HasColumnName("DISCOUNT_AMOUNT"); 
+                    .HasColumnName("DISCOUNT"); 
             
                 entity.Property(e => e.Deductions)
                     .HasColumnType("decimal(18,3)")
                     .HasColumnName("DEDUCTIONS"); 
             
-                entity.Property(e => e.InsuranceAmount)
+                entity.Property(e => e.Insurance)
                     .HasColumnType("decimal(18,3)")
-                    .HasColumnName("INSURANCE_AMOUNT");
+                    .HasColumnName("INSURANCE");
             
  
 

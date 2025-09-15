@@ -40,6 +40,7 @@ public class OrderRecord
 
     public bool AllowSubmit { get; set; }
     public string? BillingAccountId { get; set; }
+    public string? CertificateNumber { get; set; }
     public decimal? UseUpToFromBillingAccount { get; set; }
     public ICollection<OrderItemDto>? OrderItems { get; set; }
     public ICollection<OrderAdjustmentDto>? OrderAdjustments { get; set; }

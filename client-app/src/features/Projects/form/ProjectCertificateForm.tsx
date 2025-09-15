@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useAppDispatch, useAppSelector } from "../../../app/store/configureStore";
+import {useAppDispatch, useAppSelector, useFetchFacilitiesQuery} from "../../../app/store/configureStore";
 import { Field, Form, FormElement } from "@progress/kendo-react-form";
 import {Box, Button, Grid, Paper, Typography} from "@mui/material";
 import LoadingButton from "@mui/lab/LoadingButton";
@@ -20,6 +20,7 @@ import FormInput from "../../../app/common/form/FormInput";
 import {resetUiCertificateItems} from "../slice/certificateItemsUiSlice";
 import { Menu, MenuItem } from '@mui/material';
 import {CertificateStatus} from "../../../app/models/project/certificate";
+import { MemoizedFormDropDownList2 } from "../../../app/common/form/MemoizedFormDropDownList2";
 
 
 interface ProjectCertificateFormProps {
@@ -134,6 +135,9 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
         editMode,
         setIsLoading,
     });
+    const { data: facilities = [] } = useFetchFacilitiesQuery(undefined);
+    
+    console.log("Facilities data:", facilities);
 
     const renderSwitchStatus = useCallback(() => {
         const status = selectedCertificate?.currentStatusId || CertificateStatus.CREATED;
@@ -188,6 +192,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                 partyIdContractor: undefined,
                 estimatedStartDate: oneWeekAgo,
                 estimatedCompletionDate: now,
+                facilityId: undefined,
             };
         }
 
@@ -214,13 +219,28 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
             estimatedCompletionDate: selectedCertificate.estimatedCompletionDate
                 ? new Date(selectedCertificate.estimatedCompletionDate)
                 : null,
+            facilityId: selectedCertificate.facilityId,
         };
     }, [editMode, selectedCertificate, showSupplier, showContractor]);
 
+    const handleProjectChange = useCallback(
+        (event: any, formRenderProps: any) => {
+            const project = event.value;
+            if (project?.facilityId && facilities.some((f: any) => f.facilityId === project.facilityId)) {
+                // Update facilityId in the form to match the project's facilityId
+                formRenderProps.onChange("facilityId", { value: project.facilityId });
+            } else {
+                // Clear facilityId if no valid facilityId is associated with the project
+                formRenderProps.onChange("facilityId", { value: undefined });
+            }
+        },
+        [facilities]
+    );
+    
     const handleSubmit = useCallback(
         async (formProps: any) => {
             if (!formProps.isValid) {
-                toast.error(getTranslatedLabel("certificate.form.invalid", "Form is invalid"));
+                //toast.error(getTranslatedLabel("certificate.form.invalid", "Form is invalid"));
                 return false;
             }
             if (isSubmitting) return false;
@@ -238,6 +258,8 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                     partyIdContractor: formProps.values.partyIdContractor?.fromPartyId,
                     estimatedStartDate: formProps.values.estimatedStartDate,
                     estimatedCompletionDate: formProps.values.estimatedCompletionDate,
+                    facilityId: formProps.values.facilityId,
+
                 },
                 selectedMenuItem: action,
             };
@@ -250,7 +272,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                 setSelectedMenuItem("");
             }
         },
-        [handleCreate, currentCertificateType, editMode, getTranslatedLabel]
+        [isSubmitting, editMode, currentCertificateType, getTranslatedLabel, handleCreate]
     );
 
     // Purpose: Sends status update requests to useProjectCertificate hook.
@@ -298,7 +320,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
         setSelectedMenuItem("");
     }, [dispatch, cancelEdit]);
 
-    // ProjectCertificateForm.tsx
+    
     useEffect(() => {
         if (selectedCertificate?.workEffortId) {
             console.log("Selected certificate changed, resetting form with workEffortId:", selectedCertificate.workEffortId);
@@ -370,7 +392,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                         <FormElement>
                             <fieldset className="k-form-fieldset">
                                 <Grid container alignItems="start" justifyContent="start" spacing={1}>
-                                    <Grid container spacing={2} alignItems="center" justifyContent="flex-start" sx={{ paddingLeft: 3 }}>
+                                    <Grid container spacing={1} alignItems="center" justifyContent="flex-start" sx={{ paddingLeft: 3 }}>
                                         <Grid item xs={2} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
                                             <Field
                                                 id="projectId"
@@ -381,6 +403,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                                 textField="ProjectName"
                                                 validator={requiredValidator}
                                                 disabled={editMode > 3}
+                                                onChange={(event: any) => handleProjectChange(event, formRenderProps)}
                                             />
                                         </Grid>
                                         {showSupplier && (
@@ -411,7 +434,22 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                                 />
                                             </Grid>
                                         )}
-                                        <Grid item xs={showSupplier && showContractor ? 2 : 3} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
+                                        {["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE", "COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE"].includes(currentCertificateType) && (
+                                            <Grid item xs={2} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
+                                                <Field
+                                                    id="facilityId"
+                                                    name="facilityId"
+                                                    label={getTranslatedLabel("facility.items.form.facility", "Facility *")}
+                                                    component={MemoizedFormDropDownList2}
+                                                    data={facilities}
+                                                    dataItemKey="facilityId"
+                                                    textField="facilityName"
+                                                    validator={requiredValidator}
+                                                    disabled={editMode > 3}
+                                                />
+                                            </Grid>
+                                        )}
+                                        <Grid item xs={showSupplier && showContractor ? 1.5 : 2} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
                                             <Field
                                                 name="estimatedStartDate"
                                                 id="estimatedStartDate"
@@ -421,7 +459,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                                 validator={requiredValidator}
                                             />
                                         </Grid>
-                                        <Grid item xs={showSupplier && showContractor ? 2 : 3} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
+                                        <Grid item xs={showSupplier && showContractor ? 1.5 : 2} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
                                             <Field
                                                 name="estimatedCompletionDate"
                                                 id="estimatedCompletionDate"
@@ -431,7 +469,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                                 validator={requiredValidator}
                                             />
                                         </Grid>
-                                        <Grid item xs={6} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
+                                        <Grid item xs={6.5} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
                                             <Field
                                                 id="description"
                                                 name="description"
@@ -444,18 +482,12 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                         <Grid item xs={12}>
                                             <Grid container spacing={1} alignItems="center" sx={{ ml: 1, mt: 3 }}>
                                                 <Grid item xs={12}>
-                                                    <CertificateItemsListMemo
-                                                        editMode={formEditMode}
-                                                        workEffortId={selectedCertificate?.workEffortId}
-                                                    />
+                                                    <CertificateItemsListMemo editMode={formEditMode} workEffortId={selectedCertificate?.workEffortId} />
                                                 </Grid>
                                             </Grid>
                                         </Grid>
                                     </Grid>
                                 </Grid>
-
-                                {/* Purpose: Submit or cancel the form */}
-                                {/* Context: Disables submit during loading, matches PurchaseOrderForm */}
                                 <div className="k-form-buttons">
                                     <Grid container spacing={2}>
                                         {(editMode === 1 || editMode === 2) && (

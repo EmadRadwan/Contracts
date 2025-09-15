@@ -27,9 +27,9 @@ export default function CertificateItemForm({
     const [discountMode, setDiscountMode] = useState<"value" | "percentage">("value");
     const [insuranceMode, setInsuranceMode] = useState<"value" | "percentage">("value");
     const [calculatedInsurance, setCalculatedInsurance] = useState<number>(0);
-    const { data: facilities = [] } = useFetchFacilitiesQuery(undefined);
     const { getTranslatedLabel } = useTranslationHelper();
 
+    console.log('certificateItem', certificateItem)
     const calculateTotals = useCallback(
         (valueGetter: FormRenderProps["valueGetter"]) => {
             const quantity = Number(valueGetter("quantity") || 0);
@@ -67,79 +67,60 @@ export default function CertificateItemForm({
 
 
         // Set type-specific defaults
-        const deserializedInitValue = useMemo((): Partial<CertificateItem> => {
-            const baseDefaultValues: Partial<CertificateItem> = {
-                productId: "",
-                productName: "",
-                uomId: "",
-                uomName: "",
-                quantity: 0,
-                unitPrice: 0,
-                totalAmount: 0,
-                discount: 0,
-                insurance: 0,
-                deductions: 0,
-                deserved: 0,
-                net: 0,
-                procurementDate: new Date(),
-                facilityId: "",
-                facilityName: "",
-                isContractorPurchased: false,
-                isDeleted: false,
-                achievementPercentage: 0,
-                transportationExpenses: 0,
-                gratuities: 0,
-                completionPercentage: 0,
-                notes: "",
-                workEffortId: "",
-                workEffortParentId: "",
-            };
+    // CertificateItemForm.tsx
+    const deserializedInitValue = useMemo((): Partial<CertificateItem> => {
+        const baseDefaultValues: Partial<CertificateItem> = {
+            productId: "",
+            productName: "",
+            uomId: "",
+            uomName: "",
+            description: "",
+            quantity: 0,
+            unitPrice: 0,
+            totalAmount: 0,
+            discount: 0,
+            insurance: 0,
+            deductions: 0,
+            deserved: 0,
+            net: 0,
+            procurementDate: new Date(),
+            isContractorPurchased: false,
+            isDeleted: false,
+            achievementPercentage: 0,
+            transportationExpenses: 0,
+            gratuities: 0,
+            completionPercentage: 0,
+            notes: "",
+            workEffortId: "",
+            workEffortParentId: "",
+        };
 
-            const typeSpecificDefaults: Partial<CertificateItem> = {
-                ...(["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)
-                    ? {
-                        discount: 0,
-                        transportationExpenses: 0,
-                        gratuities: 0,
-                        procurementDate: new Date(),
-                        facilityId: "",
-                        facilityName: "",
-                    }
-                    : currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
-                        ? {
-                            insurance: 0,
-                            deductions: 0,
-                            achievementPercentage: 0,
-                        }
-                        : ["COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE"].includes(currentCertificateType)
-                            ? {
-                                transportationExpenses: 0,
-                                gratuities: 0,
-                                procurementDate: new Date(),
-                                facilityId: "",
-                                facilityName: "",
-                                discount: 0,
-                                insurance: 0,
-                            }
-                            : {}),
-            };
+        // REFACTOR: Only include type-specific defaults that won't overwrite certificateItem values
+        // Context: Previously, typeSpecificDefaults overwrote discount, transportationExpenses, and gratuities.
+        // Improvement: Exclude these fields when certificateItem exists to preserve its values.
+        const typeSpecificDefaults: Partial<CertificateItem> = {
+            ...(["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)
+                ? certificateItem
+                    ? {} // Skip defaults that could overwrite certificateItem values
+                    : { discount: 0, transportationExpenses: 0, gratuities: 0, procurementDate: new Date() }
+                : currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                    ? { insurance: 0, deductions: 0, achievementPercentage: 0 }
+                    : ["COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE"].includes(currentCertificateType)
+                        ? certificateItem
+                            ? {} // Skip defaults for these types as well
+                            : { transportationExpenses: 0, gratuities: 0, procurementDate: new Date(), discount: 0, insurance: 0 }
+                        : {}),
+        };
 
-            return certificateItem
-                ? {
-                    ...baseDefaultValues,
-                    ...certificateItem,
-                    ...typeSpecificDefaults,
-                    procurementDate: certificateItem.procurementDate ? new Date(certificateItem.procurementDate) : new Date(),
-                    facilityName: certificateItem.facilityName || "",
-                    isContractorPurchased: false,
-                }
-                : {
-                    ...baseDefaultValues,
-                    ...typeSpecificDefaults,
-                };
-        }, [certificateItem, currentCertificateType]);
-
-
+        return {
+            ...baseDefaultValues,
+            ...typeSpecificDefaults,
+            ...(certificateItem || {}), // Ensure certificateItem takes precedence
+            procurementDate: certificateItem?.procurementDate
+                ? new Date(certificateItem.procurementDate)
+                : new Date(),
+        };
+    }, [certificateItem, currentCertificateType]);
 
         const MyForm = useRef<Form>(null);
     const [formKey, setFormKey] = useState<number>(1);
@@ -182,23 +163,17 @@ export default function CertificateItemForm({
         },
         []
     );
-
-    const getFacilityName = useCallback(
-        (facilityId: string | undefined): string => {
-            if (!facilityId) return "";
-            const facility = facilities.find((f) => f.facilityId === facilityId);
-            return facility?.facilityName || "";
-        },
-        [facilities]
-    );
-
+    
+    console.log('initValue', initValue)
+    console.log("certificateItem in CertificateItemForm:", certificateItem);
+    console.log("initValue in CertificateItemForm:", initValue);
+     
     return (
         <Form
             ref={MyForm}
             initialValues={initValue}
             key={formKey}
             onSubmit={(values: Partial<CertificateItem>) => {
-                // REFACTOR: Ensure serializedValues includes all required fields
                 // Purpose: Align with CertificateItem interface and prevent undefined values
                 // Context: Handles COMPANY_SUPPLY_SALE_CERTIFICATE correctly
                 const serializedValues: CertificateItem = {
@@ -207,6 +182,7 @@ export default function CertificateItemForm({
                     productName: values.productName || "",
                     uomId: values.uomId || "",
                     uomName: values.uomName || "",
+                    description: values.description || "",
                     quantity: Number(values.quantity) || 0,
                     unitPrice: Number(values.unitPrice) || 0,
                     totalAmount: Number(values.totalAmount) || 0,
@@ -219,8 +195,6 @@ export default function CertificateItemForm({
                         values.procurementDate instanceof Date
                             ? values.procurementDate.toISOString()
                             : new Date().toISOString(),
-                    facilityId: values.facilityId || "",
-                    facilityName: getFacilityName(values.facilityId),
                     isContractorPurchased: false,
                     isDeleted: false,
                     achievementPercentage: Number(values.achievementPercentage) || 0,
@@ -244,7 +218,6 @@ export default function CertificateItemForm({
                             discountMode={discountMode}
                             handleDiscountModeChange={handleDiscountModeChange}
                             calculateTotals={calculateTotals}
-                            facilities={facilities}
                             getTranslatedLabel={getTranslatedLabel}
                             onClose={onClose}
                             percentageValidator={percentageValidator}
@@ -257,7 +230,6 @@ export default function CertificateItemForm({
                             editMode={editMode}
                             formEditMode={formEditMode}
                             calculateTotals={calculateTotals}
-                            facilities={facilities}
                             getTranslatedLabel={getTranslatedLabel}
                             onClose={onClose}
                         />
@@ -271,7 +243,6 @@ export default function CertificateItemForm({
                             discountMode={discountMode}
                             handleDiscountModeChange={handleDiscountModeChange}
                             calculateTotals={calculateTotals}
-                            facilities={facilities}
                             getTranslatedLabel={getTranslatedLabel}
                             onClose={onClose}
                             percentageValidator={percentageValidator}
@@ -286,7 +257,6 @@ export default function CertificateItemForm({
                             insuranceMode={insuranceMode}
                             handleInsuranceModeChange={handleInsuranceModeChange}
                             calculateTotals={calculateTotals}
-                            facilities={facilities}
                             getTranslatedLabel={getTranslatedLabel}
                             onClose={onClose}
                             achievementPercentageValidator={achievementPercentageValidator}
@@ -299,7 +269,6 @@ export default function CertificateItemForm({
                             editMode={editMode}
                             formEditMode={formEditMode}
                             calculateTotals={calculateTotals}
-                            facilities={facilities}
                             getTranslatedLabel={getTranslatedLabel}
                             onClose={onClose}
                         />

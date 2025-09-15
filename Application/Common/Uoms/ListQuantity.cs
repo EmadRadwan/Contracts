@@ -28,7 +28,6 @@ public class ListQuantity
             //   Purpose: Ensures only UOMs with English descriptions ("Kilogram", "Meter", "Piece", "Set") are returned.
             //   Improvement: Simplifies filtering by using English descriptions directly, assuming u.Description contains English names.
             var query = _context.Uoms
-                .Where(u => AllowedUoms.Contains(u.UomId))
                 .Select(u => new QuantityDto
                 {
                     QuantityUomId = u.UomId,

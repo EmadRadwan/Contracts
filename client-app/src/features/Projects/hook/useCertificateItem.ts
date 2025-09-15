@@ -46,7 +46,6 @@ export default function useCertificateItem({
         toast.error(message);
     };
 
-    // REFACTOR: Removed certificate type dependency for transportationExpenses and gratuities
     // Purpose: Allow transportationExpenses and gratuities for all certificate types, including CONTRACTOR_PURCHASE_CERTIFICATE
     // Context: Ensures values from calculateTotals are used consistently without being forced to 0
     const createOrUpdateCertificateItem = useCallback(
@@ -66,6 +65,7 @@ export default function useCertificateItem({
                 productName: typeof data.productId === "object" ? data.productId.ProductName : data.productName || "",
                 uomId: typeof data.uomId === "object" ? data.uomId.UomId : data.uomId,
                 uomName: typeof data.uomId === "object" ? data.uomId.Description : data.uomName || "",
+                description: data.description || "",
                 quantity: data.quantity,
                 unitPrice: +data.unitPrice?.toFixed(3),
                 totalAmount: +total.toFixed(3),
@@ -77,8 +77,6 @@ export default function useCertificateItem({
                 completionPercentage: data.completionPercentage,
                 notes: data.notes,
                 procurementDate: serializedProcurementDate,
-                facilityId: data.facilityId,
-                facilityName: data.facilityName || "",
                 isDeleted: false,
                 achievementPercentage: data.achievementPercentage,
                 transportationExpenses: +transportationExpenses.toFixed(3),

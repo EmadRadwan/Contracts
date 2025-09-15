@@ -12,9 +12,6 @@ export interface CertificateItem {
     completionPercentage?: number;
     productId?: string;
     productName?: string;
-    facilityId?: string;
-    facilityName?: string;
-    isContractorPurchased?: string; // Aligned with provided interface
     notes?: string;
     procurementDate?: string;
     isDeleted?: boolean;

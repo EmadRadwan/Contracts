@@ -44,6 +44,8 @@ interface ProjectCertificate {
     certificateCategory?: string; // Raw type ID from backend
     certificateCategoryDescription?: string;
     relatedOrderId?: string;
+    facilityId?: string;
+    facilityName?: string;
 }
 
 export default function ProjectCertificatesList() {
@@ -174,6 +176,8 @@ export default function ProjectCertificatesList() {
                     statusDescriptionArabic: selectedCert.statusDescriptionArabic || "",
                     relatedOrderId: selectedCert.relatedOrderId || "",
                     workEffortTypeId: selectedCert.certificateCategory || "SUPPLY_PROCUREMENT_CERTIFICATE",
+                    facilityId: selectedCert.facilityId,
+                    facilityName: selectedCert.facilityName || "",
                 })
             );
             dispatch(setCurrentCertificateType(selectedCert.certificateCategory || "SUPPLY_PROCUREMENT_CERTIFICATE"));
@@ -355,6 +359,10 @@ export default function ProjectCertificatesList() {
                                     field="estimatedCompletionDate"
                                     title={getTranslatedLabel("certificate.list.toDate", "To Date")}
                                     format="{0: dd/MM/yyyy}"
+                                />
+                                <Column
+                                    field="facilityName"
+                                    title={getTranslatedLabel("certificate.list.facilityName", "Facility Name")}
                                 />
                             </KendoGrid>
                             {isFetching && (

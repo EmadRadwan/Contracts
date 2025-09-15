@@ -6,10 +6,11 @@ import { Notification, NotificationGroup } from "@progress/kendo-react-notificat
 import agent from "../../api/agent";
 import { useAppDispatch } from "../../store/configureStore";
 
-// REFACTOR: Updated interface to use projectId instead of workEffortId for frontend consistency
+// REFACTOR: Added facilityId to ProjectItem interface to support facility data
 interface ProjectItem {
     projectId: string;
     projectName: string;
+    facilityId: string; // New field to store facility identifier
 }
 
 export const FormComboBoxVirtualProject = (fieldRenderProps: FieldRenderProps) => {
@@ -27,11 +28,12 @@ export const FormComboBoxVirtualProject = (fieldRenderProps: FieldRenderProps) =
         value,
         onChange,
     } = fieldRenderProps;
+
     const editorRef = React.useRef(null);
     const [focused, setFocused] = React.useState(false);
     const dispatch = useAppDispatch();
 
-    // REFACTOR: Consolidated position styles into a single object for better maintainability
+    // REFACTOR: Consolidated position styles (unchanged)
     const position = {
         topLeft: { top: 0, left: 0, alignItems: "flex-start" },
         topCenter: { top: 0, left: "50%", transform: "translateX(-50%)" },
@@ -47,7 +49,7 @@ export const FormComboBoxVirtualProject = (fieldRenderProps: FieldRenderProps) =
     const errorId = showValidationMessage ? `${id}_error` : "";
     const labelId = label ? `${id}_label` : "";
 
-    // REFACTOR: Simplified focus/blur handlers using useCallback for performance
+    // REFACTOR: Simplified focus/blur handlers (unchanged)
     const handleOnFocus = React.useCallback(() => {
         onFocus();
         setFocused(true);
@@ -59,10 +61,14 @@ export const FormComboBoxVirtualProject = (fieldRenderProps: FieldRenderProps) =
     }, [onBlur]);
 
     const textField = "projectName";
-    // REFACTOR: Changed keyField to projectId for frontend consistency
     const keyField = "projectId";
-    // REFACTOR: Updated emptyItem to use projectId
-    const emptyItem: ProjectItem = { [textField]: "loading ...", projectId: "0" };
+    // REFACTOR: Updated emptyItem to include facilityId
+    const emptyItem: ProjectItem = {
+        [textField]: "loading ...",
+        projectId: "0",
+        facilityId: "0", // Default value for facilityId
+    };
+
     const pageSize = 10;
     const loadingData: ProjectItem[] = [];
     while (loadingData.length < pageSize) {
@@ -77,12 +83,12 @@ export const FormComboBoxVirtualProject = (fieldRenderProps: FieldRenderProps) =
     const [filter, setFilter] = React.useState("");
     const skipRef = React.useRef(0);
 
-    // REFACTOR: Added resetCache function to clear cached data for better memory management
+    // REFACTOR: Reset cache function (unchanged)
     const resetCache = () => {
         dataCaching.current.length = 0;
     };
 
-    // REFACTOR: Updated requestData to map backend workEffortId to frontend projectId
+    // REFACTOR: Updated requestData to include facilityId in the mapping
     const requestData = React.useCallback((skip: number, filter: string) => {
         if (requestStarted.current) {
             clearTimeout(pendingRequest.current);
@@ -92,36 +98,38 @@ export const FormComboBoxVirtualProject = (fieldRenderProps: FieldRenderProps) =
             return;
         }
         requestStarted.current = true;
-        const params = new URLSearchParams();
-        params.append('skip', skip.toString());
-        params.append('pageSize', pageSize.toString());
-        if (filter) params.append('searchTerm', filter);
 
-        agent.Projects.getProjectsLov(params)
-            .then((json) => {
-                if (json) {
-                    const total = json.projectCount;
-                    const items: ProjectItem[] = [];
-                    json.projects.forEach((element: any, index: number) => {
-                        const { workEffortId, projectName } = element;
-                        // REFACTOR: Map workEffortId to projectId for frontend use
-                        const item: ProjectItem = {
-                            [keyField]: workEffortId, // Backend still uses workEffortId
-                            [textField]: projectName,
-                        };
-                        items.push(item);
-                        dataCaching.current[index + skip] = item;
-                    });
-                    if (skip === skipRef.current) {
-                        setData(items);
-                        setTotal(total);
-                    }
+        const params = new URLSearchParams();
+        params.append("skip", skip.toString());
+        params.append("pageSize", pageSize.toString());
+        if (filter) params.append("searchTerm", filter);
+
+        agent.Projects.getProjectsLov(params).then((json) => {
+            if (json) {
+                const total = json.projectCount;
+                const items: ProjectItem[] = [];
+                json.projects.forEach((element: any, index: number) => {
+                    const { workEffortId, projectName, facilityId } = element;
+                    // REFACTOR: Added facilityId to the item mapping
+                    const item: ProjectItem = {
+                        [keyField]: workEffortId,
+                        [textField]: projectName,
+                        facilityId: facilityId || "0", // Fallback to "0" if facilityId is missing
+                    };
+                    items.push(item);
+                    dataCaching.current[index + skip] = item;
+                });
+
+                if (skip === skipRef.current) {
+                    setData(items);
+                    setTotal(total);
                 }
-                requestStarted.current = false;
-            });
+            }
+            requestStarted.current = false;
+        });
     }, []);
 
-    // REFACTOR: Added useEffect cleanup to prevent memory leaks
+    // REFACTOR: useEffect cleanup (unchanged)
     React.useEffect(() => {
         const ac = new AbortController();
         requestData(0, filter);
@@ -131,17 +139,20 @@ export const FormComboBoxVirtualProject = (fieldRenderProps: FieldRenderProps) =
         };
     }, [filter, requestData]);
 
-    // REFACTOR: Optimized filter change handler to reset cache and trigger new data fetch
-    const onFilterChange = React.useCallback((event: ComboBoxFilterChangeEvent) => {
-        const filter = event.filter.value;
-        resetCache();
-        requestData(0, filter);
-        setData(loadingData);
-        skipRef.current = 0;
-        setFilter(filter);
-    }, [requestData]);
+    // REFACTOR: Filter change handler (unchanged)
+    const onFilterChange = React.useCallback(
+        (event: ComboBoxFilterChangeEvent) => {
+            const filter = event.filter.value;
+            resetCache();
+            requestData(0, filter);
+            setData(loadingData);
+            skipRef.current = 0;
+            setFilter(filter);
+        },
+        [requestData]
+    );
 
-    // REFACTOR: Simplified data caching logic for better readability
+    // REFACTOR: Cached data logic (unchanged)
     const shouldRequestData = React.useCallback((skip: number) => {
         for (let i = 0; i < pageSize; i++) {
             if (!dataCaching.current[skip + i]) {
@@ -159,7 +170,7 @@ export const FormComboBoxVirtualProject = (fieldRenderProps: FieldRenderProps) =
         return data;
     }, []);
 
-    // REFACTOR: Optimized page change handler to use cached data when available
+    // REFACTOR: Page change handler (unchanged)
     const pageChange = React.useCallback(
         (event: ComboBoxPageChangeEvent) => {
             const newSkip = event.page.skip;
@@ -173,12 +184,18 @@ export const FormComboBoxVirtualProject = (fieldRenderProps: FieldRenderProps) =
         [getCachedData, requestData, shouldRequestData, filter]
     );
 
-    // REFACTOR: Added null check and proper state dispatch for project selection
+    // REFACTOR: Updated onChangeHandler to include facilityId in the value
     const onChangeHandler = React.useCallback(
         (event) => {
-            onChange({ value: event.value });
+            onChange({
+                value: {
+                    projectId: event.value.projectId,
+                    projectName: event.value.projectName,
+                    facilityId: event.value.facilityId, // Include facilityId in the change event
+                },
+            });
         },
-        [onChange, dispatch]
+        [onChange]
     );
 
     return (
@@ -217,7 +234,7 @@ export const FormComboBoxVirtualProject = (fieldRenderProps: FieldRenderProps) =
             />
             {showHint && (
                 <NotificationGroup style={position.bottomRight}>
-                    <Notification type={{ style: 'info', icon: true }} closable={false}>
+                    <Notification type={{ style: "info", icon: true }} closable={false}>
                         <span>{hint}</span>
                     </Notification>
                 </NotificationGroup>

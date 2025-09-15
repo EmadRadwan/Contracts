@@ -19,5 +19,7 @@ public class ProjectCertificateDto
     public DateTime? EstimatedCompletionDate { get; set; }
     public string? StatusDescription { get; set; }
     public string? StatusDescriptionArabic { get; set; }
+    public string? FacilityId { get; set; }
+    public string? FacilityName { get; set; }
     public List<CertificateItemDto>? CertificateItems { get; set; } // List of associated items
 }

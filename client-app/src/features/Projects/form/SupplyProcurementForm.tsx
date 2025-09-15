@@ -7,10 +7,9 @@ import { FormSimpleComboBoxVirtualProduct } from "../../../app/common/form/FormS
 import { FormComboBoxVirtualUOM } from "../../../app/common/form/FormComboBoxVirtualUOM";
 import { MemoizedFormDropDownList2 } from "../../../app/common/form/MemoizedFormDropDownList2";
 import { requiredValidator } from "../../../app/common/form/Validators";
-import { Facility } from "../../../app/models/facility";
 import FormButtons from "./FormButtons";
+import FormInput from "../../../app/common/form/FormInput";
 
-// REFACTOR: Updated ProcurementFormProps to include transportationExpenses and gratuities in calculateTotals return type
 // Purpose: Ensure type safety for new fields used in calculations
 // Context: Reflects the updated calculateTotals function to include new fields for procurement-like certificates
 interface ProcurementFormProps {
@@ -29,7 +28,6 @@ interface ProcurementFormProps {
         transportationExpenses: number;
         gratuities: number;
     };
-    facilities: Facility[];
     getTranslatedLabel: (key: string, defaultValue: string) => string;
     onClose: () => void;
     percentageValidator: (value: number) => string | undefined;
@@ -42,7 +40,6 @@ const SupplyProcurementForm = ({
                                    discountMode,
                                    handleDiscountModeChange,
                                    calculateTotals,
-                                   facilities,
                                    getTranslatedLabel,
                                    onClose,
                                    percentageValidator,
@@ -50,7 +47,6 @@ const SupplyProcurementForm = ({
     const { valueGetter, onChange } = formRenderProps;
     const { finalTotal } = calculateTotals(valueGetter);
 
-    // REFACTOR: Optimized useEffect dependency array
     // Purpose: Prevent unnecessary re-renders by only depending on finalTotal and onChange
     // Context: Ensures total field updates only when finalTotal changes
     useEffect(() => {
@@ -80,6 +76,16 @@ const SupplyProcurementForm = ({
                             component={FormComboBoxVirtualUOM}
                             validator={requiredValidator}
                             disabled={editMode === 2 || formEditMode > 3}
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <Field
+                            id="description"
+                            name="description"
+                            label={getTranslatedLabel("certificate.items.form.description", "Description *")}
+                            component={FormInput}
+                            validator={requiredValidator}
+                            disabled={formEditMode > 3}
                         />
                     </Grid>
                     <Grid item xs={6}>
@@ -116,20 +122,8 @@ const SupplyProcurementForm = ({
                             disabled={formEditMode > 3}
                         />
                     </Grid>
+                    
                     <Grid item xs={6}>
-                        <Field
-                            id="facilityId"
-                            name="facilityId"
-                            label={getTranslatedLabel("facility.items.form.facility", "Facility *")}
-                            component={MemoizedFormDropDownList2}
-                            data={facilities}
-                            dataItemKey="facilityId"
-                            textField="facilityName"
-                            validator={requiredValidator}
-                        />
-                    </Grid>
-                    <Grid item xs={6}>
-                        {/* REFACTOR: Wrapped discount field and RadioGroup in a nested Grid container */}
                         {/* Purpose: Visually group discount and its mode selector for better UX */}
                         {/* Context: Ensures discount and RadioGroup are aligned together in the same column */}
                         <Grid container direction="column" spacing={1}>

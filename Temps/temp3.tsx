@@ -1,373 +1,423 @@
-import React, {useCallback, useEffect, useMemo, useState} from "react";
-import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
-import {
-    Grid as KendoGrid,
-    GRID_COL_INDEX_ATTRIBUTE,
-    GridColumn as Column,
-    GridDataStateChangeEvent,
-} from "@progress/kendo-react-grid";
-import { DataResult, State } from "@progress/kendo-data-query";
-import Button from "@mui/material/Button";
-import { Grid, Paper } from "@mui/material";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import usePurchaseOrder from "../../../hook/usePurchaseOrder";
+import { useAppDispatch, useAppSelector, useFetchCompanyBaseCurrencyQuery, useFetchCurrenciesQuery } from "../../../../../app/store/configureStore";
 import { Menu, MenuItem, MenuSelectEvent } from "@progress/kendo-react-layout";
-import { useLocation, useNavigate } from "react-router-dom";
-import {
-    certificateUiSelectors,
-    resetCertificateUi,
-    setCertificateFormEditMode,
-    setCurrentCertificateType,
-    setSelectedCertificate,
-} from "../slice/certificateUiSlice";
-import { useAppDispatch, useAppSelector } from "../../../app/store/configureStore";
-import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
-import LoadingComponent from "../../../app/layout/LoadingComponent";
-import { useFetchProjectCertificatesQuery } from "../../../app/store/apis/projectsApi";
-import ProjectMenu from "../menu/ProjectMenu";
-import ProjectCertificateForm from "../form/ProjectCertificateForm";
-import {Certificate, CertificateStatus} from "../../../app/models/project/certificate";
+import Grid from "@mui/material/Grid";
+import { Box, Paper, Typography } from "@mui/material";
+import { Field, Form, FormElement } from "@progress/kendo-react-form";
+import { FormComboBoxVirtualSupplier } from "../../../../../app/common/form/FormComboBoxVirtualSupplier";
+import { requiredValidator } from "../../../../../app/common/form/Validators";
+import { PurchaseOrderItemsListMemo } from "../../../dashboard/order/PurchaseOrderItemsList";
+import OrderTotals from "../OrderTotals";
+import Button from "@mui/material/Button";
+import LoadingComponent from "../../../../../app/layout/LoadingComponent";
+import { resetUiOrderItems, setUiOrderItems } from "../../../slice/orderItemsUiSlice";
+import { resetUiOrderAdjustments, setUiOrderAdjustments } from "../../../slice/orderAdjustmentsUiSlice";
+import FormTextArea from "../../../../../app/common/form/FormTextArea";
+import OrderMenu from "../../../menu/OrderMenu";
+import { useFetchAgreementsByPartyIdQuery } from "../../../../../app/store/apis";
+import { MemoizedFormDropDownList2 } from "../../../../../app/common/form/MemoizedFormDropDownList2";
+import { setAddTax, setNeedsTaxRecalculation, setSelectedApprovedPurchaseOrder, setSupplierId } from "../../../slice/sharedOrderUiSlice";
+import { RibbonContainer, Ribbon } from "react-ribbons";
+import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHelper";
+import { setOrderFormEditMode } from "../../../slice/ordersUiSlice";
+import { useNavigate } from "react-router";
+import { MemoizedFormCheckBox } from "../../../../../app/common/form/MemoizedFormCheckBox";
+import { nonDeletedOrderItemsSelector } from "../../../slice/orderSelectors";
+import { useRecalculateTaxesMutation } from "../../../../../app/store/apis/accounting/taxApi";
+import { toast } from "react-toastify";
+import { debounce } from "lodash";
+import LoadingButton from "@mui/lab/LoadingButton";
 
-interface ProjectCertificate {
-    workEffortId?: string;
-    projectNum?: string;
-    projectName?: string;
-    projectId?: string;
-    partyIdSupplier?: string;
-    partyNameSupplier?: string;
-    partyIdContractor?: string;
-    partyNameContractor?: string;
-    description?: string;
-    estimatedStartDate?: string;
-    estimatedCompletionDate?: string;
-    statusDescription?: string;
-    statusDescriptionArabic?: string; // Added for localization
-    currentStatusId?: CertificateStatus; // Added for consistent status handling
-    certificateCategory?: string; // Raw type ID from backend
-    certificateCategoryDescription?: string;
-    relatedOrderId?: string;
+interface Props {
+    selectedOrder?: any;
+    editMode: number;
+    cancelEdit: () => void;
 }
 
-export default function ProjectCertificatesList() {
-    const [certificates, setCertificates] = useState<DataResult>({ data: [], total: 0 });
-    const [dataState, setDataState] = useState<State>({ take: 6, skip: 0 });
-    const { selectedCertificate, certificateFormEditMode } = useAppSelector(certificateUiSelectors.selectCertificateUi);
+export default function PurchaseOrderForm({ selectedOrder, cancelEdit, editMode }: Props) {
+    const formRef = React.useRef<any>(null);
+    const formRef2 = React.useRef<boolean>(false);
+    const [selectedMenuItem, setSelectedMenuItem] = React.useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const { getTranslatedLabel } = useTranslationHelper();
-    const location = useLocation();
+    const localizationKey = 'order.po.form';
+    const selectedMenuItemRef = useRef<string>("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { language } = useAppSelector(state => state.localization);
+    const supplierId = useAppSelector((state) => state.sharedOrderUi.selectedSupplierId);
+    const { data: agreements } = useFetchAgreementsByPartyIdQuery({ partyId: supplierId!, orderType: "PURCHASE_ORDER" }, { skip: !supplierId });
+    const { data: currencies } = useFetchCurrenciesQuery(undefined);
+    const { data: baseCurrency } = useFetchCompanyBaseCurrencyQuery(undefined);
+    const { order, setOrder, formEditMode, setFormEditMode, handleCreate, isUpdatePurchaseOrderLoading, isAddPurchaseOrderLoading } = usePurchaseOrder({
+        selectedMenuItem,
+        editMode,
+        formRef2,
+        selectedOrder,
+        setIsLoading
+    });
+    const initialFormValues = useMemo(() => ({
+        fromPartyId: order?.fromPartyId || null,
+        currencyUomId: order?.currencyUomId || baseCurrency?.currencyUomId || '',
+        internalRemarks: order?.internalRemarks || '',
+        agreementId: order?.agreementId || null,
+        addTax: order?.addTax || false,
+    }), [order, baseCurrency]);
+
+    const handleError = useCallback((error: any, defaultMessage: string) => {
+        const message = error?.message || defaultMessage;
+        console.error("Error:", error);
+        toast.error(message);
+    }, []);
+
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
-    const [certificate, setCertificate] = useState<ProjectCertificate | undefined>(undefined);
-    const { data, isFetching, refetch } = useFetchProjectCertificatesQuery({ ...dataState });
+    const memoizedOrderTotals = useMemo(() => <OrderTotals />, [order]);
+    const addTax = useAppSelector((state) => state.sharedOrderUi.addTax);
+    const needsTaxRecalculation = useAppSelector((state) => state.sharedOrderUi.needsTaxRecalculation);
+    const orderItems = useAppSelector(nonDeletedOrderItemsSelector);
+    const allAdjustments = useAppSelector((state) => state.orderAdjustmentsUi.orderAdjustments.entities);
+    const allAvailableAdjustments = Object.values(allAdjustments);
+    const [recalculateTaxes, { isLoading: isTaxLoading }] = useRecalculateTaxesMutation();
+    const prevAddTaxRef = useRef(addTax);
 
-    console.log("Certificates data:", data);
-
-    const debounce = (func: Function, wait: number) => {
-        let timeout: NodeJS.Timeout;
-        return (...args: any[]) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func(...args), wait);
-        };
-    };
-
-    const editModeMap: { [key in CertificateStatus]: number } = useMemo(() => ({
-        [CertificateStatus.CREATED]: 2,
-        [CertificateStatus.APPROVED]: 3,
-        [CertificateStatus.COMPLETE]: 4,
-    }), []);
+    const debouncedRecalculateTaxes = useMemo(() =>
+        debounce((orderItems, dispatch) => {
+            console.log('Debounced recalculateTaxes called:', orderItems);
+            recalculateTaxes({ orderItems, forceCalculate: true })
+                .unwrap()
+                .then(() => {
+                    dispatch(setNeedsTaxRecalculation(false));
+                })
+                .catch((error) => handleError(error, "Failed to recalculate tax"));
+        }, 300), [recalculateTaxes, handleError, dispatch]);
 
     useEffect(() => {
-        if (data) {
-            const adjustedData = data.data.map((item: Certificate) => ({
-                ...item,
-                estimatedStartDate: item.estimatedStartDate
-                    ? new Date(item.estimatedStartDate).toLocaleDateString("en-GB")
-                    : "",
-                estimatedCompletionDate: item.estimatedCompletionDate
-                    ? new Date(item.estimatedCompletionDate).toLocaleDateString("en-GB")
-                    : "",
-            }));
-            setCertificates({ data: adjustedData, total: data.total });
-            if (selectedCertificate?.workEffortId) {
-                const matchingCert = adjustedData.find(
-                    (cert: Certificate) => cert.workEffortId === selectedCertificate.workEffortId
-                );
-                if (matchingCert && JSON.stringify(matchingCert) !== JSON.stringify(certificate)) {
-                    console.log("Syncing certificate with new data:", matchingCert);
-                    setCertificate(matchingCert);
-                } else if (!matchingCert) {
-                    // Purpose: Prevent stale data when certificate is deleted or unavailable
-                    // Context: Ensures form resets to initial state
-                    console.warn("Certificate not found for workEffortId:", selectedCertificate.workEffortId);
-                    //dispatch(resetCertificateUi());
-                }
-            }
+        if (needsTaxRecalculation && addTax && orderItems.length > 0) {
+            debouncedRecalculateTaxes(orderItems, dispatch);
         }
-    }, [data, selectedCertificate?.workEffortId, certificate, dispatch]);
+    }, [needsTaxRecalculation, addTax, orderItems, dispatch, debouncedRecalculateTaxes]);
 
+    useEffect(() => {
+        return () => {
+            debouncedRecalculateTaxes.cancel();
+        };
+    }, [debouncedRecalculateTaxes]);
 
+    useEffect(() => {
+        if (prevAddTaxRef.current && !addTax) {
+            const nonTaxAdjustments = allAvailableAdjustments.filter((adj: any) => adj.orderAdjustmentTypeId !== "VAT_TAX");
+            dispatch(setUiOrderAdjustments(nonTaxAdjustments));
+        }
+        prevAddTaxRef.current = addTax;
+    }, [addTax, allAvailableAdjustments, dispatch]);
 
-    const dataStateChange = (e: GridDataStateChangeEvent) => {
-        setDataState(e.dataState);
+    useEffect(() => {
+        if (selectedOrder) {
+            setOrder(selectedOrder);
+        } else {
+            setOrder({ orderId: undefined, currencyUomId: baseCurrency?.currencyUomId });
+            formRef2.current = !formRef2.current;
+        }
+    }, [baseCurrency?.currencyUomId, selectedOrder, setOrder]);
+
+    const handleInternalRemarksChange = useCallback((event: any) => {
+        if (formRef.current) {
+            const newValue = event.value || '';
+            console.log('internalRemarks changed:', {
+                newValue,
+                previous: formRef.current.valueGetter('internalRemarks'),
+                modified: formRef.current.modified
+            });
+            formRef.current.onChange('internalRemarks', { value: newValue, touched: true });
+        }
+    }, []);
+
+    useEffect(() => {
+        if (formRef.current) {
+            console.log('Form state updated:', {
+                isValid: formRef.current.isValid,
+                modified: formRef.current.modified,
+                allowSubmit: formRef.current.allowSubmit,
+                values: formRef.current.valueGetter(),
+                touched: formRef.current.touched
+            });
+        }
+    }, [formRef.current?.modified, formRef.current?.isValid, formRef.current?.values?.internalRemarks]);
+
+    const formKey = useMemo(() => formRef2.current.toString(), [formRef2.current]);
+
+    const renderSwitchStatus = () => {
+        switch (formEditMode) {
+            case 1:
+                return { label: "New", backgroundColor: "green", foreColor: "#ffffff" };
+            case 2:
+                return { backgroundColor: "green", foreColor: "#ffffff" };
+            case 3:
+                return { backgroundColor: "yellow", foreColor: "#000000" };
+            case 4:
+                return { backgroundColor: "blue", foreColor: "#ffffff" };
+            default:
+                return { backgroundColor: "gray", foreColor: "#ffffff" };
+        }
     };
 
-    const handleSelectCertificate = useCallback(
-        debounce((workEffortId?: string, currentStatusId?: CertificateStatus) => {
-            // Purpose: Ensure type safety and consistency with enum
-            // Context: Matches ProjectNumberCell call and backend DTO
-            if (!workEffortId) {
-                console.warn("No workEffortId provided to handleSelectCertificate");
-                return;
+    useEffect(() => {
+        renderSwitchStatus();
+    }, [formEditMode]);
+
+    const handleNewOrder = () => {
+        setOrder({ orderId: undefined, currencyUomId: baseCurrency?.currencyUomId });
+        setFormEditMode(1);
+        dispatch(setUiOrderItems([]));
+        dispatch(resetUiOrderItems());
+        dispatch(resetUiOrderAdjustments());
+        dispatch(setUiOrderAdjustments([]));
+        dispatch(setSupplierId(undefined));
+        formRef2.current = !formRef2?.current;
+    };
+
+    const handleCancelForm = () => {
+        dispatch(setUiOrderItems([]));
+        dispatch(resetUiOrderItems());
+        setFormEditMode(0);
+        dispatch(resetUiOrderAdjustments());
+        dispatch(setUiOrderAdjustments([]));
+        dispatch(setOrderFormEditMode(0));
+        formRef2.current = !formRef2.current;
+        cancelEdit();
+    };
+
+    const handleMenuSelect = useCallback((e: MenuSelectEvent) => {
+        const menuItem = e.item.text;
+        if (menuItem === "New Order") {
+            handleNewOrder();
+        } else if (menuItem === "Receive Inventory") {
+            dispatch(setSelectedApprovedPurchaseOrder({ orderId: selectedOrder ? selectedOrder.orderId! : order?.orderId }));
+            navigate("/receiveInventory");
+        }
+    }, [dispatch, navigate, selectedOrder, order, handleNewOrder]);
+
+    const handleSubmit = useCallback(async (formProps: any) => {
+        if (!formProps.isValid) {
+            toast.error("Form is invalid");
+            setIsLoading(false);
+            return false;
+        }
+        if (isSubmitting) {
+            return false;
+        }
+        setIsSubmitting(true);
+        const values = formProps.values;
+        const actionType = formEditMode === 1 ? "Create Order" : formEditMode === 2 ? "Update Order" : "Approve Order";
+        try {
+            const result = await handleCreate({ values, selectedMenuItem: actionType });
+            if (formEditMode === 1 && result?.orderId) {
+                await handleCreate({ values: { ...values, orderId: result.orderId }, selectedMenuItem: "Approve Order" });
             }
-            console.log("handleSelectCertificate called with workEffortId:", workEffortId);
-            const selectedCert: Certificate | undefined = certificates.data.find(
-                (cert: Certificate) => cert.workEffortId === workEffortId
-                // Purpose: Improve type safety; assumes backend data matches interface
-                // Context: Prevents runtime errors on field access
-            );
-            if (!selectedCert) {
-                console.warn("No certificate found for workEffortId:", workEffortId);
-                return;
-            }
-            console.log("Raw selectedCert:", selectedCert); // REFACTOR: Debug log
+        } catch (error) {
+            toast.error("Operation failed");
+            setIsSubmitting(false);
+        }
+    }, [handleCreate, formEditMode, isSubmitting]);
 
-            dispatch(
-                setSelectedCertificate({
-                    workEffortId: selectedCert.workEffortId || "",
-                    projectNum: selectedCert.projectNum || "",
-                    projectId: selectedCert.projectId || selectedCert.projectNum || "",
-                    projectName: selectedCert.projectName || "",
-                    currentStatusId: selectedCert.currentStatusId || CertificateStatus.CREATED,
-                    partyIdSupplier: selectedCert.partyIdSupplier
-                        ? {
-                            fromPartyId:
-                                typeof selectedCert.partyIdSupplier === "object"
-                                    ? selectedCert.partyIdSupplier.fromPartyId
-                                    : selectedCert.partyIdSupplier,
-                            partyName: selectedCert.partyNameSupplier || "",
-                        }
-                        : undefined,
-                    partyIdContractor: selectedCert.partyIdContractor
-                        ? {
-                            fromPartyId:
-                                typeof selectedCert.partyIdContractor === "object"
-                                    ? selectedCert.partyIdContractor.fromPartyId
-                                    : selectedCert.partyIdContractor, // REFACTOR: Fixed typo from partyIdContractor to contractorPartyId
-                            // Purpose: Correctly map contractor ID from query data
-                            // Context: Fixes binding for contractor ComboBox
-                            partyName: selectedCert.partyNameContractor || "",
-                        }
-                        : undefined,
-                    description: selectedCert.description || "",
-                    // REFACTOR: Parse formatted date strings back to ISO format for form compatibility
-                    // Purpose: Resolves 'Invalid time value' error by constructing valid Date objects from 'dd/MM/yyyy' strings
-                    // Context: Backend expects ISO strings; formatted dates in grid are invalid for direct Date constructor
-                    estimatedStartDate: selectedCert.estimatedStartDate
-                        ? (() => {
-                            const [day, month, year] = selectedCert.estimatedStartDate.split('/').map(Number);
-                            const date = new Date(year, month - 1, day);
-                            return isNaN(date.getTime()) ? null : date.toISOString();
-                        })()
-                        : null,
-                    estimatedCompletionDate: selectedCert.estimatedCompletionDate
-                        ? (() => {
-                            const [day, month, year] = selectedCert.estimatedCompletionDate.split('/').map(Number);
-                            const date = new Date(year, month - 1, day);
-                            return isNaN(date.getTime()) ? null : date.toISOString();
-                        })()
-                        : null,
-                    statusDescription: selectedCert.statusDescription || "",
-                    statusDescriptionArabic: selectedCert.statusDescriptionArabic || "",
-                    relatedOrderId: selectedCert.relatedOrderId || "",
-                    workEffortTypeId: selectedCert.certificateCategory || "SUPPLY_PROCUREMENT_CERTIFICATE",
-                })
-            );
-            dispatch(setCurrentCertificateType(selectedCert.certificateCategory || "SUPPLY_PROCUREMENT_CERTIFICATE"));
-            dispatch(setCertificateFormEditMode(editModeMap[selectedCert.currentStatusId as CertificateStatus] || 0));
-        }, 500),
-        [dispatch, certificates.data, editModeMap]
-    );
+    useEffect(() => {
+        if (!isLoading) {
+            setIsSubmitting(false);
+        }
+    }, [isLoading]);
 
-
-    const cancelEdit = useCallback(() => {
-        setCertificate(undefined);
-        dispatch(setCertificateFormEditMode(0));
-        dispatch(resetCertificateUi());
+    const onSupplierChange = useCallback((event: any) => {
+        if (event.value === null) {
+            dispatch(resetUiOrderItems());
+            dispatch(resetUiOrderAdjustments());
+        }
     }, [dispatch]);
 
-    // Purpose: Replaces PROCUREMENTS and CONTRACTING with the five new types (SUPPLY_PROCUREMENT_CERTIFICATE, etc.) to align with the provided data.
-    // Context: Simplifies the menu to reflect only the types defined in the sheet, maintaining Redux dispatch for form initialization.
-    const handleMenuSelect = useCallback(
-        (e: MenuSelectEvent) => {
-            //dispatch(resetCertificateUi());
-            switch (e.item.data) {
-                case "supplyProcurement":
-                    dispatch(setCurrentCertificateType("SUPPLY_PROCUREMENT_CERTIFICATE"));
-                    dispatch(setCertificateFormEditMode(1));
-                    break;
-                case "workmanshipContracting":
-                    dispatch(setCurrentCertificateType("WORKMANSHIP_CONTRACTING_CERTIFICATE"));
-                    dispatch(setCertificateFormEditMode(1));
-                    break;
-                case "contractorPurchase":
-                    dispatch(setCurrentCertificateType("CONTRACTOR_PURCHASE_CERTIFICATE"));
-                    dispatch(setCertificateFormEditMode(1));
-                    break;
-                case "companySupplySale":
-                    dispatch(setCurrentCertificateType("COMPANY_SUPPLY_SALE_CERTIFICATE"));
-                    dispatch(setCertificateFormEditMode(1));
-                    break;
-                case "externalSupplySale":
-                    dispatch(setCurrentCertificateType("EXTERNAL_SUPPLY_SALE_CERTIFICATE"));
-                    dispatch(setCertificateFormEditMode(1));
-                    break;
-                default:
-                    break;
-            }
-        },
-        [dispatch]
-    );
-
-    const ProjectNumberCell = (props: any) => {
-        const field = props.field || "";
-        const value = props.dataItem[field];
-        const navigationAttributes = useTableKeyboardNavigation(props.id);
-        return (
-            <td
-                className={props.className}
-                style={{ ...props.style, color: "blue" }}
-                colSpan={props.colSpan}
-                role="gridcell"
-                aria-colindex={props.ariaColumnIndex}
-                aria-selected={props.isSelected}
-                {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
-                {...navigationAttributes}
-            >
-                <Button
-                    onClick={() =>
-                        handleSelectCertificate(
-                            props.dataItem.workEffortId,
-                            props.dataItem.currentStatusId
-                        )
-                        // Purpose: Align with handleSelectCertificate signature
-                        // Context: Ensures status-based editMode setting works
-                    }
-                >
-                    {props.dataItem.certificateNumber}
-                </Button>
-            </td>
-        );
-    };
-
-    if (certificateFormEditMode > 0) {
-        return (
-            <ProjectCertificateForm
-                selectedCertificate={certificate}
-                cancelEdit={cancelEdit}
-                editMode={certificateFormEditMode}
-            />
-        );
-    }
+    const status = renderSwitchStatus();
+    const isLoadingCombined = isLoading || isAddPurchaseOrderLoading || isUpdatePurchaseOrderLoading;
 
     return (
         <>
-            <ProjectMenu />
-            <Paper elevation={5} className="div-container-withBorderCurved">
-                <Grid container columnSpacing={1} alignItems="center">
-                    <Grid item xs={4}>
+            {isLoadingCombined && (
+                <LoadingComponent
+                    message='Processing Order...'
+                    style={{ zIndex: 9999, position: 'fixed', top: 0, left: 0, width: '100%', height: '100%' }}
+                />
+            )}
+            <OrderMenu selectedMenuItem={'/orders'} />
+            <Paper elevation={5} className={`div-container-withBorderCurved`}>
+                <Grid container spacing={2} alignItems={"center"} position={"relative"}>
+                    <Grid item xs={10}>
+                        <Box display='flex' justifyContent='space-between'>
+                            <Typography
+                                sx={{ fontWeight: "bold", paddingLeft: 3, fontSize: '18px', color: formEditMode === 1 ? "green" : "black" }}
+                                variant="h6"
+                            >
+                                {order && order?.orderId ? `Purchase Order No: ${order?.orderId}` : "New Purchase Order"}
+                            </Typography>
+                            {/* REFACTOR: Added display for certificateNumber when available
+                   Purpose: Show the certificate number below the order number if it exists, enhancing context for the PO
+                   Why it improves: Provides users with relevant certificate information without cluttering the form, only displayed when non-null
+                   Context: certificateNumber is now included in the order query and accessed via order.certificateNumber */}
+                            {order?.certificateNumber && (
+                                <Typography
+                                    sx={{ paddingLeft: 3, fontSize: '16px', color: 'textSecondary' }}
+                                    variant="subtitle1"
+                                >
+                                    Certificate Number: {order.certificateNumber}
+                                </Typography>
+                            )}
+                        </Box>
+                    </Grid>
+                    <Grid item xs={1}>
                         <Menu onSelect={handleMenuSelect}>
-                            <MenuItem key="newCertificate" text={getTranslatedLabel("certificate.list.new", "New Certificate")}>
-                                <MenuItem
-                                    key="supplyProcurement"
-                                    text={getTranslatedLabel("certificate.list.supplyProcurement", "Supply Procurement")}
-                                    data="supplyProcurement"
-                                />
-                                <MenuItem
-                                    key="workmanshipContracting"
-                                    text={getTranslatedLabel("certificate.list.workmanshipContracting", "Workmanship Contracting")}
-                                    data="workmanshipContracting"
-                                />
-                                <MenuItem
-                                    key="contractorPurchase"
-                                    text={getTranslatedLabel("certificate.list.contractorPurchase", "Contractor Purchase")}
-                                    data="contractorPurchase"
-                                />
-                                <MenuItem
-                                    key="companySupplySale"
-                                    text={getTranslatedLabel("certificate.list.companySupplySale", "Company Supply Sale")}
-                                    data="companySupplySale"
-                                />
-                                <MenuItem
-                                    key="externalSupplySale"
-                                    text={getTranslatedLabel("certificate.list.externalSupplySale", "External Supply Sale")}
-                                    data="externalSupplySale"
-                                />
+                            <MenuItem text={getTranslatedLabel("general.actions", "Actions")}>
+                                <MenuItem text="New Order" />
+                                {formEditMode === 3 && <MenuItem text="Receive Inventory" />}
                             </MenuItem>
                         </Menu>
                     </Grid>
-                    <Grid item xs={12}>
-                        <div className="div-container">
-                            <KendoGrid
-                                style={{ height: "65vh" }}
-                                resizable={true}
-                                filterable={true}
-                                sortable={true}
-                                pageable={true}
-                                {...dataState}
-                                data={certificates ? certificates : { data: [], total: 0 }}
-                                onDataStateChange={dataStateChange}
-                            >
-                                <Column
-                                    field="certificateNumber"
-                                    title={getTranslatedLabel("certificate.list.projectNum", "Project Number")}
-                                    width={150}
-                                    locked={false}
-                                    cell={ProjectNumberCell}
-                                />
-                                <Column
-                                    field="projectName"
-                                    title={getTranslatedLabel("certificate.list.projectName", "Project Name")}
-                                />
-                                <Column
-                                    field="certificateCategoryDescription"
-                                    title={getTranslatedLabel("certificate.list.partyId", "Type")}
-                                />
-                                <Column
-                                    field="partyIdSupplier"
-                                    title={getTranslatedLabel("certificate.list.supplierPartyId", "Supplier ID")}
-                                />
-                                <Column
-                                    field="partyNameSupplier"
-                                    title={getTranslatedLabel("certificate.list.supplierPartyName", "Supplier Name")}
-                                />
-                                <Column
-                                    field="partyIdContractor"
-                                    title={getTranslatedLabel("certificate.list.contractorPartyId", "Contractor ID")}
-                                />
-                                <Column
-                                    field="partyNameContractor"
-                                    title={getTranslatedLabel("certificate.list.contractorPartyName", "Contractor Name")}
-                                />
-                                <Column
-                                    field="description"
-                                    title={getTranslatedLabel("certificate.list.description", "Certificate Description")}
-                                />
-                                <Column
-                                    field="estimatedStartDate"
-                                    title={getTranslatedLabel("certificate.list.fromDate", "From Date")}
-                                    format="{0: dd/MM/yyyy}"
-                                />
-                                <Column
-                                    field="estimatedCompletionDate"
-                                    title={getTranslatedLabel("certificate.list.toDate", "To Date")}
-                                    format="{0: dd/MM/yyyy}"
-                                />
-                            </KendoGrid>
-                            {isFetching && (
-                                <LoadingComponent
-                                    message={getTranslatedLabel("certificate.list.loading", "Loading Certificates...")}
-                                />
-                            )}
-                        </div>
+                    <Grid item xs={1}>
+                        {formEditMode > 1 && (
+                            <RibbonContainer>
+                                <Ribbon
+                                    side={language === "ar" ? "left" : "right"}
+                                    type="corner"
+                                    size="large"
+                                    backgroundColor={status.backgroundColor}
+                                    color={status.foreColor}
+                                    fontFamily="sans-serif"
+                                >
+                                    {order?.statusDescription}
+                                </Ribbon>
+                            </RibbonContainer>
+                        )}
                     </Grid>
                 </Grid>
+                <Form
+                    ref={formRef}
+                    initialValues={initialFormValues}
+                    key={formKey}
+                    onSubmitClick={values => handleSubmit(values)}
+                    render={(formRenderProps) => (
+                        <FormElement>
+                            <fieldset className={'k-form-fieldset'}>
+                                <Grid container alignItems={"start"} justifyContent="start" spacing={1}>
+                                    <Grid container spacing={2} alignItems={"center"} justifyContent={"flex-start"} xs={12} sx={{ paddingLeft: 3 }}>
+                                        <Grid item container xs={9} spacing={2} alignItems={"flex-end"}>
+                                            <Grid item xs={3} className={formEditMode > 2 ? "grid-disabled" : "grid-normal"}>
+                                                <Field
+                                                    id={"fromPartyId"}
+                                                    name={"fromPartyId"}
+                                                    label={"Supplier"}
+                                                    component={FormComboBoxVirtualSupplier}
+                                                    autoComplete={"off"}
+                                                    disabled={formEditMode > 1}
+                                                    onChange={onSupplierChange}
+                                                    validator={requiredValidator}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={3}>
+                                                <Field
+                                                    id="currencyUomId"
+                                                    name="currencyUomId"
+                                                    component={MemoizedFormDropDownList2}
+                                                    data={currencies ?? []}
+                                                    label={'Currency'}
+                                                    dataItemKey={"currencyUomId"}
+                                                    disabled={formEditMode > 1}
+                                                    textField={"description"}
+                                                />
+                                            </Grid>
+                                            {formEditMode === 1 && (
+                                                <Grid item xs={3}>
+                                                    <Field
+                                                        id={"addTax"}
+                                                        name={"addTax"}
+                                                        label={getTranslatedLabel(`${localizationKey}.addTax`, "Add Tax")}
+                                                        component={MemoizedFormCheckBox}
+                                                        onChange={(e: any) => { dispatch(setAddTax(e.value)); }}
+                                                        disabled={isTaxLoading}
+                                                    />
+                                                    {isTaxLoading && (
+                                                        <Typography variant="caption" color="textSecondary">
+                                                            Calculating Tax...
+                                                        </Typography>
+                                                    )}
+                                                </Grid>
+                                            )}
+                                        </Grid>
+                                        <Grid item container xs={3} spacing={2} alignItems="flex-end">
+                                            {memoizedOrderTotals}
+                                        </Grid>
+                                        <Grid container item xs={12} spacing={2}>
+                                            <Grid item xs={5} className={formEditMode > 2 ? "grid-disabled" : "grid-normal"}>
+                                                <Field
+                                                    id={"internalRemarks"}
+                                                    name={"internalRemarks"}
+                                                    label={"Internal Remarks"}
+                                                    component={FormTextArea}
+                                                    autoComplete={"off"}
+                                                    disabled={formEditMode > 2}
+                                                    onChange={handleInternalRemarksChange}
+                                                />
+                                            </Grid>
+                                        </Grid>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Grid container spacing={1} alignItems={"center"} sx={{ ml: 1, mt: 3 }}>
+                                            <Grid item xs={9}>
+                                                <PurchaseOrderItemsListMemo orderFormEditMode={formEditMode} orderId={order ? order.orderId : undefined} />
+                                            </Grid>
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
+                                <div className="k-form-buttons">
+                                    <Grid container spacing={2}>
+                                        {(formEditMode === 1 || formEditMode === 2) && (
+                                            <Grid item>
+                                                <LoadingButton
+                                                    size="large"
+                                                    type="submit"
+                                                    loading={isLoading}
+                                                    variant="contained"
+                                                    onClick={() => {
+                                                        console.log('Submit clicked. Form state:', {
+                                                            isValid: formRenderProps.isValid,
+                                                            modified: formRenderProps.modified,
+                                                            allowSubmit: formRenderProps.allowSubmit,
+                                                            values: formRenderProps.valueGetter(),
+                                                            touched: formRenderProps.touched
+                                                        });
+                                                        formRef.current.onSubmit();
+                                                    }}
+                                                >
+                                                    {isLoading
+                                                        ? getTranslatedLabel(`${localizationKey}.processing`, "Processing...")
+                                                        : getTranslatedLabel(
+                                                            formEditMode === 1 ? `${localizationKey}.actions.create` : `${localizationKey}.actions.update`,
+                                                            formEditMode === 1 ? "Create Order" : "Update Order"
+                                                        )}
+                                                </LoadingButton>
+                                            </Grid>
+                                        )}
+                                        <Grid item>
+                                            <Button
+                                                onClick={handleCancelForm}
+                                                size="large"
+                                                color="error"
+                                                variant="outlined"
+                                            >
+                                                {getTranslatedLabel("general.cancel", "Cancel")}
+                                            </Button>
+                                        </Grid>
+                                    </Grid>
+                                </div>
+                            </fieldset>
+                        </FormElement>
+                    )}
+                />
             </Paper>
         </>
     );

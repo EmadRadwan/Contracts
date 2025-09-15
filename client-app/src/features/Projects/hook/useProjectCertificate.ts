@@ -48,6 +48,7 @@ const useProjectCertificate = ({
       ...item,
       productId: typeof item.productId === "object" ? item.productId.productId : item.productId,
       uomId: typeof item.uomId === "object" ? item.uomId.UomId : item.uomId,
+        description: item.description || "",
       procurementDate: item.procurementDate ? new Date(item.procurementDate).toISOString() : undefined,
     }));
   }, [nonDeletedCertificateItems]);
@@ -78,7 +79,8 @@ const useProjectCertificate = ({
       const isItemsValid = items.every((item) => {
         const isValid =
           item.productId &&
-          item.quantity > 0 &&
+            item.description &&
+            item.quantity > 0 &&
           item.unitPrice >= 0 &&
           (currentCertificateType !== "WORKMANSHIP_CONTRACTING_CERTIFICATE" ||
             (item.achievementPercentage && item.achievementPercentage >= 1 && item.achievementPercentage <= 100));
@@ -123,6 +125,7 @@ const useProjectCertificate = ({
                 estimatedCompletionDate: newCertificate.estimatedCompletionDate
                     ? new Date(newCertificate.estimatedCompletionDate).toISOString()
                     : null,
+                facilityId: newCertificate.facilityId,
                 certificateItems: items,
             };
 
@@ -165,14 +168,15 @@ const useProjectCertificate = ({
                         statusDescription: createdCertificate.statusDescription,
                         currentStatusId: createdCertificate.currentStatusId || CertificateStatus.CREATED,
                         statusDescriptionArabic: createdCertificate.statusDescriptionArabic || "",
-                        relatedOrderId: createdCertificate.orderId || "",
+                        relatedOrderId: createdCertificate.relatedOrderId || "",
+                        facilityId: newCertificate.facilityId,
+                        facilityName: createdCertificate.facilityName || "",
                     })
                 );
                 dispatch(setCertificateFormEditMode(2));
                 dispatch(setProcessedCertificateItems(createdCertificate.certificateItems || []));
                 formRef2.current = !formRef2.current;
                 toast.success("Certificate and items created successfully");
-                //refetch();
                 return { workEffortId: createdCertificate.workEffortId };
             } catch (error: any) {
                 console.error("Failed to create certificate:", error);
@@ -208,11 +212,11 @@ const useProjectCertificate = ({
                         : newCertificate.partyIdContractor,
                 estimatedStartDate: newCertificate.estimatedStartDate,
                 estimatedCompletionDate: newCertificate.estimatedCompletionDate,
+                facilityId: newCertificate.facilityId,
                 certificateItems: items,
             };
             try {
                 const updatedCertificate = await updateProjectCertificate(certificateData).unwrap();
-                // REFACTOR: Use partyNameSupplier/partyNameContractor for consistency
                 // Purpose: Ensure Redux state has correct object structure for ComboBox binding
                 // Context: Matches form's initialFormValues expectations
                 dispatch(
@@ -250,7 +254,9 @@ const useProjectCertificate = ({
                         statusDescription: updatedCertificate.statusDescription,
                         statusDescriptionArabic: updatedCertificate.statusDescriptionArabic || "",
                         currentStatusId: updatedCertificate.currentStatusId || CertificateStatus.CREATED,
-                        relatedOrderId: updatedCertificate.orderId || "",
+                        relatedOrderId: updatedCertificate.relatedOrderId || "",
+                        facilityId: updatedCertificate.facilityId,
+                        facilityName: updatedCertificate.facilityName || "",
                     })
                 );
                 dispatch(setProcessedCertificateItems(updatedCertificate.certificateItems || []));
@@ -284,6 +290,7 @@ const useProjectCertificate = ({
                     description: data.values.description,
                     estimatedStartDate: data.values.estimatedStartDate,
                     estimatedCompletionDate: data.values.estimatedCompletionDate,
+                    facilityId: data.values.facilityId,
                     certificateItems: nonDeletedCertificateItems,
                 };
 
@@ -302,10 +309,7 @@ const useProjectCertificate = ({
                     /* if (!validateCertificate(newCertificate, nonDeletedCertificateItems)) {
                         return;
                     } */
-                    const approveData = {
-                        workEffortId: data.values.workEffortId,
-                        currentStatusId: data.values.currentStatusId,
-                    };
+                    
                     /*const updatedCertificate = await updateProjectCertificate(approveData).unwrap();
                     // Purpose: Ensure consistent status updates in Redux state
                     // Context: Aligns with editModeMap and backend expectations
@@ -318,13 +322,11 @@ const useProjectCertificate = ({
                     );*/
                     // Purpose: Only trigger for SUPPLY_PROCUREMENT_CERTIFICATE or EXTERNAL_SUPPLY_SALE_CERTIFICATE
                     // Context: Matches backend logic for purchase order generation
-                    if (action === "Approve Certificate" &&
-                        ["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)) {
-                        const facilityId = nonDeletedCertificateItems[0]?.facilityId;
-                        if (selectedCertificate?.relatedOrderId && facilityId) {
+                    if (action === "Approve Certificate" && ["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)) {
+                        if (selectedCertificate?.relatedOrderId && selectedCertificate?.facilityId) {
                             await receiveInventoryFromPurchaseOrder({
                                 orderId: selectedCertificate.relatedOrderId,
-                                facilityId,
+                                facilityId: selectedCertificate.facilityId,
                             }).unwrap();
                             toast.success("Inventory received successfully after approval.");
                         } else {
@@ -333,7 +335,6 @@ const useProjectCertificate = ({
                     }
                     formRef2.current = !formRef2.current;
                     dispatch(setCertificateFormEditMode(action === "Approve Certificate" ? 3 : 4));
-                    //refetch();
                     return //{ workEffortId: updatedCertificate.workEffortId };
                 } else {
                     toast.error("Invalid action type");

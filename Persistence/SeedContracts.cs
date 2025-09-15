@@ -428,16 +428,89 @@ public class SeedContracts
             await context.FacilityTypes.AddRangeAsync(facilityTypes);
             await context.SaveChangesAsync();
         }
-
-
-        // facilities
-        if (!context.Facilities.Any())
+        
+        if (!context.WorkEffortTypes.Any())
         {
-            var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/facilities.json");
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/workeffort_types.json");
             var jsonData = File.ReadAllText(path);
 
-            var facilities = JsonConvert.DeserializeObject<List<Facility>>(jsonData);
-            await context.Facilities.AddRangeAsync(facilities);
+            var workEffortTypes = JsonConvert.DeserializeObject<List<WorkEffortType>>(jsonData);
+            await context.WorkEffortTypes.AddRangeAsync(workEffortTypes);
+            await context.SaveChangesAsync();
+        }
+
+
+        // facilities and projects
+        Facility CreateFacility(string projectName, DateTime stamp)
+        {
+            return new Facility
+            {
+                FacilityId = Guid.NewGuid().ToString(),
+                FacilityTypeId = "PROJECT_FACILITY",
+                FacilityName = projectName,
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            };
+        }
+        if (!context.Facilities.Any() && !context.WorkEfforts.Any())
+        {
+            var projectNames = new List<string>
+            {
+                "مول الصحراوى 2 فدان",
+                "الصحراوى 10.5 فدان",
+                "الصحراوى 3 فدان",
+                "الصحراوى 4 فدان",
+                "الثروة الخضراء - علاء العمدة",
+                "الثروة الخضراء - سعودى",
+                "الثروة الخضراء - نسيم",
+                "الثالث زايد",
+                "السابع زايد",
+                "التاسع زايد",
+                "بيت الوطن لادريس اكتوبر",
+                "بيت الوطن لادريس التجمع"
+            };
+            var stamp = DateTime.UtcNow;
+            var counter = 100;
+            
+            foreach (var projectName in projectNames)
+            {
+                // REFACTOR: Used counter for WorkEffortId instead of utilityService.GetNextSequence
+                // Purpose: Ensure unique IDs without dependency on external service
+                var newProjectSerial = counter.ToString();
+                counter++; // Increment counter for the next project
+
+                // REFACTOR: Reused CreateFacility method from previous code
+                // Purpose: Maintain consistency in facility creation logic
+                var facility = CreateFacility(projectName, stamp);
+                context.Facilities.Add(facility);
+
+                // REFACTOR: Adapted WorkEffort creation from CreateProject handler
+                // Purpose: Create a project with default values, consistent with the handler
+                var project = new WorkEffort
+                {
+                    WorkEffortId = newProjectSerial,
+                    ProjectName = projectName,
+                    WorkEffortTypeId = "PROJECT",
+                    CurrentStatusId = "WEPR_IN_PROGRESS", // Default status as placeholder
+                    EstimatedStartDate = stamp, // Default start date
+                    EstimatedCompletionDate = stamp.AddDays(30), // Default completion date
+                    CreatedDate = stamp,
+                    LastUpdatedStamp = stamp,
+                    FacilityId = facility.FacilityId
+                };
+                context.WorkEfforts.Add(project);
+            }
+            
+            var mainStore = new Facility
+            {
+                FacilityId = "b6705327-bb0b-421f-9a1e-e94bbf7a68d2",
+                FacilityTypeId = "MAIN_STORE",
+                FacilityName = "المخزن الرءيسى",
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            };
+            context.Facilities.Add(mainStore);
+            
             await context.SaveChangesAsync();
         }
 

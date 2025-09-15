@@ -101,21 +101,19 @@ public class ListCertificateItems
                     ProductName = x.Product != null ? x.Product.ProductName : null,
                     UomDescription = x.Uom != null ? x.Uom.Description : null,
                     Quantity = (decimal)x.WorkEffort.Quantity,
-                    Rate = x.WorkEffort.Rate,  // Maps to unitPrice
+                    UnitPrice = (decimal)x.WorkEffort.Rate,  // Maps to unitPrice
                     TotalAmount = x.WorkEffort.TotalAmount ?? ((x.WorkEffort.Quantity ?? 0m) * (x.WorkEffort.Rate ?? 0m)),
-                    DiscountAmount = x.WorkEffort.DiscountAmount,
-                    InsuranceAmount = x.WorkEffort.InsuranceAmount,
+                    Discount = x.WorkEffort.Discount,
+                    Insurance = x.WorkEffort.Insurance,
                     CompletionPercentage = x.WorkEffort.CompletionPercentage,
                     Notes = x.WorkEffort.Notes,
                     ProcurementDate = x.WorkEffort.ProcurementDate ?? x.WorkEffort.CreatedDate,  // Fallback as per CSV timestamps
-                    FacilityId = x.WorkEffort.FacilityId,
-                    FacilityName = fac.FacilityName ?? "",
                     IsDeleted = false,
-                    // REFACTOR: Direct mapping for contracts-specific props from WorkEffort.
+                    //  Direct mapping for contracts-specific props from WorkEffort.
                     // Purpose: Fetch saved values (e.g., Gratuities=0.450 from col 76 equivalent) without null defaults.
                     // Improvement: Aligns with entity schema; uses null-coalescing for calculations to handle sparsity.
                     // Context: CSV shows non-zeros in late cols (e.g., col 76="0.450" -> Gratuities); AchievementPercent ~col 70="3.000000".
-                    AchievementPercent = x.WorkEffort.AchievementPercent,
+                    AchievementPercentage = x.WorkEffort.AchievementPercent,
                     TransportationExpenses = x.WorkEffort.TransportationExpenses,
                     Gratuities = x.WorkEffort.Gratuities,  // Captures saved 0.450
                     Deductions = x.WorkEffort.Deductions,

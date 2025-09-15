@@ -30,6 +30,8 @@ public class ListOrders
         {
             var language = request.Language;
             var query = from ov in _context.OrderView.AsNoTracking()
+                join we in _context.WorkEfforts on ov.OrderId equals we.RelatedOrderId into weGroup
+                from we in weGroup.DefaultIfEmpty()
                 select new OrderRecord
                 {
                     OrderId = ov.OrderId,
@@ -64,7 +66,8 @@ public class ListOrders
                     {
                         FromPartyId = ov.FromPartyId,
                         FromPartyName = ov.FromPartyNameDescription
-                    }
+                    },
+                    CertificateNumber = we != null ? we.CertificateNumber : null
                 };
 
 

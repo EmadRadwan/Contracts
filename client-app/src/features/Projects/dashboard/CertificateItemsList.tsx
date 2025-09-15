@@ -10,7 +10,6 @@ import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import { certificateSubTotal, displayCertificateItemsSelector, nonDeletedCertificateItemsSelector } from "../slice/certificateSelectors";
 import { useFetchCertificateItemsQuery } from "../../../app/store/apis/certificateItemsApi";
 import { CertificateItemFormMemo } from "../form/CertificateItemForm";
-import agent from "../../../app/api/agent";
 
 interface ProductItem {
     ProductId: string;
@@ -46,34 +45,47 @@ export default function CertificateItemsList({ editMode, workEffortId }: Props) 
     });
     const uiCertificateItems: CertificateItem[] = useAppSelector(displayCertificateItemsSelector);
 
+    console.log('uiCertificateItems', uiCertificateItems)
     const pageChange = (event: GridPageChangeEvent) => {
         setPage(event.page);
     };
 
+    // CertificateItemsList.tsx
     const handleSelectCertificateItem = useCallback(
         (workEffortId: string) => {
             const selectedCertificateItem = uiCertificateItems.find((item) => item.workEffortId === workEffortId);
             if (!selectedCertificateItem) return;
-            const productItem: ProductItem = {
-                ProductId: selectedCertificateItem.productId,
-                ProductName: selectedCertificateItem.productName || "",
-                ProductType: "",
-            };
-            const uomItem: UOMItem = {
-                UomId: selectedCertificateItem.uomId,
-                Description: selectedCertificateItem.uomName || "",
-            };
-            setCertificateItem({
+
+            // REFACTOR: Ensure all CertificateItem fields are preserved, including gratuities
+            // Context: Previously, only productId and uomId were transformed, risking loss of fields like gratuities.
+            // Improvement: Spread all fields from selectedCertificateItem and explicitly map productId/uomId to match form expectations.
+            const certificateItem: CertificateItem = {
                 ...selectedCertificateItem,
-                productId: productItem,
-                uomId: uomItem,
-            });
+                productId: {
+                    ProductId: selectedCertificateItem.productId,
+                    ProductName: selectedCertificateItem.productName || "",
+                    ProductType: "",
+                },
+                uomId: {
+                    UomId: selectedCertificateItem.uomId,
+                    Description: selectedCertificateItem.uomName || "",
+                },
+                // Ensure gratuities and other numeric fields are explicitly included
+                gratuities: selectedCertificateItem.gratuities || 0,
+                transportationExpenses: selectedCertificateItem.transportationExpenses || 0,
+                discount: selectedCertificateItem.discount || 0,
+                // Preserve procurementDate as a Date object for form compatibility
+                procurementDate: selectedCertificateItem.procurementDate
+                    ? new Date(selectedCertificateItem.procurementDate)
+                    : new Date(),
+            };
+
+            setCertificateItem(certificateItem);
             setItemEditMode(2);
             setShow(true);
         },
         [uiCertificateItems]
     );
-
     const descriptionCell = (props: GridCellProps) => (
         <td>
             <Button onClick={() => handleSelectCertificateItem(props.dataItem.workEffortId)}>
@@ -137,7 +149,8 @@ export default function CertificateItemsList({ editMode, workEffortId }: Props) 
     const isContractingType = currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE";
 
     const columns = [
-        { field: "productName", title: getTranslatedLabel(`${localizationKey}.description`, "Description"), cell: descriptionCell, width: 280 },
+        { field: "productName", title: getTranslatedLabel(`${localizationKey}.description`, "Product"), cell: descriptionCell, width: 280 },
+        { field: "description", title: getTranslatedLabel(`${localizationKey}.description`, "Description"), width: 280 },
         { field: "quantity", title: getTranslatedLabel(`${localizationKey}.quantity`, "Quantity") },
         { field: "unitPrice", title: getTranslatedLabel(`${localizationKey}.unitPrice`, "Unit Price"), format: "{0:n2}" },
         { field: "displayTotal", title: getTranslatedLabel(`${localizationKey}.totalAmount`, "Total Amount"), format: "{0:n2}" },
@@ -145,7 +158,6 @@ export default function CertificateItemsList({ editMode, workEffortId }: Props) 
             ? [
                 { field: "discount", title: getTranslatedLabel(`${localizationKey}.discount`, "Discount"), format: "{0:n2}" },
                 { field: "formattedProcurementDate", title: getTranslatedLabel(`${localizationKey}.procurementDate`, "Procurement Date") },
-                { field: "facilityName", title: getTranslatedLabel(`${localizationKey}.facilityName`, "Facility") },
                 { field: "transportationExpenses", title: getTranslatedLabel(`${localizationKey}.transportationExpenses`, "Transportation Expenses"), format: "{0:n2}" },
                 { field: "gratuities", title: getTranslatedLabel(`${localizationKey}.gratuities`, "Gratuities"), format: "{0:n2}" },
             ]
@@ -153,7 +165,6 @@ export default function CertificateItemsList({ editMode, workEffortId }: Props) 
         ...(isSupplyWithoutDiscount
             ? [
                 { field: "formattedProcurementDate", title: getTranslatedLabel(`${localizationKey}.procurementDate`, "Procurement Date") },
-                { field: "facilityName", title: getTranslatedLabel(`${localizationKey}.facilityName`, "Facility") },
                 { field: "transportationExpenses", title: getTranslatedLabel(`${localizationKey}.transportationExpenses`, "Transportation Expenses"), format: "{0:n2}" },
                 { field: "gratuities", title: getTranslatedLabel(`${localizationKey}.gratuities`, "Gratuities"), format: "{0:n2}" },
             ]

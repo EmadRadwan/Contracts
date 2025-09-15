@@ -54,6 +54,7 @@ public class CreateProject
                     FacilityId = facilityId,
                     FacilityTypeId = "PROJECT_FACILITY",
                     FacilityName = request.ProjectDto!.ProjectName,
+                    OwnerPartyId = "Company",
                     CreatedStamp = stamp,
                     LastUpdatedStamp = stamp
                 };
@@ -70,8 +71,6 @@ public class CreateProject
                     EstimatedCompletionDate = request.ProjectDto.EstimatedCompletionDate,
                     CreatedDate = stamp,
                     LastUpdatedStamp = stamp,
-                    // REFACTOR: Added FacilityId to link the project to the newly created facility
-                    // Purpose: Establishes a relationship between the project and its associated facility
                     FacilityId = facilityId
                 };
                 _context.WorkEfforts.Add(project);

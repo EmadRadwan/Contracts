@@ -10,69 +10,72 @@ namespace Application.Projects;
 
 public class GetProjectsLov
 {
-    public class ProjectsEnvelop
+  public class ProjectsEnvelop
+  {
+    public List<ProjectDto>? Projects { get; set; }
+    public int ProjectCount { get; set; }
+  }
+
+  public class ProjectDto
+  {
+    public string WorkEffortId { get; set; }
+    public string ProjectName { get; set; }
+    // REFACTOR: Added FacilityId to include facility information in the response
+    public string FacilityId { get; set; }
+  }
+
+  public class Query : IRequest<Result<ProjectsEnvelop>>
+  {
+    public PartyLovParams? Params { get; set; }
+  }
+
+  public class Handler : IRequestHandler<Query, Result<ProjectsEnvelop>>
+  {
+    private readonly DataContext _context;
+    private readonly ILogger<Handler> _logger;
+    private readonly IMapper _mapper;
+    private readonly IUserAccessor _userAccessor;
+
+    public Handler(DataContext context, IMapper mapper, IUserAccessor userAccessor, ILogger<Handler> logger)
     {
-        public List<ProjectDto>? Projects { get; set; }
-        public int ProjectCount { get; set; }
+      _mapper = mapper;
+      _context = context;
+      _userAccessor = userAccessor;
+      _logger = logger;
     }
 
-    public class ProjectDto
+    public async Task<Result<ProjectsEnvelop>> Handle(Query request, CancellationToken cancellationToken)
     {
-        public string WorkEffortId { get; set; }
-        public string ProjectName { get; set; }
-    }
+      // REFACTOR: Optimized query to include FacilityId in the projection
+      var query = _context.WorkEfforts
+        .Where(x => x.WorkEffortTypeId == "PROJECT")
+        .AsQueryable();
 
-    public class Query : IRequest<Result<ProjectsEnvelop>>
-    {
-        public PartyLovParams? Params { get; set; }
-    }
+      if (!string.IsNullOrEmpty(request.Params?.SearchTerm))
+      {
+        var lowerCaseSearchTerm = request.Params.SearchTerm.Trim().ToLower();
+        query = query.Where(p => p.ProjectName.ToLower().Contains(lowerCaseSearchTerm));
+      }
 
-    public class Handler : IRequestHandler<Query, Result<ProjectsEnvelop>>
-    {
-        private readonly DataContext _context;
-        private readonly ILogger<Handler> _logger;
-        private readonly IMapper _mapper;
-        private readonly IUserAccessor _userAccessor;
-
-        public Handler(DataContext context, IMapper mapper, IUserAccessor userAccessor, ILogger<Handler> logger)
+      var projects = await query
+        .OrderBy(x => x.ProjectName)
+        .Skip(request.Params?.Skip ?? 0)
+        .Take(request.Params?.PageSize ?? 10)
+        .Select(x => new ProjectDto
         {
-            _mapper = mapper;
-            _context = context;
-            _userAccessor = userAccessor;
-            _logger = logger;
-        }
+          WorkEffortId = x.WorkEffortId,
+          ProjectName = x.ProjectName,
+          FacilityId = x.FacilityId ?? "0" // Fallback to "0" if null
+        })
+        .ToListAsync(cancellationToken);
 
-        public async Task<Result<ProjectsEnvelop>> Handle(Query request, CancellationToken cancellationToken)
-        {
-            // REFACTOR: Optimized query to filter projects and apply search term efficiently
-            var query = _context.WorkEfforts
-                .Where(x => x.WorkEffortTypeId == "PROJECT")
-                .AsQueryable();
+      var projectEnvelop = new ProjectsEnvelop
+      {
+        Projects = projects,
+        ProjectCount = await query.CountAsync(cancellationToken)
+      };
 
-            if (!string.IsNullOrEmpty(request.Params?.SearchTerm))
-            {
-                var lowerCaseSearchTerm = request.Params.SearchTerm.Trim().ToLower();
-                query = query.Where(p => p.ProjectName.ToLower().Contains(lowerCaseSearchTerm));
-            }
-
-            var projects = await query
-                .OrderBy(x => x.ProjectName)
-                .Skip(request.Params?.Skip ?? 0)
-                .Take(request.Params?.PageSize ?? 10)
-                .Select(x => new ProjectDto
-                {
-                    WorkEffortId = x.WorkEffortId,
-                    ProjectName = x.ProjectName
-                })
-                .ToListAsync(cancellationToken);
-
-            var projectEnvelop = new ProjectsEnvelop
-            {
-                Projects = projects,
-                ProjectCount = await query.CountAsync(cancellationToken)
-            };
-
-            return Result<ProjectsEnvelop>.Success(projectEnvelop);
-        }
+      return Result<ProjectsEnvelop>.Success(projectEnvelop);
     }
+  }
 }
