@@ -4,18 +4,19 @@ import { Button, Grid, Radio, RadioGroup, FormControlLabel } from "@mui/material
 import FormNumericTextBox from "../../../app/common/form/FormNumericTextBox";
 import { FormSimpleComboBoxVirtualProduct } from "../../../app/common/form/FormSimpleComboBoxVirtualProduct";
 import { FormComboBoxVirtualUOM } from "../../../app/common/form/FormComboBoxVirtualUOM";
-import { MemoizedFormDropDownList2 } from "../../../app/common/form/MemoizedFormDropDownList2";
 import { percentageValidator, requiredValidator } from "../../../app/common/form/Validators";
-import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import FormButtons from "./FormButtons";
-import FormInput from "../../../app/common/form/FormInput";
+import FormTextArea from "../../../app/common/form/FormTextArea";
+
 
 interface ContractingFormProps {
     formRenderProps: FormRenderProps;
     editMode: number;
     formEditMode: number;
     insuranceMode: "value" | "percentage";
+    additionalInsuranceMode: "value" | "percentage";
     handleInsuranceModeChange: (event: React.ChangeEvent<HTMLInputElement>, onChange: FormRenderProps["onChange"]) => void;
+    handleAdditionalInsuranceModeChange: (event: React.ChangeEvent<HTMLInputElement>, onChange: FormRenderProps["onChange"]) => void;
     calculateTotals: (valueGetter: FormRenderProps["valueGetter"]) => {
         total: number;
         finalTotal: number;
@@ -23,6 +24,7 @@ interface ContractingFormProps {
         deserved: number;
         insurance: number;
         discount: number;
+        additionalInsurance: number;
     };
     getTranslatedLabel: (key: string, defaultValue: string) => string;
     onClose: () => void;
@@ -34,10 +36,13 @@ const WorkmanshipContractingForm = ({
                                         editMode,
                                         formEditMode,
                                         insuranceMode,
+                                        additionalInsuranceMode,
                                         handleInsuranceModeChange,
+                                        handleAdditionalInsuranceModeChange,
                                         calculateTotals,
                                         getTranslatedLabel,
                                         onClose,
+                                        additionalInsurance,
                                         achievementPercentageValidator,
                                     }: ContractingFormProps) => {
     const { valueGetter, onChange } = formRenderProps;
@@ -54,7 +59,7 @@ const WorkmanshipContractingForm = ({
     return (
         <FormElement>
             <fieldset className="k-form-fieldset">
-                <Grid container spacing={2}>
+                <Grid container spacing={1}>
                     <Grid item xs={6}>
                         <Field
                             id="productId"
@@ -81,12 +86,13 @@ const WorkmanshipContractingForm = ({
                             id="description"
                             name="description"
                             label={getTranslatedLabel("certificate.items.form.description", "Description *")}
-                            component={FormInput}
+                            component={FormTextArea}
                             validator={requiredValidator}
                             disabled={formEditMode > 3}
+                            rows={4} // Set rows for better visibility
                         />
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid item xs={4}>
                         <Field
                             id="quantity"
                             name="quantity"
@@ -98,11 +104,11 @@ const WorkmanshipContractingForm = ({
                             disabled={formEditMode > 3}
                         />
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid item xs={4}>
                         <Field
-                            id="unitPrice"
-                            name="unitPrice"
-                            label={getTranslatedLabel("certificate.items.form.price", "Price *")}
+                            id="materialPrice"
+                            name="materialPrice"
+                            label={getTranslatedLabel("certificate.items.form.materialPrice", "Material Price *")}
                             component={FormNumericTextBox}
                             format="n2"
                             min={0}
@@ -110,7 +116,19 @@ const WorkmanshipContractingForm = ({
                             disabled={formEditMode > 3}
                         />
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid item xs={4}>
+                        <Field
+                            id="laborPrice"
+                            name="laborPrice"
+                            label={getTranslatedLabel("certificate.items.form.laborPrice", "Labor Price *")}
+                            component={FormNumericTextBox}
+                            format="n2"
+                            min={0}
+                            validator={requiredValidator}
+                            disabled={formEditMode > 3}
+                        />
+                    </Grid>
+                    <Grid item xs={4}>
                         <Field
                             id="total"
                             name="total"
@@ -121,7 +139,7 @@ const WorkmanshipContractingForm = ({
                             disabled
                         />
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid item xs={4}>
                         <Field
                             id="deductions"
                             name="deductions"
@@ -132,7 +150,7 @@ const WorkmanshipContractingForm = ({
                             disabled={formEditMode > 3}
                         />
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid item xs={4}>
                         <Field
                             id="deserved"
                             name="deserved"
@@ -143,7 +161,7 @@ const WorkmanshipContractingForm = ({
                             disabled
                         />
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid item xs={4}>
                         {/* Purpose: Visually group insurance and its mode selector for better UX */}
                         {/* Context: Places RadioGroup directly below insurance field in the same column */}
                         <Grid container direction="column" spacing={1}>
@@ -180,7 +198,51 @@ const WorkmanshipContractingForm = ({
                             </Grid>
                         </Grid>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid item xs={4}>
+                        <Grid container direction="column" spacing={1}>
+                            <Grid item>
+                                <Field
+                                    id="additionalInsurance"
+                                    name="additionalInsurance"
+                                    label={getTranslatedLabel(
+                                        "certificate.items.form.additionalInsurance",
+                                        `Additional Insurance (${additionalInsuranceMode})`
+                                    )}
+                                    component={FormNumericTextBox}
+                                    format={additionalInsuranceMode === "percentage" ? "n0" : "n2"}
+                                    min={0}
+                                    max={additionalInsuranceMode === "percentage" ? 100 : undefined}
+                                    validator={
+                                        additionalInsuranceMode === "percentage" &&
+                                        valueGetter("additionalInsurance") !== undefined &&
+                                        valueGetter("additionalInsurance") !== null
+                                            ? percentageValidator
+                                            : undefined
+                                    }
+                                    disabled={formEditMode > 3}
+                                />
+                            </Grid>
+                            <Grid item>
+                                <RadioGroup
+                                    row
+                                    value={additionalInsuranceMode}
+                                    onChange={(e) => handleAdditionalInsuranceModeChange(e, formRenderProps.onChange)}
+                                >
+                                    <FormControlLabel
+                                        value="value"
+                                        control={<Radio disabled={formEditMode > 3} />}
+                                        label={getTranslatedLabel("certificate.items.form.additionalInsuranceValue", "Value")}
+                                    />
+                                    <FormControlLabel
+                                        value="percentage"
+                                        control={<Radio disabled={formEditMode > 3} />}
+                                        label={getTranslatedLabel("certificate.items.form.additionalInsurancePercentage", "Percentage")}
+                                    />
+                                </RadioGroup>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                    <Grid item xs={4}>
                         <Field
                             id="net"
                             name="net"
@@ -191,7 +253,7 @@ const WorkmanshipContractingForm = ({
                             disabled
                         />
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid item xs={4}>
                         <Field
                             id="achievementPercentage"
                             name="achievementPercentage"

@@ -54,48 +54,39 @@ const useProjectCertificate = ({
   }, [nonDeletedCertificateItems]);
 
 
-  const validateCertificate = useCallback(
-    (cert: Certificate, items: CertificateItem[]) => {
-      let isHeaderValid = true;
-      if (currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE") {
-        isHeaderValid = !!cert.partyIdSupplier && (editMode !== 2 || cert.workEffortId);
-        if (!cert.partyIdSupplier) toast.error("Supplier ID is required");
-      } else if (
-        currentCertificateType === "COMPANY_SUPPLY_SALE_CERTIFICATE" ||
-        currentCertificateType === "CONTRACTOR_PURCHASE_CERTIFICATE" ||
-        currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
-      ) {
-        isHeaderValid = !!cert.partyIdContractor && (editMode !== 2 || cert.workEffortId);
-        if (!cert.partyIdContractor) toast.error("Contractor ID is required");
-      } else if (currentCertificateType === "EXTERNAL_SUPPLY_SALE_CERTIFICATE") {
-        isHeaderValid = !!cert.partyIdSupplier && !!cert.partyIdContractor && (editMode !== 2 || cert.workEffortId);
-        if (!cert.partyIdSupplier) toast.error("Supplier ID is required");
-        if (!cert.partyIdContractor) toast.error("Contractor ID is required");
-      }
-      if (!isHeaderValid && editMode === 2 && !cert.workEffortId) {
-        toast.error("Work Effort ID is required");
-      }
-
-      const isItemsValid = items.every((item) => {
-        const isValid =
-          item.productId &&
-            item.description &&
-            item.quantity > 0 &&
-          item.unitPrice >= 0 &&
-          (currentCertificateType !== "WORKMANSHIP_CONTRACTING_CERTIFICATE" ||
-            (item.achievementPercentage && item.achievementPercentage >= 1 && item.achievementPercentage <= 100));
-        if (!isValid) {
-          toast.error(
-            "Invalid certificate item: ensure product, quantity, price, and completion percentage (for contracting) are valid."
-          );
-        }
-        return isValid;
-      });
-
-      return isHeaderValid && isItemsValid && items.length > 0;
-    },
-    [editMode, currentCertificateType]
-  );
+    const validateCertificate = useCallback(
+        (cert: Certificate, items: CertificateItem[]) => {
+            let isHeaderValid = true;
+            if (currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE") {
+                isHeaderValid = !!cert.partyIdSupplier && (editMode !== 2 || cert.workEffortId);
+                if (!cert.partyIdSupplier) toast.error("Supplier ID is required");
+            } else if (["WORKMANSHIP_CONTRACTING_CERTIFICATE", "COMPANY_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)) {
+                isHeaderValid = !!cert.partyIdContractor && (editMode !== 2 || cert.workEffortId);
+                if (!cert.partyIdContractor) toast.error("Contractor ID is required");
+            }
+            // REFACTOR: Updated validation to require partyIdContractor for both WORKMANSHIP_CONTRACTING_CERTIFICATE and COMPANY_SUPPLY_SALE_CERTIFICATE
+            // Purpose: Align validation with new requirement for contractor field visibility
+            // Improvement: Ensures contractor field is mandatory where displayed, maintaining data integrity
+            if (!isHeaderValid && editMode === 2 && !cert.workEffortId) {
+                toast.error("Work Effort ID is required");
+            }
+            const isItemsValid = items.every((item) => {
+                const isValid =
+                    item.productId &&
+                    item.description &&
+                    item.quantity > 0 &&
+                    item.unitPrice >= 0 &&
+                    (currentCertificateType !== "WORKMANSHIP_CONTRACTING_CERTIFICATE" ||
+                        (item.achievementPercentage && item.achievementPercentage >= 1 && item.achievementPercentage <= 100));
+                if (!isValid) {
+                    toast.error("Invalid certificate item: ensure product, quantity, price, and completion percentage (for contracting) are valid.");
+                }
+                return isValid;
+            });
+            return isHeaderValid && isItemsValid && items.length > 0;
+        },
+        [editMode, currentCertificateType]
+    );
 
     const createCertificate = useCallback(
         async (newCertificate: Certificate) => {

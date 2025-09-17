@@ -140,6 +140,10 @@ public class WorkEffort
     public decimal? PaidAmount { get; set; }
     public decimal? Deductions { get; set; }
     public decimal? Insurance { get; set; }
+    public decimal? MaterialPrice { get; set; }
+    public decimal? LaborPrice { get; set; }
+    public decimal? AdditionalInsurance { get; set; }
+
     public decimal? RemainingAmount { get; set; }
     public decimal? AchievementPercent { get; set; }
     public string? Notes { get; set; } 

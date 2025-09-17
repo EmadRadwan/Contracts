@@ -207,16 +207,8 @@ export default function ProjectCertificatesList() {
                     dispatch(setCurrentCertificateType("WORKMANSHIP_CONTRACTING_CERTIFICATE"));
                     dispatch(setCertificateFormEditMode(1));
                     break;
-                case "contractorPurchase":
-                    dispatch(setCurrentCertificateType("CONTRACTOR_PURCHASE_CERTIFICATE"));
-                    dispatch(setCertificateFormEditMode(1));
-                    break;
                 case "companySupplySale":
                     dispatch(setCurrentCertificateType("COMPANY_SUPPLY_SALE_CERTIFICATE"));
-                    dispatch(setCertificateFormEditMode(1));
-                    break;
-                case "externalSupplySale":
-                    dispatch(setCurrentCertificateType("EXTERNAL_SUPPLY_SALE_CERTIFICATE"));
                     dispatch(setCertificateFormEditMode(1));
                     break;
                 default:
@@ -286,19 +278,9 @@ export default function ProjectCertificatesList() {
                                     data="workmanshipContracting"
                                 />
                                 <MenuItem
-                                    key="contractorPurchase"
-                                    text={getTranslatedLabel("certificate.list.contractorPurchase", "Contractor Purchase")}
-                                    data="contractorPurchase"
-                                />
-                                <MenuItem
                                     key="companySupplySale"
                                     text={getTranslatedLabel("certificate.list.companySupplySale", "Company Supply Sale")}
                                     data="companySupplySale"
-                                />
-                                <MenuItem
-                                    key="externalSupplySale"
-                                    text={getTranslatedLabel("certificate.list.externalSupplySale", "External Supply Sale")}
-                                    data="externalSupplySale"
                                 />
                             </MenuItem>
                         </Menu>

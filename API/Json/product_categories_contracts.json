@@ -68,5 +68,85 @@
     "long_description": "Construction materials used in building, including bricks, cement, and rebar",
     "created_stamp": "2025-08-27 14:28:00.000",
     "last_updated_stamp": "2025-08-27 14:28:00.000"
+  },
+  {
+    "product_category_id": "TIPS_FEES",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Tips and Fees",
+    "DESCRIPTION_ARABIC": "اكراميات و اتعاب",
+    "long_description": "Gratuities and fees paid to workers or service providers, such as pump operators or loader drivers",
+    "created_stamp": "2025-08-27 14:23:00.000",
+    "last_updated_stamp": "2025-08-27 14:23:00.000"
+  },
+  {
+    "product_category_id": "MISCELLANEOUS",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Miscellaneous Expenses",
+    "DESCRIPTION_ARABIC": "مصروفات متنوعة",
+    "long_description": "Miscellaneous project-related expenses, such as photocopying engineering drawings",
+    "created_stamp": "2025-08-27 14:23:00.000",
+    "last_updated_stamp": "2025-08-27 14:23:00.000"
+  },
+  {
+    "product_category_id": "CONSULTANCY",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Consultancy Services",
+    "DESCRIPTION_ARABIC": "مصروفات استشارية",
+    "long_description": "Fees for consultant office services, including project oversight and technical advice",
+    "created_stamp": "2025-08-27 14:23:00.000",
+    "last_updated_stamp": "2025-08-27 14:23:00.000"
+  },
+  {
+    "product_category_id": "SECURITY",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Security and Guarding",
+    "DESCRIPTION_ARABIC": "غفرة و حراسة",
+    "long_description": "Security services for site protection, including guards and monitoring",
+    "created_stamp": "2025-08-27 14:23:00.000",
+    "last_updated_stamp": "2025-08-27 14:23:00.000"
+  },
+  {
+    "product_category_id": "DESIGN",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Design Works",
+    "DESCRIPTION_ARABIC": "أعمال التصميمات",
+    "long_description": "Architectural and engineering design services, including drawings and plans",
+    "created_stamp": "2025-08-27 14:23:00.000",
+    "last_updated_stamp": "2025-08-27 14:23:00.000"
+  },
+  {
+    "product_category_id": "SWIMMING_POOL",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Swimming Pool Works",
+    "DESCRIPTION_ARABIC": "أعمال حمام السباحة",
+    "long_description": "Construction and installation services for swimming pools, including materials and labor",
+    "created_stamp": "2025-08-27 14:23:00.000",
+    "last_updated_stamp": "2025-08-27 14:23:00.000"
+  },
+  {
+    "product_category_id": "LABOR",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Labor Wages",
+    "DESCRIPTION_ARABIC": "اجور عمالة",
+    "long_description": "Wages for variable and fixed labor, including daily or weekly worker payments",
+    "created_stamp": "2025-08-27 14:23:00.000",
+    "last_updated_stamp": "2025-08-27 14:23:00.000"
+  },
+  {
+    "product_category_id": "CONTRACTOR",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Contractor Services",
+    "DESCRIPTION_ARABIC": "أعمال المقاولين",
+    "long_description": "Services provided by third-party contractors, such as Al-Ghoul company, for specific project tasks",
+    "created_stamp": "2025-08-27 14:23:00.000",
+    "last_updated_stamp": "2025-08-27 14:23:00.000"
   }
 ]

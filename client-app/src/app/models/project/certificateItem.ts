@@ -3,12 +3,17 @@ export interface CertificateItem {
     workEffortParentId?: string;
     description?: string;
     quantity?: number;
-    uomId?: number; // Aligned with provided interface
+    uomId?: string;
     uomName?: string;
-    unitPrice?: number;
+    materialPrice?: number; // Used for WORKMANSHIP_CONTRACTING_CERTIFICATE
+    laborPrice?: number;    // Used for WORKMANSHIP_CONTRACTING_CERTIFICATE
+    unitPrice?: number;     // Sum of materialPrice and laborPrice for WORKMANSHIP_CONTRACTING_CERTIFICATE, or standalone for other types
     totalAmount?: number;
     discount?: number; // Always a value (not percentage)
     insurance?: number; // Always a value (not percentage)
+    insuranceMode?: "value" | "percentage";
+    additionalInsuranceMode?: "value" | "percentage";
+    additionalInsurance?: number; // Always a value (not percentage)
     completionPercentage?: number;
     productId?: string;
     productName?: string;

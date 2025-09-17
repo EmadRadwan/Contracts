@@ -25,9 +25,10 @@ interface UOMItem {
 interface Props {
     editMode: number; // 0: view, 1: create, 2: edit CREATED, 3: edit APPROVED, 4: edit COMPLETED
     workEffortId?: string;
+    isFormCollapsed: boolean;
 }
 
-export default function CertificateItemsList({ editMode, workEffortId }: Props) {
+export default function CertificateItemsList({ editMode, workEffortId, isFormCollapsed }: Props) {
     const initialSort: Array<SortDescriptor> = [{ field: "productName", dir: "asc" }];
     const [sort, setSort] = useState(initialSort);
     const initialDataState: State = { skip: 0, take: 4 };
@@ -50,15 +51,10 @@ export default function CertificateItemsList({ editMode, workEffortId }: Props) 
         setPage(event.page);
     };
 
-    // CertificateItemsList.tsx
     const handleSelectCertificateItem = useCallback(
         (workEffortId: string) => {
             const selectedCertificateItem = uiCertificateItems.find((item) => item.workEffortId === workEffortId);
             if (!selectedCertificateItem) return;
-
-            // REFACTOR: Ensure all CertificateItem fields are preserved, including gratuities
-            // Context: Previously, only productId and uomId were transformed, risking loss of fields like gratuities.
-            // Improvement: Spread all fields from selectedCertificateItem and explicitly map productId/uomId to match form expectations.
             const certificateItem: CertificateItem = {
                 ...selectedCertificateItem,
                 productId: {
@@ -70,22 +66,26 @@ export default function CertificateItemsList({ editMode, workEffortId }: Props) 
                     UomId: selectedCertificateItem.uomId,
                     Description: selectedCertificateItem.uomName || "",
                 },
-                // Ensure gratuities and other numeric fields are explicitly included
                 gratuities: selectedCertificateItem.gratuities || 0,
                 transportationExpenses: selectedCertificateItem.transportationExpenses || 0,
                 discount: selectedCertificateItem.discount || 0,
-                // Preserve procurementDate as a Date object for form compatibility
+                materialPrice: selectedCertificateItem.materialPrice || 0, // Use materialPrice directly
+                laborPrice: selectedCertificateItem.laborPrice || 0, // Use laborPrice directly
                 procurementDate: selectedCertificateItem.procurementDate
                     ? new Date(selectedCertificateItem.procurementDate)
                     : new Date(),
+                additionalInsurance: selectedCertificateItem.additionalInsurance || 0,
             };
-
             setCertificateItem(certificateItem);
             setItemEditMode(2);
             setShow(true);
+            console.log('selectedCertificateItem', selectedCertificateItem);
+            console.log('certificateItem', certificateItem);
         },
         [uiCertificateItems]
     );
+    
+    
     const descriptionCell = (props: GridCellProps) => (
         <td>
             <Button onClick={() => handleSelectCertificateItem(props.dataItem.workEffortId)}>
@@ -144,38 +144,119 @@ export default function CertificateItemsList({ editMode, workEffortId }: Props) 
         setShow(false);
     }, []);
 
+    const modalWidth = currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE" ? 900 : 700;
+
+
     const isSupplyWithDiscount = ["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
     const isSupplyWithoutDiscount = ["COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE"].includes(currentCertificateType);
     const isContractingType = currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE";
 
     const columns = [
-        { field: "productName", title: getTranslatedLabel(`${localizationKey}.description`, "Product"), cell: descriptionCell, width: 280 },
+        {
+            field: "productName",
+            title: getTranslatedLabel(`${localizationKey}.description`, "Product"),
+            cell: descriptionCell,
+            width: 280,
+        },
         { field: "description", title: getTranslatedLabel(`${localizationKey}.description`, "Description"), width: 280 },
         { field: "quantity", title: getTranslatedLabel(`${localizationKey}.quantity`, "Quantity") },
-        { field: "unitPrice", title: getTranslatedLabel(`${localizationKey}.unitPrice`, "Unit Price"), format: "{0:n2}" },
+        ...(isContractingType
+            ? [
+                {
+                    field: "materialPrice",
+                    title: getTranslatedLabel(`${localizationKey}.materialPrice`, "Material Price"),
+                    format: "{0:n2}",
+                },
+                {
+                    field: "laborPrice",
+                    title: getTranslatedLabel(`${localizationKey}.laborPrice`, "Labor Price"),
+                    format: "{0:n2}",
+                },
+            ]
+            : [
+                {
+                    field: "unitPrice",
+                    title: getTranslatedLabel(`${localizationKey}.unitPrice`, "Unit Price"),
+                    format: "{0:n2}",
+                },
+            ]),
         { field: "displayTotal", title: getTranslatedLabel(`${localizationKey}.totalAmount`, "Total Amount"), format: "{0:n2}" },
         ...(isSupplyWithDiscount
             ? [
-                { field: "discount", title: getTranslatedLabel(`${localizationKey}.discount`, "Discount"), format: "{0:n2}" },
-                { field: "formattedProcurementDate", title: getTranslatedLabel(`${localizationKey}.procurementDate`, "Procurement Date") },
-                { field: "transportationExpenses", title: getTranslatedLabel(`${localizationKey}.transportationExpenses`, "Transportation Expenses"), format: "{0:n2}" },
-                { field: "gratuities", title: getTranslatedLabel(`${localizationKey}.gratuities`, "Gratuities"), format: "{0:n2}" },
+                {
+                    field: "discount",
+                    title: getTranslatedLabel(`${localizationKey}.discount`, "Discount"),
+                    format: "{0:n2}",
+                },
+                {
+                    field: "formattedProcurementDate",
+                    title: getTranslatedLabel(`${localizationKey}.procurementDate`, "Procurement Date"),
+                },
+                {
+                    field: "transportationExpenses",
+                    title: getTranslatedLabel(`${localizationKey}.transportationExpenses`, "Transportation Expenses"),
+                    format: "{0:n2}",
+                },
+                {
+                    field: "gratuities",
+                    title: getTranslatedLabel(`${localizationKey}.gratuities`, "Gratuities"),
+                    format: "{0:n2}",
+                },
             ]
             : []),
         ...(isSupplyWithoutDiscount
             ? [
-                { field: "formattedProcurementDate", title: getTranslatedLabel(`${localizationKey}.procurementDate`, "Procurement Date") },
-                { field: "transportationExpenses", title: getTranslatedLabel(`${localizationKey}.transportationExpenses`, "Transportation Expenses"), format: "{0:n2}" },
-                { field: "gratuities", title: getTranslatedLabel(`${localizationKey}.gratuities`, "Gratuities"), format: "{0:n2}" },
+                {
+                    field: "formattedProcurementDate",
+                    title: getTranslatedLabel(`${localizationKey}.procurementDate`, "Procurement Date"),
+                },
+                {
+                    field: "transportationExpenses",
+                    title: getTranslatedLabel(`${localizationKey}.transportationExpenses`, "Transportation Expenses"),
+                    format: "{0:n2}",
+                },
+                {
+                    field: "gratuities",
+                    title: getTranslatedLabel(`${localizationKey}.gratuities`, "Gratuities"),
+                    format: "{0:n2}",
+                },
             ]
             : []),
         ...(isContractingType
             ? [
-                { field: "deductions", title: getTranslatedLabel(`${localizationKey}.deductions`, "Deductions"), format: "{0:n2}" },
-                { field: "deserved", title: getTranslatedLabel(`${localizationKey}.deserved`, "Deserved"), format: "{0:n2}" },
-                { field: "insurance", title: getTranslatedLabel(`${localizationKey}.insurance`, "Insurance"), format: "{0:n2}" },
-                { field: "net", title: getTranslatedLabel(`${localizationKey}.net`, "Net"), format: "{0:n2}" },
-                { field: "achievementPercentage", title: getTranslatedLabel(`${localizationKey}.achievementPercentage`, "Achievement %"), format: "{0:n0}" },
+                {
+                    field: "deductions",
+                    title: getTranslatedLabel(`${localizationKey}.deductions`, "Deductions"),
+                    format: "{0:n2}",
+                },
+                {
+                    field: "deserved",
+                    title: getTranslatedLabel(`${localizationKey}.deserved`, "Deserved"),
+                    format: "{0:n2}",
+                },
+                {
+                    field: "insurance",
+                    title: getTranslatedLabel(`${localizationKey}.insurance`, "Insurance"),
+                    format: "{0:n2}",
+                },
+                // REFACTOR: Added additionalInsurance column
+                // Purpose: Display additionalInsurance in grid
+                // Improvement: Consistent with form field additions
+                {
+                    field: "additionalInsurance",
+                    title: getTranslatedLabel(`${localizationKey}.additionalInsurance`, "Additional Insurance"),
+                    format: "{0:n2}",
+                },
+                {
+                    field: "net",
+                    title: getTranslatedLabel(`${localizationKey}.net`, "Net"),
+                    format: "{0:n2}",
+                },
+                {
+                    field: "achievementPercentage",
+                    title: getTranslatedLabel(`${localizationKey}.achievementPercentage`, "Achievement %"),
+                    format: "{0:n0}",
+                },
             ]
             : []),
         { cell: CommandCell },
@@ -184,7 +265,7 @@ export default function CertificateItemsList({ editMode, workEffortId }: Props) 
     return (
         <>
             {show && (
-                <ModalContainer show={show} onClose={memoizedOnClose} width={700}>
+                <ModalContainer show={show} onClose={memoizedOnClose} width={modalWidth}>
                     <CertificateItemFormMemo
                         certificateItem={certificateItem}
                         editMode={itemEditMode}
@@ -211,7 +292,7 @@ export default function CertificateItemsList({ editMode, workEffortId }: Props) 
                         <Grid item xs={12}>
                             <KendoGrid
                                 className="main-grid"
-                                style={{ height: "30vh" }}
+                                style={{ height: isFormCollapsed ? "60vh" : "30vh" }}
                                 data={orderBy(uiCertificateItems || [], sort).slice(page.skip, page.take + page.skip)}
                                 sortable
                                 sort={sort}

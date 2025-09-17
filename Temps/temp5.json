@@ -1,0 +1,102 @@
+[
+  { "GL_ACCOUNT_ID": "1200100", "GL_ACCOUNT_TYPE_ID": "ACCOUNTS_RECEIVABLE", "GL_ACCOUNT_CLASS_ID": "CURRENT_ASSET", "ACCOUNT_NAME": "Apartment Sales Customers" },
+  { "GL_ACCOUNT_ID": "1200200", "GL_ACCOUNT_TYPE_ID": "ACCOUNTS_RECEIVABLE", "GL_ACCOUNT_CLASS_ID": "CURRENT_ASSET", "ACCOUNT_NAME": "Rental Debtors" },
+  { "GL_ACCOUNT_ID": "1200300", "GL_ACCOUNT_TYPE_ID": "ACCOUNTS_RECEIVABLE", "GL_ACCOUNT_CLASS_ID": "CURRENT_ASSET", "ACCOUNT_NAME": "Property Management Debtors" },
+  {
+    "GL_ACCOUNT_ID": "140010",
+    "GL_ACCOUNT_TYPE_ID": "INVENTORY",
+    // REFACTOR: Changed GL_ACCOUNT_CLASS_ID from CURRENT_ASSET to INVENTORY_ASSET for specificity, as it better reflects inventory accounts per the class list.
+    "GL_ACCOUNT_CLASS_ID": "INVENTORY_ASSET",
+    "ACCOUNT_NAME": "Apartments Ready for Sale"
+  },
+  {
+    "GL_ACCOUNT_ID": "140020",
+    "GL_ACCOUNT_TYPE_ID": "INVENTORY",
+    // REFACTOR: Changed GL_ACCOUNT_CLASS_ID from CURRENT_ASSET to INVENTORY_ASSET for specificity, as it better reflects inventory accounts per the class list.
+    "GL_ACCOUNT_CLASS_ID": "INVENTORY_ASSET",
+    "ACCOUNT_NAME": "Agricultural Crops"
+  },
+  {
+    "GL_ACCOUNT_ID": "141100",
+    "GL_ACCOUNT_TYPE_ID": "INVENTORY",
+    // REFACTOR: Changed GL_ACCOUNT_CLASS_ID from CURRENT_ASSET to INVENTORY_ASSET for specificity, as it better reflects inventory accounts per the class list.
+    "GL_ACCOUNT_CLASS_ID": "INVENTORY_ASSET",
+    "ACCOUNT_NAME": "Building Materials"
+  },
+  { "GL_ACCOUNT_ID": "150100", "GL_ACCOUNT_TYPE_ID": "OTHER_CURRENT_ASSET", "GL_ACCOUNT_CLASS_ID": "CURRENT_ASSET", "ACCOUNT_NAME": "Contractor and Craftsman Advances" },
+  { "GL_ACCOUNT_ID": "161100", "GL_ACCOUNT_TYPE_ID": "FIXED_ASSET", "GL_ACCOUNT_CLASS_ID": "LONGTERM_ASSET", "ACCOUNT_NAME": "Farms" },
+  { "GL_ACCOUNT_ID": "100100", "GL_ACCOUNT_TYPE_ID": "FIXED_ASSET", "GL_ACCOUNT_CLASS_ID": "LONGTERM_ASSET", "ACCOUNT_NAME": "Projects Under Execution" },
+  { "GL_ACCOUNT_ID": "201000", "GL_ACCOUNT_TYPE_ID": "ACCOUNTS_PAYABLE", "GL_ACCOUNT_CLASS_ID": "CURRENT_LIABILITY", "ACCOUNT_NAME": "Building Materials Suppliers" },
+  { "GL_ACCOUNT_ID": "202000", "GL_ACCOUNT_TYPE_ID": "ACCOUNTS_PAYABLE", "GL_ACCOUNT_CLASS_ID": "CURRENT_LIABILITY", "ACCOUNT_NAME": "Subcontractors" },
+  { "GL_ACCOUNT_ID": "203000", "GL_ACCOUNT_TYPE_ID": "ACCOUNTS_PAYABLE", "GL_ACCOUNT_CLASS_ID": "CURRENT_LIABILITY", "ACCOUNT_NAME": "Craftsmen" },
+  { "GL_ACCOUNT_ID": "271000", "GL_ACCOUNT_TYPE_ID": "UNEARNED_REVENUE", "GL_ACCOUNT_CLASS_ID": "CURRENT_LIABILITY", "ACCOUNT_NAME": "Prepaid Rents Received" },
+  { "GL_ACCOUNT_ID": "301000", "GL_ACCOUNT_TYPE_ID": "OWNERS_EQUITY", "GL_ACCOUNT_CLASS_ID": "EQUITY", "ACCOUNT_NAME": "Partners' Current - Parent Company" },
+  { "GL_ACCOUNT_ID": "302000", "GL_ACCOUNT_TYPE_ID": "OWNERS_EQUITY", "GL_ACCOUNT_CLASS_ID": "EQUITY", "ACCOUNT_NAME": "Partner (A) Current" },
+  { "GL_ACCOUNT_ID": "303000", "GL_ACCOUNT_TYPE_ID": "OWNERS_EQUITY", "GL_ACCOUNT_CLASS_ID": "EQUITY", "ACCOUNT_NAME": "Partner (B) Current" },
+  { "GL_ACCOUNT_ID": "304000", "GL_ACCOUNT_TYPE_ID": "OWNERS_EQUITY", "GL_ACCOUNT_CLASS_ID": "EQUITY", "ACCOUNT_NAME": "Project Developers Partners' Current" },
+  { "GL_ACCOUNT_ID": "400100", "GL_ACCOUNT_TYPE_ID": "REVENUE", "GL_ACCOUNT_CLASS_ID": "INCOME", "ACCOUNT_NAME": "Real Estate Development Revenues" },
+  { "GL_ACCOUNT_ID": "400200", "GL_ACCOUNT_TYPE_ID": "REVENUE", "GL_ACCOUNT_CLASS_ID": "INCOME", "ACCOUNT_NAME": "Rental Revenues" },
+  { "GL_ACCOUNT_ID": "400300", "GL_ACCOUNT_TYPE_ID": "REVENUE", "GL_ACCOUNT_CLASS_ID": "INCOME", "ACCOUNT_NAME": "Shop Rents" },
+  { "GL_ACCOUNT_ID": "400400", "GL_ACCOUNT_TYPE_ID": "REVENUE", "GL_ACCOUNT_CLASS_ID": "INCOME", "ACCOUNT_NAME": "Restaurants and Cafes Rents" },
+  { "GL_ACCOUNT_ID": "400500", "GL_ACCOUNT_TYPE_ID": "REVENUE", "GL_ACCOUNT_CLASS_ID": "INCOME", "ACCOUNT_NAME": "Residential Apartments Rents" },
+  { "GL_ACCOUNT_ID": "400600", "GL_ACCOUNT_TYPE_ID": "REVENUE", "GL_ACCOUNT_CLASS_ID": "INCOME", "ACCOUNT_NAME": "Property Management Revenues" },
+  { "GL_ACCOUNT_ID": "400700", "GL_ACCOUNT_TYPE_ID": "REVENUE", "GL_ACCOUNT_CLASS_ID": "INCOME", "ACCOUNT_NAME": "Agricultural Activity Revenues" },
+  { "GL_ACCOUNT_ID": "400800", "GL_ACCOUNT_TYPE_ID": "REVENUE", "GL_ACCOUNT_CLASS_ID": "INCOME", "ACCOUNT_NAME": "Crop Sales" },
+  { "GL_ACCOUNT_ID": "400900", "GL_ACCOUNT_TYPE_ID": "REVENUE", "GL_ACCOUNT_CLASS_ID": "INCOME", "ACCOUNT_NAME": "Other Products Sales" },
+  {
+    "GL_ACCOUNT_ID": "520000",
+    "GL_ACCOUNT_TYPE_ID": "EXPENSE",
+    // REFACTOR: Changed GL_ACCOUNT_CLASS_ID from COST_OF_SALES to COGS_EXPENSE, as COST_OF_SALES is not in the class list, and COGS_EXPENSE accurately reflects expenses tied to production.
+    "GL_ACCOUNT_CLASS_ID": "COGS_EXPENSE",
+    "ACCOUNT_NAME": "Expenses for Projects Under Construction"
+  },
+  {
+    "GL_ACCOUNT_ID": "522000",
+    "GL_ACCOUNT_TYPE_ID": "EXPENSE",
+    // REFACTOR: Changed GL_ACCOUNT_CLASS_ID from COST_OF_SALES to COGS_EXPENSE, as COST_OF_SALES is not in the class list, and COGS_EXPENSE accurately reflects expenses tied to production.
+    "GL_ACCOUNT_CLASS_ID": "COGS_EXPENSE",
+    "ACCOUNT_NAME": "Craftsmen Expenses"
+  },
+  {
+    "GL_ACCOUNT_ID": "524000",
+    "GL_ACCOUNT_TYPE_ID": "EXPENSE",
+    // REFACTOR: Changed GL_ACCOUNT_CLASS_ID from COST_OF_SALES to COGS_EXPENSE, as COST_OF_SALES is not in the class list, and COGS_EXPENSE accurately reflects expenses tied to production.
+    "GL_ACCOUNT_CLASS_ID": "COGS_EXPENSE",
+    "ACCOUNT_NAME": "Project Sundries"
+  },
+  {
+    "GL_ACCOUNT_ID": "530000",
+    "GL_ACCOUNT_TYPE_ID": "EXPENSE",
+    // REFACTOR: Changed GL_ACCOUNT_CLASS_ID from COST_OF_SALES to COGS_EXPENSE, as COST_OF_SALES is not in the class list, and COGS_EXPENSE accurately reflects expenses tied to production.
+    "GL_ACCOUNT_CLASS_ID": "COGS_EXPENSE",
+    "ACCOUNT_NAME": "Agricultural Activity Expenses"
+  },
+  {
+    "GL_ACCOUNT_ID": "531000",
+    "GL_ACCOUNT_TYPE_ID": "EXPENSE",
+    // REFACTOR: Changed GL_ACCOUNT_CLASS_ID from COST_OF_SALES to COGS_EXPENSE, as COST_OF_SALES is not in the class list, and COGS_EXPENSE accurately reflects expenses tied to production.
+    "GL_ACCOUNT_CLASS_ID": "COGS_EXPENSE",
+    "ACCOUNT_NAME": "Farm Workers Wages"
+  },
+  {
+    "GL_ACCOUNT_ID": "532000",
+    "GL_ACCOUNT_TYPE_ID": "EXPENSE",
+    // REFACTOR: Changed GL_ACCOUNT_CLASS_ID from COST_OF_SALES to COGS_EXPENSE, as COST_OF_SALES is not in the class list, and COGS_EXPENSE accurately reflects expenses tied to production.
+    "GL_ACCOUNT_CLASS_ID": "COGS_EXPENSE",
+    "ACCOUNT_NAME": "Fertilizers and Seeds"
+  },
+  {
+    "GL_ACCOUNT_ID": "533000",
+    "GL_ACCOUNT_TYPE_ID": "EXPENSE",
+    // REFACTOR: Changed GL_ACCOUNT_CLASS_ID from COST_OF_SALES to COGS_EXPENSE, as COST_OF_SALES is not in the class list, and COGS_EXPENSE accurately reflects expenses tied to production.
+    "GL_ACCOUNT_CLASS_ID": "COGS_EXPENSE",
+    "ACCOUNT_NAME": "Land Reclamation Costs"
+  },
+  {
+    "GL_ACCOUNT_ID": "542000",
+    "GL_ACCOUNT_TYPE_ID": "EXPENSE",
+    // REFACTOR: Changed GL_ACCOUNT_CLASS_ID from GENERAL_AND_ADMIN to SGA_EXPENSE, as GENERAL_AND_ADMIN is not in the class list, and SGA_EXPENSE aligns with general and administrative expenses.
+    "GL_ACCOUNT_CLASS_ID": "SGA_EXPENSE",
+    "ACCOUNT_NAME": "Employee Advances Expenses"
+  }
+]

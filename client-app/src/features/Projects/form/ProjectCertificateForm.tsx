@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {useAppDispatch, useAppSelector, useFetchFacilitiesQuery} from "../../../app/store/configureStore";
 import { Field, Form, FormElement } from "@progress/kendo-react-form";
-import {Box, Button, Grid, Paper, Typography} from "@mui/material";
+import {Box, Button, Collapse, Grid, IconButton, Paper, Typography} from "@mui/material";
 import LoadingButton from "@mui/lab/LoadingButton";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import { resetCertificateUi, setCertificateFormEditMode } from "../slice/certificateUiSlice";
@@ -21,7 +21,8 @@ import {resetUiCertificateItems} from "../slice/certificateItemsUiSlice";
 import { Menu, MenuItem } from '@mui/material';
 import {CertificateStatus} from "../../../app/models/project/certificate";
 import { MemoizedFormDropDownList2 } from "../../../app/common/form/MemoizedFormDropDownList2";
-
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
 interface ProjectCertificateFormProps {
     editMode: number; // 0: view, 1: create, 2: edit (CREATED), 3: edit (APPROVED), 4: edit (COMPLETED)
@@ -46,15 +47,7 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
     const open = Boolean(anchorEl);
     const { getTranslatedLabel } = useTranslationHelper();
 
-    // Purpose: Verifies user roles for menu rendering and debugging.
-    useEffect(() => {
-        console.log('CertificateActionsMenu user:', {
-            id: user?.id,
-            username: user?.username,
-            email: user?.email,
-            roles: user?.roles || [],
-        });
-    }, [user]);
+
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
@@ -123,6 +116,8 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
     const [isLoading, setIsLoading] = useState(false);
     const { language } = useAppSelector((state) => state.localization);
     const {user} = useAppSelector((state) => state.account);
+    const [isFormCollapsed, setIsFormCollapsed] = useState(false);
+
     const {
         formEditMode,
         setFormEditMode,
@@ -173,14 +168,11 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
     console.log("Redux selectedCertificate:", selectedCertificate);
 
     const formKey = useMemo(() => formRef2.current.toString(), [formRef2.current]);
-    const showSupplier = ["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
-    const showContractor = ["COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE", "WORKMANSHIP_CONTRACTING_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
+    const showSupplier = currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE";
 
-    // ProjectCertificateForm.tsx
+    const showContractor = ["WORKMANSHIP_CONTRACTING_CERTIFICATE", "COMPANY_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
+
     const initialFormValues = useMemo(() => {
-        console.log("Computing initialFormValues with Redux selectedCertificate:", selectedCertificate);
-        // Purpose: Ensure consistent object structure for form controls and handle missing data
-        // Context: Prevents errors when selectedCertificate is partially populated
         if (editMode === 1 || !selectedCertificate?.workEffortId) {
             const now = new Date();
             const oneWeekAgo = new Date(now);
@@ -195,32 +187,23 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                 facilityId: undefined,
             };
         }
-
         return {
             description: selectedCertificate.description || "",
-            projectId: selectedCertificate.projectId
-                ? { projectId: selectedCertificate.projectId, projectName: selectedCertificate.projectName || "" }
-                : undefined,
-            partyIdSupplier: showSupplier && selectedCertificate.partyIdSupplier
-                ? {
-                    fromPartyId: selectedCertificate.partyIdSupplier.fromPartyId || "",
-                    fromPartyName: selectedCertificate.partyIdSupplier.partyName || "",
-                }
-                : undefined,
-            partyIdContractor: showContractor && selectedCertificate.partyIdContractor
-                ? {
-                    fromPartyId: selectedCertificate.partyIdContractor.fromPartyId || "",
-                    fromPartyName: selectedCertificate.partyIdContractor.partyName || "",
-                }
-                : undefined,
-            estimatedStartDate: selectedCertificate.estimatedStartDate
-                ? new Date(selectedCertificate.estimatedStartDate)
-                : null,
-            estimatedCompletionDate: selectedCertificate.estimatedCompletionDate
-                ? new Date(selectedCertificate.estimatedCompletionDate)
-                : null,
+            projectId: selectedCertificate.projectId ? { projectId: selectedCertificate.projectId, projectName: selectedCertificate.projectName || "" } : undefined,
+            partyIdSupplier: showSupplier && selectedCertificate.partyIdSupplier ? {
+                fromPartyId: selectedCertificate.partyIdSupplier.fromPartyId || "",
+                fromPartyName: selectedCertificate.partyIdSupplier.partyName || "",
+            } : undefined,
+            partyIdContractor: showContractor && selectedCertificate.partyIdContractor ? {
+                fromPartyId: selectedCertificate.partyIdContractor.fromPartyId || "",
+                fromPartyName: selectedCertificate.partyIdContractor.partyName || "",
+            } : undefined,
+            estimatedStartDate: selectedCertificate.estimatedStartDate ? new Date(selectedCertificate.estimatedStartDate) : null,
+            estimatedCompletionDate: selectedCertificate.estimatedCompletionDate ? new Date(selectedCertificate.estimatedCompletionDate) : null,
             facilityId: selectedCertificate.facilityId,
         };
+        // Purpose: Ensure contractor field is initialized for both WORKMANSHIP_CONTRACTING_CERTIFICATE and COMPANY_SUPPLY_SALE_CERTIFICATE
+        // Improvement: Maintains consistency with form rendering and prevents missing initial values
     }, [editMode, selectedCertificate, showSupplier, showContractor]);
 
     const handleProjectChange = useCallback(
@@ -356,6 +339,9 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                     ? `${getTranslatedLabel("certificate.form.title", "Project Certificate No")}: ${selectedCertificate.projectNum} (${getCertificateTypeDisplayText(currentCertificateType)})`
                                     : `${getTranslatedLabel("certificate.form.new", "New Project Certificate")} (${getCertificateTypeDisplayText(currentCertificateType)})`}
                             </Typography>
+                            <IconButton onClick={() => setIsFormCollapsed(!isFormCollapsed)}>
+                                {isFormCollapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+                            </IconButton>
                             {editMode >= 2 && (
                                 <CertificateActionsMenu
                                     workEffortId={selectedCertificate?.workEffortId}
@@ -383,6 +369,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                         )}
                     </Grid>
                 </Grid>
+                <Collapse in={!isFormCollapsed}>
                 <Form
                     ref={formRef}
                     initialValues={initialFormValues}
@@ -479,13 +466,6 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                                 disabled={editMode > 3}
                                             />
                                         </Grid>
-                                        <Grid item xs={12}>
-                                            <Grid container spacing={1} alignItems="center" sx={{ ml: 1, mt: 3 }}>
-                                                <Grid item xs={12}>
-                                                    <CertificateItemsListMemo editMode={formEditMode} workEffortId={selectedCertificate?.workEffortId} />
-                                                </Grid>
-                                            </Grid>
-                                        </Grid>
                                     </Grid>
                                 </Grid>
                                 <div className="k-form-buttons">
@@ -517,6 +497,12 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                         </FormElement>
                     )}
                 />
+                </Collapse>
+                <Grid container spacing={1} alignItems="center" sx={{ ml: 1, mt: 3 }}>
+                    <Grid item xs={12}>
+                        <CertificateItemsListMemo editMode={formEditMode} workEffortId={selectedCertificate?.workEffortId} isFormCollapsed={isFormCollapsed} />
+                    </Grid>
+                </Grid>
             </Paper>
             {isAddCertificateLoading || isUpdateCertificateLoading && (
                 <LoadingComponent message={getTranslatedLabel("certificate.form.saving", "Saving Certificate...")}/>

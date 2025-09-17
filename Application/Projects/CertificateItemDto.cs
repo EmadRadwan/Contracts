@@ -9,17 +9,21 @@ public class CertificateItemDto
     public string? ProductId { get; set; } // Maps to WorkEffort.ProductId
     public ProductLovDto? ProductIdObject { get; set; } // Maps to WorkEffort.ProductId
     public UomLovDto? QuantityUomObject { get; set; } 
-    public string? QuantityUom { get; set; } 
+    public string? UomId { get; set; } 
     public decimal? AchievementPercentage { get; set; }
     public string? Description { get; set; } 
-    public string? UomDescription { get; set; } 
+    public string? UomName { get; set; } 
     public string? ProductName { get; set; }
     public decimal Quantity { get; set; } 
+    public decimal MaterialPrice { get; set; }
+    public decimal LaborPrice { get; set; }
     public decimal UnitPrice { get; set; } 
     public decimal TotalAmount { get; set; } 
     public decimal? Discount { get; set; } 
     public decimal? Deductions { get; set; } 
     public decimal? Insurance { get; set; }
+    public decimal AdditionalInsurance { get; set; }
+
     public decimal? TransportationExpenses { get; set; }
     public decimal? Gratuities { get; set; }
     public decimal? Rate { get; set; }

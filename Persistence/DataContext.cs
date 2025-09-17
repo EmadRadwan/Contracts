@@ -61943,6 +61943,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
         		.HasMaxLength(36)
         		.IsUnicode(false)
        			 .HasColumnName("PARTY_ID_SUPPLIER");
+       			 
     entity.Property(e => e.PartyIdContractor)
         .HasMaxLength(36)
         .IsUnicode(false)
@@ -61973,6 +61974,14 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 entity.Property(e => e.Rate)
                     .HasColumnType("decimal(18,3)")
                     .HasColumnName("RATE");
+                    
+                    entity.Property(e => e.MaterialPrice)
+                    .HasColumnType("decimal(18,3)")
+                    .HasColumnName("MATERIAL_PRICE");
+                    
+            entity.Property(e => e.LaborPrice)
+                    .HasColumnType("decimal(18,3)")
+                    .HasColumnName("LABOR_PRICE");
             
                 entity.Property(e => e.CompletionPercentage)
                     .HasColumnType("decimal(5, 2)")
@@ -62046,6 +62055,10 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 entity.Property(e => e.Insurance)
                     .HasColumnType("decimal(18,3)")
                     .HasColumnName("INSURANCE");
+            
+                entity.Property(e => e.AdditionalInsurance)
+                    .HasColumnType("decimal(18,3)")
+                    .HasColumnName("ADDITIONAL_INSURANCE");
             
  
 

@@ -23,8 +23,6 @@ export const allItemsAreDeletedOrNone = createSelector(
     }
 );
 
-// Purpose: Ensure subtotal reflects the effective total after adjustments like discount, deductions, insurance, trans, grat.
-// Improvement: Provides accurate aggregation for display, aligning with form calculations and grid columns.
 export const certificateSubTotal = createSelector(
     nonDeletedCertificateItemsSelector,
     (state: RootState) => state.certificateUi.currentCertificateType,
@@ -32,14 +30,17 @@ export const certificateSubTotal = createSelector(
         if (!certificateItems) return 0;
         return certificateItems.reduce((sum, item) => {
             let amount = 0;
-            const total = item.totalAmount || 0;
-            if (["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)) {
+            const total =
+                currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                    ? (item.materialPrice || 0) + (item.laborPrice || 0)
+                    : item.totalAmount || 0;
+            if (["SUPPLY_PROCUREMENT_CERTIFICATE"].includes(currentCertificateType)) {
                 amount = total - (item.discount || 0) + (item.transportationExpenses || 0) + (item.gratuities || 0);
-            } else if (["COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE"].includes(currentCertificateType)) {
+            } else if (["COMPANY_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)) {
                 amount = total + (item.transportationExpenses || 0) + (item.gratuities || 0);
             } else if (currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE") {
                 const deserved = total - (item.deductions || 0);
-                amount = Math.max(0, deserved - (item.insurance || 0));
+                amount = Math.max(0, deserved - (item.insurance || 0) - (item.additionalInsurance || 0));
             }
             return sum + Math.round(amount * 100) / 100;
         }, 0);
@@ -51,32 +52,44 @@ export const certificateSubTotal = createSelector(
 export const certificateItemSubTotal = createSelector(
     certificateItemsEntities,
     (state: RootState) => state.certificateItemsUi.selectedCertificateItem,
-    (certificateItemsEntities, selectedCertificateItem) => {
+    (state: RootState) => state.certificateUi.currentCertificateType,
+    (certificateItemsEntities, selectedCertificateItem, currentCertificateType) => {
         const filteredItems =
             certificateItemsEntities?.filter(
-                (item: CertificateItem) => !item?.isDeleted && item?.workEffortId === selectedCertificateItem?.workEffortId
+                (item: CertificateItem) =>
+                    !item?.isDeleted && item?.workEffortId === selectedCertificateItem?.workEffortId
             ) || [];
-        return filteredItems.reduce((sum, item) => sum + (item?.totalAmount || 0), 0);
+        return filteredItems.reduce((sum, item) => {
+            const total =
+                currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                    ? (item.materialPrice || 0) + (item.laborPrice || 0)
+                    : item.totalAmount || 0;
+            return sum + total;
+        }, 0);
     }
 );
 
-// Purpose: Replace deprecated type checks with specific includes, calculate displayTotal as gross for contracting and final for supply.
-// Improvement: Ensures grid displays accurate values, fixes missing additives, and supports dynamic column adjustments.
+// REFACTOR: Include quantity in total calculation for WORKMANSHIP_CONTRACTING_CERTIFICATE
+// Purpose: Ensure total reflects quantity * (materialPrice + laborPrice) to match form calculations
+// Improvement: Fixes incorrect net value in grid (2 instead of 12)
 export const displayCertificateItemsSelector = createSelector(
     nonDeletedCertificateItemsSelector,
     (state: RootState) => state.certificateUi.currentCertificateType,
     (certificateItems, currentCertificateType) =>
         certificateItems.map((item) => {
-            const total = item.totalAmount || 0;
+            const total =
+                currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                    ? (item.quantity || 0) * ((item.materialPrice || 0) + (item.laborPrice || 0))
+                    : item.totalAmount || 0;
             let displayTotal = total;
             let net = displayTotal;
-            if (["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)) {
+            if (["SUPPLY_PROCUREMENT_CERTIFICATE"].includes(currentCertificateType)) {
                 displayTotal = total - (item.discount || 0) + (item.transportationExpenses || 0) + (item.gratuities || 0);
-            } else if (["COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE"].includes(currentCertificateType)) {
+            } else if (["COMPANY_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)) {
                 displayTotal = total + (item.transportationExpenses || 0) + (item.gratuities || 0);
             } else if (currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE") {
                 const deserved = Math.max(0, Math.round((total - (item.deductions || 0)) * 1000) / 1000);
-                net = Math.max(0, Math.round((deserved - (item.insurance || 0)) * 1000) / 1000);
+                net = Math.max(0, Math.round((deserved - (item.insurance || 0) - (item.additionalInsurance || 0)) * 1000) / 1000);
                 displayTotal = total;
             }
             const formattedProcurementDate = item.procurementDate

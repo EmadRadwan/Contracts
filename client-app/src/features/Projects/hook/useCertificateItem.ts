@@ -16,6 +16,7 @@ interface UseCertificateItemProps {
     setInitValue: (value: CertificateItem | undefined) => void;
     discountMode: "value" | "percentage";
     insuranceMode: "value" | "percentage";
+    additionalInsuranceMode: "value" | "percentage";
     calculateTotals: (valueGetter: FormRenderProps["valueGetter"]) => {
         total: number;
         finalTotal: number;
@@ -25,6 +26,7 @@ interface UseCertificateItemProps {
         discount: number;
         transportationExpenses: number;
         gratuities: number;
+        additionalInsurance: number;
     };
 }
 
@@ -35,6 +37,7 @@ export default function useCertificateItem({
                                                setInitValue,
                                                discountMode,
                                                insuranceMode,
+                                               additionalInsuranceMode,
                                                calculateTotals,
                                            }: UseCertificateItemProps) {
     const dispatch = useAppDispatch();
@@ -47,18 +50,12 @@ export default function useCertificateItem({
     };
 
     // Purpose: Allow transportationExpenses and gratuities for all certificate types, including CONTRACTOR_PURCHASE_CERTIFICATE
-    // Context: Ensures values from calculateTotals are used consistently without being forced to 0
+    // Context: Ensures values from calculateTotals are used consistently without being forced to 
     const createOrUpdateCertificateItem = useCallback(
         (data: CertificateItem, valueGetter: FormRenderProps["valueGetter"]): CertificateItem => {
-            console.log("createOrUpdateCertificateItem called with:", data);
             const itemSeqId = certificateItemsFromUi?.length ? certificateItemsFromUi.length + 1 : 1;
-            const serializedProcurementDate = data.procurementDate instanceof Date
-                ? data.procurementDate.toISOString()
-                : data.procurementDate;
-
-            // Use calculateTotals to get consistent values
-            const { total, finalTotal, net, deserved, insurance, discount, transportationExpenses, gratuities } =
-                calculateTotals(valueGetter);
+            const serializedProcurementDate = data.procurementDate instanceof Date ? data.procurementDate.toISOString() : data.procurementDate;
+            const { total, finalTotal, net, deserved, insurance, discount, transportationExpenses, gratuities, additionalInsurance  } = calculateTotals(valueGetter);
 
             const commonFields: CertificateItem = {
                 productId: typeof data.productId === "object" ? data.productId.ProductId : data.productId,
@@ -67,10 +64,13 @@ export default function useCertificateItem({
                 uomName: typeof data.uomId === "object" ? data.uomId.Description : data.uomName || "",
                 description: data.description || "",
                 quantity: data.quantity,
-                unitPrice: +data.unitPrice?.toFixed(3),
+                unitPrice: data.unitPrice || (Number(data.materialPrice || 0) + Number(data.laborPrice || 0)),
+                materialPrice: Number(data.materialPrice) || 0,
+                laborPrice: Number(data.laborPrice) || 0,
                 totalAmount: +total.toFixed(3),
                 discount: +discount.toFixed(3),
                 insurance: +insurance.toFixed(3),
+                additionalInsurance: +additionalInsurance.toFixed(3),
                 deductions: data.deductions || 0,
                 deserved: +deserved.toFixed(3),
                 net: +net.toFixed(3),
@@ -81,6 +81,8 @@ export default function useCertificateItem({
                 achievementPercentage: data.achievementPercentage,
                 transportationExpenses: +transportationExpenses.toFixed(3),
                 gratuities: +gratuities.toFixed(3),
+                insuranceMode,
+                additionalInsuranceMode,
             };
 
             let newCertificateItem: CertificateItem;
@@ -97,7 +99,11 @@ export default function useCertificateItem({
                     workEffortParentId: "",
                 };
             }
-
+            console.log('createOrUpdateCertificateItem debug:', {
+                inputData: data,
+                calculated: { total, finalTotal, net, deserved, insurance, additionalInsurance },
+                newCertificateItem,
+            });
             return newCertificateItem;
         },
         [certificateItem, editMode, certificateItemsFromUi, calculateTotals]

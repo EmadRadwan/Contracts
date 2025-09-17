@@ -36,9 +36,7 @@ namespace Application.Projects
                 {
                     "SUPPLY_PROCUREMENT_CERTIFICATE" => "Supply Procurement Certificate",
                     "WORKMANSHIP_CONTRACTING_CERTIFICATE" => "Workmanship Contracting Certificate",
-                    "CONTRACTOR_PURCHASE_CERTIFICATE" => "Contractor Purchase Certificate",
                     "COMPANY_SUPPLY_SALE_CERTIFICATE" => "Company Supply Sale Certificate",
-                    "EXTERNAL_SUPPLY_SALE_CERTIFICATE" => "External Supply Sale Certificate",
                     _ => "Unknown Certificate"
                 };
             }
@@ -81,17 +79,10 @@ namespace Application.Projects
                                 PartyIdContractor = contractor != null ? contractor.PartyId : null,
                                 PartyNameContractor = contractor != null ? contractor.Description : null,
                                 RelatedOrderId = we.RelatedOrderId,
-                                // REFACTOR: Added FacilityId and FacilityName to projection
-                                // Purpose: Map facility data from joined Facilities table
-                                // Improvement: Provides header-level facility info for frontend binding
-                                // Context: Matches updated ProjectCertificateRecord; null for non-facility types
                                 FacilityId = we.FacilityId,
                                 FacilityName = fac != null ? fac.FacilityName : null
                             };
 
-                // REFACTOR: Map CertificateCategory to CertificateCategoryDescription in memory
-                // Purpose: Apply description mapping after query execution to avoid EF Core limitations
-                // Context: Uses GetCertificateCategoryDescription to set the field
                 var result = query.Select(record => new ProjectCertificateRecord
                 {
                     WorkEffortId = record.WorkEffortId,
@@ -113,14 +104,7 @@ namespace Application.Projects
                     FacilityId = record.FacilityId,
                     FacilityName = record.FacilityName
                 });
-
-                // REFACTOR: Retained debug logging for query result
-                // Purpose: Verify PartyIdSupplier/PartyNameSupplier and FacilityId/FacilityName presence in response
-                // Improvement: Helps diagnose binding issues in frontend
-                // Context: Logs sample for debugging; includes new facility fields
-                //var resultList = await result.Take(10).ToListAsync(cancellationToken);
-                //Console.WriteLine("ListProjectCertificates query result sample: " + System.Text.Json.JsonSerializer.Serialize(resultList));
-
+                
                 return result;
             }
         }

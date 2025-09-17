@@ -37,7 +37,8 @@ namespace Application.Projects
             private readonly IOrderService _orderService;
             private readonly IProductStoreService _productStoreService;
 
-            public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService, IOrderService orderService, IProductStoreService productStoreService)
+            public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService,
+                IOrderService orderService, IProductStoreService productStoreService)
             {
                 _context = context;
                 _userAccessor = userAccessor;
@@ -46,7 +47,8 @@ namespace Application.Projects
                 _productStoreService = productStoreService;
             }
 
-            public async Task<Result<ProjectCertificateDto>> Handle(Command request, CancellationToken cancellationToken)
+            public async Task<Result<ProjectCertificateDto>> Handle(Command request,
+                CancellationToken cancellationToken)
             {
                 await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
                 try
@@ -63,11 +65,14 @@ namespace Application.Projects
                     if (string.IsNullOrEmpty(partyId))
                     {
                         await transaction.RollbackAsync(cancellationToken);
-                        return Result<ProjectCertificateDto>.Failure("No valid party ID (Contractor or Supplier) provided");
+                        return Result<ProjectCertificateDto>.Failure(
+                            "No valid party ID (Contractor or Supplier) provided");
                     }
 
                     var certificateCount = await _context.WorkEfforts
-                        .CountAsync(we => (we.PartyIdContractor == partyId || we.PartyIdSupplier == partyId) && we.CertificateCategory == certificate.CertificateCategory, cancellationToken);
+                        .CountAsync(
+                            we => (we.PartyIdContractor == partyId || we.PartyIdSupplier == partyId) &&
+                                  we.CertificateCategory == certificate.CertificateCategory, cancellationToken);
 
                     newProjectCertificateSerial = string.Format("{0}-{1:D4}", partyId, certificateCount + 1);
 
@@ -106,6 +111,10 @@ namespace Application.Projects
                             TotalAmount = item.TotalAmount,
                             Discount = item.Discount ?? 0,
                             Insurance = item.Insurance ?? 0,
+                            AdditionalInsurance = item.AdditionalInsurance,
+                            MaterialPrice = certificate.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE" ? item.MaterialPrice : 0,
+                            LaborPrice = certificate.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE" ? item.LaborPrice : 0,
+                            QuantityUomId = item.UomId, 
                             Deductions = item.Deductions ?? 0,
                             AchievementPercent = item.AchievementPercentage ?? 0,
                             Notes = item.Notes,
@@ -128,17 +137,23 @@ namespace Application.Projects
                         if (poItems.Any())
                         {
                             string fromPartyId;
-                            if (certificate.CertificateCategory is "SUPPLY_PROCUREMENT_CERTIFICATE" or "EXTERNAL_SUPPLY_SALE_CERTIFICATE" or "COMPANY_SUPPLY_SALE_CERTIFICATE")
+                            if (certificate.CertificateCategory is "SUPPLY_PROCUREMENT_CERTIFICATE")
                             {
-                                fromPartyId = certificate.PartyIdSupplier ?? throw new InvalidOperationException("PartyIdSupplier is required for supply/sale certificates");
+                                fromPartyId = certificate.PartyIdSupplier ??
+                                              throw new InvalidOperationException(
+                                                  "PartyIdSupplier is required for supply/sale certificates");
                             }
-                            else if (certificate.CertificateCategory is "CONTRACTOR_PURCHASE_CERTIFICATE" or "WORKMANSHIP_CONTRACTING_CERTIFICATE")
+                            else if (certificate.CertificateCategory is "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                                     or "COMPANY_SUPPLY_SALE_CERTIFICATE")
                             {
-                                fromPartyId = certificate.PartyIdContractor ?? throw new InvalidOperationException("PartyIdContractor is required for contractor/workmanship certificates");
+                                fromPartyId = certificate.PartyIdContractor ??
+                                              throw new InvalidOperationException(
+                                                  "PartyIdContractor is required for contractor/workmanship certificates");
                             }
                             else
                             {
-                                throw new InvalidOperationException($"Unsupported certificate category: {certificate.CertificateCategory}");
+                                throw new InvalidOperationException(
+                                    $"Unsupported certificate category: {certificate.CertificateCategory}");
                             }
 
                             var discountAdjustments = poItems
@@ -157,7 +172,9 @@ namespace Application.Projects
                                     IsManual = "Y",
                                     CreatedDate = stamp,
                                     IsAdjustmentDeleted = false,
-                                    SourcePercentage = x.Item.TotalAmount > 0 ? (x.Item.Discount.Value / x.Item.TotalAmount) * 100 : 0
+                                    SourcePercentage = x.Item.TotalAmount > 0
+                                        ? (x.Item.Discount.Value / x.Item.TotalAmount) * 100
+                                        : 0
                                 });
 
                             var shippingAdjustments = poItems
@@ -212,7 +229,9 @@ namespace Application.Projects
                                 StatusId = "ORDER_CREATED",
                                 StatusDescription = "Created",
                                 InternalRemarks = $"Auto-generated from Certificate {newProjectCertificateSerial}",
-                                GrandTotal = poItems.Sum(i => i.TotalAmount + (i.TransportationExpenses ?? 0) + (i.Gratuities ?? 0) - (i.Discount ?? 0)),
+                                GrandTotal = poItems.Sum(i =>
+                                    i.TotalAmount + (i.TransportationExpenses ?? 0) + (i.Gratuities ?? 0) -
+                                    (i.Discount ?? 0)),
                                 OrderItems = poItems.Select((item, index) => new OrderItemDto2
                                 {
                                     OrderItemSeqId = (index + 1).ToString("D4"),
@@ -237,6 +256,7 @@ namespace Application.Projects
                                 await transaction.RollbackAsync(cancellationToken);
                                 return Result<ProjectCertificateDto>.Failure("Failed to create purchase order");
                             }
+
                             generatedOrderId = poResult.OrderId;
                         }
                     }
@@ -245,8 +265,7 @@ namespace Application.Projects
                     {
                         workEffort.RelatedOrderId = generatedOrderId;
                     }
-                    
-                   
+
 
                     // this ensures UpdateOrApprovePurchaseOrder can query and find the order via FirstOrDefaultAsync, as EF Core queries ignore pending changes.
                     // Improves code by allowing seamless approval in the same transaction without separate scopes or context issues.
@@ -279,11 +298,8 @@ namespace Application.Projects
                                 OrderId = oi.OrderId,
                                 OrderItemSeqId = oi.OrderItemSeqId,
                                 ProductId = oi.ProductId,
-                                //ProductName = oi.ProductName, // Assuming OrderItem has ProductName; adjust if needed based on entity
                                 Quantity = oi.Quantity,
                                 UnitPrice = oi.UnitPrice,
-                                //SubTotal = oi.SubTotal,
-                                //FacilityId = oi.FacilityId,
                                 ItemDescription = oi.ItemDescription,
                                 OrderItemTypeId = oi.OrderItemTypeId,
                                 StatusId = oi.StatusId,
@@ -314,10 +330,10 @@ namespace Application.Projects
                         var approveOrderDto = new OrderDto
                         {
                             OrderId = orderHeader.OrderId,
-                            FromPartyId = certificate.PartyIdContractor ?? certificate.PartyIdSupplier, 
+                            FromPartyId = certificate.PartyIdContractor ?? certificate.PartyIdSupplier,
                             GrandTotal = orderHeader.GrandTotal,
                             OrderDate = orderHeader.OrderDate,
-                            CurrencyUomId = await _productStoreService.GetProductStoreDefaultCurrencyId(), 
+                            CurrencyUomId = await _productStoreService.GetProductStoreDefaultCurrencyId(),
                             StatusId = orderHeader.StatusId,
                             OrderItems = orderItems,
                             OrderAdjustments = orderAdjustments
@@ -329,8 +345,8 @@ namespace Application.Projects
                         //  Added a second SaveChanges to persist approval changes (e.g., status updates, roles); 
                         // this is necessary after the service method updates entities but doesn't save, allowing batching within the transaction 
                         // and providing a checkpoint for failure handling.
-                        
-                        
+
+
                         var approveResult = await _context.SaveChangesAsync(cancellationToken);
                         if (approveResult <= 0)
                         {
@@ -367,9 +383,10 @@ namespace Application.Projects
                         { "WEPR_COMPLETE", ("Complete", "مكتمل") }
                     };
 
-                    var (statusDescription, statusDescriptionArabic) = statusDescriptions.ContainsKey(workEffort.CurrentStatusId)
-                        ? statusDescriptions[workEffort.CurrentStatusId]
-                        : ("Unknown", "غير معروف");
+                    var (statusDescription, statusDescriptionArabic) =
+                        statusDescriptions.ContainsKey(workEffort.CurrentStatusId)
+                            ? statusDescriptions[workEffort.CurrentStatusId]
+                            : ("Unknown", "غير معروف");
 
                     var resultDto = new ProjectCertificateDto
                     {
@@ -391,7 +408,6 @@ namespace Application.Projects
                         RelatedOrderId = workEffort.RelatedOrderId,
                         CertificateItems = certificate.CertificateItems
                     };
-                    
 
 
                     return Result<ProjectCertificateDto>.Success(resultDto);
