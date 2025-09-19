@@ -7,8 +7,6 @@ import { CertificateItem } from "../../../app/models/project/certificateItem";
 import { setProcessedCertificateItems, updateCertificateItem } from "../slice/certificateItemsUiSlice";
 import { FormRenderProps } from "@progress/kendo-react-form";
 
-// Purpose: Ensure consistency with CertificateItemForm calculations including transportationExpenses and gratuities
-// Context: Avoids duplicating calculation logic and ensures correct handling of new fields
 interface UseCertificateItemProps {
     certificateItem?: CertificateItem;
     editMode: number; // 1: add, 2: edit
@@ -42,6 +40,7 @@ export default function useCertificateItem({
                                            }: UseCertificateItemProps) {
     const dispatch = useAppDispatch();
     const certificateItemsFromUi: CertificateItem[] = useSelector(nonDeletedCertificateItemsSelector);
+    const currentCertificateType = useSelector((state: any) => state.certificateUi.currentCertificateType);
 
     const logError = (error: any, defaultMessage: string) => {
         const message = error?.data?.message || error?.message || defaultMessage;
@@ -55,34 +54,53 @@ export default function useCertificateItem({
         (data: CertificateItem, valueGetter: FormRenderProps["valueGetter"]): CertificateItem => {
             const itemSeqId = certificateItemsFromUi?.length ? certificateItemsFromUi.length + 1 : 1;
             const serializedProcurementDate = data.procurementDate instanceof Date ? data.procurementDate.toISOString() : data.procurementDate;
-            const { total, finalTotal, net, deserved, insurance, discount, transportationExpenses, gratuities, additionalInsurance  } = calculateTotals(valueGetter);
+            const { total, finalTotal, net, deserved, insurance, discount, transportationExpenses, gratuities, additionalInsurance } = calculateTotals(valueGetter);
+            const isContractingType = currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE";
 
             const commonFields: CertificateItem = {
-                productId: typeof data.productId === "object" ? data.productId.ProductId : data.productId,
-                productName: typeof data.productId === "object" ? data.productId.ProductName : data.productName || "",
-                uomId: typeof data.uomId === "object" ? data.uomId.UomId : data.uomId,
-                uomName: typeof data.uomId === "object" ? data.uomId.Description : data.uomName || "",
-                description: data.description || "",
-                quantity: data.quantity,
-                unitPrice: data.unitPrice || (Number(data.materialPrice || 0) + Number(data.laborPrice || 0)),
-                materialPrice: Number(data.materialPrice) || 0,
-                laborPrice: Number(data.laborPrice) || 0,
-                totalAmount: +total.toFixed(3),
-                discount: +discount.toFixed(3),
-                insurance: +insurance.toFixed(3),
-                additionalInsurance: +additionalInsurance.toFixed(3),
-                deductions: data.deductions || 0,
-                deserved: +deserved.toFixed(3),
-                net: +net.toFixed(3),
-                completionPercentage: data.completionPercentage,
-                notes: data.notes,
-                procurementDate: serializedProcurementDate,
-                isDeleted: false,
-                achievementPercentage: data.achievementPercentage,
-                transportationExpenses: +transportationExpenses.toFixed(3),
-                gratuities: +gratuities.toFixed(3),
-                insuranceMode,
-                additionalInsuranceMode,
+              productId:
+                typeof data.productId === "object"
+                  ? data.productId.ProductId
+                  : data.productId,
+              productName:
+                typeof data.productId === "object"
+                  ? data.productId.ProductName
+                  : data.productName || "",
+              uomId:
+                typeof data.uomId === "object" ? data.uomId.UomId : data.uomId,
+              uomName:
+                typeof data.uomId === "object"
+                  ? data.uomId.Description
+                  : data.uomName || "",
+              description: data.description || "",
+              quantity: data.quantity || 0,
+              unitPrice: isContractingType
+                ? (Number(data.materialPrice) || 0) +
+                  (Number(data.laborPrice) || 0)
+                : data.unitPrice || 0,
+              materialPrice: isContractingType
+                ? Number(data.materialPrice) || 0
+                : 0,
+              laborPrice: isContractingType ? Number(data.laborPrice) || 0 : 0,
+              totalAmount: isContractingType
+                ? +total.toFixed(3)
+                : +net.toFixed(3),
+              discount: +discount.toFixed(3),
+              insurance: +insurance.toFixed(3),
+              additionalInsurance: +additionalInsurance.toFixed(3),
+              deductions: data.deductions || 0,
+              deserved: +deserved.toFixed(3),
+              net: +net.toFixed(3),
+              completionPercentage: data.completionPercentage,
+              notes: data.notes,
+              procurementDate: serializedProcurementDate,
+              isDeleted: false,
+              achievementPercentage: data.achievementPercentage || 0,
+              transportationExpenses: +transportationExpenses.toFixed(3),
+              gratuities: +gratuities.toFixed(3),
+              insuranceMode,
+              additionalInsuranceMode,
+              finalTotal: +finalTotal.toFixed(3),
             };
 
             let newCertificateItem: CertificateItem;

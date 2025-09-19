@@ -992,12 +992,16 @@ public class OrderService : BaseService, IOrderService
         var orderCurrency = orderHeader?.CurrencyUom;
 
         // REFACTOR: Query moved outside of conditional logic for clarity and reusability
-        var selectedProductSuppliers = _context.SupplierProducts
+        /*var selectedProductSuppliers = _context.SupplierProducts
             .Where(ps => ps.ProductId == orderItem.ProductId
                          && ps.PartyId == productSupplierId
                          && ps.AvailableThruDate == null
                          && ps.CurrencyUomId == orderCurrency)
-            .ToList();
+            .ToList();*/
+        
+        var selectedProductSuppliers = await _utilityService.FindLocalOrDatabaseListAsync<SupplierProduct>(
+            query => query.Where(ps =>
+                ps.PartyId == productSupplierId && ps.AvailableThruDate == null && ps.CurrencyUomId == orderCurrency));
 
         var nowTimestamp = DateTime.Now;
 
@@ -1011,7 +1015,6 @@ public class OrderService : BaseService, IOrderService
                 CurrencyUomId = orderCurrency,
                 LastPrice = orderItem.UnitPrice,
                 AvailableFromDate = nowTimestamp
-                // Additional required fields should be set here based on SupplierProduct schema
             };
             _context.Add(newSupplierProduct);
             return;

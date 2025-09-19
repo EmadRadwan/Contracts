@@ -112,9 +112,13 @@ namespace Application.Projects
                             Discount = item.Discount ?? 0,
                             Insurance = item.Insurance ?? 0,
                             AdditionalInsurance = item.AdditionalInsurance,
-                            MaterialPrice = certificate.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE" ? item.MaterialPrice : 0,
-                            LaborPrice = certificate.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE" ? item.LaborPrice : 0,
-                            QuantityUomId = item.UomId, 
+                            MaterialPrice = certificate.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                                ? item.MaterialPrice
+                                : 0,
+                            LaborPrice = certificate.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                                ? item.LaborPrice
+                                : 0,
+                            QuantityUomId = item.UomId,
                             Deductions = item.Deductions ?? 0,
                             AchievementPercent = item.AchievementPercentage ?? 0,
                             Notes = item.Notes,
@@ -129,96 +133,118 @@ namespace Application.Projects
                     }
 
                     string? generatedOrderId = null;
-                    OrderHeader poResult = null;
-
+                    OrderHeader? poResult = null;
                     if (certificate.CertificateCategory != "COMPANY_SUPPLY_SALE_CERTIFICATE")
                     {
                         var poItems = certificate.CertificateItems.ToList();
                         if (poItems.Any())
                         {
-                            string fromPartyId;
-                            if (certificate.CertificateCategory is "SUPPLY_PROCUREMENT_CERTIFICATE")
+                            string fromPartyId = certificate.CertificateCategory switch
                             {
-                                fromPartyId = certificate.PartyIdSupplier ??
-                                              throw new InvalidOperationException(
-                                                  "PartyIdSupplier is required for supply/sale certificates");
-                            }
-                            else if (certificate.CertificateCategory is "WORKMANSHIP_CONTRACTING_CERTIFICATE"
-                                     or "COMPANY_SUPPLY_SALE_CERTIFICATE")
+                                "SUPPLY_PROCUREMENT_CERTIFICATE" => certificate.PartyIdSupplier ??
+                                                                    throw new InvalidOperationException(
+                                                                        "PartyIdSupplier is required for supply/sale certificates"),
+                                "WORKMANSHIP_CONTRACTING_CERTIFICATE" => certificate.PartyIdContractor ??
+                                                                         throw new InvalidOperationException(
+                                                                             "PartyIdContractor is required for contractor/workmanship certificates"),
+                                _ => throw new InvalidOperationException(
+                                    $"Unsupported certificate category: {certificate.CertificateCategory}")
+                            };
+
+                            var orderAdjustments = new List<OrderAdjustmentDto2>();
+                            for (int index = 0; index < poItems.Count; index++)
                             {
-                                fromPartyId = certificate.PartyIdContractor ??
-                                              throw new InvalidOperationException(
-                                                  "PartyIdContractor is required for contractor/workmanship certificates");
+                                var item = poItems[index];
+                                var orderItemSeqId = (index + 1).ToString("D4");
+
+                                if (item.Discount.HasValue && item.Discount > 0)
+                                {
+                                    orderAdjustments.Add(new OrderAdjustmentDto2
+                                    {
+                                        OrderAdjustmentId = Guid.NewGuid().ToString(),
+                                        OrderAdjustmentTypeId = "DISCOUNT_ADJUSTMENT",
+                                        OrderAdjustmentTypeDescription = "خصم",
+                                        OrderId = null,
+                                        OrderItemSeqId = orderItemSeqId,
+                                        Amount = -item.Discount.Value,
+                                        CorrespondingProductId = item.ProductId,
+                                        CorrespondingProductName = item.ProductName,
+                                        IsManual = "Y",
+                                        CreatedDate = stamp,
+                                        IsAdjustmentDeleted = false,
+                                        SourcePercentage = item.TotalAmount > 0
+                                            ? (item.Discount.Value / item.TotalAmount) * 100
+                                            : 0
+                                    });
+                                }
+
+                                if (item.TransportationExpenses.HasValue && item.TransportationExpenses > 0)
+                                {
+                                    orderAdjustments.Add(new OrderAdjustmentDto2
+                                    {
+                                        OrderAdjustmentId = Guid.NewGuid().ToString(),
+                                        OrderAdjustmentTypeId = "SHIPPING_CHARGES",
+                                        OrderAdjustmentTypeDescription = "Transportation Expenses",
+                                        OrderId = null,
+                                        OrderItemSeqId = orderItemSeqId,
+                                        Amount = item.TransportationExpenses.Value,
+                                        CorrespondingProductId = item.ProductId,
+                                        CorrespondingProductName = item.ProductName,
+                                        IsManual = "Y",
+                                        CreatedDate = stamp,
+                                        IsAdjustmentDeleted = false,
+                                        SourcePercentage = null
+                                    });
+                                }
+
+                                if (item.Gratuities.HasValue && item.Gratuities > 0)
+                                {
+                                    orderAdjustments.Add(new OrderAdjustmentDto2
+                                    {
+                                        OrderAdjustmentId = Guid.NewGuid().ToString(),
+                                        OrderAdjustmentTypeId = "MISCELLANEOUS_CHARGE",
+                                        OrderAdjustmentTypeDescription = "Gratuities",
+                                        OrderId = null,
+                                        OrderItemSeqId = orderItemSeqId,
+                                        Amount = item.Gratuities.Value,
+                                        CorrespondingProductId = item.ProductId,
+                                        CorrespondingProductName = item.ProductName,
+                                        IsManual = "Y",
+                                        CreatedDate = stamp,
+                                        IsAdjustmentDeleted = false,
+                                        SourcePercentage = null
+                                    });
+                                }
                             }
-                            else
+
+                            // REFACTOR: Fixed SubTotal calculation for OrderItems
+                            // Purpose: Aligns SubTotal with frontend's net for WORKMANSHIP_CONTRACTING_CERTIFICATE
+                            // Context: Uses TotalAmount for non-WORKMANSHIP types, net (deserved - insurance - additionalInsurance) for WORKMANSHIP
+                            var orderItems = poItems.Select((item, index) => new OrderItemDto2
                             {
-                                throw new InvalidOperationException(
-                                    $"Unsupported certificate category: {certificate.CertificateCategory}");
-                            }
+                                OrderItemSeqId = (index + 1).ToString("D4"),
+                                ProductId = item.ProductId,
+                                ProductName = item.ProductName,
+                                Quantity = item.Quantity,
+                                UnitPrice = item.UnitPrice,
+                                SubTotal = certificate.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                                    ? Math.Max(0,
+                                        (item.TotalAmount - (item.Deductions ?? 0)) - (item.Insurance ?? 0) -
+                                        (item.AdditionalInsurance))
+                                    : item.TotalAmount,
+                                FacilityId = certificate.FacilityId,
+                                ItemDescription = item.Description,
+                                OrderItemTypeId = "PRODUCT_ORDER_ITEM",
+                                StatusId = "ITEM_CREATED",
+                                CreatedStamp = stamp,
+                                LastUpdatedStamp = stamp
+                            }).ToList();
 
-                            var discountAdjustments = poItems
-                                .Select((item, index) => new { Item = item, Index = index })
-                                .Where(x => x.Item.Discount.HasValue && x.Item.Discount > 0)
-                                .Select(x => new OrderAdjustmentDto2
-                                {
-                                    OrderAdjustmentId = Guid.NewGuid().ToString(),
-                                    OrderAdjustmentTypeId = "DISCOUNT_ADJUSTMENT",
-                                    OrderAdjustmentTypeDescription = "خصم",
-                                    OrderId = null,
-                                    OrderItemSeqId = (x.Index + 1).ToString("D4"),
-                                    Amount = -x.Item.Discount.Value,
-                                    CorrespondingProductId = x.Item.ProductId,
-                                    CorrespondingProductName = x.Item.ProductName,
-                                    IsManual = "Y",
-                                    CreatedDate = stamp,
-                                    IsAdjustmentDeleted = false,
-                                    SourcePercentage = x.Item.TotalAmount > 0
-                                        ? (x.Item.Discount.Value / x.Item.TotalAmount) * 100
-                                        : 0
-                                });
-
-                            var shippingAdjustments = poItems
-                                .Select((item, index) => new { Item = item, Index = index })
-                                .Where(x => x.Item.TransportationExpenses.HasValue && x.Item.TransportationExpenses > 0)
-                                .Select(x => new OrderAdjustmentDto2
-                                {
-                                    OrderAdjustmentId = Guid.NewGuid().ToString(),
-                                    OrderAdjustmentTypeId = "SHIPPING_CHARGES",
-                                    OrderAdjustmentTypeDescription = "Transportation Expenses",
-                                    OrderId = null,
-                                    OrderItemSeqId = (x.Index + 1).ToString("D4"),
-                                    Amount = x.Item.TransportationExpenses.Value,
-                                    CorrespondingProductId = x.Item.ProductId,
-                                    CorrespondingProductName = x.Item.ProductName,
-                                    IsManual = "Y",
-                                    CreatedDate = stamp,
-                                    IsAdjustmentDeleted = false,
-                                    SourcePercentage = null
-                                });
-
-                            var gratuityAdjustments = poItems
-                                .Select((item, index) => new { Item = item, Index = index })
-                                .Where(x => x.Item.Gratuities.HasValue && x.Item.Gratuities > 0)
-                                .Select(x => new OrderAdjustmentDto2
-                                {
-                                    OrderAdjustmentId = Guid.NewGuid().ToString(),
-                                    OrderAdjustmentTypeId = "MISCELLANEOUS_CHARGE",
-                                    OrderAdjustmentTypeDescription = "Gratuities",
-                                    OrderId = null,
-                                    OrderItemSeqId = (x.Index + 1).ToString("D4"),
-                                    Amount = x.Item.Gratuities.Value,
-                                    CorrespondingProductId = x.Item.ProductId,
-                                    CorrespondingProductName = x.Item.ProductName,
-                                    IsManual = "Y",
-                                    CreatedDate = stamp,
-                                    IsAdjustmentDeleted = false,
-                                    SourcePercentage = null
-                                });
-
-                            var orderAdjustments = discountAdjustments
-                                .Concat(shippingAdjustments)
-                                .Concat(gratuityAdjustments)
-                                .ToList();
+                            // REFACTOR: Fixed GrandTotal calculation to sum OrderItem SubTotals
+                            // Purpose: Ensures GrandTotal reflects the sum of adjusted SubTotals
+                            // Context: Avoids redundant calculations and aligns with OrderItem SubTotals
+                            var grandTotal = orderItems.Sum(i => i.SubTotal) +
+                                             orderAdjustments.Sum(a => a.Amount);
 
                             var orderDto = new OrderDto
                             {
@@ -229,26 +255,11 @@ namespace Application.Projects
                                 StatusId = "ORDER_CREATED",
                                 StatusDescription = "Created",
                                 InternalRemarks = $"Auto-generated from Certificate {newProjectCertificateSerial}",
-                                GrandTotal = poItems.Sum(i =>
-                                    i.TotalAmount + (i.TransportationExpenses ?? 0) + (i.Gratuities ?? 0) -
-                                    (i.Discount ?? 0)),
-                                OrderItems = poItems.Select((item, index) => new OrderItemDto2
-                                {
-                                    OrderItemSeqId = (index + 1).ToString("D4"),
-                                    ProductId = item.ProductId,
-                                    ProductName = item.ProductName,
-                                    Quantity = item.Quantity,
-                                    UnitPrice = item.UnitPrice,
-                                    SubTotal = item.TotalAmount,
-                                    FacilityId = certificate.FacilityId,
-                                    ItemDescription = item.Description,
-                                    OrderItemTypeId = "PRODUCT_ORDER_ITEM",
-                                    StatusId = "ITEM_CREATED",
-                                    CreatedStamp = stamp,
-                                    LastUpdatedStamp = stamp
-                                }).ToList(),
+                                GrandTotal = grandTotal,
+                                OrderItems = orderItems,
                                 OrderAdjustments = orderAdjustments
                             };
+
 
                             poResult = await _orderService.CreatePurchaseOrder(orderDto);
                             if (poResult == null)

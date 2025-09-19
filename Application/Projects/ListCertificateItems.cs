@@ -29,7 +29,6 @@ public class ListCertificateItems
     {
         private readonly DataContext _context;
 
-
         public Handler(DataContext context)
         {
             _context = context;
@@ -42,43 +41,49 @@ public class ListCertificateItems
             var validator = new QueryValidator();
             var validationResult = await validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
-                return Result<List<CertificateItemDto>>.Failure(string.Join("; ",
-                    validationResult.Errors.Select(e => e.ErrorMessage)));
+                return Result<List<CertificateItemDto>>.Failure(string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
 
-            // Purpose: Ensure consistent behavior
-            // Context: Maintains original behavior with added validation
             var language = request.Language?.ToLower() == "en" ? "en" : request.Language?.ToLower() ?? "en";
 
             try
             {
                 var certificateItems = await _context.WorkEfforts
-                    .Where(we =>
-                        we.WorkEffortParentId == request.WorkEffortId && we.WorkEffortTypeId == "CERTIFICATE_ITEM")
+                    .Where(we => we.WorkEffortParentId == request.WorkEffortId && we.WorkEffortTypeId == "CERTIFICATE_ITEM")
+                    .GroupJoin(
+                        _context.WorkEfforts,
+                        we => we.WorkEffortParentId,
+                        parent => parent.WorkEffortId,
+                        (we, parentGroup) => new { WorkEffort = we, Parent = parentGroup }
+                    )
+                    .SelectMany(
+                        x => x.Parent.DefaultIfEmpty(),
+                        (x, parent) => new { x.WorkEffort, Parent = parent }
+                    )
                     .GroupJoin(
                         _context.Products,
-                        we => we.ProductId,
+                        x => x.WorkEffort.ProductId,
                         prd => prd.ProductId,
-                        (we, prdGroup) => new { WorkEffort = we, Products = prdGroup }
+                        (x, prdGroup) => new { x.WorkEffort, x.Parent, Products = prdGroup }
                     )
                     .SelectMany(
                         x => x.Products.DefaultIfEmpty(),
-                        (x, prd) => new { x.WorkEffort, Product = prd }
+                        (x, prd) => new { x.WorkEffort, x.Parent, Product = prd }
                     )
                     .GroupJoin(
                         _context.Uoms,
                         x => x.WorkEffort.QuantityUomId,
                         uom => uom.UomId,
-                        (x, uomGroup) => new { x.WorkEffort, x.Product, Uoms = uomGroup }
+                        (x, uomGroup) => new { x.WorkEffort, x.Parent, x.Product, Uoms = uomGroup }
                     )
                     .SelectMany(
                         x => x.Uoms.DefaultIfEmpty(),
-                        (x, uom) => new { x.WorkEffort, x.Product, Uom = uom }
+                        (x, uom) => new { x.WorkEffort, x.Parent, x.Product, Uom = uom }
                     )
                     .GroupJoin(
                         _context.Facilities,
                         x => x.WorkEffort.FacilityId,
                         fac => fac.FacilityId,
-                        (x, facGroup) => new { x.WorkEffort, x.Product, x.Uom, Facilities = facGroup }
+                        (x, facGroup) => new { x.WorkEffort, x.Parent, x.Product, x.Uom, Facilities = facGroup }
                     )
                     .SelectMany(
                         x => x.Facilities.DefaultIfEmpty(),
@@ -87,43 +92,41 @@ public class ListCertificateItems
                             WorkEffortId = x.WorkEffort.WorkEffortId,
                             WorkEffortParentId = x.WorkEffort.WorkEffortParentId,
                             ProductId = x.WorkEffort.ProductId,
-                            ProductIdObject = x.Product != null
-                                ? new ProductLovDto
-                                {
-                                    ProductId = x.Product.ProductId,
-                                    ProductName = x.Product.ProductName
-                                }
-                                : null,
+                            ProductIdObject = x.Product != null ? new ProductLovDto
+                            {
+                                ProductId = x.Product.ProductId,
+                                ProductName = x.Product.ProductName
+                            } : null,
                             UomId = x.WorkEffort.QuantityUomId,
-                            QuantityUomObject = x.Uom != null
-                                ? new UomLovDto
-                                {
-                                    UomId = x.Uom.UomId,
-                                    Description = x.Uom.Description
-                                }
-                                : null,
+                            QuantityUomObject = x.Uom != null ? new UomLovDto
+                            {
+                                UomId = x.Uom.UomId,
+                                Description = x.Uom.Description
+                            } : null,
                             Description = x.WorkEffort.Description,
                             ProductName = x.Product != null ? x.Product.ProductName : null,
                             UomName = x.Uom != null ? x.Uom.Description : null,
                             Quantity = (decimal)x.WorkEffort.Quantity,
-                            UnitPrice = (decimal)x.WorkEffort.Rate,
-                            TotalAmount = x.WorkEffort.TotalAmount ??
-                                          ((x.WorkEffort.Quantity ?? 0m) * (x.WorkEffort.Rate ?? 0m)),
-                            Discount = x.WorkEffort.Discount,
-                            Insurance = x.WorkEffort.Insurance,
-                            CompletionPercentage = x.WorkEffort.CompletionPercentage,
-                            Notes = x.WorkEffort.Notes,
-                            ProcurementDate =
-                                x.WorkEffort.ProcurementDate ??
-                                x.WorkEffort.CreatedDate, // Fallback as per CSV timestamps
-                            IsDeleted = false,
+                            UnitPrice = (decimal)(x.WorkEffort.Rate ?? 0m),
                             MaterialPrice = x.WorkEffort.MaterialPrice ?? 0m,
                             LaborPrice = x.WorkEffort.LaborPrice ?? 0m,
+                            TotalAmount = x.Parent.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                                ? (x.WorkEffort.Quantity ?? 0m) * ((x.WorkEffort.MaterialPrice ?? 0m) + (x.WorkEffort.LaborPrice ?? 0m))
+                                : (x.WorkEffort.TotalAmount ?? ((x.WorkEffort.Quantity ?? 0m) * (x.WorkEffort.Rate ?? 0m)) + (x.WorkEffort.TransportationExpenses ?? 0m) + (x.WorkEffort.Gratuities ?? 0m) - (x.WorkEffort.Discount ?? 0m)),
+                            Net = x.Parent.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                                ? (x.WorkEffort.Quantity ?? 0m) * ((x.WorkEffort.Rate ?? 0m)) - (x.WorkEffort.Insurance ?? 0m) - (x.WorkEffort.AdditionalInsurance ?? 0m) - (x.WorkEffort.Discount ?? 0m) - (x.WorkEffort.Deductions ?? 0m)
+                                : (x.WorkEffort.TotalAmount ?? ((x.WorkEffort.Quantity ?? 0m) * (x.WorkEffort.Rate ?? 0m)) + (x.WorkEffort.TransportationExpenses ?? 0m) + (x.WorkEffort.Gratuities ?? 0m) - (x.WorkEffort.Discount ?? 0m)),
+                            Discount = x.WorkEffort.Discount ?? 0m,
+                            Insurance = x.WorkEffort.Insurance ?? 0m,
                             AdditionalInsurance = x.WorkEffort.AdditionalInsurance ?? 0m,
+                            CompletionPercentage = x.WorkEffort.CompletionPercentage,
+                            Notes = x.WorkEffort.Notes,
+                            ProcurementDate = x.WorkEffort.ProcurementDate ?? x.WorkEffort.CreatedDate,
+                            IsDeleted = false,
                             AchievementPercentage = x.WorkEffort.AchievementPercent,
-                            TransportationExpenses = x.WorkEffort.TransportationExpenses,
-                            Gratuities = x.WorkEffort.Gratuities,
-                            Deductions = x.WorkEffort.Deductions,
+                            TransportationExpenses = x.WorkEffort.TransportationExpenses ?? 0m,
+                            Gratuities = x.WorkEffort.Gratuities ?? 0m,
+                            Deductions = x.WorkEffort.Deductions ?? 0m
                         }
                     )
                     .ToListAsync(cancellationToken);

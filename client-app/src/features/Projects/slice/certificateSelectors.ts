@@ -1,97 +1,77 @@
 import { createSelector } from "@reduxjs/toolkit";
 import { RootState } from "../../../app/store/configureStore";
-import {certificateItemsEntities} from "./certificateItemsUiSlice";
-import {CertificateItem} from "../../../app/models/project/certificateItem";
+import { CertificateItem } from "../../../app/models/project/certificateItem";
 
-// Purpose: Filter out items marked as deleted
-// Context: Mirrors nonDeletedOrderItemsSelector
 export const nonDeletedCertificateItemsSelector = createSelector(
-    certificateItemsEntities,
+    (state: RootState) => state.certificateItemsUi.certificateItems,
+    // REFACTOR: Handle entity adapter structure
+    // Purpose: Ensure selector works with createEntityAdapter
+    // Improvement: Safely handles empty or uninitialized state
     (certificateItems) =>
-        Object.values(certificateItems).filter(
-            (certificateItem): certificateItem is CertificateItem => !certificateItem?.isDeleted
-        )
-);
-
-// Purpose: Determine if the certificate has no valid items
-// Context: No key dependency, unchanged
-export const allItemsAreDeletedOrNone = createSelector(
-    certificateItemsEntities,
-    (certificateItems) => {
-        const items = Object.values(certificateItems);
-        return !items || items.length === 0 || items.every((item) => item.isDeleted === true);
-    }
+        certificateItems?.entities
+            ? Object.values(certificateItems.entities).filter(
+                (certificateItem): certificateItem is CertificateItem => !certificateItem?.isDeleted
+            )
+            : []
 );
 
 export const certificateSubTotal = createSelector(
     nonDeletedCertificateItemsSelector,
     (state: RootState) => state.certificateUi.currentCertificateType,
     (certificateItems, currentCertificateType) => {
+        console.log('certificateSubTotal input:', certificateItems);
         if (!certificateItems) return 0;
-        return certificateItems.reduce((sum, item) => {
-            let amount = 0;
-            const total =
-                currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
-                    ? (item.materialPrice || 0) + (item.laborPrice || 0)
-                    : item.totalAmount || 0;
-            if (["SUPPLY_PROCUREMENT_CERTIFICATE"].includes(currentCertificateType)) {
-                amount = total - (item.discount || 0) + (item.transportationExpenses || 0) + (item.gratuities || 0);
-            } else if (["COMPANY_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)) {
-                amount = total + (item.transportationExpenses || 0) + (item.gratuities || 0);
-            } else if (currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE") {
-                const deserved = total - (item.deductions || 0);
-                amount = Math.max(0, deserved - (item.insurance || 0) - (item.additionalInsurance || 0));
-            }
-            return sum + Math.round(amount * 100) / 100;
+
+        // REFACTOR: Use net for WORKMANSHIP_CONTRACTING_CERTIFICATE, totalAmount for others
+        // Purpose: Align toolbar Total with net (e.g., 23.00) for WORKMANSHIP_CONTRACTING_CERTIFICATE
+        // Improvement: Fixes incorrect Total (0 or totalAmount) in CertificateItemsListGrouped toolbar
+        const isContractingType = currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE";
+        const total = certificateItems.reduce((sum, item) => {
+            const amount = isContractingType ? (item.net || 0) : (item.totalAmount || 0);
+            console.log('certificateSubTotal item:', { item, amount });
+            return sum + amount;
         }, 0);
+        console.log('certificateSubTotal result:', total);
+        return +total.toFixed(2);
     }
 );
 
-// Purpose: Get totalAmount for the selected item using workEffortId
-// Context: Updated to use workEffortId
-export const certificateItemSubTotal = createSelector(
-    certificateItemsEntities,
-    (state: RootState) => state.certificateItemsUi.selectedCertificateItem,
-    (state: RootState) => state.certificateUi.currentCertificateType,
-    (certificateItemsEntities, selectedCertificateItem, currentCertificateType) => {
-        const filteredItems =
-            certificateItemsEntities?.filter(
-                (item: CertificateItem) =>
-                    !item?.isDeleted && item?.workEffortId === selectedCertificateItem?.workEffortId
-            ) || [];
-        return filteredItems.reduce((sum, item) => {
-            const total =
-                currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
-                    ? (item.materialPrice || 0) + (item.laborPrice || 0)
-                    : item.totalAmount || 0;
-            return sum + total;
-        }, 0);
-    }
-);
-
-// REFACTOR: Include quantity in total calculation for WORKMANSHIP_CONTRACTING_CERTIFICATE
-// Purpose: Ensure total reflects quantity * (materialPrice + laborPrice) to match form calculations
-// Improvement: Fixes incorrect net value in grid (2 instead of 12)
 export const displayCertificateItemsSelector = createSelector(
     nonDeletedCertificateItemsSelector,
     (state: RootState) => state.certificateUi.currentCertificateType,
-    (certificateItems, currentCertificateType) =>
-        certificateItems.map((item) => {
-            const total =
-                currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
-                    ? (item.quantity || 0) * ((item.materialPrice || 0) + (item.laborPrice || 0))
-                    : item.totalAmount || 0;
-            let displayTotal = total;
-            let net = displayTotal;
-            if (["SUPPLY_PROCUREMENT_CERTIFICATE"].includes(currentCertificateType)) {
-                displayTotal = total - (item.discount || 0) + (item.transportationExpenses || 0) + (item.gratuities || 0);
-            } else if (["COMPANY_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)) {
-                displayTotal = total + (item.transportationExpenses || 0) + (item.gratuities || 0);
-            } else if (currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE") {
-                const deserved = Math.max(0, Math.round((total - (item.deductions || 0)) * 1000) / 1000);
-                net = Math.max(0, Math.round((deserved - (item.insurance || 0) - (item.additionalInsurance || 0)) * 1000) / 1000);
-                displayTotal = total;
-            }
+    (certificateItems, currentCertificateType) => {
+        console.log('displayCertificateItemsSelector input:', certificateItems);
+        const isContractingType = currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE";
+
+        // REFACTOR: Robust code generation for WORKMANSHIP_CONTRACTING_CERTIFICATE
+        // Purpose: Ensure valid productId and serial for code (e.g., 000018/1)
+        // Improvement: Preserves correct behavior for CertificateItemsListGrouped
+        let productIdGroups: { [key: string]: CertificateItem[] } = {};
+        if (isContractingType) {
+            productIdGroups = certificateItems.reduce(
+                (acc, item) => {
+                    const productId = item.productId || `UNKNOWN-${Date.now()}`;
+                    if (!acc[productId]) acc[productId] = [];
+                    acc[productId].push(item);
+                    return acc;
+                },
+                {} as { [key: string]: CertificateItem[] }
+            );
+        }
+
+        return certificateItems.map((item) => {
+            // REFACTOR: Use totalAmount for displayTotal, net for contracting types
+            // Purpose: Maintain correct grid display (e.g., Total Amount: 28, Net: 23)
+            // Improvement: Ensures consistency with database and form calculations
+            const total = isContractingType
+                ? (item.quantity || 0) * ((item.materialPrice || 0) + (item.laborPrice || 0))
+                : item.totalAmount || 0;
+            const deserved = isContractingType
+                ? Math.max(0, total - (item.deductions || 0))
+                : item.deserved || 0;
+            const net = isContractingType
+                ? Math.max(0, deserved - (item.insurance || 0) - (item.additionalInsurance || 0))
+                : item.net || 0;
             const formattedProcurementDate = item.procurementDate
                 ? new Date(item.procurementDate).toLocaleDateString("en-US", {
                     month: "2-digit",
@@ -99,11 +79,25 @@ export const displayCertificateItemsSelector = createSelector(
                     year: "numeric",
                 })
                 : "";
+
+            let code = "";
+            let productSubtotal = 0;
+            if (isContractingType) {
+                const productItems = productIdGroups[item.productId || `UNKNOWN-${Date.now()}`];
+                const serial = productItems ? productItems.indexOf(item) + 1 : 1;
+                code = `${item.productId || 'UNKNOWN'}/${serial}`;
+                productSubtotal = productItems.reduce((sum, i) => sum + (i.net || 0), 0);
+            }
+
+            console.log('Item calculation:', { item, total, deserved, net, code, productSubtotal });
             return {
                 ...item,
-                displayTotal: +displayTotal.toFixed(2),
+                displayTotal: +total.toFixed(2),
                 net: +net.toFixed(2),
                 formattedProcurementDate,
+                code: isContractingType ? code : "",
+                productSubtotal: isContractingType ? +productSubtotal.toFixed(2) : 0,
             };
-        })
+        });
+    }
 );

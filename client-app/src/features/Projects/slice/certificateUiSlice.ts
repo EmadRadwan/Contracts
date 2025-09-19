@@ -5,7 +5,7 @@ import { RootState } from "../../../app/store/configureStore";
 // Context: Ensures form re-renders with correct values after submission
 interface SelectedCertificate {
   workEffortId: string;
-  projectNum: string;
+  certificateNumber: string;
   projectId: string;
   projectName: string;
   currentStatusId: string;
@@ -31,7 +31,7 @@ export const certificateUiInitialState: CertificateUiState = {
   certificateFormEditMode: 0,
   selectedCertificate: {
     workEffortId: "",
-    projectNum: "",
+    certificateNumber: "",
     projectId: "",
     projectName: "",
     partyIdSupplier: undefined,
@@ -76,7 +76,7 @@ export const certificateUiSlice = createSlice({
       state.certificateFormEditMode = 0;
       state.selectedCertificate = {
         workEffortId: "",
-        projectNum: "",
+        certificateNumber: "",
         projectId: "",
         projectName: "",
         partyIdSupplier: undefined,

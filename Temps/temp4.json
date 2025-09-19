@@ -1,192 +1,316 @@
-[
-  { "GL_ACCOUNT_ID": "1200100", "GL_ACCOUNT_TYPE_ID": "ACCOUNTS_RECEIVABLE", "GL_ACCOUNT_CLASS_ID": "CURRENT_ASSET", "ACCOUNT_NAME": "Apartment Sales Customers" },
-  { "GL_ACCOUNT_ID": "1200200", "GL_ACCOUNT_TYPE_ID": "ACCOUNTS_RECEIVABLE", "GL_ACCOUNT_CLASS_ID": "CURRENT_ASSET", "ACCOUNT_NAME": "Rental Debtors" },
-  { "GL_ACCOUNT_ID": "1200300", "GL_ACCOUNT_TYPE_ID": "ACCOUNTS_RECEIVABLE", "GL_ACCOUNT_CLASS_ID": "CURRENT_ASSET", "ACCOUNT_NAME": "Property Management Debtors" },
+
   {
-    "GL_ACCOUNT_ID": "140010",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from INVENTORY to INVENTORY_ACCOUNT, as INVENTORY is not in the list, and INVENTORY_ACCOUNT aligns with inventory assets.
-    "GL_ACCOUNT_TYPE_ID": "INVENTORY_ACCOUNT",
-    "GL_ACCOUNT_CLASS_ID": "INVENTORY_ASSET",
-    "ACCOUNT_NAME": "Apartments Ready for Sale"
+    "PRODUCT_ID": "000001",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "SITE_WORKS",
+    "PRODUCT_NAME": "اعمال تمهيد الموقع",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "140020",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from INVENTORY to INVENTORY_ACCOUNT, as INVENTORY is not in the list, and INVENTORY_ACCOUNT aligns with inventory assets.
-    "GL_ACCOUNT_TYPE_ID": "INVENTORY_ACCOUNT",
-    "GL_ACCOUNT_CLASS_ID": "INVENTORY_ASSET",
-    "ACCOUNT_NAME": "Agricultural Crops"
+    "PRODUCT_ID": "000002",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "SITE_WORKS",
+    "PRODUCT_NAME": "اعمال استلام الموقع",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "141100",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from INVENTORY to INVENTORY_ACCOUNT, as INVENTORY is not in the list, and INVENTORY_ACCOUNT aligns with inventory assets.
-    "GL_ACCOUNT_TYPE_ID": "INVENTORY_ACCOUNT",
-    "GL_ACCOUNT_CLASS_ID": "INVENTORY_ASSET",
-    "ACCOUNT_NAME": "Building Materials"
+    "PRODUCT_ID": "000003",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "SITE_WORKS",
+    "PRODUCT_NAME": "اعمال الحفر",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "150100",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from OTHER_CURRENT_ASSET to PREPAID_EXPENSES, as OTHER_CURRENT_ASSET is not in the list, and PREPAID_EXPENSES fits advances.
-    "GL_ACCOUNT_TYPE_ID": "PREPAID_EXPENSES",
-    "GL_ACCOUNT_CLASS_ID": "CURRENT_ASSET",
-    "ACCOUNT_NAME": "Contractor and Craftsman Advances"
-  },
-  { "GL_ACCOUNT_ID": "161100", "GL_ACCOUNT_TYPE_ID": "FIXED_ASSET", "GL_ACCOUNT_CLASS_ID": "LONGTERM_ASSET", "ACCOUNT_NAME": "Farms" },
-  { "GL_ACCOUNT_ID": "100100", "GL_ACCOUNT_TYPE_ID": "FIXED_ASSET", "GL_ACCOUNT_CLASS_ID": "LONGTERM_ASSET", "ACCOUNT_NAME": "Projects Under Execution" },
-  { "GL_ACCOUNT_ID": "201000", "GL_ACCOUNT_TYPE_ID": "ACCOUNTS_PAYABLE", "GL_ACCOUNT_CLASS_ID": "CURRENT_LIABILITY", "ACCOUNT_NAME": "Building Materials Suppliers" },
-  { "GL_ACCOUNT_ID": "202000", "GL_ACCOUNT_TYPE_ID": "ACCOUNTS_PAYABLE", "GL_ACCOUNT_CLASS_ID": "CURRENT_LIABILITY", "ACCOUNT_NAME": "Subcontractors" },
-  { "GL_ACCOUNT_ID": "203000", "GL_ACCOUNT_TYPE_ID": "ACCOUNTS_PAYABLE", "GL_ACCOUNT_CLASS_ID": "CURRENT_LIABILITY", "ACCOUNT_NAME": "Craftsmen" },
-  {
-    "GL_ACCOUNT_ID": "271000",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from UNEARNED_REVENUE to CUSTOMER_DEPOSIT, as UNEARNED_REVENUE is not in the list, and CUSTOMER_DEPOSIT fits prepaid rents.
-    "GL_ACCOUNT_TYPE_ID": "CUSTOMER_DEPOSIT",
-    "GL_ACCOUNT_CLASS_ID": "CURRENT_LIABILITY",
-    "ACCOUNT_NAME": "Prepaid Rents Received"
+    "PRODUCT_ID": "000004",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "ELECTROMECHANICAL",
+    "PRODUCT_NAME": "الاعمال الصحية",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "301000",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from EQUITY to OWNERS_EQUITY, as EQUITY is not in the list, and OWNERS_EQUITY fits partners’ accounts.
-    "GL_ACCOUNT_TYPE_ID": "OWNERS_EQUITY",
-    "GL_ACCOUNT_CLASS_ID": "EQUITY",
-    "ACCOUNT_NAME": "Partners' Current - Parent Company"
+    "PRODUCT_ID": "000005",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "CONCRETE_WORKS",
+    "PRODUCT_NAME": "اعمال الخرسانة العادية",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "302000",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from EQUITY to OWNERS_EQUITY, as EQUITY is not in the list, and OWNERS_EQUITY fits partners’ accounts.
-    "GL_ACCOUNT_TYPE_ID": "OWNERS_EQUITY",
-    "GL_ACCOUNT_CLASS_ID": "EQUITY",
-    "ACCOUNT_NAME": "Partner (A) Current"
+    "PRODUCT_ID": "000006",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "CONCRETE_WORKS",
+    "PRODUCT_NAME": "اعمال الخرسانة المسلحة",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "303000",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from EQUITY to OWNERS_EQUITY, as EQUITY is not in the list, and OWNERS_EQUITY fits partners’ accounts.
-    "GL_ACCOUNT_TYPE_ID": "OWNERS_EQUITY",
-    "GL_ACCOUNT_CLASS_ID": "EQUITY",
-    "ACCOUNT_NAME": "Partner (B) Current"
+    "PRODUCT_ID": "000007",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "INSULATION",
+    "PRODUCT_NAME": "اعمال العزل",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "304000",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from EQUITY to OWNERS_EQUITY, as EQUITY is not in the list, and OWNERS_EQUITY fits partners’ accounts.
-    "GL_ACCOUNT_TYPE_ID": "OWNERS_EQUITY",
-    "GL_ACCOUNT_CLASS_ID": "EQUITY",
-    "ACCOUNT_NAME": "Project Developers Partners' Current"
+    "PRODUCT_ID": "000008",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "ELECTROMECHANICAL",
+    "PRODUCT_NAME": "اعمال الكهرباء",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "400100",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from REVENUE to SALES_ACCOUNT, as REVENUE is not in the list, and SALES_ACCOUNT fits operational revenues.
-    "GL_ACCOUNT_TYPE_ID": "SALES_ACCOUNT",
-    "GL_ACCOUNT_CLASS_ID": "INCOME",
-    "ACCOUNT_NAME": "Real Estate Development Revenues"
+    "PRODUCT_ID": "000009",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "ELECTROMECHANICAL",
+    "PRODUCT_NAME": "اعمال المصعد",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "400200",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from REVENUE to SALES_ACCOUNT, as REVENUE is not in the list, and SALES_ACCOUNT fits operational revenues.
-    "GL_ACCOUNT_TYPE_ID": "SALES_ACCOUNT",
-    "GL_ACCOUNT_CLASS_ID": "INCOME",
-    "ACCOUNT_NAME": "Rental Revenues"
+    "PRODUCT_ID": "000010",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "MARBLE_WORKS",
+    "PRODUCT_NAME": "اعمال الرخام",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "400300",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from REVENUE to SALES_ACCOUNT, as REVENUE is not in the list, and SALES_ACCOUNT fits operational revenues.
-    "GL_ACCOUNT_TYPE_ID": "SALES_ACCOUNT",
-    "GL_ACCOUNT_CLASS_ID": "INCOME",
-    "ACCOUNT_NAME": "Shop Rents"
+    "PRODUCT_ID": "000011",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "SWIMMING_POOL",
+    "PRODUCT_NAME": "اعمال حمام السباحة",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "400400",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from REVENUE to SALES_ACCOUNT, as REVENUE is not in the list, and SALES_ACCOUNT fits operational revenues.
-    "GL_ACCOUNT_TYPE_ID": "SALES_ACCOUNT",
-    "GL_ACCOUNT_CLASS_ID": "INCOME",
-    "ACCOUNT_NAME": "Restaurants and Cafes Rents"
+    "PRODUCT_ID": "000012",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "CONCRETE_WORKS",
+    "PRODUCT_NAME": "اعمال المباني",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "400500",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from REVENUE to SALES_ACCOUNT, as REVENUE is not in the list, and SALES_ACCOUNT fits operational revenues.
-    "GL_ACCOUNT_TYPE_ID": "SALES_ACCOUNT",
-    "GL_ACCOUNT_CLASS_ID": "INCOME",
-    "ACCOUNT_NAME": "Residential Apartments Rents"
+    "PRODUCT_ID": "000013",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "FINISHING_WORKS",
+    "PRODUCT_NAME": "أعمال البياض الداخلي",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "400600",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from REVENUE to SALES_ACCOUNT, as REVENUE is not in the list, and SALES_ACCOUNT fits operational revenues.
-    "GL_ACCOUNT_TYPE_ID": "SALES_ACCOUNT",
-    "GL_ACCOUNT_CLASS_ID": "INCOME",
-    "ACCOUNT_NAME": "Property Management Revenues"
+    "PRODUCT_ID": "000014",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "FINISHING_WORKS",
+    "PRODUCT_NAME": "أعمال البياض الخارجي",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "400700",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from REVENUE to SALES_ACCOUNT, as REVENUE is not in the list, and SALES_ACCOUNT fits operational revenues.
-    "GL_ACCOUNT_TYPE_ID": "SALES_ACCOUNT",
-    "GL_ACCOUNT_CLASS_ID": "INCOME",
-    "ACCOUNT_NAME": "Agricultural Activity Revenues"
+    "PRODUCT_ID": "000015",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "FINISHING_WORKS",
+    "PRODUCT_NAME": "أعمال التبليط",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "400800",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from REVENUE to SALES_ACCOUNT, as REVENUE is not in the list, and SALES_ACCOUNT fits operational revenues.
-    "GL_ACCOUNT_TYPE_ID": "SALES_ACCOUNT",
-    "GL_ACCOUNT_CLASS_ID": "INCOME",
-    "ACCOUNT_NAME": "Crop Sales"
+    "PRODUCT_ID": "000016",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "FINISHING_WORKS",
+    "PRODUCT_NAME": "أعمال الدهانات",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "400900",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from REVENUE to SALES_ACCOUNT, as REVENUE is not in the list, and SALES_ACCOUNT fits operational revenues.
-    "GL_ACCOUNT_TYPE_ID": "SALES_ACCOUNT",
-    "GL_ACCOUNT_CLASS_ID": "INCOME",
-    "ACCOUNT_NAME": "Other Products Sales"
+    "PRODUCT_ID": "000017",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "CONCRETE_WORKS",
+    "PRODUCT_NAME": "أعمال الحديد المشغول",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "520000",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from EXPENSE to COGS_ACCOUNT, as COGS_ACCOUNT is more specific for production-related costs.
-    "GL_ACCOUNT_TYPE_ID": "COGS_ACCOUNT",
-    "GL_ACCOUNT_CLASS_ID": "COGS_EXPENSE",
-    "ACCOUNT_NAME": "Expenses for Projects Under Construction"
+    "PRODUCT_ID": "000018",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "ALUMINUM_WORKS",
+    "PRODUCT_NAME": "أعمال الألمونيوم",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "522000",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from EXPENSE to COGS_ACCOUNT, as COGS_ACCOUNT is more specific for production-related costs.
-    "GL_ACCOUNT_TYPE_ID": "COGS_ACCOUNT",
-    "GL_ACCOUNT_CLASS_ID": "COGS_EXPENSE",
-    "ACCOUNT_NAME": "Craftsmen Expenses"
+    "PRODUCT_ID": "000019",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "SUSPENDED_CEILINGS",
+    "PRODUCT_NAME": "أعمال الاسقف المعلقة",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "524000",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from EXPENSE to COGS_ACCOUNT, as COGS_ACCOUNT is more specific for production-related costs.
-    "GL_ACCOUNT_TYPE_ID": "COGS_ACCOUNT",
-    "GL_ACCOUNT_CLASS_ID": "COGS_EXPENSE",
-    "ACCOUNT_NAME": "Project Sundries"
+    "PRODUCT_ID": "000020",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "FIBERGLASS_WORKS",
+    "PRODUCT_NAME": "أعمال الفيبرجلاس",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "530000",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from EXPENSE to COGS_ACCOUNT, as COGS_ACCOUNT is more specific for production-related costs.
-    "GL_ACCOUNT_TYPE_ID": "COGS_ACCOUNT",
-    "GL_ACCOUNT_CLASS_ID": "COGS_EXPENSE",
-    "ACCOUNT_NAME": "Agricultural Activity Expenses"
+    "PRODUCT_ID": "000021",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "GYPSUM_WORKS",
+    "PRODUCT_NAME": "الأعمال الجبسية",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "531000",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from EXPENSE to COGS_ACCOUNT, as COGS_ACCOUNT is more specific for production-related costs.
-    "GL_ACCOUNT_TYPE_ID": "COGS_ACCOUNT",
-    "GL_ACCOUNT_CLASS_ID": "COGS_EXPENSE",
-    "ACCOUNT_NAME": "Farm Workers Wages"
+    "PRODUCT_ID": "000022",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "CARPENTRY_WORKS",
+    "PRODUCT_NAME": "أعمال النجارة",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "532000",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from EXPENSE to COGS_ACCOUNT, as COGS_ACCOUNT is more specific for production-related costs.
-    "GL_ACCOUNT_TYPE_ID": "COGS_ACCOUNT",
-    "GL_ACCOUNT_CLASS_ID": "COGS_EXPENSE",
-    "ACCOUNT_NAME": "Fertilizers and Seeds"
+    "PRODUCT_ID": "000023",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "GLASS_WORKS",
+    "PRODUCT_NAME": "الاعمال الزجاجية",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "533000",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from EXPENSE to COGS_ACCOUNT, as COGS_ACCOUNT is more specific for production-related costs.
-    "GL_ACCOUNT_TYPE_ID": "COGS_ACCOUNT",
-    "GL_ACCOUNT_CLASS_ID": "COGS_EXPENSE",
-    "ACCOUNT_NAME": "Land Reclamation Costs"
+    "PRODUCT_ID": "000024",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "EXTERIOR_WORKS",
+    "PRODUCT_NAME": "اعمال الواجهات",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   },
   {
-    "GL_ACCOUNT_ID": "542000",
-    // REFACTOR: Changed GL_ACCOUNT_TYPE_ID from EXPENSE to OPERATING_EXPENSE, as OPERATING_EXPENSE is more specific for general and administrative costs.
-    "GL_ACCOUNT_TYPE_ID": "OPERATING_EXPENSE",
-    "GL_ACCOUNT_CLASS_ID": "SGA_EXPENSE",
-    "ACCOUNT_NAME": "Employee Advances Expenses"
+    "PRODUCT_ID": "000025",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "ELECTROMECHANICAL",
+    "PRODUCT_NAME": "أعمال التكييف تجهيزات",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
+  },
+  {
+    "PRODUCT_ID": "000026",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "ELECTROMECHANICAL",
+    "PRODUCT_NAME": "أعمال التكييف توريدات",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
+  },
+  {
+    "PRODUCT_ID": "000027",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "SECURITY",
+    "PRODUCT_NAME": "أعمال الحماية المدنية",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
+  },
+  {
+    "PRODUCT_ID": "000028",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "SITE_WORKS",
+    "PRODUCT_NAME": "أعمال الجسات",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
+  },
+  {
+    "PRODUCT_ID": "000029",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "DESIGN",
+    "PRODUCT_NAME": "أعمال الرسومات",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
+  },
+  {
+    "PRODUCT_ID": "000030",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "EXTERIOR_WORKS",
+    "PRODUCT_NAME": "أعمال الكلادينج",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
+  },
+  {
+    "PRODUCT_ID": "000031",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "DEMOLITION_WORKS",
+    "PRODUCT_NAME": "اعمال التكسير",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
+  },
+  {
+    "PRODUCT_ID": "000032",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "STORAGE_WORKS",
+    "PRODUCT_NAME": "اعمال التشوين",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
+  },
+  {
+    "PRODUCT_ID": "000033",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "SITE_WORKS",
+    "PRODUCT_NAME": "الاعمال المساحية",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
+  },
+  {
+    "PRODUCT_ID": "000034",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "SITE_WORKS",
+    "PRODUCT_NAME": "اعمال الحصر",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
+  },
+  {
+    "PRODUCT_ID": "000035",
+    "PRODUCT_TYPE_ID": "SERVICE",
+    "PRIMARY_PRODUCT_CATEGORY_ID": "SHEET_METAL_WORKS",
+    "PRODUCT_NAME": "اعمال الصاج",
+    "COMMENTS": "",
+    "CREATED_DATE": "2025-09-17 21:59:00",
+    "LAST_UPDATED_STAMP": "2025-09-17 21:59:00"
   }
-]

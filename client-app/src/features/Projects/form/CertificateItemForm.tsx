@@ -7,8 +7,8 @@ import useCertificateItem from "../hook/useCertificateItem";
 import { percentageValidator, requiredValidator } from "../../../app/common/form/Validators";
 import SupplyProcurementForm from "./SupplyProcurementForm";
 import WorkmanshipContractingForm from "./WorkmanshipContractingForm";
-import ContractorPurchaseForm from "./ContractorPurchaseForm";
 import CompanySupplyForm from "./CompanySupplyForm";
+import { v4 as uuidv4 } from "uuid";
 
 interface Props {
     certificateItem?: CertificateItem;
@@ -53,8 +53,8 @@ export default function CertificateItemForm({
                 additionalInsurance =
                     additionalInsuranceMode === "value" ? additionalInsuranceInput : (additionalInsuranceInput / 100) * deserved;
                 additionalInsurance = Math.round(additionalInsurance * 1000) / 1000;
-                finalTotal = deserved;
-                console.log('calculateTotals debug:', {
+                
+              /*  console.log('calculateTotals debug:', {
                     quantity,
                     price,
                     total,
@@ -67,7 +67,7 @@ export default function CertificateItemForm({
                     additionalInsuranceMode,
                     additionalInsurance,
                     net: Math.max(0, Math.round((deserved - insurance - additionalInsurance) * 1000) / 1000),
-                });
+                });*/
             } else if (currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE") {
                 const discountInput = Number(valueGetter("discount") || 0);
                 discount = discountMode === "value" ? discountInput : (discountInput / 100) * total;
@@ -84,6 +84,7 @@ export default function CertificateItemForm({
                 currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
                     ? Math.max(0, Math.round((deserved - insurance - additionalInsurance) * 1000) / 1000)
                     : finalTotal;
+            finalTotal = net;
 
             return {
                 total,
@@ -100,10 +101,7 @@ export default function CertificateItemForm({
         [currentCertificateType, discountMode, insuranceMode, additionalInsuranceMode]
     );
 
-
-    // REFACTOR: Use persisted additionalInsuranceMode from CertificateItem
-// Purpose: Ensure form initializes with the correct mode used during creation
-// Improvement: Avoids incorrect mode assumptions
+    
     const deserializedInitValue = useMemo((): Partial<CertificateItem> => {
         const baseDefaultValues: Partial<CertificateItem> = {
             productId: "",
@@ -215,10 +213,12 @@ export default function CertificateItemForm({
         },
         []
     );
+/*
     console.log('initValue', initValue)
     console.log("certificateItem in CertificateItemForm:", certificateItem);
     console.log("initValue in CertificateItemForm:", initValue);
     console.log('deserializedInitValue', deserializedInitValue);
+*/
 
     return (
         <Form
@@ -226,6 +226,8 @@ export default function CertificateItemForm({
             initialValues={initValue}
             key={formKey}
             onSubmit={(values: Partial<CertificateItem>) => {
+                const tempWorkEffortId = values.workEffortId || uuidv4();
+
                 const serializedValues: CertificateItem = {
                     ...values,
                     productId: values.productId || "",
@@ -255,7 +257,7 @@ export default function CertificateItemForm({
                     workEffortId: values.workEffortId || "",
                     workEffortParentId: values.workEffortParentId || "",
                 };
-                console.log('onSubmit serializedValues:', serializedValues);
+                //console.log('onSubmit serializedValues:', serializedValues);
                 handleSubmitData(serializedValues, (name: string) => values[name] || "");
                 onClose();
             }}

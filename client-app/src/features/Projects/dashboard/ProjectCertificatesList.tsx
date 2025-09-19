@@ -28,7 +28,7 @@ import {Certificate, CertificateStatus} from "../../../app/models/project/certif
 
 interface ProjectCertificate {
     workEffortId?: string;
-    projectNum?: string;
+    certificateNumber?: string;
     projectName?: string;
     projectId?: string;
     partyIdSupplier?: string; 
@@ -133,8 +133,8 @@ export default function ProjectCertificatesList() {
             dispatch(
                 setSelectedCertificate({
                     workEffortId: selectedCert.workEffortId || "",
-                    projectNum: selectedCert.projectNum || "",
-                    projectId: selectedCert.projectId || selectedCert.projectNum || "",
+                    certificateNumber: selectedCert.certificateNumber || "",
+                    projectId: selectedCert.projectId  || "",
                     projectName: selectedCert.projectName || "",
                     currentStatusId: selectedCert.currentStatusId || CertificateStatus.CREATED,
                     partyIdSupplier: selectedCert.partyIdSupplier
@@ -299,7 +299,7 @@ export default function ProjectCertificatesList() {
                             >
                                 <Column
                                     field="certificateNumber"
-                                    title={getTranslatedLabel("certificate.list.projectNum", "Project Number")}
+                                    title={getTranslatedLabel("certificate.list.certificateNumber", "Project Number")}
                                     width={150}
                                     locked={false}
                                     cell={ProjectNumberCell}

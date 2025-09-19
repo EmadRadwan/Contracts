@@ -87,13 +87,19 @@ const projectsApi = createApi({
                 invalidatesTags: ["ProjectCertificates"],
             }),
             updateProjectCertificate: builder.mutation<ProjectCertificateRecord, Partial<ProjectCertificateRecord>>({
-                query: (certificate) => ({
-                    url: `/project/certificate/${certificate.WorkEffortId}`,
-                    method: "PUT",
-                    body: { ...certificate },
-                }),
+                query: (certificate) => {
+                    if (!certificate.WorkEffortId) {
+                        throw new Error("WorkEffortId is required for updating certificate");
+                    }
+                    return {
+                        url: `/project/updateProjectCertificate/${certificate.WorkEffortId}`,
+                        method: "PUT",
+                        body: { ...certificate },   // ✅ send DTO directly
+                    };
+                },
                 invalidatesTags: ["ProjectCertificates"],
             }),
+
         };
     },
 });

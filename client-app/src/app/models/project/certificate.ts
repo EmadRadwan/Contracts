@@ -6,7 +6,7 @@ export interface Certificate {
   workEffortTypeId?: string;
   projectId?: string;
   projectName?: string;
-  projectNum?: string;
+  certificateNumber?: string;
   partyIdSupplier?: { fromPartyId: string; partyName: string } | string;
   partyIdContractor?: { fromPartyId: string; partyName: string } | string;
   description?: string;

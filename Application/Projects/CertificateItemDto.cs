@@ -19,6 +19,7 @@ public class CertificateItemDto
     public decimal LaborPrice { get; set; }
     public decimal UnitPrice { get; set; } 
     public decimal TotalAmount { get; set; } 
+    public decimal Net { get; set; } 
     public decimal? Discount { get; set; } 
     public decimal? Deductions { get; set; } 
     public decimal? Insurance { get; set; }

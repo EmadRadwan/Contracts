@@ -127,7 +127,7 @@ const useProjectCertificate = ({
                 dispatch(
                     setSelectedCertificate({
                         workEffortId: createdCertificate.workEffortId,
-                        projectNum: createdCertificate.certificateNumber,
+                        certificateNumber: createdCertificate.certificateNumber,
                         projectId: newCertificate.projectId,
                         projectName: newCertificate.projectName || createdCertificate.projectName || "",
                         partyIdSupplier: newCertificate.partyIdSupplier
@@ -185,69 +185,55 @@ const useProjectCertificate = ({
                 toast.error("Certificate must have at least one item.");
                 return;
             }
-            /*if (!validateCertificate(newCertificate, nonDeletedCertificateItems)) {
+            if (!validateCertificate(newCertificate, nonDeletedCertificateItems)) {
                 return;
-            }*/
+            }
+            if (!newCertificate.workEffortId) {
+                toast.error("Work Effort ID is required for updating certificate");
+                return;
+            }
             const certificateData = {
-                workEffortId: newCertificate.workEffortId,
-                workEffortTypeId: newCertificate.workEffortTypeId,
-                description: newCertificate.description,
-                projectId: newCertificate.projectId,
-                partyIdSupplier:
-                    typeof newCertificate.partyIdSupplier === "object"
-                        ? newCertificate.partyIdSupplier.fromPartyId
-                        : newCertificate.partyIdSupplier,
-                partyIdContractor:
-                    typeof newCertificate.partyIdContractor === "object"
-                        ? newCertificate.partyIdContractor.fromPartyId
-                        : newCertificate.partyIdContractor,
-                estimatedStartDate: newCertificate.estimatedStartDate,
-                estimatedCompletionDate: newCertificate.estimatedCompletionDate,
-                facilityId: newCertificate.facilityId,
-                certificateItems: items,
+                WorkEffortId: newCertificate.workEffortId,
+                CertificateCategory: currentCertificateType,
+                Description: newCertificate.description,
+                ProjectId: newCertificate.projectId,
+                PartyIdSupplier: typeof newCertificate.partyIdSupplier === "object" ? newCertificate.partyIdSupplier.fromPartyId : newCertificate.partyIdSupplier,
+                PartyIdContractor: typeof newCertificate.partyIdContractor === "object" ? newCertificate.partyIdContractor.fromPartyId : newCertificate.partyIdContractor,
+                EstimatedStartDate: newCertificate.estimatedStartDate ? new Date(newCertificate.estimatedStartDate).toISOString() : null,
+                EstimatedCompletionDate: newCertificate.estimatedCompletionDate ? new Date(newCertificate.estimatedCompletionDate).toISOString() : null,
+                FacilityId: newCertificate.facilityId,
+                CertificateItems: items,
             };
             try {
                 const updatedCertificate = await updateProjectCertificate(certificateData).unwrap();
-                // Purpose: Ensure Redux state has correct object structure for ComboBox binding
-                // Context: Matches form's initialFormValues expectations
                 dispatch(
                     setSelectedCertificate({
                         workEffortId: updatedCertificate.workEffortId,
-                        projectNum: updatedCertificate.certificateNumber,
+                        certificateNumber: updatedCertificate.certificateNumber,
                         projectId: newCertificate.projectId,
                         projectName: newCertificate.projectName || updatedCertificate.projectName || "",
                         partyIdSupplier: newCertificate.partyIdSupplier
                             ? {
-                                fromPartyId:
-                                    typeof newCertificate.partyIdSupplier === "object"
-                                        ? newCertificate.partyIdSupplier.fromPartyId
-                                        : newCertificate.partyIdSupplier,
+                                fromPartyId: typeof newCertificate.partyIdSupplier === "object" ? newCertificate.partyIdSupplier.fromPartyId : newCertificate.partyIdSupplier,
                                 partyName: newCertificate.partyIdSupplier?.partyName || updatedCertificate.partyNameSupplier || "",
                             }
                             : undefined,
                         partyIdContractor: newCertificate.partyIdContractor
                             ? {
-                                fromPartyId:
-                                    typeof newCertificate.partyIdContractor === "object"
-                                        ? newCertificate.partyIdContractor.fromPartyId
-                                        : newCertificate.partyIdContractor,
-                                partyName:
-                                    newCertificate.partyIdContractor?.partyName || updatedCertificate.partyNameContractor || "",
+                                fromPartyId: typeof newCertificate.partyIdContractor === "object" ? newCertificate.partyIdContractor.fromPartyId : newCertificate.partyIdContractor,
+                                partyName: newCertificate.partyIdContractor?.partyName || updatedCertificate.partyNameContractor || "",
                             }
                             : undefined,
                         description: newCertificate.description,
-                        estimatedStartDate: newCertificate.estimatedStartDate
-                            ? new Date(newCertificate.estimatedStartDate).toISOString()
-                            : null,
-                        estimatedCompletionDate: newCertificate.estimatedCompletionDate
-                            ? new Date(newCertificate.estimatedCompletionDate).toISOString()
-                            : null,
+                        estimatedStartDate: newCertificate.estimatedStartDate ? new Date(newCertificate.estimatedStartDate).toISOString() : null,
+                        estimatedCompletionDate: newCertificate.estimatedCompletionDate ? new Date(newCertificate.estimatedCompletionDate).toISOString() : null,
                         statusDescription: updatedCertificate.statusDescription,
                         statusDescriptionArabic: updatedCertificate.statusDescriptionArabic || "",
                         currentStatusId: updatedCertificate.currentStatusId || CertificateStatus.CREATED,
                         relatedOrderId: updatedCertificate.relatedOrderId || "",
                         facilityId: updatedCertificate.facilityId,
                         facilityName: updatedCertificate.facilityName || "",
+                        certificateCategory: updatedCertificate.certificateCategory,
                     })
                 );
                 dispatch(setProcessedCertificateItems(updatedCertificate.certificateItems || []));
@@ -272,7 +258,7 @@ const useProjectCertificate = ({
                 // Purpose: Preserve object structure for FormComboBox components
                 // Context: Flatten only for API calls, not for Redux state
                 const newCertificate: Certificate = {
-                    workEffortId: editMode > 1 ? selectedCertificate?.workEffortId : undefined,
+                    workEffortId: editMode === 2 ? selectedCertificate?.workEffortId : undefined,
                     workEffortTypeId: data.values.workEffortTypeId,
                     projectId: data.values.projectId?.projectId || data.values.projectId,
                     projectName: data.values.projectId?.projectName,
@@ -287,6 +273,11 @@ const useProjectCertificate = ({
 
                 if (nonDeletedCertificateItems.length === 0) {
                     toast.error("Certificate items cannot be empty");
+                    return;
+                }
+
+                if (editMode === 2 && !newCertificate.workEffortId) {
+                    toast.error("Work Effort ID is required for updating certificate");
                     return;
                 }
 

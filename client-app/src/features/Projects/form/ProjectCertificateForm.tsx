@@ -23,6 +23,7 @@ import {CertificateStatus} from "../../../app/models/project/certificate";
 import { MemoizedFormDropDownList2 } from "../../../app/common/form/MemoizedFormDropDownList2";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import {CertificateItemsListGroupedMemo} from "../dashboard/CertificateItemsListGrouped";
 
 interface ProjectCertificateFormProps {
     editMode: number; // 0: view, 1: create, 2: edit (CREATED), 3: edit (APPROVED), 4: edit (COMPLETED)
@@ -94,11 +95,11 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
                         {getTranslatedLabel('certificate.approve', 'Approve Certificate')}
                     </MenuItem>
                 )}
-                {user?.roles?.includes('CompleteCertificate') && (
+                {/*{user?.roles?.includes('CompleteCertificate') && (
                     <MenuItem onClick={handleComplete} disabled={isCompleteDisabled}>
                         {getTranslatedLabel('certificate.complete', 'Complete Certificate')}
                     </MenuItem>
-                )}
+                )}*/}
             </Menu>
         </>
     );
@@ -117,7 +118,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
     const { language } = useAppSelector((state) => state.localization);
     const {user} = useAppSelector((state) => state.account);
     const [isFormCollapsed, setIsFormCollapsed] = useState(false);
-
+console.log('selectedCertificate in form:', selectedCertificate)
     const {
         formEditMode,
         setFormEditMode,
@@ -132,7 +133,6 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
     });
     const { data: facilities = [] } = useFetchFacilitiesQuery(undefined);
     
-    console.log("Facilities data:", facilities);
 
     const renderSwitchStatus = useCallback(() => {
         const status = selectedCertificate?.currentStatusId || CertificateStatus.CREATED;
@@ -324,6 +324,25 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
     console.log('initialFormValues', initialFormValues)
     const status = renderSwitchStatus();
 
+    const renderCertificateItems = () => {
+        if (currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE") {
+            return (
+                <CertificateItemsListGroupedMemo
+                    editMode={editMode}
+                    workEffortId={selectedCertificate?.workEffortId}
+                    isFormCollapsed={isFormCollapsed}
+                />
+            );
+        }
+        return (
+            <CertificateItemsListMemo
+                editMode={editMode}
+                workEffortId={selectedCertificate?.workEffortId}
+                isFormCollapsed={isFormCollapsed}
+            />
+        );
+    };
+
     return (
         <>
             <ProjectMenu />
@@ -335,8 +354,8 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                 sx={{ fontWeight: "bold", fontSize: "18px", color: editMode === 1 ? "green" : "black" }}
                                 variant="h6"
                             >
-                                {selectedCertificate?.projectNum
-                                    ? `${getTranslatedLabel("certificate.form.title", "Project Certificate No")}: ${selectedCertificate.projectNum} (${getCertificateTypeDisplayText(currentCertificateType)})`
+                                {selectedCertificate?.certificateNumber
+                                    ? `${getTranslatedLabel("certificate.form.title", "Project Certificate No")}: ${selectedCertificate.certificateNumber} (${getCertificateTypeDisplayText(currentCertificateType)})`
                                     : `${getTranslatedLabel("certificate.form.new", "New Project Certificate")} (${getCertificateTypeDisplayText(currentCertificateType)})`}
                             </Typography>
                             <IconButton onClick={() => setIsFormCollapsed(!isFormCollapsed)}>
@@ -498,12 +517,10 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                     )}
                 />
                 </Collapse>
-                <Grid container spacing={1} alignItems="center" sx={{ ml: 1, mt: 3 }}>
-                    <Grid item xs={12}>
-                        <CertificateItemsListMemo editMode={formEditMode} workEffortId={selectedCertificate?.workEffortId} isFormCollapsed={isFormCollapsed} />
-                    </Grid>
+                <Grid item xs={12}>
+                    {renderCertificateItems()}
                 </Grid>
-            </Paper>
+        </Paper>
             {isAddCertificateLoading || isUpdateCertificateLoading && (
                 <LoadingComponent message={getTranslatedLabel("certificate.form.saving", "Saving Certificate...")}/>
             )}

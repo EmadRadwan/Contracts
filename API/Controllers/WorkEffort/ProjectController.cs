@@ -34,13 +34,13 @@ public class ProjectController : BaseApiController
         return HandleResult(result);
     }
     
-    /*[HttpPut("certificate/{workEffortId}", Name = "UpdateProjectCertificate")]
-    public async Task<ActionResult<ProjectCertificateRecord>> UpdateProjectCertificate(string workEffortId, [FromBody] ProjectCertificateDto certificate)
+    [HttpPut("updateProjectCertificate/{workEffortId}", Name = "UpdateProjectCertificate")]
+    public async Task<ActionResult<ProjectCertificateDto>> UpdateProjectCertificate(string workEffortId, [FromBody] ProjectCertificateDto certificate)
     {
         certificate.WorkEffortId = workEffortId;
         var result = await Mediator.Send(new UpdateProjectCertificate.Command { Certificate = certificate });
         return HandleResult(result);
-    }*/
+    }
     
     [HttpGet("{workEffortId}/getCertificateItems")]
     public async Task<IActionResult> GetCertificateItems(string workEffortId)

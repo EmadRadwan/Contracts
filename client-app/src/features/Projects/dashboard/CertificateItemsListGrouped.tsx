@@ -1,6 +1,13 @@
-import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
-import React, { useCallback, useState } from "react";
-import { Grid as KendoGrid, GridCellProps, GridColumn as Column, GridPageChangeEvent, GridSortChangeEvent, GridToolbar } from "@progress/kendo-react-grid";
+import { orderBy, SortDescriptor, State, process} from "@progress/kendo-data-query";
+import React, {useCallback, useEffect, useState} from "react";
+import {
+    Grid as KendoGrid,
+    GridCellProps,
+    GridColumn as Column,
+    GridPageChangeEvent,
+    GridSortChangeEvent,
+    GridToolbar
+} from "@progress/kendo-react-grid";
 import { useAppDispatch, useAppSelector } from "../../../app/store/configureStore";
 import { Button, Grid, Skeleton, Typography } from "@mui/material";
 import { CertificateItem } from "../../../app/models/project/certificateItem";
@@ -19,7 +26,7 @@ interface Props {
     isFormCollapsed: boolean;
 }
 
-export default function CertificateItemsList({ editMode, workEffortId, isFormCollapsed }: Props) {
+export default function CertificateItemsListGrouped({ editMode, workEffortId, isFormCollapsed }: Props) {
     const initialSort: Array<SortDescriptor> = [{ field: "productName", dir: "asc" }];
     const [sort, setSort] = useState(initialSort);
     const initialDataState: State = { skip: 0, take: 4 };
@@ -30,17 +37,27 @@ export default function CertificateItemsList({ editMode, workEffortId, isFormCol
     const dispatch = useAppDispatch();
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = "certificate.items.list";
-    const subtotal = useAppSelector(certificateSubTotal);
-    const { currentCertificateType } = useAppSelector((state) => state.certificateUi);
+    const total = useAppSelector(certificateSubTotal);
+    const certificateItemsEntities = useAppSelector(state => state.certificateItemsUi.certificateItemsEntities);
+
     const { data: certificateItemsData, isFetching, isLoading } = useFetchCertificateItemsQuery(workEffortId || "", {
         skip: !workEffortId,
     });
     const uiCertificateItems: CertificateItem[] = useAppSelector(displayCertificateItemsSelector);
 
-    console.log('uiCertificateItems', uiCertificateItems)
+    console.log('certificateItemsData:', certificateItemsData);
+    console.log('certificateItemsEntities:', certificateItemsEntities);
+    console.log('uiCertificateItems:', uiCertificateItems);
+    console.log('certificateSubTotal:', total);
+
+   
     const pageChange = (event: GridPageChangeEvent) => {
         setPage(event.page);
     };
+
+
+    
+    
 
     const handleSelectCertificateItem = useCallback(
         (workEffortId: string) => {
@@ -60,10 +77,12 @@ export default function CertificateItemsList({ editMode, workEffortId, isFormCol
                 gratuities: selectedCertificateItem.gratuities || 0,
                 transportationExpenses: selectedCertificateItem.transportationExpenses || 0,
                 discount: selectedCertificateItem.discount || 0,
-                unitPrice: selectedCertificateItem.unitPrice || 0,
+                materialPrice: selectedCertificateItem.materialPrice || 0, // Use materialPrice directly
+                laborPrice: selectedCertificateItem.laborPrice || 0, // Use laborPrice directly
                 procurementDate: selectedCertificateItem.procurementDate
                     ? new Date(selectedCertificateItem.procurementDate)
                     : new Date(),
+                additionalInsurance: selectedCertificateItem.additionalInsurance || 0,
             };
             setCertificateItem(certificateItem);
             setItemEditMode(2);
@@ -133,100 +152,67 @@ export default function CertificateItemsList({ editMode, workEffortId, isFormCol
         setShow(false);
     }, []);
 
-    const modalWidth = 700;
-
-
-    const isSupplyWithDiscount = ["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
-    const isSupplyWithoutDiscount = ["COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE"].includes(currentCertificateType);
+    const modalWidth = 900;
 
     const columns = [
-        // REFACTOR: Removed code column as it is specific to WORKMANSHIP_CONTRACTING_CERTIFICATE
-        // Purpose: Clean column configuration to exclude fields used only by WORKMANSHIP_CONTRACTING_CERTIFICATE
-        // Improvement: Simplifies table structure for non-contracting certificate types
         {
-            field: "productName",
-            title: getTranslatedLabel(`${localizationKey}.description`, "Product"),
-            cell: descriptionCell,
-            width: 280,
+            field: "code",
+            title: getTranslatedLabel(`${localizationKey}.code`, "Code"),
+            width: 220,
+            cell: (props: GridCellProps) =>
+                props.dataItem.isLastInGroup ? (
+                    <td>{`${props.dataItem.code} (${getTranslatedLabel(`${localizationKey}.productSubtotal`, "Subtotal")}: ${props.dataItem.productSubtotal})`}</td>
+                ) : (
+                    <td>{props.dataItem.code}</td>
+                ),
         },
-        {
-            field: "description",
-            title: getTranslatedLabel(`${localizationKey}.description`, "Description"),
-            width: 280,
-        },
-        {
-            field: "quantity",
-            title: getTranslatedLabel(`${localizationKey}.quantity`, "Quantity"),
-            width: 100,
-        },
-        {
-            field: "unitPrice",
-            title: getTranslatedLabel(`${localizationKey}.unitPrice`, "Unit Price"),
-            format: "{0:n2}",
-            width: 120,
-        },
-        {
-            field: "displayTotal",
-            title: getTranslatedLabel(`${localizationKey}.totalAmount`, "Total Amount"),
-            format: "{0:n2}",
-            width: 130,
-        },
-        ...(isSupplyWithDiscount
-            ? [
-                {
-                    field: "discount",
-                    title: getTranslatedLabel(`${localizationKey}.discount`, "Discount"),
-                    format: "{0:n2}",
-                    width: 120,
-                },
-                {
-                    field: "formattedProcurementDate",
-                    title: getTranslatedLabel(`${localizationKey}.procurementDate`, "Procurement Date"),
-                    width: 180,
-                },
-                {
-                    field: "transportationExpenses",
-                    title: getTranslatedLabel(`${localizationKey}.transportationExpenses`, "Transportation Expenses"),
-                    format: "{0:n2}",
-                    width: 180,
-                },
-                {
-                    field: "gratuities",
-                    title: getTranslatedLabel(`${localizationKey}.gratuities`, "Gratuities"),
-                    format: "{0:n2}",
-                    width: 120,
-                },
-            ]
-            : []),
-        ...(isSupplyWithoutDiscount
-            ? [
-                {
-                    field: "formattedProcurementDate",
-                    title: getTranslatedLabel(`${localizationKey}.procurementDate`, "Procurement Date"),
-                    width: 180,
-                },
-                {
-                    field: "transportationExpenses",
-                    title: getTranslatedLabel(`${localizationKey}.transportationExpenses`, "Transportation Expenses"),
-                    format: "{0:n2}",
-                    width: 180,
-                },
-                {
-                    field: "gratuities",
-                    title: getTranslatedLabel(`${localizationKey}.gratuities`, "Gratuities"),
-                    format: "{0:n2}",
-                    width: 120,
-                },
-            ]
-            : []),
-        {
-            cell: CommandCell,
-            width: 100,
-        },
+        { field: "productName", title: getTranslatedLabel(`${localizationKey}.description`, "Product"), cell: descriptionCell, width: 280 },
+        { field: "description", title: getTranslatedLabel(`${localizationKey}.description`, "Description"), width: 280 },
+        { field: "quantity", title: getTranslatedLabel(`${localizationKey}.quantity`, "Quantity"), width: 100 },
+        { field: "materialPrice", title: getTranslatedLabel(`${localizationKey}.materialPrice`, "Material Price"), format: "{0:n2}", width: 150 },
+        { field: "laborPrice", title: getTranslatedLabel(`${localizationKey}.laborPrice`, "Labor Price"), format: "{0:n2}", width: 150 },
+        { field: "displayTotal", title: getTranslatedLabel(`${localizationKey}.totalAmount`, "Total Amount"), format: "{0:n2}", width: 130 },
+        { field: "deductions", title: getTranslatedLabel(`${localizationKey}.deductions`, "Deductions"), format: "{0:n2}", width: 120 },
+        { field: "deserved", title: getTranslatedLabel(`${localizationKey}.deserved`, "Deserved"), format: "{0:n2}", width: 120 },
+        { field: "insurance", title: getTranslatedLabel(`${localizationKey}.insurance`, "Insurance"), format: "{0:n2}", width: 120 },
+        { field: "additionalInsurance", title: getTranslatedLabel(`${localizationKey}.additionalInsurance`, "Additional Insurance"), format: "{0:n2}", width: 140 },
+        { field: "net", title: getTranslatedLabel(`${localizationKey}.net`, "Net"), format: "{0:n2}", width: 120 },
+        { field: "achievementPercentage", title: getTranslatedLabel(`${localizationKey}.achievementPercentage`, "Achievement %"), format: "{0:n0}", width: 140 },
+        { cell: CommandCell, width: 100 },
     ];
 
-    const sortedData = orderBy(uiCertificateItems || [], sort);
-    const pagedData = sortedData.slice(page.skip, page.skip + page.take);
+
+    const dataWithSummaries = uiCertificateItems
+        ? (() => {
+            const groupedByProductId: { [key: string]: CertificateItem[] } = uiCertificateItems.reduce(
+                (acc, item) => {
+                    const productId = item.productId || "";
+                    if (!acc[productId]) acc[productId] = [];
+                    acc[productId].push(item);
+                    return acc;
+                },
+                {} as { [key: string]: CertificateItem[] }
+            );
+
+            const sortedData = orderBy(uiCertificateItems, sort);
+            let result: any[] = [];
+            Object.keys(groupedByProductId).forEach((productId) => {
+                const groupItems = groupedByProductId[productId];
+                const subtotal = groupItems.reduce((sum: number, item: CertificateItem) => sum + (item.net || 0), 0);
+                const sortedGroupItems = sortedData.filter((item) => item.productId === productId);
+                const updatedGroupItems = sortedGroupItems.map((item, index) => ({
+                    ...item,
+                    isLastInGroup: index === sortedGroupItems.length - 1,
+                    productSubtotal: subtotal.toFixed(2),
+                }));
+                result = [...result, ...updatedGroupItems];
+            });
+
+            const pagedData = process(result, { skip: page.skip, take: page.take });
+            return pagedData.data;
+        })()
+        : [];
+
 
 
     return (
@@ -260,17 +246,17 @@ export default function CertificateItemsList({ editMode, workEffortId, isFormCol
                             <KendoGrid
                                 className="main-grid"
                                 style={{ height: isFormCollapsed ? "60vh" : "30vh" }}
-                                data={pagedData}
-                                sortable
                                 scrollable="scrollable"
                                 resizable={true}
+                                sortable
                                 sort={sort}
                                 onSortChange={(e: GridSortChangeEvent) => setSort(e.sort)}
                                 skip={page.skip}
                                 take={page.take}
-                                total={uiCertificateItems?.length || 0}
+                                total={dataWithSummaries.length}
                                 pageable
                                 onPageChange={pageChange}
+                                data={dataWithSummaries}
                             >
                                 <GridToolbar>
                                     <Grid container justifyContent="space-between">
@@ -290,7 +276,7 @@ export default function CertificateItemsList({ editMode, workEffortId, isFormCol
                                         </Grid>
                                         <Grid item>
                                             <Typography>
-                                                {getTranslatedLabel(`${localizationKey}.Total`, "Total")}: {subtotal.toFixed(2)}
+                                                {getTranslatedLabel(`${localizationKey}.subtotal`, "Total")}: {total.toFixed(2)}
                                             </Typography>
                                         </Grid>
                                     </Grid>
@@ -307,4 +293,4 @@ export default function CertificateItemsList({ editMode, workEffortId, isFormCol
     );
 }
 
-export const CertificateItemsListMemo = React.memo(CertificateItemsList);
+export const CertificateItemsListGroupedMemo = React.memo(CertificateItemsListGrouped);
