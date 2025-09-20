@@ -9,6 +9,7 @@ import SupplyProcurementForm from "./SupplyProcurementForm";
 import WorkmanshipContractingForm from "./WorkmanshipContractingForm";
 import CompanySupplyForm from "./CompanySupplyForm";
 import { v4 as uuidv4 } from "uuid";
+import {toast} from "react-toastify";
 
 interface Props {
     certificateItem?: CertificateItem;
@@ -228,6 +229,12 @@ export default function CertificateItemForm({
             onSubmit={(values: Partial<CertificateItem>) => {
                 const tempWorkEffortId = values.workEffortId || uuidv4();
 
+                const description = values.description || "";
+                if (description.length > 1000) {
+                    toast.error("Description cannot exceed 1000 characters.");
+                    return; // Prevent form submission
+                }
+                
                 const serializedValues: CertificateItem = {
                     ...values,
                     productId: values.productId || "",

@@ -1556,5 +1556,65 @@
     "LAST_UPDATED_TX_STAMP": "2025-08-28 21:55:00",
     "CREATED_STAMP": "2025-08-28 21:55:00",
     "CREATED_TX_STAMP": "2025-08-28 21:55:00"
+  },
+  {
+    "UOM_ID": "LN_m_2x",
+    "UOM_TYPE_ID": "LENGTH_MEASURE",
+    "ABBREVIATION": "m*2",
+    "NUMERIC_CODE": null,
+    "DESCRIPTION": "Linear Meter x2",
+    "DESCRIPTION_ARABIC": "المتر الطولي * 2",
+    "LAST_UPDATED_STAMP": "2025-09-20 12:00:00",
+    "LAST_UPDATED_TX_STAMP": "2025-09-20 12:00:00",
+    "CREATED_STAMP": "2025-09-20 12:00:00",
+    "CREATED_TX_STAMP": "2025-09-20 12:00:00"
+  },
+  {
+    "UOM_ID": "LN_m_3x",
+    "UOM_TYPE_ID": "LENGTH_MEASURE",
+    "ABBREVIATION": "m*3",
+    "NUMERIC_CODE": null,
+    "DESCRIPTION": "Linear Meter x3",
+    "DESCRIPTION_ARABIC": "المتر الطولي * 3",
+    "LAST_UPDATED_STAMP": "2025-09-20 12:00:00",
+    "LAST_UPDATED_TX_STAMP": "2025-09-20 12:00:00",
+    "CREATED_STAMP": "2025-09-20 12:00:00",
+    "CREATED_TX_STAMP": "2025-09-20 12:00:00"
+  },
+  {
+    "UOM_ID": "AR_m2_2x",
+    "UOM_TYPE_ID": "AREA_MEASURE",
+    "ABBREVIATION": "m²*2",
+    "NUMERIC_CODE": null,
+    "DESCRIPTION": "Square Meter x2",
+    "DESCRIPTION_ARABIC": "المتر المسطح * 2",
+    "LAST_UPDATED_STAMP": "2025-09-20 12:00:00",
+    "LAST_UPDATED_TX_STAMP": "2025-09-20 12:00:00",
+    "CREATED_STAMP": "2025-09-20 12:00:00",
+    "CREATED_TX_STAMP": "2025-09-20 12:00:00"
+  },
+  {
+    "UOM_ID": "AR_m2_1.5x",
+    "UOM_TYPE_ID": "AREA_MEASURE",
+    "ABBREVIATION": "m²*1.5",
+    "NUMERIC_CODE": null,
+    "DESCRIPTION": "Square Meter x1.5",
+    "DESCRIPTION_ARABIC": "المتر المسطح * 1.5",
+    "LAST_UPDATED_STAMP": "2025-09-20 12:00:00",
+    "LAST_UPDATED_TX_STAMP": "2025-09-20 12:00:00",
+    "CREATED_STAMP": "2025-09-20 12:00:00",
+    "CREATED_TX_STAMP": "2025-09-20 12:00:00"
+  },
+  {
+    "UOM_ID": "CUST_phase",
+    "UOM_TYPE_ID": "OTHER_MEASURE",
+    "ABBREVIATION": "phase",
+    "NUMERIC_CODE": null,
+    "DESCRIPTION": "Phase",
+    "DESCRIPTION_ARABIC": "المرحلة",
+    "LAST_UPDATED_STAMP": "2025-09-20 12:00:00",
+    "LAST_UPDATED_TX_STAMP": "2025-09-20 12:00:00",
+    "CREATED_STAMP": "2025-09-20 12:00:00",
+    "CREATED_TX_STAMP": "2025-09-20 12:00:00"
   }
 ]

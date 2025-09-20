@@ -61656,7 +61656,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("CURRENT_STATUS_ID");
 
                 entity.Property(e => e.Description)
-                    .HasMaxLength(255)
+                    .HasMaxLength(1000)
                     .IsUnicode(false)
                     .HasColumnName("DESCRIPTION");
 

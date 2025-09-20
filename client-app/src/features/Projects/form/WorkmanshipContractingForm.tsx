@@ -7,6 +7,7 @@ import { FormComboBoxVirtualUOM } from "../../../app/common/form/FormComboBoxVir
 import { percentageValidator, requiredValidator } from "../../../app/common/form/Validators";
 import FormButtons from "./FormButtons";
 import FormTextArea from "../../../app/common/form/FormTextArea";
+import { toast } from "react-toastify";
 
 
 interface ContractingFormProps {
@@ -56,6 +57,13 @@ const WorkmanshipContractingForm = ({
         onChange("net", { value: net });
     }, [total, deserved, net, onChange]);
 
+    const descriptionLengthValidator = (value: string | undefined): string | undefined => {
+        if (value && value.length > 1000) {
+            return "Description cannot exceed 1000 characters.";
+        }
+        return undefined;
+    };
+    
     return (
         <FormElement>
             <fieldset className="k-form-fieldset">
@@ -87,9 +95,13 @@ const WorkmanshipContractingForm = ({
                             name="description"
                             label={getTranslatedLabel("certificate.items.form.description", "Description *")}
                             component={FormTextArea}
-                            validator={requiredValidator}
                             disabled={formEditMode > 3}
                             rows={4} // Set rows for better visibility
+                            validator={(value: string | undefined) => {
+                                const requiredError = requiredValidator(value);
+                                if (requiredError) return requiredError;
+                                return descriptionLengthValidator(value);
+                            }}
                         />
                     </Grid>
                     <Grid item xs={4}>

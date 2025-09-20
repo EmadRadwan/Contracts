@@ -132,7 +132,7 @@ namespace Application.Projects
                         _context.WorkEfforts.Add(itemWorkEffort);
                     }
 
-                    string? generatedOrderId = null;
+                    /*string? generatedOrderId = null;
                     OrderHeader? poResult = null;
                     if (certificate.CertificateCategory != "COMPANY_SUPPLY_SALE_CERTIFICATE")
                     {
@@ -276,6 +276,7 @@ namespace Application.Projects
                     {
                         workEffort.RelatedOrderId = generatedOrderId;
                     }
+                    */
 
 
                     // this ensures UpdateOrApprovePurchaseOrder can query and find the order via FirstOrDefaultAsync, as EF Core queries ignore pending changes.
@@ -289,7 +290,7 @@ namespace Application.Projects
 
                     // this integrates backend approval directly behind the scenes, reusing the existing UpdateOrApprovePurchaseOrder method 
                     // without needing a frontend call, ensuring the order is immediately approved as per requirements while maintaining transaction integrity.
-                    if (generatedOrderId != null && poResult != null)
+                    /*if (generatedOrderId != null && poResult != null)
                     {
                         // queried from the database after SaveChanges; this populates all required fields (e.g., OrderId, GrandTotal, FromPartyId, OrderItems, OrderAdjustments) 
                         // for the UpdateOrApprovePurchaseOrder method without modifying the called service signature, avoiding impacts on other code. 
@@ -365,6 +366,7 @@ namespace Application.Projects
                             return Result<ProjectCertificateDto>.Failure("Failed to approve purchase order");
                         }
                     }
+                    */
 
                     await transaction.CommitAsync(cancellationToken);
 

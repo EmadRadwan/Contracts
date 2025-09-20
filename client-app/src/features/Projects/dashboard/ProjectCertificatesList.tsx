@@ -76,6 +76,12 @@ export default function ProjectCertificatesList() {
     }), []);
 
     useEffect(() => {
+        return () => {
+            dispatch(resetCertificateUi());
+        };
+    }, [dispatch]);
+
+    useEffect(() => {
         if (data) {
             const adjustedData = data.data.map((item: Certificate) => ({
                 ...item,
@@ -248,6 +254,7 @@ export default function ProjectCertificatesList() {
             </td>
         );
     };
+    console.log('certificateFormEditMode:', certificateFormEditMode)
 
     if (certificateFormEditMode > 0) {
         return (

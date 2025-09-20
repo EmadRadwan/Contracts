@@ -56,11 +56,28 @@ public class GetUOMsLov
                 // REFACTOR: Define allowed UOM IDs
                 // Purpose: Restrict query to specific UOMs from provided JSON list
                 // Context: Filters UOMs to match client-provided list
-                var allowedUomIds = new List<string>
-                {
-                    "LN_m", "AR_m2", "VL_m3", "LN_m_linear", "LN_m_half", "LN_m_third",
-                    "LN_mm", "LN_in", "VL_l", "WT_kg", "VL_bbl", "VL_bastila",
-                    "WT_t", "TM_day", "TM_hr", "QT_thousand"
+                var allowedUomIds = new List<string> { 
+                    "LN_m", 
+                    "AR_m2", 
+                    "VL_m3", 
+                    "LN_m_linear", 
+                    "LN_m_half", 
+                    "LN_m_third", 
+                    "LN_mm", 
+                    "LN_in", 
+                    "VL_l", 
+                    "WT_kg", 
+                    "VL_bbl", 
+                    "VL_bastila", 
+                    "WT_t", 
+                    "TM_day", 
+                    "TM_hr", 
+                    "QT_thousand",
+                    "LN_m_2x",      // Added: Linear Meter x2
+                    "LN_m_3x",      // Added: Linear Meter x3
+                    "AR_m2_2x",     // Added: Square Meter x2
+                    "AR_m2_1.5x",   // Added: Square Meter x1.5
+                    "CUST_phase"    // Added: Phase
                 };
 
                 // REFACTOR: Determine language preference

@@ -158,7 +158,7 @@ export default function CertificateItemsListGrouped({ editMode, workEffortId, is
         {
             field: "code",
             title: getTranslatedLabel(`${localizationKey}.code`, "Code"),
-            width: 220,
+            width: 250,
             cell: (props: GridCellProps) =>
                 props.dataItem.isLastInGroup ? (
                     <td>{`${props.dataItem.code} (${getTranslatedLabel(`${localizationKey}.productSubtotal`, "Subtotal")}: ${props.dataItem.productSubtotal})`}</td>
