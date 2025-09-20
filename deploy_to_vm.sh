@@ -6,7 +6,7 @@ set -e  # Stop on first error
 VM_USER="ubuntu"
 VM_HOST="129.146.22.240"
 PRIVATE_KEY="$HOME/.ssh/id_rsa"
-VM_DEST_PATH="/home/ubuntu/erp-project"
+VM_DEST_PATH="/home/ubuntu/erp-contracts"
 
 # SSH options
 SSH_OPTIONS="-i $PRIVATE_KEY -o StrictHostKeyChecking=no"

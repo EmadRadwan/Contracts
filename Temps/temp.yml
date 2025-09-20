@@ -1,0 +1,2 @@
+rsync -av --progress --inplace -e "ssh $SSH_OPTIONS" --exclude=".git" --exclude="bin" --exclude="obj" \
+"${INCLUDE_FILES[@]}" "$VM_USER@$VM_HOST:$VM_DEST_PATH/"

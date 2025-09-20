@@ -1,45 +1,53 @@
 version: '3.8'
 services:
   web:
-    container_name: 'erpweb-app'
-    image: 'eradwan/erpwebapp:1.0.1'
+    # REFACTOR: Kept unique container name for clarity and to avoid conflicts
+    container_name: contracts-app
+    # REFACTOR: Kept unique image name for consistency
+    image: eradwan/contractsapp:1.0.1
     build:
       context: .
       dockerfile: Dockerfile.vm
+    # REFACTOR: Simplified port mapping, ensuring no conflicts with other projects
     ports:
-      - '0.0.0.0:5000:5000'
-      - '0.0.0.0:8444:8444'
+      - '5100:5100'
+      - '8544:8544'
     environment:
+      # REFACTOR: Added default values for environment variables to ensure fallback
       TokenKey: ${TokenKey:-lWwMN68UKbjuEJAAYq9ke9KYtPrabUTE9kghtxPrysPDfgaezEyfV3gjoA4F90TYcgYRhH5wXC0XhR5idy1n0w==}
-      ASPNETCORE_URLS: "http://*:5000;https://*:8444"
+      ASPNETCORE_URLS: "http://*:5100;https://*:8544"
       ASPNETCORE_ENVIRONMENT: "Production"
-      Kestrel__Certificates__Default__Path: "/root/.aspnet/https/aspnetapp.pfx"
-      Kestrel__Certificates__Default__Password: ${Kestrel_Certificate_Password:-Tmbtc202500}
-      SendGridKey: ${SendGridKey:-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}
+      Kestrel__Certificates__Default__Path: "/root/.aspnet/https/contracts/aspnetapp.pfx"
+      Kestrel__Certificates__Default__Password: ${Kestrel_Certificate_Password_Contracts:-Tmbtc202500}
+      SendGridKey: ${SendGridKey_Contracts:-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}
     volumes:
-      - /home/ubuntu/.aspnet/https:/root/.aspnet/https:rw
+      - /home/ubuntu/.aspnet/https/contracts:/root/.aspnet/https/contracts:rw
+    # REFACTOR: Fixed dependency name to match the service name exactly
     depends_on:
-      - 'mysql'
+      - mysql-contracts
     networks:
-      - erp-network
+      - erp-contracts-network
 
-  mysql:
-    container_name: erp-mysql
-    image: 'mysql:latest'
+  # REFACTOR: Ensured service name matches exactly with depends_on reference
+  mysql-contracts:
+    container_name: erp-mysql-contracts
+    image: mysql:latest
     ports:
-      - '0.0.0.0:3306:3306'
+      - '3307:3306'
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-Tmbtc202500}
-      MYSQL_DATABASE: erp
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD_Contracts:-Tmbtc202500}
+      MYSQL_DATABASE: erp_contracts
     volumes:
-      - 'erp-mysql-volume:/var/lib/mysql'
-      - '/home/ubuntu/mysql-config/my.cnf:/etc/mysql/my.cnf:ro'
+      - erp-mysql-volume-contracts:/var/lib/mysql
+      - /home/ubuntu/mysql-config/contracts/my.cnf:/etc/mysql/my.cnf:ro
     networks:
-      - erp-network
+      - erp-contracts-network
 
 volumes:
-  erp-mysql-volume:
+  erp-mysql-volume-contracts:
+    # REFACTOR: Added explicit volume name for clarity
+    name: erp-mysql-volume-contracts
 
 networks:
-  erp-network:
+  erp-contracts-network:
     driver: bridge
