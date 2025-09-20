@@ -203,6 +203,20 @@ ssh ubuntu@129.146.22.240
 docker-compose -f docker-compose.vm.yml down
 docker-compose -f docker-compose.vm.yml up -d --build
 
+sudo rm -rf erp-contracts
+ git clone https://github.com/EmadRadwan/Contracts.git erp-contracts
+ sudo find /home/ubuntu/erp-contracts -type f -exec chmod 644 {} +
+ sudo find /home/ubuntu/erp-contracts -type d -exec chmod 755 {} +
+ 
+ sudo mkdir -p /home/ubuntu/mysql-config/contracts
+ echo "[mysqld]" | sudo tee /home/ubuntu/mysql-config/contracts/my.cnf
+ echo "bind-address=0.0.0.0" | sudo tee -a /home/ubuntu/mysql-config/contracts/my.cnf
+ sudo chmod 644 /home/ubuntu/mysql-config/contracts/my.cnf
+ if [ -f docker-compose.vm.yml ]; then
+   sudo docker-compose -f docker-compose.vm.yml down
+ fi
+ sudo docker-compose -f docker-compose.vm.yml up -d --build
+
 Portainer.io:
 http://129.146.22.240:9000
 admin / Tmbtc202500))
