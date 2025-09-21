@@ -76,9 +76,11 @@ if (builder.Environment.IsProduction())
     Console.WriteLine("Running in PRODUCTION mode - HTTPS is required.");
     builder.WebHost.ConfigureKestrel(options =>
     {
-        options.ListenAnyIP(5000); // HTTP
-        options.ListenAnyIP(8444,
-            listenOptions => { listenOptions.UseHttps("/root/.aspnet/https/aspnetapp.pfx", "Tmbtc202500"); });
+        options.ListenAnyIP(5100); // HTTP, matches docker-compose
+        // REFACTOR: Use environment variables for certificate path and password to align with docker-compose and avoid hardcoding
+        var certPath = Environment.GetEnvironmentVariable("Kestrel__Certificates__Default__Path") ?? "/root/.aspnet/https/contracts/aspnetapp.pfx";
+        var certPassword = Environment.GetEnvironmentVariable("Kestrel_Certificate_Password_Contracts") ?? "Tmbtc202500";
+        options.ListenAnyIP(8544, listenOptions => listenOptions.UseHttps(certPath, certPassword)); // HTTPS, matches docker-compose port
     });
 }
 else
