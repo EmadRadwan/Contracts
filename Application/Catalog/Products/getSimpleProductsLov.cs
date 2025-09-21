@@ -14,9 +14,6 @@ public class GetSimpleProductsLov
         public int ProductCount { get; set; }
     }
 
-    // REFACTOR: Add ProductType to DTO
-    // Purpose: Include product type information in the response
-    // Context: Added new property to return whether product is RAW_MATERIAL or SERVICE
     public class ProductLovDto
     {
         public string ProductId { get; set; }
@@ -44,24 +41,16 @@ public class GetSimpleProductsLov
         {
             try
             {
-                // REFACTOR: Validate input
-                // Purpose: Prevent null reference exceptions
-                // Context: Unchanged from previous
                 if (request?.Params == null)
                 {
                     _logger.LogWarning("Invalid request: Params is null");
                     return Result<ProductsEnvelope>.Failure("Invalid request parameters.");
                 }
 
-                // REFACTOR: Filter by new certificate types
-                // Purpose: Map the five new certificate types to appropriate ProductTypeId values (RAW_MATERIAL, SERVICE)
-                // Context: Replaces PROCUREMENTS and CONTRACTING checks with logic for SUPPLY_PROCUREMENT_CERTIFICATE, WORKMANSHIP_CONTRACTING_CERTIFICATE, etc., aligning with the provided sheet
                 var validProductTypes = request.Params.CertificateType switch
                 {
                     "SUPPLY_PROCUREMENT_CERTIFICATE" => new[] { "RAW_MATERIAL" },
-                    "EXTERNAL_SUPPLY_SALE_CERTIFICATE" => new[] { "RAW_MATERIAL" },
                     "WORKMANSHIP_CONTRACTING_CERTIFICATE" => new[] { "SERVICE" },
-                    "CONTRACTOR_PURCHASE_CERTIFICATE" => new[] { "RAW_MATERIAL" },
                     "COMPANY_SUPPLY_SALE_CERTIFICATE" => new[] { "RAW_MATERIAL"},
                     _ => null
                 };
@@ -72,16 +61,18 @@ public class GetSimpleProductsLov
                     return Result<ProductsEnvelope>.Failure("Invalid certificate type.");
                 }
 
-                // REFACTOR: Query products
-                // Purpose: Fetch ProductId, ProductName, and ProductType, filter by product types and search term
-                // Context: Unchanged from previous, ensures compatibility with new certificate types
+                // REFACTOR: Update search logic
+                // Purpose: Allow searching by both ProductId and ProductName
+                // Context: Modified query to include ProductId in search conditions
                 var query = _context.Products
                     .Where(p => validProductTypes.Contains(p.ProductTypeId))
                     .AsQueryable();
 
                 if (!string.IsNullOrEmpty(request.Params.SearchTerm))
                 {
-                    query = query.Where(p => p.ProductName.Contains(request.Params.SearchTerm));
+                    query = query.Where(p => 
+                        p.ProductName.Contains(request.Params.SearchTerm) || 
+                        p.ProductId.Contains(request.Params.SearchTerm));
                 }
 
                 var total = await query.CountAsync(cancellationToken);

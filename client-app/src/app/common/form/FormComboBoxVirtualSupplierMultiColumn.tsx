@@ -1,11 +1,15 @@
 import * as React from "react";
 import { FieldRenderProps, FieldWrapper } from "@progress/kendo-react-form";
 import { Label } from "@progress/kendo-react-labels";
-import { MultiColumnComboBox, ComboBoxFilterChangeEvent, ComboBoxPageChangeEvent } from "@progress/kendo-react-dropdowns";
+import {
+    MultiColumnComboBox,
+    ComboBoxFilterChangeEvent,
+    ComboBoxPageChangeEvent,
+    ComboBoxChangeEvent
+} from "@progress/kendo-react-dropdowns";
 import { Notification, NotificationGroup } from "@progress/kendo-react-notification";
 import agent from "../../api/agent";
 import { useAppDispatch } from "../../store/configureStore";
-import { setSupplierId } from "../../../features/orders/slice/sharedOrderUiSlice";
 
 interface Item {
     fromPartyId: string;
@@ -175,11 +179,6 @@ export const FormComboBoxVirtualSupplierMultiColumn = (fieldRenderProps: FieldRe
 
     const onChangeHandler = React.useCallback(
         (event: ComboBoxChangeEvent) => {
-            if (event.value === null) {
-                dispatch(setSupplierId(undefined));
-            } else {
-                dispatch(setSupplierId(event.value.fromPartyId));
-            }
             onChange({ value: event.value || null });
         },
         [onChange, dispatch]

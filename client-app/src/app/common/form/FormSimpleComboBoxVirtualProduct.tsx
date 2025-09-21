@@ -1,23 +1,22 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import * as React from "react";
 import { FieldRenderProps, FieldWrapper } from "@progress/kendo-react-form";
 import { Label } from "@progress/kendo-react-labels";
-import { ComboBox, ComboBoxChangeEvent, ComboBoxFilterChangeEvent, ComboBoxPageChangeEvent } from "@progress/kendo-react-dropdowns";
+import {
+    MultiColumnComboBox,
+    ComboBoxFilterChangeEvent,
+    ComboBoxPageChangeEvent,
+    ComboBoxChangeEvent
+} from "@progress/kendo-react-dropdowns";
 import { Notification, NotificationGroup } from "@progress/kendo-react-notification";
 import agent from "../../api/agent";
 import { useAppSelector } from "../../store/configureStore";
 
-// REFACTOR: Updated interface for dropdown items
-// Purpose: Include ProductType for type safety and access in form
-// Context: Added ProductType to match ProductLovDto from GetSimpleProductsLov
 interface ProductItem {
     ProductId: string;
     ProductName: string;
     ProductType: string;
 }
 
-// REFACTOR: Define component
-// Purpose: Single-column virtualized ComboBox for product selection with certificate type filtering
-// Context: Updated to include ProductType in data mapping
 export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderProps) => {
     const {
         validationMessage,
@@ -33,33 +32,52 @@ export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderPr
         value,
         onChange,
     } = fieldRenderProps;
-    const editorRef = useRef<any>(null);
-    const [focused, setFocused] = useState(false);
+    const editorRef = React.useRef<any>(null);
+    const [focused, setFocused] = React.useState(false);
     const { currentCertificateType } = useAppSelector((state) => state.certificateUi);
-    const textField = "ProductName";
     const keyField = "ProductId";
-    const emptyItem: ProductItem = { [keyField]: "0", [textField]: "loading ...", ProductType: "" };
+    const textField = "ProductName"; // REFACTOR: Set textField to ProductName
+    // Purpose: Ensure ProductName is displayed in the input after selection
+    // Context: Fixes [object Object] issue by specifying the display field
+    const emptyItem: ProductItem = { ProductId: "0", ProductName: "loading ...", ProductType: "" };
     const pageSize = 10;
-    const loadingData: ProductItem[] = Array(pageSize).fill({ ...emptyItem });
-    const dataCaching = useRef<ProductItem[]>([]);
-    const requestStarted = useRef(false);
-    const pendingRequest = useRef<NodeJS.Timeout | null>(null);
-    const [data, setData] = useState<ProductItem[]>([]);
-    const [total, setTotal] = useState(0);
-    const [filter, setFilter] = useState("");
-    const skipRef = useRef(0);
 
-    // REFACTOR: Reset cache
-    // Purpose: Clear cached data when filter changes
-    // Context: Unchanged
+    // REFACTOR: Define columns for multi-column display
+    // Purpose: Display ProductId and ProductName in separate columns
+    // Context: Adopted from FormMultiColumnComboBoxVirtualSalesProduct for clarity
+    const columns = [
+        { field: "ProductId", header: "Product ID", width: "200px" },
+        { field: "ProductName", header: "Product Name", width: "250px" },
+    ];
+
+    // REFACTOR: Simplify loading data creation
+    // Purpose: Use while loop for concise loading data array
+    // Context: Maintains efficient initialization
+    const loadingData: ProductItem[] = [];
+    while (loadingData.length < pageSize) {
+        loadingData.push({ ...emptyItem });
+    }
+
+    const dataCaching = React.useRef<ProductItem[]>([]);
+    const requestStarted = React.useRef(false);
+    const pendingRequest = React.useRef<NodeJS.Timeout | null>(null);
+    const [data, setData] = React.useState<ProductItem[]>([]);
+    const [total, setTotal] = React.useState(0);
+    const [filter, setFilter] = React.useState("");
+    const skipRef = React.useRef(0);
+
+    // REFACTOR: Define position object
+    // Purpose: Standardize notification positioning
+    // Context: Consistent with provided example
+    const position = {
+        bottomRight: { bottom: 0, right: 0, alignItems: "flex-end" },
+    };
+
     const resetCache = () => {
         dataCaching.current.length = 0;
     };
 
-    // REFACTOR: Fetch product data
-    // Purpose: Load products with pagination, filtering, and certificate type
-    // Context: Updated mapping to include ProductType from API response
-    const requestData = useCallback(
+    const requestData = React.useCallback(
         (skip: number, filter: string) => {
             if (requestStarted.current) {
                 if (pendingRequest.current) clearTimeout(pendingRequest.current);
@@ -77,12 +95,14 @@ export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderPr
                 .then((json) => {
                     if (json) {
                         const total = json.productCount;
-                        const items: ProductItem[] = json.products.map((element: any) => ({
-                            ProductId: element.productId,
-                            ProductName: element.productName,
-                            ProductType: element.productType, // Added ProductType mapping
-                        }));
-                        items.forEach((item, index) => {
+                        const items: ProductItem[] = [];
+                        json.products.forEach((element: any, index: number) => {
+                            const item: ProductItem = {
+                                ProductId: element.productId,
+                                ProductName: element.productName,
+                                ProductType: element.productType,
+                            };
+                            items.push(item);
                             dataCaching.current[index + skip] = item;
                         });
                         if (skip === skipRef.current) {
@@ -99,10 +119,7 @@ export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderPr
         [currentCertificateType]
     );
 
-    // REFACTOR: Initialize data
-    // Purpose: Fetch initial data on mount or filter/certificate type change
-    // Context: Unchanged, includes currentCertificateType dependency
-    useEffect(() => {
+    React.useEffect(() => {
         const ac = new AbortController();
         requestData(0, filter);
         return () => {
@@ -111,10 +128,7 @@ export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderPr
         };
     }, [filter, requestData, currentCertificateType]);
 
-    // REFACTOR: Handle filter change
-    // Purpose: Update filter and reset pagination
-    // Context: Unchanged
-    const onFilterChange = useCallback(
+    const onFilterChange = React.useCallback(
         (event: ComboBoxFilterChangeEvent) => {
             const newFilter = event.filter.value;
             resetCache();
@@ -126,10 +140,7 @@ export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderPr
         [requestData]
     );
 
-    // REFACTOR: Check if data needs fetching
-    // Purpose: Determine if new data should be requested
-    // Context: Unchanged
-    const shouldRequestData = useCallback((skip: number) => {
+    const shouldRequestData = React.useCallback((skip: number) => {
         for (let i = 0; i < pageSize; i++) {
             if (!dataCaching.current[skip + i]) {
                 return true;
@@ -138,10 +149,7 @@ export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderPr
         return false;
     }, []);
 
-    // REFACTOR: Get cached data
-    // Purpose: Retrieve cached data for current page
-    // Context: Unchanged
-    const getCachedData = useCallback((skip: number) => {
+    const getCachedData = React.useCallback((skip: number) => {
         const data: ProductItem[] = [];
         for (let i = 0; i < pageSize; i++) {
             data.push(dataCaching.current[i + skip] || { ...emptyItem });
@@ -149,10 +157,7 @@ export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderPr
         return data;
     }, []);
 
-    // REFACTOR: Handle page change
-    // Purpose: Load new page of data
-    // Context: Unchanged
-    const pageChange = useCallback(
+    const pageChange = React.useCallback(
         (event: ComboBoxPageChangeEvent) => {
             const newSkip = event.page.skip;
             if (shouldRequestData(newSkip)) {
@@ -165,10 +170,7 @@ export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderPr
         [getCachedData, requestData, shouldRequestData, filter]
     );
 
-    // REFACTOR: Handle change
-    // Purpose: Update form value with selected product
-    // Context: Unchanged
-    const onChangeHandler = useCallback(
+    const onChangeHandler = React.useCallback(
         (event: ComboBoxChangeEvent) => onChange({ value: event.value || null }),
         [onChange]
     );
@@ -179,12 +181,12 @@ export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderPr
     const errorId = showValidationMessage ? `${id}_error` : "";
     const labelId = label ? `${id}_label` : "";
 
-    const handleOnFocus = useCallback(() => {
+    const handleOnFocus = React.useCallback(() => {
         onFocus();
         setFocused(true);
     }, [onFocus]);
 
-    const handleOnBlur = useCallback(() => {
+    const handleOnBlur = React.useCallback(() => {
         onBlur();
         setFocused(false);
     }, [onBlur]);
@@ -194,7 +196,7 @@ export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderPr
             <Label id={labelId} editorRef={editorRef} editorId={id} editorValid={valid} editorDisabled={disabled}>
                 {label}
             </Label>
-            <ComboBox
+            <MultiColumnComboBox
                 ariaLabelledBy={labelId}
                 ariaDescribedBy={`${hintId} ${errorId}`}
                 ref={editorRef}
@@ -203,6 +205,7 @@ export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderPr
                 disabled={disabled}
                 dataItemKey={keyField}
                 textField={textField}
+                columns={columns}
                 value={value}
                 data={data}
                 onChange={onChangeHandler}
@@ -214,7 +217,7 @@ export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderPr
                 onPageChange={pageChange}
             />
             {showHint && (
-                <NotificationGroup style={{ bottom: 0, right: 0, alignItems: "flex-end" }}>
+                <NotificationGroup style={position.bottomRight}>
                     <Notification type={{ style: "info", icon: true }} closable={false}>
                         <span>{hint}</span>
                     </Notification>

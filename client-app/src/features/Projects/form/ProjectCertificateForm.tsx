@@ -24,6 +24,7 @@ import { MemoizedFormDropDownList2 } from "../../../app/common/form/MemoizedForm
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import {CertificateItemsListGroupedMemo} from "../dashboard/CertificateItemsListGrouped";
+import {FormComboBoxVirtualSupplierMultiColumn} from "../../../app/common/form/FormComboBoxVirtualSupplierMultiColumn";
 
 interface ProjectCertificateFormProps {
     editMode: number; // 0: view, 1: create, 2: edit (CREATED), 3: edit (APPROVED), 4: edit (COMPLETED)
@@ -417,7 +418,7 @@ console.log('selectedCertificate in form:', selectedCertificate)
                                                 <Field
                                                     id="partyIdSupplier"
                                                     name="partyIdSupplier"
-                                                    component={FormComboBoxVirtualSupplier}
+                                                    component={FormComboBoxVirtualSupplierMultiColumn}
                                                     label={getTranslatedLabel("certificate.form.supplier", "Supplier *")}
                                                     valueField="fromPartyId"
                                                     textField="fromPartyName"

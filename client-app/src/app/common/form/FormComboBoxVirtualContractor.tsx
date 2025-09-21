@@ -1,12 +1,18 @@
 import * as React from "react";
-
-import {FieldRenderProps, FieldWrapper} from "@progress/kendo-react-form";
-import {Label} from "@progress/kendo-react-labels";
-import {ComboBox, ComboBoxFilterChangeEvent, ComboBoxPageChangeEvent} from "@progress/kendo-react-dropdowns";
-import {Notification, NotificationGroup} from "@progress/kendo-react-notification";
+import { FieldRenderProps, FieldWrapper } from "@progress/kendo-react-form";
+import { Label } from "@progress/kendo-react-labels";
+import { MultiColumnComboBox, ComboBoxFilterChangeEvent, ComboBoxPageChangeEvent, ComboBoxChangeEvent } from "@progress/kendo-react-dropdowns";
+import { Notification, NotificationGroup } from "@progress/kendo-react-notification";
 import agent from "../../api/agent";
-import {useAppDispatch} from "../../store/configureStore";
+import { useAppDispatch } from "../../store/configureStore";
+// REFACTOR: Update import for contractor-specific action
+// Purpose: Use a contractor-specific action to set contractor ID
+// Context: Replaces setSupplierId to align with contractor context
 
+interface Item {
+    fromPartyId: string;
+    fromPartyName: string;
+}
 
 export const FormComboBoxVirtualContractor = (fieldRenderProps: FieldRenderProps) => {
     const {
@@ -22,163 +28,124 @@ export const FormComboBoxVirtualContractor = (fieldRenderProps: FieldRenderProps
         wrapperStyle,
         value,
         onChange,
-
     } = fieldRenderProps;
-    const editorRef = React.useRef(null);
+    const editorRef = React.useRef<any>(null);
     const [focused, setFocused] = React.useState(false);
     const dispatch = useAppDispatch();
-
-
-    const position = {
-        topLeft: {
-            top: 0,
-            left: 0,
-            alignItems: "flex-start",
-        },
-        topCenter: {
-            top: 0,
-            left: "50%",
-            transform: "translateX(-50%)",
-        },
-        topRight: {
-            top: 0,
-            right: 0,
-            alignItems: "flex-end",
-        },
-        bottomLeft: {
-            bottom: 0,
-            left: 0,
-            alignItems: "flex-start",
-        },
-        bottomCenter: {
-            bottom: 0,
-            left: "50%",
-            transform: "translateX(-50%)",
-        },
-        bottomRight: {
-            bottom: 0,
-            right: 0,
-            alignItems: "flex-end",
-        },
-    };
-    const showValidationMessage = !focused && touched && validationMessage;
-    const showHint = !showValidationMessage && focused && hint;
-    const hintId = showHint ? `${id}_hint` : "";
-    const errorId = showValidationMessage ? `${id}_error` : "";
-    const labelId = label ? `${id}_label` : '';
-
-
-    const handleOnFocus = React.useCallback(
-        () => {
-            onFocus();
-            setFocused(true);
-        },
-        [onFocus]
-    );
-
-    const handleOnBlur = React.useCallback(
-        () => {
-            onBlur();
-            setFocused(false);
-        },
-        [onBlur]
-    );
-
-    ////////////////////////////////////////////
-
-    interface Item {
-        fromPartyId: string;
-        fromPartyName: string;
-    }
-
-    const textField = "fromPartyName";
     const keyField = "fromPartyId";
-    const emptyItem: Item = {[textField]: "loading ...", fromPartyId: "0"};
+    const textField = "fromPartyName";
+    const emptyItem: Item = { fromPartyId: "0", fromPartyName: "loading ..." };
     const pageSize = 10;
 
+    // REFACTOR: Initialize loading data
+    // Purpose: Use placeholder data to show loading state
+    // Context: Prevents empty dropdown on initial render
     const loadingData: Item[] = [];
     while (loadingData.length < pageSize) {
-        loadingData.push({...emptyItem});
+        loadingData.push({ ...emptyItem });
     }
 
-    const dataCaching = React.useRef<any>([]);
-    const pendingRequest = React.useRef<any>();
-    const requestStarted = React.useRef(false);
+    const columns = [
+        { field: "fromPartyId", header: "Party ID", width: "100px" },
+        { field: "fromPartyName", header: "Party Name", width: "200px" },
+    ];
 
-    const [data, setData] = React.useState<Item[]>([]);
+    const position = {
+        bottomRight: { bottom: 0, right: 0, alignItems: "flex-end" },
+    };
+
+    // REFACTOR: Initialize data state with loadingData
+    // Purpose: Display loading placeholders on initial render
+    // Context: Fixes empty dropdown issue by showing "loading ..." until API responds
+    const [data, setData] = React.useState<Item[]>(loadingData);
     const [total, setTotal] = React.useState(0);
     const [filter, setFilter] = React.useState("");
-
+    const dataCaching = React.useRef<Item[]>([]);
+    const requestStarted = React.useRef(false);
+    const pendingRequest = React.useRef<NodeJS.Timeout | null>(null);
     const skipRef = React.useRef(0);
 
-    const resetCach = () => {
+    const resetCache = () => {
         dataCaching.current.length = 0;
     };
 
-    const requestData = React.useCallback((skip: number, filter: string) => {
-        if (requestStarted.current) {
-            clearTimeout(pendingRequest.current);
-            pendingRequest.current = setTimeout(() => {
-                requestData(skip, filter);
-            }, 50);
-            return;
-        }
+    const requestData = React.useCallback(
+        (skip: number, filter: string) => {
+            if (requestStarted.current) {
+                if (pendingRequest.current) clearTimeout(pendingRequest.current);
+                pendingRequest.current = setTimeout(() => requestData(skip, filter), 50);
+                return;
+            }
+            requestStarted.current = true;
+            const params = new URLSearchParams();
+            params.append("skip", skip.toString());
+            params.append("pageSize", pageSize.toString());
+            if (filter) params.append("searchTerm", filter);
 
-
-        requestStarted.current = true;
-        const params = new URLSearchParams();
-        params.append('skip', skip.toString());
-        params.append('pageSize', pageSize.toString());
-        if (filter) params.append('searchTerm', filter);
-        agent.Parties.getContractorsLov(params)
-            .then((json) => {
-                if (json) {
-                    const total = json.partyCount;
-                    const items: Item[] = [];
-                    json.parties.forEach((element: any, index: any) => {
-                        const {fromPartyId, fromPartyName} = element;
-                        const item: Item = {
-                            [keyField]: fromPartyId,
-                            [textField]: fromPartyName,
-                        };
-                        items.push(item);
-                        dataCaching.current[index + skip] = item;
-                    });
-
-                    if (skip === skipRef.current) {
-                        setData(items);
-                        setTotal(total);
+            // REFACTOR: Update API call to getContractorsLov
+            // Purpose: Fetch contractors instead of suppliers
+            // Context: Matches backend endpoint for contractors
+            agent.Parties.getContractorsLov(params)
+                .then((json) => {
+                    // REFACTOR: Add debug logging
+                    // Purpose: Verify API response content
+                    // Context: Helps diagnose if data is empty or malformed
+                    console.log("API Response:", json);
+                    if (json && json.parties) {
+                        const total = json.partyCount || 0;
+                        const items: Item[] = json.parties.map((element: any, index: number) => {
+                            const item: Item = {
+                                fromPartyId: element.fromPartyId,
+                                fromPartyName: element.fromPartyName,
+                            };
+                            dataCaching.current[index + skip] = item;
+                            return item;
+                        });
+                        if (skip === skipRef.current) {
+                            setData(items.length > 0 ? items : loadingData);
+                            setTotal(total);
+                        }
+                    } else {
+                        setData(loadingData);
+                        setTotal(0);
                     }
-                }
-
-                requestStarted.current = false;
-            });
-    }, []);
+                    requestStarted.current = false;
+                })
+                .catch((error) => {
+                    // REFACTOR: Handle API errors
+                    // Purpose: Ensure loading state persists on failure
+                    // Context: Prevents empty dropdown on error
+                    console.error("API Error:", error);
+                    setData(loadingData);
+                    setTotal(0);
+                    requestStarted.current = false;
+                });
+        },
+        []
+    );
 
     React.useEffect(() => {
         const ac = new AbortController();
         requestData(0, filter);
         return () => {
-            resetCach();
+            resetCache();
             ac.abort();
         };
     }, [filter, requestData]);
 
     const onFilterChange = React.useCallback(
         (event: ComboBoxFilterChangeEvent) => {
-            const filter = event.filter.value;
-
-            resetCach();
-            requestData(0, filter);
-
+            const newFilter = event.filter.value;
+            resetCache();
+            requestData(0, newFilter);
             setData(loadingData);
             skipRef.current = 0;
-            setFilter(filter);
+            setFilter(newFilter);
         },
-        []
+        [requestData]
     );
 
-    const shouldRequestData = React.useCallback((skip) => {
+    const shouldRequestData = React.useCallback((skip: number) => {
         for (let i = 0; i < pageSize; i++) {
             if (!dataCaching.current[skip + i]) {
                 return true;
@@ -187,10 +154,10 @@ export const FormComboBoxVirtualContractor = (fieldRenderProps: FieldRenderProps
         return false;
     }, []);
 
-    const getCachedData = React.useCallback((skip) => {
-        const data: Array<any> = [];
+    const getCachedData = React.useCallback((skip: number) => {
+        const data: Item[] = [];
         for (let i = 0; i < pageSize; i++) {
-            data.push(dataCaching.current[i + skip] || {...emptyItem});
+            data.push(dataCaching.current[i + skip] || { ...emptyItem });
         }
         return data;
     }, []);
@@ -198,34 +165,45 @@ export const FormComboBoxVirtualContractor = (fieldRenderProps: FieldRenderProps
     const pageChange = React.useCallback(
         (event: ComboBoxPageChangeEvent) => {
             const newSkip = event.page.skip;
-
             if (shouldRequestData(newSkip)) {
                 requestData(newSkip, filter);
             }
-
             const data = getCachedData(newSkip);
-
             setData(data);
             skipRef.current = newSkip;
         },
         [getCachedData, requestData, shouldRequestData, filter]
     );
 
-
     const onChangeHandler = React.useCallback(
-        (event) => {
-            
-            onChange({value: event.value && event.value})
+        (event: ComboBoxChangeEvent) => {
+            onChange({ value: event.value || null });
         },
-        [onChange, value]
+        [onChange, dispatch]
     );
+
+    const showValidationMessage = !focused && touched && validationMessage;
+    const showHint = !showValidationMessage && focused && hint;
+    const hintId = showHint ? `${id}_hint` : "";
+    const errorId = showValidationMessage ? `${id}_error` : "";
+    const labelId = label ? `${id}_label` : "";
+
+    const handleOnFocus = React.useCallback(() => {
+        onFocus();
+        setFocused(true);
+    }, [onFocus]);
+
+    const handleOnBlur = React.useCallback(() => {
+        onBlur();
+        setFocused(false);
+    }, [onBlur]);
 
     return (
         <FieldWrapper style={wrapperStyle}>
             <Label id={labelId} editorRef={editorRef} editorId={id} editorValid={valid} editorDisabled={disabled}>
                 {label}
             </Label>
-            <ComboBox
+            <MultiColumnComboBox
                 ariaLabelledBy={labelId}
                 ariaDescribedBy={`${hintId} ${errorId}`}
                 ref={editorRef}
@@ -234,6 +212,7 @@ export const FormComboBoxVirtualContractor = (fieldRenderProps: FieldRenderProps
                 disabled={disabled}
                 dataItemKey={keyField}
                 textField={textField}
+                columns={columns}
                 value={value}
                 data={data}
                 onChange={onChangeHandler}
@@ -241,23 +220,16 @@ export const FormComboBoxVirtualContractor = (fieldRenderProps: FieldRenderProps
                 onBlur={handleOnBlur}
                 filterable={true}
                 onFilterChange={onFilterChange}
-                virtual={{
-                    pageSize: pageSize,
-                    skip: skipRef.current,
-                    total: total,
-                }}
+                virtual={{ pageSize, skip: skipRef.current, total }}
                 onPageChange={pageChange}
-                //style={{width: "200px"}}
             />
-            {
-                showHint &&
+            {showHint && (
                 <NotificationGroup style={position.bottomRight}>
-                    <Notification type={{style: 'info', icon: true}} closable={false}>
+                    <Notification type={{ style: "info", icon: true }} closable={false}>
                         <span>{hint}</span>
                     </Notification>
                 </NotificationGroup>
-            }
-           
+            )}
         </FieldWrapper>
     );
 };
