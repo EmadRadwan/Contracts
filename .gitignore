@@ -447,7 +447,6 @@ riderModule.iml
 /_ReSharper.Caches/
 
 /client-app/.eslintcache
-/Persistence/Migrations/
 
 #yarn.lock
 .vscode/launch.json
