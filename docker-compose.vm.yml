@@ -1,34 +1,26 @@
-version: '3.8'
 services:
   web:
-    # REFACTOR: Kept unique container name for clarity and to avoid conflicts
     container_name: contracts-app
-    # REFACTOR: Kept unique image name for consistency
     image: eradwan/contractsapp:1.0.1
     build:
       context: .
       dockerfile: Dockerfile.vm
-    # REFACTOR: Simplified port mapping, ensuring no conflicts with other projects
     ports:
       - '5100:5100'
       - '8544:8544'
     environment:
-      # REFACTOR: Added default values for environment variables to ensure fallback
       TokenKey: ${TokenKey:-lWwMN68UKbjuEJAAYq9ke9KYtPrabUTE9kghtxPrysPDfgaezEyfV3gjoA4F90TYcgYRhH5wXC0XhR5idy1n0w==}
       ASPNETCORE_URLS: "http://*:5100;https://*:8544"
       ASPNETCORE_ENVIRONMENT: "Production"
       Kestrel__Certificates__Default__Path: "/root/.aspnet/https/contracts/aspnetapp.pfx"
-      Kestrel__Certificates__Default__Password: ${Kestrel_Certificate_Password_Contracts:-Tmbtc202500}
+      Kestrel_Certificate_Password_Contracts: ${Kestrel_Certificate_Password_Contracts:-Tmbtc202500}
       SendGridKey: ${SendGridKey_Contracts:-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}
     volumes:
       - /home/ubuntu/.aspnet/https/contracts:/root/.aspnet/https/contracts:rw
-    # REFACTOR: Fixed dependency name to match the service name exactly
     depends_on:
       - mysql-contracts
     networks:
       - erp-contracts-network
-
-  # REFACTOR: Ensured service name matches exactly with depends_on reference
   mysql-contracts:
     container_name: erp-mysql-contracts
     image: mysql:latest
@@ -42,12 +34,9 @@ services:
       - /home/ubuntu/mysql-config/contracts/my.cnf:/etc/mysql/my.cnf:ro
     networks:
       - erp-contracts-network
-
 volumes:
   erp-mysql-volume-contracts:
-    # REFACTOR: Added explicit volume name for clarity
     name: erp-mysql-volume-contracts
-
 networks:
   erp-contracts-network:
     driver: bridge
