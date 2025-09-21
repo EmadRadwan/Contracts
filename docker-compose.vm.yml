@@ -17,21 +17,29 @@ services:
       SendGridKey: ${SendGridKey_Contracts:-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}
     volumes:
       - /home/ubuntu/.aspnet/https/contracts:/root/.aspnet/https/contracts:rw
+      - /home/ubuntu/.aspnet/DataProtection-Keys:/root/.aspnet/DataProtection-Keys:rw  # REFACTOR: Persist data protection keys
     depends_on:
-      - mysql-contracts
+      mysql-contracts:
+        condition: service_healthy  # REFACTOR: Wait for MySQL to be healthy
     networks:
       - erp-contracts-network
   mysql-contracts:
     container_name: erp-mysql-contracts
     image: mysql:latest
     ports:
-      - '3307:3306'
+      - '3308:3306'  # REFACTOR: Use 3308 to avoid port conflict
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD_Contracts:-Tmbtc202500}
       MYSQL_DATABASE: erp_contracts
     volumes:
       - erp-mysql-volume-contracts:/var/lib/mysql
       - /home/ubuntu/mysql-config/contracts/my.cnf:/etc/mysql/my.cnf:ro
+    healthcheck:
+      # REFACTOR: Ensure MySQL is ready
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD_Contracts:-Tmbtc202500}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - erp-contracts-network
 volumes:

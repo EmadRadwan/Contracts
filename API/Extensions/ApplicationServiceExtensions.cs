@@ -32,20 +32,18 @@ public static class ApplicationServiceExtensions
         services.AddDbContext<DataContext>(options =>
         {
             var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-
-            string connStr;
             var serverVersion = new MySqlServerVersion(new Version(8, 3, 0));
-
             if (env == "Development")
-
-                options.UseMySql(config.GetConnectionString("DefaultConnection"), serverVersion)
+                options.UseMySql(config.GetConnectionString("DefaultConnection"), serverVersion, mysqlOptions => 
+                        // REFACTOR: Add retries for transient connection failures
+                        mysqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null))
                     .LogTo(Console.WriteLine, LogLevel.Information)
                     .EnableSensitiveDataLogging(false)
                     .EnableDetailedErrors(false);
-            /*options.UseMySql(config.GetConnectionString("DefaultConnection"), serverVersion)
-                .LogTo(Console.WriteLine, LogLevel.Warning);*/
             else
-                options.UseMySql(config.GetConnectionString("DefaultConnection"), serverVersion)
+                options.UseMySql(config.GetConnectionString("DefaultConnection"), serverVersion, mysqlOptions => 
+                        // REFACTOR: Add retries for transient connection failures
+                        mysqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null))
                     .LogTo(Console.WriteLine, LogLevel.Information);
         });
         services.AddCors(opt =>
