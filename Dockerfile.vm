@@ -15,11 +15,13 @@ ENV ASPNETCORE_ENVIRONMENT=Production
 RUN dotnet publish ./API/API.csproj -c Release -o /app/
 
 # Runtime Stage
-FROM --platform=linux/arm64 mcr.microsoft.com/dotnet/aspnet:8.0-bullseye-slim AS runtime
+FROM --platform=linux/arm64 mcr.microsoft.com/dotnet/aspnet:8.0.20-bookworm-slim AS runtime
 WORKDIR /app
 COPY --from=build-env /app .
 COPY API/appsettings.json /app/appsettings.json
 COPY API/appsettings.*.json /app/
+# REFACTOR: Ensure OpenSSL is available by installing it explicitly to handle certificate loading
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 ENV ASPNETCORE_URLS=http://0.0.0.0:5100;https://0.0.0.0:8544
 EXPOSE 5100
 EXPOSE 8544
