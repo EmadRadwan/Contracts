@@ -13,8 +13,8 @@ RUN dotnet restore
 RUN dotnet tool install --global dotnet-ef --version 8.0.8
 ENV PATH="$PATH:/root/.dotnet/tools"
 COPY . .
-# REFACTOR: Copy Json directory explicitly to ensure seeding files are included
-COPY ./Persistence/Json ./Persistence/Json
+# REFACTOR: Copy Json directory from API project for seeding
+COPY ./API/Json ./API/Json
 ENV TokenKey=lWwMN68UKbjuEJAAYq9ke9KYtPrabUTE9kghtxPrysPDfgaezEyfV3gjoA4F90TYcgYRhH5wXC0XhR5idy1n0w==
 ENV ASPNETCORE_URLS=http://0.0.0.0:5100;https://0.0.0.0:8544
 ENV ASPNETCORE_ENVIRONMENT=Production
@@ -25,8 +25,8 @@ RUN dotnet publish ./API/API.csproj -c Release -o /app/ --no-restore
 FROM --platform=linux/arm64 mcr.microsoft.com/dotnet/aspnet:8.0.20-bookworm-slim AS runtime
 WORKDIR /app
 COPY --from=build-env /app .
-# REFACTOR: Copy Json directory to runtime image for seeding
-COPY --from=build-env /src/Persistence/Json ./Json
+# REFACTOR: Copy Json directory from API project to runtime image for seeding
+COPY --from=build-env /src/API/Json ./Json
 COPY API/appsettings.json /app/appsettings.json
 COPY API/appsettings.*.json /app/
 # REFACTOR: Install OpenSSL for certificate handling and clean up to reduce image size
