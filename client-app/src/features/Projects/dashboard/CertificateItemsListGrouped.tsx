@@ -257,6 +257,7 @@ export default function CertificateItemsListGrouped({ editMode, workEffortId, is
                                 pageable
                                 onPageChange={pageChange}
                                 data={dataWithSummaries}
+                                rowSpannable
                             >
                                 <GridToolbar>
                                     <Grid container justifyContent="space-between">
