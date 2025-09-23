@@ -981,110 +981,94 @@ public class OrderService : BaseService, IOrderService
         _context.OrderAdjustments.Remove(orderAdjustment);
     }
 
-    private async Task SetUnitPriceAsLastPrice(OrderItemDto2 orderItem)
-{
-    // REFACTOR: Use ChangeTracker and database queries with optimized merging
-    // Purpose: Avoids performance issues of FindLocalOrDatabaseListAsync, eliminates reflection, and optimizes queries
-    // Context: Supports single-save transaction pattern with improved performance
-    var nowTimestamp = DateTime.UtcNow;
-
-    var orderRoleQuery = _context.OrderRoles.AsQueryable()
-        .Where(x => x.OrderId == orderItem.OrderId && x.RoleTypeId == "BILL_FROM_VENDOR");
-
-    // Check change tracker for unpersisted OrderRole
-    var orderRole = _context.ChangeTracker.Entries<OrderRole>()
-        .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
-        .Select(e => e.Entity)
-        .AsQueryable()
-        .Where(x => x.OrderId == orderItem.OrderId && x.RoleTypeId == "BILL_FROM_VENDOR")
-        .FirstOrDefault() ?? await orderRoleQuery.FirstOrDefaultAsync();
-
-    if (orderRole == null)
+    public async Task SetUnitPriceAsLastPrice(OrderItemDto2 orderItem)
     {
-        _logger.LogWarning("No order role found for OrderId: {OrderId}", orderItem.OrderId);
-        return;
-    }
+        // REFACTOR: Retain shared DbContext but ensure all queries are awaited sequentially.
+        // Purpose: Prevents concurrent access issues within the same DbContext by awaiting all async operations.
+        // Context: Assumes DbContext is scoped to a single request, managed by the caller.
+        var nowTimestamp = DateTime.UtcNow;
 
-    var productSupplierId = orderRole.PartyId;
-
-    var orderHeaderQuery = _context.OrderHeaders.AsQueryable()
-        .Where(x => x.OrderId == orderItem.OrderId);
-
-    // Check change tracker for unpersisted OrderHeader
-    var orderHeader = _context.ChangeTracker.Entries<OrderHeader>()
-        .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
-        .Select(e => e.Entity)
-        .AsQueryable()
-        .Where(x => x.OrderId == orderItem.OrderId)
-        .FirstOrDefault() ?? await orderHeaderQuery.FirstOrDefaultAsync();
-
-    if (orderHeader == null)
-    {
-        _logger.LogWarning("No order header found for OrderId: {OrderId}", orderItem.OrderId);
-        return;
-    }
-
-    var orderCurrency = orderHeader.CurrencyUom;
-
-    // REFACTOR: Query change tracker for SupplierProduct with optimized state filtering
-    var localSupplierProductsQuery = _context.ChangeTracker.Entries<SupplierProduct>()
-        .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
-        .Select(e => e.Entity)
-        .AsQueryable()
-        .Where(ps => ps.PartyId == productSupplierId &&
-                     ps.AvailableThruDate == null &&
-                     ps.CurrencyUomId == orderCurrency &&
-                     ps.ProductId == orderItem.ProductId);
-    var localSupplierProducts = localSupplierProductsQuery.ToList();
-
-    // REFACTOR: Query database with optimized conditions
-    var dbSupplierProductsQuery = _context.SupplierProducts.AsQueryable()
-        .Where(ps => ps.PartyId == productSupplierId &&
-                     ps.AvailableThruDate == null &&
-                     ps.CurrencyUomId == orderCurrency &&
-                     ps.ProductId == orderItem.ProductId);
-    var dbSupplierProducts = await dbSupplierProductsQuery.ToListAsync();
-
-    // REFACTOR: Early exit if no results to avoid merge
-    if (!localSupplierProducts.Any() && !dbSupplierProducts.Any())
-    {
-        var newSupplierProduct = new SupplierProduct
+        try
         {
-            ProductId = orderItem.ProductId,
-            PartyId = productSupplierId,
-            CurrencyUomId = orderCurrency,
-            LastPrice = orderItem.UnitPrice,
-            AvailableFromDate = nowTimestamp
-        };
-        _context.Add(newSupplierProduct);
-        _logger.LogInformation("Added new SupplierProduct for OrderId {OrderId}", orderItem.OrderId);
-        return;
-    }
+            // REFACTOR: Combine OrderRole and OrderHeader queries into a single async join.
+            // Purpose: Reduces database round-trips and ensures proper awaiting, minimizing connection contention.
+            // Context: Fetches related data in one query to improve performance and avoid overlapping operations.
+            var orderData = await (from or in _context.OrderRoles.AsQueryable()
+                    join oh in _context.OrderHeaders.AsQueryable() on or.OrderId equals oh.OrderId
+                    where or.OrderId == orderItem.OrderId && or.RoleTypeId == "BILL_FROM_VENDOR"
+                    select new { OrderRole = or, OrderHeader = oh })
+                .FirstOrDefaultAsync();
 
-    // REFACTOR: Merge results without reflection using hardcoded primary key
-    var selectedProductSuppliers = localSupplierProducts.Concat(dbSupplierProducts)
-        .GroupBy(sp => $"{sp.ProductId},{sp.PartyId},{sp.CurrencyUomId},{sp.AvailableFromDate}")
-        .Select(g => g.First())
-        .ToList();
-
-    foreach (var supplierProduct in selectedProductSuppliers)
-    {
-        if (orderItem.UnitPrice != supplierProduct.LastPrice)
-        {
-            var newSupplierProduct = new SupplierProduct
+            if (orderData == null)
             {
-                ProductId = supplierProduct.ProductId,
-                PartyId = supplierProduct.PartyId,
-                CurrencyUomId = supplierProduct.CurrencyUomId,
-                LastPrice = orderItem.UnitPrice,
-                AvailableFromDate = nowTimestamp
-            };
-            _context.Add(newSupplierProduct);
-            supplierProduct.AvailableThruDate = nowTimestamp;
-            _logger.LogInformation("Updated SupplierProduct for OrderId {OrderId}, ProductId {ProductId}", orderItem.OrderId, supplierProduct.ProductId);
+                _logger.LogWarning("No order role or header found for OrderId: {OrderId}", orderItem.OrderId);
+                return;
+            }
+
+            var productSupplierId = orderData.OrderRole.PartyId;
+            var orderCurrency = orderData.OrderHeader.CurrencyUom;
+
+            // REFACTOR: Optimize SupplierProduct query by checking ChangeTracker and database in a single async operation.
+            // Purpose: Avoids separate local and database queries, ensuring all operations are awaited and reducing complexity.
+            // Context: Uses FirstOrDefault for in-memory check and FirstOrDefaultAsync for database, minimizing memory usage.
+            var supplierProduct = _context.ChangeTracker.Entries<SupplierProduct>()
+                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
+                .Select(e => e.Entity)
+                .AsQueryable()
+                .Where(ps => ps.PartyId == productSupplierId &&
+                             ps.AvailableThruDate == null &&
+                             ps.CurrencyUomId == orderCurrency &&
+                             ps.ProductId == orderItem.ProductId)
+                .FirstOrDefault() ?? await _context.SupplierProducts
+                .AsQueryable()
+                .Where(ps => ps.PartyId == productSupplierId &&
+                             ps.AvailableThruDate == null &&
+                             ps.CurrencyUomId == orderCurrency &&
+                             ps.ProductId == orderItem.ProductId)
+                .FirstOrDefaultAsync();
+
+            // REFACTOR: Simplify SupplierProduct creation or update logic with early exit.
+            // Purpose: Eliminates redundant merge logic and ensures changes are tracked in the shared DbContext.
+            // Context: Streamlines handling of new or existing SupplierProduct in a single path.
+            if (supplierProduct == null)
+            {
+                var newSupplierProduct = new SupplierProduct
+                {
+                    ProductId = orderItem.ProductId,
+                    PartyId = productSupplierId,
+                    CurrencyUomId = orderCurrency,
+                    LastPrice = orderItem.UnitPrice,
+                    AvailableFromDate = nowTimestamp
+                };
+                _context.Add(newSupplierProduct);
+                _logger.LogInformation("Added new SupplierProduct for OrderId {OrderId}", orderItem.OrderId);
+            }
+            else if (orderItem.UnitPrice != supplierProduct.LastPrice)
+            {
+                var newSupplierProduct = new SupplierProduct
+                {
+                    ProductId = supplierProduct.ProductId,
+                    PartyId = supplierProduct.PartyId,
+                    CurrencyUomId = supplierProduct.CurrencyUomId,
+                    LastPrice = orderItem.UnitPrice,
+                    AvailableFromDate = nowTimestamp
+                };
+                supplierProduct.AvailableThruDate = nowTimestamp;
+                _context.Add(newSupplierProduct);
+                _logger.LogInformation("Updated SupplierProduct for OrderId {OrderId}, ProductId {ProductId}",
+                    orderItem.OrderId, supplierProduct.ProductId);
+            }
+        }
+        catch (Exception ex)
+        {
+            // REFACTOR: Add exception handling to log and handle database errors.
+            // Purpose: Prevents unhandled exceptions and provides context for debugging concurrency or connection issues.
+            // Context: Captures OrderId for easier diagnosis of errors.
+            _logger.LogError(ex, "Failed to update SupplierProduct for OrderId {OrderId}", orderItem.OrderId);
+            throw;
         }
     }
-}
+
     private SupplierProduct CloneSupplierProduct(SupplierProduct source)
     {
         var stamp = DateTime.UtcNow;
