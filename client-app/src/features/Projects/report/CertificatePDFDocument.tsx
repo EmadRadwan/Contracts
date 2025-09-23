@@ -84,6 +84,9 @@ interface CertificatePDFDocumentProps {
     isUpdateCertificateLoading: boolean;
     isReceiveLoading: boolean;
     certificateNumber: string;
+    certificateType: string; // REFACTOR: Add certificateType prop
+    // Purpose: Receive currentCertificateType from Redux to determine certificate type
+    // Improvement: Replaces unreliable certificate.certificateCategory
 }
 
 // REFACTOR: Create reusable PDF document component
@@ -100,6 +103,7 @@ const CertificatePDFDocument: React.FC<CertificatePDFDocumentProps> = ({
                                                                            isUpdateCertificateLoading,
                                                                            isReceiveLoading,
                                                                            certificateNumber,
+                                                                           certificateType,
                                                                        }) => {
     const pageSize = 15;
     const pages = [];
@@ -107,14 +111,24 @@ const CertificatePDFDocument: React.FC<CertificatePDFDocumentProps> = ({
         pages.push(items.slice(i, i + pageSize));
     }
 
-    const isSupplyWithDiscount = [
-        'SUPPLY_PROCUREMENT_CERTIFICATE',
-        'EXTERNAL_SUPPLY_SALE_CERTIFICATE',
-    ].includes(certificate.certificateCategory || '');
-    const isSupplyWithoutDiscount = [
-        'COMPANY_SUPPLY_SALE_CERTIFICATE',
-        'CONTRACTOR_PURCHASE_CERTIFICATE',
-    ].includes(certificate.certificateCategory || '');
+    console.log('certificate', certificate);
+
+    // REFACTOR: Use certificateType for supply certificate logic
+    // Purpose: Correctly handle discount for SUPPLY_PROCUREMENT_CERTIFICATE and shared columns for supply certificates
+    // Improvement: Uses reliable certificateType prop instead of missing certificate.certificateCategory
+    const isSupplyWithDiscount = certificateType === 'SUPPLY_PROCUREMENT_CERTIFICATE';
+    const isSupplyCertificate = ['SUPPLY_PROCUREMENT_CERTIFICATE', 'COMPANY_SUPPLY_SALE_CERTIFICATE'].includes(certificateType);
+
+    // REFACTOR: Use isGrouped to determine party and label
+    // Purpose: Display contractor for WORKMANSHIP_CONTRACTING_CERTIFICATE and supplier for supply-related types
+    // Improvement: Avoids reliance on certificate.certificateCategory, which may be undefined, and aligns with parent component logic
+    const partyField = isGrouped
+        ? certificate.partyIdContractor || 'N/A'
+        : certificate.partyIdSupplier || 'N/A';
+    const partyLabelKey = isGrouped
+        ? 'certificate.form.contractor'
+        : 'certificate.form.supplier';
+    const partyLabelDefault = isGrouped ? 'Contractor' : 'Supplier';
 
     // REFACTOR: Move MyDocument into the component
     // Purpose: Keep PDF rendering logic self-contained
@@ -131,8 +145,7 @@ const CertificatePDFDocument: React.FC<CertificatePDFDocumentProps> = ({
                             {getTranslatedLabel('certificate.project', 'Project')}: {certificate.projectName}
                         </Text>
                         <Text style={styles.subtitle}>
-                            {getTranslatedLabel('certificate.supplierOrContractor', 'Supplier/Contractor')}:{' '}
-                            {certificate.partyIdSupplier || certificate.partyIdContractor}
+                            {getTranslatedLabel(partyLabelKey, partyLabelDefault)}: {partyField}
                         </Text>
                         <Text style={styles.subtitle}>
                             {getTranslatedLabel('certificate.dates', 'Dates')}: {certificate.estimatedStartDate} to{' '}
@@ -144,9 +157,14 @@ const CertificatePDFDocument: React.FC<CertificatePDFDocumentProps> = ({
                         <Text style={styles.subtitle}>
                             {getTranslatedLabel('certificate.status', 'Status')}: {certificate.status}
                         </Text>
-                        <Text style={styles.subtitle}>
-                            {getTranslatedLabel('certificate.facility', 'Facility')}: {certificate.facilityName}
-                        </Text>
+                        {/* REFACTOR: Conditionally render facility field */}
+                        {/* Purpose: Exclude facility field for WORKMANSHIP_CONTRACTING_CERTIFICATE as it is not required */}
+                        {/* Improvement: Aligns PDF content with certificate type requirements */}
+                        {!isGrouped && (
+                            <Text style={styles.subtitle}>
+                                {getTranslatedLabel('certificate.facility', 'Facility')}: {certificate.facilityName || 'N/A'}
+                            </Text>
+                        )}
                         <Text style={styles.subtitle}>
                             {getTranslatedLabel('certificate.total', 'Total')}: {subtotal.toFixed(2)}
                         </Text>
@@ -235,30 +253,13 @@ const CertificatePDFDocument: React.FC<CertificatePDFDocumentProps> = ({
                                             </Text>
                                         </View>
                                         {isSupplyWithDiscount && (
-                                            <>
-                                                <View style={styles.tableCol}>
-                                                    <Text style={styles.tableCell}>
-                                                        {getTranslatedLabel('certificate.items.list.discount', 'Discount')}
-                                                    </Text>
-                                                </View>
-                                                <View style={styles.tableCol}>
-                                                    <Text style={styles.tableCell}>
-                                                        {getTranslatedLabel('certificate.items.list.procurementDate', 'Procurement Date')}
-                                                    </Text>
-                                                </View>
-                                                <View style={styles.tableCol}>
-                                                    <Text style={styles.tableCell}>
-                                                        {getTranslatedLabel('certificate.items.list.transportationExpenses', 'Transportation Expenses')}
-                                                    </Text>
-                                                </View>
-                                                <View style={styles.tableCol}>
-                                                    <Text style={styles.tableCell}>
-                                                        {getTranslatedLabel('certificate.items.list.gratuities', 'Gratuities')}
-                                                    </Text>
-                                                </View>
-                                            </>
+                                            <View style={styles.tableCol}>
+                                                <Text style={styles.tableCell}>
+                                                    {getTranslatedLabel('certificate.items.list.discount', 'Discount')}
+                                                </Text>
+                                            </View>
                                         )}
-                                        {isSupplyWithoutDiscount && (
+                                        {isSupplyCertificate && (
                                             <>
                                                 <View style={styles.tableCol}>
                                                     <Text style={styles.tableCell}>
@@ -340,22 +341,11 @@ const CertificatePDFDocument: React.FC<CertificatePDFDocumentProps> = ({
                                                         <Text style={styles.tableCell}>{item.displayTotal?.toFixed(2) || 'N/A'}</Text>
                                                     </View>
                                                     {isSupplyWithDiscount && (
-                                                        <>
-                                                            <View style={styles.tableCol}>
-                                                                <Text style={styles.tableCell}>{item.discount?.toFixed(2) || 'N/A'}</Text>
-                                                            </View>
-                                                            <View style={styles.tableCol}>
-                                                                <Text style={styles.tableCell}>{item.formattedProcurementDate || 'N/A'}</Text>
-                                                            </View>
-                                                            <View style={styles.tableCol}>
-                                                                <Text style={styles.tableCell}>{item.transportationExpenses?.toFixed(2) || 'N/A'}</Text>
-                                                            </View>
-                                                            <View style={styles.tableCol}>
-                                                                <Text style={styles.tableCell}>{item.gratuities?.toFixed(2) || 'N/A'}</Text>
-                                                            </View>
-                                                        </>
+                                                        <View style={styles.tableCol}>
+                                                            <Text style={styles.tableCell}>{item.discount?.toFixed(2) || 'N/A'}</Text>
+                                                        </View>
                                                     )}
-                                                    {isSupplyWithoutDiscount && (
+                                                    {isSupplyCertificate && (
                                                         <>
                                                             <View style={styles.tableCol}>
                                                                 <Text style={styles.tableCell}>{item.formattedProcurementDate || 'N/A'}</Text>

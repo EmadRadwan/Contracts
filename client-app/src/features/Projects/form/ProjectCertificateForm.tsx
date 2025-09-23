@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {useAppDispatch, useAppSelector, useFetchFacilitiesQuery} from "../../../app/store/configureStore";
+import {RootState, useAppDispatch, useAppSelector, useFetchFacilitiesQuery} from "../../../app/store/configureStore";
 import { Field, Form, FormElement } from "@progress/kendo-react-form";
 import {Box, Button, Collapse, Grid, IconButton, Paper, Typography} from "@mui/material";
 import LoadingButton from "@mui/lab/LoadingButton";
@@ -27,6 +27,7 @@ import {FormComboBoxVirtualSupplierMultiColumn} from "../../../app/common/form/F
 import { Document, Page, Text, View, StyleSheet, PDFDownloadLink, Font } from '@react-pdf/renderer';
 import {certificateReportSelector, certificateSubTotal} from "../slice/certificateSelectors";
 import CertificatePDFDocument from "../report/CertificatePDFDocument";
+import {useSelector} from "react-redux";
 
 
 interface ProjectCertificateFormProps {
@@ -454,7 +455,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                                 />
                                             </Grid>
                                         )}
-                                        {["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE", "COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE"].includes(currentCertificateType) && (
+                                        {["SUPPLY_PROCUREMENT_CERTIFICATE", "COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE"].includes(currentCertificateType) && (
                                             <Grid item xs={2} className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
                                                 <Field
                                                     id="facilityId"
@@ -535,6 +536,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                                     isUpdateCertificateLoading={isUpdateCertificateLoading}
                                                     isReceiveLoading={isReceiveLoading}
                                                     certificateNumber={reportData.certificate.certificateNumber}
+                                                    certificateType={currentCertificateType}
                                                 />
                                             ) : (
                                                 <Button

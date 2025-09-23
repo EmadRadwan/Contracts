@@ -21,6 +21,7 @@ using FluentValidation;
 using Infrastructure.Contents;
 using Infrastructure.Security;
 using MediatR;
+using Serilog;
 
 namespace API.Extensions;
 
@@ -80,7 +81,6 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IPaymentWorkerService, PaymentWorkerService>();
         services.AddScoped<IBillingAccountService, BillingAccountService>();
         services.AddScoped<IPaymentService, PaymentService>();
-        //services.AddScoped<IPaymentGatewayService, PaymentGatewayService>();
         services.AddScoped<IPaymentHelperService, PaymentHelperService>();
         services.AddScoped<IPaymentApplicationService, PaymentApplicationService>();
         services.AddScoped<IProductService, ProductService>();

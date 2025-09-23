@@ -982,53 +982,109 @@ public class OrderService : BaseService, IOrderService
     }
 
     private async Task SetUnitPriceAsLastPrice(OrderItemDto2 orderItem)
+{
+    // REFACTOR: Use ChangeTracker and database queries with optimized merging
+    // Purpose: Avoids performance issues of FindLocalOrDatabaseListAsync, eliminates reflection, and optimizes queries
+    // Context: Supports single-save transaction pattern with improved performance
+    var nowTimestamp = DateTime.UtcNow;
+
+    var orderRoleQuery = _context.OrderRoles.AsQueryable()
+        .Where(x => x.OrderId == orderItem.OrderId && x.RoleTypeId == "BILL_FROM_VENDOR");
+
+    // Check change tracker for unpersisted OrderRole
+    var orderRole = _context.ChangeTracker.Entries<OrderRole>()
+        .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
+        .Select(e => e.Entity)
+        .AsQueryable()
+        .Where(x => x.OrderId == orderItem.OrderId && x.RoleTypeId == "BILL_FROM_VENDOR")
+        .FirstOrDefault() ?? await orderRoleQuery.FirstOrDefaultAsync();
+
+    if (orderRole == null)
     {
-        var orderRole = await _utilityService.FindLocalOrDatabaseAsync2<OrderRole>(
-            x => x.OrderId == orderItem.OrderId && x.RoleTypeId == "BILL_FROM_VENDOR");
-        var productSupplierId = orderRole?.PartyId;
+        _logger.LogWarning("No order role found for OrderId: {OrderId}", orderItem.OrderId);
+        return;
+    }
 
-        var orderHeader = await _utilityService.FindLocalOrDatabaseAsync2<OrderHeader>(
-            x => x.OrderId == orderItem.OrderId);
-        var orderCurrency = orderHeader?.CurrencyUom;
+    var productSupplierId = orderRole.PartyId;
 
-        
-        var selectedProductSuppliers = await _utilityService.FindLocalOrDatabaseListAsync<SupplierProduct>(
-            query => query.Where(ps =>
-                ps.PartyId == productSupplierId && ps.AvailableThruDate == null && ps.CurrencyUomId == orderCurrency
-                && ps.ProductId == orderItem.ProductId));
+    var orderHeaderQuery = _context.OrderHeaders.AsQueryable()
+        .Where(x => x.OrderId == orderItem.OrderId);
 
-        var nowTimestamp = DateTime.Now;
+    // Check change tracker for unpersisted OrderHeader
+    var orderHeader = _context.ChangeTracker.Entries<OrderHeader>()
+        .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
+        .Select(e => e.Entity)
+        .AsQueryable()
+        .Where(x => x.OrderId == orderItem.OrderId)
+        .FirstOrDefault() ?? await orderHeaderQuery.FirstOrDefaultAsync();
 
-        // REFACTOR: Added check for empty supplier products list to create new record if none exists
-        if (!selectedProductSuppliers.Any())
+    if (orderHeader == null)
+    {
+        _logger.LogWarning("No order header found for OrderId: {OrderId}", orderItem.OrderId);
+        return;
+    }
+
+    var orderCurrency = orderHeader.CurrencyUom;
+
+    // REFACTOR: Query change tracker for SupplierProduct with optimized state filtering
+    var localSupplierProductsQuery = _context.ChangeTracker.Entries<SupplierProduct>()
+        .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
+        .Select(e => e.Entity)
+        .AsQueryable()
+        .Where(ps => ps.PartyId == productSupplierId &&
+                     ps.AvailableThruDate == null &&
+                     ps.CurrencyUomId == orderCurrency &&
+                     ps.ProductId == orderItem.ProductId);
+    var localSupplierProducts = localSupplierProductsQuery.ToList();
+
+    // REFACTOR: Query database with optimized conditions
+    var dbSupplierProductsQuery = _context.SupplierProducts.AsQueryable()
+        .Where(ps => ps.PartyId == productSupplierId &&
+                     ps.AvailableThruDate == null &&
+                     ps.CurrencyUomId == orderCurrency &&
+                     ps.ProductId == orderItem.ProductId);
+    var dbSupplierProducts = await dbSupplierProductsQuery.ToListAsync();
+
+    // REFACTOR: Early exit if no results to avoid merge
+    if (!localSupplierProducts.Any() && !dbSupplierProducts.Any())
+    {
+        var newSupplierProduct = new SupplierProduct
+        {
+            ProductId = orderItem.ProductId,
+            PartyId = productSupplierId,
+            CurrencyUomId = orderCurrency,
+            LastPrice = orderItem.UnitPrice,
+            AvailableFromDate = nowTimestamp
+        };
+        _context.Add(newSupplierProduct);
+        _logger.LogInformation("Added new SupplierProduct for OrderId {OrderId}", orderItem.OrderId);
+        return;
+    }
+
+    // REFACTOR: Merge results without reflection using hardcoded primary key
+    var selectedProductSuppliers = localSupplierProducts.Concat(dbSupplierProducts)
+        .GroupBy(sp => $"{sp.ProductId},{sp.PartyId},{sp.CurrencyUomId},{sp.AvailableFromDate}")
+        .Select(g => g.First())
+        .ToList();
+
+    foreach (var supplierProduct in selectedProductSuppliers)
+    {
+        if (orderItem.UnitPrice != supplierProduct.LastPrice)
         {
             var newSupplierProduct = new SupplierProduct
             {
-                ProductId = orderItem.ProductId,
-                PartyId = productSupplierId,
-                CurrencyUomId = orderCurrency,
+                ProductId = supplierProduct.ProductId,
+                PartyId = supplierProduct.PartyId,
+                CurrencyUomId = supplierProduct.CurrencyUomId,
                 LastPrice = orderItem.UnitPrice,
                 AvailableFromDate = nowTimestamp
             };
             _context.Add(newSupplierProduct);
-            return;
-        }
-
-        // REFACTOR: Simplified update logic by moving it after the empty check
-        foreach (var supplierProduct in selectedProductSuppliers)
-        {
-            if (orderItem.UnitPrice != supplierProduct.LastPrice)
-            {
-                var newSupplierProduct = CloneSupplierProduct(supplierProduct);
-                newSupplierProduct.AvailableFromDate = nowTimestamp;
-                newSupplierProduct.LastPrice = orderItem.UnitPrice;
-                _context.Add(newSupplierProduct);
-
-                supplierProduct.AvailableThruDate = nowTimestamp;
-            }
+            supplierProduct.AvailableThruDate = nowTimestamp;
+            _logger.LogInformation("Updated SupplierProduct for OrderId {OrderId}, ProductId {ProductId}", orderItem.OrderId, supplierProduct.ProductId);
         }
     }
-
+}
     private SupplierProduct CloneSupplierProduct(SupplierProduct source)
     {
         var stamp = DateTime.UtcNow;

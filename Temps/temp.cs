@@ -1,40 +1,29 @@
-using Application.Core;
-using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
-using Persistence;
+import { useSelector } from 'react-redux';
+import { RootState } from '../../../app/store/configureStore';
+import CertificatePDFDocument from './CertificatePDFDocument';
 
-namespace Application._Base;
+// Inside ProjectCertificateForm.tsx component
+const ProjectCertificateForm = () => {
+    // Assuming currentCertificateType is accessed from Redux
+    const currentCertificateType = useSelector((state: RootState) => state.certificateUi.currentCertificateType);
+    const certificateReport = useSelector(certificateReportSelector);
 
-public abstract class BaseService
-{
-    protected readonly DataContext _context;
-    protected readonly IDbContextFactory<DataContext> _contextFactory;
-    protected readonly ILogger _logger;
-    protected readonly IUtilityService? _utilityService; // Made optional to avoid circular dependency
+    // Other logic...
 
-    // Constructor for transactional use
-    protected BaseService(DataContext context, ILogger logger, IUtilityService? utilityService = null)
-    {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _utilityService = utilityService;
-    }
-
-    // Constructor for non-transactional use or flexibility
-    protected BaseService(IDbContextFactory<DataContext> contextFactory, ILogger logger, IUtilityService? utilityService = null)
-    {
-        _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _utilityService = utilityService;
-    }
-
-    // Helper method to create a new DbContext when needed
-    protected DataContext CreateDbContext()
-    {
-        if (_contextFactory == null)
-        {
-            throw new InvalidOperationException("IDbContextFactory not provided. Use the appropriate constructor.");
-        }
-        return _contextFactory.CreateDbContext();
-    }
-}
+    return (
+        // Other JSX...
+        <CertificatePDFDocument
+        certificate={certificateReport.certificate}
+    items={certificateReport.items}
+    getTranslatedLabel={getTranslatedLabel}
+    subtotal={subtotal}
+    isGrouped={currentCertificateType === 'WORKMANSHIP_CONTRACTING_CERTIFICATE'}
+    isSubmitting={isSubmitting}
+    isAddCertificateLoading={isAddCertificateLoading}
+    isUpdateCertificateLoading={isUpdateCertificateLoading}
+    isReceiveLoading={isReceiveLoading}
+    certificateNumber={certificateReport.certificate.certificateNumber}
+    certificateType={currentCertificateType} // Add this prop
+    />
+    );
+};
