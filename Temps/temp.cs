@@ -1,89 +1,40 @@
-using Application.Interfaces;
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
+using Application.Core;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 using Persistence;
 
-namespace Application.Parties.Parties;
+namespace Application._Base;
 
-public class GetSuppliersLov
+public abstract class BaseService
 {
-    public class SuppliersEnvelop
+    protected readonly DataContext _context;
+    protected readonly IDbContextFactory<DataContext> _contextFactory;
+    protected readonly ILogger _logger;
+    protected readonly IUtilityService? _utilityService; // Made optional to avoid circular dependency
+
+    // Constructor for transactional use
+    protected BaseService(DataContext context, ILogger logger, IUtilityService? utilityService = null)
     {
-        public List<PartyFromPartyIdDto>? Parties { get; set; }
-        public int PartyCount { get; set; }
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _utilityService = utilityService;
     }
 
-    public class PartyFromPartyIdDto
+    // Constructor for non-transactional use or flexibility
+    protected BaseService(IDbContextFactory<DataContext> contextFactory, ILogger logger, IUtilityService? utilityService = null)
     {
-        public string fromPartyId { get; set; }
-        public string fromPartyName { get; set; }
+        _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _utilityService = utilityService;
     }
 
-    public class Query : IRequest<Result<SuppliersEnvelop>>
+    // Helper method to create a new DbContext when needed
+    protected DataContext CreateDbContext()
     {
-        public PartyLovParams? Params { get; set; }
-    }
-
-    public class Handler : IRequestHandler<Query, Result<SuppliersEnvelop>>
-    {
-        private readonly DataContext _context;
-        private readonly ILogger<Handler> _logger;
-        private readonly IMapper _mapper;
-        private readonly IUserAccessor _userAccessor;
-
-        public Handler(DataContext context, IMapper mapper, IUserAccessor userAccessor, ILogger<Handler> logger)
+        if (_contextFactory == null)
         {
-            _mapper = mapper;
-            _context = context;
-            _userAccessor = userAccessor;
-            _logger = logger;
+            throw new InvalidOperationException("IDbContextFactory not provided. Use the appropriate constructor.");
         }
-
-        public async Task<Result<SuppliersEnvelop>> Handle(Query request, CancellationToken cancellationToken)
-        {
-            // REFACTOR: Validate input
-            // Purpose: Prevent null reference exceptions
-            // Context: Ensure request parameters are valid
-            if (request?.Params == null)
-            {
-                _logger.LogWarning("Invalid request: Params is null");
-                return Result<SuppliersEnvelop>.Failure("Invalid request parameters.");
-            }
-
-            var query = _context.Parties
-                .Where(x => x.MainRole == "SUPPLIER")
-                .AsQueryable();
-
-            // REFACTOR: Update search logic
-            // Purpose: Allow searching by both fromPartyId and fromPartyName
-            // Context: Modified to include PartyId in search conditions
-            if (!string.IsNullOrEmpty(request.Params.SearchTerm))
-            {
-                var lowerCaseSearchTerm = request.Params.SearchTerm.Trim().ToLower();
-                query = query.Where(p => 
-                    p.Description!.ToLower().Contains(lowerCaseSearchTerm) ||
-                    p.PartyId.ToLower().Contains(lowerCaseSearchTerm));
-            }
-
-            var total = await query.CountAsync(cancellationToken);
-
-            var parties = await query
-                .OrderBy(x => x.Description)
-                .Skip(request.Params.Skip)
-                .Take(request.Params.PageSize)
-                .ProjectTo<PartyFromPartyIdDto>(_mapper.ConfigurationProvider)
-                .ToListAsync(cancellationToken);
-
-            var partyEnvelop = new SuppliersEnvelop
-            {
-                Parties = parties,
-                PartyCount = total
-            };
-
-            return Result<SuppliersEnvelop>.Success(partyEnvelop);
-        }
+        return _contextFactory.CreateDbContext();
     }
 }

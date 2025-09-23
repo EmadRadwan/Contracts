@@ -1,16 +1,26 @@
-import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
-import React, { useCallback, useState } from "react";
-import { Grid as KendoGrid, GridCellProps, GridColumn as Column, GridPageChangeEvent, GridSortChangeEvent, GridToolbar } from "@progress/kendo-react-grid";
-import { useAppDispatch, useAppSelector } from "../../../app/store/configureStore";
-import { Button, Grid, Skeleton, Typography } from "@mui/material";
-import { CertificateItem } from "../../../app/models/project/certificateItem";
-import { setUiCertificateItems } from "../slice/certificateItemsUiSlice";
+import {orderBy, SortDescriptor, State, process} from '@progress/kendo-data-query';
+import React, {useCallback, useState} from "react";
+import {
+    Grid as KendoGrid,
+    GridCellProps,
+    GridColumn as Column,
+    GridPageChangeEvent,
+    GridSortChangeEvent,
+    GridToolbar
+} from "@progress/kendo-react-grid";
+import {useAppDispatch, useAppSelector} from "../../../app/store/configureStore";
+import {Button, Grid, Skeleton, Typography} from "@mui/material";
+import {CertificateItem} from "../../../app/models/project/certificateItem";
+import {setUiCertificateItems} from "../slice/certificateItemsUiSlice";
 import ModalContainer from "../../../app/common/modals/ModalContainer";
-import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
-import { certificateSubTotal, displayCertificateItemsSelector, nonDeletedCertificateItemsSelector } from "../slice/certificateSelectors";
-import { useFetchCertificateItemsQuery } from "../../../app/store/apis/certificateItemsApi";
-import { CertificateItemFormMemo } from "../form/CertificateItemForm";
-
+import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
+import {
+    certificateSubTotal,
+    displayCertificateItemsSelector,
+    nonDeletedCertificateItemsSelector
+} from "../slice/certificateSelectors";
+import {useFetchCertificateItemsQuery} from "../../../app/store/apis/certificateItemsApi";
+import {CertificateItemFormMemo} from "../form/CertificateItemForm";
 
 
 interface Props {
@@ -19,23 +29,24 @@ interface Props {
     isFormCollapsed: boolean;
 }
 
-export default function CertificateItemsList({ editMode, workEffortId, isFormCollapsed }: Props) {
-    const initialSort: Array<SortDescriptor> = [{ field: "productName", dir: "asc" }];
+export default function CertificateItemsList({editMode, workEffortId, isFormCollapsed}: Props) {
+    const initialSort: Array<SortDescriptor> = [{field: "productName", dir: "asc"}];
     const [sort, setSort] = useState(initialSort);
-    const initialDataState: State = { skip: 0, take: 4 };
+    const initialDataState: State = {skip: 0, take: 4};
     const [page, setPage] = useState<State>(initialDataState);
     const [show, setShow] = useState(false);
     const [itemEditMode, setItemEditMode] = useState(0);
     const [certificateItem, setCertificateItem] = useState<CertificateItem | undefined>(undefined);
     const dispatch = useAppDispatch();
-    const { getTranslatedLabel } = useTranslationHelper();
+    const {getTranslatedLabel} = useTranslationHelper();
     const localizationKey = "certificate.items.list";
     const subtotal = useAppSelector(certificateSubTotal);
-    const { currentCertificateType } = useAppSelector((state) => state.certificateUi);
-    const { data: certificateItemsData, isFetching, isLoading } = useFetchCertificateItemsQuery(workEffortId || "", {
+    const {currentCertificateType} = useAppSelector((state) => state.certificateUi);
+    const {data: certificateItemsData, isFetching, isLoading} = useFetchCertificateItemsQuery(workEffortId || "", {
         skip: !workEffortId,
     });
     const uiCertificateItems: CertificateItem[] = useAppSelector(displayCertificateItemsSelector);
+    const nonDeletedItems = useAppSelector(nonDeletedCertificateItemsSelector);
 
     console.log('uiCertificateItems', uiCertificateItems)
     const pageChange = (event: GridPageChangeEvent) => {
@@ -73,8 +84,8 @@ export default function CertificateItemsList({ editMode, workEffortId, isFormCol
         },
         [uiCertificateItems]
     );
-    
-    
+
+
     const descriptionCell = (props: GridCellProps) => (
         <td>
             <Button onClick={() => handleSelectCertificateItem(props.dataItem.workEffortId)}>
@@ -97,9 +108,8 @@ export default function CertificateItemsList({ editMode, workEffortId, isFormCol
     );
 
     const remove = useCallback(
-        (dataItem: CertificateItem) => {
-            const originalItems = useAppSelector(nonDeletedCertificateItemsSelector);
-            const newCertificateItems = originalItems.map((item) =>
+        (dataItem: CertificateItem, nonDeletedItems: CertificateItem[]) => {
+            const newCertificateItems = nonDeletedItems.map((item) =>
                 item.workEffortId === dataItem.workEffortId ? { ...item, isDeleted: true } : item
             );
             dispatch(setUiCertificateItems(newCertificateItems));
@@ -107,27 +117,11 @@ export default function CertificateItemsList({ editMode, workEffortId, isFormCol
         [dispatch]
     );
 
-    const CommandCell = (props: GridCellProps) => <DeleteCertificateItemCell {...props} remove={remove} />;
-
-    const updateCertificateItems = useCallback(
-        (certificateItem: CertificateItem, editMode: number) => {
-            const originalItems = useAppSelector(nonDeletedCertificateItemsSelector);
-            let newCertificateItems: CertificateItem[];
-            try {
-                if (editMode === 1) {
-                    newCertificateItems = originalItems ? [...originalItems, certificateItem] : [certificateItem];
-                } else {
-                    newCertificateItems = originalItems.map((item) =>
-                        item.workEffortId === certificateItem.workEffortId ? certificateItem : item
-                    );
-                }
-                dispatch(setUiCertificateItems(newCertificateItems));
-            } catch (e) {
-                console.error("Error updating certificate items:", e);
-            }
-        },
-        [dispatch]
+    const CommandCell = (props: GridCellProps) => (
+        <DeleteCertificateItemCell {...props} remove={(dataItem: CertificateItem) => remove(dataItem, nonDeletedItems)} />
     );
+    
+
 
     const memoizedOnClose = useCallback(() => {
         setShow(false);
@@ -139,10 +133,56 @@ export default function CertificateItemsList({ editMode, workEffortId, isFormCol
     const isSupplyWithDiscount = ["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
     const isSupplyWithoutDiscount = ["COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE"].includes(currentCertificateType);
 
+    const dataWithSummaries = uiCertificateItems ? (() => {
+        const groupedByProductId: { [key: string]: CertificateItem[] } = uiCertificateItems.reduce(
+            (acc, item) => {
+                const productId = item.productId || '';
+                if (!acc[productId]) acc[productId] = [];
+                acc[productId].push(item);
+                return acc;
+            },
+            {} as { [key: string]: CertificateItem[] }
+        );
+
+        const sortedData = orderBy(uiCertificateItems, sort);
+        let result: any[] = [];
+        Object.keys(groupedByProductId).forEach((productId) => {
+            const groupItems = groupedByProductId[productId];
+            // REFACTOR: Calculate productSubtotal for each group
+            // Purpose: Sum net values for items with the same productId to display in code column
+            // Improvement: Ensures subtotal is available for last item in group, matching CertificateItemsListGrouped
+            const subtotal = groupItems.reduce((sum: number, item: CertificateItem) => sum + (item.displayTotal || 0), 0);
+            const sortedGroupItems = sortedData.filter((item) => item.productId === productId);
+            const updatedGroupItems = sortedGroupItems.map((item, index) => ({
+                ...item,
+                isLastInGroup: index === sortedGroupItems.length - 1,
+                productSubtotal: subtotal.toFixed(2), // Add productSubtotal to each item
+            }));
+            result = [...result, ...updatedGroupItems];
+        });
+
+        const pagedData = process(result, {skip: page.skip, take: page.take});
+        return pagedData.data;
+    })() : [];
+
     const columns = [
-        // REFACTOR: Removed code column as it is specific to WORKMANSHIP_CONTRACTING_CERTIFICATE
-        // Purpose: Clean column configuration to exclude fields used only by WORKMANSHIP_CONTRACTING_CERTIFICATE
-        // Improvement: Simplifies table structure for non-contracting certificate types
+        {
+            field: 'code',
+            title: getTranslatedLabel(`${localizationKey}.code`, 'Code'),
+            width: 250,
+            // REFACTOR: Enforce LTR rendering with stronger specificity
+            // Purpose: Ensure productId/serial displays before subtotal in RTL mode
+            // Improvement: Uses span with inline LTR direction and !important to override page-level RTL
+            cell: (props: GridCellProps) => (
+                <td style={{direction: 'ltr !important', textAlign: 'left !important'}}>
+        <span style={{direction: 'ltr !important'}}>
+          {props.dataItem.isLastInGroup && props.dataItem.productSubtotal !== undefined
+              ? `${props.dataItem.code} (${getTranslatedLabel(`${localizationKey}.productSubtotal`, 'Subtotal')}: ${props.dataItem.productSubtotal})`
+              : props.dataItem.code}
+        </span>
+                </td>
+            ),
+        },
         {
             field: "productName",
             title: getTranslatedLabel(`${localizationKey}.description`, "Product"),
@@ -241,26 +281,26 @@ export default function CertificateItemsList({ editMode, workEffortId, isFormCol
                     />
                 </ModalContainer>
             )}
-            <Grid container columnSpacing={1} direction="column" alignItems="flex-start" sx={{ mt: 1 }}>
+            <Grid container columnSpacing={1} direction="column" alignItems="flex-start" sx={{mt: 1}}>
                 <Grid container>
                     {(isFetching || isLoading) ? (
                         <Grid container spacing={2} direction="column">
                             <Grid item>
-                                <Skeleton animation="wave" variant="rounded" height={40} sx={{ width: "70%" }} />
+                                <Skeleton animation="wave" variant="rounded" height={40} sx={{width: "70%"}}/>
                             </Grid>
                             <Grid item>
-                                <Skeleton animation="wave" variant="rounded" height={40} sx={{ width: "70%" }} />
+                                <Skeleton animation="wave" variant="rounded" height={40} sx={{width: "70%"}}/>
                             </Grid>
                             <Grid item>
-                                <Skeleton animation="wave" variant="rounded" height={40} sx={{ width: "70%" }} />
+                                <Skeleton animation="wave" variant="rounded" height={40} sx={{width: "70%"}}/>
                             </Grid>
                         </Grid>
                     ) : (
                         <Grid item xs={12}>
                             <KendoGrid
                                 className="main-grid"
-                                style={{ height: isFormCollapsed ? "60vh" : "30vh" }}
-                                data={pagedData}
+                                style={{height: isFormCollapsed ? "60vh" : "30vh"}}
+                                data={dataWithSummaries}
                                 sortable
                                 scrollable="scrollable"
                                 resizable={true}

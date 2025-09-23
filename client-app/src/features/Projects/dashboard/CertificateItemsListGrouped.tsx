@@ -44,6 +44,7 @@ export default function CertificateItemsListGrouped({ editMode, workEffortId, is
         skip: !workEffortId,
     });
     const uiCertificateItems: CertificateItem[] = useAppSelector(displayCertificateItemsSelector);
+    const nonDeletedItems = useAppSelector(nonDeletedCertificateItemsSelector);
 
     console.log('certificateItemsData:', certificateItemsData);
     console.log('certificateItemsEntities:', certificateItemsEntities);
@@ -116,9 +117,8 @@ export default function CertificateItemsListGrouped({ editMode, workEffortId, is
     );
 
     const remove = useCallback(
-        (dataItem: CertificateItem) => {
-            const originalItems = useAppSelector(nonDeletedCertificateItemsSelector);
-            const newCertificateItems = originalItems.map((item) =>
+        (dataItem: CertificateItem, nonDeletedItems: CertificateItem[]) => {
+            const newCertificateItems = nonDeletedItems.map((item) =>
                 item.workEffortId === dataItem.workEffortId ? { ...item, isDeleted: true } : item
             );
             dispatch(setUiCertificateItems(newCertificateItems));
@@ -126,27 +126,11 @@ export default function CertificateItemsListGrouped({ editMode, workEffortId, is
         [dispatch]
     );
 
-    const CommandCell = (props: GridCellProps) => <DeleteCertificateItemCell {...props} remove={remove} />;
-
-    const updateCertificateItems = useCallback(
-        (certificateItem: CertificateItem, editMode: number) => {
-            const originalItems = useAppSelector(nonDeletedCertificateItemsSelector);
-            let newCertificateItems: CertificateItem[];
-            try {
-                if (editMode === 1) {
-                    newCertificateItems = originalItems ? [...originalItems, certificateItem] : [certificateItem];
-                } else {
-                    newCertificateItems = originalItems.map((item) =>
-                        item.workEffortId === certificateItem.workEffortId ? certificateItem : item
-                    );
-                }
-                dispatch(setUiCertificateItems(newCertificateItems));
-            } catch (e) {
-                console.error("Error updating certificate items:", e);
-            }
-        },
-        [dispatch]
+    const CommandCell = (props: GridCellProps) => (
+        <DeleteCertificateItemCell {...props} remove={(dataItem: CertificateItem) => remove(dataItem, nonDeletedItems)} />
     );
+    
+
 
     const memoizedOnClose = useCallback(() => {
         setShow(false);

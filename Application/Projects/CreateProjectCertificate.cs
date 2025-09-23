@@ -132,7 +132,7 @@ namespace Application.Projects
                         _context.WorkEfforts.Add(itemWorkEffort);
                     }
 
-                    /*string? generatedOrderId = null;
+                    string? generatedOrderId = null;
                     OrderHeader? poResult = null;
                     if (certificate.CertificateCategory != "COMPANY_SUPPLY_SALE_CERTIFICATE")
                     {
@@ -215,9 +215,65 @@ namespace Application.Projects
                                         SourcePercentage = null
                                     });
                                 }
+                                
+                                if (item.Deductions.HasValue && item.Deductions != 0)
+                                {
+                                    orderAdjustments.Add(new OrderAdjustmentDto2
+                                    {
+                                        OrderAdjustmentId = Guid.NewGuid().ToString(),
+                                        OrderAdjustmentTypeId = "DEDUCTION_ADJUSTMENT",
+                                        OrderAdjustmentTypeDescription = "استقطاع",
+                                        OrderId = null,
+                                        OrderItemSeqId = orderItemSeqId,
+                                        Amount = -Math.Abs(item.Deductions.Value), // Ensure negative for reduction
+                                        CorrespondingProductId = item.ProductId,
+                                        CorrespondingProductName = item.ProductName,
+                                        IsManual = "Y",
+                                        CreatedDate = stamp,
+                                        IsAdjustmentDeleted = false,
+                                        SourcePercentage = item.TotalAmount > 0 ? (Math.Abs(item.Deductions.Value) / item.TotalAmount) * 100 : 0
+                                    });
+                                }
+                                
+                                if (item.Insurance.HasValue && item.Insurance != 0)
+                                {
+                                    orderAdjustments.Add(new OrderAdjustmentDto2
+                                    {
+                                        OrderAdjustmentId = Guid.NewGuid().ToString(),
+                                        OrderAdjustmentTypeId = "INSURANCE_ADJUSTMENT",
+                                        OrderAdjustmentTypeDescription = "تأمين",
+                                        OrderId = null,
+                                        OrderItemSeqId = orderItemSeqId,
+                                        Amount = -Math.Abs(item.Insurance.Value),
+                                        CorrespondingProductId = item.ProductId,
+                                        CorrespondingProductName = item.ProductName,
+                                        IsManual = "Y",
+                                        CreatedDate = stamp,
+                                        IsAdjustmentDeleted = false,
+                                        SourcePercentage = null
+                                    });
+                                }
+                                
+                                if (item.AdditionalInsurance.HasValue && item.AdditionalInsurance != 0)
+                                {
+                                    orderAdjustments.Add(new OrderAdjustmentDto2
+                                    {
+                                        OrderAdjustmentId = Guid.NewGuid().ToString(),
+                                        OrderAdjustmentTypeId = "ADDITIONAL_INSURANCE_ADJUSTMENT",
+                                        OrderAdjustmentTypeDescription = "تأمين اضافى",
+                                        OrderId = null,
+                                        OrderItemSeqId = orderItemSeqId,
+                                        Amount = -Math.Abs(item.AdditionalInsurance.Value),
+                                        CorrespondingProductId = item.ProductId,
+                                        CorrespondingProductName = item.ProductName,
+                                        IsManual = "Y",
+                                        CreatedDate = stamp,
+                                        IsAdjustmentDeleted = false,
+                                        SourcePercentage = null
+                                    });
+                                }
                             }
 
-                            // REFACTOR: Fixed SubTotal calculation for OrderItems
                             // Purpose: Aligns SubTotal with frontend's net for WORKMANSHIP_CONTRACTING_CERTIFICATE
                             // Context: Uses TotalAmount for non-WORKMANSHIP types, net (deserved - insurance - additionalInsurance) for WORKMANSHIP
                             var orderItems = poItems.Select((item, index) => new OrderItemDto2
@@ -227,11 +283,7 @@ namespace Application.Projects
                                 ProductName = item.ProductName,
                                 Quantity = item.Quantity,
                                 UnitPrice = item.UnitPrice,
-                                SubTotal = certificate.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
-                                    ? Math.Max(0,
-                                        (item.TotalAmount - (item.Deductions ?? 0)) - (item.Insurance ?? 0) -
-                                        (item.AdditionalInsurance))
-                                    : item.TotalAmount,
+                                SubTotal = item.TotalAmount,
                                 FacilityId = certificate.FacilityId,
                                 ItemDescription = item.Description,
                                 OrderItemTypeId = "PRODUCT_ORDER_ITEM",
@@ -240,7 +292,6 @@ namespace Application.Projects
                                 LastUpdatedStamp = stamp
                             }).ToList();
 
-                            // REFACTOR: Fixed GrandTotal calculation to sum OrderItem SubTotals
                             // Purpose: Ensures GrandTotal reflects the sum of adjusted SubTotals
                             // Context: Avoids redundant calculations and aligns with OrderItem SubTotals
                             var grandTotal = orderItems.Sum(i => i.SubTotal) +
@@ -276,7 +327,6 @@ namespace Application.Projects
                     {
                         workEffort.RelatedOrderId = generatedOrderId;
                     }
-                    */
 
 
                     // this ensures UpdateOrApprovePurchaseOrder can query and find the order via FirstOrDefaultAsync, as EF Core queries ignore pending changes.
@@ -290,7 +340,7 @@ namespace Application.Projects
 
                     // this integrates backend approval directly behind the scenes, reusing the existing UpdateOrApprovePurchaseOrder method 
                     // without needing a frontend call, ensuring the order is immediately approved as per requirements while maintaining transaction integrity.
-                    /*if (generatedOrderId != null && poResult != null)
+                    if (generatedOrderId != null && poResult != null)
                     {
                         // queried from the database after SaveChanges; this populates all required fields (e.g., OrderId, GrandTotal, FromPartyId, OrderItems, OrderAdjustments) 
                         // for the UpdateOrApprovePurchaseOrder method without modifying the called service signature, avoiding impacts on other code. 
@@ -354,10 +404,6 @@ namespace Application.Projects
 
                         await _orderService.UpdateOrApprovePurchaseOrder(approveOrderDto, "APPROVE");
 
-                        //  Added a second SaveChanges to persist approval changes (e.g., status updates, roles); 
-                        // this is necessary after the service method updates entities but doesn't save, allowing batching within the transaction 
-                        // and providing a checkpoint for failure handling.
-
 
                         var approveResult = await _context.SaveChangesAsync(cancellationToken);
                         if (approveResult <= 0)
@@ -366,7 +412,6 @@ namespace Application.Projects
                             return Result<ProjectCertificateDto>.Failure("Failed to approve purchase order");
                         }
                     }
-                    */
 
                     await transaction.CommitAsync(cancellationToken);
 

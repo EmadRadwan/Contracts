@@ -23,7 +23,7 @@ public class CertificateItemDto
     public decimal? Discount { get; set; } 
     public decimal? Deductions { get; set; } 
     public decimal? Insurance { get; set; }
-    public decimal AdditionalInsurance { get; set; }
+    public decimal? AdditionalInsurance { get; set; }
 
     public decimal? TransportationExpenses { get; set; }
     public decimal? Gratuities { get; set; }

@@ -25,6 +25,7 @@ import { useFetchProjectCertificatesQuery } from "../../../app/store/apis/projec
 import ProjectMenu from "../menu/ProjectMenu";
 import ProjectCertificateForm from "../form/ProjectCertificateForm";
 import {Certificate, CertificateStatus} from "../../../app/models/project/certificate";
+import {resetUiCertificateItems} from "../slice/certificateItemsUiSlice";
 
 interface ProjectCertificate {
     workEffortId?: string;
@@ -58,8 +59,11 @@ export default function ProjectCertificatesList() {
     const navigate = useNavigate();
     const [certificate, setCertificate] = useState<ProjectCertificate | undefined>(undefined);
     const { data, isFetching, refetch } = useFetchProjectCertificatesQuery({ ...dataState });
+    const [viewMode, setViewMode] = useState<"list" | "form">("list");
 
-    console.log("Certificates data:", data);
+    // console.log("Certificates data:", data);
+    
+    console.log('List rendered')
 
     const debounce = (func: Function, wait: number) => {
         let timeout: NodeJS.Timeout;
@@ -98,12 +102,12 @@ export default function ProjectCertificatesList() {
                     (cert: Certificate) => cert.workEffortId === selectedCertificate.workEffortId
                 );
                 if (matchingCert && JSON.stringify(matchingCert) !== JSON.stringify(certificate)) {
-                    console.log("Syncing certificate with new data:", matchingCert);
+                    // console.log("Syncing certificate with new data:", matchingCert);
                     setCertificate(matchingCert);
                 } else if (!matchingCert) {
                     // Purpose: Prevent stale data when certificate is deleted or unavailable
                     // Context: Ensures form resets to initial state
-                    console.warn("Certificate not found for workEffortId:", selectedCertificate.workEffortId);
+                    // console.warn("Certificate not found for workEffortId:", selectedCertificate.workEffortId);
                     //dispatch(resetCertificateUi());
                 }
             }
@@ -121,20 +125,20 @@ export default function ProjectCertificatesList() {
             // Purpose: Ensure type safety and consistency with enum
             // Context: Matches ProjectNumberCell call and backend DTO
             if (!workEffortId) {
-                console.warn("No workEffortId provided to handleSelectCertificate");
+                // console.warn("No workEffortId provided to handleSelectCertificate");
                 return;
             }
-            console.log("handleSelectCertificate called with workEffortId:", workEffortId);
+            // console.log("handleSelectCertificate called with workEffortId:", workEffortId);
             const selectedCert: Certificate | undefined = certificates.data.find(
                 (cert: Certificate) => cert.workEffortId === workEffortId
                 // Purpose: Improve type safety; assumes backend data matches interface
                 // Context: Prevents runtime errors on field access
             );
             if (!selectedCert) {
-                console.warn("No certificate found for workEffortId:", workEffortId);
+                // console.warn("No certificate found for workEffortId:", workEffortId);
                 return;
             }
-            console.log("Raw selectedCert:", selectedCert); // REFACTOR: Debug log
+            // console.log("Raw selectedCert:", selectedCert); 
 
             dispatch(
                 setSelectedCertificate({
@@ -157,7 +161,7 @@ export default function ProjectCertificatesList() {
                             fromPartyId:
                                 typeof selectedCert.partyIdContractor === "object"
                                     ? selectedCert.partyIdContractor.fromPartyId
-                                    : selectedCert.partyIdContractor, // REFACTOR: Fixed typo from partyIdContractor to contractorPartyId
+                                    : selectedCert.partyIdContractor, 
                             // Purpose: Correctly map contractor ID from query data
                             // Context: Fixes binding for contractor ComboBox
                             partyName: selectedCert.partyNameContractor || "",
@@ -188,6 +192,7 @@ export default function ProjectCertificatesList() {
             );
             dispatch(setCurrentCertificateType(selectedCert.certificateCategory || "SUPPLY_PROCUREMENT_CERTIFICATE"));
             dispatch(setCertificateFormEditMode(editModeMap[selectedCert.currentStatusId as CertificateStatus] || 0));
+            setViewMode("form");
         }, 500),
         [dispatch, certificates.data, editModeMap] 
     );
@@ -197,25 +202,34 @@ export default function ProjectCertificatesList() {
         setCertificate(undefined);
         dispatch(setCertificateFormEditMode(0));
         dispatch(resetCertificateUi());
+        setViewMode("list");
     }, [dispatch]);
 
     // Purpose: Replaces PROCUREMENTS and CONTRACTING with the five new types (SUPPLY_PROCUREMENT_CERTIFICATE, etc.) to align with the provided data.
     // Context: Simplifies the menu to reflect only the types defined in the sheet, maintaining Redux dispatch for form initialization.
     const handleMenuSelect = useCallback(
         (e: MenuSelectEvent) => {
-            //dispatch(resetCertificateUi());
+            dispatch(resetCertificateUi());
+            dispatch(resetUiCertificateItems());
+
             switch (e.item.data) {
                 case "supplyProcurement":
                     dispatch(setCurrentCertificateType("SUPPLY_PROCUREMENT_CERTIFICATE"));
                     dispatch(setCertificateFormEditMode(1));
+                    setViewMode("form");
                     break;
                 case "workmanshipContracting":
                     dispatch(setCurrentCertificateType("WORKMANSHIP_CONTRACTING_CERTIFICATE"));
                     dispatch(setCertificateFormEditMode(1));
+                    setViewMode("form");
                     break;
                 case "companySupplySale":
                     dispatch(setCurrentCertificateType("COMPANY_SUPPLY_SALE_CERTIFICATE"));
                     dispatch(setCertificateFormEditMode(1));
+                    setViewMode("form");
+                    break;
+                case "projectCertificates":
+                    setViewMode("list");
                     break;
                 default:
                     break;
@@ -254,9 +268,9 @@ export default function ProjectCertificatesList() {
             </td>
         );
     };
-    console.log('certificateFormEditMode:', certificateFormEditMode)
+    // console.log('certificateFormEditMode:', certificateFormEditMode)
 
-    if (certificateFormEditMode > 0) {
+    if (viewMode === "form" && certificateFormEditMode > 0) {
         return (
             <ProjectCertificateForm
                 selectedCertificate={certificate}
@@ -265,7 +279,7 @@ export default function ProjectCertificatesList() {
             />
         );
     }
-
+    
     return (
         <>
             <ProjectMenu />

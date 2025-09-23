@@ -5,10 +5,9 @@ import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined';
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import {HomeWork} from "@mui/icons-material";
 
-// REFACTOR: Created ProjectMenu with a single "Projects" entry, adapted from FacilityMenu.
-// Maintains theme-based styling, translation, and navigation logic for consistency.
 interface ProjectMenuProps {
     selectedMenuItem?: string;
+    onMenuSelect?: (data: string) => void;
 }
 
 const links = [
@@ -28,7 +27,7 @@ const links = [
 
 const normalizePath = (path: string) => path.replace(/^\//, '').toLowerCase();
 
-const ProjectMenu = ({ selectedMenuItem }: ProjectMenuProps) => {
+const ProjectMenu = ({ selectedMenuItem, onMenuSelect }: ProjectMenuProps) => {
     const theme = useTheme();
     const normalizedSelectedMenuItem = normalizePath(selectedMenuItem || '');
     const { getTranslatedLabel } = useTranslationHelper();
@@ -54,6 +53,15 @@ const ProjectMenu = ({ selectedMenuItem }: ProjectMenuProps) => {
         };
     };
 
+    const handleClick = (key: string) => {
+        if (onMenuSelect) {
+            // REFACTOR: Call onMenuSelect with the menu item's key
+            // Purpose: Notifies parent component of menu selection
+            // Context: Allows ProjectCertificatesList to handle "Project Certificates" click
+            onMenuSelect(key);
+        }
+    };
+
     return (
         <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'left' }}>
             <Box display='flex' alignItems='left'>
@@ -65,6 +73,7 @@ const ProjectMenu = ({ selectedMenuItem }: ProjectMenuProps) => {
                                 to={path}
                                 key={key}
                                 sx={navStyles(path)}
+                                onClick={() => handleClick(key)}
                             >
                                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                     {icon}

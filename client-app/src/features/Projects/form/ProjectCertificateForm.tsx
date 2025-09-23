@@ -9,7 +9,6 @@ import { RibbonContainer, Ribbon } from "react-ribbons";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
 import { requiredValidator } from "../../../app/common/form/Validators";
 import { toast } from "react-toastify";
-import {FormComboBoxVirtualSupplier} from "../../../app/common/form/FormComboBoxVirtualSupplier";
 import FormDatePicker from "../../../app/common/form/FormDatePicker";
 import ProjectMenu from "../menu/ProjectMenu";
 import useProjectCertificate from "../hook/useProjectCertificate";
@@ -25,6 +24,10 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import {CertificateItemsListGroupedMemo} from "../dashboard/CertificateItemsListGrouped";
 import {FormComboBoxVirtualSupplierMultiColumn} from "../../../app/common/form/FormComboBoxVirtualSupplierMultiColumn";
+import { Document, Page, Text, View, StyleSheet, PDFDownloadLink, Font } from '@react-pdf/renderer';
+import {certificateReportSelector, certificateSubTotal} from "../slice/certificateSelectors";
+import CertificatePDFDocument from "../report/CertificatePDFDocument";
+
 
 interface ProjectCertificateFormProps {
     editMode: number; // 0: view, 1: create, 2: edit (CREATED), 3: edit (APPROVED), 4: edit (COMPLETED)
@@ -119,7 +122,12 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
     const { language } = useAppSelector((state) => state.localization);
     const {user} = useAppSelector((state) => state.account);
     const [isFormCollapsed, setIsFormCollapsed] = useState(false);
-console.log('selectedCertificate in form:', selectedCertificate)
+    const reportData = useAppSelector(certificateReportSelector);
+    const subtotal = useAppSelector(certificateSubTotal);
+
+    console.log('Form rendered')
+
+// console.log('selectedCertificate in form:', selectedCertificate)
     const {
         formEditMode,
         setFormEditMode,
@@ -166,7 +174,7 @@ console.log('selectedCertificate in form:', selectedCertificate)
     }, [selectedCertificate]);
 
 
-    console.log("Redux selectedCertificate:", selectedCertificate);
+    // console.log("Redux selectedCertificate:", selectedCertificate);
 
     const formKey = useMemo(() => formRef2.current.toString(), [formRef2.current]);
     const showSupplier = currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE";
@@ -307,7 +315,7 @@ console.log('selectedCertificate in form:', selectedCertificate)
     
     useEffect(() => {
         if (selectedCertificate?.workEffortId) {
-            console.log("Selected certificate changed, resetting form with workEffortId:", selectedCertificate.workEffortId);
+            // console.log("Selected certificate changed, resetting form with workEffortId:", selectedCertificate.workEffortId);
             // Purpose: Ensure form reflects the latest selectedCertificate data
             // Context: Prevents stale form data when switching certificates
             formRef.current?.resetForm({ values: initialFormValues });
@@ -322,7 +330,7 @@ console.log('selectedCertificate in form:', selectedCertificate)
             .join(' ');
     };
 
-    console.log('initialFormValues', initialFormValues)
+    // console.log('initialFormValues', initialFormValues)
     const status = renderSwitchStatus();
 
     const renderCertificateItems = () => {
@@ -346,7 +354,12 @@ console.log('selectedCertificate in form:', selectedCertificate)
 
     return (
         <>
-            <ProjectMenu />
+            <ProjectMenu onMenuSelect={(key) => {
+                console.log("Menu item selected in form:", key);
+                if (key === "projectCertificates") {
+                    cancelEdit(); // Trigger cancelEdit to switch to list view
+                }
+            }} />
             <Paper elevation={5} className="div-container-withBorderCurved">
                 <Grid container spacing={2} alignItems="center" position="relative">
                     <Grid item xs={11}>
@@ -506,6 +519,37 @@ console.log('selectedCertificate in form:', selectedCertificate)
                                                 </LoadingButton>
                                             </Grid>
                                         )}
+                                        <Grid item>
+                                            {/* REFACTOR: Restrict PDF export to CREATED status */}
+                                            {/* Purpose: Only allow printing for certificates in CREATED status */}
+                                            {/* Improvement: Enhances control by limiting PDF generation to specific state */}
+                                            {reportData.items && reportData.items.length > 0 && selectedCertificate?.currentStatusId === CertificateStatus.CREATED ? (
+                                                <CertificatePDFDocument
+                                                    certificate={reportData.certificate}
+                                                    items={reportData.items}
+                                                    getTranslatedLabel={getTranslatedLabel}
+                                                    subtotal={subtotal}
+                                                    isGrouped={currentCertificateType === 'WORKMANSHIP_CONTRACTING_CERTIFICATE'}
+                                                    isSubmitting={isSubmitting}
+                                                    isAddCertificateLoading={isAddCertificateLoading}
+                                                    isUpdateCertificateLoading={isUpdateCertificateLoading}
+                                                    isReceiveLoading={isReceiveLoading}
+                                                    certificateNumber={reportData.certificate.certificateNumber}
+                                                />
+                                            ) : (
+                                                <Button
+                                                    color="primary"
+                                                    variant="outlined"
+                                                    disabled
+                                                    title={getTranslatedLabel(
+                                                        'certificate.print.disabled',
+                                                        'Printing is only available for certificates in CREATED status'
+                                                    )}
+                                                >
+                                                    {getTranslatedLabel('certificate.export', 'Export to PDF')}
+                                                </Button>
+                                            )}
+                                        </Grid>
                                         <Grid item>
                                             <Button size="large" color="error" variant="outlined" onClick={handleCancel}>
                                                 {getTranslatedLabel("certificate.form.cancel", "Cancel")}

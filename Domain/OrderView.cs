@@ -12,6 +12,7 @@ public class OrderView
     public string? InvoiceId { get; set; }
     public string? PaymentMethodTypeId { get; set; }
     public string? AgreementId { get; set; }
+    public string? InternalRemarks { get; set; }
     public string? FromPartyId { get; set; }
     public string? FromPartyNameDescription { get; set; }
     public string? FromPartyName { get; set; }  // The party name

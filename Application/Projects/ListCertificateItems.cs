@@ -105,7 +105,7 @@ public class ListCertificateItems
                             } : null,
                             Description = x.WorkEffort.Description,
                             ProductName = x.Product != null ? x.Product.ProductName : null,
-                            UomName = x.Uom != null ? x.Uom.Description : null,
+                            UomName = x.Uom != null ? (language == "ar" ? x.Uom.DescriptionArabic : x.Uom.Description) : null,
                             Quantity = (decimal)x.WorkEffort.Quantity,
                             UnitPrice = (decimal)(x.WorkEffort.Rate ?? 0m),
                             MaterialPrice = x.WorkEffort.MaterialPrice ?? 0m,

@@ -67,7 +67,7 @@ SELECT
     ord.ORDER_TYPE_ID AS orderTypeId,
     ordt.DESCRIPTION AS orderTypeDescription,
     ordt.DESCRIPTION_ARABIC AS orderTypeDescriptionArabic,
-    ordt.DESCRIPTION_TURKISH AS orderTypeDescriptionTurkish,
+    ord.INTERNAL_REMARKS AS internalRemarks,
 
     -- Earliest OPP (the user's actual original PaymentMethodTypeId)
     oppEarliest.earliestPaymentMethodId AS paymentMethodId,

@@ -107,7 +107,7 @@ i want to. refactor the create production run code by including logs using  simi
 
 153 -> Yousef CC
 
-var affectedRecords4 = _context.ChangeTracker
+var affectedRecords5 = _context.ChangeTracker
     .Entries()
     .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted)
     .Select(e => new
@@ -124,7 +124,7 @@ var affectedRecords4 = _context.ChangeTracker
     ----------------------------------------------------------------  
     
    var affectedRecords4 = _context.ChangeTracker
-       .Entries<OrderItemBilling>() 
+       .Entries<SupplierProduct>() 
        .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted)
        .Select(e => new
        {

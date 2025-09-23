@@ -49,6 +49,7 @@ public class ListOrders
                     AgreementId = ov.AgreementId,
                     PaymentId = ov.PaymentId,
                     InvoiceId = ov.InvoiceId,
+                    InternalRemarks = ov.InternalRemarks,
                     GrandTotal = ov.GrandTotal,
                     OrderTypeId = ov.OrderTypeId,
                     OrderTypeDescription = language == "ar" 

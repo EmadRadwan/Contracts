@@ -25456,6 +25456,9 @@ namespace Persistence.Migrations
                     b.Property<decimal>("GrandTotal")
                         .HasColumnType("decimal(65,30)");
 
+                    b.Property<string>("InternalRemarks")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("InvoiceId")
                         .HasColumnType("longtext");
 
@@ -56855,9 +56858,9 @@ namespace Persistence.Migrations
                         .HasColumnName("DEDUCTIONS");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(255)
+                        .HasMaxLength(1000)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(255)")
+                        .HasColumnType("varchar(1000)")
                         .HasColumnName("DESCRIPTION");
 
                     b.Property<decimal?>("Discount")
