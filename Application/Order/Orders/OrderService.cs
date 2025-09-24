@@ -108,34 +108,39 @@ public class OrderService : BaseService, IOrderService
         //TODO: consider using entity OrderHeaderNote for both internal and customer remarks
 
         _context.OrderHeaders.Add(newOrder);
+        await _context.SaveChangesAsync();
 
         // create order status
-        _utilityService.CreateOrderStatus(newOrderSerial, "ORDER_CREATED");
+        await _utilityService.CreateOrderStatus(newOrderSerial, "ORDER_CREATED");
 
         // create "SHIP_FROM_VENDOR" order role
-        _utilityService.CreateOrderRole(newOrderSerial, "SHIP_FROM_VENDOR", orderDto.FromPartyId);
+        await _utilityService.CreateOrderRole(newOrderSerial, "SHIP_FROM_VENDOR", orderDto.FromPartyId);
 
         // create "BILL_FROM_VENDOR" order role
-        _utilityService.CreateOrderRole(newOrderSerial, "BILL_FROM_VENDOR", orderDto.FromPartyId);
+        await _utilityService.CreateOrderRole(newOrderSerial, "BILL_FROM_VENDOR", orderDto.FromPartyId);
 
         // create "SUPPLIER_AGENT" order role
-        _utilityService.CreateOrderRole(newOrderSerial, "SUPPLIER_AGENT", orderDto.FromPartyId);
+        await _utilityService.CreateOrderRole(newOrderSerial, "SUPPLIER_AGENT", orderDto.FromPartyId);
 
         // get product store pay to party id
         var payToPartyId = await _productStoreService.GetProductStorePayToPartId();
 
         // create "BILL_TO_CUSTOMER" order role
-        _utilityService.CreateOrderRole(newOrderSerial, "BILL_TO_CUSTOMER", payToPartyId);
+        await _utilityService.CreateOrderRole(newOrderSerial, "BILL_TO_CUSTOMER", payToPartyId);
 
         // create OrderItemShipGroup
-        var orderItemShipGroup = _shipmentService.CreateOrderItemShipGroup(newOrderSerial);
+        var orderItemShipGroup = await _shipmentService.CreateOrderItemShipGroup(newOrderSerial);
 
         // create order items
         await CreatePurchaseOrderItems(orderDto.OrderItems, newOrderSerial);
 
-        var createdOrderItems = await _utilityService.FindLocalOrDatabaseListAsync<OrderItem>(
+        /*var createdOrderItems = await _utilityService.FindLocalOrDatabaseListAsync<OrderItem>(
             query => query.Where(ii => ii.OrderId == newOrderSerial)
-        );
+        );*/
+        
+        var createdOrderItems = await _context.OrderItems
+            .Where(ii => ii.OrderId == newOrderSerial)
+            .ToListAsync();
 
         foreach (var orderItem in createdOrderItems)
         {
@@ -253,24 +258,24 @@ public class OrderService : BaseService, IOrderService
 
 
         // create order status
-        _utilityService.CreateOrderStatus(newOrderSerial, "ORDER_CREATED");
+        await _utilityService.CreateOrderStatus(newOrderSerial, "ORDER_CREATED");
 
         //_logger.LogInformation("Create Sales order status. {Transaction} for {OrderId}","create sales order", newOrder.OrderId);
 
 
         // create "BILL_TO_CUSTOMER" order role
-        _utilityService.CreateOrderRole(newOrderSerial, "PLACING_CUSTOMER", orderDto.FromPartyId);
+        await _utilityService.CreateOrderRole(newOrderSerial, "PLACING_CUSTOMER", orderDto.FromPartyId);
 
-        _utilityService.CreateOrderRole(newOrderSerial, "BILL_TO_CUSTOMER", orderDto.FromPartyId);
+        await _utilityService.CreateOrderRole(newOrderSerial, "BILL_TO_CUSTOMER", orderDto.FromPartyId);
 
         // get product store pay to party id
         var payToPartyId = await _productStoreService.GetProductStorePayToPartId();
 
         // create "BILL_FROM_VENDOR" order role
-        _utilityService.CreateOrderRole(newOrderSerial, "BILL_FROM_VENDOR", payToPartyId);
+        await _utilityService.CreateOrderRole(newOrderSerial, "BILL_FROM_VENDOR", payToPartyId);
 
         // create OrderItemShipGroup
-        var orderItemShipGroup = _shipmentService.CreateOrderItemShipGroup(newOrderSerial);
+        var orderItemShipGroup = await _shipmentService.CreateOrderItemShipGroup(newOrderSerial);
 
         // loop through order items and add to ShipGroupSeqId and ReserveOrderEnumId
         foreach (var orderItem in orderDto.OrderItems)
@@ -512,7 +517,7 @@ public class OrderService : BaseService, IOrderService
             if (orderAdjustment.IsAdjustmentDeleted) continue;
             // //_logger.LogDebug("Starting CreateJobOrderAdjustments");
 
-            CreateOrderAdjustment(orderAdjustment, orderId);
+            await CreateOrderAdjustment(orderAdjustment, orderId);
 
             // //_logger.LogDebug("Finished CreateJobOrderAdjustments {createdAdjustment}", createdAdjustment);
         }
@@ -551,11 +556,12 @@ public class OrderService : BaseService, IOrderService
             LastUpdatedStamp = stamp
         };
         _context.OrderItems.Add(newItem);
+        await _context.SaveChangesAsync();
 
         orderItem.OrderId = orderId;
 
         // create order_status ITEM_CREATED
-        _utilityService.CreateOrderItemStatus(newItem, "ITEM_CREATED");
+        await _utilityService.CreateOrderItemStatus(newItem, "ITEM_CREATED");
 
         await SetUnitPriceAsLastPrice(orderItem);
 
@@ -658,7 +664,7 @@ public class OrderService : BaseService, IOrderService
         return newItem;
     }
 
-    private OrderAdjustment CreateOrderAdjustment(OrderAdjustmentDto2 orderAdjustment, string orderId)
+    private async Task<OrderAdjustment> CreateOrderAdjustment(OrderAdjustmentDto2 orderAdjustment, string orderId)
     {
         var stamp = DateTime.UtcNow;
 
@@ -683,6 +689,7 @@ public class OrderService : BaseService, IOrderService
             CreatedStamp = stamp
         };
         _context.OrderAdjustments.Add(newAdjustment);
+        await _context.SaveChangesAsync();
 
         return newAdjustment;
     }
@@ -787,8 +794,9 @@ public class OrderService : BaseService, IOrderService
         savedOrderItem.Quantity = updatedOrderItem.Quantity;
         savedOrderItem.UnitPrice = updatedOrderItem.UnitPrice;
         savedOrderItem.LastUpdatedStamp = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
 
-        SetUnitPriceAsLastPrice(updatedOrderItem);
+        await SetUnitPriceAsLastPrice(updatedOrderItem);
 
 
         await _utilityService.UpdateAllOrderItemStatusAsync(updatedOrderItem);
@@ -944,6 +952,7 @@ public class OrderService : BaseService, IOrderService
 
         // delete order item
         _context.OrderItems.Remove(orderItem);
+        await _context.SaveChangesAsync();
     }
 
     private async Task DeleteJobOrderItem(OrderItem orderItem)
@@ -981,94 +990,46 @@ public class OrderService : BaseService, IOrderService
         _context.OrderAdjustments.Remove(orderAdjustment);
     }
 
-    public async Task SetUnitPriceAsLastPrice(OrderItemDto2 orderItem)
+    private async Task SetUnitPriceAsLastPrice(OrderItemDto2 orderItem)
     {
-        // REFACTOR: Retain shared DbContext but ensure all queries are awaited sequentially.
-        // Purpose: Prevents concurrent access issues within the same DbContext by awaiting all async operations.
-        // Context: Assumes DbContext is scoped to a single request, managed by the caller.
-        var nowTimestamp = DateTime.UtcNow;
+        // get product supplier from order roles
+        var productSupplierId = await _context.OrderRoles
+            .Where(x => x.OrderId == orderItem.OrderId && x.RoleTypeId == "BILL_FROM_VENDOR")
+            .Select(x => x.PartyId)
+            .FirstOrDefaultAsync();
 
-        try
+        // get order currency
+        var orderCurrency = await _context.OrderHeaders
+            .Where(x => x.OrderId == orderItem.OrderId)
+            .Select(x => x.CurrencyUom)
+            .FirstOrDefaultAsync();
+
+        // get product supplier
+        var selectedProductSuppliers = await _context.SupplierProducts
+            .Where(ps => ps.ProductId == orderItem.ProductId
+                         && ps.PartyId == productSupplierId && ps.AvailableThruDate == null &&
+                         ps.CurrencyUomId == orderCurrency &&
+                         ps.ProductId == orderItem.ProductId)
+            .ToListAsync();
+
+
+        foreach (var supplierProduct in selectedProductSuppliers)
         {
-            // REFACTOR: Combine OrderRole and OrderHeader queries into a single async join.
-            // Purpose: Reduces database round-trips and ensures proper awaiting, minimizing connection contention.
-            // Context: Fetches related data in one query to improve performance and avoid overlapping operations.
-            var orderData = await (from or in _context.OrderRoles.AsQueryable()
-                    join oh in _context.OrderHeaders.AsQueryable() on or.OrderId equals oh.OrderId
-                    where or.OrderId == orderItem.OrderId && or.RoleTypeId == "BILL_FROM_VENDOR"
-                    select new { OrderRole = or, OrderHeader = oh })
-                .FirstOrDefaultAsync();
+            var nowTimestamp = DateTime.Now;
 
-            if (orderData == null)
+            if (orderItem.UnitPrice != supplierProduct.LastPrice)
             {
-                _logger.LogWarning("No order role or header found for OrderId: {OrderId}", orderItem.OrderId);
-                return;
-            }
-
-            var productSupplierId = orderData.OrderRole.PartyId;
-            var orderCurrency = orderData.OrderHeader.CurrencyUom;
-
-            // REFACTOR: Optimize SupplierProduct query by checking ChangeTracker and database in a single async operation.
-            // Purpose: Avoids separate local and database queries, ensuring all operations are awaited and reducing complexity.
-            // Context: Uses FirstOrDefault for in-memory check and FirstOrDefaultAsync for database, minimizing memory usage.
-            var supplierProduct = _context.ChangeTracker.Entries<SupplierProduct>()
-                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
-                .Select(e => e.Entity)
-                .AsQueryable()
-                .Where(ps => ps.PartyId == productSupplierId &&
-                             ps.AvailableThruDate == null &&
-                             ps.CurrencyUomId == orderCurrency &&
-                             ps.ProductId == orderItem.ProductId)
-                .FirstOrDefault() ?? await _context.SupplierProducts
-                .AsQueryable()
-                .Where(ps => ps.PartyId == productSupplierId &&
-                             ps.AvailableThruDate == null &&
-                             ps.CurrencyUomId == orderCurrency &&
-                             ps.ProductId == orderItem.ProductId)
-                .FirstOrDefaultAsync();
-
-            // REFACTOR: Simplify SupplierProduct creation or update logic with early exit.
-            // Purpose: Eliminates redundant merge logic and ensures changes are tracked in the shared DbContext.
-            // Context: Streamlines handling of new or existing SupplierProduct in a single path.
-            if (supplierProduct == null)
-            {
-                var newSupplierProduct = new SupplierProduct
-                {
-                    ProductId = orderItem.ProductId,
-                    PartyId = productSupplierId,
-                    CurrencyUomId = orderCurrency,
-                    LastPrice = orderItem.UnitPrice,
-                    AvailableFromDate = nowTimestamp
-                };
+                var newSupplierProduct = CloneSupplierProduct(supplierProduct);
+                newSupplierProduct.AvailableFromDate = nowTimestamp;
+                newSupplierProduct.LastPrice = orderItem.UnitPrice;
                 _context.Add(newSupplierProduct);
-                _logger.LogInformation("Added new SupplierProduct for OrderId {OrderId}", orderItem.OrderId);
-            }
-            else if (orderItem.UnitPrice != supplierProduct.LastPrice)
-            {
-                var newSupplierProduct = new SupplierProduct
-                {
-                    ProductId = supplierProduct.ProductId,
-                    PartyId = supplierProduct.PartyId,
-                    CurrencyUomId = supplierProduct.CurrencyUomId,
-                    LastPrice = orderItem.UnitPrice,
-                    AvailableFromDate = nowTimestamp
-                };
+                await _context.SaveChangesAsync();
+
                 supplierProduct.AvailableThruDate = nowTimestamp;
-                _context.Add(newSupplierProduct);
-                _logger.LogInformation("Updated SupplierProduct for OrderId {OrderId}, ProductId {ProductId}",
-                    orderItem.OrderId, supplierProduct.ProductId);
+                await _context.SaveChangesAsync();
             }
-        }
-        catch (Exception ex)
-        {
-            // REFACTOR: Add exception handling to log and handle database errors.
-            // Purpose: Prevents unhandled exceptions and provides context for debugging concurrency or connection issues.
-            // Context: Captures OrderId for easier diagnosis of errors.
-            _logger.LogError(ex, "Failed to update SupplierProduct for OrderId {OrderId}", orderItem.OrderId);
-            throw;
         }
     }
-
     private SupplierProduct CloneSupplierProduct(SupplierProduct source)
     {
         var stamp = DateTime.UtcNow;

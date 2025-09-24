@@ -14,7 +14,7 @@ namespace Application.Shipments;
 
 public interface IShipmentService
 {
-    OrderItemShipGroup CreateOrderItemShipGroup(string orderId);
+    Task<OrderItemShipGroup> CreateOrderItemShipGroup(string orderId);
 
     Task<OperationResult> AddOrderItemShipGroupAssoc(
         string orderId,
@@ -97,7 +97,7 @@ public class ShipmentService : IShipmentService
         return await Task.FromResult(shipmentReceipt);
     }
 
-    public OrderItemShipGroup CreateOrderItemShipGroup(string orderId)
+    public async Task<OrderItemShipGroup> CreateOrderItemShipGroup(string orderId)
     {
         var stamp = DateTime.UtcNow;
         var orderItemShipGroup = new OrderItemShipGroup
@@ -108,6 +108,7 @@ public class ShipmentService : IShipmentService
             CreatedStamp = stamp
         };
         _context.OrderItemShipGroups.Add(orderItemShipGroup);
+        await _context.SaveChangesAsync();
 
         return orderItemShipGroup;
     }
@@ -1001,8 +1002,11 @@ public class ShipmentService : IShipmentService
             // Define the main error message prefix
             string mainErrorMessage = "Unable to add item to Order Item Ship Group.";
 
-            var orderItem =
+            /*var orderItem =
                 await _utilityService.FindLocalOrDatabaseAsync<OrderItem>(orderId, orderItemSeqId);
+                */
+
+            var orderItem = await _context.OrderItems.FindAsync(orderId, orderItemSeqId);
 
             // Check if the order item exists
             if (orderItem == null)
@@ -1058,14 +1062,19 @@ public class ShipmentService : IShipmentService
 
                     // Add the new ship group to the database context
                     _context.OrderItemShipGroups.Add(newShipGroup);
+                    await _context.SaveChangesAsync();
 
                     // Update shipGroupSeqId with the newly created ship group sequence ID
                     shipGroupSeqId = newShipGroup.ShipGroupSeqId;
                 }
 
                 // Retrieve the OrderItemShipGroup using the orderId and shipGroupSeqId
-                var orderItemShipGroup =
+                /*var orderItemShipGroup =
                     await _utilityService.FindLocalOrDatabaseAsync<OrderItemShipGroup>(orderId, shipGroupSeqId);
+                    */
+                
+                var orderItemShipGroup = await _context.OrderItemShipGroups
+                    .FirstOrDefaultAsync(oisg => oisg.OrderId == orderId && oisg.ShipGroupSeqId == shipGroupSeqId);
 
 
                 // Check if the OrderItemShipGroup exists
@@ -1116,6 +1125,7 @@ public class ShipmentService : IShipmentService
 
                 // Add the new association to the database context
                 _context.OrderItemShipGroupAssocs.Add(newAssoc);
+                await _context.SaveChangesAsync();
 
                 // Return a success result indicating the association was added successfully
                 return OperationResult.Success("Order item ship group association added successfully.");

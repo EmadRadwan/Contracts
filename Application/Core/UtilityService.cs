@@ -14,14 +14,14 @@ public interface IUtilityService
     Task<string> GetNextSequence(string sequenceName);
     Task<string> GetNextOrderSequence(string orderTypeId);
     Task<OrderRole> GetOrderRole(string orderId, string roleTypeId);
-    OrderRole CreateOrderRole(string orderId, string roleTypeId, string partyId);
+    Task<OrderRole> CreateOrderRole(string orderId, string roleTypeId, string partyId);
     OrderRole UpdateOrderRole(string orderId, string roleTypeId, string partyId);
-    OrderStatus CreateOrderStatus(string orderId, string statusTypeId);
+    Task<OrderStatus> CreateOrderStatus(string orderId, string statusTypeId);
     InvoiceStatus CreateInvoiceStatus(string invoiceId, string statusTypeId);
     void DeleteOrderStatus(string orderId, string statusTypeId);
     Task DeleteAllOrderItemStatusAsync(OrderItemDto2 orderItem);
     Task UpdateAllOrderItemStatusAsync(OrderItemDto2 orderItem);
-    OrderStatus CreateOrderItemStatus(OrderItem orderItem, string statusTypeId);
+    Task<OrderStatus> CreateOrderItemStatus(OrderItem orderItem, string statusTypeId);
     InvoiceRole CreateInvoiceRole(string invoiceId, string roleTypeId, string partyId);
     Task<string> GetPaymentParentType(string paymentTypeId);
     Task<string?> GetBaseCurrencyForLoggedInUser();
@@ -162,7 +162,7 @@ public class UtilityService : IUtilityService
         }
     }
 
-    public OrderRole CreateOrderRole(string orderId, string roleTypeId, string partyId)
+    public async Task<OrderRole> CreateOrderRole(string orderId, string roleTypeId, string partyId)
     {
         var stamp = DateTime.UtcNow;
         var orderRole = new OrderRole
@@ -174,6 +174,7 @@ public class UtilityService : IUtilityService
             LastUpdatedStamp = stamp
         };
         _context.OrderRoles.Add(orderRole);
+        await _context.SaveChangesAsync();
         return orderRole;
     }
 
@@ -189,7 +190,7 @@ public class UtilityService : IUtilityService
         return orderRole;
     }
 
-    public OrderStatus CreateOrderStatus(string orderId, string statusTypeId)
+    public async Task<OrderStatus> CreateOrderStatus(string orderId, string statusTypeId)
     {
         var stamp = DateTime.UtcNow;
         var orderStatus = new OrderStatus
@@ -202,6 +203,8 @@ public class UtilityService : IUtilityService
             CreatedStamp = stamp
         };
         _context.OrderStatuses.Add(orderStatus);
+        await _context.SaveChangesAsync();
+
         return orderStatus;
     }
 
@@ -220,7 +223,7 @@ public class UtilityService : IUtilityService
         return invoiceStatus;
     }
 
-    public OrderStatus CreateOrderItemStatus(OrderItem orderItem, string statusTypeId)
+    public async Task<OrderStatus> CreateOrderItemStatus(OrderItem orderItem, string statusTypeId)
     {
         var stamp = DateTime.UtcNow;
         var orderStatus = new OrderStatus
@@ -234,6 +237,7 @@ public class UtilityService : IUtilityService
             CreatedStamp = stamp
         };
         _context.OrderStatuses.Add(orderStatus);
+        await _context.SaveChangesAsync();
         return orderStatus;
     }
 
@@ -255,6 +259,7 @@ public class UtilityService : IUtilityService
         if (!orderStatus.Any()) throw new InvalidOperationException("Order status not found.");
 
         _context.OrderStatuses.RemoveRange(orderStatus);
+        await _context.SaveChangesAsync();
     }
 
     public async Task UpdateAllOrderItemStatusAsync(OrderItemDto2 orderItem)
@@ -263,6 +268,7 @@ public class UtilityService : IUtilityService
             .Where(x => x.OrderId == orderItem.OrderId && x.OrderItemSeqId == orderItem.OrderItemSeqId).ToListAsync();
 
         foreach (var orderStatus in orderItemStatus) orderStatus.LastUpdatedStamp = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
     }
 
     public async Task<string> GetPaymentParentType(string paymentTypeId)
