@@ -126,7 +126,8 @@ public class ListCertificateItems
                             AchievementPercentage = x.WorkEffort.AchievementPercent,
                             TransportationExpenses = x.WorkEffort.TransportationExpenses ?? 0m,
                             Gratuities = x.WorkEffort.Gratuities ?? 0m,
-                            Deductions = x.WorkEffort.Deductions ?? 0m
+                            Deductions = x.WorkEffort.Deductions ?? 0m,
+                            DeductionDescription = x.WorkEffort.DeductionDescription
                         }
                     )
                     .ToListAsync(cancellationToken);

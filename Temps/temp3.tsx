@@ -1,564 +1,241 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useAppDispatch, useAppSelector, useFetchFacilitiesQuery } from '../../../app/store/configureStore';
-import { Field, Form, FormElement } from '@progress/kendo-react-form';
-import { Box, Button, Collapse, Grid, IconButton, Paper, Typography } from '@mui/material';
-import LoadingButton from '@mui/lab/LoadingButton';
-import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
-import { resetCertificateUi, setCertificateFormEditMode } from '../slice/certificateUiSlice';
-import { RibbonContainer, Ribbon } from 'react-ribbons';
-import LoadingComponent from '../../../app/layout/LoadingComponent';
-import { requiredValidator } from '../../../app/common/form/Validators';
-import { toast } from 'react-toastify';
-import FormDatePicker from '../../../app/common/form/FormDatePicker';
-import ProjectMenu from '../menu/ProjectMenu';
-import useProjectCertificate from '../hook/useProjectCertificate';
-import { CertificateItemsListMemo } from '../dashboard/CertificateItemsList';
-import { FormComboBoxVirtualProject } from '../../../app/common/form/FormComboBoxVirtualProject';
-import { FormComboBoxVirtualContractor } from '../../../app/common/form/FormComboBoxVirtualContractor';
-import FormInput from '../../../app/common/form/FormInput';
-import { resetUiCertificateItems } from '../slice/certificateItemsUiSlice';
-import { Menu, MenuItem } from '@mui/material';
-import { CertificateStatus } from '../../../app/models/project/certificate';
-import { MemoizedFormDropDownList2 } from '../../../app/common/form/MemoizedFormDropDownList2';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import { CertificateItemsListGroupedMemo } from '../dashboard/CertificateItemsListGrouped';
-import { FormComboBoxVirtualSupplierMultiColumn } from '../../../app/common/form/FormComboBoxVirtualSupplierMultiColumn';
-import { certificateReportSelector, certificateSubTotal } from '../slice/certificateSelectors';
-import CertificatePDFDocument from './CertificatePDFDocument';
+// ... (previous imports and styles remain unchanged)
 
-interface ProjectCertificateFormProps {
-  editMode: number; // 0: view, 1: create, 2: edit (CREATED), 3: edit (APPROVED), 4: edit (COMPLETED)
-  cancelEdit: () => void;
-}
-
-interface CertificateActionsMenuProps {
-  workEffortId: string | undefined;
-  currentStatusId: string | undefined;
-  handleStatusUpdate: (action: string) => void;
-  disabled: boolean;
-}
-
-const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
-                                                                         workEffortId,
-                                                                         currentStatusId,
-                                                                         handleStatusUpdate,
-                                                                         disabled,
+const CertificatePDFDocument: React.FC<CertificatePDFDocumentProps> = ({
+                                                                           certificate,
+                                                                           items,
+                                                                           getTranslatedLabel,
+                                                                           subtotal,
+                                                                           isGrouped,
+                                                                           isSubmitting,
+                                                                           isAddCertificateLoading,
+                                                                           isUpdateCertificateLoading,
+                                                                           isReceiveLoading,
+                                                                           certificateNumber,
+                                                                           certificateType,
+                                                                           pageSize = 15,
                                                                        }) => {
-  const { user } = useAppSelector((state) => state.account);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
-  const { getTranslatedLabel } = useTranslationHelper();
+    // REFACTOR: Adjusted pagination to handle list-based items
+    // Purpose: Ensures items are split across pages without breaking list structure
+    // Improvement: Maintains readability for large item sets
+    const pages = [];
+    for (let i = 0; i < items.length; i += pageSize) {
+        pages.push(items.slice(i, i + pageSize));
+    }
 
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
+    const isSupplyWithDiscount = certificateType === 'SUPPLY_PROCUREMENT_CERTIFICATE';
+    const isSupplyCertificate = ['SUPPLY_PROCUREMENT_CERTIFICATE', 'COMPANY_SUPPLY_SALE_CERTIFICATE'].includes(certificateType);
+    const partyField = isGrouped ? certificate.partyIdContractor ?? 'N/A' : certificate.partyIdSupplier ?? 'N/A';
 
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
+    // REFACTOR: Updated translation keys to match JSON structure
+    // Purpose: Aligns with provided Arabic translations under projects.certificate
+    // Improvement: Ensures correct Arabic labels are used
+    const partyLabelKey = isGrouped ? 'projects.certificate.form.contractor' : 'projects.certificate.form.supplier';
+    const partyLabelDefault = isGrouped ? 'Contractor' : 'Supplier';
 
-  const handleApprove = () => {
-    handleStatusUpdate('Approve Certificate');
-    handleClose();
-  };
+    const MyDocument = () => (
+        <Document>
+            {pages.map((pageItems, pageIndex) => (
+                <Page key={pageIndex} size="A4" orientation="landscape" style={styles.page}>
+                    <View style={styles.section}>
+                        {/* Header Section */}
+                        <View style={styles.header}>
+                            <Text style={styles.title}>
+                                {getTranslatedLabel('projects.certificate.report.title', 'Certificate Report')}: {certificate.certificateNumber}
+                            </Text>
+                            <View style={{ flexDirection: 'row-reverse', alignItems: 'baseline' }}>
+                                <Text style={[styles.headerText, { textAlign: 'right' }]}>
+                                    {getTranslatedLabel('projects.certificate.type', 'Type')}
+                                </Text>
+                                <Text style={styles.headerText}>:</Text>
+                                <Text style={[styles.headerText, { textAlign: 'left' }]}>{certificateType}</Text>
+                            </View>
+                            <View style={{ flexDirection: 'row-reverse', alignItems: 'baseline' }}>
+                                <Text style={[styles.headerText, { textAlign: 'right' }]}>
+                                    {getTranslatedLabel('projects.certificate.date', 'Date')}
+                                </Text>
+                                <Text style={styles.headerText}>:</Text>
+                                <Text style={[styles.headerText, { textAlign: 'left' }]}>{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</Text>
+                            </View>
+                            <View style={{ flexDirection: 'row-reverse', alignItems: 'baseline' }}>
+                                <Text style={[styles.headerText, { textAlign: 'right' }]}>
+                                    {getTranslatedLabel('projects.certificate.description', 'Description')}
+                                </Text>
+                                <Text style={styles.headerText}>:</Text>
+                                <Text style={[styles.headerText, { textAlign: 'left' }]}>{certificate.description ?? 'N/A'}</Text>
+                            </View>
+                            <View style={{ flexDirection: 'row-reverse', alignItems: 'baseline' }}>
+                                <Text style={[styles.headerText, { textAlign: 'right' }]}>
+                                    {getTranslatedLabel(partyLabelKey, partyLabelDefault)}
+                                </Text>
+                                <Text style={styles.headerText}>:</Text>
+                                <Text style={[styles.headerText, { textAlign: 'left' }]}>{partyField}</Text>
+                            </View>
+                            <View style={{ flexDirection: 'row-reverse', alignItems: 'baseline' }}>
+                                <Text style={[styles.headerText, { textAlign: 'right' }]}>
+                                    {getTranslatedLabel('projects.certificate.total', 'Total')}
+                                </Text>
+                                <Text style={styles.headerText}>:</Text>
+                                <Text style={[styles.headerText, { textAlign: 'left' }]}>{subtotal.toFixed(2)}</Text>
+                            </View>
+                            {!isGrouped && (
+                                <View style={{ flexDirection: 'row-reverse', alignItems: 'baseline' }}>
+                                    <Text style={[styles.headerText, { textAlign: 'right' }]}>
+                                        {getTranslatedLabel('projects.certificate.form.facility', 'Facility')}
+                                    </Text>
+                                    <Text style={styles.headerText}>:</Text>
+                                    <Text style={[styles.headerText, { textAlign: 'left' }]}>{certificate.facilityName ?? 'N/A'}</Text>
+                                </View>
+                            )}
+                        </View>
 
-  const handleComplete = () => {
-    handleStatusUpdate('Complete Certificate');
-    handleClose();
-  };
+                        {/* REFACTOR: Replaced table with list-based item rendering */}
+                        {/* Purpose: Displays items as a vertical list to match client’s layout */}
+                        {/* Improvement: Reduces horizontal crowding and aligns with header style */}
+                        {pageItems && pageItems.length > 0 ? (
+                            pageItems.map((item, itemIndex) => (
+                                <View key={`${pageIndex}-${itemIndex}`} style={styles.itemSection}>
+                                    <Text style={styles.itemTitle}>
+                                        {getTranslatedLabel('projects.certificate.items.list.item', 'Item')} {itemIndex + 1}: {item.productName ?? 'N/A'}
+                                    </Text>
+                                    <View style={{ flexDirection: 'row-reverse', alignItems: 'baseline' }}>
+                                        <Text style={[styles.itemText, { textAlign: 'right' }]}>
+                                            {getTranslatedLabel('projects.certificate.items.list.code', 'Code')}
+                                        </Text>
+                                        <Text style={styles.itemText}>:</Text>
+                                        <Text style={[styles.itemText, { textAlign: 'left' }]}>{item.code ?? 'N/A'}</Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row-reverse', alignItems: 'baseline' }}>
+                                        <Text style={[styles.itemText, { textAlign: 'right' }]}>
+                                            {getTranslatedLabel('projects.certificate.items.list.description', 'Description')}
+                                        </Text>
+                                        <Text style={styles.itemText}>:</Text>
+                                        <Text style={[styles.itemText, { textAlign: 'left' }]}>{item.description ?? 'N/A'}</Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row-reverse', alignItems: 'baseline' }}>
+                                        <Text style={[styles.itemText, { textAlign: 'right' }]}>
+                                            {getTranslatedLabel('projects.certificate.items.list.quantity', 'Quantity')}
+                                        </Text>
+                                        <Text style={styles.itemText}>:</Text>
+                                        <Text style={[styles.itemText, { textAlign: 'left' }]}>{item.quantity ?? 'N/A'}</Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row-reverse', alignItems: 'baseline' }}>
+                                        <Text style={[styles.itemText, { textAlign: 'right' }]}>
+                                            {getTranslatedLabel('projects.certificate.items.list.unitOfMeasure', 'Unit of Measure')}
+                                        </Text>
+                                        <Text style={styles.itemText}>:</Text>
+                                        <Text style={[styles.itemText, { textAlign: 'left' }]}>{item.unitOfMeasure ?? 'N/A'}</Text>
+                                    </View>
+                                    {!isGrouped && (
+                                        <>
+                                            <View style={{ flexDirection: 'row-reverse', alignItems: 'baseline' }}>
+                                                <Text style={[styles.itemText, { textAlign: 'right' }]}>
+                                                    {getTranslatedLabel('projects.certificate.items.list.unitPrice', 'Unit Price')}
+                                                </Text>
+                                                <Text style={styles.itemText}>:</Text>
+                                                <Text style={[styles.itemText, { textAlign: 'left' }]}>{item.unitPrice?.toFixed(2) ?? 'N/A'}</Text>
+                                            </View>
+                                            <View style={{ flexDirection: 'row-reverse', alignItems: 'baseline' }}>
+                                                <Text style={[styles.itemText, { textAlign: 'right' }]}>
+                                                    {getTranslatedLabel('projects.certificate.items.list.totalAmount', 'Total Amount')}
+                                                </Text>
+                                                <Text style={styles.itemText}>:</Text>
+                                                <Text style={[styles.itemText, { textAlign: 'left' }]}>{item.displayTotal?.toFixed(2) ?? 'N/A'}</Text>
+                                            </View>
+                                            {isSupplyWithDiscount && (
+                                                <View style={{ flexDirection: 'row-reverse', alignItems: 'baseline' }}>
+                                                    <Text style={[styles.itemText, { textAlign: 'right' }]}>
+                                                        {getTranslatedLabel('projects.certificate.items.list.discount', 'Discount')}
+                                                    </Text>
+                                                    <Text style={styles.itemText}>:</Text>
+                                                    <Text style={[styles.itemText, { textAlign: 'left' }]}>{item.discount?.toFixed(2) ?? 'N/A'}</Text>
+                                                </View>
+                                            )}
+                                            {isSupplyCertificate && (
+                                                <>
+                                                    <View style={{ flexDirection: 'row-reverse', alignItems: 'baseline' }}>
+                                                        <Text style={[styles.itemText, { textAlign: 'right' }]}>
+                                                            {getTranslatedLabel('projects.certificate.items.list.procurementDate', 'Procurement Date')}
+                                                        </Text>
+                                                        <Text style={styles.itemText}>:</Text>
+                                                        <Text style={[styles.itemText, { textAlign: 'left' }]}>{item.formattedProcurementDate ?? 'N/A'}</Text>
+                                                    </View>
+                                                    <View style={{ flexDirection: 'row-reverse', alignItems: 'baseline' }}>
+                                                        <Text style={[styles.itemText, { textAlign: 'right' }]}>
+                                                            {getTranslatedLabel('projects.certificate.items.list.transportationExpenses', 'Transportation Expenses')}
+                                                        </Text>
+                                                        <Text style={styles.itemText}>:</Text>
+                                                        <Text style={[styles.itemText, { textAlign: 'left' }]}>{item.transportationExpenses?.toFixed(2) ?? 'N/A'}</Text>
+                                                    </View>
+                                                    <View style={{ flexDirection: 'row-reverse', alignItems: 'baseline' }}>
+                                                        <Text style={[styles.itemText, { textAlign: 'right' }]}>
+                                                            {getTranslatedLabel('projects.certificate.items.list.gratuities', 'Gratuities')}
+                                                        </Text>
+                                                        <Text style={styles.itemText}>:</Text>
+                                                        <Text style={[styles.itemText, { textAlign: 'left' }]}>{item.gratuities?.toFixed(2) ?? 'N/A'}</Text>
+                                                    </View>
+                                                </>
+                                            )}
+                                        </>
+                                    )}
+                                </View>
+                            ))
+                        ) : (
+                            <View style={styles.itemSection}>
+                                <Text style={styles.error}>
+                                    {getTranslatedLabel('projects.certificate.items.list.noData', 'No items available')}
+                                </Text>
+                            </View>
+                        )}
 
-  const isApproveDisabled = !workEffortId || currentStatusId === CertificateStatus.APPROVED || currentStatusId === CertificateStatus.COMPLETE;
-  const isCompleteDisabled = !workEffortId || currentStatusId === CertificateStatus.COMPLETE;
+                        {/* REFACTOR: Retained main item description and discount note sections */}
+                        {pageItems.some(item => item.mainItemDescription) && (
+                            <View style={styles.noteSection}>
+                                <Text style={styles.noteTitle}>
+                                    {getTranslatedLabel('projects.certificate.items.mainDescription', 'Main Item Description')}
+                                </Text>
+                                {pageItems.map((item, itemIndex) => (
+                                    item.mainItemDescription && (
+                                        <Text key={`${pageIndex}-${itemIndex}-main`} style={styles.noteText}>
+                                            {item.mainItemDescription}
+                                        </Text>
+                                    )
+                                ))}
+                            </View>
+                        )}
+                        {pageItems.some(item => item.discountNote) && (
+                            <View style={styles.noteSection}>
+                                <Text style={styles.noteTitle}>
+                                    {getTranslatedLabel('projects.certificate.items.discountNote', 'Discount Description Note')}
+                                </Text>
+                                {pageItems.map((item, itemIndex) => (
+                                    item.discountNote && (
+                                        <Text key={`${pageIndex}-${itemIndex}-discount`} style={styles.noteText}>
+                                            {item.discountNote}
+                                        </Text>
+                                    )
+                                ))}
+                            </View>
+                        )}
+                    </View>
+                </Page>
+            ))}
+        </Document>
+    );
 
-  return (
-      <>
-        <Button
-            variant="contained"
-            color="primary"
-            onClick={handleClick}
-            disabled={disabled || !workEffortId}
-            sx={{ mt: 2, mr: 2 }}
-        >
-          {getTranslatedLabel('certificate.actions', 'Actions')}
-        </Button>
-        <Menu
-            anchorEl={anchorEl}
-            open={open}
-            onClose={handleClose}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        >
-          {user?.roles?.includes('ApproveCertificate') && (
-              <MenuItem onClick={handleApprove} disabled={isApproveDisabled}>
-                {getTranslatedLabel('certificate.approve', 'Approve Certificate')}
-              </MenuItem>
-          )}
-          {/*{user?.roles?.includes('CompleteCertificate') && (
-          <MenuItem onClick={handleComplete} disabled={isCompleteDisabled}>
-            {getTranslatedLabel('certificate.complete', 'Complete Certificate')}
-          </MenuItem>
-        )}*/}
-        </Menu>
-      </>
-  );
+    return (
+        <PDFDownloadLink document={<MyDocument />} fileName={`Certificate_${certificateNumber}.pdf`}>
+            {({ loading }) => (
+                <Button
+                    color="primary"
+                    variant="outlined"
+                    disabled={isSubmitting || isAddCertificateLoading || isUpdateCertificateLoading || isReceiveLoading || loading}
+                    aria-label={loading ? 'Generating PDF' : 'Export to PDF'}
+                >
+                    {loading ? getTranslatedLabel('projects.certificate.generating', 'Generating PDF...') : getTranslatedLabel('projects.certificate.export', 'Export to PDF')}
+                </Button>
+            )}
+        </PDFDownloadLink>
+    );
 };
 
-export default function ProjectCertificateForm({ editMode, cancelEdit }: ProjectCertificateFormProps) {
-  const formRef = useRef<any>(null);
-  const formRef2 = useRef<boolean>(false);
-  const dispatch = useAppDispatch();
-  const { getTranslatedLabel } = useTranslationHelper();
-  const { currentCertificateType, selectedCertificate } = useAppSelector((state) => state.certificateUi);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedMenuItem, setSelectedMenuItem] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { language } = useAppSelector((state) => state.localization);
-  const { user } = useAppSelector((state) => state.account);
-  const [isFormCollapsed, setIsFormCollapsed] = useState(false);
-  const reportData = useAppSelector(certificateReportSelector);
-  const subtotal = useAppSelector(certificateSubTotal);
-  console.log('Form rendered');
-
-  const { formEditMode, setFormEditMode, handleCreate, isAddCertificateLoading, isUpdateCertificateLoading, isReceiveLoading } =
-      useProjectCertificate({ selectedMenuItem, formRef2, editMode, setIsLoading });
-
-  const { data: facilities = [] } = useFetchFacilitiesQuery(undefined);
-
-  const renderSwitchStatus = useCallback(() => {
-    const status = selectedCertificate?.currentStatusId || CertificateStatus.CREATED;
-    const { language } = useAppSelector((state) => state.localization);
-
-    if (selectedCertificate?.statusDescription && selectedCertificate?.statusDescriptionArabic) {
-      return {
-        label: language === 'ar' ? selectedCertificate.statusDescriptionArabic : selectedCertificate.statusDescription,
-        backgroundColor: status === CertificateStatus.CREATED ? 'blue' : status === CertificateStatus.APPROVED ? 'yellow' : 'green',
-        foreColor: status === CertificateStatus.APPROVED ? '#000000' : '#ffffff',
-      };
-    }
-
-    const statusLabels: { [key in CertificateStatus]: { en: string; ar: string } } = {
-      [CertificateStatus.CREATED]: { en: 'Created', ar: 'تم الإنشاء' },
-      [CertificateStatus.APPROVED]: { en: 'Approved', ar: 'تمت الموافقة' },
-      [CertificateStatus.COMPLETE]: { en: 'Complete', ar: 'مكتمل' },
-    };
-
-    switch (status) {
-      case CertificateStatus.CREATED:
-        return {
-          label: language === 'ar' ? statusLabels[CertificateStatus.CREATED].ar : statusLabels[CertificateStatus.CREATED].en,
-          backgroundColor: 'blue',
-          foreColor: '#ffffff',
-        };
-      case CertificateStatus.APPROVED:
-        return {
-          label: language === 'ar' ? statusLabels[CertificateStatus.APPROVED].ar : statusLabels[CertificateStatus.APPROVED].en,
-          backgroundColor: 'yellow',
-          foreColor: '#000000',
-        };
-      case CertificateStatus.COMPLETE:
-        return {
-          label: language === 'ar' ? statusLabels[CertificateStatus.COMPLETE].ar : statusLabels[CertificateStatus.COMPLETE].en,
-          backgroundColor: 'green',
-          foreColor: '#ffffff',
-        };
-      default:
-        return {
-          label: language === 'ar' ? 'غير معروف' : 'Unknown',
-          backgroundColor: 'gray',
-          foreColor: '#ffffff',
-        };
-    }
-  }, [selectedCertificate]);
-
-  const formKey = useMemo(() => formRef2.current.toString(), [formRef2.current]);
-
-  const showSupplier = currentCertificateType === 'SUPPLY_PROCUREMENT_CERTIFICATE';
-  const showContractor = ['WORKMANSHIP_CONTRACTING_CERTIFICATE', 'COMPANY_SUPPLY_SALE_CERTIFICATE'].includes(currentCertificateType);
-
-  const initialFormValues = useMemo(() => {
-    if (editMode === 1 || !selectedCertificate?.workEffortId) {
-      const now = new Date();
-      const oneWeekAgo = new Date(now);
-      oneWeekAgo.setDate(now.getDate() - 7);
-      return {
-        description: '',
-        projectId: undefined,
-        partyIdSupplier: undefined,
-        partyIdContractor: undefined,
-        estimatedStartDate: oneWeekAgo,
-        estimatedCompletionDate: now,
-        facilityId: undefined,
-      };
-    }
-    return {
-      description: selectedCertificate.description || '',
-      projectId: selectedCertificate.projectId
-          ? { projectId: selectedCertificate.projectId, projectName: selectedCertificate.projectName || '' }
-          : undefined,
-      partyIdSupplier: showSupplier && selectedCertificate.partyIdSupplier
-          ? { fromPartyId: selectedCertificate.partyIdSupplier.fromPartyId || '', fromPartyName: selectedCertificate.partyIdSupplier.partyName || '' }
-          : undefined,
-      partyIdContractor: showContractor && selectedCertificate.partyIdContractor
-          ? { fromPartyId: selectedCertificate.partyIdContractor.fromPartyId || '', fromPartyName: selectedCertificate.partyIdContractor.partyName || '' }
-          : undefined,
-      estimatedStartDate: selectedCertificate.estimatedStartDate ? new Date(selectedCertificate.estimatedStartDate) : null,
-      estimatedCompletionDate: selectedCertificate.estimatedCompletionDate ? new Date(selectedCertificate.estimatedCompletionDate) : null,
-      facilityId: selectedCertificate.facilityId,
-    };
-  }, [editMode, selectedCertificate, showSupplier, showContractor]);
-
-  const handleProjectChange = useCallback(
-      (event: any, formRenderProps: any) => {
-        const project = event.value;
-        if (project?.facilityId && facilities.some((f: any) => f.facilityId === project.facilityId)) {
-          formRenderProps.onChange('facilityId', { value: project.facilityId });
-        } else {
-          formRenderProps.onChange('facilityId', { value: undefined });
-        }
-      },
-      [facilities]
-  );
-
-  const handleSubmit = useCallback(
-      async (formProps: any) => {
-        if (!formProps.isValid) {
-          return false;
-        }
-        if (isSubmitting) return false;
-        setIsSubmitting(true);
-        const action = editMode === 1 ? 'Create Certificate' : 'Update Certificate';
-        setSelectedMenuItem(action);
-        const certificateData = {
-          values: {
-            workEffortTypeId: currentCertificateType,
-            description: formProps.values.description,
-            projectId: formProps.values.projectId?.projectId || formProps.values.projectId,
-            partyIdSupplier: formProps.values.partyIdSupplier?.fromPartyId,
-            partyIdContractor: formProps.values.partyIdContractor?.fromPartyId,
-            estimatedStartDate: formProps.values.estimatedStartDate,
-            estimatedCompletionDate: formProps.values.estimatedCompletionDate,
-            facilityId: formProps.values.facilityId,
-          },
-          selectedMenuItem: action,
-        };
-        try {
-          await handleCreate(certificateData);
-        } catch (error) {
-          toast.error(getTranslatedLabel('certificate.form.error', 'Failed to save certificate'));
-        } finally {
-          setIsSubmitting(false);
-          setSelectedMenuItem('');
-        }
-      },
-      [isSubmitting, editMode, currentCertificateType, getTranslatedLabel, handleCreate]
-  );
-
-  const handleStatusUpdate = useCallback(
-      async (action: string) => {
-        if (!selectedCertificate?.workEffortId) {
-          toast.error(getTranslatedLabel('certificate.noWorkEffortId', 'No certificate selected'));
-          return;
-        }
-        setIsSubmitting(true);
-        setSelectedMenuItem(action);
-        const statusUpdate = {
-          values: {
-            workEffortId: selectedCertificate.workEffortId,
-            currentStatusId: action === 'Approve Certificate' ? CertificateStatus.APPROVED : CertificateStatus.COMPLETE,
-          },
-          selectedMenuItem: action,
-        };
-        try {
-          await handleCreate(statusUpdate);
-          toast.success(
-              getTranslatedLabel(
-                  action === 'Approve Certificate' ? 'certificate.approved' : 'certificate.completed',
-                  action === 'Approve Certificate' ? 'Certificate approved' : 'Certificate completed'
-              )
-          );
-        } catch (error) {
-          toast.error(getTranslatedLabel('certificate.statusUpdate.error', 'Failed to update certificate status'));
-        } finally {
-          setIsSubmitting(false);
-          setSelectedMenuItem('');
-        }
-      },
-      [handleCreate, selectedCertificate, getTranslatedLabel]
-  );
-
-  const handleCancel = useCallback(() => {
-    formRef2.current = !formRef2.current;
-    dispatch(resetCertificateUi());
-    dispatch(setCertificateFormEditMode(0));
-    dispatch(resetUiCertificateItems());
-    cancelEdit();
-    setSelectedMenuItem('');
-  }, [dispatch, cancelEdit]);
-
-  useEffect(() => {
-    if (selectedCertificate?.workEffortId) {
-      formRef.current?.resetForm({ values: initialFormValues });
-      formRef2.current = !formRef2.current;
-    }
-  }, [selectedCertificate?.workEffortId, initialFormValues]);
-
-  const getCertificateTypeDisplayText = (type: string) => {
-    return type
-        .split('_')
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-  };
-
-  const status = renderSwitchStatus();
-
-  const renderCertificateItems = () => {
-    if (currentCertificateType === 'WORKMANSHIP_CONTRACTING_CERTIFICATE') {
-      return (
-          <CertificateItemsListGroupedMemo
-              editMode={editMode}
-              workEffortId={selectedCertificate?.workEffortId}
-              isFormCollapsed={isFormCollapsed}
-          />
-      );
-    }
-    return (
-        <CertificateItemsListMemo
-            editMode={editMode}
-            workEffortId={selectedCertificate?.workEffortId}
-            isFormCollapsed={isFormCollapsed}
-        />
-    );
-  };
-
-  return (
-      <>
-        <ProjectMenu
-            onMenuSelect={(key) => {
-              console.log('Menu item selected in form:', key);
-              if (key === 'projectCertificates') {
-                cancelEdit();
-              }
-            }}
-        />
-        <Paper elevation={5} className="div-container-withBorderCurved">
-          <Grid container spacing={2} alignItems="center" position="relative">
-            <Grid item xs={11}>
-              <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ paddingLeft: 3 }}>
-                <Typography
-                    sx={{ fontWeight: 'bold', fontSize: '18px', color: editMode === 1 ? 'green' : 'black' }}
-                    variant="h6"
-                >
-                  {selectedCertificate?.certificateNumber
-                      ? `${getTranslatedLabel('certificate.form.title', 'Project Certificate No')}: ${
-                          selectedCertificate.certificateNumber
-                      } (${getCertificateTypeDisplayText(currentCertificateType)})`
-                      : `${getTranslatedLabel('certificate.form.new', 'New Project Certificate')} (${getCertificateTypeDisplayText(
-                          currentCertificateType
-                      )})`}
-                </Typography>
-                <IconButton onClick={() => setIsFormCollapsed(!isFormCollapsed)}>
-                  {isFormCollapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
-                </IconButton>
-                {editMode >= 2 && (
-                    <CertificateActionsMenu
-                        workEffortId={selectedCertificate?.workEffortId}
-                        currentStatusId={selectedCertificate?.currentStatusId}
-                        handleStatusUpdate={handleStatusUpdate}
-                        disabled={editMode < 2 || isSubmitting || isAddCertificateLoading || isUpdateCertificateLoading}
-                    />
-                )}
-              </Box>
-            </Grid>
-            <Grid item xs={1}>
-              {editMode > 1 && (
-                  <RibbonContainer>
-                    <Ribbon
-                        side={language === 'ar' ? 'left' : 'right'}
-                        type="corner"
-                        size="large"
-                        backgroundColor={status.backgroundColor}
-                        color={status.foreColor}
-                        fontFamily="sans-serif"
-                    >
-                      {status.label}
-                    </Ribbon>
-                  </RibbonContainer>
-              )}
-            </Grid>
-          </Grid>
-          <Collapse in={!isFormCollapsed}>
-            <Form
-                ref={formRef}
-                initialValues={initialFormValues}
-                key={formKey}
-                onSubmitClick={handleSubmit}
-                render={(formRenderProps) => (
-                    <FormElement>
-                      <fieldset className="k-form-fieldset">
-                        <Grid container alignItems="start" justifyContent="start" spacing={1}>
-                          <Grid container spacing={1} alignItems="center" justifyContent="flex-start" sx={{ paddingLeft: 3 }}>
-                            <Grid item xs={2} className={editMode > 3 ? 'grid-disabled' : 'grid-normal'}>
-                              <Field
-                                  id="projectId"
-                                  name="projectId"
-                                  component={FormComboBoxVirtualProject}
-                                  label={getTranslatedLabel('certificate.form.project', 'Project')}
-                                  dataItemKey="projectId"
-                                  textField="ProjectName"
-                                  validator={requiredValidator}
-                                  disabled={editMode > 3}
-                                  onChange={(event: any) => handleProjectChange(event, formRenderProps)}
-                              />
-                            </Grid>
-                            {showSupplier && (
-                                <Grid item xs={showContractor ? 2 : 3} className={editMode > 3 ? 'grid-disabled' : 'grid-normal'}>
-                                  <Field
-                                      id="partyIdSupplier"
-                                      name="partyIdSupplier"
-                                      component={FormComboBoxVirtualSupplierMultiColumn}
-                                      label={getTranslatedLabel('certificate.form.supplier', 'Supplier *')}
-                                      valueField="fromPartyId"
-                                      textField="fromPartyName"
-                                      validator={requiredValidator}
-                                      disabled={editMode > 3}
-                                  />
-                                </Grid>
-                            )}
-                            {showContractor && (
-                                <Grid item xs={showSupplier ? 2 : 3} className={editMode > 3 ? 'grid-disabled' : 'grid-normal'}>
-                                  <Field
-                                      id="partyIdContractor"
-                                      name="partyIdContractor"
-                                      component={FormComboBoxVirtualContractor}
-                                      label={getTranslatedLabel('certificate.form.contractor', 'Contractor *')}
-                                      valueField="fromPartyId"
-                                      textField="fromPartyName"
-                                      validator={requiredValidator}
-                                      disabled={editMode > 3}
-                                  />
-                                </Grid>
-                            )}
-                            {['SUPPLY_PROCUREMENT_CERTIFICATE', 'EXTERNAL_SUPPLY_SALE_CERTIFICATE', 'COMPANY_SUPPLY_SALE_CERTIFICATE', 'CONTRACTOR_PURCHASE_CERTIFICATE'].includes(
-                                currentCertificateType
-                            ) && (
-                                <Grid item xs={2} className={editMode > 3 ? 'grid-disabled' : 'grid-normal'}>
-                                  <Field
-                                      id="facilityId"
-                                      name="facilityId"
-                                      label={getTranslatedLabel('facility.items.form.facility', 'Facility *')}
-                                      component={MemoizedFormDropDownList2}
-                                      data={facilities}
-                                      dataItemKey="facilityId"
-                                      textField="facilityName"
-                                      validator={requiredValidator}
-                                      disabled={editMode > 3}
-                                  />
-                                </Grid>
-                            )}
-                            <Grid item xs={showSupplier && showContractor ? 1.5 : 2} className={editMode > 3 ? 'grid-disabled' : 'grid-normal'}>
-                              <Field
-                                  name="estimatedStartDate"
-                                  id="estimatedStartDate"
-                                  label={getTranslatedLabel('certificate.form.startDate', 'Start Date')}
-                                  disabled={editMode > 1}
-                                  component={FormDatePicker}
-                                  validator={requiredValidator}
-                              />
-                            </Grid>
-                            <Grid item xs={showSupplier && showContractor ? 1.5 : 2} className={editMode > 3 ? 'grid-disabled' : 'grid-normal'}>
-                              <Field
-                                  name="estimatedCompletionDate"
-                                  id="estimatedCompletionDate"
-                                  label={getTranslatedLabel('certificate.form.completionDate', 'Completion Date')}
-                                  disabled={editMode > 1}
-                                  component={FormDatePicker}
-                                  validator={requiredValidator}
-                              />
-                            </Grid>
-                            <Grid item xs={6.5} className={editMode > 3 ? 'grid-disabled' : 'grid-normal'}>
-                              <Field
-                                  id="description"
-                                  name="description"
-                                  label={getTranslatedLabel('certificate.form.description', 'Description')}
-                                  component={FormInput}
-                                  validator={requiredValidator}
-                                  disabled={editMode > 3}
-                              />
-                            </Grid>
-                          </Grid>
-                        </Grid>
-                        <div className="k-form-buttons">
-                          <Grid container spacing={2}>
-                            {(editMode === 1 || editMode === 2) && (
-                                <Grid item>
-                                  <LoadingButton
-                                      size="large"
-                                      type="submit"
-                                      loading={isSubmitting || isAddCertificateLoading}
-                                      variant="contained"
-                                      onClick={() => formRef.current?.onSubmit()}
-                                  >
-                                    {getTranslatedLabel(
-                                        editMode === 1 ? 'certificate.form.create' : 'certificate.form.update',
-                                        editMode === 1 ? 'Create Certificate' : 'Update Certificate'
-                                    )}
-                                  </LoadingButton>
-                                </Grid>
-                            )}
-                            <Grid item>
-                              {/* REFACTOR: Restrict PDF export to CREATED status */}
-                              {/* Purpose: Only allow printing for certificates in CREATED status */}
-                              {/* Improvement: Enhances control by limiting PDF generation to specific state */}
-                              {reportData.items && reportData.items.length > 0 && selectedCertificate?.currentStatusId === CertificateStatus.CREATED ? (
-                                  <CertificatePDFDocument
-                                      certificate={reportData.certificate}
-                                      items={reportData.items}
-                                      getTranslatedLabel={getTranslatedLabel}
-                                      subtotal={subtotal}
-                                      isGrouped={currentCertificateType === 'WORKMANSHIP_CONTRACTING_CERTIFICATE'}
-                                      isSubmitting={isSubmitting}
-                                      isAddCertificateLoading={isAddCertificateLoading}
-                                      isUpdateCertificateLoading={isUpdateCertificateLoading}
-                                      isReceiveLoading={isReceiveLoading}
-                                      certificateNumber={reportData.certificate.certificateNumber}
-                                  />
-                              ) : (
-                                  <Button
-                                      color="primary"
-                                      variant="outlined"
-                                      disabled
-                                      title={getTranslatedLabel(
-                                          'certificate.print.disabled',
-                                          'Printing is only available for certificates in CREATED status'
-                                      )}
-                                  >
-                                    {getTranslatedLabel('certificate.export', 'Export to PDF')}
-                                  </Button>
-                              )}
-                            </Grid>
-                            <Grid item>
-                              <Button size="large" color="error" variant="outlined" onClick={handleCancel}>
-                                {getTranslatedLabel('certificate.form.cancel', 'Cancel')}
-                              </Button>
-                            </Grid>
-                          </Grid>
-                        </div>
-                      </fieldset>
-                    </FormElement>
-                )}
-            />
-          </Collapse>
-          <Grid item xs={12}>
-            {renderCertificateItems()}
-          </Grid>
-        </Paper>
-        {(isAddCertificateLoading || isUpdateCertificateLoading) && (
-            <LoadingComponent message={getTranslatedLabel('certificate.form.saving', 'Saving Certificate...')} />
-        )}
-        {isReceiveLoading && (
-            <LoadingComponent message={getTranslatedLabel('certificate.form.saving', 'Approving Certificate...')} />
-        )}
-      </>
-  );
-}
+export default CertificatePDFDocument;

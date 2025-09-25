@@ -106,6 +106,7 @@ namespace Application.Projects
                             WorkEffortTypeId = "CERTIFICATE_ITEM",
                             ProductId = item.ProductId,
                             Description = item.Description,
+                            DeductionDescription = item.DeductionDescription,
                             Quantity = item.Quantity,
                             Rate = item.UnitPrice,
                             TotalAmount = item.TotalAmount,

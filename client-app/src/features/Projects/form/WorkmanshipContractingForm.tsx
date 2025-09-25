@@ -8,6 +8,7 @@ import { percentageValidator, requiredValidator } from "../../../app/common/form
 import FormButtons from "./FormButtons";
 import FormTextArea from "../../../app/common/form/FormTextArea";
 import { toast } from "react-toastify";
+import FormInput from "../../../app/common/form/FormInput";
 
 
 interface ContractingFormProps {
@@ -58,8 +59,15 @@ const WorkmanshipContractingForm = ({
     }, [total, deserved, net, onChange]);
 
     const descriptionLengthValidator = (value: string | undefined): string | undefined => {
-        if (value && value.length > 1000) {
+        if (value && value.length > 3000) {
             return "Description cannot exceed 1000 characters.";
+        }
+        return undefined;
+    };
+
+    const deductionDescriptionLengthValidator = (value: string | undefined): string | undefined => {
+        if (value && value.length > 1000) {
+            return "Deduction description cannot exceed 1000 characters.";
         }
         return undefined;
     };
@@ -76,7 +84,7 @@ const WorkmanshipContractingForm = ({
                             component={FormSimpleComboBoxVirtualProduct}
                             autoComplete="off"
                             validator={requiredValidator}
-                            disabled={editMode === 2 || formEditMode > 3}
+                            disabled={formEditMode > 3}
                         />
                     </Grid>
                     <Grid item xs={6}>
@@ -86,10 +94,10 @@ const WorkmanshipContractingForm = ({
                             label={getTranslatedLabel("certificate.items.form.uom", "Unit of Measure *")}
                             component={FormComboBoxVirtualUOM}
                             validator={requiredValidator}
-                            disabled={editMode === 2 || formEditMode > 3}
+                            disabled={formEditMode > 3}
                         />
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid item xs={12}>
                         <Field
                             id="description"
                             name="description"
@@ -104,7 +112,7 @@ const WorkmanshipContractingForm = ({
                             }}
                         />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={2}>
                         <Field
                             id="quantity"
                             name="quantity"
@@ -116,7 +124,7 @@ const WorkmanshipContractingForm = ({
                             disabled={formEditMode > 3}
                         />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={2}>
                         <Field
                             id="materialPrice"
                             name="materialPrice"
@@ -128,7 +136,7 @@ const WorkmanshipContractingForm = ({
                             disabled={formEditMode > 3}
                         />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={2}>
                         <Field
                             id="laborPrice"
                             name="laborPrice"
@@ -140,7 +148,7 @@ const WorkmanshipContractingForm = ({
                             disabled={formEditMode > 3}
                         />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={2}>
                         <Field
                             id="total"
                             name="total"
@@ -151,7 +159,7 @@ const WorkmanshipContractingForm = ({
                             disabled
                         />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item  xs={2}>
                         <Field
                             id="deductions"
                             name="deductions"
@@ -162,7 +170,17 @@ const WorkmanshipContractingForm = ({
                             disabled={formEditMode > 3}
                         />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={12}>
+                        <Field
+                            id="deductionDescription"
+                            name="deductionDescription"
+                            label={getTranslatedLabel("certificate.items.form.deductionDescription", "Deduction Description")}
+                            component={FormInput}
+                            disabled={formEditMode > 3}
+                            validator={deductionDescriptionLengthValidator}
+                        />
+                    </Grid>
+                    <Grid item xs={2}>
                         <Field
                             id="deserved"
                             name="deserved"
@@ -173,7 +191,7 @@ const WorkmanshipContractingForm = ({
                             disabled
                         />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={3}>
                         {/* Purpose: Visually group insurance and its mode selector for better UX */}
                         {/* Context: Places RadioGroup directly below insurance field in the same column */}
                         <Grid container direction="column" spacing={1}>
@@ -210,7 +228,7 @@ const WorkmanshipContractingForm = ({
                             </Grid>
                         </Grid>
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={3}>
                         <Grid container direction="column" spacing={1}>
                             <Grid item>
                                 <Field
@@ -254,7 +272,7 @@ const WorkmanshipContractingForm = ({
                             </Grid>
                         </Grid>
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={2}>
                         <Field
                             id="net"
                             name="net"
@@ -265,7 +283,7 @@ const WorkmanshipContractingForm = ({
                             disabled
                         />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={2}>
                         <Field
                             id="achievementPercentage"
                             name="achievementPercentage"

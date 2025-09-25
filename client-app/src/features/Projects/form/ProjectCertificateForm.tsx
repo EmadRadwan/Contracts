@@ -530,7 +530,6 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                                     items={reportData.items}
                                                     getTranslatedLabel={getTranslatedLabel}
                                                     subtotal={subtotal}
-                                                    isGrouped={currentCertificateType === 'WORKMANSHIP_CONTRACTING_CERTIFICATE'}
                                                     isSubmitting={isSubmitting}
                                                     isAddCertificateLoading={isAddCertificateLoading}
                                                     isUpdateCertificateLoading={isUpdateCertificateLoading}

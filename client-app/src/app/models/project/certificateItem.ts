@@ -2,6 +2,7 @@ export interface CertificateItem {
     workEffortId?: string;
     workEffortParentId?: string;
     description?: string;
+    deductionDescription?: string;
     quantity?: number;
     uomId?: string;
     uomName?: string;

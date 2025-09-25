@@ -116,6 +116,7 @@ namespace Application.Projects
                             existingItem.LaborPrice = category == "WORKMANSHIP_CONTRACTING_CERTIFICATE" ? item.LaborPrice : 0;
                             existingItem.QuantityUomId = item.UomId;
                             existingItem.Deductions = item.Deductions ?? 0;
+                            existingItem.DeductionDescription = item.DeductionDescription;
                             existingItem.AchievementPercent = item.AchievementPercentage ?? 0;
                             existingItem.Notes = item.Notes;
                             existingItem.ProcurementDate = item.ProcurementDate;
@@ -144,6 +145,7 @@ namespace Application.Projects
                                 LaborPrice = category == "WORKMANSHIP_CONTRACTING_CERTIFICATE" ? item.LaborPrice : 0,
                                 QuantityUomId = item.UomId,
                                 Deductions = item.Deductions ?? 0,
+                                DeductionDescription = item.DeductionDescription,
                                 AchievementPercent = item.AchievementPercentage ?? 0,
                                 Notes = item.Notes,
                                 ProcurementDate = item.ProcurementDate,

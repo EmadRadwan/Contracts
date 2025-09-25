@@ -84,6 +84,7 @@ export default function CertificateItemsListGrouped({ editMode, workEffortId, is
                     ? new Date(selectedCertificateItem.procurementDate)
                     : new Date(),
                 additionalInsurance: selectedCertificateItem.additionalInsurance || 0,
+                deductionDescription: selectedCertificateItem.deductionDescription || "", // Added deductionDescription
             };
             setCertificateItem(certificateItem);
             setItemEditMode(2);
@@ -93,7 +94,20 @@ export default function CertificateItemsListGrouped({ editMode, workEffortId, is
         },
         [uiCertificateItems]
     );
-    
+
+    const deductionDescriptionCell = (props: GridCellProps) => (
+        <td>
+            {props.dataItem.deductionDescription ? (
+                <Button onClick={() => handleSelectCertificateItem(props.dataItem.workEffortId)}>
+                    {props.dataItem.deductionDescription.length > 50
+                        ? `${props.dataItem.deductionDescription.substring(0, 50)}...`
+                        : props.dataItem.deductionDescription}
+                </Button>
+            ) : (
+                "-"
+            )}
+        </td>
+    );
     
     const descriptionCell = (props: GridCellProps) => (
         <td>
@@ -136,7 +150,7 @@ export default function CertificateItemsListGrouped({ editMode, workEffortId, is
         setShow(false);
     }, []);
 
-    const modalWidth = 900;
+    const modalWidth = 1200;
 
     const columns = [
         {
@@ -157,6 +171,11 @@ export default function CertificateItemsListGrouped({ editMode, workEffortId, is
         { field: "laborPrice", title: getTranslatedLabel(`${localizationKey}.laborPrice`, "Labor Price"), format: "{0:n2}", width: 150 },
         { field: "displayTotal", title: getTranslatedLabel(`${localizationKey}.totalAmount`, "Total Amount"), format: "{0:n2}", width: 130 },
         { field: "deductions", title: getTranslatedLabel(`${localizationKey}.deductions`, "Deductions"), format: "{0:n2}", width: 120 },
+        {
+            field: "deductionDescription",
+            title: getTranslatedLabel(`${localizationKey}.deductionDescription`, "Deduction Description"),
+            width: 200, // Set width to accommodate text, adjustable based on UI needs
+        },
         { field: "deserved", title: getTranslatedLabel(`${localizationKey}.deserved`, "Deserved"), format: "{0:n2}", width: 120 },
         { field: "insurance", title: getTranslatedLabel(`${localizationKey}.insurance`, "Insurance"), format: "{0:n2}", width: 120 },
         { field: "additionalInsurance", title: getTranslatedLabel(`${localizationKey}.additionalInsurance`, "Additional Insurance"), format: "{0:n2}", width: 140 },

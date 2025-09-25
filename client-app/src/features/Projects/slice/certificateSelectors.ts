@@ -4,7 +4,6 @@ import { CertificateItem } from "../../../app/models/project/certificateItem";
 
 export const nonDeletedCertificateItemsSelector = createSelector(
     (state: RootState) => state.certificateItemsUi.certificateItems,
-    // REFACTOR: Handle entity adapter structure
     // Purpose: Ensure selector works with createEntityAdapter
     // Improvement: Safely handles empty or uninitialized state
     (certificateItems) =>
@@ -22,7 +21,6 @@ export const certificateSubTotal = createSelector(
         console.log('certificateSubTotal input:', certificateItems);
         if (!certificateItems) return 0;
 
-        // REFACTOR: Use net for WORKMANSHIP_CONTRACTING_CERTIFICATE, totalAmount for others
         // Purpose: Align toolbar Total with net (e.g., 23.00) for WORKMANSHIP_CONTRACTING_CERTIFICATE
         // Improvement: Fixes incorrect Total (0 or totalAmount) in CertificateItemsListGrouped toolbar
         const isContractingType = currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE";
@@ -42,7 +40,6 @@ export const displayCertificateItemsSelector = createSelector(
     (certificateItems, currentCertificateType) => {
         console.log('displayCertificateItemsSelector input:', certificateItems);
 
-        // REFACTOR: Group items by productId for all certificate types
         // Purpose: Enable serial-based code generation (e.g., 000018/1) universally
         // Improvement: Simplifies logic by removing type-specific grouping
         const productIdGroups: { [key: string]: CertificateItem[] } = certificateItems.reduce(
@@ -56,7 +53,6 @@ export const displayCertificateItemsSelector = createSelector(
         );
 
         return certificateItems.map((item) => {
-            // REFACTOR: Standardize calculations with type-specific overrides
             // Purpose: Ensure total, deserved, and net are calculated correctly for all types
             // Improvement: Centralizes calculation logic, making it easier to extend for new types
             const isContractingType = currentCertificateType === 'WORKMANSHIP_CONTRACTING_CERTIFICATE';
@@ -70,7 +66,6 @@ export const displayCertificateItemsSelector = createSelector(
                 ? Math.max(0, deserved - (item.insurance || 0) - (item.additionalInsurance || 0))
                 : item.net || 0;
 
-            // REFACTOR: Format procurement date consistently
             // Purpose: Ensure consistent date display (MM/DD/YYYY) across all types
             // Improvement: Handles missing or invalid dates gracefully
             const formattedProcurementDate = item.procurementDate
@@ -81,21 +76,18 @@ export const displayCertificateItemsSelector = createSelector(
                 })
                 : '';
 
-            // REFACTOR: Generate code (e.g., 000018/1) for all certificate types
             // Purpose: Provide consistent productId/serial format for grouping
             // Improvement: Ensures unique codes even for non-contracting types
             const productItems = productIdGroups[item.productId || `UNKNOWN-${Date.now()}`];
             const serial = productItems ? productItems.indexOf(item) + 1 : 1;
             const code = `${item.productId || 'UNKNOWN'}/${serial}`;
 
-            // REFACTOR: Calculate product subtotal for grouped items
             // Purpose: Sum net values for items with the same productId
             // Improvement: Supports grid display for grouped totals across all types
             const productSubtotal = productItems.reduce((sum, i) => sum + (i.net || 0), 0);
 
             console.log('Item calculation:', { item, total, deserved, net, code, productSubtotal });
 
-            // REFACTOR: Return standardized item with display fields
             // Purpose: Ensure consistent output for grid display (e.g., Total Amount: 28, Net: 23)
             // Improvement: Rounds numbers for display and includes all necessary fields
             return {
@@ -105,6 +97,7 @@ export const displayCertificateItemsSelector = createSelector(
                 formattedProcurementDate,
                 code, // Now applied to all types
                 productSubtotal: +productSubtotal.toFixed(2),
+                deductionDescription: item.deductionDescription || "", // Include for grid display
             };
         });
     }
@@ -115,7 +108,6 @@ export const certificateReportSelector = createSelector(
     (state: RootState) => state.certificateUi.currentCertificateType,
     nonDeletedCertificateItemsSelector,
     (selectedCertificate, currentCertificateType, certificateItems) => {
-        // REFACTOR: Standardize certificate data for PDF report
         // Purpose: Ensure consistent data structure for certificate details
         // Improvement: Handles missing fields and formats dates
         const certificateData = {
@@ -142,7 +134,6 @@ export const certificateReportSelector = createSelector(
             status: selectedCertificate.statusDescriptionArabic || selectedCertificate.statusDescription || "N/A",
         };
 
-        // REFACTOR: Format certificate items for PDF report
         // Purpose: Ensure consistent item data with type-specific fields
         // Improvement: Groups items and calculates subtotals, matching CertificateItemsListGrouped
         const productIdGroups: { [key: string]: CertificateItem[] } = certificateItems.reduce(
@@ -183,6 +174,7 @@ export const certificateReportSelector = createSelector(
                     })
                     : "N/A",
                 productSubtotal: +productSubtotal.toFixed(2),
+                deductionDescription: item.deductionDescription || "", // Include for PDF report
             };
         });
 

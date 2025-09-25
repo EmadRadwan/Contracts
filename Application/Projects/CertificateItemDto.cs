@@ -12,6 +12,7 @@ public class CertificateItemDto
     public string? UomId { get; set; } 
     public decimal? AchievementPercentage { get; set; }
     public string? Description { get; set; } 
+    public string? DeductionDescription { get; set; } 
     public string? UomName { get; set; } 
     public string? ProductName { get; set; }
     public decimal Quantity { get; set; } 

@@ -49,7 +49,8 @@ const useProjectCertificate = ({
       productId: typeof item.productId === "object" ? item.productId.productId : item.productId,
       uomId: typeof item.uomId === "object" ? item.uomId.UomId : item.uomId,
         description: item.description || "",
-      procurementDate: item.procurementDate ? new Date(item.procurementDate).toISOString() : undefined,
+        deductionDescription: item.deductionDescription || "", // Include deductionDescription
+        procurementDate: item.procurementDate ? new Date(item.procurementDate).toISOString() : undefined,
     }));
   }, [nonDeletedCertificateItems]);
 

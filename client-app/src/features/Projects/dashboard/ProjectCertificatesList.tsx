@@ -332,6 +332,7 @@ export default function ProjectCertificatesList() {
                                 <Column
                                     field="certificateCategoryDescription"
                                     title={getTranslatedLabel("certificate.list.partyId", "Type")}
+                                    width={320}
                                 />
                                 <Column
                                     field="partyIdSupplier"

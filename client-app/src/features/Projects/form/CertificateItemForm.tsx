@@ -119,6 +119,7 @@ export default function CertificateItemForm({
             insurance: 0,
             additionalInsurance: certificateItem?.additionalInsurance ?? 0,
             deductions: 0,
+            deductionDescription: "",
             deserved: 0,
             net: 0,
             procurementDate: new Date(),
@@ -230,8 +231,14 @@ export default function CertificateItemForm({
                 const tempWorkEffortId = values.workEffortId || uuidv4();
 
                 const description = values.description || "";
-                if (description.length > 1000) {
+                const deductionDescription = values.deductionDescription || "";
+
+                if (description.length > 3000) {
                     toast.error("Description cannot exceed 1000 characters.");
+                    return; // Prevent form submission
+                }
+                if (deductionDescription.length > 1000) {
+                    toast.error("Deduction Description cannot exceed 1000 characters.");
                     return; // Prevent form submission
                 }
                 
@@ -242,6 +249,7 @@ export default function CertificateItemForm({
                     uomId: values.uomId || "",
                     uomName: values.uomName || "",
                     description: values.description || "",
+                    deductionDescription: values.deductionDescription || "",
                     quantity: Number(values.quantity) || 0,
                     unitPrice:
                         currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"

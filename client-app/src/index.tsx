@@ -12,23 +12,13 @@ import "@progress/kendo-theme-bootstrap/dist/all.css";
 import {RouterProvider} from "react-router-dom";
 import {router} from "./app/router/Routes";
 import React from 'react';
-
+import './pdfSetup';
 
 const root = document.getElementById("root");
 
 if (root) {
     const reactRoot = createRoot(root);
-
-    // Import why-did-you-render only in development
-    // if (process.env.NODE_ENV === 'development') {
-    //     const { default: whyDidYouRender } = await import('@welldone-software/why-did-you-render');
-    //     whyDidYouRender(React, {
-    //         trackAllPureComponents: true, // Tracks all pure components (e.g., those wrapped with React.memo)
-    //         trackHooks: true, // Tracks hook changes (React 16.8+)
-    //         logOnDifferentValues: true, // Logs only when props/state/hooks differ
-    //         logOwnerReasons: true, // Logs the component that caused the re-render
-    //     });
-    // }
+    
     
     reactRoot.render(
         <StoreContext.Provider value={store}>

@@ -73,7 +73,8 @@ export default function useCertificateItem({
                   ? data.uomId.Description
                   : data.uomName || "",
               description: data.description || "",
-              quantity: data.quantity || 0,
+                deductionDescription: data.deductionDescription || "",
+                quantity: data.quantity || 0,
               unitPrice: isContractingType
                 ? (Number(data.materialPrice) || 0) +
                   (Number(data.laborPrice) || 0)

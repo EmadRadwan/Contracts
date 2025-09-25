@@ -61572,9 +61572,6 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
             {
                 entity.ToTable("WORK_EFFORT");
 
-                entity.HasIndex(e => e.AccommodationMapId, "WK_EFFRT_ACC_MAP");
-
-                entity.HasIndex(e => e.AccommodationSpotId, "WK_EFFRT_ACC_SPOT");
 
                 entity.HasIndex(e => e.CurrentStatusId, "WK_EFFRT_CURSTTS");
 
@@ -61584,21 +61581,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
 
                 entity.HasIndex(e => e.FixedAssetId, "WK_EFFRT_FXDASST");
 
-                entity.HasIndex(e => e.MoneyUomId, "WK_EFFRT_MON_UOM");
-
                 entity.HasIndex(e => e.NoteId, "WK_EFFRT_NOTE");
 
                 entity.HasIndex(e => e.WorkEffortParentId, "WK_EFFRT_PARENT");
 
                 entity.HasIndex(e => e.WorkEffortPurposeTypeId, "WK_EFFRT_PRPTYP");
-
-                entity.HasIndex(e => e.RecurrenceInfoId, "WK_EFFRT_RECINFO");
-
-                entity.HasIndex(e => e.RuntimeDataId, "WK_EFFRT_RNTMDTA");
-
-                entity.HasIndex(e => e.ScopeEnumId, "WK_EFFRT_SC_ENUM");
-
-                entity.HasIndex(e => e.TempExprId, "WK_EFFRT_TEMPEXPR");
 
                 entity.HasIndex(e => e.WorkEffortTypeId, "WK_EFFRT_TYPE");
 
@@ -61610,16 +61597,6 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasMaxLength(36)
                     .IsUnicode(false)
                     .HasColumnName("WORK_EFFORT_ID");
-
-                entity.Property(e => e.AccommodationMapId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("ACCOMMODATION_MAP_ID");
-
-                entity.Property(e => e.AccommodationSpotId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("ACCOMMODATION_SPOT_ID");
 
                 entity.Property(e => e.ActualCompletionDate)
                     .HasColumnType("datetime")
@@ -61656,9 +61633,14 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("CURRENT_STATUS_ID");
 
                 entity.Property(e => e.Description)
-                    .HasMaxLength(1000)
+                    .HasMaxLength(4000)
                     .IsUnicode(false)
                     .HasColumnName("DESCRIPTION");
+
+				entity.Property(e => e.DeductionDescription)
+                    .HasMaxLength(2000)
+                    .IsUnicode(false)
+                    .HasColumnName("DEDUCTION_DESCRIPTION");
 
                 entity.Property(e => e.EstimateCalcMethod)
                     .HasMaxLength(36)
@@ -61687,10 +61669,6 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .IsUnicode(false)
                     .HasColumnName("FIXED_ASSET_ID");
 
-                entity.Property(e => e.InfoUrl)
-                    .HasMaxLength(255)
-                    .IsUnicode(false)
-                    .HasColumnName("INFO_URL");
 
                 entity.Property(e => e.LastModifiedByUserLogin)
                     .HasMaxLength(250)
@@ -61713,22 +61691,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnType("datetime")
                     .HasColumnName("LAST_UPDATED_TX_STAMP");
 
-                entity.Property(e => e.LocationDesc)
-                    .HasMaxLength(255)
-                    .IsUnicode(false)
-                    .HasColumnName("LOCATION_DESC");
-
-                entity.Property(e => e.MoneyUomId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("MONEY_UOM_ID");
-
                 entity.Property(e => e.NoteId)
                     .HasMaxLength(36)
                     .IsUnicode(false)
                     .HasColumnName("NOTE_ID");
 
-                entity.Property(e => e.PercentComplete).HasColumnName("PERCENT_COMPLETE");
 
                 entity.Property(e => e.Priority).HasColumnName("PRIORITY");
 
@@ -61744,11 +61711,6 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnType("decimal(18, 6)")
                     .HasColumnName("QUANTITY_TO_PRODUCE");
 
-                entity.Property(e => e.RecurrenceInfoId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("RECURRENCE_INFO_ID");
-
                 entity.Property(e => e.Reserv2ndPPPerc)
                     .HasColumnType("decimal(18, 6)")
                     .HasColumnName("RESERV2ND_P_P_PERC");
@@ -61763,60 +61725,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
 
                 entity.Property(e => e.RevisionNumber).HasColumnName("REVISION_NUMBER");
 
-                entity.Property(e => e.RuntimeDataId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("RUNTIME_DATA_ID");
-
-                entity.Property(e => e.ScopeEnumId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("SCOPE_ENUM_ID");
-
-                entity.Property(e => e.SendNotificationEmail)
-                    .HasMaxLength(1)
-                    .IsUnicode(false)
-                    .HasColumnName("SEND_NOTIFICATION_EMAIL")
-                    .IsFixedLength();
-
-                entity.Property(e => e.ServiceLoaderName)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("SERVICE_LOADER_NAME");
-
-                entity.Property(e => e.ShowAsEnumId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("SHOW_AS_ENUM_ID");
-
-                entity.Property(e => e.SourceReferenceId)
-                    .HasMaxLength(60)
-                    .IsUnicode(false)
-                    .HasColumnName("SOURCE_REFERENCE_ID");
-
-                entity.Property(e => e.SpecialTerms)
-                    .HasMaxLength(255)
-                    .IsUnicode(false)
-                    .HasColumnName("SPECIAL_TERMS");
-
-                entity.Property(e => e.TempExprId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("TEMP_EXPR_ID");
-
-                entity.Property(e => e.TimeTransparency).HasColumnName("TIME_TRANSPARENCY");
-
-                entity.Property(e => e.TotalMilliSecondsAllowed).HasColumnName("TOTAL_MILLI_SECONDS_ALLOWED");
-
-                entity.Property(e => e.TotalMoneyAllowed)
-                    .HasColumnType("decimal(18,3)")
-                    .HasColumnName("TOTAL_MONEY_ALLOWED");
-
-                entity.Property(e => e.UniversalId)
-                    .HasMaxLength(60)
-                    .IsUnicode(false)
-                    .HasColumnName("UNIVERSAL_ID");
-
+               
                 entity.Property(e => e.WorkEffortName)
                     .HasMaxLength(255)
                     .IsUnicode(false)
@@ -61837,15 +61746,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .IsUnicode(false)
                     .HasColumnName("WORK_EFFORT_TYPE_ID");
 
-                entity.HasOne(d => d.AccommodationMap)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.AccommodationMapId)
-                    .HasConstraintName("WK_EFFRT_ACC_MAP");
-
-                entity.HasOne(d => d.AccommodationSpot)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.AccommodationSpotId)
-                    .HasConstraintName("WK_EFFRT_ACC_SPOT");
+             
 
                 entity.HasOne(d => d.CurrentStatus)
                     .WithMany(p => p.WorkEfforts)
@@ -61868,35 +61769,14 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasForeignKey(d => d.FixedAssetId)
                     .HasConstraintName("WK_EFFRT_FXDASST");
 
-                entity.HasOne(d => d.MoneyUom)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.MoneyUomId)
-                    .HasConstraintName("WK_EFFRT_MON_UOM");
+           
 
                 entity.HasOne(d => d.Note)
                     .WithMany(p => p.WorkEfforts)
                     .HasForeignKey(d => d.NoteId)
                     .HasConstraintName("WK_EFFRT_NOTE");
 
-                entity.HasOne(d => d.RecurrenceInfo)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.RecurrenceInfoId)
-                    .HasConstraintName("WK_EFFRT_RECINFO");
-
-                entity.HasOne(d => d.RuntimeData)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.RuntimeDataId)
-                    .HasConstraintName("WK_EFFRT_RNTMDTA");
-
-                entity.HasOne(d => d.ScopeEnum)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.ScopeEnumId)
-                    .HasConstraintName("WK_EFFRT_SC_ENUM");
-
-                entity.HasOne(d => d.TempExpr)
-                    .WithMany(p => p.WorkEfforts)
-                    .HasForeignKey(d => d.TempExprId)
-                    .HasConstraintName("WK_EFFRT_TEMPEXPR");
+          
 
                 entity.HasOne(d => d.WorkEffortParent)
                     .WithMany(p => p.InverseWorkEffortParent)
@@ -62063,6 +61943,8 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
  
 
                         });
+                  
+                  
                         
             modelBuilder.Entity<WorkEffortAssoc>(entity =>
             {

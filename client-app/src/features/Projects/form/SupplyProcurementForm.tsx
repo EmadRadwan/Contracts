@@ -65,7 +65,7 @@ const SupplyProcurementForm = ({
                             component={FormSimpleComboBoxVirtualProduct}
                             autoComplete="off"
                             validator={requiredValidator}
-                            disabled={editMode === 2 || formEditMode > 3}
+                            disabled={formEditMode > 3}
                         />
                     </Grid>
                     <Grid item xs={6}>
@@ -75,7 +75,7 @@ const SupplyProcurementForm = ({
                             label={getTranslatedLabel("certificate.items.form.uom", "Unit of Measure *")}
                             component={FormComboBoxVirtualUOM}
                             validator={requiredValidator}
-                            disabled={editMode === 2 || formEditMode > 3}
+                            disabled={formEditMode > 3}
                         />
                     </Grid>
                     <Grid item xs={6}>
