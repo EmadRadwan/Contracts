@@ -203,6 +203,7 @@ ssh ubuntu@129.146.22.240
 docker-compose -f docker-compose.vm.yml down
 docker-compose -f docker-compose.vm.yml up -d --build
 
+yarn build
 sudo rm -rf erp-contracts
  git clone https://github.com/EmadRadwan/Contracts.git erp-contracts
  cd erp-contracts
