@@ -99,7 +99,12 @@ const projectsApi = createApi({
                 },
                 invalidatesTags: ["ProjectCertificates"],
             }),
-
+            getCertificatesByParty: builder.query<ProjectCertificateSummaryDto[], { contractorId?: string; supplierId?: string; certificateType: string }>({
+                query: ({ contractorId, supplierId, certificateType }) => ({
+                    url: '/project/byParty',
+                    params: { contractorId, supplierId, certificateType },
+                }),
+            }),
         };
     },
 });
@@ -109,6 +114,30 @@ export const {
     useAddProjectMutation,
     useUpdateProjectMutation,
     useFetchProjectCertificatesQuery,
-    useAddProjectCertificateMutation, useUpdateProjectCertificateMutation,
+    useAddProjectCertificateMutation,
+    useUpdateProjectCertificateMutation, useGetCertificatesByPartyQuery
 } = projectsApi;
 export {projectsApi};
+
+
+interface ProjectCertificateSummaryDto {
+    workEffortId: string;
+    certificateNumber: string;
+    projectId: string;
+    projectName: string;
+    partyIdSupplier: string | null;
+    partyNameSupplier: string | null;
+    partyIdContractor: string | null;
+    partyNameContractor: string | null;
+    description: string | null;
+    estimatedStartDate: string | null;
+    estimatedCompletionDate: string | null;
+    statusDescription: string;
+    statusDescriptionArabic: string;
+    currentStatusId: string;
+    certificateCategory: string;
+    certificateCategoryDescription: string;
+    facilityId: string | null;
+    facilityName: string | null;
+    total: number;
+}

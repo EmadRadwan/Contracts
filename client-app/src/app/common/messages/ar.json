@@ -984,12 +984,12 @@
   "projects": {
     "certificate": {
       "report": {
-        "title": "تقرير الشهادة"
+        "title": "تقرير المستخلص"
       },
       "form": {
         "contractor": "المقاول",
         "supplier": "المورد",
-        "facility": "المنشأة",
+        "facility": "المخزن",
         "project": "المشروع",
         "title": "رقم شهادة المشروع",
         "new": "شهادة مشروع جديدة",

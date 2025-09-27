@@ -93,7 +93,9 @@ public class OrganizationGlController : BaseApiController
     [HttpGet("getGlAccountHierarchyLov")]
     public async Task<IActionResult> GlAccountHierarchyViewLov()
     {
-        return HandleResult(await Mediator.Send(new GetGlAccountHierarchyLov.Query()));
+        // REFACTOR: Added language retrieval to pass to the query
+        var language = GetLanguage(); // Assuming GetLanguage() is defined elsewhere
+        return HandleResult(await Mediator.Send(new GetGlAccountHierarchyLov.Query { Language = language }));
     }
     
     [HttpGet("{companyId}/getGlAccountOrganizationHierarchyLov")]
@@ -188,11 +190,13 @@ public class OrganizationGlController : BaseApiController
     [HttpGet("chart-of-accounts")]
     public async Task<IActionResult> GetChartOfAccounts([FromQuery] string companyId)
     {
-        var query = new ListFullOrganizationChartOfAccounts.Query
-        {
-            CompanyId = companyId
+        // REFACTOR: Added language retrieval to pass to the query
+        var language = GetLanguage(); // Assuming GetLanguage() is defined elsewhere
+        var query = new ListFullOrganizationChartOfAccounts.Query 
+        { 
+            CompanyId = companyId,
+            Language = language
         };
-
         var result = await Mediator.Send(query);
         return Ok(result);
     }

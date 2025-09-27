@@ -30,8 +30,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    textAlign: 'center',
-    // REFACTOR: Centered title for better visual hierarchy
+    textAlign: 'center', // REFACTOR: Centered title for better visual hierarchy
     marginBottom: 10,
   },
   table: {
@@ -42,8 +41,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   tableRow: {
-    flexDirection: 'row-reverse',
-    // REFACTOR: Supports RTL layout for table rows
+    flexDirection: 'row-reverse', // REFACTOR: Supports RTL layout for table rows
     borderBottomWidth: 1,
     borderBottomColor: '#bfbfbf',
   },
@@ -156,8 +154,7 @@ const CertificatePDFDocument: React.FC<CertificatePDFDocumentProps> = ({
   pageSize = 15,
 }) => {
   const [show, setShow] = useState(false);
-  console.log('certificate', certificate)
-
+console.log('certificate', certificate)
   // REFACTOR: Memoized onClose function for consistent modal behavior
   // Improvement: Prevents unnecessary re-renders
   const onClose = useCallback(() => {
@@ -176,18 +173,17 @@ const CertificatePDFDocument: React.FC<CertificatePDFDocumentProps> = ({
   const isSupplyWithDiscount = certificateType === 'SUPPLY_PROCUREMENT_CERTIFICATE';
   const isSupplyCertificate = ['SUPPLY_PROCUREMENT_CERTIFICATE', 'COMPANY_SUPPLY_SALE_CERTIFICATE'].includes(certificateType);
   const isWorkmanshipCertificate = certificateType === 'WORKMANSHIP_CONTRACTING_CERTIFICATE';
+
   const partyField = isWorkmanshipCertificate ? certificate.partyIdContractor ?? 'N/A' : certificate.partyIdSupplier ?? 'N/A';
   const partyLabelKey = isWorkmanshipCertificate ? 'projects.certificate.form.contractor' : 'projects.certificate.form.supplier';
   const partyLabelDefault = isWorkmanshipCertificate ? 'Contractor' : 'Supplier';
 
-  // REFACTOR: Added Arabic translation mapping for certificateType
-  // Improvement: Provides localized display for certificate type in header
   const certificateTypeTranslations: { [key: string]: string } = {
     SUPPLY_PROCUREMENT_CERTIFICATE: 'شهادة توريد',
     COMPANY_SUPPLY_SALE_CERTIFICATE: 'شهادة بيع توريد الشركة',
     WORKMANSHIP_CONTRACTING_CERTIFICATE: 'شهادة أعمال المقاولة',
   };
-
+  
   const MyDocument = () => (
     <Document>
       {pages.map((pageItems, pageIndex) => (
@@ -227,6 +223,7 @@ const CertificatePDFDocument: React.FC<CertificatePDFDocumentProps> = ({
                 )}
               </View>
             </View>
+
             {/* REFACTOR: Replaced Table components with View-based table structure */}
             {/* Improvement: Ensures compatibility with @react-pdf/renderer, maintains tabular layout */}
             {pageItems && pageItems.length > 0 ? (
@@ -393,6 +390,7 @@ const CertificatePDFDocument: React.FC<CertificatePDFDocumentProps> = ({
                 </Text>
               </View>
             )}
+
             {pageItems.some(item => item.mainItemDescription) && (
               <View style={styles.noteSection}>
                 <Text style={styles.noteTitle}>
@@ -407,6 +405,7 @@ const CertificatePDFDocument: React.FC<CertificatePDFDocumentProps> = ({
                 ))}
               </View>
             )}
+
             {pageItems.some(item => item.discountNote) && (
               <View style={styles.noteSection}>
                 <Text style={styles.noteTitle}>

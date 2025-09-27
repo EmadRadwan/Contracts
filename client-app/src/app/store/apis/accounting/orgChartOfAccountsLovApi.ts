@@ -12,6 +12,10 @@ const orgChartOfAccountsLovApi = createApi({
             if (token) {
                 headers.set("authorization", `Bearer ${token}`);
             }
+            const lang = store.getState().localization.language ;
+            if (lang) {
+                headers.set("Accept-Language", `${lang}`);
+            }
             return headers;
         },
     }),

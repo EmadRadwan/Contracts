@@ -1,7 +1,8 @@
-import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
 import { Button } from '@mui/material';
+import {useCallback, useState} from "react";
+import ModalContainer from "../../../app/common/modals/ModalContainer";
 
-// REFACTOR: Centralize styling for the PDF to ensure consistent list-based layout
 // Purpose: Maintains consistent RTL layout for Arabic text, matching client’s Word document
 // Improvement: Simplified styles for clarity and consistency
 const styles = StyleSheet.create({
@@ -71,6 +72,11 @@ const styles = StyleSheet.create({
         color: 'red',
         textAlign: 'right',
     },
+    viewer: {
+        width: '100%',
+        height: '70vh', // Adjusted for modal display
+        border: '1px solid #ccc',
+    },
 });
 
 interface CertificatePDFDocumentProps {
@@ -136,7 +142,14 @@ const CertificatePDFDocument: React.FC<CertificatePDFDocumentProps> = ({
                                                                            certificateNumber,
                                                                            pageSize = 15,
                                                                        }) => {
-    // REFACTOR: Adjusted pagination to handle list-based items
+    const [show, setShow] = useState(false);
+
+    // Purpose: Memoizes the onClose function for consistent modal behavior
+    // Improvement: Prevents unnecessary re-renders and aligns with CertificateItemsList
+    const onClose = useCallback(() => {
+        setShow(false);
+    }, []);
+    
     // Purpose: Ensures items are split across pages without breaking list structure
     // Improvement: Maintains readability for large item sets
     const pages = [];
@@ -144,14 +157,12 @@ const CertificatePDFDocument: React.FC<CertificatePDFDocumentProps> = ({
         pages.push(items.slice(i, i + pageSize));
     }
 
-    // REFACTOR: Simplified certificate type checks
     // Purpose: Defines which fields to display based on certificateType
     // Improvement: Clearer logic without intermediate flags
     const isSupplyWithDiscount = certificateType === 'SUPPLY_PROCUREMENT_CERTIFICATE';
     const isSupplyCertificate = ['SUPPLY_PROCUREMENT_CERTIFICATE', 'COMPANY_SUPPLY_SALE_CERTIFICATE'].includes(certificateType);
     const isWorkmanshipCertificate = certificateType === 'WORKMANSHIP_CONTRACTING_CERTIFICATE';
 
-    // REFACTOR: Updated party field logic to use certificateType
     // Purpose: Selects contractor or supplier based on certificateType
     // Improvement: More explicit and maintainable
     const partyField = isWorkmanshipCertificate ? certificate.partyIdContractor ?? 'N/A' : certificate.partyIdSupplier ?? 'N/A';
@@ -216,7 +227,6 @@ const CertificatePDFDocument: React.FC<CertificatePDFDocumentProps> = ({
                             )}
                         </View>
 
-                        {/* REFACTOR: Enhanced item rendering to include WORKMANSHIP_CONTRACTING_CERTIFICATE fields */}
                         {/* Purpose: Adds materialPrice, laborPrice, deductions, deductionDescription, deserved, insurance, additionalInsurance, net, and achievementPercentage */}
                         {/* Improvement: Aligns with WorkmanshipContractingForm and displayCertificateItemsSelector calculations */}
                         {pageItems && pageItems.length > 0 ? (
@@ -420,19 +430,31 @@ const CertificatePDFDocument: React.FC<CertificatePDFDocumentProps> = ({
         </Document>
     );
 
+   
+
     return (
-        <PDFDownloadLink document={<MyDocument />} fileName={`Certificate_${certificateNumber}.pdf`}>
-            {({ loading }) => (
-                <Button
-                    color="primary"
-                    variant="outlined"
-                    disabled={isSubmitting || isAddCertificateLoading || isUpdateCertificateLoading || isReceiveLoading || loading}
-                    aria-label={loading ? 'Generating PDF' : 'Export to PDF'}
-                >
-                    {loading ? getTranslatedLabel('projects.certificate.generating', 'Generating PDF...') : getTranslatedLabel('projects.certificate.export', 'Export to PDF')}
-                </Button>
+        <div>
+            <Button
+                color="primary"
+                variant="outlined"
+                onClick={() => setShow(true)}
+                disabled={isSubmitting || isAddCertificateLoading || isUpdateCertificateLoading || isReceiveLoading}
+                aria-label="Preview PDF"
+                style={{ marginRight: 10 }}
+            >
+                {getTranslatedLabel('projects.certificate.preview', 'Preview PDF')}
+            </Button>
+
+            {/* Purpose: Renders the PDF preview in a modal, aligning with existing UI patterns */}
+            {/* Improvement: Provides a controlled, dismissible preview experience */}
+            {show && (
+                <ModalContainer show={show} onClose={onClose} width={1200}>
+                    <PDFViewer style={styles.viewer}>
+                        <MyDocument />
+                    </PDFViewer>
+                </ModalContainer>
             )}
-        </PDFDownloadLink>
+        </div>
     );
 };
 

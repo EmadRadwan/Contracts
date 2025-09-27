@@ -49,6 +49,24 @@ public class ProjectController : BaseApiController
         return HandleResult(await Mediator.Send(new ListCertificateItems.Query { WorkEffortId = workEffortId, Language = language }));
     }
     
+    [HttpGet("byParty")]
+    public async Task<IActionResult> GetCertificatesByParty(
+        [FromQuery] string? contractorId,
+        [FromQuery] string? supplierId,
+        [FromQuery] string certificateType)
+    {
+        var language = GetLanguage();
+
+        var result = await Mediator.Send(new GetCertificatesByParty.Query
+        {
+            ContractorId = contractorId,
+            SupplierId = supplierId,
+            CertificateType = certificateType,
+            Language = language
+        });
+        return HandleResult(result);
+    }
+    
     [HttpGet("getProjectsLov", Name = "GetProjectsLov")]
     public async Task<IActionResult> GetProjectsLov([FromQuery] PartyLovParams param)
     {
