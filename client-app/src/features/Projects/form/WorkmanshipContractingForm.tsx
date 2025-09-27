@@ -80,7 +80,7 @@ const WorkmanshipContractingForm = ({
                         <Field
                             id="productId"
                             name="productId"
-                            label={getTranslatedLabel("certificate.items.form.product", "Product *")}
+                            label={getTranslatedLabel("projects.certificate.items.list.product", "Product *")}
                             component={FormSimpleComboBoxVirtualProduct}
                             autoComplete="off"
                             validator={requiredValidator}
@@ -91,7 +91,7 @@ const WorkmanshipContractingForm = ({
                         <Field
                             id="uomId"
                             name="uomId"
-                            label={getTranslatedLabel("certificate.items.form.uom", "Unit of Measure *")}
+                            label={getTranslatedLabel("projects.certificate.items.list.unitOfMeasure", "Unit of Measure *")}
                             component={FormComboBoxVirtualUOM}
                             validator={requiredValidator}
                             disabled={formEditMode > 3}
@@ -101,7 +101,7 @@ const WorkmanshipContractingForm = ({
                         <Field
                             id="description"
                             name="description"
-                            label={getTranslatedLabel("certificate.items.form.description", "Description *")}
+                            label={getTranslatedLabel("projects.certificate.items.list.description", "Description *")}
                             component={FormTextArea}
                             disabled={formEditMode > 3}
                             rows={4} // Set rows for better visibility
@@ -116,7 +116,7 @@ const WorkmanshipContractingForm = ({
                         <Field
                             id="quantity"
                             name="quantity"
-                            label={getTranslatedLabel("certificate.items.form.quantity", "Quantity *")}
+                            label={getTranslatedLabel("projects.certificate.items.list.quantity", "Quantity *")}
                             component={FormNumericTextBox}
                             format="n0"
                             min={1}
@@ -128,7 +128,7 @@ const WorkmanshipContractingForm = ({
                         <Field
                             id="materialPrice"
                             name="materialPrice"
-                            label={getTranslatedLabel("certificate.items.form.materialPrice", "Material Price *")}
+                            label={getTranslatedLabel("projects.certificate.items.list.materialPrice", "Material Price *")}
                             component={FormNumericTextBox}
                             format="n2"
                             min={0}
@@ -140,7 +140,7 @@ const WorkmanshipContractingForm = ({
                         <Field
                             id="laborPrice"
                             name="laborPrice"
-                            label={getTranslatedLabel("certificate.items.form.laborPrice", "Labor Price *")}
+                            label={getTranslatedLabel("projects.certificate.items.list.laborPrice", "Labor Price *")}
                             component={FormNumericTextBox}
                             format="n2"
                             min={0}
@@ -152,7 +152,7 @@ const WorkmanshipContractingForm = ({
                         <Field
                             id="total"
                             name="total"
-                            label={getTranslatedLabel("certificate.items.form.total", "Total")}
+                            label={getTranslatedLabel("projects.certificate.items.list.totalAmount", "Total")}
                             component={FormNumericTextBox}
                             format="n2"
                             value={total}
@@ -163,7 +163,7 @@ const WorkmanshipContractingForm = ({
                         <Field
                             id="deductions"
                             name="deductions"
-                            label={getTranslatedLabel("certificate.items.form.deductions", "Deductions")}
+                            label={getTranslatedLabel("projects.certificate.items.list.deductions", "Deductions")}
                             component={FormNumericTextBox}
                             format="n2"
                             min={0}
@@ -174,7 +174,7 @@ const WorkmanshipContractingForm = ({
                         <Field
                             id="deductionDescription"
                             name="deductionDescription"
-                            label={getTranslatedLabel("certificate.items.form.deductionDescription", "Deduction Description")}
+                            label={getTranslatedLabel("projects.certificate.items.list.deductionDescription", "Deduction Description")}
                             component={FormInput}
                             disabled={formEditMode > 3}
                             validator={deductionDescriptionLengthValidator}
@@ -184,7 +184,7 @@ const WorkmanshipContractingForm = ({
                         <Field
                             id="deserved"
                             name="deserved"
-                            label={getTranslatedLabel("certificate.items.form.deserved", "Deserved")}
+                            label={getTranslatedLabel("projects.certificate.items.list.deserved", "Deserved")}
                             component={FormNumericTextBox}
                             format="n2"
                             value={deserved}
@@ -199,7 +199,7 @@ const WorkmanshipContractingForm = ({
                                 <Field
                                     id="insurance"
                                     name="insurance"
-                                    label={getTranslatedLabel("certificate.items.form.insurance", `Insurance (${insuranceMode})`)}
+                                    label={getTranslatedLabel("projects.certificate.items.list.insurance", `Insurance (${insuranceMode})`)}
                                     component={FormNumericTextBox}
                                     format={insuranceMode === "percentage" ? "n0" : "n2"}
                                     min={0}
@@ -217,12 +217,12 @@ const WorkmanshipContractingForm = ({
                                     <FormControlLabel
                                         value="value"
                                         control={<Radio disabled={formEditMode > 3} />}
-                                        label={getTranslatedLabel("certificate.items.form.insuranceValue", "Value")}
+                                        label={getTranslatedLabel("projects.certificate.items.list.insuranceValue", "Value")}
                                     />
                                     <FormControlLabel
                                         value="percentage"
                                         control={<Radio disabled={formEditMode > 3} />}
-                                        label={getTranslatedLabel("certificate.items.form.insurancePercentage", "Percentage")}
+                                        label={getTranslatedLabel("projects.certificate.items.list.insurancePercentage", "Percentage")}
                                     />
                                 </RadioGroup>
                             </Grid>
@@ -234,10 +234,7 @@ const WorkmanshipContractingForm = ({
                                 <Field
                                     id="additionalInsurance"
                                     name="additionalInsurance"
-                                    label={getTranslatedLabel(
-                                        "certificate.items.form.additionalInsurance",
-                                        `Additional Insurance (${additionalInsuranceMode})`
-                                    )}
+                                    label={getTranslatedLabel("projects.certificate.items.list.additionalInsurance", `Additional Insurance (${additionalInsuranceMode})`)}
                                     component={FormNumericTextBox}
                                     format={additionalInsuranceMode === "percentage" ? "n0" : "n2"}
                                     min={0}
@@ -261,12 +258,12 @@ const WorkmanshipContractingForm = ({
                                     <FormControlLabel
                                         value="value"
                                         control={<Radio disabled={formEditMode > 3} />}
-                                        label={getTranslatedLabel("certificate.items.form.additionalInsuranceValue", "Value")}
+                                        label={getTranslatedLabel("projects.certificate.items.list.additionalInsuranceValue", "Value")}
                                     />
                                     <FormControlLabel
                                         value="percentage"
                                         control={<Radio disabled={formEditMode > 3} />}
-                                        label={getTranslatedLabel("certificate.items.form.additionalInsurancePercentage", "Percentage")}
+                                        label={getTranslatedLabel("projects.certificate.items.list.additionalInsurancePercentage", "Percentage")}
                                     />
                                 </RadioGroup>
                             </Grid>
@@ -276,7 +273,7 @@ const WorkmanshipContractingForm = ({
                         <Field
                             id="net"
                             name="net"
-                            label={getTranslatedLabel("certificate.items.form.net", "Net")}
+                            label={getTranslatedLabel("projects.certificate.items.list.net", "Net")}
                             component={FormNumericTextBox}
                             format="n2"
                             value={net}
@@ -287,7 +284,7 @@ const WorkmanshipContractingForm = ({
                         <Field
                             id="achievementPercentage"
                             name="achievementPercentage"
-                            label={getTranslatedLabel("certificate.items.form.achievementPercentage", "Achievement Percentage *")}
+                            label={getTranslatedLabel("projects.certificate.items.list.achievementPercentage", "Achievement Percentage *")}
                             component={FormNumericTextBox}
                             format="n0"
                             min={1}

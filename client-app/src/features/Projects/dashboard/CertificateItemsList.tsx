@@ -130,8 +130,8 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
     const modalWidth = 700;
 
 
-    const isSupplyWithDiscount = ["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
-    const isSupplyWithoutDiscount = ["COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE"].includes(currentCertificateType);
+    const isSupplyWithDiscount = ["SUPPLY_PROCUREMENT_CERTIFICATE"].includes(currentCertificateType);
+    const isSupplyWithoutDiscount = ["COMPANY_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
 
     const dataWithSummaries = uiCertificateItems ? (() => {
         const groupedByProductId: { [key: string]: CertificateItem[] } = uiCertificateItems.reduce(

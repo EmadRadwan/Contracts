@@ -55,7 +55,7 @@ const CompanySupplyForm = ({
                         <Field
                             id="productId"
                             name="productId"
-                            label={getTranslatedLabel("certificate.items.form.product", "Product *")}
+                            label={getTranslatedLabel("projects.certificate.items.list.product", "Product *")}
                             component={FormSimpleComboBoxVirtualProduct}
                             autoComplete="off"
                             validator={requiredValidator}
@@ -66,7 +66,7 @@ const CompanySupplyForm = ({
                         <Field
                             id="uomId"
                             name="uomId"
-                            label={getTranslatedLabel("certificate.items.form.uom", "Unit of Measure *")}
+                            label={getTranslatedLabel("projects.certificate.items.list.unitOfMeasure", "Unit of Measure *")}
                             component={FormComboBoxVirtualUOM}
                             validator={requiredValidator}
                             disabled={formEditMode > 3}
@@ -76,7 +76,7 @@ const CompanySupplyForm = ({
                         <Field
                             id="description"
                             name="description"
-                            label={getTranslatedLabel("certificate.items.form.description", "Description *")}
+                            label={getTranslatedLabel("projects.certificate.items.list.description", "Description *")}
                             component={FormInput}
                             validator={requiredValidator}
                             disabled={formEditMode > 3}
@@ -86,7 +86,7 @@ const CompanySupplyForm = ({
                         <Field
                             id="quantity"
                             name="quantity"
-                            label={getTranslatedLabel("certificate.items.form.quantity", "Quantity *")}
+                            label={getTranslatedLabel("projects.certificate.items.list.quantity", "Quantity *")}
                             component={FormNumericTextBox}
                             format="n3"
                             min={1}
@@ -98,7 +98,7 @@ const CompanySupplyForm = ({
                         <Field
                             id="unitPrice"
                             name="unitPrice"
-                            label={getTranslatedLabel("certificate.items.form.price", "Price *")}
+                            label={getTranslatedLabel("projects.certificate.items.list.unitPrice", "Unit Price *")}
                             component={FormNumericTextBox}
                             format="n3"
                             min={0}
@@ -110,7 +110,7 @@ const CompanySupplyForm = ({
                         <Field
                             id="procurementDate"
                             name="procurementDate"
-                            label={getTranslatedLabel("certificate.items.form.procurementDate", "Procurement Date *")}
+                            label={getTranslatedLabel("projects.certificate.items.list.procurementDate", "Procurement Date *")}
                             component={FormDatePicker}
                             validator={requiredValidator}
                             disabled={formEditMode > 3}
@@ -121,7 +121,7 @@ const CompanySupplyForm = ({
                         <Field
                             id="transportationExpenses"
                             name="transportationExpenses"
-                            label={getTranslatedLabel("certificate.items.form.transportationExpenses", "Transportation Expenses")}
+                            label={getTranslatedLabel("projects.certificate.items.list.transportationExpenses", "Transportation Expenses")}
                             component={FormNumericTextBox}
                             format="n3"
                             min={0}
@@ -132,7 +132,7 @@ const CompanySupplyForm = ({
                         <Field
                             id="gratuities"
                             name="gratuities"
-                            label={getTranslatedLabel("certificate.items.form.gratuities", "Gratuities")}
+                            label={getTranslatedLabel("projects.certificate.items.list.gratuities", "Gratuities")}
                             component={FormNumericTextBox}
                             format="n3"
                             min={0}
@@ -143,7 +143,7 @@ const CompanySupplyForm = ({
                         <Field
                             id="total"
                             name="total"
-                            label={getTranslatedLabel("certificate.items.form.total", "Total")}
+                            label={getTranslatedLabel("projects.certificate.items.list.totalAmount", "Total")}
                             component={FormNumericTextBox}
                             format="n3"
                             value={finalTotal}

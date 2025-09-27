@@ -989,7 +989,19 @@
       "form": {
         "contractor": "المقاول",
         "supplier": "المورد",
-        "facility": "المنشأة"
+        "facility": "المنشأة",
+        "project": "المشروع",
+        "title": "رقم شهادة المشروع",
+        "new": "شهادة مشروع جديدة",
+        "startDate": "تاريخ البدء",
+        "completionDate": "تاريخ الانتهاء",
+        "description": "الوصف",
+        "create": "إنشاء الشهادة",
+        "update": "تحديث الشهادة",
+        "cancel": "إلغاء",
+        "saving": "جاري حفظ الشهادة...",
+        "error": "فشل في حفظ الشهادة",
+        "invalid": "النموذج غير صالح"
       },
       "type": "النوع",
       "date": "التاريخ",
@@ -997,6 +1009,18 @@
       "total": "الإجمالي",
       "export": "تصدير إلى PDF",
       "generating": "جاري إنشاء PDF...",
+      "actions": "الإجراءات",
+      "approve": "الموافقة على الشهادة",
+      "approved": "تمت الموافقة على الشهادة",
+      "complete": "إكمال الشهادة",
+      "completed": "تم إكمال الشهادة",
+      "noWorkEffortId": "لم يتم اختيار شهادة",
+      "statusUpdate": {
+        "error": "فشل في تحديث حالة الشهادة"
+      },
+      "print": {
+        "disabled": "الطباعة متاحة فقط للشهادات في حالة تم الإنشاء"
+      },
       "items": {
         "list": {
           "item": "البند",
@@ -1018,7 +1042,16 @@
           "transportationExpenses": "مصاريف النقل",
           "gratuities": "المكافآت",
           "productSubtotal": "إجمالي المنتج",
-          "noData": "لا توجد بنود متاحة"
+          "noData": "لا توجد بنود متاحة",
+          "product": "المنتج",
+          "discountValue": "القيمة",
+          "discountPercentage": "النسبة المئوية",
+          "deductionDescription": "وصف الخصم",
+          "deserved": "المستحق",
+          "insuranceValue": "القيمة",
+          "insurancePercentage": "النسبة المئوية",
+          "additionalInsuranceValue": "القيمة",
+          "additionalInsurancePercentage": "النسبة المئوية"
         },
         "mainDescription": "وصف البند الرئيسي",
         "discountNote": "ملاحظة الخصم"

@@ -305,7 +305,7 @@ const useProjectCertificate = ({
                     );*/
                     // Purpose: Only trigger for SUPPLY_PROCUREMENT_CERTIFICATE or EXTERNAL_SUPPLY_SALE_CERTIFICATE
                     // Context: Matches backend logic for purchase order generation
-                    if (action === "Approve Certificate" && ["SUPPLY_PROCUREMENT_CERTIFICATE", "EXTERNAL_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)) {
+                    if (action === "Approve Certificate" && ["SUPPLY_PROCUREMENT_CERTIFICATE"].includes(currentCertificateType)) {
                         if (selectedCertificate?.relatedOrderId && selectedCertificate?.facilityId) {
                             await receiveInventoryFromPurchaseOrder({
                                 orderId: selectedCertificate.relatedOrderId,

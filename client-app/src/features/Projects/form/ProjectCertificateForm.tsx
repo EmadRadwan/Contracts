@@ -86,7 +86,7 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
                 disabled={disabled || !workEffortId}
                 sx={{ mt: 2, mr: 2 }}
             >
-                {getTranslatedLabel('certificate.actions', 'Actions')}
+                {getTranslatedLabel('projects.certificate.actions', 'Actions')}
             </Button>
             <Menu
                 anchorEl={anchorEl}
@@ -97,7 +97,7 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
             >
                 {user?.roles?.includes('ApproveCertificate') && (
                     <MenuItem onClick={handleApprove} disabled={isApproveDisabled}>
-                        {getTranslatedLabel('certificate.approve', 'Approve Certificate')}
+                        {getTranslatedLabel('projects.certificate.approve', 'Approve Certificate')}
                     </MenuItem>
                 )}
                 {/*{user?.roles?.includes('CompleteCertificate') && (
@@ -370,8 +370,8 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                 variant="h6"
                             >
                                 {selectedCertificate?.certificateNumber
-                                    ? `${getTranslatedLabel("certificate.form.title", "Project Certificate No")}: ${selectedCertificate.certificateNumber} (${getCertificateTypeDisplayText(currentCertificateType)})`
-                                    : `${getTranslatedLabel("certificate.form.new", "New Project Certificate")} (${getCertificateTypeDisplayText(currentCertificateType)})`}
+                                    ? `${getTranslatedLabel("projects.certificate.form.title", "Project Certificate No")}: ${selectedCertificate.certificateNumber} (${getCertificateTypeDisplayText(currentCertificateType)})`
+                                    : `${getTranslatedLabel("projects.certificate.form.new", "New Project Certificate")} (${getCertificateTypeDisplayText(currentCertificateType)})`}
                             </Typography>
                             <IconButton onClick={() => setIsFormCollapsed(!isFormCollapsed)}>
                                 {isFormCollapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
@@ -419,7 +419,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                                 id="projectId"
                                                 name="projectId"
                                                 component={FormComboBoxVirtualProject}
-                                                label={getTranslatedLabel("certificate.form.project", "Project")}
+                                                label={getTranslatedLabel("projects.certificate.form.project", "Project")}
                                                 dataItemKey="projectId"
                                                 textField="ProjectName"
                                                 validator={requiredValidator}
@@ -433,7 +433,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                                     id="partyIdSupplier"
                                                     name="partyIdSupplier"
                                                     component={FormComboBoxVirtualSupplierMultiColumn}
-                                                    label={getTranslatedLabel("certificate.form.supplier", "Supplier *")}
+                                                    label={getTranslatedLabel("projects.certificate.form.supplier", "Supplier *")}
                                                     valueField="fromPartyId"
                                                     textField="fromPartyName"
                                                     validator={requiredValidator}
@@ -447,7 +447,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                                     id="partyIdContractor"
                                                     name="partyIdContractor"
                                                     component={FormComboBoxVirtualContractor}
-                                                    label={getTranslatedLabel("certificate.form.contractor", "Contractor *")}
+                                                    label={getTranslatedLabel("projects.certificate.form.contractor", "Contractor *")}
                                                     valueField="fromPartyId"
                                                     textField="fromPartyName"
                                                     validator={requiredValidator}
@@ -460,7 +460,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                                 <Field
                                                     id="facilityId"
                                                     name="facilityId"
-                                                    label={getTranslatedLabel("facility.items.form.facility", "Facility *")}
+                                                    label={getTranslatedLabel("projects.certificate.form.facility", "Facility *")}
                                                     component={MemoizedFormDropDownList2}
                                                     data={facilities}
                                                     dataItemKey="facilityId"
@@ -474,7 +474,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                             <Field
                                                 name="estimatedStartDate"
                                                 id="estimatedStartDate"
-                                                label={getTranslatedLabel("certificate.form.startDate", "Start Date")}
+                                                label={getTranslatedLabel("projects.certificate.form.startDate", "Start Date")}
                                                 disabled={editMode > 1}
                                                 component={FormDatePicker}
                                                 validator={requiredValidator}
@@ -484,7 +484,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                             <Field
                                                 name="estimatedCompletionDate"
                                                 id="estimatedCompletionDate"
-                                                label={getTranslatedLabel("certificate.form.completionDate", "Completion Date")}
+                                                label={getTranslatedLabel("projects.certificate.form.completionDate", "Completion Date")}
                                                 disabled={editMode > 1}
                                                 component={FormDatePicker}
                                                 validator={requiredValidator}
@@ -494,7 +494,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                             <Field
                                                 id="description"
                                                 name="description"
-                                                label={getTranslatedLabel("certificate.form.description", "Description")}
+                                                label={getTranslatedLabel("projects.certificate.form.description", "Description")}
                                                 component={FormInput}
                                                 validator={requiredValidator}
                                                 disabled={editMode > 3}
@@ -514,7 +514,7 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                                     onClick={() => formRef.current?.onSubmit()}
                                                 >
                                                     {getTranslatedLabel(
-                                                        editMode === 1 ? "certificate.form.create" : "certificate.form.update",
+                                                        editMode === 1 ? "projects.certificate.form.create" : "projects.certificate.form.update",
                                                         editMode === 1 ? "Create Certificate" : "Update Certificate"
                                                     )}
                                                 </LoadingButton>
@@ -543,17 +543,17 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                                                     variant="outlined"
                                                     disabled
                                                     title={getTranslatedLabel(
-                                                        'certificate.print.disabled',
+                                                        'projects.certificate.print.disabled',
                                                         'Printing is only available for certificates in CREATED status'
                                                     )}
                                                 >
-                                                    {getTranslatedLabel('certificate.export', 'Export to PDF')}
+                                                    {getTranslatedLabel('projects.certificate.export', 'Export to PDF')}
                                                 </Button>
                                             )}
                                         </Grid>
                                         <Grid item>
                                             <Button size="large" color="error" variant="outlined" onClick={handleCancel}>
-                                                {getTranslatedLabel("certificate.form.cancel", "Cancel")}
+                                                {getTranslatedLabel("projects.certificate.form.cancel", "Cancel")}
                                             </Button>
                                         </Grid>
                                     </Grid>
@@ -567,12 +567,11 @@ export default function ProjectCertificateForm({ editMode, cancelEdit }: Project
                     {renderCertificateItems()}
                 </Grid>
         </Paper>
-            {isAddCertificateLoading || isUpdateCertificateLoading && (
-                <LoadingComponent message={getTranslatedLabel("certificate.form.saving", "Saving Certificate...")}/>
+            {(isAddCertificateLoading || isUpdateCertificateLoading) && (
+                <LoadingComponent message={getTranslatedLabel("projects.certificate.form.saving", "Saving Certificate...")} />
             )}
-            
             {isReceiveLoading && (
-                <LoadingComponent message={getTranslatedLabel("certificate.form.saving", "Approving Certificate...")}/>
+                <LoadingComponent message={getTranslatedLabel("projects.certificate.form.saving", "Approving Certificate...")} />
             )}
         </>
     );
