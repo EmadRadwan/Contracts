@@ -33,6 +33,13 @@ interface ContractingFormProps {
     achievementPercentageValidator: (value: number) => string | undefined;
 }
 
+const priceValidator = (laborPrice: number | undefined, materialPrice: number | undefined): string | undefined => {
+    if ((laborPrice === undefined || laborPrice === null) && (materialPrice === undefined || materialPrice === null)) {
+        return "At least one of Labor Price or Material Price must be provided.";
+    }
+    return undefined;
+};
+
 const WorkmanshipContractingForm = ({
                                         formRenderProps,
                                         editMode,
@@ -132,7 +139,7 @@ const WorkmanshipContractingForm = ({
                             component={FormNumericTextBox}
                             format="n2"
                             min={0}
-                            validator={requiredValidator}
+                            validator={() => priceValidator(valueGetter("laborPrice"), valueGetter("materialPrice"))}
                             disabled={formEditMode > 3}
                         />
                     </Grid>
@@ -144,7 +151,7 @@ const WorkmanshipContractingForm = ({
                             component={FormNumericTextBox}
                             format="n2"
                             min={0}
-                            validator={requiredValidator}
+                            validator={() => priceValidator(valueGetter("laborPrice"), valueGetter("materialPrice"))}
                             disabled={formEditMode > 3}
                         />
                     </Grid>
