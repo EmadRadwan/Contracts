@@ -1,40 +1,48 @@
-import { Document, Page, Text, View, StyleSheet, PDFDownloadLink, PDFViewer, Image } from '@react-pdf/renderer'; // REFACTOR: Added Image import for logo embedding
-import { Button } from '@mui/material';
-import { useCallback, useState } from "react";
-import ModalContainer from "../../../app/common/modals/ModalContainer";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react-swc';
+// REFACTOR: Imported Node.js polyfills plugin to handle Buffer and other Node.js globals
+// Improvement: Simplifies polyfilling by using vite-plugin-node-polyfills, ensuring Buffer is available in browser
+// Context: The previous manual Buffer polyfill was not executing in the browser environment
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
-// ... (keep existing styles and interface unchanged)
-
-// Inside the MyDocument component, update the header section:
-const MyDocument = () => (
-    <Document>
-      {pages.map((pageItems, pageIndex) => (
-          <Page key={pageIndex} size="A4" orientation="landscape" style={styles.page}>
-            <View style={styles.section}>
-              <View style={styles.header}>
-                {/* REFACTOR: Added logo image above the title for branding */}
-                {/* Improvement: Enhances visual identity, positioned at the top left */}
-                <Image style={{ width: 100, height: 100, marginBottom: 10 }} src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUg..."/> {/* Replace with actual base64 or file path */}
-                <Text style={styles.title}>
-                  {getTranslatedLabel('projects.certificate.report.title', 'Certificate Report')}: {certificate.certificateNumber}
-                </Text>
-                <View style={{ flexDirection: 'row-reverse', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <Text style={styles.headerText}>
-                    {getTranslatedLabel('projects.certificate.type', 'Type')}: {certificateType}
-                  </Text>
-                  <Text style={styles.headerText}>
-                    {getTranslatedLabel('projects.certificate.date', 'Date')}: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}
-                  </Text>
-                </View>
-                {/* ... (rest of the header remains unchanged) */}
-              </View>
-              {/* ... (rest of the component remains unchanged) */}
-            </View>
-          </Page>
-      ))}
-    </Document>
-);
-
-// ... (rest of the component remains unchanged)
-
-export default CertificatePDFDocument;
+export default defineConfig(() => {
+    return {
+        build: {
+            outDir: '../API/wwwroot',
+        },
+        server: {
+            port: 3000,
+        },
+        optimizeDeps: {
+            // This prevents Vite from pre-bundling Mermaid, letting it run only in the browser after the DOM is ready
+            exclude: ['mermaid', 'dagre-d3-es', 'd3'],
+        },
+        ssr: {
+            // This ensures that if you do any sort of SSR or SSR-like features,
+            // Vite won't attempt to bundle these packages for server usage
+            noExternal: ['mermaid', 'dagre-d3-es', 'd3'],
+        },
+        // REFACTOR: Added assetsInclude to handle .ttf files
+        // Purpose: Allows Vite to process .ttf files as assets, ensuring correct import or public serving
+        assetsInclude: ['**/*.ttf'],
+        plugins: [
+            react(),
+            // REFACTOR: Added nodePolyfills plugin to provide Buffer and other Node.js globals
+            // Improvement: Automatically handles Buffer polyfilling without manual window.Buffer assignment
+            // Context: Ensures @react-pdf/renderer can access Buffer in the browser
+            nodePolyfills({
+                globals: {
+                    Buffer: true, // Explicitly enable Buffer polyfill
+                },
+            }),
+        ],
+        // REFACTOR: Added resolve.alias to ensure buffer module is correctly resolved
+        // Improvement: Maps Node.js 'buffer' to the browser-compatible 'buffer' package
+        // Context: Prevents Vite from attempting to load Node.js built-in buffer module
+        resolve: {
+            alias: {
+                buffer: 'buffer',
+            },
+        },
+    };
+});

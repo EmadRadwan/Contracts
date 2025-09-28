@@ -1024,7 +1024,7 @@
       "items": {
         "list": {
           "item": "البند",
-          "code": "رقم المستخلص",
+          "code": "رقم البند",
           "description": "الوصف",
           "quantity": "الكمية",
           "unitOfMeasure": "وحدة القياس",
@@ -1040,7 +1040,7 @@
           "discount": "الخصم",
           "procurementDate": "تاريخ الشراء",
           "transportationExpenses": "مصاريف النقل",
-          "gratuities": "المكافآت",
+          "gratuities": "الاكراميات",
           "productSubtotal": "إجمالي المنتج",
           "noData": "لا توجد بنود متاحة",
           "product": "المنتج",

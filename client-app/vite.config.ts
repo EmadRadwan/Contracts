@@ -1,5 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
+
 
 export default defineConfig(() => {
     return {
@@ -22,6 +24,21 @@ export default defineConfig(() => {
         // REFACTOR: Added assetsInclude to handle .ttf files
         // Purpose: Allows Vite to process .ttf files as assets, ensuring correct import or public serving
         assetsInclude: ['**/*.ttf'],
-        plugins: [react()],
+        plugins: [
+            react(),
+            // REFACTOR: Added nodePolyfills plugin to provide Buffer and other Node.js globals
+            // Improvement: Automatically handles Buffer polyfilling without manual window.Buffer assignment
+            // Context: Ensures @react-pdf/renderer can access Buffer in the browser
+            nodePolyfills({
+                globals: {
+                    Buffer: true, // Explicitly enable Buffer polyfill
+                },
+            }),
+        ],
+        resolve: {
+            alias: {
+                buffer: 'buffer',
+            },
+        },
     };
 });
