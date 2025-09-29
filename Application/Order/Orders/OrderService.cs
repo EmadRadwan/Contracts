@@ -98,7 +98,7 @@ public class OrderService : BaseService, IOrderService
             CurrencyUom = orderDto.CurrencyUomId,
             AgreementId = orderDto.AgreementId,
             GrandTotal = orderDto.GrandTotal,
-            InvoicePerShipment = "Y",
+            InvoicePerShipment = "N",
             LastUpdatedStamp = stamp,
             OrderDate = stamp,
             EntryDate = stamp,
@@ -137,7 +137,7 @@ public class OrderService : BaseService, IOrderService
         /*var createdOrderItems = await _utilityService.FindLocalOrDatabaseListAsync<OrderItem>(
             query => query.Where(ii => ii.OrderId == newOrderSerial)
         );*/
-        
+
         var createdOrderItems = await _context.OrderItems
             .Where(ii => ii.OrderId == newOrderSerial)
             .ToListAsync();
@@ -546,6 +546,7 @@ public class OrderService : BaseService, IOrderService
             OrderId = orderId,
             OrderItemSeqId = orderItem.OrderItemSeqId,
             ProductId = orderItem.ProductId,
+            UomId = orderItem.UomId,
             ProductFeatureId = orderItem.ProductFeatureId,
             ItemDescription = orderItem.ProductName,
             Quantity = orderItem.Quantity,
@@ -990,7 +991,7 @@ public class OrderService : BaseService, IOrderService
         _context.OrderAdjustments.Remove(orderAdjustment);
     }
 
-    private async Task SetUnitPriceAsLastPrice(OrderItemDto2 orderItem)
+    private async Task SetUnitPriceAsLastPrice_OLD(OrderItemDto2 orderItem)
     {
         // get product supplier from order roles
         var productSupplierId = await _context.OrderRoles
@@ -1030,6 +1031,88 @@ public class OrderService : BaseService, IOrderService
             }
         }
     }
+
+
+    public async Task<object> SetUnitPriceAsLastPrice(OrderItemDto2 orderItem)
+    {
+        // REFACTOR: Query OrderRoles for BILL_FROM_VENDOR party ID, aligning with _OLD version
+        // Uses direct table access (_context.OrderRoles) for clarity and consistency
+        var productSupplierId = await _context.OrderRoles
+            .Where(x => x.OrderId == orderItem.OrderId && x.RoleTypeId == "BILL_FROM_VENDOR")
+            .Select(x => x.PartyId)
+            .FirstOrDefaultAsync();
+
+        if (string.IsNullOrEmpty(productSupplierId))
+        {
+            // REFACTOR: Return success if no supplier found, avoiding unnecessary processing
+            // Simplifies error handling compared to original complex checks
+            return new { success = true };
+        }
+
+        // REFACTOR: Query OrderHeaders for currency, matching _OLD version
+        // Uses direct table access (_context.OrderHeaders) for consistency
+        var orderCurrency = await _context.OrderHeaders
+            .Where(x => x.OrderId == orderItem.OrderId)
+            .Select(x => x.CurrencyUom)
+            .FirstOrDefaultAsync();
+
+        // REFACTOR: Query SupplierProducts for active record matching supplier, product, and currency
+        // Simplifies query to focus on essential filters, uses direct table access
+        var supplierProduct = await _context.SupplierProducts
+            .Where(ps => ps.ProductId == orderItem.ProductId
+                         && ps.PartyId == productSupplierId
+                         && ps.AvailableThruDate == null
+                         && ps.CurrencyUomId == orderCurrency)
+            .FirstOrDefaultAsync();
+
+        var nowTimestamp = DateTime.UtcNow;
+
+        if (supplierProduct != null)
+        {
+            // REFACTOR: Update SupplierProduct if price differs, maintaining price history
+            // Streamlines update logic, removes cloning method for direct object creation
+            if (orderItem.UnitPrice.HasValue && orderItem.UnitPrice != supplierProduct.LastPrice)
+            {
+                supplierProduct.AvailableThruDate = nowTimestamp;
+                _context.SupplierProducts.Update(supplierProduct);
+
+                var newSupplierProduct = new SupplierProduct
+                {
+                    ProductId = orderItem.ProductId,
+                    PartyId = productSupplierId,
+                    CurrencyUomId = orderCurrency,
+                    AvailableFromDate = nowTimestamp,
+                    LastPrice = orderItem.UnitPrice.Value
+                };
+                _context.SupplierProducts.Add(newSupplierProduct);
+
+                await _context.SaveChangesAsync();
+            }
+        }
+        else
+        {
+            // REFACTOR: Create new SupplierProduct if no active record exists
+            // Simplifies creation logic, ensures currency and supplier are included
+            if (orderItem.UnitPrice.HasValue)
+            {
+                var newSupplierProduct = new SupplierProduct
+                {
+                    ProductId = orderItem.ProductId,
+                    PartyId = productSupplierId,
+                    CurrencyUomId = orderCurrency,
+                    AvailableFromDate = nowTimestamp,
+                    LastPrice = orderItem.UnitPrice.Value
+                };
+                _context.SupplierProducts.Add(newSupplierProduct);
+
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        return new { success = true };
+    }
+
+
     private SupplierProduct CloneSupplierProduct(SupplierProduct source)
     {
         var stamp = DateTime.UtcNow;

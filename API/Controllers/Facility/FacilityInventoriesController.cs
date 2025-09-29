@@ -22,6 +22,12 @@ public class FacilityInventoriesController : BaseApiController
     {
         return HandleResult(await Mediator.Send(command));
     }
+    
+    [HttpPost("processWorkmanCertificatePurchaseOrder", Name = "ProcessWorkmanCertificatePurchaseOrder")]
+    public async Task<IActionResult> ProcessWorkmanCertificatePurchaseOrder(ProcessWorkmanCertificatePurchaseOrder.Command command)
+    {
+        return HandleResult(await Mediator.Send(command));
+    }
 
 
     [HttpPost("createInventoryTransfer", Name = "CreateInventoryTransfer")]
@@ -81,9 +87,6 @@ public class FacilityInventoriesController : BaseApiController
     [HttpPost("updateInventoryItem", Name = "UpdateInventoryItem")]
     public async Task<IActionResult> UpdateInventoryItem([FromBody] UpdateInventoryItem.UpdateInventoryItemDto inventoryItem)
     {
-        // REFACTOR: Dispatched the MediatR command with the DTO, using HandleResult
-        // to standardize response formatting (e.g., 200, 400, 401).
-        // Why: Mirrors CreateInventoryItem’s controller logic for consistency and reusability.
         return HandleResult(await Mediator.Send(new UpdateInventoryItem.Command { InventoryItemDto = inventoryItem }));
     }
 }

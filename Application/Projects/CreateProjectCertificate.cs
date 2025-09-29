@@ -285,6 +285,7 @@ namespace Application.Projects
                                 Quantity = item.Quantity,
                                 UnitPrice = item.UnitPrice,
                                 SubTotal = item.TotalAmount,
+                                UomId = item.UomId,
                                 FacilityId = certificate.FacilityId,
                                 ItemDescription = item.Description,
                                 OrderItemTypeId = "PRODUCT_ORDER_ITEM",

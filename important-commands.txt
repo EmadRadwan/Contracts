@@ -42,10 +42,10 @@ grep -Ev 'Permission|ConfigXMLReader|ScreenFactory|LoginWorker|ServerHitBin|Pers
 "react-scripts --openssl-legacy-provider start",
 "DefaultConnection": "server=localhost;user=root;password=baba1934;database=erp"
 dotnet ef database drop -p Persistence -s API
-dotnet ef migrations add "AddedQuotes" -p Persistence -s API
+dotnet ef migrations add "Added uom to orderitem" -p Persistence -s API
 
 //Migrations for database views:
-1 - dotnet ef migrations add CreateDatabaseViews -p Persistence -s API
+dotnet ef migrations add CreateDatabaseViews -p Persistence -s API
     - then add the database view creation code to the newly created migration file
     - if view migrations to be dropped, remove their files from the migration folder
       and from the __EFMigrationHistory table
@@ -71,7 +71,7 @@ compare and align my C# translation of an Ofbiz. service/function.
 
 compare this code deeply  logic wise and make sure that the C# version mirrors the ofbiz version and call all called functions
 
-PartyAndTelecomNumbers in ofbiz is a db view with the following definition, use the underlying tables and joints in the query where its mentioned
+OrderHeaderItemAndRoles in ofbiz is a db view with the following definition, use the underlying tables and joins in the query where its mentioned
 
 FilterListByDate:
 var components = await _context.WorkEffortGoodStandards

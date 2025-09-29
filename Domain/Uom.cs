@@ -33,7 +33,9 @@ public class Uom
         OrderDeliveryScheduleTotalCubicUoms = new HashSet<OrderDeliverySchedule>();
         OrderDeliveryScheduleTotalWeightUoms = new HashSet<OrderDeliverySchedule>();
         OrderHeaders = new HashSet<OrderHeader>();
-        OrderItems = new HashSet<OrderItem>();
+        OrderItemsByRecurringFreqUom = new HashSet<OrderItem>();
+        // REFACTOR: Added OrderItemsByUom to support the new UomId foreign key in OrderItem, resolving the EF relationship conflict.
+        OrderItemsByUom = new HashSet<OrderItem>();
         OrderTerms = new HashSet<OrderTerm>();
         Parties = new HashSet<Party>();
         PartyAcctgPreferences = new HashSet<PartyAcctgPreference>();
@@ -136,7 +138,9 @@ public class Uom
     public ICollection<OrderDeliverySchedule> OrderDeliveryScheduleTotalCubicUoms { get; set; }
     public ICollection<OrderDeliverySchedule> OrderDeliveryScheduleTotalWeightUoms { get; set; }
     public ICollection<OrderHeader> OrderHeaders { get; set; }
-    public ICollection<OrderItem> OrderItems { get; set; }
+    public ICollection<OrderItem> OrderItemsByRecurringFreqUom { get; set; }
+    // REFACTOR: Added OrderItemsByUom to support the new UomId foreign key relationship in OrderItem.
+    public ICollection<OrderItem> OrderItemsByUom { get; set; }
     public ICollection<OrderTerm> OrderTerms { get; set; }
     public ICollection<Party> Parties { get; set; }
     public ICollection<PartyAcctgPreference> PartyAcctgPreferences { get; set; }

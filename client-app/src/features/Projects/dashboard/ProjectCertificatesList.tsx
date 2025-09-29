@@ -287,20 +287,31 @@ export default function ProjectCertificatesList() {
                 <Grid container columnSpacing={1} alignItems="center">
                     <Grid item xs={4}>
                         <Menu onSelect={handleMenuSelect}>
-                            <MenuItem key="newCertificate" text={getTranslatedLabel("certificate.list.new", "New Certificate")}>
+                            <MenuItem key="newCertificate"
+                                      text={getTranslatedLabel("projects.certificate.list.new", "New Certificate")}
+                            >
                                 <MenuItem
                                     key="supplyProcurement"
-                                    text={getTranslatedLabel("certificate.list.supplyProcurement", "Supply Procurement")}
+                                    text={getTranslatedLabel(
+                                        "projects.certificate.list.supplyProcurement",
+                                        "Supply Procurement"
+                                    )}
                                     data="supplyProcurement"
                                 />
                                 <MenuItem
                                     key="workmanshipContracting"
-                                    text={getTranslatedLabel("certificate.list.workmanshipContracting", "Workmanship Contracting")}
+                                    text={getTranslatedLabel(
+                                        "projects.certificate.list.workmanshipContracting",
+                                        "Workmanship Contracting"
+                                    )}
                                     data="workmanshipContracting"
                                 />
                                 <MenuItem
                                     key="companySupplySale"
-                                    text={getTranslatedLabel("certificate.list.companySupplySale", "Company Supply Sale")}
+                                    text={getTranslatedLabel(
+                                        "projects.certificate.list.companySupplySale",
+                                        "Company Supply Sale"
+                                    )}
                                     data="companySupplySale"
                                 />
                             </MenuItem>
@@ -320,58 +331,82 @@ export default function ProjectCertificatesList() {
                             >
                                 <Column
                                     field="certificateNumber"
-                                    title={getTranslatedLabel("certificate.list.certificateNumber", "Project Number")}
+                                    title={getTranslatedLabel(
+                                        "projects.certificate.list.certificateNumber",
+                                        "Project Number"
+                                    )}
                                     width={150}
                                     locked={false}
                                     cell={ProjectNumberCell}
                                 />
                                 <Column
                                     field="projectName"
-                                    title={getTranslatedLabel("certificate.list.projectName", "Project Name")}
+                                    title={getTranslatedLabel("projects.certificate.list.projectName", "Project Name")}
                                 />
                                 <Column
                                     field="certificateCategoryDescription"
-                                    title={getTranslatedLabel("certificate.list.partyId", "Type")}
+                                    title={getTranslatedLabel("projects.certificate.list.certificateType", "Type")}
                                     width={320}
                                 />
                                 <Column
                                     field="partyIdSupplier"
-                                    title={getTranslatedLabel("certificate.list.supplierPartyId", "Supplier ID")}
+                                    title={getTranslatedLabel(
+                                        "projects.certificate.list.supplierPartyId",
+                                        "Supplier ID"
+                                    )}
                                 />
                                 <Column
                                     field="partyNameSupplier"
-                                    title={getTranslatedLabel("certificate.list.supplierPartyName", "Supplier Name")}
+                                    title={getTranslatedLabel(
+                                        "projects.certificate.list.supplierPartyName",
+                                        "Supplier Name"
+                                    )}
                                 />
                                 <Column
                                     field="partyIdContractor"
-                                    title={getTranslatedLabel("certificate.list.contractorPartyId", "Contractor ID")}
+                                    title={getTranslatedLabel(
+                                        "projects.certificate.list.contractorPartyId",
+                                        "Contractor ID"
+                                    )}
                                 />
                                 <Column
                                     field="partyNameContractor"
-                                    title={getTranslatedLabel("certificate.list.contractorPartyName", "Contractor Name")}
+                                    title={getTranslatedLabel(
+                                        "projects.certificate.list.contractorPartyName",
+                                        "Contractor Name"
+                                    )}
                                 />
                                 <Column
                                     field="description"
-                                    title={getTranslatedLabel("certificate.list.description", "Certificate Description")}
+                                    title={getTranslatedLabel(
+                                        "projects.certificate.list.description",
+                                        "Certificate Description"
+                                    )}
                                 />
                                 <Column
                                     field="estimatedStartDate"
-                                    title={getTranslatedLabel("certificate.list.fromDate", "From Date")}
+                                    title={getTranslatedLabel("projects.certificate.list.startDate", "From Date")}
                                     format="{0: dd/MM/yyyy}"
                                 />
                                 <Column
                                     field="estimatedCompletionDate"
-                                    title={getTranslatedLabel("certificate.list.toDate", "To Date")}
+                                    title={getTranslatedLabel(
+                                        "projects.certificate.list.completionDate",
+                                        "To Date"
+                                    )}
                                     format="{0: dd/MM/yyyy}"
                                 />
                                 <Column
                                     field="facilityName"
-                                    title={getTranslatedLabel("certificate.list.facilityName", "Facility Name")}
+                                    title={getTranslatedLabel("projects.certificate.list.facilityName", "Facility Name")}
                                 />
                             </KendoGrid>
                             {isFetching && (
                                 <LoadingComponent
-                                    message={getTranslatedLabel("certificate.list.loading", "Loading Certificates...")}
+                                    message={getTranslatedLabel(
+                                        "projects.certificate.list.loading",
+                                        "Loading Certificates..."
+                                    )}
                                 />
                             )}
                         </div>

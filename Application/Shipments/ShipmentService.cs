@@ -46,7 +46,8 @@ public interface IShipmentService
         string facilityId,
         string? returnId,
         decimal? orderCurrencyUnitPrice = null,
-        string? color = null);
+        string? color = null,
+        string? uomId = null);
 
     Task<OperationResult> QuickReceivePurchaseOrder(string orderId, string facilityId);
 }
@@ -220,7 +221,8 @@ public class ShipmentService : IShipmentService
         string facilityId,
         string? returnId,
         decimal? orderCurrencyUnitPrice = null,
-        string? color = null)
+        string? color = null,
+        string? uomId = null)
     {
         try
         {
@@ -305,6 +307,7 @@ public class ShipmentService : IShipmentService
                         FacilityId = facilityId,
                         QuantityOnHandTotal = quantityAccepted,
                         ProductId = productId,
+                        UomId = uomId,
                         SupplierId = supplierPartyId,
                         FacilityOwnerPartyId = facilityId,
                         CurrencyUomId = currencyUomId,

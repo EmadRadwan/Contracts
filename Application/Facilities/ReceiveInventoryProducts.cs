@@ -56,7 +56,7 @@ namespace Application.Facilities
                     var results = new ReceiveInventoryResult();
                     foreach (var item in request.ReceivedItems.OrderItems)
                     {
-                        await _shipmentService.ReceiveInventoryProduct("NON_SERIAL_INV_ITEM", (decimal)item.QuantityAccepted, (decimal)item.QuantityRejected, null, null, null, item.OrderId, item.OrderItemSeqId, item.ProductId, item.FacilityId, null, null, item.Color);
+                        await _shipmentService.ReceiveInventoryProduct("NON_SERIAL_INV_ITEM", (decimal)item.QuantityAccepted, (decimal)item.QuantityRejected, null, null, null, item.OrderId, item.OrderItemSeqId, item.ProductId, item.FacilityId, null, null, item.Color, item.UomId);
                     }
 
                     var result = await _context.SaveChangesAsync(cancellationToken) > 0;

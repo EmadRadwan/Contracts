@@ -78,7 +78,7 @@ const ProjectMenu = ({ selectedMenuItem, onMenuSelect }: ProjectMenuProps) => {
                                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                     {icon}
                                     <Typography variant="body1" sx={{ marginX: '4px' }}>
-                                        {getTranslatedLabel(`project.menu.${key}`, title)}
+                                        {getTranslatedLabel(`projects.menu.${key}`, title)}
                                     </Typography>
                                 </Box>
                             </ListItem>

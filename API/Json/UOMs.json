@@ -1522,6 +1522,18 @@
     "CREATED_TX_STAMP": "2025-08-28 21:55:00"
   },
   {
+    "UOM_ID": "WT_shikara",
+    "UOM_TYPE_ID": "WEIGHT_MEASURE",
+    "ABBREVIATION": "shikara",
+    "NUMERIC_CODE": null,
+    "DESCRIPTION": "Shikara (Sack)",
+    "DESCRIPTION_ARABIC": "شيكارة",
+    "LAST_UPDATED_STAMP": "2025-09-29 21:12:00",
+    "LAST_UPDATED_TX_STAMP": "2025-09-29 21:12:00",
+    "CREATED_STAMP": "2025-09-29 21:12:00",
+    "CREATED_TX_STAMP": "2025-09-29 21:12:00"
+  },
+  {
     "UOM_ID": "TM_day",
     "UOM_TYPE_ID": "TIME_MEASURE",
     "ABBREVIATION": "day",

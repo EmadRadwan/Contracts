@@ -1,5 +1,6 @@
 using Application.Catalog.Products;
 using Application.Manufacturing;
+using Application.ProjectCertificates;
 using Application.WorkEfforts;
 using Microsoft.AspNetCore.Mvc;
 using CostComponentCalcDto = Application.Manufacturing.CostComponentCalcDto;
@@ -121,6 +122,15 @@ public class WorkEffortController : BaseApiController
     {
         return HandleResults(await Mediator.Send(new IssueProductionRunTask.Command
             { IssueProductionRunTaskParams = issueProductionRunTaskParams }));
+    }
+    
+    [HttpPut("issueMaterialsForCertificate", Name = "IssueMaterialsForCertificate")]
+    public async Task<IActionResult> IssueMaterialsForCertificate([FromBody] IssueMaterialsForCertificateParams issueParams)
+    {
+        return HandleResults(await Mediator.Send(new IssueMaterialsForCertificate.Command 
+        { 
+            WorkEffortId = issueParams.WorkEffortId 
+        }));
     }
 
     [HttpPut("reserveProductionRunTask", Name = "ReserveProductionRunTask")]

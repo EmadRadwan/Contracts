@@ -14,6 +14,7 @@ using Application.Order.Orders.Returns;
 using Application.order.Quotes;
 using Application.Parties.ContactMechTypes;
 using Application.Parties.Parties;
+using Application.Projects;
 using Application.Services;
 using Application.Shipments;
 using Application.WorkEfforts;
@@ -113,6 +114,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IVehicleService, VehicleService>();
         services.AddScoped<IStatusService, StatusService>();
         services.AddScoped<IPartyService, PartyService>();
+        services.AddScoped<IProjectService, ProjectService>();
         services.AddScoped<IContentAccessor, ContentAccessor>();
         services.AddScoped<IPriceService, PriceService>(); // Register the service
         services.AddScoped<CustomMethodsService>();

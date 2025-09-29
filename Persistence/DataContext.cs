@@ -25747,6 +25747,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 entity.Property(e => e.UnitRecurringPrice)
                     .HasColumnType("decimal(18,3)")
                     .HasColumnName("UNIT_RECURRING_PRICE");
+                    
+                   entity.Property(e => e.UomId)
+                  .HasMaxLength(36)
+                  .IsUnicode(false)
+                  .HasColumnName("UOM_ID");
 
                 entity.HasOne(d => d.ChangeByUserLogin)
                     .WithMany(p => p.OrderItemChangeByUserLogins)
@@ -25785,10 +25790,10 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasConstraintName("ORDER_ITEM_PRODUCT");
 
                 entity.HasOne(d => d.RecurringFreqUom)
-                    .WithMany(p => p.OrderItems)
-                    .HasForeignKey(d => d.RecurringFreqUomId)
-                    .HasConstraintName("ORDER_ITEM_RFUOM");
-
+                  .WithMany(p => p.OrderItemsByRecurringFreqUom)
+                  .HasForeignKey(d => d.RecurringFreqUomId)
+                  .HasConstraintName("ORDER_ITEM_RFUOM");
+                  
                 entity.HasOne(d => d.SalesOpportunity)
                     .WithMany(p => p.OrderItems)
                     .HasForeignKey(d => d.SalesOpportunityId)
@@ -25813,6 +25818,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .WithMany(p => p.OrderItems)
                     .HasForeignKey(d => new { d.QuoteId, d.QuoteItemSeqId })
                     .HasConstraintName("ORDER_ITEM_QUIT");
+                    
+                   entity.HasOne(e => e.Uom)
+                  .WithMany(u => u.OrderItemsByUom)
+                  .HasForeignKey(e => e.UomId)
+                  .HasConstraintName("FK_OrderItem_Uom");
             });
 
             modelBuilder.Entity<OrderItemAssoc>(entity =>
@@ -59078,6 +59088,19 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .WithMany(p => p.Uoms)
                     .HasForeignKey(d => d.UomTypeId)
                     .HasConstraintName("UOM_TO_TYPE");
+                    
+               
+
+            entity.HasMany(u => u.OrderItemsByRecurringFreqUom)
+                  .WithOne(o => o.RecurringFreqUom)
+                  .HasForeignKey(o => o.RecurringFreqUomId)
+                  .HasConstraintName("ORDER_ITEM_RFUOM");
+
+            // REFACTOR: Added relationship for UomId using OrderItemsByUom to support the new foreign key in OrderItem.
+            entity.HasMany(u => u.OrderItemsByUom)
+                  .WithOne(o => o.Uom)
+                  .HasForeignKey(o => o.UomId)
+                  .HasConstraintName("FK_OrderItem_Uom");
             });
 
             modelBuilder.Entity<UomConversion>(entity =>

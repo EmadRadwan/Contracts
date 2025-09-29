@@ -182,6 +182,7 @@ public class ReceiveInventoryFromPurchaseOrder
                     OrderId = orderItem.OrderId,
                     OrderItemSeqId = orderItem.OrderItemSeqId,
                     ProductId = orderItem.ProductId,
+                    UomId = orderItem.UomId,
                     FacilityId = facilityId,
                     Quantity = orderItem.Quantity,
                     QuantityAccepted = orderItem.Quantity,

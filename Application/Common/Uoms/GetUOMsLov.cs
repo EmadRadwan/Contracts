@@ -73,6 +73,7 @@ public class GetUOMsLov
                     "TM_day", 
                     "TM_hr", 
                     "QT_thousand",
+                    "WT_shikara",
                     "LN_m_2x",      // Added: Linear Meter x2
                     "LN_m_3x",      // Added: Linear Meter x3
                     "AR_m2_2x",     // Added: Square Meter x2

@@ -573,7 +573,6 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                                     </Grid>
                                                 )}
                                                 <Grid item>
-                                                    {/* REFACTOR: Restrict PDF export to CREATED status */}
                                                     {/* Purpose: Only allow printing for certificates in CREATED status */}
                                                     {/* Improvement: Enhances control by limiting PDF generation to specific state */}
                                                     {reportData.items && reportData.items.length > 0 && selectedCertificate?.currentStatusId === CertificateStatus.CREATED ? (

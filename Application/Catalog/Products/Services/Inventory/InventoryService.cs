@@ -145,6 +145,7 @@ public class InventoryService : IInventoryService
                 LotId = param.LotId,
                 LocationSeqId = param.LocationSeqId,
                 ProductId = param.ProductId,
+                UomId = param.UomId,
                 CurrencyUomId = param.CurrencyUomId,
                 PartyId = param.SupplierId,
                 DatetimeReceived = stamp,

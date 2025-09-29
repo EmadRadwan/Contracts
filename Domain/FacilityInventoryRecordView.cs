@@ -15,7 +15,7 @@ public class FacilityInventoryRecordView
     public string ProductId { get; set; }
     public string ProductName { get; set; }
     public string Description { get; set; }
-    public string QuantityUomId { get; set; }
+    public string? QuantityUomId { get; set; }
     public decimal QuantityOnHandTotal { get; set; }
     public decimal AvailableToPromiseTotal { get; set; }
     public decimal DefaultPrice { get; set; }

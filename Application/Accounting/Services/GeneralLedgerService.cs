@@ -21,6 +21,7 @@ public interface IGeneralLedgerService
     Task<string> CreateAcctgTransAndEntriesForIncomingPayment(string paymentId);
     Task<string> CreateAcctgTransAndEntriesForPaymentApplication(string paymentApplicationId);
     Task<string> CreateAcctgTransForWorkEffortIssuance(string workEffortId, string inventoryItemId);
+    Task<string> CreateAcctgTransForCertificateIssuance(string workEffortId, string inventoryItemId);
     Task<string> QuickCreateAcctgTransAndEntries(CreateQuickAcctgTransAndEntriesParams parameters);
     Task<string> CreateAcctgTransForCustomerReturnInvoice(string invoiceId);
     Task<string> CreateAcctgTransAndEntriesForOutgoingPayment(string paymentId);
@@ -2787,194 +2788,196 @@ public class GeneralLedgerService : IGeneralLedgerService
     }
 
     public async Task<string> CreateAcctgTransAndEntriesForOutgoingPayment(string paymentId)
-{
-    try
     {
-        var glSettings = _acctgMiscService.GetGlArithmeticSettingsInline();
-        var ledgerDecimals = glSettings.DecimalScale;
-        var roundingMode = glSettings.RoundingMode;
-        // Retrieve Payment record
-        
-        var payment = await _context.Payments
-            .FirstOrDefaultAsync(p => p.PaymentId == paymentId);
-
-        if (payment == null)
+        try
         {
-            _logger.LogWarning($"Payment with ID {paymentId} was not found.");
-            return null;
-        }
+            var glSettings = _acctgMiscService.GetGlArithmeticSettingsInline();
+            var ledgerDecimals = glSettings.DecimalScale;
+            var roundingMode = glSettings.RoundingMode;
+            // Retrieve Payment record
 
-        // Check if Payment is a disbursement
-        var isDisbursement = await _paymentHelperService.Value.IsDisbursement(payment);
-        if (!isDisbursement)
-        {
-            _logger.LogInformation($"Payment {paymentId} is not a disbursement. Skipping outgoing payment transaction.");
-            return null;
-        }
+            var payment = await _context.Payments
+                .FirstOrDefaultAsync(p => p.PaymentId == paymentId);
 
-        // Set organizationPartyId, partyId, and roleTypeId
-        var organizationPartyId = payment.PartyIdFrom;
-        var partyId = payment.PartyIdTo;
-        var roleTypeId = "BILL_FROM_VENDOR";
+            if (payment == null)
+            {
+                _logger.LogWarning($"Payment with ID {paymentId} was not found.");
+                return null;
+            }
 
-        // Retrieve PaymentGlAccountTypeMap
-        var paymentGlAccountTypeMap = await _context.PaymentGlAccountTypeMaps
-            .FirstOrDefaultAsync(map =>
-                map.PaymentTypeId == payment.PaymentTypeId &&
-                map.OrganizationPartyId == organizationPartyId);
+            // Check if Payment is a disbursement
+            var isDisbursement = await _paymentHelperService.Value.IsDisbursement(payment);
+            if (!isDisbursement)
+            {
+                _logger.LogInformation(
+                    $"Payment {paymentId} is not a disbursement. Skipping outgoing payment transaction.");
+                return null;
+            }
 
-        var debitGlAccountTypeId = paymentGlAccountTypeMap?.GlAccountTypeId;
+            // Set organizationPartyId, partyId, and roleTypeId
+            var organizationPartyId = payment.PartyIdFrom;
+            var partyId = payment.PartyIdTo;
+            var roleTypeId = "BILL_FROM_VENDOR";
 
-        // Initialize accounting entries list
-        var acctgTransEntries = new List<AcctgTransEntry>();
+            // Retrieve PaymentGlAccountTypeMap
+            var paymentGlAccountTypeMap = await _context.PaymentGlAccountTypeMaps
+                .FirstOrDefaultAsync(map =>
+                    map.PaymentTypeId == payment.PaymentTypeId &&
+                    map.OrganizationPartyId == organizationPartyId);
 
-        // Generate unique sequence ID for AcctgTrans
-        var stamp = DateTime.UtcNow;
-        var newAcctgTransSequence = await _utilityService.GetNextSequence("AcctgTrans");
+            var debitGlAccountTypeId = paymentGlAccountTypeMap?.GlAccountTypeId;
 
-        var paymentAmount = _acctgMiscService.CustomRound(payment.Amount,
-            (int)ledgerDecimals, roundingMode);
-        
-        // Create CREDIT entry
-        var creditEntry = new AcctgTransEntry
-        {
-            AcctgTransId = newAcctgTransSequence,
-            AcctgTransEntrySeqId = "1",
-            AcctgTransEntryTypeId = "_NA_",
-            DebitCreditFlag = "C",
-            OrigAmount = paymentAmount,
-            OrigCurrencyUomId = payment.CurrencyUomId,
-            OrganizationPartyId = organizationPartyId,
-            PartyId = partyId,
-            RoleTypeId = roleTypeId,
-            ReconcileStatusId = "AES_NOT_RECONCILED",
-            CreatedStamp = stamp,
-            LastUpdatedStamp = stamp
-        };
-        acctgTransEntries.Add(creditEntry);
+            // Initialize accounting entries list
+            var acctgTransEntries = new List<AcctgTransEntry>();
 
-        // Initialize amountAppliedTotal
-        decimal amountAppliedTotal = 0m;
+            // Generate unique sequence ID for AcctgTrans
+            var stamp = DateTime.UtcNow;
+            var newAcctgTransSequence = await _utilityService.GetNextSequence("AcctgTrans");
 
-        // Retrieve PaymentApplications
-        var paymentApplications = await _context.PaymentApplications
-            .Where(pa => pa.PaymentId == payment.PaymentId)
-            .ToListAsync();
+            var paymentAmount = _acctgMiscService.CustomRound(payment.Amount,
+                (int)ledgerDecimals, roundingMode);
 
-        // Create DEBIT entries for PaymentApplications (mirroring commented-out OFBiz logic)
-        int entrySeqId = 2; // Start after credit entry
-        foreach (var paymentApplication in paymentApplications)
-        {
-            var debitEntry = new AcctgTransEntry
+            // Create CREDIT entry
+            var creditEntry = new AcctgTransEntry
             {
                 AcctgTransId = newAcctgTransSequence,
-                AcctgTransEntrySeqId = entrySeqId.ToString(),
+                AcctgTransEntrySeqId = "1",
                 AcctgTransEntryTypeId = "_NA_",
-                DebitCreditFlag = "D",
-                OrigAmount = paymentApplication.AmountApplied,
+                DebitCreditFlag = "C",
+                OrigAmount = paymentAmount,
                 OrigCurrencyUomId = payment.CurrencyUomId,
-                GlAccountTypeId = "ACCOUNTS_PAYABLE", // Default GL account type
                 OrganizationPartyId = organizationPartyId,
+                PartyId = partyId,
+                RoleTypeId = roleTypeId,
                 ReconcileStatusId = "AES_NOT_RECONCILED",
                 CreatedStamp = stamp,
                 LastUpdatedStamp = stamp
             };
+            acctgTransEntries.Add(creditEntry);
 
-            // Handle overrideGlAccountId or TaxAuthorityGlAccount
-            if (!string.IsNullOrEmpty(paymentApplication.OverrideGlAccountId))
+            // Initialize amountAppliedTotal
+            decimal amountAppliedTotal = 0m;
+
+            // Retrieve PaymentApplications
+            var paymentApplications = await _context.PaymentApplications
+                .Where(pa => pa.PaymentId == payment.PaymentId)
+                .ToListAsync();
+
+            // Create DEBIT entries for PaymentApplications (mirroring commented-out OFBiz logic)
+            int entrySeqId = 2; // Start after credit entry
+            foreach (var paymentApplication in paymentApplications)
             {
-                debitEntry.GlAccountId = paymentApplication.OverrideGlAccountId;
-            }
-            else if (!string.IsNullOrEmpty(paymentApplication.TaxAuthGeoId))
-            {
-                var taxAuthorityGlAccount = await _context.TaxAuthorityGlAccounts
-                    .FirstOrDefaultAsync(t =>
-                        t.OrganizationPartyId == organizationPartyId &&
-                        t.TaxAuthGeoId == paymentApplication.TaxAuthGeoId &&
-                        t.TaxAuthPartyId == partyId);
-                if (taxAuthorityGlAccount != null)
+                var debitEntry = new AcctgTransEntry
                 {
-                    debitEntry.GlAccountId = taxAuthorityGlAccount.GlAccountId;
+                    AcctgTransId = newAcctgTransSequence,
+                    AcctgTransEntrySeqId = entrySeqId.ToString(),
+                    AcctgTransEntryTypeId = "_NA_",
+                    DebitCreditFlag = "D",
+                    OrigAmount = paymentApplication.AmountApplied,
+                    OrigCurrencyUomId = payment.CurrencyUomId,
+                    GlAccountTypeId = "ACCOUNTS_PAYABLE", // Default GL account type
+                    OrganizationPartyId = organizationPartyId,
+                    ReconcileStatusId = "AES_NOT_RECONCILED",
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp
+                };
+
+                // Handle overrideGlAccountId or TaxAuthorityGlAccount
+                if (!string.IsNullOrEmpty(paymentApplication.OverrideGlAccountId))
+                {
+                    debitEntry.GlAccountId = paymentApplication.OverrideGlAccountId;
                 }
+                else if (!string.IsNullOrEmpty(paymentApplication.TaxAuthGeoId))
+                {
+                    var taxAuthorityGlAccount = await _context.TaxAuthorityGlAccounts
+                        .FirstOrDefaultAsync(t =>
+                            t.OrganizationPartyId == organizationPartyId &&
+                            t.TaxAuthGeoId == paymentApplication.TaxAuthGeoId &&
+                            t.TaxAuthPartyId == partyId);
+                    if (taxAuthorityGlAccount != null)
+                    {
+                        debitEntry.GlAccountId = taxAuthorityGlAccount.GlAccountId;
+                    }
+                }
+
+                acctgTransEntries.Add(debitEntry);
+                amountAppliedTotal += (decimal)paymentApplication.AmountApplied;
+                entrySeqId++;
             }
 
-            acctgTransEntries.Add(debitEntry);
-            amountAppliedTotal += (decimal)paymentApplication.AmountApplied;
-            entrySeqId++;
-        }
+            // Calculate remaining amount
+            var amount = payment.Amount - amountAppliedTotal;
 
-        // Calculate remaining amount
-        var amount = payment.Amount - amountAppliedTotal;
-
-        // Create debit entry for any remaining amount
-        if (amount > 0)
-        {
-            var debitEntryWithDiffAmount = new AcctgTransEntry
+            // Create debit entry for any remaining amount
+            if (amount > 0)
             {
-                AcctgTransId = newAcctgTransSequence,
-                AcctgTransEntrySeqId = entrySeqId.ToString(),
-                AcctgTransEntryTypeId = "_NA_",
-                DebitCreditFlag = "D",
-                OrigAmount = amount,
-                OrigCurrencyUomId = payment.CurrencyUomId,
-                GlAccountId = payment.OverrideGlAccountId,
-                GlAccountTypeId = debitGlAccountTypeId,
-                OrganizationPartyId = organizationPartyId,
-                ReconcileStatusId = "AES_NOT_RECONCILED",
-                CreatedStamp = stamp,
-                LastUpdatedStamp = stamp
+                var debitEntryWithDiffAmount = new AcctgTransEntry
+                {
+                    AcctgTransId = newAcctgTransSequence,
+                    AcctgTransEntrySeqId = entrySeqId.ToString(),
+                    AcctgTransEntryTypeId = "_NA_",
+                    DebitCreditFlag = "D",
+                    OrigAmount = amount,
+                    OrigCurrencyUomId = payment.CurrencyUomId,
+                    GlAccountId = payment.OverrideGlAccountId,
+                    GlAccountTypeId = debitGlAccountTypeId,
+                    OrganizationPartyId = organizationPartyId,
+                    ReconcileStatusId = "AES_NOT_RECONCILED",
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp
+                };
+                acctgTransEntries.Add(debitEntryWithDiffAmount);
+                entrySeqId++;
+            }
+
+            // Prepare AcctgTrans parameters
+            var createParams = new CreateAcctgTransAndEntriesParams
+            {
+                RoleTypeId = roleTypeId,
+                GlFiscalTypeId = "ACTUAL",
+                AcctgTransTypeId = "OUTGOING_PAYMENT",
+                PartyId = partyId,
+                PaymentId = payment.PaymentId,
+                AcctgTransEntries = acctgTransEntries
             };
-            acctgTransEntries.Add(debitEntryWithDiffAmount);
-            entrySeqId++;
-        }
 
-        // Prepare AcctgTrans parameters
-        var createParams = new CreateAcctgTransAndEntriesParams
-        {
-            RoleTypeId = roleTypeId,
-            GlFiscalTypeId = "ACTUAL",
-            AcctgTransTypeId = "OUTGOING_PAYMENT",
-            PartyId = partyId,
-            PaymentId = payment.PaymentId,
-            AcctgTransEntries = acctgTransEntries
-        };
+            // Create AcctgTrans
+            var acctgTransId = await CreateAcctgTransAndEntries(createParams);
 
-        // Create AcctgTrans
-        var acctgTransId = await CreateAcctgTransAndEntries(createParams);
-
-        // Process PaymentApplications for additional transactions
-        foreach (var paymentApplication in paymentApplications)
-        {
-            var invoice = await _context.Invoices
-                .FirstOrDefaultAsync(i => i.InvoiceId == paymentApplication.InvoiceId);
-            if (invoice == null) continue;
-            if (invoice.StatusId == "INVOICE_READY" || invoice.StatusId == "INVOICE_PAID")
+            // Process PaymentApplications for additional transactions
+            foreach (var paymentApplication in paymentApplications)
             {
-                if (payment.PaymentTypeId == "CUSTOMER_REFUND")
+                var invoice = await _context.Invoices
+                    .FirstOrDefaultAsync(i => i.InvoiceId == paymentApplication.InvoiceId);
+                if (invoice == null) continue;
+                if (invoice.StatusId == "INVOICE_READY" || invoice.StatusId == "INVOICE_PAID")
                 {
-                    var cRefundAcctgTransId = await CreateAcctgTransAndEntriesForCustomerRefundPaymentApplication(
-                        paymentApplication.PaymentApplicationId);
-                    _logger.LogInformation(
-                        $"Accounting transaction {cRefundAcctgTransId} created for customer refund payment application {paymentApplication.PaymentApplicationId}");
-                }
-                else
-                {
-                    var paAcctgTransId = await CreateAcctgTransAndEntriesForPaymentApplication(
-                        paymentApplication.PaymentApplicationId);
-                    _logger.LogInformation(
-                        $"Accounting transaction {paAcctgTransId} created for payment application {paymentApplication.PaymentApplicationId}");
+                    if (payment.PaymentTypeId == "CUSTOMER_REFUND")
+                    {
+                        var cRefundAcctgTransId = await CreateAcctgTransAndEntriesForCustomerRefundPaymentApplication(
+                            paymentApplication.PaymentApplicationId);
+                        _logger.LogInformation(
+                            $"Accounting transaction {cRefundAcctgTransId} created for customer refund payment application {paymentApplication.PaymentApplicationId}");
+                    }
+                    else
+                    {
+                        var paAcctgTransId = await CreateAcctgTransAndEntriesForPaymentApplication(
+                            paymentApplication.PaymentApplicationId);
+                        _logger.LogInformation(
+                            $"Accounting transaction {paAcctgTransId} created for payment application {paymentApplication.PaymentApplicationId}");
+                    }
                 }
             }
-        }
 
-        return acctgTransId;
+            return acctgTransId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error creating AcctgTrans for outgoing payment {paymentId}");
+            throw new Exception($"An error occurred while creating outgoing payment AcctgTrans for {paymentId}.", ex);
+        }
     }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, $"Error creating AcctgTrans for outgoing payment {paymentId}");
-        throw new Exception($"An error occurred while creating outgoing payment AcctgTrans for {paymentId}.", ex);
-    }
-}
+
     public async Task<List<string>> PostAcctgTrans(string acctgTransId, bool verifyOnly = false)
     {
         var messages = new List<string>();
@@ -3168,8 +3171,9 @@ public class GeneralLedgerService : IGeneralLedgerService
                     _context.AcctgTrans.Update(acctgTrans);
 
                     // Simplified to use string concatenation to avoid potential issues with string interpolation
-                    var warningMessage = "The accounting transaction " + (acctgTrans?.AcctgTransId ?? "Unknown") + 
-                                         " has been posted to the Error Journal " + (partyAcctgPreference?.ErrorGlJournalId ?? "Unknown") + ".";
+                    var warningMessage = "The accounting transaction " + (acctgTrans?.AcctgTransId ?? "Unknown") +
+                                         " has been posted to the Error Journal " +
+                                         (partyAcctgPreference?.ErrorGlJournalId ?? "Unknown") + ".";
                     messages.Add(warningMessage);
 
                     return messages;
@@ -4107,6 +4111,109 @@ public class GeneralLedgerService : IGeneralLedgerService
             return Result<string>.Failure($"Error posting FinAccountTrans to GL: {ex.Message}");
         }
     }
+
+    public async Task<string> CreateAcctgTransForCertificateIssuance(string workEffortId, string inventoryItemId)
+    {
+        // uses PROJECTS_UNDER_DEVELOPMENT (143000) for debit and INVENTORY_ACCOUNT (140000) for credit, fetching from WorkEfforts.
+        try
+        {
+            // Fetch certificate header
+            var workEffort = await _context.WorkEfforts
+                .FirstOrDefaultAsync(w =>
+                    w.WorkEffortId == workEffortId && w.WorkEffortTypeId == "PROJECT_CERTIFICATE");
+            if (workEffort == null)
+                throw new Exception($"Certificate WorkEffort with ID {workEffortId} not found.");
+
+            // Fetch certificate item for the inventory item
+            var certificateItem = await _context.WorkEfforts
+                .FirstOrDefaultAsync(w => w.WorkEffortParentId == workEffortId
+                                          && w.WorkEffortTypeId == "CERTIFICATE_ITEM"
+                                          && w.ProductId != null
+                                          && w.Quantity > 0);
+            if (certificateItem == null)
+                throw new Exception($"No valid certificate item found for WorkEffortId {workEffortId}.");
+
+            // Fetch InventoryItem
+            var inventoryItem = await _context.InventoryItems
+                .FindAsync(inventoryItemId);
+            if (inventoryItem == null)
+                throw new Exception($"InventoryItem with ID {inventoryItemId} not found.");
+
+            // Calculate amount (Quantity * UnitCost)
+            // REFACTOR: Uses certificate item quantity and InventoryItem UnitCost;
+            // replaces WorkEffortInventoryAssign dependency from production runs.
+            var origAmount = certificateItem.Quantity * (decimal?)inventoryItem.UnitCost;
+            if (origAmount == null)
+                throw new Exception($"UnitCost missing for InventoryItem {inventoryItemId}.");
+
+            var stamp = DateTime.UtcNow;
+            var newAcctgTransSequence = await _utilityService.GetNextSequence("AcctgTrans");
+
+            // Create Debit entry for PROJECTS_UNDER_DEVELOPMENT
+            // REFACTOR: Debits PROJECTS_UNDER_DEVELOPMENT (143000) instead of WIP_INVENTORY;
+            // reflects project-specific asset account for certificate issuance.
+            var debitEntry = new AcctgTransEntry
+            {
+                AcctgTransId = newAcctgTransSequence,
+                AcctgTransEntrySeqId = "1",
+                AcctgTransEntryTypeId = "_NA_",
+                ReconcileStatusId = "AES_NOT_RECONCILED",
+                DebitCreditFlag = "D",
+                GlAccountTypeId = "PROJECTS_UNDER_DEVELOPMENT", // GL account 143000
+                OrganizationPartyId = inventoryItem.OwnerPartyId,
+                ProductId = certificateItem.ProductId, // From certificate item
+                OrigAmount = (decimal?)origAmount,
+                OrigCurrencyUomId = inventoryItem.CurrencyUomId,
+                CurrencyUomId = inventoryItem.CurrencyUomId
+            };
+
+            // Create Credit entry for INVENTORY_ACCOUNT
+            // REFACTOR: Credits INVENTORY_ACCOUNT (140000) as requested;
+            // aligns with inventory reduction for certificate issuance.
+            var creditEntry = new AcctgTransEntry
+            {
+                AcctgTransId = newAcctgTransSequence,
+                AcctgTransEntrySeqId = "2",
+                AcctgTransEntryTypeId = "_NA_",
+                ReconcileStatusId = "AES_NOT_RECONCILED",
+                DebitCreditFlag = "C",
+                GlAccountTypeId = "INVENTORY_ACCOUNT", // GL account 140000
+                OrganizationPartyId = inventoryItem.OwnerPartyId,
+                ProductId = inventoryItem.ProductId,
+                OrigAmount = (decimal?)origAmount,
+                OrigCurrencyUomId = inventoryItem.CurrencyUomId,
+                CurrencyUomId = inventoryItem.CurrencyUomId
+            };
+
+            // Prepare accounting transaction
+            var acctgTransEntries = new List<AcctgTransEntry> { debitEntry, creditEntry };
+            var acctgTransInMap = new CreateAcctgTransAndEntriesParams
+            {
+                GlFiscalTypeId = "ACTUAL",
+                AcctgTransTypeId = "INVENTORY", 
+                WorkEffortId = workEffortId,
+                TransactionDate = stamp,
+                AcctgTransEntries = acctgTransEntries
+            };
+
+            // Create transaction and entries
+            var acctgTransId = await CreateAcctgTransAndEntries(acctgTransInMap);
+           
+
+            // REFACTOR: Log successful accounting transaction;
+            // improves traceability for certificate issuance.
+            _logger.LogInformation(
+                $"Created accounting transaction {acctgTransId} for certificate issuance WorkEffortId {workEffortId}, InventoryItemId {inventoryItemId}.");
+            return acctgTransId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                $"Error creating accounting transaction for certificate WorkEffortId {workEffortId}, InventoryItemId {inventoryItemId}.");
+            throw;
+        }
+    }
+
 
     public async Task<string> CreateAcctgTransForPhysicalInventoryVariance(
         CreateAcctgTransForPhysicalInventoryVarianceDto dto)

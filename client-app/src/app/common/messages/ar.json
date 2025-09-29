@@ -1003,6 +1003,24 @@
         "error": "فشل في حفظ الشهادة",
         "invalid": "النموذج غير صالح"
       },
+      "list": {
+        "new": "مستخلص جديد",
+        "supplyProcurement": "مستخلص توريدات",
+        "workmanshipContracting": "مستخلص مقاوله",
+        "companySupplySale": "مستخلص توريدات من مخازن الشركة",
+        "certificateNumber": "رقم الشهادة",
+        "projectName": "اسم المشروع",
+        "certificateType": "النوع",
+        "supplierPartyId": "كود المورد",
+        "supplierPartyName": "اسم المورد",
+        "contractorPartyId": "كود المقاول",
+        "contractorPartyName": "اسم المقاول",
+        "description": "الوصف",
+        "startDate": "تاريخ البدء",
+        "completionDate": "تاريخ الانتهاء",
+        "facilityName": "اسم المخزن",
+        "loading": "جاري تحميل الشهادات..."
+      },
       "type": "النوع",
       "date": "التاريخ",
       "description": "الوصف",
@@ -1056,6 +1074,10 @@
         "mainDescription": "وصف البند الرئيسي",
         "discountNote": "ملاحظة الخصم"
       }
+    },
+    "menu": {
+      "projects": "المشاريع",
+      "projectCertificates": "مستخلصات المشاريع"
     }
   }
 }

@@ -68,6 +68,8 @@ public class OrderItem
     public string? CorrespondingPoId { get; set; }
     public string? StatusId { get; set; }
     public string? SyncStatusId { get; set; }
+    public string? UomId { get; set; }
+
     public DateTime? EstimatedShipDate { get; set; }
     public DateTime? EstimatedDeliveryDate { get; set; }
     public DateTime? AutoCancelDate { get; set; }
@@ -95,6 +97,7 @@ public class OrderItem
     public Product? Product { get; set; }
     public QuoteItem? QuoteI { get; set; }
     public Uom? RecurringFreqUom { get; set; }
+    public Uom? Uom { get; set; }
     public SalesOpportunity? SalesOpportunity { get; set; }
     public StatusItem? Status { get; set; }
     public StatusItem? SyncStatus { get; set; }

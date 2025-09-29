@@ -7,6 +7,7 @@ public class ReceiveInventoryItemDto
     public string? OrderId { get; set; }
     public string? OrderItemSeqId { get; set; }
     public string? ProductId { get; set; }
+    public string? UomId { get; set; }
     public string? FacilityId { get; set; }
     public string? Color { get; set; }
 

@@ -105,6 +105,21 @@ const projectsApi = createApi({
                     params: { contractorId, supplierId, certificateType },
                 }),
             }),
+            processWorkEffortCertificate: builder.mutation<OrderStatusChangeResult, { workEffortId: string }>({
+                query: (data) => ({
+                    url: '/facilityInventories/processWorkmanCertificatePurchaseOrder',
+                    method: 'POST',
+                    body: data,
+                }),
+                invalidatesTags: ['Certificates'],
+            }),
+            issueMaterialsForCertificate: builder.mutation({
+                query: ({ workEffortId }) => ({
+                    url: '/workEffort/issueMaterialsForCertificate',
+                    method: 'PUT',
+                    body: { workEffortId },
+                }),
+            }),
         };
     },
 });
@@ -115,7 +130,9 @@ export const {
     useUpdateProjectMutation,
     useFetchProjectCertificatesQuery,
     useAddProjectCertificateMutation,
-    useUpdateProjectCertificateMutation, useGetCertificatesByPartyQuery
+    useUpdateProjectCertificateMutation,
+    useGetCertificatesByPartyQuery,
+    useProcessWorkEffortCertificateMutation, useIssueMaterialsForCertificateMutation
 } = projectsApi;
 export {projectsApi};
 
@@ -140,4 +157,10 @@ interface ProjectCertificateSummaryDto {
     facilityId: string | null;
     facilityName: string | null;
     total: number;
+}
+
+interface OrderStatusChangeResult {
+    orderId: string;
+    orderStatusId: string;
+    invoiceId: string;
 }
