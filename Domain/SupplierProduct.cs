@@ -13,7 +13,7 @@ public class SupplierProduct
     public string? SupplierPrefOrderId { get; set; }
     public string? SupplierRatingTypeId { get; set; }
     public decimal? StandardLeadTimeDays { get; set; }
-    public decimal MinimumOrderQuantity { get; set; }
+    public decimal? MinimumOrderQuantity { get; set; }
     public decimal? OrderQtyIncrements { get; set; }
     public decimal? UnitsIncluded { get; set; }
     public string? QuantityUomId { get; set; }

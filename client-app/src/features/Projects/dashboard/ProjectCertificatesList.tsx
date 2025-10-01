@@ -21,11 +21,12 @@ import {
 import { useAppDispatch, useAppSelector } from "../../../app/store/configureStore";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
-import { useFetchProjectCertificatesQuery } from "../../../app/store/apis/projectsApi";
+import { useFetchProjectCertificatesQuery} from "../../../app/store/apis/projectsApi";
 import ProjectMenu from "../menu/ProjectMenu";
 import ProjectCertificateForm from "../form/ProjectCertificateForm";
 import {Certificate, CertificateStatus} from "../../../app/models/project/certificate";
 import {resetUiCertificateItems} from "../slice/certificateItemsUiSlice";
+import {certificateItemsApi} from "../../../app/store/apis/certificateItemsApi";
 
 interface ProjectCertificate {
     workEffortId?: string;
@@ -61,9 +62,9 @@ export default function ProjectCertificatesList() {
     const { data, isFetching, refetch } = useFetchProjectCertificatesQuery({ ...dataState });
     const [viewMode, setViewMode] = useState<"list" | "form">("list");
 
-    // console.log("Certificates data:", data);
+    // // console.log("Certificates data:", data);
     
-    console.log('List rendered')
+    // console.log('List rendered')
 
     const debounce = (func: Function, wait: number) => {
         let timeout: NodeJS.Timeout;
@@ -102,12 +103,12 @@ export default function ProjectCertificatesList() {
                     (cert: Certificate) => cert.workEffortId === selectedCertificate.workEffortId
                 );
                 if (matchingCert && JSON.stringify(matchingCert) !== JSON.stringify(certificate)) {
-                    // console.log("Syncing certificate with new data:", matchingCert);
+                    // // console.log("Syncing certificate with new data:", matchingCert);
                     setCertificate(matchingCert);
                 } else if (!matchingCert) {
                     // Purpose: Prevent stale data when certificate is deleted or unavailable
                     // Context: Ensures form resets to initial state
-                    // console.warn("Certificate not found for workEffortId:", selectedCertificate.workEffortId);
+                    // // console.warn("Certificate not found for workEffortId:", selectedCertificate.workEffortId);
                     //dispatch(resetCertificateUi());
                 }
             }
@@ -125,21 +126,21 @@ export default function ProjectCertificatesList() {
             // Purpose: Ensure type safety and consistency with enum
             // Context: Matches ProjectNumberCell call and backend DTO
             if (!workEffortId) {
-                // console.warn("No workEffortId provided to handleSelectCertificate");
+                // // console.warn("No workEffortId provided to handleSelectCertificate");
                 return;
             }
-            // console.log("handleSelectCertificate called with workEffortId:", workEffortId);
+            // // console.log("handleSelectCertificate called with workEffortId:", workEffortId);
             const selectedCert: Certificate | undefined = certificates.data.find(
                 (cert: Certificate) => cert.workEffortId === workEffortId
                 // Purpose: Improve type safety; assumes backend data matches interface
                 // Context: Prevents runtime errors on field access
             );
             if (!selectedCert) {
-                // console.warn("No certificate found for workEffortId:", workEffortId);
+                // // console.warn("No certificate found for workEffortId:", workEffortId);
                 return;
             }
-            // console.log("Raw selectedCert:", selectedCert); 
-
+            dispatch(resetUiCertificateItems());
+            dispatch(certificateItemsApi.util.invalidateTags(['CertificateItems']));
             dispatch(
                 setSelectedCertificate({
                     workEffortId: selectedCert.workEffortId || "",
@@ -193,6 +194,8 @@ export default function ProjectCertificatesList() {
             dispatch(setCurrentCertificateType(selectedCert.certificateCategory || "SUPPLY_PROCUREMENT_CERTIFICATE"));
             dispatch(setCertificateFormEditMode(editModeMap[selectedCert.currentStatusId as CertificateStatus] || 0));
             setViewMode("form");
+            dispatch(certificateItemsApi.endpoints.fetchCertificateItems.initiate(workEffortId));
+
         }, 500),
         [dispatch, certificates.data, editModeMap] 
     );
@@ -268,7 +271,7 @@ export default function ProjectCertificatesList() {
             </td>
         );
     };
-    // console.log('certificateFormEditMode:', certificateFormEditMode)
+    // // console.log('certificateFormEditMode:', certificateFormEditMode)
 
     if (viewMode === "form" && certificateFormEditMode > 0) {
         return (

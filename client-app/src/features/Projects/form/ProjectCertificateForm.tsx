@@ -24,10 +24,17 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import {CertificateItemsListGroupedMemo} from "../dashboard/CertificateItemsListGrouped";
 import {FormComboBoxVirtualSupplierMultiColumn} from "../../../app/common/form/FormComboBoxVirtualSupplierMultiColumn";
-import {certificateReportSelector, certificateSubTotal} from "../slice/certificateSelectors";
+import {
+    certificateReportSelector,
+    certificateSubTotal, displayCertificateItemsSelector, supplyCertificateReportSelector,
+    workmanshipCertificateReportSelector
+} from "../slice/certificateSelectors";
 import CertificatesListModal from "../dashboard/CertificatesListModal";
-import CertificatePDFDocumentTabular from "../report/CertificatePDFDocumentTabular";
-
+import {WorkmanshipCertificatePDF} from "../report/WorkmanshipCertificatePDF";
+import {SupplyCertificatePDF} from "../report/SupplyCertificatePDF";
+import {certificateItemsApi, useFetchCertificateItemsQuery} from "../../../app/store/apis/certificateItemsApi";
+import {WorkmanshipCertificateExcel} from "../report/WorkmanshipCertificateExcel";
+import {SupplyCertificateExcel} from "../report/SupplyCertificateExcel";
 
 interface ProjectCertificateFormProps {
     editMode: number; // 0: view, 1: create, 2: edit (CREATED), 3: edit (APPROVED), 4: edit (COMPLETED)
@@ -121,16 +128,34 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
     const {language} = useAppSelector((state) => state.localization);
     const {user} = useAppSelector((state) => state.account);
     const [isFormCollapsed, setIsFormCollapsed] = useState(false);
-    const reportData = useAppSelector(certificateReportSelector);
+    const workmanshipReportData = useAppSelector(workmanshipCertificateReportSelector);
+    const supplyReportData = useAppSelector(supplyCertificateReportSelector);
     const subtotal = useAppSelector(certificateSubTotal);
     const [showCertificatesModal, setShowCertificatesModal] = useState(false);
+    const [showPDF, setShowPDF] = useState(false);
+    const { data: items, isFetching, isError, error } = useFetchCertificateItemsQuery(selectedCertificate?.workEffortId || '', {
+        skip: !selectedCertificate?.workEffortId,
+    });
 
+    const certificateItems = useAppSelector(displayCertificateItemsSelector);
 
     const formRenderPropsRef = useRef<FormRenderProps | null>(null);
 
 
     const contractorId = formRenderPropsRef.current?.valueGetter('partyIdContractor')?.fromPartyId;
     const supplierId = formRenderPropsRef.current?.valueGetter('partyIdSupplier')?.fromPartyId;
+
+    useEffect(() => {
+        console.log('ProjectCertificateForm fetchCertificateItems:', { items, isFetching, isError, error });
+    }, [items, isFetching, isError, error]);
+
+    
+    useEffect(() => {
+        if (selectedCertificate?.workEffortId && currentCertificateType) {
+            dispatch(certificateItemsApi.util.invalidateTags(['CertificateItems']));
+            dispatch(certificateItemsApi.endpoints.fetchCertificateItems.initiate(selectedCertificate.workEffortId));
+        }
+    }, [selectedCertificate?.workEffortId, currentCertificateType, dispatch]);
 
 
     const {
@@ -333,6 +358,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
         dispatch(resetUiCertificateItems());
         cancelEdit();
         setSelectedMenuItem("");
+        setShowPDF(false);
     }, [dispatch, cancelEdit]);
 
     const handleCloseCertificatesModal = useCallback(() => {
@@ -341,7 +367,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
 
     useEffect(() => {
         if (selectedCertificate?.workEffortId) {
-            // console.log("Selected certificate changed, resetting form with workEffortId:", selectedCertificate.workEffortId);
+            // // console.log("Selected certificate changed, resetting form with workEffortId:", selectedCertificate.workEffortId);
             // Purpose: Ensure form reflects the latest selectedCertificate data
             // Context: Prevents stale form data when switching certificates
             formRef.current?.resetForm({values: initialFormValues});
@@ -362,7 +388,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
             .join(' ');
     };
 
-    // console.log('initialFormValues', initialFormValues)
+    // // console.log('initialFormValues', initialFormValues)
     const status = renderSwitchStatus();
 
     const renderCertificateItems = () => {
@@ -384,10 +410,113 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
         );
     };
 
+    const validateItems = (items: any[], type: string) => {
+        const validationResults = items.map((item) => {
+            const errors: string[] = [];
+            //if (!item.productId) errors.push('productId is required');
+            if (!item.quantity || item.quantity <= 0) errors.push('quantity must be greater than 0');
+            if (type === 'SUPPLY_PROCUREMENT_CERTIFICATE' && (!item.unitPrice || item.unitPrice <= 0)) {
+                errors.push('unitPrice must be greater than 0 for supply certificate');
+            }
+            if (type === 'WORKMANSHIP_CONTRACTING_CERTIFICATE' && (!item.materialPrice || !item.laborPrice)) {
+                errors.push('materialPrice and laborPrice are required for workmanship certificate');
+            }
+            return { itemId: item.id, errors };
+        });
+        const isValid = validationResults.every((result) => result.errors.length === 0);
+        console.log('Items validation:', { type, validationResults });
+        return { isValid, validationResults };
+    };
+
+    const { isValid: areItemsValid, validationResults } = validateItems(certificateItems, currentCertificateType);
+
+    const renderCertificateReport = () => {
+        const commonProps = {
+            getTranslatedLabel,
+            subtotal,
+            isSubmitting,
+            isAddCertificateLoading,
+            isUpdateCertificateLoading,
+            isReceiveLoading,
+            isFetching,
+        };
+
+        // REFACTOR: Removed PDF button and showPDF logic
+        // Purpose: Eliminates PDF export button as only Excel is required
+        // Improvement: Reduces UI clutter and simplifies rendering logic
+        // Context: PDF components are no longer needed
+        if (selectedCertificate?.currentStatusId !== CertificateStatus.CREATED) {
+            return (
+                <WorkmanshipCertificateExcel
+                    certificate={workmanshipReportData.certificate}
+                    items={workmanshipReportData.items}
+                    {...commonProps}
+                />
+            );
+        }
+
+        const isValidItems = items && items.length > 0 && validateItems(
+            currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                ? workmanshipReportData.items
+                : supplyReportData.items,
+            currentCertificateType
+        ).isValid;
+
+        if (!isValidItems) {
+            return (
+                <WorkmanshipCertificateExcel
+                    certificate={workmanshipReportData.certificate}
+                    items={workmanshipReportData.items}
+                    {...commonProps}
+                />
+            );
+        }
+
+        // REFACTOR: Added SupplyCertificateExcel for supply certificate types
+        // Purpose: Handles SUPPLY_PROCUREMENT_CERTIFICATE and COMPANY_SUPPLY_SALE_CERTIFICATE with SupplyCertificateExcel
+        // Improvement: Matches certificate type to appropriate Excel component; uses supplyReportData for supply types
+        // Context: Aligns with WorkmanshipCertificateExcel for consistent Excel output
+        if (currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE") {
+            if (workmanshipReportData.items?.length > 0 && workmanshipReportData.items[0].materialPrice !== undefined) {
+                return (
+                    <WorkmanshipCertificateExcel
+                        certificate={workmanshipReportData.certificate}
+                        items={workmanshipReportData.items}
+                        {...commonProps}
+                        key={`${selectedCertificate.workEffortId}-workmanship`}
+                    />
+                );
+            }
+        } else if (["SUPPLY_PROCUREMENT_CERTIFICATE", "COMPANY_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)) {
+            if (supplyReportData.items?.length > 0 && supplyReportData.items[0].unitPrice !== undefined) {
+                return (
+                    <SupplyCertificateExcel
+                        certificate={supplyReportData.certificate}
+                        items={supplyReportData.items}
+                        {...commonProps}
+                        key={`${selectedCertificate.workEffortId}-supply`}
+                    />
+                );
+            }
+        }
+
+        // REFACTOR: Default to WorkmanshipCertificateExcel for invalid cases
+        // Purpose: Provides fallback Excel component when no valid items or type
+        // Improvement: Ensures a component is rendered even for edge cases
+        // Context: Maintains consistency with original fallback behavior
+        return (
+            <WorkmanshipCertificateExcel
+                certificate={workmanshipReportData.certificate}
+                items={workmanshipReportData.items}
+                {...commonProps}
+            />
+        );
+    };
+
     return (
         <>
             <ProjectMenu onMenuSelect={(key) => {
-                console.log("Menu item selected in form:", key);
+                // console.log("Menu item selected in form:", key);
                 if (key === "projectCertificates") {
                     cancelEdit(); // Trigger cancelEdit to switch to list view
                 }
@@ -573,34 +702,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                                     </Grid>
                                                 )}
                                                 <Grid item>
-                                                    {/* Purpose: Only allow printing for certificates in CREATED status */}
-                                                    {/* Improvement: Enhances control by limiting PDF generation to specific state */}
-                                                    {reportData.items && reportData.items.length > 0 && selectedCertificate?.currentStatusId === CertificateStatus.CREATED ? (
-                                                        <CertificatePDFDocumentTabular
-                                                            certificate={reportData.certificate}
-                                                            items={reportData.items}
-                                                            getTranslatedLabel={getTranslatedLabel}
-                                                            subtotal={subtotal}
-                                                            isSubmitting={isSubmitting}
-                                                            isAddCertificateLoading={isAddCertificateLoading}
-                                                            isUpdateCertificateLoading={isUpdateCertificateLoading}
-                                                            isReceiveLoading={isReceiveLoading}
-                                                            certificateNumber={reportData.certificate.certificateNumber}
-                                                            certificateType={currentCertificateType}
-                                                        />
-                                                    ) : (
-                                                        <Button
-                                                            color="primary"
-                                                            variant="outlined"
-                                                            disabled
-                                                            title={getTranslatedLabel(
-                                                                'projects.certificate.print.disabled',
-                                                                'Printing is only available for certificates in CREATED status'
-                                                            )}
-                                                        >
-                                                            {getTranslatedLabel('projects.certificate.export', 'Export to PDF')}
-                                                        </Button>
-                                                    )}
+                                                    {renderCertificateReport()}
                                                 </Grid>
                                                 <Grid item>
                                                     <Button size="large" color="error" variant="outlined"

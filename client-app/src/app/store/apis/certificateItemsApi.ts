@@ -47,17 +47,22 @@ const certificateItemsApi = createApi({
             // Purpose: Retrieve items for a certificate by workEffortId
             // Context: Mirrors fetchPurchaseOrderItems
             fetchCertificateItems: builder.query<CertificateItem[], string>({
-                query: (workEffortId) => ({
-                    url: `/project/${workEffortId}/getCertificateItems`,
-                    method: "GET",
-                }),
+                query: (workEffortId) => {
+                    // REFACTOR: Validate workEffortId
+                    // Purpose: Prevent invalid API calls
+                    // Context: Avoids fetching with undefined or empty workEffortId
+                    if (!workEffortId) {
+                        throw new Error('workEffortId is required');
+                    }
+                    return {
+                        url: `/project/${workEffortId}/getCertificateItems`,
+                        method: 'GET',
+                    };
+                },
                 keepUnusedDataFor: 1,
                 async onQueryStarted(id, {dispatch, queryFulfilled}) {
                     try {
                         const {data} = await queryFulfilled;
-                        // REFACTOR: Update Redux store
-                        // Purpose: Sync fetched items with certificateItemsUiSlice
-                        // Context: Matches setUiOrderItemsFromApi
                         dispatch(setUiCertificateItemsFromApi(data));
                     } catch (err) {
                         console.error("Error fetching certificate items:", err);
@@ -65,10 +70,15 @@ const certificateItemsApi = createApi({
                 },
                 providesTags: ["CertificateItems"],
                 transformResponse: (response: any) => {
-                    // REFACTOR: Transform response
-                    // Purpose: Map API response to CertificateItem interface
-                    // Context: Ensures compatibility with frontend
-                    return response as CertificateItem[];
+                    return response.map((item: any) => ({
+                        ...item,
+                        id: item.id || `item-${item.workEffortId}-${Date.now()}`, // REFACTOR: Add fallback id
+                        // Purpose: Ensure every item has an id
+                        // Context: Prevents TypeError in @react-pdf/renderer
+                        achievementPercentage: typeof item.achievementPercentage === 'number'
+                            ? `${item.achievementPercentage}%`
+                            : item.achievementPercentage || 'N/A',
+                    })) as CertificateItem[];
                 },
             }),
 

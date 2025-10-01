@@ -55,7 +55,7 @@ export default function CertificateItemForm({
                     additionalInsuranceMode === "value" ? additionalInsuranceInput : (additionalInsuranceInput / 100) * deserved;
                 additionalInsurance = Math.round(additionalInsurance * 1000) / 1000;
                 
-              /*  console.log('calculateTotals debug:', {
+              /*  // console.log('calculateTotals debug:', {
                     quantity,
                     price,
                     total,
@@ -216,10 +216,10 @@ export default function CertificateItemForm({
         []
     );
 /*
-    console.log('initValue', initValue)
-    console.log("certificateItem in CertificateItemForm:", certificateItem);
-    console.log("initValue in CertificateItemForm:", initValue);
-    console.log('deserializedInitValue', deserializedInitValue);
+    // console.log('initValue', initValue)
+    // console.log("certificateItem in CertificateItemForm:", certificateItem);
+    // console.log("initValue in CertificateItemForm:", initValue);
+    // console.log('deserializedInitValue', deserializedInitValue);
 */
 
     return (
@@ -272,7 +272,7 @@ export default function CertificateItemForm({
                     workEffortId: values.workEffortId || "",
                     workEffortParentId: values.workEffortParentId || "",
                 };
-                //console.log('onSubmit serializedValues:', serializedValues);
+                //// console.log('onSubmit serializedValues:', serializedValues);
                 handleSubmitData(serializedValues, (name: string) => values[name] || "");
                 onClose();
             }}

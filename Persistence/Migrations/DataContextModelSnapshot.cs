@@ -13644,7 +13644,6 @@ namespace Persistence.Migrations
                         .HasColumnName("QUANTITY_ON_HAND_TOTAL");
 
                     b.Property<string>("QuantityUomId")
-                        .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("QUANTITY_UOM_ID");
 
@@ -50351,10 +50350,6 @@ namespace Persistence.Migrations
                         .HasColumnType("varchar(36)")
                         .HasColumnName("CURRENCY_UOM_ID");
 
-                    b.Property<decimal>("MinimumOrderQuantity")
-                        .HasColumnType("decimal(18, 6)")
-                        .HasColumnName("MINIMUM_ORDER_QUANTITY");
-
                     b.Property<DateTime>("AvailableFromDate")
                         .HasColumnType("datetime")
                         .HasColumnName("AVAILABLE_FROM_DATE");
@@ -50408,6 +50403,10 @@ namespace Persistence.Migrations
                         .HasColumnType("datetime")
                         .HasColumnName("LAST_UPDATED_TX_STAMP");
 
+                    b.Property<decimal?>("MinimumOrderQuantity")
+                        .HasColumnType("decimal(18, 6)")
+                        .HasColumnName("MINIMUM_ORDER_QUANTITY");
+
                     b.Property<decimal?>("OrderQtyIncrements")
                         .HasColumnType("decimal(18, 6)")
                         .HasColumnName("ORDER_QTY_INCREMENTS");
@@ -50454,7 +50453,7 @@ namespace Persistence.Migrations
                         .HasColumnType("decimal(18, 6)")
                         .HasColumnName("UNITS_INCLUDED");
 
-                    b.HasKey("ProductId", "PartyId", "CurrencyUomId", "MinimumOrderQuantity", "AvailableFromDate");
+                    b.HasKey("ProductId", "PartyId", "CurrencyUomId", "AvailableFromDate");
 
                     b.HasIndex(new[] { "CreatedTxStamp" }, "SPPLR_PRDCT_TXCRTS");
 

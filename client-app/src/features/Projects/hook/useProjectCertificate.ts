@@ -176,7 +176,7 @@ const useProjectCertificate = ({
                 toast.success("Certificate and items created successfully");
                 return {workEffortId: createdCertificate.workEffortId};
             } catch (error: any) {
-                console.error("Failed to create certificate:", error);
+                // console.error("Failed to create certificate:", error);
                 toast.error(error?.data?.message || "Failed to create certificate and items");
                 throw error;
             }
@@ -248,7 +248,7 @@ const useProjectCertificate = ({
                 toast.success("Certificate and items updated successfully");
                 return {workEffortId: updatedCertificate.workEffortId};
             } catch (error: any) {
-                console.error("Failed to update certificate:", error);
+                // console.error("Failed to update certificate:", error);
                 toast.error(error?.data?.message || "Failed to update certificate and items");
                 throw error;
             }

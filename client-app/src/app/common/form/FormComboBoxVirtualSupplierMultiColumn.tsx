@@ -89,7 +89,6 @@ export const FormComboBoxVirtualSupplierMultiColumn = (fieldRenderProps: FieldRe
                     // REFACTOR: Add debug logging
                     // Purpose: Verify API response content
                     // Context: Helps diagnose if data is empty or malformed
-                    console.log("API Response:", json);
                     if (json && json.parties) {
                         const total = json.partyCount || 0;
                         const items: Item[] = json.parties.map((element: any, index: number) => {
@@ -114,7 +113,6 @@ export const FormComboBoxVirtualSupplierMultiColumn = (fieldRenderProps: FieldRe
                     // REFACTOR: Handle API errors
                     // Purpose: Ensure loading state persists on failure
                     // Context: Prevents empty dropdown on error
-                    console.error("API Error:", error);
                     setData(loadingData);
                     setTotal(0);
                     requestStarted.current = false;

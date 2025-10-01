@@ -19,7 +19,7 @@ export const signInUser = createAsyncThunk<User, FieldValues>(
     try {
       const user = await agent.Account.login(data);
       // REFACTOR: Log user and roles after login for debugging.
-      console.log('Logged in user:', { ...user, roles: user.roles || [] });
+      //console.log('Logged in user:', { ...user, roles: user.roles || [] });
       localStorage.setItem('user', JSON.stringify(user));
       return user;
     } catch (error: any) {
@@ -35,7 +35,7 @@ export const fetchCurrentUser = createAsyncThunk<User>(
     try {
       const user = await agent.Account.current();
       // REFACTOR: Log user and roles after fetching current user.
-      console.log('Current user:', { ...user, roles: user.roles || [] });
+      //console.log('Current user:', { ...user, roles: user.roles || [] });
       localStorage.setItem('user', JSON.stringify(user));
       return user;
     } catch (error: any) {

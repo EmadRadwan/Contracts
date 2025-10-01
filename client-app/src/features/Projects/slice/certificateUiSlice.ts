@@ -58,7 +58,6 @@ export const certificateUiSlice = createSlice({
       state.certificateFormEditMode = action.payload;
     },
     setSelectedCertificate: (state, action: PayloadAction<SelectedCertificate>) => {
-      console.log("Dispatching setSelectedCertificate with payload:", action.payload);
       state.selectedCertificate = {
         ...action.payload,
         estimatedStartDate: action.payload.estimatedStartDate instanceof Date
@@ -91,9 +90,6 @@ export const certificateUiSlice = createSlice({
         facilityName: "",
       };
     },
-    debugCertificateUiState: (state) => {
-      console.log("Current certificateUi state:", state);
-    },
   },
 });
 
@@ -102,7 +98,6 @@ export const {
   setCertificateFormEditMode,
   setSelectedCertificate,
   resetCertificateUi,
-  debugCertificateUiState,
 } = certificateUiSlice.actions;
 
 export const certificateUiSelectors = {

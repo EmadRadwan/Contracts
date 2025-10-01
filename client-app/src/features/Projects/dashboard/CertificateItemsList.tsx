@@ -1,5 +1,5 @@
 import {orderBy, SortDescriptor, State, process} from '@progress/kendo-data-query';
-import React, {useCallback, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {
     Grid as KendoGrid,
     GridCellProps,
@@ -11,7 +11,7 @@ import {
 import {useAppDispatch, useAppSelector} from "../../../app/store/configureStore";
 import {Button, Grid, Skeleton, Typography} from "@mui/material";
 import {CertificateItem} from "../../../app/models/project/certificateItem";
-import {setUiCertificateItems} from "../slice/certificateItemsUiSlice";
+import {resetUiCertificateItems, setUiCertificateItems} from "../slice/certificateItemsUiSlice";
 import ModalContainer from "../../../app/common/modals/ModalContainer";
 import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
 import {
@@ -48,10 +48,12 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
     const uiCertificateItems: CertificateItem[] = useAppSelector(displayCertificateItemsSelector);
     const nonDeletedItems = useAppSelector(nonDeletedCertificateItemsSelector);
 
-    console.log('uiCertificateItems', uiCertificateItems)
+    //console.log('uiCertificateItems', uiCertificateItems)
     const pageChange = (event: GridPageChangeEvent) => {
         setPage(event.page);
     };
+
+    
 
     const handleSelectCertificateItem = useCallback(
         (workEffortId: string) => {

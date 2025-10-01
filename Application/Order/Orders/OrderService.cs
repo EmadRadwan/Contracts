@@ -991,49 +991,8 @@ public class OrderService : BaseService, IOrderService
         _context.OrderAdjustments.Remove(orderAdjustment);
     }
 
-    private async Task SetUnitPriceAsLastPrice_OLD(OrderItemDto2 orderItem)
-    {
-        // get product supplier from order roles
-        var productSupplierId = await _context.OrderRoles
-            .Where(x => x.OrderId == orderItem.OrderId && x.RoleTypeId == "BILL_FROM_VENDOR")
-            .Select(x => x.PartyId)
-            .FirstOrDefaultAsync();
 
-        // get order currency
-        var orderCurrency = await _context.OrderHeaders
-            .Where(x => x.OrderId == orderItem.OrderId)
-            .Select(x => x.CurrencyUom)
-            .FirstOrDefaultAsync();
-
-        // get product supplier
-        var selectedProductSuppliers = await _context.SupplierProducts
-            .Where(ps => ps.ProductId == orderItem.ProductId
-                         && ps.PartyId == productSupplierId && ps.AvailableThruDate == null &&
-                         ps.CurrencyUomId == orderCurrency &&
-                         ps.ProductId == orderItem.ProductId)
-            .ToListAsync();
-
-
-        foreach (var supplierProduct in selectedProductSuppliers)
-        {
-            var nowTimestamp = DateTime.Now;
-
-            if (orderItem.UnitPrice != supplierProduct.LastPrice)
-            {
-                var newSupplierProduct = CloneSupplierProduct(supplierProduct);
-                newSupplierProduct.AvailableFromDate = nowTimestamp;
-                newSupplierProduct.LastPrice = orderItem.UnitPrice;
-                _context.Add(newSupplierProduct);
-                await _context.SaveChangesAsync();
-
-                supplierProduct.AvailableThruDate = nowTimestamp;
-                await _context.SaveChangesAsync();
-            }
-        }
-    }
-
-
-    public async Task<object> SetUnitPriceAsLastPrice(OrderItemDto2 orderItem)
+    private async Task<object> SetUnitPriceAsLastPrice(OrderItemDto2 orderItem)
     {
         // REFACTOR: Query OrderRoles for BILL_FROM_VENDOR party ID, aligning with _OLD version
         // Uses direct table access (_context.OrderRoles) for clarity and consistency

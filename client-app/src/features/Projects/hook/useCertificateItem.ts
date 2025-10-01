@@ -44,7 +44,7 @@ export default function useCertificateItem({
 
     const logError = (error: any, defaultMessage: string) => {
         const message = error?.data?.message || error?.message || defaultMessage;
-        console.error("Error:", JSON.stringify(error, null, 2));
+        // console.error("Error:", JSON.stringify(error, null, 2));
         toast.error(message);
     };
 
@@ -118,11 +118,11 @@ export default function useCertificateItem({
                     workEffortParentId: "",
                 };
             }
-            console.log('createOrUpdateCertificateItem debug:', {
+            /*console.log('createOrUpdateCertificateItem debug:', {
                 inputData: data,
                 calculated: { total, finalTotal, net, deserved, insurance, additionalInsurance },
                 newCertificateItem,
-            });
+            });*/
             return newCertificateItem;
         },
         [certificateItem, editMode, certificateItemsFromUi, calculateTotals]

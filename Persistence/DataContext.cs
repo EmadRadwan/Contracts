@@ -54980,7 +54980,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
 
             modelBuilder.Entity<SupplierProduct>(entity =>
             {
-                entity.HasKey(e => new { e.ProductId, e.PartyId, e.CurrencyUomId, e.MinimumOrderQuantity, e.AvailableFromDate });
+                entity.HasKey(e => new { e.ProductId, e.PartyId, e.CurrencyUomId, e.AvailableFromDate });
 
                 entity.ToTable("SUPPLIER_PRODUCT");
 

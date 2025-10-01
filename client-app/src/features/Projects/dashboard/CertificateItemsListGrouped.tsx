@@ -11,7 +11,7 @@ import {
 import { useAppDispatch, useAppSelector } from "../../../app/store/configureStore";
 import { Button, Grid, Skeleton, Typography } from "@mui/material";
 import { CertificateItem } from "../../../app/models/project/certificateItem";
-import { setUiCertificateItems } from "../slice/certificateItemsUiSlice";
+import {resetUiCertificateItems, setUiCertificateItems} from "../slice/certificateItemsUiSlice";
 import ModalContainer from "../../../app/common/modals/ModalContainer";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import { certificateSubTotal, displayCertificateItemsSelector, nonDeletedCertificateItemsSelector } from "../slice/certificateSelectors";
@@ -39,26 +39,25 @@ export default function CertificateItemsListGrouped({ editMode, workEffortId, is
     const localizationKey = "certificate.items.list";
     const total = useAppSelector(certificateSubTotal);
     const certificateItemsEntities = useAppSelector(state => state.certificateItemsUi.certificateItemsEntities);
-
-    const { data: certificateItemsData, isFetching, isLoading } = useFetchCertificateItemsQuery(workEffortId || "", {
+    const { data: certificateItemsData, isFetching, isLoading, isError, error } = useFetchCertificateItemsQuery(workEffortId || "", {
         skip: !workEffortId,
     });
     const uiCertificateItems: CertificateItem[] = useAppSelector(displayCertificateItemsSelector);
     const nonDeletedItems = useAppSelector(nonDeletedCertificateItemsSelector);
 
-    console.log('certificateItemsData:', certificateItemsData);
-    console.log('certificateItemsEntities:', certificateItemsEntities);
-    console.log('uiCertificateItems:', uiCertificateItems);
-    console.log('certificateSubTotal:', total);
+    // REFACTOR: Log API response
+    // Purpose: Debug undefined or incomplete data
+    // Context: Identifies API response issues
+    useEffect(() => {
+        console.log('CertificateItemsListGrouped API response:', { certificateItemsData, certificateItemsEntities, isFetching, isLoading, isError, error });
+    }, [certificateItemsData, certificateItemsEntities, isFetching, isLoading, isError, error]);
 
-   
+
     const pageChange = (event: GridPageChangeEvent) => {
         setPage(event.page);
     };
 
 
-    
-    
 
     const handleSelectCertificateItem = useCallback(
         (workEffortId: string) => {
@@ -89,8 +88,8 @@ export default function CertificateItemsListGrouped({ editMode, workEffortId, is
             setCertificateItem(certificateItem);
             setItemEditMode(2);
             setShow(true);
-            console.log('selectedCertificateItem', selectedCertificateItem);
-            console.log('certificateItem', certificateItem);
+            // console.log('selectedCertificateItem', selectedCertificateItem);
+            // console.log('certificateItem', certificateItem);
         },
         [uiCertificateItems]
     );
