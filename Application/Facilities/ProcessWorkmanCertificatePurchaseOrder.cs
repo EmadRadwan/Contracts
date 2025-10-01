@@ -29,8 +29,7 @@ namespace Application.Facilities
             private readonly IMediator _mediator;
             private readonly IOrderHelperService _orderHelperService;
 
-            public Handler(DataContext context, IMediator mediator, ILogger<Handler> logger,
-                IOrderHelperService orderHelperService)
+            public Handler(DataContext context, IMediator mediator, ILogger<Handler> logger, IOrderHelperService orderHelperService)
             {
                 _context = context;
                 _mediator = mediator;
@@ -38,12 +37,8 @@ namespace Application.Facilities
                 _orderHelperService = orderHelperService;
             }
 
-            public async Task<Result<OrderStatusChangeResult>> Handle(Command request,
-                CancellationToken cancellationToken)
+            public async Task<Result<OrderStatusChangeResult>> Handle(Command request, CancellationToken cancellationToken)
             {
-                // REFACTOR: Replaced explicit transaction with conditional enlistment to existing transaction or new one;
-                // this prevents nested transaction errors when called within an outer transaction (e.g., certificate approval workflow),
-                // ensuring atomicity and integration with existing transactions.
                 IDbContextTransaction? transaction = null;
                 var ownsTransaction = false;
 
@@ -64,6 +59,7 @@ namespace Application.Facilities
                     // this aligns with OFBiz's WorkEffort-to-Order linkage (e.g., via WorkEffort.OrderId) and prevents processing invalid certificates.
                     var workEffort = await _context.WorkEfforts
                         .FirstOrDefaultAsync(we => we.WorkEffortId == request.WorkEffortId, cancellationToken);
+
                     if (workEffort == null)
                     {
                         _logger.LogWarning("WorkEffort with ID {WorkEffortId} not found.", request.WorkEffortId);
@@ -71,17 +67,17 @@ namespace Application.Facilities
                             $"WorkEffort with ID {request.WorkEffortId} not found.");
                     }
 
-                    var orderId = workEffort.RelatedOrderId; // Assumes WorkEffort has OrderId field
+                    var orderId = workEffort.RelatedOrderId; // Assumes WorkEffort has RelatedOrderId field
                     if (string.IsNullOrEmpty(orderId))
                     {
-                        _logger.LogWarning("No OrderId associated with WorkEffort ID {WorkEffortId}.",
-                            request.WorkEffortId);
+                        _logger.LogWarning("No OrderId associated with WorkEffort ID {WorkEffortId}.", request.WorkEffortId);
                         return Result<OrderStatusChangeResult>.Failure(
                             "No purchase order associated with the WorkEffort.");
                     }
 
                     var purchaseOrder = await _context.OrderHeaders
                         .FirstOrDefaultAsync(po => po.OrderId == orderId, cancellationToken);
+
                     if (purchaseOrder == null)
                     {
                         _logger.LogWarning("Purchase Order with ID {OrderId} not found.", orderId);
@@ -95,9 +91,8 @@ namespace Application.Facilities
                             $"OrderTypeId for Order ID {orderId} is invalid.");
                     }
 
-
                     // REFACTOR: Configured OrderStatusChanges call with service-specific parameters;
-                    // sets ORDER_APPROVED and ITEM_APPROVED, with ITEM_COMPLETED for service items to trigger direct invoicing, per OFBiz patterns.
+                    // sets ORDER_COMPLETED and ITEM_COMPLETED for service items to trigger direct invoicing, per OFBiz patterns.
                     await _orderHelperService.OrderStatusChanges(
                         orderId: orderId,
                         orderStatus: "ORDER_COMPLETED",
@@ -106,12 +101,26 @@ namespace Application.Facilities
                         digitalItemStatus: "ITEM_COMPLETED"
                     );
 
+                    // REFACTOR: Added logic to update WorkEfforts CURRENT_STATUS_ID to WEPR_APPROVED for projectCertificate
+                    // where WorkEffortId matches the provided ID. This ties certificate approval to successful order processing,
+                    // ensuring atomicity within the transaction. Improves traceability by logging the update.
+                    workEffort.CurrentStatusId = "WEPR_APPROVED";
+                    workEffort.LastStatusUpdate = DateTime.UtcNow; // Update timestamp for auditability
+                    _context.WorkEfforts.Update(workEffort);
+                    _logger.LogInformation("Updated WorkEffort {WorkEffortId} status to WEPR_APPROVED for OrderId: {OrderId}", request.WorkEffortId, orderId);
+
+                    // REFACTOR: Added SaveChanges to persist WorkEffort update before committing the transaction;
+                    // this ensures the certificate status is saved within the same transaction as order status changes.
+                    var workEffortSaveResult = await _context.SaveChangesAsync(cancellationToken);
+                    if (workEffortSaveResult > 0)
+                    {
+                        _logger.LogDebug("Persisted WorkEffort status update for WorkEffortId: {WorkEffortId}", request.WorkEffortId);
+                    }
 
                     // REFACTOR: Persist changes only if this handler owns the transaction;
                     // this avoids redundant saves and ensures compatibility with outer transactions in the certificate workflow.
                     if (ownsTransaction)
                     {
-                        await _context.SaveChangesAsync(cancellationToken);
                         await transaction.CommitAsync(cancellationToken);
                         _logger.LogDebug("Committed transaction for ProcessWorkEffortCertificate.");
                     }
@@ -124,9 +133,7 @@ namespace Application.Facilities
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex,
-                        "An error occurred while processing ProcessWorkEffortCertificate for WorkEffortId: {WorkEffortId}.",
-                        request.WorkEffortId);
+                    _logger.LogError(ex, "An error occurred while processing ProcessWorkEffortCertificate for WorkEffortId: {WorkEffortId}.", request.WorkEffortId);
                     if (ownsTransaction) await transaction.RollbackAsync(cancellationToken);
                     return Result<OrderStatusChangeResult>.Failure(
                         $"An error occurred while processing certificate: {ex.Message}");

@@ -290,15 +290,6 @@ export default function PaymentForm({
 
     // Render the appropriate form
     const renderForm = () => {
-        if (showPaymentApplicationsList && payment?.paymentId) {
-            return (
-                <EditPaymentApplications
-                    payment={payment}
-                    paymentId={payment.paymentId}
-                    onClose={handleCancelApplications}
-                />
-            );
-        }
         if (formEditMode === 1) {
             if (paymentType === 1) {
                 return (
@@ -346,6 +337,8 @@ export default function PaymentForm({
             />
         );
     };
+
+
     // Handle loading and error states
     if (paymentTypesLoading) {
         return (
@@ -422,6 +415,20 @@ export default function PaymentForm({
                         <PaymentTransactionsList
                             onClose={() => setShowTransactionsList(false)}
                             paymentId={payment?.paymentId || ""}
+                        />
+                    </ModalContainer>
+                )}
+
+                {showPaymentApplicationsList && payment?.paymentId && (
+                    <ModalContainer
+                        show={showPaymentApplicationsList}
+                        onClose={handleCancelApplications}
+                        width={950}
+                    >
+                        <EditPaymentApplications
+                            payment={payment}
+                            paymentId={payment.paymentId}
+                            onClose={handleCancelApplications}
                         />
                     </ModalContainer>
                 )}

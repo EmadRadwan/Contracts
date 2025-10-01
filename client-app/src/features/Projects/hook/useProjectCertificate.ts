@@ -261,8 +261,6 @@ const useProjectCertificate = ({
         async (data: any) => {
             setIsLoading(true);
             try {
-                // Purpose: Preserve object structure for FormComboBox components
-                // Context: Flatten only for API calls, not for Redux state
                 const newCertificate: Certificate = {
                     workEffortId: editMode === 2 ? selectedCertificate?.workEffortId : undefined,
                     workEffortTypeId: data.values.workEffortTypeId,
@@ -288,70 +286,94 @@ const useProjectCertificate = ({
                 }
 
                 const action = data.selectedMenuItem || selectedMenuItem;
-
                 if (action === "Create Certificate" || editMode === 1) {
                     return await createCertificate(newCertificate);
                 } else if (action === "Update Certificate") {
                     return await updateCertificate(newCertificate);
                 } else if (action === "Approve Certificate") {
-                    if (currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE") {
-                        if (!selectedCertificate?.workEffortId) {
-                            toast.error("Work Effort ID is required for approving certificate");
-                            return;
-                        }
-                        const result = await processWorkEffortCertificate({workEffortId: selectedCertificate.workEffortId}).unwrap();
-                        dispatch(
-                            setSelectedCertificate({
-                                ...selectedCertificate,
-                                currentStatusId: CertificateStatus.APPROVED,
-                                statusDescription: "Approved",
-                                statusDescriptionArabic: "تمت الموافقة",
-                                relatedOrderId: result.orderId,
-                            })
-                        );
-                        dispatch(setCertificateFormEditMode(3));
-                        formRef2.current = !formRef2.current;
-                        toast.success("Certificate approved successfully");
+                    if (!selectedCertificate?.workEffortId) {
+                        toast.error("Work Effort ID is required for approving certificate");
                         return;
                     }
-                    if (action === "Approve Certificate" && ["SUPPLY_PROCUREMENT_CERTIFICATE"].includes(currentCertificateType)) {
-                        if (selectedCertificate?.relatedOrderId && selectedCertificate?.facilityId) {
-                            await receiveInventoryFromPurchaseOrder({
-                                orderId: selectedCertificate.relatedOrderId,
-                                facilityId: selectedCertificate.facilityId,
-                            }).unwrap();
-                            toast.success("Inventory received successfully after approval.");
-                        } else {
-                            toast.error("Missing orderId or facilityId for receiving inventory.");
-                        }
-                    }
 
-                    if (action === "Approve Certificate" && currentCertificateType === "COMPANY_SUPPLY_SALE_CERTIFICATE") {
-                        if (!selectedCertificate?.workEffortId) {
-                            toast.error("Work Effort ID is required for issuing materials");
+                    let result;
+                    if (currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE") {
+                        result = await processWorkEffortCertificate({ workEffortId: selectedCertificate.workEffortId }).unwrap();
+                    } else if (currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE") {
+                        if (!selectedCertificate?.relatedOrderId || !selectedCertificate?.facilityId) {
+                            toast.error("Missing orderId or facilityId for receiving inventory.");
                             return;
                         }
+                        result = await receiveInventoryFromPurchaseOrder({
+                            orderId: selectedCertificate.relatedOrderId,
+                            facilityId: selectedCertificate.facilityId,
+                        }).unwrap();
+                    } else if (currentCertificateType === "COMPANY_SUPPLY_SALE_CERTIFICATE") {
                         try {
-                            await issueMaterialsForCertificate({ workEffortId: selectedCertificate.workEffortId }).unwrap();
-                            toast.success("Materials issued successfully for certificate.");
+                            result = await issueMaterialsForCertificate({
+                                workEffortId: selectedCertificate.workEffortId,
+                            }).unwrap();
                         } catch (error: any) {
-                            toast.error(error?.data?.message || "Failed to issue materials for certificate");
-                            throw error; // Rethrow to maintain error handling
+                            // REFACTOR: Handle specific INSUFFICIENT_INVENTORY error from issueMaterialsForCertificate
+                            // Purpose: Display the detailed error title from the API response in the Toast notification
+                            // Improvement: Provides user-friendly feedback with specific inventory shortage details
+                            // Context: Checks for errorCode to identify INSUFFICIENT_INVENTORY and uses the title field
+                            if (error?.data?.errorCode === "INSUFFICIENT_INVENTORY" && error?.data?.title) {
+                                toast.error(error.data.title);
+                            } else {
+                                toast.error(error?.data?.message || "Failed to issue materials for certificate");
+                            }
+                            throw error;
                         }
+                    } else {
+                        toast.error("Invalid certificate type for approval");
+                        return;
                     }
-                    
-                    formRef2.current = !formRef2.current;
-                    dispatch(setCertificateFormEditMode(action === "Approve Certificate" ? 3 : 4));
+
+                    // REFACTOR: Update selectedCertificate state with WEPR_APPROVED status after successful approval
+                    // Purpose: Ensures the frontend reflects the new certificate status immediately without requiring a DB refresh
+                    // Improvement: Prevents the "Approve" menu from remaining enabled after an approval action
+                    // Context: Syncs the local Redux state with the backend's updated status (WEPR_APPROVED)
+                    dispatch(
+                        setSelectedCertificate({
+                            ...selectedCertificate,
+                            currentStatusId: CertificateStatus.APPROVED,
+                            statusDescription: "Approved",
+                            statusDescriptionArabic: "تمت الموافقة",
+                            relatedOrderId: result?.orderId || selectedCertificate?.relatedOrderId || "",
+                        })
+                    );
+                    dispatch(setCertificateFormEditMode(3)); // Set to edit mode for APPROVED status
+                    formRef2.current = !formRef2.current; // Trigger form re-render
+                    toast.success("Certificate approved successfully");
                     return;
                 } else {
                     toast.error("Invalid action type");
                     return;
                 }
+            } catch (error: any) {
+                toast.error(error?.data?.message || "Failed to process certificate action");
+                throw error;
             } finally {
                 setIsLoading(false);
             }
         },
-        [createCertificate, updateCertificate, editMode, selectedCertificate, nonDeletedCertificateItems, selectedMenuItem, setIsLoading, updateProjectCertificate, receiveInventoryFromPurchaseOrder, currentCertificateType, dispatch, refetch]
+        [
+            createCertificate,
+            updateCertificate,
+            editMode,
+            selectedCertificate,
+            nonDeletedCertificateItems,
+            selectedMenuItem,
+            setIsLoading,
+            updateProjectCertificate,
+            receiveInventoryFromPurchaseOrder,
+            processWorkEffortCertificate,
+            issueMaterialsForCertificate,
+            currentCertificateType,
+            dispatch,
+            refetch,
+        ]
     );
 
     return {

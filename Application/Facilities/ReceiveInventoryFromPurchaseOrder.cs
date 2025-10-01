@@ -35,7 +35,6 @@ public class ReceiveInventoryFromPurchaseOrder
 
         public async Task<Result<ReceiveInventoryResult>> Handle(Command request, CancellationToken cancellationToken)
         {
-            // REFACTOR: Replaced explicit transaction with conditional enlistment to existing transaction or new one;
             // this prevents nested transaction errors when called within an outer transaction (e.g., from another handler),
             // allowing seamless integration while maintaining atomicity. Improves robustness by checking CurrentTransaction.
             IDbContextTransaction? transaction = null;
@@ -53,7 +52,6 @@ public class ReceiveInventoryFromPurchaseOrder
                     _logger.LogDebug("Using existing transaction for ReceiveInventoryFromPurchaseOrder.");
                 }
 
-                // REFACTOR: Added validation for purchase order to ensure it exists and is of type PURCHASE_ORDER;
                 // this aligns with ListPurchaseOrderItemsForReceive logic and prevents processing invalid orders.
                 var purchaseOrder = await _context.OrderHeaders
                     .FirstOrDefaultAsync(po => po.OrderId == request.OrderId, cancellationToken);
@@ -72,7 +70,6 @@ public class ReceiveInventoryFromPurchaseOrder
                         $"OrderTypeId for Purchase Order ID {request.OrderId} is invalid.");
                 }
 
-                // REFACTOR: Integrated shipment check and creation logic from ListPurchaseOrderItemsForReceive and QuickReceivePurchaseOrder;
                 // this ensures a shipment exists before attempting to receive inventory, addressing the failure due to missing shipment artifacts.
                 // Improves code by consolidating the workflow in the backend, bypassing frontend dependencies.
                 var orderShipments = await _context.OrderShipments
@@ -90,7 +87,7 @@ public class ReceiveInventoryFromPurchaseOrder
                         return Result<ReceiveInventoryResult>.Failure("Failed to create shipment for purchase order.");
                     }
 
-                    // REFACTOR: Added SaveChanges to persist shipment-related entities before proceeding to inventory receipt;
+                    // : Added SaveChanges to persist shipment-related entities before proceeding to inventory receipt;
                     // this ensures the shipment is available for ReceiveInventoryProducts, maintaining transaction integrity.
                     var shipmentSaveResult = await _context.SaveChangesAsync(cancellationToken);
                     if (shipmentSaveResult <= 0)
@@ -101,7 +98,7 @@ public class ReceiveInventoryFromPurchaseOrder
                     }
                 }
 
-                // REFACTOR: Extracted order item fetching into a separate method for clarity and reusability.
+                //  Extracted order item fetching into a separate method for clarity and reusability.
                 // This improves maintainability by isolating data retrieval logic and makes it easier to test.
                 var orderItems = await GetOrderItemsForPurchaseOrder(request.OrderId, cancellationToken);
                 if (!orderItems.Any())
@@ -111,12 +108,12 @@ public class ReceiveInventoryFromPurchaseOrder
                     return Result<ReceiveInventoryResult>.Failure("No order items found for the provided OrderId.");
                 }
 
-                // REFACTOR: Moved DTO construction to a separate method to encapsulate mapping logic.
+                //  Moved DTO construction to a separate method to encapsulate mapping logic.
                 // This reduces code duplication and makes the handler more focused on orchestration.
                 var receivedItemsDto = await ConstructReceiveInventoryItemsDto(request.OrderId, request.FacilityId,
                     orderItems, cancellationToken);
 
-                // REFACTOR: Reuse existing ReceiveInventoryProducts logic to avoid duplicating transaction and error-handling code.
+                //  Reuse existing ReceiveInventoryProducts logic to avoid duplicating transaction and error-handling code.
                 // This ensures consistency with existing inventory receiving functionality. Note: Inner handler will detect existing transaction and skip its own.
                 var result =
                     await _mediator.Send(new ReceiveInventoryProducts.Command { ReceivedItems = receivedItemsDto },
@@ -128,9 +125,31 @@ public class ReceiveInventoryFromPurchaseOrder
                     if (ownsTransaction) await transaction.RollbackAsync(cancellationToken);
                     return result;
                 }
+                
+                var workEffort = await _context.WorkEfforts
+                    .FirstOrDefaultAsync(we => we.RelatedOrderId == request.OrderId && we.WorkEffortTypeId == "PROJECT_CERTIFICATE", cancellationToken);
 
-                // REFACTOR: Removed final SaveChanges as ReceiveInventoryProducts handles its own persistence within the shared transaction;
-                // this avoids redundant saves and leverages EF Core's automatic savepoint rollback on errors for safety.
+                if (workEffort != null)
+                {
+                    workEffort.CurrentStatusId = "WEPR_APPROVED";
+                    workEffort.LastStatusUpdate = DateTime.UtcNow; // Update timestamp for auditability
+                    _context.WorkEfforts.Update(workEffort);
+                    _logger.LogInformation("Updated WorkEffort {WorkEffortId} status to WEPR_APPROVED for OrderId: {OrderId}", workEffort.WorkEffortId, request.OrderId);
+                }
+                else
+                {
+                    _logger.LogWarning("No PROJECT_CERTIFICATE found for OrderId: {OrderId}", request.OrderId);
+                    // Note: Not failing the transaction as certificate update is secondary to inventory receipt
+                }
+
+                // REFACTOR: Added SaveChanges to persist WorkEffort update before committing the transaction;
+                // this ensures the certificate status is saved within the same transaction as inventory receipt.
+                var workEffortSaveResult = await _context.SaveChangesAsync(cancellationToken);
+                if (workEffortSaveResult > 0)
+                {
+                    _logger.LogDebug("Persisted WorkEffort status update for OrderId: {OrderId}", request.OrderId);
+                }
+
 
                 // REFACTOR: Commit only if this handler owns the transaction; defers to outer transaction otherwise.
                 // Improves integration in nested scenarios without premature commits.

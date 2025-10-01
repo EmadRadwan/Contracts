@@ -1,10 +1,11 @@
 using Application.Core;
 using Application.Projects;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Persistence;
 
-namespace Application.ProjectCertificates;
+namespace Application.Projects;
 
 public class IssueMaterialsForCertificate
 {
@@ -30,7 +31,7 @@ public class IssueMaterialsForCertificate
         public async Task<Results<IssueMaterialsForCertificateResult>> Handle(Command request,
             CancellationToken cancellationToken)
         {
-            // REFACTOR: Added transaction management to ensure atomicity of issuance operations;
+            //  Added transaction management to ensure atomicity of issuance operations;
             // this prevents partial issuances in case of errors, improving data consistency for certificate material issuance.
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
@@ -43,9 +44,36 @@ public class IssueMaterialsForCertificate
                     return Results<IssueMaterialsForCertificateResult>.Failure(result.ErrorMessage, result.ErrorCode);
                 }
 
-                await _context.SaveChangesAsync(cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
+                var workEffort = await _context.WorkEfforts
+                    .FirstOrDefaultAsync(
+                        we => we.WorkEffortId == request.WorkEffortId && we.WorkEffortTypeId == "PROJECT_CERTIFICATE",
+                        cancellationToken);
 
+                if (workEffort != null)
+                {
+                    workEffort.CurrentStatusId = "WEPR_APPROVED";
+                    workEffort.LastStatusUpdate = DateTime.UtcNow; // Update timestamp for auditability
+                    _context.WorkEfforts.Update(workEffort);
+                    _logger.LogInformation("Updated WorkEffort {WorkEffortId} status to WEPR_APPROVED",
+                        request.WorkEffortId);
+                }
+                else
+                {
+                    _logger.LogWarning("No PROJECT_CERTIFICATE found for WorkEffortId: {WorkEffortId}",
+                        request.WorkEffortId);
+                    // Note: Not failing the transaction as certificate update is secondary to material issuance
+                }
+
+                // REFACTOR: Moved SaveChanges after WorkEffort update to persist both material issuance and certificate status
+                // within the same transaction; this ensures data consistency and avoids partial updates.
+                var saveResult = await _context.SaveChangesAsync(cancellationToken);
+                if (saveResult > 0)
+                {
+                    _logger.LogDebug("Persisted WorkEffort status update for WorkEffortId: {WorkEffortId}",
+                        request.WorkEffortId);
+                }
+
+                await transaction.CommitAsync(cancellationToken);
                 return Results<IssueMaterialsForCertificateResult>.Success(result.Value);
             }
             catch (Exception ex)

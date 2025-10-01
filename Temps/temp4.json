@@ -1,101 +1,12 @@
-{
-  "projects": {
-    "certificate": {
-      "report": {
-        "title": "تقرير المستخلص"
-      },
-      "form": {
-        "contractor": "المقاول",
-        "supplier": "المورد",
-        "facility": "المخزن",
-        "project": "المشروع",
-        "title": "رقم شهادة المشروع",
-        "new": "شهادة مشروع جديدة",
-        "startDate": "تاريخ البدء",
-        "completionDate": "تاريخ الانتهاء",
-        "description": "الوصف",
-        "create": "إنشاء الشهادة",
-        "update": "تحديث الشهادة",
-        "cancel": "إلغاء",
-        "saving": "جاري حفظ الشهادة...",
-        "error": "فشل في حفظ الشهادة",
-        "invalid": "النموذج غير صالح"
-      },
-      "list": {
-        "new": "شهادة جديدة",
-        "supplyProcurement": "توريد المشتريات",
-        "workmanshipContracting": "تعهد بالأعمال",
-        "companySupplySale": "بيع توريد الشركة",
-        "certificateNumber": "رقم الشهادة",
-        "projectName": "اسم المشروع",
-        "certificateType": "النوع",
-        "supplierPartyId": "معرف المورد",
-        "supplierPartyName": "اسم المورد",
-        "contractorPartyId": "معرف المقاول",
-        "contractorPartyName": "اسم المقاول",
-        "description": "الوصف",
-        "startDate": "تاريخ البدء",
-        "completionDate": "تاريخ الانتهاء",
-        "facilityName": "اسم المخزن",
-        "loading": "جاري تحميل الشهادات..."
-      },
-      "type": "النوع",
-      "date": "التاريخ",
-      "description": "الوصف",
-      "total": "الإجمالي",
-      "export": "تصدير إلى PDF",
-      "generating": "جاري إنشاء PDF...",
-      "actions": "الإجراءات",
-      "approve": "الموافقة على الشهادة",
-      "approved": "تمت الموافقة على الشهادة",
-      "complete": "إكمال الشهادة",
-      "completed": "تم إكمال الشهادة",
-      "noWorkEffortId": "لم يتم اختيار شهادة",
-      "statusUpdate": {
-        "error": "فشل في تحديث حالة الشهادة"
-      },
-      "print": {
-        "disabled": "الطباعة متاحة فقط للشهادات في حالة تم الإنشاء"
-      },
-      "items": {
-        "list": {
-          "item": "البند",
-          "code": "رقم البند",
-          "description": "الوصف",
-          "quantity": "الكمية",
-          "unitOfMeasure": "وحدة القياس",
-          "materialPrice": "سعر المواد",
-          "laborPrice": "سعر العمالة",
-          "totalAmount": "الإجمالي",
-          "deductions": "الخصومات",
-          "insurance": "التأمين",
-          "additionalInsurance": "التأمين الإضافي",
-          "net": "الصافي",
-          "achievementPercentage": "نسبة الإنجاز",
-          "unitPrice": "سعر الوحدة",
-          "discount": "الخصم",
-          "procurementDate": "تاريخ الشراء",
-          "transportationExpenses": "مصاريف النقل",
-          "gratuities": "الاكراميات",
-          "productSubtotal": "إجمالي المنتج",
-          "noData": "لا توجد بنود متاحة",
-          "product": "المنتج",
-          "discountValue": "القيمة",
-          "discountPercentage": "النسبة المئوية",
-          "deductionDescription": "وصف الخصم",
-          "deserved": "المستحق",
-          "insuranceValue": "القيمة",
-          "insurancePercentage": "النسبة المئوية",
-          "additionalInsuranceValue": "القيمة",
-          "additionalInsurancePercentage": "النسبة المئوية"
-        },
-        "mainDescription": "وصف البند الرئيسي",
-        "discountNote": "ملاحظة الخصم"
-      }
-    },
-    "menu": {
-      "projects": "المشاريع",
-      "projectCertificates": "مستخلصات المشاريع"
-    }
-  }
+"accounting": {
+"payments": {
+"applications": {
+"title": "تطبيقات الدفع",
+"amountTotal": "المبلغ الإجمالي",
+"amountNotApplied": "المبلغ غير المطبق",
+"noApplications": "لم يتم العثور على تطبيقات دفع",
+"loading": "جاري تحميل تطبيقات الدفع...",
+"noPayment": "لم يتم العثور على دفعة"
+}
+}
 }

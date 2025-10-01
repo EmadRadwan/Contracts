@@ -73,7 +73,6 @@ function App() {
     return (
         <ThemeProvider theme={theme}>
             <LocalizationProvider language={language}>
-                {/* <IntlProvider locale={language === "ar" ? "ar-EG" : "en-GB"}> */}
                 <div dir={language === "ar" ? "rtl" : "ltr"}>
                     <ToastContainer position={language === "ar" ? "bottom-center" : "bottom-right"} transition={Flip}/>
                     <CssBaseline/>
@@ -88,7 +87,6 @@ function App() {
                         </>
                     )}
                 </div>
-                {/* </IntlProvider> */}
             </LocalizationProvider>
         </ThemeProvider>
     )

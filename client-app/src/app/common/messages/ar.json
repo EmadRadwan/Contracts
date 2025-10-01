@@ -21,7 +21,7 @@
     "close": "غلق",
     "details": "التفاصيل",
     "generate": "إنشاء التقرير",
-    "setup": "الإعداد",
+    "setup": "الإعدادات",
     "accounting": "المحاسبة",
     "clear": "إخلاء",
     "date-range-or-month-error": "يجب اختيار شهر او تاريخ من و الى",
@@ -742,8 +742,8 @@
       "agreements": "الاتفاقيات",
       "financialAccount": "البنوك",
       "billingAccounts": "حسابات الاجل",
-      "globalGLSettings": "إعدادات دفتر الأستاذ العام العالمية",
-      "organizationGLSettings": "إعدادات دفتر الأستاذ العام للمنظمة"
+      "globalGLSettings": "إعدادات دفتر الأستاذ العام العامة",
+      "organizationGLSettings": "إعدادات دفتر الأستاذ العام للشركة"
     },
     "payments": {
       "list": {
@@ -787,6 +787,14 @@
         "date": "التاريخ الفعلي *",
         "comments": "التعليقات",
         "loading": "جاري معالجة الدفعة..."
+      },
+      "applications": {
+        "title": "تطبيقات الدفع",
+        "amountTotal": "المبلغ الإجمالي",
+        "amountNotApplied": "المبلغ غير المطبق",
+        "noApplications": "لم يتم العثور على تطبيقات دفع",
+        "loading": "جاري تحميل تطبيقات الدفع...",
+        "noPayment": "لم يتم العثور على دفعة"
       }
     },
     "orgGL": {
@@ -803,16 +811,16 @@
       "accounting": {
         "summary": {
           "title": "ملخص المحاسبة لـ",
-          "createTxn": "إنشاء معاملة محاسبية",
-          "qCreateTxn": "إنشاء معاملة محاسبية سريعة",
-          "unposted": "المعاملات المحاسبية غير المنشورة",
+          "createTxn": "إنشاء قيد محاسبي",
+          "qCreateTxn": "إنشاء قيد محاسبي سريع",
+          "unposted": "المعاملات المحاسبية الغير مرحلة",
           "trial": "ميزان المراجعة",
           "income": "قائمة الدخل",
           "balanceSheet": "الميزانية العمومية",
           "menu": {
             "summary": "الملخص",
-            "txns": "المعاملات المحاسبية",
-            "txnEntries": "إدخالات المعاملات المحاسبية",
+            "txns": "القيود المحاسبية",
+            "txnEntries": "تفاصيل القيود المحاسبية",
             "recon": "تسوية الحساب",
             "reports": "التقارير",
             "checks": "الشيكات"

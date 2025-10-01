@@ -336,16 +336,8 @@ export const WorkmanshipCertificateExcel: React.FC<WorkmanshipCertificatePDFProp
                 onClick={handleDownload}
                 style={{ marginRight: 10 }}
             >
-                {getTranslatedLabel('projects.certificate.excel', 'Download Excel')}
+                {getTranslatedLabel('projects.certificate.excel', 'Excel Report')}
             </Button>
-            
-            {show && (
-                <ModalContainer show={show} onClose={onClose} width={1200}>
-                    <div>
-                        {getTranslatedLabel('projects.certificate.excel.preview', 'Excel preview is not supported in browsers. Please download the file.')}
-                    </div>
-                </ModalContainer>
-            )}
         </div>
     );
 };
