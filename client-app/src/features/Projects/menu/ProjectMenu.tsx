@@ -12,16 +12,16 @@ interface ProjectMenuProps {
 
 const links = [
     {
-        title: "Projects",
-        key: "projects",
-        path: "/projects",
-        icon: <HomeWork sx={{ color: "#FF4081" }} />,
-    },
-    {
         title: "Project Certificates",
         key: "projectCertificates",
         path: "/projectCertificates",
         icon: <ListAltOutlinedIcon sx={{ color: "#FF4081" }} />,
+    },
+    {
+        title: "Projects",
+        key: "projects",
+        path: "/projects",
+        icon: <HomeWork sx={{ color: "#FF4081" }} />,
     },
 ];
 

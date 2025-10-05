@@ -136,4 +136,19 @@ public class TransactionsController : BaseApiController
         var result = await Mediator.Send(command);
         return HandleResult(result);
     }
+    
+    [HttpPost("createMultiAcctgTransWithEntries")]
+    public async Task<IActionResult> CreateMultiAcctgTransWithEntries(CreateMultiAcctgTransWithEntries.Command command)
+    {
+        return HandleResult(await Mediator.Send(command));
+    }
+    
+    [HttpPut("updateMultiAcctgTransWithEntries")]
+    public async Task<IActionResult> UpdateMultiAcctgTransWithEntries(UpdateMultiAcctgTransWithEntries.Command command)
+    {
+        // REFACTOR: Use MediatR to handle the update command
+        // Purpose: Centralizes business logic in the handler
+        // Improvement: Maintains separation of concerns
+        return HandleResult(await Mediator.Send(command));
+    }
 }

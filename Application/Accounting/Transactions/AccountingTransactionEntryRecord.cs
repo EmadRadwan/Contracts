@@ -20,6 +20,7 @@ public class AccountingTransactionEntryRecord
     public string? WorkEffortId { get; set; }
     public string? GlAccountTypeId { get; set; }
     public string? GlAccountId { get; set; }
+    public string? GlAccountName { get; set; }
     public decimal? Amount { get; set; }
     public string? DebitCreditFlag { get; set; }
     public DateTime? TransactionDate { get; set; }

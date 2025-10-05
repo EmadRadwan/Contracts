@@ -1,4 +1,4 @@
-using Application.Accounting;
+using Application.Accounting.Accounting;
 using Application.Accounting.Services;
 using Domain;
 using FluentValidation;
@@ -37,27 +37,21 @@ namespace Application.Accounting.Transactions
                 _acctgTransService = acctgTransService;
             }
 
-            public async Task<Result<UpdateMultiAcctgTransResult>> Handle(Command request, CancellationToken cancellationToken)
+            public async Task<Result<UpdateMultiAcctgTransResult>> Handle(Command request,
+                CancellationToken cancellationToken)
             {
-                // REFACTOR: Begin transaction to ensure atomicity
-                // Purpose: Ensures all changes (header update, entry updates/creations/deletions) are atomic
-                // Improvement: Prevents partial updates in case of errors
                 await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
                 try
                 {
-                    // REFACTOR: Verify transaction exists
-                    // Purpose: Ensure the transaction ID is valid before processing
-                    // Improvement: Prevents updates to non-existent transactions
-                    var existingTrans = await _context.AcctgTrans.FindAsync(new object[] { request.AcctgTransId }, cancellationToken);
+                    var existingTrans =
+                        await _context.AcctgTrans.FindAsync(new object[] { request.AcctgTransId }, cancellationToken);
                     if (existingTrans == null)
                     {
                         return Result<UpdateMultiAcctgTransResult>.Failure("Transaction not found.");
                     }
 
-                    // REFACTOR: Update transaction header using AcctgTrans type
-                    // Purpose: Align with UpdateAcctgTrans method's expected AcctgTrans parameter
-                    // Improvement: Ensures type safety and consistency with service method
-                    var acctgTrans = new AcctgTrans
+                    var acctgTrans = new AcctgTran
                     {
                         AcctgTransId = request.AcctgTransId,
                         AcctgTransTypeId = request.UpdateMultiAcctgTransParams.AcctgTransTypeId,
@@ -87,29 +81,34 @@ namespace Application.Accounting.Transactions
                     var entriesToDelete = existingEntries
                         .Where(e => !requestEntrySeqIds.Contains(e.AcctgTransEntrySeqId))
                         .ToList();
+
+                    // Delete removed entries
                     _context.AcctgTransEntries.RemoveRange(entriesToDelete);
 
-                    // REFACTOR: Process entries using dedicated UpdateAcctgTransEntry function
-                    // Purpose: Replace inline editing with service method for consistency and validation
-                    // Improvement: Reuses existing logic, enforces posted transaction rules
+                    // REFACTOR: Process entries (update existing, create new)
+                    // Purpose: Handle both updates and creations in a single loop
+                    // Improvement: Reduces code duplication and improves maintainability
                     var stamp = DateTime.UtcNow;
-                    var maxSeqId = existingEntries.Any() ? existingEntries.Max(e => int.Parse(e.AcctgTransEntrySeqId)) : 0;
+                    var maxSeqId = existingEntries.Any()
+                        ? existingEntries.Max(e => int.Parse(e.AcctgTransEntrySeqId))
+                        : 0;
+
                     foreach (var entry in request.Entries)
                     {
                         if (!string.IsNullOrEmpty(entry.AcctgTransEntrySeqId))
                         {
-                            // Update existing entry using service method
-                            var acctgTransEntry = new AcctgTransEntry
+                            // Update existing entry
+                            var existingEntry = existingEntries.FirstOrDefault(e =>
+                                e.AcctgTransEntrySeqId == entry.AcctgTransEntrySeqId);
+                            if (existingEntry != null)
                             {
-                                AcctgTransId = request.AcctgTransId,
-                                AcctgTransEntrySeqId = entry.AcctgTransEntrySeqId,
-                                GlAccountId = entry.DebitGlAccountId ?? entry.CreditGlAccountId,
-                                DebitCreditFlag = entry.DebitCreditFlag,
-                                Amount = entry.Amount,
-                                Description = entry.Description,
-                                LastUpdatedStamp = stamp
-                            };
-                            await _acctgTransService.UpdateAcctgTransEntry(acctgTransEntry);
+                                existingEntry.GlAccountId = entry.DebitGlAccountId ?? entry.CreditGlAccountId;
+                                existingEntry.DebitCreditFlag = entry.DebitCreditFlag;
+                                existingEntry.Amount = entry.Amount;
+                                existingEntry.Description = entry.Description;
+                                existingEntry.LastUpdatedStamp = stamp;
+                                _context.AcctgTransEntries.Update(existingEntry);
+                            }
                         }
                         else
                         {
@@ -165,15 +164,5 @@ namespace Application.Accounting.Transactions
     public class UpdateMultiAcctgTransResult
     {
         public string AcctgTransId { get; set; }
-    }
-
-    public class MultiAcctgTransEntryParams
-    {
-        public string AcctgTransEntrySeqId { get; set; }
-        public string DebitGlAccountId { get; set; }
-        public string CreditGlAccountId { get; set; }
-        public string DebitCreditFlag { get; set; }
-        public decimal Amount { get; set; }
-        public string Description { get; set; }
     }
 }

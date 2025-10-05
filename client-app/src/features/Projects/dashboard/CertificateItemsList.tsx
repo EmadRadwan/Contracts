@@ -11,7 +11,11 @@ import {
 import {useAppDispatch, useAppSelector} from "../../../app/store/configureStore";
 import {Button, Grid, Skeleton, Typography} from "@mui/material";
 import {CertificateItem} from "../../../app/models/project/certificateItem";
-import {resetUiCertificateItems, setUiCertificateItems} from "../slice/certificateItemsUiSlice";
+import {
+    resetUiCertificateItems,
+    setUiCertificateItems,
+    setUiCertificateItemsFromApi
+} from "../slice/certificateItemsUiSlice";
 import ModalContainer from "../../../app/common/modals/ModalContainer";
 import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
 import {
@@ -53,6 +57,11 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
         setPage(event.page);
     };
 
+    useEffect(() => {
+        if (certificateItemsData && !isFetching && !isLoading) {
+            dispatch(setUiCertificateItemsFromApi(certificateItemsData));
+        }
+    }, [certificateItemsData, isFetching, isLoading, dispatch]);
     
 
     const handleSelectCertificateItem = useCallback(

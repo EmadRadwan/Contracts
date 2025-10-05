@@ -40,14 +40,14 @@ const OrgAccountingSummary = () => {
           <SetupAccountingMenu />
           <AccountingSummaryMenu />
         </Grid>
-        <Grid item xs={12} sx={{ paddingBottom: 1, marginInlineStart: 2 }}>
+        {/*<Grid item xs={12} sx={{ paddingBottom: 1, marginInlineStart: 2 }}>
           <Button
             themeColor={"success"}
             onClick={() => router.navigate("/glQuickCreateAccountingTransaction")}
           >
             {getTranslatedLabel(`${localizationKey}.qCreateTxn`, "Quick Create an Accounting Transaction")}
           </Button>
-        </Grid>
+        </Grid>*/}
         
         <Grid item xs={12} sx={{ paddingBottom: 1, marginInlineStart: 2 }}>
           <Button

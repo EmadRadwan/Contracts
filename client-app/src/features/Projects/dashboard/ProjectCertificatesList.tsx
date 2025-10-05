@@ -123,24 +123,20 @@ export default function ProjectCertificatesList() {
 
     const handleSelectCertificate = useCallback(
         debounce((workEffortId?: string, currentStatusId?: CertificateStatus) => {
-            // Purpose: Ensure type safety and consistency with enum
-            // Context: Matches ProjectNumberCell call and backend DTO
             if (!workEffortId) {
-                // // console.warn("No workEffortId provided to handleSelectCertificate");
+                console.warn("No workEffortId provided to handleSelectCertificate");
                 return;
             }
-            // // console.log("handleSelectCertificate called with workEffortId:", workEffortId);
             const selectedCert: Certificate | undefined = certificates.data.find(
                 (cert: Certificate) => cert.workEffortId === workEffortId
-                // Purpose: Improve type safety; assumes backend data matches interface
-                // Context: Prevents runtime errors on field access
             );
             if (!selectedCert) {
-                // // console.warn("No certificate found for workEffortId:", workEffortId);
+                console.warn("No certificate found for workEffortId:", workEffortId);
                 return;
             }
             dispatch(resetUiCertificateItems());
             dispatch(certificateItemsApi.util.invalidateTags(['CertificateItems']));
+            
             dispatch(
                 setSelectedCertificate({
                     workEffortId: selectedCert.workEffortId || "",

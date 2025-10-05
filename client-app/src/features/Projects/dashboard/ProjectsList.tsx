@@ -16,6 +16,7 @@ import ProjectForm from "../form/ProjectForm";
 import ProjectMenu from "../menu/ProjectMenu";
 import {DataResult, State} from "@progress/kendo-data-query";
 import {handleDatesArray} from "../../../app/util/utils";
+import LoadingComponent from "../../../app/layout/LoadingComponent";
 
 export default function ProjectsList() {
     const [editMode, setEditMode] = useState(0);
@@ -137,6 +138,7 @@ export default function ProjectsList() {
                         width={150}
                     />
                 </KendoGrid>
+                {isFetching && <LoadingComponent message="Loading Projects..." />}
             </Paper>
         </>
     );

@@ -532,11 +532,11 @@
     "routings": {
       "list": {
         "createRouting": "إنشاء مسار",
-        "routingId": "معرف المسار",
+        "routingId": "كود المسار",
         "routingName": "اسم المسار",
         "description": "الوصف",
         "quantityToProduce": "الكمية المراد إنتاجها",
-        "currentStatusId": "معرف الحالة الحالية",
+        "currentStatusId": "كود الحالة الحالية",
         "loading": "جارٍ تحميل المسارات..."
       }
     },
@@ -776,13 +776,13 @@
         "new-outgoing": "دفعة صادرة جديدة",
         "title": "الدفعة رقم: ",
         "status": "الحالة",
-        "orgPartyId": "معرف منظمة الطرف *",
+        "orgPartyId": "كود منظمة الطرف *",
         "from": "من الطرف *",
         "to": "إلى الطرف *",
         "new-customer": "عميل جديد",
         "paymentType": "نوع الدفعة *",
         "paymentMethod": "طريقة الدفع *",
-        "finAccount-trans": "معرف المعاملة المالية",
+        "finAccount-trans": "كود المعاملة المالية",
         "amount": "المبلغ *",
         "date": "التاريخ الفعلي *",
         "comments": "التعليقات",
@@ -824,6 +824,39 @@
             "recon": "تسوية الحساب",
             "reports": "التقارير",
             "checks": "الشيكات"
+          },
+          "txns": {
+            "acctgTransId": "كود القيد المحاسبي",
+            "transactionDate": "تاريخ المعاملة",
+            "acctgTransType": "نوع القيد المحاسبي",
+            "description": "الوصف",
+            "glFiscalType": "نوع السنة المالية",
+            "shipmentId": "كود الشحنة",
+            "isPosted": "تم الترحيل",
+            "postedDate": "تاريخ الترحيل"
+          },
+          "txnEntries": {
+            "acctgTransEntrySeqId": "معرف التسلسل",
+            "glAccountId": "كود الحساب المحاسبي",
+            "glAccountType": "نوع الحساب المحاسبي",
+            "workEffortId": "رمز العمل"
+          }
+        },
+        "trans": {
+          "multi": {
+            "title": "إنشاء معاملة محاسبية لـ",
+            "editTitle": "تعديل معاملة محاسبية لـ",
+            "transactionDate": "تاريخ المعاملة *",
+            "headerDescription": "ملاحظات",
+            "debitGlAccount": "حساب المدين",
+            "creditGlAccount": "حساب الدائن",
+            "amount": "المبلغ *",
+            "description": "الوصف",
+            "entries": "إدخالات المعاملة",
+            "glAccount": "حساب دفتر الأستاذ",
+            "debitCredit": "مدين/دائن",
+            "totalDebit": "إجمالي المدين",
+            "totalCredit": "إجمالي الدائن"
           }
         }
       },
@@ -996,19 +1029,20 @@
       },
       "form": {
         "contractor": "المقاول",
+        "viewOld": "المستخلصات السابقة",
         "supplier": "المورد",
         "facility": "المخزن",
         "project": "المشروع",
-        "title": "رقم شهادة المشروع",
+        "title": "رقم المستخلص",
         "new": "شهادة مشروع جديدة",
         "startDate": "تاريخ البدء",
         "completionDate": "تاريخ الانتهاء",
         "description": "الوصف",
-        "create": "إنشاء الشهادة",
-        "update": "تحديث الشهادة",
+        "create": "إنشاء المستخلص",
+        "update": "تحديث المستخلص",
         "cancel": "إلغاء",
-        "saving": "جاري حفظ الشهادة...",
-        "error": "فشل في حفظ الشهادة",
+        "saving": "جاري حفظ المستخلص...",
+        "error": "فشل في حفظ المستخلص",
         "invalid": "النموذج غير صالح"
       },
       "list": {
@@ -1016,7 +1050,7 @@
         "supplyProcurement": "مستخلص توريدات",
         "workmanshipContracting": "مستخلص مقاوله",
         "companySupplySale": "مستخلص توريدات من مخازن الشركة",
-        "certificateNumber": "رقم الشهادة",
+        "certificateNumber": "رقم المستخلص",
         "projectName": "اسم المشروع",
         "certificateType": "النوع",
         "supplierPartyId": "كود المورد",
@@ -1027,7 +1061,7 @@
         "startDate": "تاريخ البدء",
         "completionDate": "تاريخ الانتهاء",
         "facilityName": "اسم المخزن",
-        "loading": "جاري تحميل الشهادات..."
+        "loading": "جاري تحميل المستخلصات..."
       },
       "type": "النوع",
       "date": "التاريخ",
@@ -1036,13 +1070,13 @@
       "export": "تصدير إلى PDF",
       "generating": "جاري إنشاء PDF...",
       "actions": "الإجراءات",
-      "approve": "الموافقة على الشهادة",
-      "approved": "تمت الموافقة على الشهادة",
+      "approve": "الموافقة على المستخلص",
+      "approved": "تمت الموافقة على المستخلص",
       "complete": "إكمال الشهادة",
       "completed": "تم إكمال الشهادة",
       "noWorkEffortId": "لم يتم اختيار شهادة",
       "statusUpdate": {
-        "error": "فشل في تحديث حالة الشهادة"
+        "error": "فشل في تحديث حالة المستخلص"
       },
       "print": {
         "disabled": "الطباعة متاحة فقط للشهادات في حالة تم الإنشاء"

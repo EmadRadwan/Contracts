@@ -69,12 +69,17 @@ namespace Application.Projects
                             "No valid party ID (Contractor or Supplier) provided");
                     }
 
-                    var certificateCount = await _context.WorkEfforts
+                    /*var certificateCount = await _context.WorkEfforts
                         .CountAsync(
                             we => (we.PartyIdContractor == partyId || we.PartyIdSupplier == partyId) &&
                                   we.CertificateCategory == certificate.CertificateCategory, cancellationToken);
-
+                                  */
+                    var certificateCount = await _context.WorkEfforts
+                        .CountAsync(
+                            we => we.PartyIdContractor == partyId || we.PartyIdSupplier == partyId,
+                            cancellationToken);
                     newProjectCertificateSerial = string.Format("{0}-{1:D4}", partyId, certificateCount + 1);
+
 
                     var workEffort = new WorkEffort
                     {

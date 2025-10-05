@@ -123,6 +123,8 @@ import ListRoutingTaskCosts from "../../features/manufacturing/dashboard/ListRou
 import EditRoutingTask from "../../features/manufacturing/form/EditRoutingTask";
 import ProjectsDashboard from "../../features/Projects/dashboard/ProjectsDashboard";
 import ProjectCertificatesList from "../../features/Projects/dashboard/ProjectCertificatesList";
+import MultiAcctgTransEntryForm from "../../features/accounting/transaction/form/MultiAcctgTransEntryForm";
+import EditMultiAcctgTrans from "../../features/accounting/transaction/form/EditMultiAcctgTrans";
 
 // Wrapper component to extract partyId from URL
 const PartyFinancialHistoryWrapper = () => {
@@ -215,8 +217,8 @@ export const routes: RouteObject[] = [
                     {path: "accountingTransaction", element: <AccountingTransactionsList/>},
                     {path: "accountingTransactionEntries", element: <AccountingTransactionEntriesList/>},
                     {path: "glQuickCreateAccountingTransaction", element: <QuickCreateAcctgTransForm/>},
-                    {path: "glCreateAccountingTransaction", element: <CreateAcctgTransForm/>},
-                    {path: "editAcctgTrans/:acctgTransId", element: <EditAcctgTrans/>},
+                    {path: "glCreateAccountingTransaction", element: <MultiAcctgTransEntryForm/>},
+                    {path: "editAcctgTrans/:acctgTransId", element: <EditMultiAcctgTrans/>},
                     {path: "orgChartOfAccount", element: <ChartOfAccountAssignForm/>},
                     {path: "gLAccountDefaults", element: <GlAccountTypeDefaults/>},
                     {path: "varianceReasonGLAccounts", element: <GlVarianceReason/>},

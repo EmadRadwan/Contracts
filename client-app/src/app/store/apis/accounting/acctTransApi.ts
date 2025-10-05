@@ -4,6 +4,10 @@ import {State, toODataString} from "@progress/kendo-data-query";
 import {AcctgTrans} from "../../../models/accounting/acctgTrans";
 import {AcctgTransEntry} from "../../../models/accounting/acctgTransEntry";
 import {setUiAcctgTransEntriesFromApi} from "../../../../features/accounting/slice/accountingSharedUiSlice";
+import {
+    UpdateMultiAcctgTransResponse,
+    UpdateMultiAcctgTransWithEntriesParams
+} from "../../../../features/accounting/transaction/hook/useEditMultiAcctgTrans";
 
 interface ListResponse<T> {
     data: T[];
@@ -176,6 +180,22 @@ const acctTransApi = createApi({
                     body: { acctgTransId, verifyOnly },
                 }),
             }),
+            createMultiAcctgTransWithEntries: builder.mutation({
+                query: (params) => ({
+                    url: "/transactions/createMultiAcctgTransWithEntries",
+                    method: "POST",
+                    body: params,
+                }),
+                invalidatesTags: ["MultiTransactions"],
+            }),
+            updateMultiAcctgTransWithEntries: builder.mutation<UpdateMultiAcctgTransResponse, UpdateMultiAcctgTransWithEntriesParams>({
+                query: (params) => ({
+                    url: '/transactions/updateMultiAcctgTransWithEntries',
+                    method: 'PUT',
+                    body: params,
+                }),
+                invalidatesTags: ['ITransactions'], // REFACTOR: Invalidate ITransactions tag to refresh transaction list
+            }),
         };
     },
 });
@@ -188,6 +208,8 @@ export const {
     useFetchInvoiceAcctTransEntriesQuery,
     useFetchPaymentAcctTransEntriesQuery,
     useFetchAcctTransEntriesQuery,
-    useFetchGeneralAcctTransEntriesQuery, usePostAcctgTransMutation
+    useFetchGeneralAcctTransEntriesQuery,
+    usePostAcctgTransMutation, 
+    useCreateMultiAcctgTransWithEntriesMutation, useUpdateMultiAcctgTransWithEntriesMutation
 } = acctTransApi;
 export {acctTransApi};

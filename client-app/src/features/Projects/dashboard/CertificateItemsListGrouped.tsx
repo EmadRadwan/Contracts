@@ -11,7 +11,11 @@ import {
 import { useAppDispatch, useAppSelector } from "../../../app/store/configureStore";
 import { Button, Grid, Skeleton, Typography } from "@mui/material";
 import { CertificateItem } from "../../../app/models/project/certificateItem";
-import {resetUiCertificateItems, setUiCertificateItems} from "../slice/certificateItemsUiSlice";
+import {
+    resetUiCertificateItems,
+    setUiCertificateItems,
+    setUiCertificateItemsFromApi
+} from "../slice/certificateItemsUiSlice";
 import ModalContainer from "../../../app/common/modals/ModalContainer";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import { certificateSubTotal, displayCertificateItemsSelector, nonDeletedCertificateItemsSelector } from "../slice/certificateSelectors";
@@ -45,13 +49,11 @@ export default function CertificateItemsListGrouped({ editMode, workEffortId, is
     const uiCertificateItems: CertificateItem[] = useAppSelector(displayCertificateItemsSelector);
     const nonDeletedItems = useAppSelector(nonDeletedCertificateItemsSelector);
 
-    // REFACTOR: Log API response
-    // Purpose: Debug undefined or incomplete data
-    // Context: Identifies API response issues
     useEffect(() => {
-        console.log('CertificateItemsListGrouped API response:', { certificateItemsData, certificateItemsEntities, isFetching, isLoading, isError, error });
-    }, [certificateItemsData, certificateItemsEntities, isFetching, isLoading, isError, error]);
-
+        if (certificateItemsData && !isFetching && !isLoading) {
+            dispatch(setUiCertificateItemsFromApi(certificateItemsData));
+        }
+    }, [certificateItemsData, isFetching, isLoading, dispatch]);
 
     const pageChange = (event: GridPageChangeEvent) => {
         setPage(event.page);

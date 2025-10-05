@@ -5,9 +5,9 @@ public class UpdateAcctgTransParams
     // PK field (from <auto-attributes include="pk" ...>)
     public string AcctgTransId { get; set; } = null!;
 
-    // Non-PK fields (from <auto-attributes include="nonpk" ...>)
     public string? AcctgTransTypeId { get; set; }
     public string? GlFiscalTypeId { get; set; }
+    public string? Description { get; set; }
     public DateTime? TransactionDate { get; set; }
     public DateTime? PostedDate { get; set; }
     public string? IsPosted { get; set; }
@@ -19,5 +19,4 @@ public class UpdateAcctgTransParams
     public string? ShipmentId { get; set; }
 
     public string? WorkEffortId { get; set; }
-    // Add more if your AcctgTrans entity has more columns
 }

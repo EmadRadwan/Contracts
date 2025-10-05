@@ -30,8 +30,6 @@ import {
     workmanshipCertificateReportSelector
 } from "../slice/certificateSelectors";
 import CertificatesListModal from "../dashboard/CertificatesListModal";
-import {WorkmanshipCertificatePDF} from "../report/WorkmanshipCertificatePDF";
-import {SupplyCertificatePDF} from "../report/SupplyCertificatePDF";
 import {certificateItemsApi, useFetchCertificateItemsQuery} from "../../../app/store/apis/certificateItemsApi";
 import {WorkmanshipCertificateExcel} from "../report/WorkmanshipCertificateExcel";
 import {SupplyCertificateExcel} from "../report/SupplyCertificateExcel";
@@ -157,6 +155,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
         }
     }, [selectedCertificate?.workEffortId, currentCertificateType, dispatch]);
 
+    
 
     const {
         formEditMode,
@@ -380,12 +379,18 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
             formRenderPropsRef.current = null; // Clean up on unmount
         };
     }, []);
-    
-    const getCertificateTypeDisplayText = (type: string) => {
-        return type
-            .split('_')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-            .join(' ');
+
+    const getCertificateTypeLabel = (type: string) => {
+        switch (type) {
+            case "SUPPLY_PROCUREMENT_CERTIFICATE":
+                return getTranslatedLabel("projects.certificate.list.supplyProcurement", "Supply Procurement");
+            case "WORKMANSHIP_CONTRACTING_CERTIFICATE":
+                return getTranslatedLabel("projects.certificate.list.workmanshipContracting", "Workmanship Contracting");
+            case "COMPANY_SUPPLY_SALE_CERTIFICATE":
+                return getTranslatedLabel("projects.certificate.list.companySupplySale", "Company Supply Sale");
+            default:
+                return getTranslatedLabel("projects.certificate.form.unknown", "Unknown Certificate Type");
+        }
     };
 
     // // console.log('initialFormValues', initialFormValues)
@@ -441,18 +446,9 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
             isFetching,
         };
 
-        // REFACTOR: Removed PDF button and showPDF logic
-        // Purpose: Eliminates PDF export button as only Excel is required
-        // Improvement: Reduces UI clutter and simplifies rendering logic
-        // Context: PDF components are no longer needed
-        if (selectedCertificate?.currentStatusId !== CertificateStatus.CREATED) {
-            return (
-                <WorkmanshipCertificateExcel
-                    certificate={workmanshipReportData.certificate}
-                    items={workmanshipReportData.items}
-                    {...commonProps}
-                />
-            );
+        // Check if certificate number exists before rendering any Excel component
+        if (!selectedCertificate?.certificateNumber) {
+            return null;
         }
 
         const isValidItems = items && items.length > 0 && validateItems(
@@ -462,22 +458,8 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
             currentCertificateType
         ).isValid;
 
-        if (!isValidItems) {
-            return (
-                <WorkmanshipCertificateExcel
-                    certificate={workmanshipReportData.certificate}
-                    items={workmanshipReportData.items}
-                    {...commonProps}
-                />
-            );
-        }
-
-        // REFACTOR: Added SupplyCertificateExcel for supply certificate types
-        // Purpose: Handles SUPPLY_PROCUREMENT_CERTIFICATE and COMPANY_SUPPLY_SALE_CERTIFICATE with SupplyCertificateExcel
-        // Improvement: Matches certificate type to appropriate Excel component; uses supplyReportData for supply types
-        // Context: Aligns with WorkmanshipCertificateExcel for consistent Excel output
         if (currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE") {
-            if (workmanshipReportData.items?.length > 0 && workmanshipReportData.items[0].materialPrice !== undefined) {
+            if (workmanshipReportData.items?.length > 0 && workmanshipReportData.items[0].materialPrice !== undefined && isValidItems) {
                 return (
                     <WorkmanshipCertificateExcel
                         certificate={workmanshipReportData.certificate}
@@ -488,7 +470,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                 );
             }
         } else if (["SUPPLY_PROCUREMENT_CERTIFICATE", "COMPANY_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)) {
-            if (supplyReportData.items?.length > 0 && supplyReportData.items[0].unitPrice !== undefined) {
+            if (supplyReportData.items?.length > 0 && supplyReportData.items[0].unitPrice !== undefined && isValidItems) {
                 return (
                     <SupplyCertificateExcel
                         certificate={supplyReportData.certificate}
@@ -500,10 +482,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
             }
         }
 
-        // REFACTOR: Default to WorkmanshipCertificateExcel for invalid cases
-        // Purpose: Provides fallback Excel component when no valid items or type
-        // Improvement: Ensures a component is rendered even for edge cases
-        // Context: Maintains consistency with original fallback behavior
+        // Default to WorkmanshipCertificateExcel if conditions are not met but certificate number exists
         return (
             <WorkmanshipCertificateExcel
                 certificate={workmanshipReportData.certificate}
@@ -530,8 +509,8 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                 variant="h6"
                             >
                                 {selectedCertificate?.certificateNumber
-                                    ? `${getTranslatedLabel("projects.certificate.form.title", "Project Certificate No")}: ${selectedCertificate.certificateNumber} (${getCertificateTypeDisplayText(currentCertificateType)})`
-                                    : `${getTranslatedLabel("projects.certificate.form.new", "New Project Certificate")} (${getCertificateTypeDisplayText(currentCertificateType)})`}
+                                    ? `${getTranslatedLabel("projects.certificate.form.title", "Project Certificate No")}: ${selectedCertificate.certificateNumber} (${getCertificateTypeLabel(currentCertificateType)})`
+                                    : `(${getCertificateTypeLabel(currentCertificateType)})`}
                             </Typography>
                             <Button
                                 variant="outlined"
@@ -540,7 +519,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                 disabled={!contractorId && !supplierId}
                                 sx={{mr: 2}}
                             >
-                                {getTranslatedLabel('projects.certificate.viewList', 'View Certificates')}
+                                {getTranslatedLabel('projects.certificate.form.viewOld', 'View Certificates')}
                             </Button>
                             <IconButton onClick={() => setIsFormCollapsed(!isFormCollapsed)}>
                                 {isFormCollapsed ? <ExpandMoreIcon/> : <ExpandLessIcon/>}

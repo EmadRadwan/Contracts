@@ -40,11 +40,14 @@ export default function AccountingTransactionsList() {
     data: [],
     total: 0,
   });
-  const [dataState, setDataState] = React.useState<State>({ take: 6, skip: 0 });
+  
+  const [dataState, setDataState] = React.useState<State>({
+    take: 6,
+    skip: 0,
+    sort: [{ field: "transactionDate", dir: "desc" }],
+  });
 
-  const { whatWasClicked } = useAppSelector(
-    (state) => state.accountingSharedUi
-  );
+ 
 
   const dataStateChange = (e: GridDataStateChangeEvent) => {
     setDataState(e.dataState);
@@ -235,7 +238,10 @@ export default function AccountingTransactionsList() {
                         onClick={() => setEditMode(1)}
                         variant="outlined"
                       >
-                        Create Accounting Transaction
+                        {getTranslatedLabel(
+                            "accounting.orgGL.menu.createGL",
+                            "Create Accounting Transaction"
+                        )}
                       </Button>
                     </Grid>
                   </Grid>
@@ -246,49 +252,96 @@ export default function AccountingTransactionsList() {
                   cell={AcctTransDescriptionCell}
                   width={110}
                   locked={!show}
-                  title={"Acctg Trans Id"}
+                  title={getTranslatedLabel(
+                      "accounting.orgGL.accounting.summary.txns.acctgTransId",
+                      "Acctg Trans Id"
+                  )}
                 />
                 <Column
                   field="transactionDate"
-                  title="Transaction Date"
+                  title={getTranslatedLabel(
+                      "accounting.orgGL.accounting.summary.txns.transactionDate",
+                      "Transaction Date"
+                  )}
                   width={130}
                   format="{0: dd/MM/yyyy}"
                 />
                 <Column
                   field="acctgTransTypeDescription"
-                  title="Acctg Trans Type"
+                  title={getTranslatedLabel(
+                      "accounting.orgGL.accounting.summary.txns.acctgTransType",
+                      "Acctg Trans Type"
+                  )}
                   width={150}
                 />
-                <Column field="description" title="Description" width={130} />
+                <Column field="description" title={getTranslatedLabel(
+                    "accounting.orgGL.accounting.summary.txns.description",
+                    "Description"
+                )}
+                        width={130} />
 
                 <Column
                   field="glFiscalTypeId"
-                  title="Fiscal Gl Type"
+                  title={getTranslatedLabel(
+                      "accounting.orgGL.accounting.summary.txns.glFiscalType",
+                      "Fiscal Gl Type"
+                  )}
                   width={100}
                 />
                 <Column
                   field="invoiceId"
-                  title="Invoice Id"
+                  title={getTranslatedLabel(
+                      "accounting.invoices.list.invoiceId",
+                      "Invoice Id"
+                  )}
                   width={100}
                   cell={AccountingTransInvoiceCell}
                 />
-                <Column field="paymentId" title="Payment Id" width={100} />
+                <Column field="paymentId" title={getTranslatedLabel(
+                    "accounting.payments.list.paymentId",
+                    "Payment Id"
+                )} width={100} />
                 <Column
-                  field="workEffortId"
-                  title="WorkEffort Id"
+                  field="certificateNumber"
+                  title={getTranslatedLabel(
+                      "projects.certificate.list.certificateNumber",
+                      "Certificate Number"
+                  )}
                   width={100}
                 />
-                <Column field="shipmentId" title="Shipment Id" width={100} />
-                <Column field="isPosted" title="Is Posted" width={100} />
+                <Column
+                  field="projectName"
+                  title={getTranslatedLabel(
+                      "projects.certificate.list.projectName",
+                      "Project"
+                  )}
+                  width={200}
+                />
+                <Column field="shipmentId" title={getTranslatedLabel(
+                    "accounting.orgGL.accounting.summary.txns.shipmentId",
+                    "Shipment Id"
+                )}
+                        width={100} />
+                <Column field="isPosted" title={getTranslatedLabel(
+                    "accounting.orgGL.accounting.summary.txns.isPosted",
+                    "Is Posted"
+                )}
+                        width={100} />
                 <Column
                   field="postedDate"
-                  title="Posted Date"
+                  title={getTranslatedLabel(
+                      "accounting.orgGL.accounting.summary.txns.postedDate",
+                      "Posted Date"
+                  )}
                   width={150}
                   format="{0: dd/MM/yyyy}"
                 />
               </KendoGrid>
               {isFetching && (
-                <LoadingComponent message="Loading Accounting Transactions..." />
+                <LoadingComponent message={getTranslatedLabel(
+                    "accounting.orgGL.accounting.summary.loading",
+                    "Loading Accounting Transactions..."
+                )} />
               )}
             </div>
           </Grid>

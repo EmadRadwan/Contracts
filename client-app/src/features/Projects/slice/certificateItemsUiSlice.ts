@@ -51,6 +51,7 @@ export const certificateItemsSlice = createSlice({
       });
     },
     setUiCertificateItemsFromApi: (state, action: PayloadAction<CertificateItem[]>) => {
+      certificateItemsAdapter.removeAll(state.certificateItems);
       certificateItemsAdapter.setAll(state.certificateItems, action.payload);
     },
     resetUiCertificateItems: (state) => {
@@ -60,6 +61,10 @@ export const certificateItemsSlice = createSlice({
     setSelectedCertificateItem: (state, action: PayloadAction<CertificateItem | undefined>) => {
       state.selectedCertificateItem = action.payload;
     },
+    setCertificateItemsError: (state, action: PayloadAction<{ error: string }>) => {
+      state.error = action.payload.error;
+      certificateItemsAdapter.removeAll(state.certificateItems);
+    },
   },
 });
 
@@ -68,7 +73,7 @@ export const {
   setProcessedCertificateItems,
   setUiCertificateItemsFromApi,
   resetUiCertificateItems, updateCertificateItem,
-  setSelectedCertificateItem,
+  setSelectedCertificateItem, setCertificateItemsError
 } = certificateItemsSlice.actions;
 
 export const certificateItemsSelectors = certificateItemsAdapter.getSelectors(

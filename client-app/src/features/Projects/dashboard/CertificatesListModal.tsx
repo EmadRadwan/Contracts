@@ -1,11 +1,11 @@
-import React, {useCallback, useState} from "react";
-import { Grid as KendoGrid, GridColumn as Column, GridToolbar } from "@progress/kendo-react-grid";
+import React, { useCallback, useState } from "react";
+import { Grid as KendoGrid, GridColumn as Column, GridToolbar, GridCustomFooterCellProps } from "@progress/kendo-react-grid";
 import { orderBy, SortDescriptor } from "@progress/kendo-data-query";
 import { Box, Button, Typography } from "@mui/material";
 import ModalContainer from "../../../app/common/modals/ModalContainer";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
-import {useGetCertificatesByPartyQuery} from "../../../app/store/apis/projectsApi";
+import { useGetCertificatesByPartyQuery } from "../../../app/store/apis/projectsApi";
 
 interface CertificatesListModalProps {
     show: boolean;
@@ -15,7 +15,13 @@ interface CertificatesListModalProps {
     certificateType: string;
 }
 
-export default function CertificatesListModal({ show, onClose, contractorId, supplierId, certificateType }: CertificatesListModalProps) {
+export default function CertificatesListModal({
+                                                  show,
+                                                  onClose,
+                                                  contractorId,
+                                                  supplierId,
+                                                  certificateType,
+                                              }: CertificatesListModalProps) {
     const { getTranslatedLabel } = useTranslationHelper();
     const initialSort: Array<SortDescriptor> = [{ field: "certificateNumber", dir: "asc" }];
     const [sort, setSort] = useState(initialSort);
@@ -27,33 +33,83 @@ export default function CertificatesListModal({ show, onClose, contractorId, sup
         data: certificates = [],
         isLoading: isCertificatesLoading,
         error: certificatesError,
-    } = useGetCertificatesByPartyQuery({
-        contractorId,
-        supplierId,
-        certificateType,
-    }, { skip: !show || (!contractorId && !supplierId) });
+    } = useGetCertificatesByPartyQuery(
+        { contractorId, supplierId, certificateType },
+        { skip: !show || (!contractorId && !supplierId) }
+    );
+
+    // REFACTOR: Added calculation for total sum
+    // Purpose: Computes the sum of the 'total' field for display in the footer
+    // Improvement: Provides a clear summary of the total values, enhancing user understanding
+    const totalSum = certificates.reduce((sum, cert) => sum + (cert.total || 0), 0);
+
+    // REFACTOR: Added TotalFooterCell for the 'total' column
+    // Purpose: Displays the sum of the 'total' field in the footer of the 'total' column
+    // Improvement: Mimics the approach in AcctgTransEntryList for consistency and clarity
+    const TotalFooterCell = (props: GridCustomFooterCellProps) => (
+        <td style={{ textAlign: "right", fontWeight: "bold", color: "#1565C0" }}>
+            {getTranslatedLabel('projects.certificate.totalSum', 'Total Sum')}: {totalSum.toFixed(2)}
+        </td>
+    );
 
     const showSupplier = certificateType === "SUPPLY_PROCUREMENT_CERTIFICATE";
     const showContractor = ["WORKMANSHIP_CONTRACTING_CERTIFICATE", "COMPANY_SUPPLY_SALE_CERTIFICATE"].includes(certificateType);
 
     const columns = [
-        { field: "certificateNumber", title: getTranslatedLabel('projects.certificate.certificateNumber', 'Certificate Number'), width: 150 },
-        { field: "projectName", title: getTranslatedLabel('projects.certificate.projectName', 'Project Name'), width: 200 },
-        { field: "description", title: getTranslatedLabel('projects.certificate.description', 'Description'), width: 250 },
+        {
+            field: "certificateNumber",
+            title: getTranslatedLabel('projects.certificate.certificateNumber', 'Certificate Number'),
+            width: 150,
+        },
+        {
+            field: "projectName",
+            title: getTranslatedLabel('projects.certificate.projectName', 'Project Name'),
+            width: 200,
+        },
+        {
+            field: "description",
+            title: getTranslatedLabel('projects.certificate.description', 'Description'),
+            width: 250,
+        },
         {
             field: "statusDescription",
             title: getTranslatedLabel('projects.certificate.status', 'Status'),
             width: 150,
         },
-        { field: "total", title: getTranslatedLabel('projects.certificate.total', 'Total'), format: "{0:n2}", width: 120 },
-        ...(showSupplier ? [{ field: "partyNameSupplier", title: getTranslatedLabel('projects.certificate.supplier', 'Supplier'), width: 200 }] : []),
-        ...(showContractor ? [{ field: "partyNameContractor", title: getTranslatedLabel('projects.certificate.contractor', 'Contractor'), width: 200 }] : []),
+        {
+            field: "total",
+            title: getTranslatedLabel('projects.certificate.total', 'Total'),
+            format: "{0:n2}",
+            width: 220,
+            // REFACTOR: Added footerCell to the 'total' column
+            // Purpose: Links the TotalFooterCell to display the sum of totals
+            // Improvement: Ensures the total sum is displayed only in the relevant column
+            footerCell: TotalFooterCell,
+        },
+        ...(showSupplier
+            ? [{
+                field: "partyNameSupplier",
+                title: getTranslatedLabel('projects.certificate.supplier', 'Supplier'),
+                width: 200,
+            }]
+            : []),
+        ...(showContractor
+            ? [{
+                field: "partyNameContractor",
+                title: getTranslatedLabel('projects.certificate.contractor', 'Contractor'),
+                width: 200,
+            }]
+            : []),
         {
             field: "estimatedStartDate",
             title: getTranslatedLabel('projects.certificate.startDate', 'Start Date'),
             width: 150,
             cell: (props: any) => (
-                <td>{props.dataItem.estimatedStartDate ? new Date(props.dataItem.estimatedStartDate).toLocaleDateString() : 'N/A'}</td>
+                <td>
+                    {props.dataItem.estimatedStartDate
+                        ? new Date(props.dataItem.estimatedStartDate).toLocaleDateString()
+                        : 'N/A'}
+                </td>
             ),
         },
         {
@@ -61,7 +117,11 @@ export default function CertificatesListModal({ show, onClose, contractorId, sup
             title: getTranslatedLabel('projects.certificate.completionDate', 'Completion Date'),
             width: 150,
             cell: (props: any) => (
-                <td>{props.dataItem.estimatedCompletionDate ? new Date(props.dataItem.estimatedCompletionDate).toLocaleDateString() : 'N/A'}</td>
+                <td>
+                    {props.dataItem.estimatedCompletionDate
+                        ? new Date(props.dataItem.estimatedCompletionDate).toLocaleDateString()
+                        : 'N/A'}
+                </td>
             ),
         },
     ];

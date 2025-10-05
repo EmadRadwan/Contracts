@@ -21,6 +21,9 @@ public class AccountingTransactionRecord
     public string? FixedAssetId { get; set; }
     public string? InventoryItemId { get; set; }
     public string? PhysicalInventoryId { get; set; }
+    public string CertificateNumber { get; set; }
+    public string ProjectNumber { get; set; }
+    public string ProjectName { get; set; }
     public string? PartyId { get; set; }
     public string? RoleTypeId { get; set; }
     public string? InvoiceId { get; set; }
