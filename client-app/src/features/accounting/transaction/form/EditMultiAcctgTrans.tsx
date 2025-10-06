@@ -389,7 +389,11 @@ export default function EditMultiAcctgTrans() {
                                                     variant="contained"
                                                     color="primary"
                                                     onClick={handleSaveTransaction}
-                                                    disabled={transEntries.length === 0 || isLoading || selectedAcctgTrans?.isPosted === "Y"}
+                                                    disabled={
+                                                        !formRenderProps.allowSubmit ||
+                                                        (!formRenderProps.valueGetter("debitGlAccountId") && !formRenderProps.valueGetter("creditGlAccountId")) ||
+                                                        isLoading
+                                                    }
                                                 >
                                                     {getTranslatedLabel("general.save", "Save Transaction")}
                                                 </Button>

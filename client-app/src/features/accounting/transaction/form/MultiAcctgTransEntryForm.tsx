@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { Grid, Paper, Typography, Button, Skeleton } from "@mui/material";
+import { Grid, Paper, Typography, Button, Skeleton, TextField } from "@mui/material";
 import { Form, FormElement, Field } from "@progress/kendo-react-form";
 import {
     Grid as KendoGrid,
@@ -62,6 +62,8 @@ export default function MultiAcctgTransEntryForm() {
 
     // REFACTOR: Add state for transactionId to display after save
     const [transactionId, setTransactionId] = useState<string | null>(null);
+    const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
+    let formRenderProps: any;
 
     console.log('transactionId:', transactionId);
     
@@ -83,24 +85,63 @@ export default function MultiAcctgTransEntryForm() {
     );
 
     // REFACTOR: Handle adding entries, resetting only entry-level fields
-    const handleAddEntry = useCallback(
+    const handleAddOrUpdateEntry = useCallback(
         async (data: any) => {
             if (!data.isValid) return;
             const { debitGlAccountId, creditGlAccountId, amount, description } = data.values;
-            const newEntries: TransEntry[] = [
-                ...(debitGlAccountId
-                    ? [{ id: `D-${Date.now()}`, debitGlAccountId, amount, description, debitCreditFlag: "D" as const }]
-                    : []),
-                ...(creditGlAccountId
-                    ? [{ id: `C-${Date.now() + 1}`, creditGlAccountId, amount, description, debitCreditFlag: "C" as const }]
-                    : []),
-            ];
-            setTransEntries((prev) => [...prev, ...newEntries]);
+            if (selectedEntryId) {
+                // Update existing entry
+                setTransEntries((prev) =>
+                    prev.map((entry) =>
+                        entry.id === selectedEntryId
+                            ? {
+                                ...entry,
+                                debitGlAccountId: debitGlAccountId || entry.debitGlAccountId,
+                                creditGlAccountId: creditGlAccountId || entry.creditGlAccountId,
+                                amount: amount || entry.amount,
+                                description: description || entry.description,
+                            }
+                            : entry
+                    )
+                );
+                setSelectedEntryId(null); // Clear edit mode
+            } else {
+                // Add new entries
+                const newEntries: TransEntry[] = [
+                    ...(debitGlAccountId
+                        ? [{ id: `D-${Date.now()}`, debitGlAccountId, amount, description, debitCreditFlag: "D" as const }]
+                        : []),
+                    ...(creditGlAccountId
+                        ? [{ id: `C-${Date.now() + 1}`, creditGlAccountId, amount, description, debitCreditFlag: "C" as const }]
+                        : []),
+                ];
+                setTransEntries((prev) => [...prev, ...newEntries]);
+            }
             setFormResetCounter((prev) => prev + 1); // Reset entry-level fields
         },
-        []
+        [selectedEntryId]
     );
 
+    // REFACTOR: Handle editing an entry by populating the form with its data
+    // Purpose: Allow users to click a GL Account cell to edit the corresponding entry
+    // Improvement: Enhances UX by enabling direct editing from the grid
+    const handleEditEntry = useCallback(
+        (entryId: string) => {
+            const entry = transEntries.find((e) => e.id === entryId);
+            if (entry) {
+                setSelectedEntryId(entryId);
+                // Update form values with selected entry data
+                const form = document.getElementById("multiAcctgTransEntryForm") as HTMLFormElement;
+                if (form && formRenderProps) {
+                    formRenderProps.onChange("debitGlAccountId", { value: entry.debitGlAccountId });
+                    formRenderProps.onChange("creditGlAccountId", { value: entry.creditGlAccountId });
+                    formRenderProps.onChange("amount", { value: entry.amount });
+                    formRenderProps.onChange("description", { value: entry.description });
+                }
+            }
+        },
+        [transEntries]
+    );
     // REFACTOR: Handle removing entries from the local grid
     const handleRemoveEntry = useCallback((entryId: string) => {
         setTransEntries((prev) => prev.filter((entry) => entry.id !== entryId));
@@ -176,11 +217,14 @@ export default function MultiAcctgTransEntryForm() {
         ({ dataItem }: GridCellProps) => {
             const glAccountId = dataItem.debitGlAccountId || dataItem.creditGlAccountId;
             const glAccount = glAccounts?.find((acc) => acc.glAccountId === glAccountId);
-            return <td>{glAccount?.text || glAccountId || "-"}</td>;
+            return (
+                <td style={{ cursor: "pointer", color: "#1976d2" }} onClick={() => handleEditEntry(dataItem.id)}>
+                    {glAccount?.text || glAccountId || "-"}
+                </td>
+            );
         },
-        [glAccounts]
+        [glAccounts, handleEditEntry]
     );
-
     // REFACTOR: Custom cell for remove action
     const RemoveCell = useCallback(
         ({ dataItem }: GridCellProps) => (
@@ -247,165 +291,175 @@ export default function MultiAcctgTransEntryForm() {
                 <Form
                     initialValues={initialFormValues}
                     key={formResetCounter}
-                    onSubmitClick={handleAddEntry}
-                    render={(formRenderProps) => (
-                        <FormElement>
-                            <Grid container spacing={2} direction="column">
-                                {/* Middle Row: GL Accounts, Amount, Description, Add Button */}
-                                <Grid item xs={12}>
-                                    <Grid container spacing={2} alignItems="flex-end">
-                                        <Grid item xs={3}>
-                                            {isLoadingGlAccounts ? (
-                                                <Skeleton variant="rounded" height={40} sx={{ width: "100%", borderRadius: "4px" }} />
-                                            ) : (
+                    onSubmitClick={handleAddOrUpdateEntry}
+                    render={(props) => {
+                        formRenderProps = props; // Store form render props for updating form values
+                        return (
+                            <FormElement id="multiAcctgTransEntryForm">
+                                <Grid container spacing={2} direction="column">
+                                    {/* Middle Row: GL Accounts, Amount, Description, Add/Update Button */}
+                                    <Grid item xs={12}>
+                                        <Grid container spacing={2} alignItems="flex-end">
+                                            <Grid item xs={3}>
+                                                {isLoadingGlAccounts ? (
+                                                    <Skeleton variant="rounded" height={40} sx={{ width: "100%", borderRadius: "4px" }} />
+                                                ) : (
+                                                    <Field
+                                                        id="debitGlAccountId"
+                                                        name="debitGlAccountId"
+                                                        label={getTranslatedLabel(`${localizationKey}.debitGlAccount`, "Debit GL Account")}
+                                                        data={glAccounts || []}
+                                                        component={FormDropDownTreeGlAccount2}
+                                                        dataItemKey="glAccountId"
+                                                        textField="text"
+                                                        selectField="selected"
+                                                        expandField="expanded"
+                                                    />
+                                                )}
+                                            </Grid>
+                                            <Grid item xs={3}>
+                                                {isLoadingGlAccounts ? (
+                                                    <Skeleton variant="rounded" height={40} sx={{ width: "100%", borderRadius: "4px" }} />
+                                                ) : (
+                                                    <Field
+                                                        id="creditGlAccountId"
+                                                        name="creditGlAccountId"
+                                                        label={getTranslatedLabel(`${localizationKey}.creditGlAccount`, "Credit GL Account")}
+                                                        data={glAccounts || []}
+                                                        component={FormDropDownTreeGlAccount2}
+                                                        dataItemKey="glAccountId"
+                                                        textField="text"
+                                                        selectField="selected"
+                                                        expandField="expanded"
+                                                    />
+                                                )}
+                                            </Grid>
+                                            <Grid item xs={2}>
                                                 <Field
-                                                    id="debitGlAccountId"
-                                                    name="debitGlAccountId"
-                                                    label={getTranslatedLabel(`${localizationKey}.debitGlAccount`, "Debit GL Account")}
-                                                    data={glAccounts || []}
-                                                    component={FormDropDownTreeGlAccount2}
-                                                    dataItemKey="glAccountId"
-                                                    textField="text"
-                                                    selectField="selected"
-                                                    expandField="expanded"
+                                                    id="amount"
+                                                    name="amount"
+                                                    label={getTranslatedLabel(`${localizationKey}.amount`, "Amount *")}
+                                                    format="n2"
+                                                    min={0}
+                                                    component={FormNumericTextBox}
+                                                    validator={requiredValidator}
                                                 />
-                                            )}
-                                        </Grid>
-                                        <Grid item xs={3}>
-                                            {isLoadingGlAccounts ? (
-                                                <Skeleton variant="rounded" height={40} sx={{ width: "100%", borderRadius: "4px" }} />
-                                            ) : (
+                                            </Grid>
+                                            <Grid item xs={3}>
                                                 <Field
-                                                    id="creditGlAccountId"
-                                                    name="creditGlAccountId"
-                                                    label={getTranslatedLabel(`${localizationKey}.creditGlAccount`, "Credit GL Account")}
-                                                    data={glAccounts || []}
-                                                    component={FormDropDownTreeGlAccount2}
-                                                    dataItemKey="glAccountId"
-                                                    textField="text"
-                                                    selectField="selected"
-                                                    expandField="expanded"
+                                                    id="description"
+                                                    name="description"
+                                                    label={getTranslatedLabel(`${localizationKey}.description`, "Description")}
+                                                    component={FormInput}
+                                                    autoComplete="off"
                                                 />
-                                            )}
+                                            </Grid>
+                                            <Grid item xs={1}>
+                                                <Button
+                                                    variant="contained"
+                                                    color="success"
+                                                    type="submit"
+                                                    disabled={
+                                                        !formRenderProps.allowSubmit ||
+                                                        (!formRenderProps.valueGetter("debitGlAccountId") && !formRenderProps.valueGetter("creditGlAccountId")) ||
+                                                        isLoading
+                                                    }
+                                                >
+                                                    {selectedEntryId
+                                                        ? getTranslatedLabel("general.update", "Update Entry")
+                                                        : getTranslatedLabel("general.add", "Add Entry")}
+                                                </Button>
+                                            </Grid>
                                         </Grid>
-                                        <Grid item xs={2}>
-                                            <Field
-                                                id="amount"
-                                                name="amount"
-                                                label={getTranslatedLabel(`${localizationKey}.amount`, "Amount *")}
-                                                format="n2"
-                                                min={0}
-                                                component={FormNumericTextBox}
-                                                validator={requiredValidator}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={3}>
-                                            <Field
-                                                id="description"
-                                                name="description"
-                                                label={getTranslatedLabel(`${localizationKey}.description`, "Description")}
-                                                component={FormInput}
-                                                autoComplete="off"
-                                            />
-                                        </Grid>
-                                        <Grid item xs={1}>
-                                            <Button
-                                                variant="contained"
-                                                color="success"
-                                                type="submit"
-                                                disabled={
-                                                    !formRenderProps.allowSubmit ||
-                                                    (!formRenderProps.valueGetter("debitGlAccountId") &&
-                                                        !formRenderProps.valueGetter("creditGlAccountId")) ||
-                                                    isLoading
-                                                }
-                                            >
-                                                {getTranslatedLabel("general.add", "Add Entry")}
-                                            </Button>
+                                    </Grid>
+                                    {/* Bottom: Save Transaction and New Transaction Buttons, Kendo Grid */}
+                                    <Grid item xs={12}>
+                                        <Grid container spacing={2} alignItems="center">
+                                            <Grid item xs={2}>
+                                                {/* REFACTOR: Disable Save Transaction button unless debit and credit totals are balanced */}
+                                                <Button
+                                                    variant="contained"
+                                                    color="primary"
+                                                    onClick={handleSaveTransaction}
+                                                    disabled={transEntries.length === 0 || totalDebit !== totalCredit || isLoading}
+                                                >
+                                                    {getTranslatedLabel("general.save", "Save Transaction")}
+                                                </Button>
+                                            </Grid>
+                                            {/* REFACTOR: Add New Transaction button */}
+                                            <Grid item xs={2}>
+                                                <Button
+                                                    variant="contained"
+                                                    color="secondary"
+                                                    onClick={handleNewTransaction}
+                                                    disabled={isLoading}
+                                                >
+                                                    {getTranslatedLabel("general.newTransaction", "New Transaction")}
+                                                </Button>
+                                            </Grid>
+                                            <Grid item xs={12}>
+                                                <KendoGrid
+                                                    style={{ height: "40vh" }}
+                                                    data={orderBy(transEntries, sort).slice(page.skip, page.take + page.skip)}
+                                                    sortable
+                                                    sort={sort}
+                                                    onSortChange={handleSortChange}
+                                                    skip={page.skip}
+                                                    take={page.take}
+                                                    total={transEntries.length}
+                                                    pageable
+                                                    onPageChange={pageChange}
+                                                    rowRender={rowRender}
+                                                    resizable={true}
+                                                >
+                                                    <Column
+                                                        field="glAccountId"
+                                                        title={getTranslatedLabel(`${localizationKey}.glAccount`, "GL Account")}
+                                                        width={300}
+                                                        cell={GlAccountCell}
+                                                    />
+                                                    <Column
+                                                        field="amount"
+                                                        title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")}
+                                                        width={100}
+                                                        format="{0:n2}"
+                                                    />
+                                                    <Column width={320}
+                                                            title={""}
+                                                            footerCell={() => (
+                                                                <td style={{ textAlign: "left", fontWeight: "bold", color: "#1565C0" }}>
+                                                                    {getTranslatedLabel(`${localizationKey}.totalDebit`, "Total Debit")}:{" "}
+                                                                    {totalDebit.toFixed(2)} |{" "}
+                                                                    {getTranslatedLabel(`${localizationKey}.totalCredit`, "Total Credit")}:{" "}
+                                                                    {totalCredit.toFixed(2)}
+                                                                </td>
+                                                            )}
+                                                    />
+                                                    <Column
+                                                        field="description"
+                                                        title={getTranslatedLabel(`${localizationKey}.description`, "Description")}
+                                                        width={400}
+                                                    />
+                                                    <Column
+                                                        field="debitCreditFlag"
+                                                        title={getTranslatedLabel(`${localizationKey}.debitCredit`, "Debit/Credit")}
+                                                        width={130}
+                                                    />
+                                                    <Column title={""} width={100} cell={RemoveCell} />
+                                                    
+                                                </KendoGrid>
+                                            </Grid>
                                         </Grid>
                                     </Grid>
                                 </Grid>
-                                {/* Bottom: Save Transaction and New Transaction Buttons, Kendo Grid */}
-                                <Grid item xs={12}>
-                                    <Grid container spacing={2} alignItems="center">
-                                        <Grid item xs={2}>
-                                            <Button
-                                                variant="contained"
-                                                color="primary"
-                                                onClick={handleSaveTransaction}
-                                                disabled={transEntries.length === 0 || isLoading}
-                                            >
-                                                {getTranslatedLabel("general.save", "Save Transaction")}
-                                            </Button>
-                                        </Grid>
-                                        {/* REFACTOR: Add New Transaction button */}
-                                        <Grid item xs={2}>
-                                            <Button
-                                                variant="contained"
-                                                color="secondary"
-                                                onClick={handleNewTransaction}
-                                                disabled={isLoading}
-                                            >
-                                                {getTranslatedLabel("general.newTransaction", "New Transaction")}
-                                            </Button>
-                                        </Grid>
-                                        <Grid item xs={12}>
-                                            <KendoGrid
-                                                style={{ height: "40vh" }}
-                                                data={orderBy(transEntries, sort).slice(page.skip, page.take + page.skip)}
-                                                sortable
-                                                sort={sort}
-                                                onSortChange={handleSortChange}
-                                                skip={page.skip}
-                                                take={page.take}
-                                                total={transEntries.length}
-                                                pageable
-                                                onPageChange={pageChange}
-                                                rowRender={rowRender}
-                                                resizable={true}
-                                            >
-                                                <Column
-                                                    field="glAccountId"
-                                                    title={getTranslatedLabel(`${localizationKey}.glAccount`, "GL Account")}
-                                                    width={300}
-                                                    cell={GlAccountCell}
-                                                />
-                                                <Column
-                                                    field="amount"
-                                                    title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")}
-                                                    width={100}
-                                                    format="{0:n2}"
-                                                />
-                                                <Column
-                                                    field="description"
-                                                    title={getTranslatedLabel(`${localizationKey}.description`, "Description")}
-                                                    width={400}
-                                                />
-                                                <Column
-                                                    field="debitCreditFlag"
-                                                    title={getTranslatedLabel(`${localizationKey}.debitCredit`, "Debit/Credit")}
-                                                    width={150}
-                                                />
-                                                <Column title={""} width={100} cell={RemoveCell} />
-                                                <Column
-                                                    title={""}
-                                                    footerCell={() => (
-                                                        <td style={{ textAlign: "left", fontWeight: "bold", color: "#1565C0" }}>
-                                                            {getTranslatedLabel(`${localizationKey}.totalDebit`, "Total Debit")}:{" "}
-                                                            {totalDebit.toFixed(2)} |{" "}
-                                                            {getTranslatedLabel(`${localizationKey}.totalCredit`, "Total Credit")}:{" "}
-                                                            {totalCredit.toFixed(2)}
-                                                        </td>
-                                                    )}
-                                                />
-                                            </KendoGrid>
-                                        </Grid>
-                                    </Grid>
-                                </Grid>
-                            </Grid>
-                            {isLoading && <LoadingComponent  message={getTranslatedLabel("accounting.orgGL.accounting.summary.loading", "Loading Accounting Transactions...")}/>}
-                        </FormElement>
-                    )}
+                                {isLoading && (
+                                    <LoadingComponent
+                                        message={getTranslatedLabel("accounting.orgGL.accounting.summary.loading", "Loading Accounting Transactions...")}
+                                    />
+                                )}
+                            </FormElement>
+                        );
+                    }}
                 />
             </Paper>
         </>
