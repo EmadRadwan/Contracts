@@ -15,14 +15,14 @@ services:
       Kestrel__Certificates__Default__Path: "/root/.aspnet/https/contracts/aspnetapp.pfx"
       Kestrel_Certificate_Password_Contracts: ${Kestrel_Certificate_Password_Contracts:-Tmbtc202500}
       SendGridKey: ${SendGridKey_Contracts:-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}
-      # REFACTOR: Add environment variable to specify log directory
-      # This allows mapping the container's log directory to a host volume
+      # REFACTOR: Specify log directory for Serilog
+      # This ensures logs are written to a directory mapped to the host
       SERILOG_LOG_PATH: "/app/logs"
     volumes:
       - /home/ubuntu/.aspnet/https/contracts:/root/.aspnet/https/contracts:rw
       - /home/ubuntu/.aspnet/DataProtection-Keys:/root/.aspnet/DataProtection-Keys:rw
-      # REFACTOR: Map log directory to a persistent volume on the host
-      # This ensures log files are persisted outside the container
+      # REFACTOR: Persist logs to host directory for easy access
+      # This ensures runtime errors are saved outside the container
       - /home/ubuntu/logs/contracts:/app/logs:rw
     depends_on:
       mysql-contracts:
@@ -53,10 +53,10 @@ services:
 volumes:
   erp-mysql-volume-contracts:
     name: erp-mysql-volume-contracts
-  # REFACTOR: Define a named volume for logs to ensure persistence
-  # This allows logs to be retained across container restarts
-  contracts-logs:
-    name: contracts-logs
+  # REFACTOR: Remove unused contracts-logs volume
+  # This eliminates the Portainer warning since logs are persisted to the host directory
+  # contracts-logs:
+  #   name: contracts-logs
 
 networks:
   erp-contracts-network:

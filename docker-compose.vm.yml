@@ -47,8 +47,6 @@ services:
 volumes:
   erp-mysql-volume-contracts:
     name: erp-mysql-volume-contracts
-  contracts-logs:
-    name: contracts-logs
 networks:
   erp-contracts-network:
     driver: bridge
