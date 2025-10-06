@@ -24,6 +24,9 @@ COPY --from=build-env /app .
 COPY --from=build-env /src/API/Json ./Json
 COPY API/appsettings.json /app/appsettings.json
 COPY API/appsettings.*.json /app/
+
+ RUN mkdir -p /app/logs
+ 
 # REFACTOR: Ensure OpenSSL is available by installing it explicitly to handle certificate loading
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 ENV ASPNETCORE_URLS=http://0.0.0.0:5100;https://0.0.0.0:8544

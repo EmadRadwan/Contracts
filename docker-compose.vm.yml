@@ -15,9 +15,11 @@ services:
       Kestrel__Certificates__Default__Path: "/root/.aspnet/https/contracts/aspnetapp.pfx"
       Kestrel_Certificate_Password_Contracts: ${Kestrel_Certificate_Password_Contracts:-Tmbtc202500}
       SendGridKey: ${SendGridKey_Contracts:-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}
+      SERILOG_LOG_PATH: "/app/logs"
     volumes:
       - /home/ubuntu/.aspnet/https/contracts:/root/.aspnet/https/contracts:rw
-      - /home/ubuntu/.aspnet/DataProtection-Keys:/root/.aspnet/DataProtection-Keys:rw  # REFACTOR: Persist data protection keys
+      - /home/ubuntu/.aspnet/DataProtection-Keys:/root/.aspnet/DataProtection-Keys:rw 
+      - /home/ubuntu/logs/contracts:/app/logs:rw
     depends_on:
       mysql-contracts:
         condition: service_healthy  # REFACTOR: Wait for MySQL to be healthy
@@ -45,6 +47,8 @@ services:
 volumes:
   erp-mysql-volume-contracts:
     name: erp-mysql-volume-contracts
+  contracts-logs:
+    name: contracts-logs
 networks:
   erp-contracts-network:
     driver: bridge

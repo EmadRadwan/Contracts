@@ -33,6 +33,10 @@ using Serilog.Filters;
 using Serilog.Sinks.SystemConsole.Themes;
 
 
+var logDirectory = Environment.GetEnvironmentVariable("SERILOG_LOG_PATH") ?? "logs";
+// REFACTOR: Configure Serilog with a general file sink and retainedFileCountLimit
+// Removed specific loggers for "create sales order" and "Get Routing Tasks" to make logging general
+// Added retainedFileCountLimit to manage disk space by keeping only the last 7 days of logs
 Log.Logger = new LoggerConfiguration()
     .Enrich.WithThreadId()
     .Enrich.WithMachineName()
@@ -40,23 +44,12 @@ Log.Logger = new LoggerConfiguration()
         outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3} T{ThreadId}] {Message:lj}{NewLine}{Exception}",
         theme: AnsiConsoleTheme.Literate,
         restrictedToMinimumLevel: LogEventLevel.Warning)
-    .WriteTo.File("logs/logfile.log",
-        LogEventLevel.Warning,
+    .WriteTo.File(
+        Path.Combine(logDirectory, "logfile.log"),
+        LogEventLevel.Information,
         "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
-        rollingInterval: RollingInterval.Day)
-    .WriteTo.Logger(lc => lc
-        .Filter.ByIncludingOnly(Matching.WithProperty<string>("Transaction", tx => tx == "create sales order"))
-        .WriteTo.File("logs/create-sales-order-logfile.log",
-            LogEventLevel.Debug,
-            "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
-            rollingInterval: RollingInterval.Day))
-    .WriteTo.Logger(lc => lc
-        .Filter.ByIncludingOnly(Matching.WithProperty<string>("Transaction", tx => tx == "Get Routing Tasks"))
-        .WriteTo.File($"logs/create-production-run-BOM-logfile-{DateTime.Now:yyyyMMdd_HHmmss}.log",
-            LogEventLevel.Debug,
-            "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
-            rollingInterval: RollingInterval.Infinite,
-            buffered: true)) // Enable buffering to delay file creation until the first log
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 7) // Keep only the last 7 days of logs
     .MinimumLevel.Information()
     .CreateLogger();
 

@@ -1,179 +1,63 @@
-using Application.Accounting;
-using Application.Accounting.Services;
-using Domain;
-using FluentValidation;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Persistence;
+services:
+  web:
+    container_name: contracts-app
+    image: eradwan/contractsapp:1.0.1
+    build:
+      context: .
+      dockerfile: Dockerfile.vm
+    ports:
+      - '5100:5100'
+      - '8544:8544'
+    environment:
+      TokenKey: ${TokenKey:-lWwMN68UKbjuEJAAYq9ke9KYtPrabUTE9kghtxPrysPDfgaezEyfV3gjoA4F90TYcgYRhH5wXC0XhR5idy1n0w==}
+      ASPNETCORE_URLS: "http://*:5100;https://*:8544"
+      ASPNETCORE_ENVIRONMENT: "Production"
+      Kestrel__Certificates__Default__Path: "/root/.aspnet/https/contracts/aspnetapp.pfx"
+      Kestrel_Certificate_Password_Contracts: ${Kestrel_Certificate_Password_Contracts:-Tmbtc202500}
+      SendGridKey: ${SendGridKey_Contracts:-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}
+      # REFACTOR: Add environment variable to specify log directory
+      # This allows mapping the container's log directory to a host volume
+      SERILOG_LOG_PATH: "/app/logs"
+    volumes:
+      - /home/ubuntu/.aspnet/https/contracts:/root/.aspnet/https/contracts:rw
+      - /home/ubuntu/.aspnet/DataProtection-Keys:/root/.aspnet/DataProtection-Keys:rw
+      # REFACTOR: Map log directory to a persistent volume on the host
+      # This ensures log files are persisted outside the container
+      - /home/ubuntu/logs/contracts:/app/logs:rw
+    depends_on:
+      mysql-contracts:
+        condition: service_healthy
+    networks:
+      - erp-contracts-network
 
-namespace Application.Accounting.Transactions
-{
-    public class UpdateMultiAcctgTransWithEntries
-    {
-        public class Command : IRequest<Result<UpdateMultiAcctgTransResult>>
-        {
-            public string AcctgTransId { get; set; }
-            public UpdateMultiAcctgTransParams UpdateMultiAcctgTransParams { get; set; }
-            public List<MultiAcctgTransEntryParams> Entries { get; set; }
-        }
+  mysql-contracts:
+    container_name: erp-mysql-contracts
+    image: mysql:latest
+    ports:
+      - '3308:3306' # REFACTOR: Use 3308 to avoid port conflict
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD_Contracts:-Tmbtc202500}
+      MYSQL_DATABASE: erp_contracts
+    volumes:
+      - erp-mysql-volume-contracts:/var/lib/mysql
+      - /home/ubuntu/mysql-config/contracts/my.cnf:/etc/mysql/my.cnf:ro
+    healthcheck:
+      # REFACTOR: Ensure MySQL is ready
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD_Contracts:-Tmbtc202500}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - erp-contracts-network
 
-        public class CommandValidator : AbstractValidator<Command>
-        {
-            public CommandValidator()
-            {
-                RuleFor(x => x.AcctgTransId).NotEmpty().WithMessage("Transaction ID is required.");
-                RuleFor(x => x.Entries).NotEmpty().WithMessage("At least one entry is required.");
-            }
-        }
+volumes:
+  erp-mysql-volume-contracts:
+    name: erp-mysql-volume-contracts
+  # REFACTOR: Define a named volume for logs to ensure persistence
+  # This allows logs to be retained across container restarts
+  contracts-logs:
+    name: contracts-logs
 
-        public class Handler : IRequestHandler<Command, Result<UpdateMultiAcctgTransResult>>
-        {
-            private readonly DataContext _context;
-            private readonly IAcctgTransService _acctgTransService;
-
-            public Handler(DataContext context, IAcctgTransService acctgTransService)
-            {
-                _context = context;
-                _acctgTransService = acctgTransService;
-            }
-
-            public async Task<Result<UpdateMultiAcctgTransResult>> Handle(Command request, CancellationToken cancellationToken)
-            {
-                // REFACTOR: Begin transaction to ensure atomicity
-                // Purpose: Ensures all changes (header update, entry updates/creations/deletions) are atomic
-                // Improvement: Prevents partial updates in case of errors
-                await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-                try
-                {
-                    // REFACTOR: Verify transaction exists
-                    // Purpose: Ensure the transaction ID is valid before processing
-                    // Improvement: Prevents updates to non-existent transactions
-                    var existingTrans = await _context.AcctgTrans.FindAsync(new object[] { request.AcctgTransId }, cancellationToken);
-                    if (existingTrans == null)
-                    {
-                        return Result<UpdateMultiAcctgTransResult>.Failure("Transaction not found.");
-                    }
-
-                    // REFACTOR: Update transaction header using AcctgTrans type
-                    // Purpose: Align with UpdateAcctgTrans method's expected AcctgTrans parameter
-                    // Improvement: Ensures type safety and consistency with service method
-                    var acctgTrans = new AcctgTrans
-                    {
-                        AcctgTransId = request.AcctgTransId,
-                        AcctgTransTypeId = request.UpdateMultiAcctgTransParams.AcctgTransTypeId,
-                        TransactionDate = request.UpdateMultiAcctgTransParams.TransactionDate,
-                        IsPosted = request.UpdateMultiAcctgTransParams.IsPosted,
-                        Description = request.UpdateMultiAcctgTransParams.HeaderDescription,
-                        GlFiscalTypeId = request.UpdateMultiAcctgTransParams.GlFiscalTypeId,
-                        PartyId = request.UpdateMultiAcctgTransParams.OrganizationPartyId,
-                        LastUpdatedStamp = DateTime.UtcNow
-                    };
-                    var updateMessages = await _acctgTransService.UpdateAcctgTrans(acctgTrans);
-                    if (updateMessages.Any())
-                    {
-                        await transaction.RollbackAsync(cancellationToken);
-                        return Result<UpdateMultiAcctgTransResult>.Failure(string.Join("; ", updateMessages));
-                    }
-
-                    // Purpose: Identify entries to delete by comparing with request
-                    // Improvement: Ensures deleted entries are removed from the database
-                    var existingEntries = await _context.AcctgTransEntries
-                        .Where(e => e.AcctgTransId == request.AcctgTransId)
-                        .ToListAsync(cancellationToken);
-                    var requestEntrySeqIds = request.Entries
-                        .Where(e => !string.IsNullOrEmpty(e.AcctgTransEntrySeqId))
-                        .Select(e => e.AcctgTransEntrySeqId)
-                        .ToList();
-                    var entriesToDelete = existingEntries
-                        .Where(e => !requestEntrySeqIds.Contains(e.AcctgTransEntrySeqId))
-                        .ToList();
-                    _context.AcctgTransEntries.RemoveRange(entriesToDelete);
-
-                    // REFACTOR: Process entries using dedicated UpdateAcctgTransEntry function
-                    // Purpose: Replace inline editing with service method for consistency and validation
-                    // Improvement: Reuses existing logic, enforces posted transaction rules
-                    var stamp = DateTime.UtcNow;
-                    var maxSeqId = existingEntries.Any() ? existingEntries.Max(e => int.Parse(e.AcctgTransEntrySeqId)) : 0;
-                    foreach (var entry in request.Entries)
-                    {
-                        if (!string.IsNullOrEmpty(entry.AcctgTransEntrySeqId))
-                        {
-                            // Update existing entry using service method
-                            var acctgTransEntry = new AcctgTransEntry
-                            {
-                                AcctgTransId = request.AcctgTransId,
-                                AcctgTransEntrySeqId = entry.AcctgTransEntrySeqId,
-                                GlAccountId = entry.DebitGlAccountId ?? entry.CreditGlAccountId,
-                                DebitCreditFlag = entry.DebitCreditFlag,
-                                Amount = entry.Amount,
-                                Description = entry.Description,
-                                LastUpdatedStamp = stamp
-                            };
-                            await _acctgTransService.UpdateAcctgTransEntry(acctgTransEntry);
-                        }
-                        else
-                        {
-                            // Create new entry
-                            var entrySeqId = (++maxSeqId).ToString().PadLeft(3, '0');
-                            var acctgTransEntry = new AcctgTransEntry
-                            {
-                                AcctgTransId = request.AcctgTransId,
-                                AcctgTransEntrySeqId = entrySeqId,
-                                GlAccountId = entry.DebitGlAccountId ?? entry.CreditGlAccountId,
-                                DebitCreditFlag = entry.DebitCreditFlag,
-                                AcctgTransEntryTypeId = "_NA_",
-                                Amount = entry.Amount,
-                                ReconcileStatusId = "AES_NOT_RECONCILED",
-                                Description = entry.Description,
-                                OrganizationPartyId = request.UpdateMultiAcctgTransParams.OrganizationPartyId,
-                                CreatedStamp = stamp,
-                                LastUpdatedStamp = stamp,
-                            };
-                            await _acctgTransService.CreateAcctgTransEntry(acctgTransEntry);
-                        }
-                    }
-
-                    await _context.SaveChangesAsync(cancellationToken);
-                    await transaction.CommitAsync(cancellationToken);
-
-                    // REFACTOR: Return result with transaction ID
-                    // Purpose: Provide feedback to the frontend
-                    // Improvement: Maintains consistency with create operation
-                    var result = new UpdateMultiAcctgTransResult { AcctgTransId = request.AcctgTransId };
-                    return Result<UpdateMultiAcctgTransResult>.Success(result);
-                }
-                catch (Exception ex)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                    return Result<UpdateMultiAcctgTransResult>.Failure($"Error updating transaction: {ex.Message}");
-                }
-            }
-        }
-    }
-
-    public class UpdateMultiAcctgTransParams
-    {
-        public string AcctgTransId { get; set; }
-        public string AcctgTransTypeId { get; set; }
-        public DateTime TransactionDate { get; set; }
-        public string OrganizationPartyId { get; set; }
-        public string HeaderDescription { get; set; }
-        public string IsPosted { get; set; }
-        public string GlFiscalTypeId { get; set; }
-    }
-
-    public class UpdateMultiAcctgTransResult
-    {
-        public string AcctgTransId { get; set; }
-    }
-
-    public class MultiAcctgTransEntryParams
-    {
-        public string AcctgTransEntrySeqId { get; set; }
-        public string DebitGlAccountId { get; set; }
-        public string CreditGlAccountId { get; set; }
-        public string DebitCreditFlag { get; set; }
-        public decimal Amount { get; set; }
-        public string Description { get; set; }
-    }
-}
+networks:
+  erp-contracts-network:
+    driver: bridge

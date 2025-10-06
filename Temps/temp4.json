@@ -1,12 +1,18 @@
-"accounting": {
-"payments": {
-"applications": {
-"title": "تطبيقات الدفع",
-"amountTotal": "المبلغ الإجمالي",
-"amountNotApplied": "المبلغ غير المطبق",
-"noApplications": "لم يتم العثور على تطبيقات دفع",
-"loading": "جاري تحميل تطبيقات الدفع...",
-"noPayment": "لم يتم العثور على دفعة"
-}
-}
+{
+  "GL_ACCOUNT_ID": "166000",
+  "GL_ACCOUNT_TYPE_ID": "FIXED_ASSET",
+  "GL_ACCOUNT_CLASS_ID": "LONGTERM_ASSET",
+  "GL_RESOURCE_TYPE_ID": "MONEY",
+  "GL_XBRL_CLASS_ID": null,
+  "PARENT_GL_ACCOUNT_ID": "160000",
+  "ACCOUNT_CODE": "166000",
+  "ACCOUNT_NAME": "BUILDINGS UNDER RIGHT OF USE",
+  "ACCOUNT_NAME_ARABIC": "مباني بحق انتفاع",
+  "DESCRIPTION": null,
+  "PRODUCT_ID": null,
+  "EXTERNAL_ID": null,
+  "LAST_UPDATED_STAMP": "2025-10-06 15:21:00.000",
+  "LAST_UPDATED_TX_STAMP": "2025-10-06 15:21:00.000",
+  "CREATED_STAMP": "2025-10-06 15:21:00.000",
+  "CREATED_TX_STAMP": "2025-10-06 15:21:00.000"
 }
