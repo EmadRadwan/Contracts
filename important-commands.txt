@@ -218,6 +218,9 @@ sudo rm -rf erp-contracts
    sudo docker-compose -f docker-compose.vm.yml down
  fi
  sudo docker-compose -f docker-compose.vm.yml up -d --build
+ 
+scp ubuntu@129.146.22.240:/home/ubuntu/logs/contracts/\*.log .
+
 
 Portainer.io:
 http://129.146.22.240:9000

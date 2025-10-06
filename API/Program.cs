@@ -28,29 +28,30 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
 using Serilog;
+using Serilog.Enrichers.ExceptionProperties;
 using Serilog.Events;
 using Serilog.Filters;
 using Serilog.Sinks.SystemConsole.Themes;
 
 
 var logDirectory = Environment.GetEnvironmentVariable("SERILOG_LOG_PATH") ?? "logs";
-// REFACTOR: Configure Serilog with a general file sink and retainedFileCountLimit
-// Removed specific loggers for "create sales order" and "Get Routing Tasks" to make logging general
-// Added retainedFileCountLimit to manage disk space by keeping only the last 7 days of logs
 Log.Logger = new LoggerConfiguration()
     .Enrich.WithThreadId()
     .Enrich.WithMachineName()
+    .Enrich.WithExceptionData() // Adds detailed exception data (requires Serilog.Enrichers.ExceptionDetails)
+    .Enrich.WithExceptionStackTraceHash()
+    .Enrich.WithExceptionProperties()
     .WriteTo.Console(
-        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3} T{ThreadId}] {Message:lj}{NewLine}{Exception}",
+        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3} T{ThreadId} R{RequestId}] {Message:lj}{NewLine}{Exception}",
         theme: AnsiConsoleTheme.Literate,
-        restrictedToMinimumLevel: LogEventLevel.Warning)
+        restrictedToMinimumLevel: LogEventLevel.Warning) // Keep console at Warning for Portainer visibility
     .WriteTo.File(
         Path.Combine(logDirectory, "logfile.log"),
-        LogEventLevel.Information,
-        "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
+        LogEventLevel.Warning, // REFACTOR: Set to Warning to capture only critical logs
+        outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3} T{ThreadId} R{RequestId}] {Message:lj}{NewLine}{Exception}",
         rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 7) // Keep only the last 7 days of logs
-    .MinimumLevel.Information()
+        retainedFileCountLimit: 7) // Keep 7 days of logs
+    .MinimumLevel.Warning() // REFACTOR: Set global minimum to Warning to filter out Info logs
     .CreateLogger();
 
 
