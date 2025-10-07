@@ -219,7 +219,9 @@ sudo rm -rf erp-contracts
  fi
  sudo docker-compose -f docker-compose.vm.yml up -d --build
  
+ cd logs/contracts
 scp ubuntu@129.146.22.240:/home/ubuntu/logs/contracts/\*.log .
+scp ubuntu@129.146.22.240:/home/ubuntu/logs/contracts/logfile20251007.log .
 
 
 Portainer.io:

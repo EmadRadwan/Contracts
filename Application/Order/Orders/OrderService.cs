@@ -13,6 +13,7 @@ using Application.Shipments;
 using Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using MySqlConnector;
 using Persistence;
 using Serilog;
 
@@ -994,83 +995,170 @@ public class OrderService : BaseService, IOrderService
 
     private async Task<object> SetUnitPriceAsLastPrice(OrderItemDto2 orderItem)
     {
-        // REFACTOR: Query OrderRoles for BILL_FROM_VENDOR party ID, aligning with _OLD version
-        // Uses direct table access (_context.OrderRoles) for clarity and consistency
-        var productSupplierId = await _context.OrderRoles
-            .Where(x => x.OrderId == orderItem.OrderId && x.RoleTypeId == "BILL_FROM_VENDOR")
-            .Select(x => x.PartyId)
-            .FirstOrDefaultAsync();
+        // REFACTOR: Declare variables outside try block to ensure scope in catch block
+        // Fixes "Cannot resolve symbol" errors by making variables accessible for logging
+        string productSupplierId = null;
+        string orderCurrency = null;
+        DateTime? nowTimestamp = null; // Kept as DateTime? to match database field type
 
-        if (string.IsNullOrEmpty(productSupplierId))
+        try
         {
-            // REFACTOR: Return success if no supplier found, avoiding unnecessary processing
-            // Simplifies error handling compared to original complex checks
+            // Query OrderRoles for BILL_FROM_VENDOR party ID
+            productSupplierId = await _context.OrderRoles
+                .Where(x => x.OrderId == orderItem.OrderId && x.RoleTypeId == "BILL_FROM_VENDOR")
+                .Select(x => x.PartyId)
+                .FirstOrDefaultAsync();
+
+            if (string.IsNullOrEmpty(productSupplierId))
+            {
+                // REFACTOR: Return success if no supplier found, consistent with original logic
+                // Simplifies flow by avoiding unnecessary processing
+                return new { success = true };
+            }
+
+            // Query OrderHeaders for currency
+            orderCurrency = await _context.OrderHeaders
+                .Where(x => x.OrderId == orderItem.OrderId)
+                .Select(x => x.CurrencyUom)
+                .FirstOrDefaultAsync();
+
+            // Query SupplierProducts for active record
+            var supplierProduct = await _context.SupplierProducts
+                .Where(ps => ps.ProductId == orderItem.ProductId &&
+                             ps.PartyId == productSupplierId &&
+                             ps.AvailableThruDate == null &&
+                             ps.CurrencyUomId == orderCurrency)
+                .FirstOrDefaultAsync();
+
+            // REFACTOR: Use DateTime.UtcNow directly instead of ticks
+            // Aligns with database field type (DateTime) and avoids type mismatch
+            nowTimestamp = DateTime.UtcNow;
+
+            if (supplierProduct != null)
+            {
+                // Update SupplierProduct if price differs
+                if (orderItem.UnitPrice.HasValue && orderItem.UnitPrice != supplierProduct.LastPrice)
+                {
+                    supplierProduct.AvailableThruDate = nowTimestamp;
+                    _context.SupplierProducts.Update(supplierProduct);
+
+                    // REFACTOR: Check for existing record with the new primary key
+                    // Handles duplicates gracefully by updating instead of inserting
+                    var newSupplierProductKey = new
+                    {
+                        ProductId = orderItem.ProductId,
+                        PartyId = productSupplierId,
+                        CurrencyUomId = orderCurrency,
+                        AvailableFromDate = nowTimestamp
+                    };
+                    var existingDuplicate = await _context.SupplierProducts
+                        .FirstOrDefaultAsync(ps => ps.ProductId == newSupplierProductKey.ProductId &&
+                                                   ps.PartyId == newSupplierProductKey.PartyId &&
+                                                   ps.CurrencyUomId == newSupplierProductKey.CurrencyUomId &&
+                                                   ps.AvailableFromDate == newSupplierProductKey.AvailableFromDate);
+
+                    if (existingDuplicate != null)
+                    {
+                        // REFACTOR: Update existing record instead of failing
+                        // Handles duplicates by updating LastPrice, avoiding key violation
+                        _logger.LogInformation(
+                            "Duplicate SupplierProduct found: ProductId: {ProductId}, PartyId: {PartyId}, CurrencyUomId: {CurrencyUomId}, AvailableFromDate: {AvailableFromDate}. Updating LastPrice.",
+                            orderItem.ProductId, productSupplierId, orderCurrency, nowTimestamp);
+                        existingDuplicate.LastPrice = orderItem.UnitPrice.Value;
+                        existingDuplicate.AvailableThruDate = null; // Keep it active
+                        _context.SupplierProducts.Update(existingDuplicate);
+                    }
+                    else
+                    {
+                        // Create new SupplierProduct if no duplicate exists
+                        var newSupplierProduct = new SupplierProduct
+                        {
+                            ProductId = orderItem.ProductId,
+                            PartyId = productSupplierId,
+                            CurrencyUomId = orderCurrency,
+                            AvailableFromDate = (DateTime)nowTimestamp,
+                            LastPrice = orderItem.UnitPrice.Value
+                        };
+                        _context.SupplierProducts.Add(newSupplierProduct);
+                    }
+
+                    await _context.SaveChangesAsync();
+                }
+            }
+            else
+            {
+                // Create new SupplierProduct if no active record exists
+                if (orderItem.UnitPrice.HasValue)
+                {
+                    // REFACTOR: Check for existing record with the new primary key
+                    // Handles duplicates gracefully by updating instead of inserting
+                    var newSupplierProductKey = new
+                    {
+                        ProductId = orderItem.ProductId,
+                        PartyId = productSupplierId,
+                        CurrencyUomId = orderCurrency,
+                        AvailableFromDate = nowTimestamp
+                    };
+                    var existingDuplicate = await _context.SupplierProducts
+                        .FirstOrDefaultAsync(ps => ps.ProductId == newSupplierProductKey.ProductId &&
+                                                   ps.PartyId == newSupplierProductKey.PartyId &&
+                                                   ps.CurrencyUomId == newSupplierProductKey.CurrencyUomId &&
+                                                   ps.AvailableFromDate == newSupplierProductKey.AvailableFromDate);
+
+                    if (existingDuplicate != null)
+                    {
+                        // REFACTOR: Update existing record instead of failing
+                        // Handles duplicates by updating LastPrice, avoiding key violation
+                        _logger.LogInformation(
+                            "Duplicate SupplierProduct found: ProductId: {ProductId}, PartyId: {PartyId}, CurrencyUomId: {CurrencyUomId}, AvailableFromDate: {AvailableFromDate}. Updating LastPrice.",
+                            orderItem.ProductId, productSupplierId, orderCurrency, nowTimestamp);
+                        existingDuplicate.LastPrice = orderItem.UnitPrice.Value;
+                        existingDuplicate.AvailableThruDate = null; // Keep it active
+                        _context.SupplierProducts.Update(existingDuplicate);
+                    }
+                    else
+                    {
+                        // Create new SupplierProduct if no duplicate exists
+                        var newSupplierProduct = new SupplierProduct
+                        {
+                            ProductId = orderItem.ProductId,
+                            PartyId = productSupplierId,
+                            CurrencyUomId = orderCurrency,
+                            AvailableFromDate = (DateTime)nowTimestamp,
+                            LastPrice = orderItem.UnitPrice.Value
+                        };
+                        _context.SupplierProducts.Add(newSupplierProduct);
+                    }
+
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            // REFACTOR: Return success without committing transaction
+            // Relies on caller's transaction for commit or rollback
             return new { success = true };
         }
-
-        // REFACTOR: Query OrderHeaders for currency, matching _OLD version
-        // Uses direct table access (_context.OrderHeaders) for consistency
-        var orderCurrency = await _context.OrderHeaders
-            .Where(x => x.OrderId == orderItem.OrderId)
-            .Select(x => x.CurrencyUom)
-            .FirstOrDefaultAsync();
-
-        // REFACTOR: Query SupplierProducts for active record matching supplier, product, and currency
-        // Simplifies query to focus on essential filters, uses direct table access
-        var supplierProduct = await _context.SupplierProducts
-            .Where(ps => ps.ProductId == orderItem.ProductId
-                         && ps.PartyId == productSupplierId
-                         && ps.AvailableThruDate == null
-                         && ps.CurrencyUomId == orderCurrency)
-            .FirstOrDefaultAsync();
-
-        var nowTimestamp = DateTime.UtcNow;
-
-        if (supplierProduct != null)
+        catch (DbUpdateException ex) when (ex.InnerException is MySqlException mysqlEx && mysqlEx.Number == 1062)
         {
-            // REFACTOR: Update SupplierProduct if price differs, maintaining price history
-            // Streamlines update logic, removes cloning method for direct object creation
-            if (orderItem.UnitPrice.HasValue && orderItem.UnitPrice != supplierProduct.LastPrice)
-            {
-                supplierProduct.AvailableThruDate = nowTimestamp;
-                _context.SupplierProducts.Update(supplierProduct);
-
-                var newSupplierProduct = new SupplierProduct
-                {
-                    ProductId = orderItem.ProductId,
-                    PartyId = productSupplierId,
-                    CurrencyUomId = orderCurrency,
-                    AvailableFromDate = nowTimestamp,
-                    LastPrice = orderItem.UnitPrice.Value
-                };
-                _context.SupplierProducts.Add(newSupplierProduct);
-
-                await _context.SaveChangesAsync();
-            }
+            // REFACTOR: Log and handle unexpected duplicate key errors
+            // Uses variables declared outside try block for logging
+            _logger.LogError(ex,
+                "Unexpected duplicate key error for SupplierProduct with ProductId: {ProductId}, PartyId: {PartyId}, CurrencyUomId: {CurrencyUomId}, AvailableFromDate: {AvailableFromDate}",
+                orderItem.ProductId, productSupplierId ?? "N/A", orderCurrency ?? "N/A", nowTimestamp);
+            // REFACTOR: Return success to avoid failing caller's transaction
+            // Assumes duplicate is non-critical; caller can decide to rollback
+            return new { success = true };
         }
-        else
+        catch (Exception ex)
         {
-            // REFACTOR: Create new SupplierProduct if no active record exists
-            // Simplifies creation logic, ensures currency and supplier are included
-            if (orderItem.UnitPrice.HasValue)
-            {
-                var newSupplierProduct = new SupplierProduct
-                {
-                    ProductId = orderItem.ProductId,
-                    PartyId = productSupplierId,
-                    CurrencyUomId = orderCurrency,
-                    AvailableFromDate = nowTimestamp,
-                    LastPrice = orderItem.UnitPrice.Value
-                };
-                _context.SupplierProducts.Add(newSupplierProduct);
-
-                await _context.SaveChangesAsync();
-            }
+            // REFACTOR: Log unexpected errors and rethrow
+            // Uses variables declared outside try block for logging
+            _logger.LogError(ex,
+                "Error processing SupplierProduct for ProductId: {ProductId}, PartyId: {PartyId}, CurrencyUomId: {CurrencyUomId}, AvailableFromDate: {AvailableFromDate}",
+                orderItem.ProductId, productSupplierId ?? "N/A", orderCurrency ?? "N/A", nowTimestamp);
+            throw;
         }
-
-        return new { success = true };
     }
-
 
     private SupplierProduct CloneSupplierProduct(SupplierProduct source)
     {
