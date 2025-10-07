@@ -32,13 +32,14 @@ export default function ProjectsList() {
             // REFACTOR: Extract total as a number from data.total, handling object case
             const total = typeof data.total === "object" ? data.total.total : data.total;
             const adjustedData = handleDatesArray(data.data);
+            console.log("Fetched Projects Data:", adjustedData);
             setProjects({ data: adjustedData, total: Number(total) });
         }
     }, [data]);
     
     // REFACTOR: Centralized facility selection logic to handle project selection and dispatch projectId to Redux store.
     function handleSelectProject(projectId: string) {
-        const selectedProject = projects?.data?.find((project: WorkEffort) => project.WorkEffortId === projectId);
+        const selectedProject = projects?.data?.find((project: WorkEffort) => project.workEffortId === projectId);
         setProject(selectedProject);
         setEditMode(2); // Edit mode
     }
@@ -68,7 +69,7 @@ export default function ProjectsList() {
                 {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
                 {...navigationAttributes}
             >
-                <Button onClick={() => handleSelectProject(props.dataItem.WorkEffortId)}>
+                <Button onClick={() => handleSelectProject(props.dataItem.workEffortId)}>
                     {props.dataItem.workEffortId}
                 </Button>
             </td>

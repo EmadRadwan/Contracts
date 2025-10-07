@@ -46,28 +46,16 @@ public class UpdateProject
                 _logger.LogWarning($"Project with ID {request.ProjectDto.WorkEffortId} not found.");
                 return Result<ProjectDto>.Failure($"Project with ID {request.ProjectDto.WorkEffortId} not found.");
             }
-
-            var existingProject = await _context.WorkEfforts
-                .AnyAsync(x => x.ProjectNum == request.ProjectDto.ProjectNum && x.WorkEffortId != request.ProjectDto.WorkEffortId, cancellationToken);
-            if (existingProject)
-            {
-                return Result<ProjectDto>.Failure("Project Number already exists.");
-            }
             
 
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
                 var stamp = DateTime.UtcNow;
-                // REFACTOR: Update project fields, using null-coalescing to preserve existing values if not provided.
-                project.ProjectNum = request.ProjectDto.ProjectNum ?? project.ProjectNum;
                 project.ProjectName = request.ProjectDto.ProjectName ?? project.ProjectName;
-                project.WorkEffortTypeId = "PROJECT";
                 project.CurrentStatusId = request.ProjectDto.CurrentStatusId ?? project.CurrentStatusId;
                 project.EstimatedStartDate = request.ProjectDto.EstimatedStartDate ?? project.EstimatedStartDate;
                 project.EstimatedCompletionDate = request.ProjectDto.EstimatedCompletionDate ?? project.EstimatedCompletionDate;
-                project.LastModifiedByUserLogin = _userAccessor.GetUsername();
-                project.LastModifiedDate = stamp;
                 project.LastUpdatedStamp = stamp;
 
                 var result = await _context.SaveChangesAsync(cancellationToken) > 0;

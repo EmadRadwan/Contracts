@@ -55,7 +55,7 @@ const projectsApi = createApi({
             }),
             updateProject: builder.mutation<WorkEffort, Partial<WorkEffort>>({
                 query: (project) => ({
-                    url: `/project/${project.WorkEffortId}`,
+                    url: `project/updateProject`, // Updated to match backend route
                     method: "PUT",
                     body: project,
                 }),
