@@ -11,7 +11,7 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20250930083359_CreateDatabaseViews")]
+    [Migration("20251007124430_CreateDatabaseViews")]
     partial class CreateDatabaseViews
     {
         /// <inheritdoc />
@@ -50354,7 +50354,7 @@ namespace Persistence.Migrations
                         .HasColumnName("CURRENCY_UOM_ID");
 
                     b.Property<DateTime>("AvailableFromDate")
-                        .HasColumnType("datetime")
+                        .HasColumnType("DATETIME(6)")
                         .HasColumnName("AVAILABLE_FROM_DATE");
 
                     b.Property<string>("AgreementId")
@@ -50370,7 +50370,7 @@ namespace Persistence.Migrations
                         .HasColumnName("AGREEMENT_ITEM_SEQ_ID");
 
                     b.Property<DateTime?>("AvailableThruDate")
-                        .HasColumnType("datetime")
+                        .HasColumnType("DATETIME(6)")
                         .HasColumnName("AVAILABLE_THRU_DATE");
 
                     b.Property<string>("CanDropShip")

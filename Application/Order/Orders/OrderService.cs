@@ -798,7 +798,7 @@ public class OrderService : BaseService, IOrderService
         savedOrderItem.LastUpdatedStamp = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
-        await SetUnitPriceAsLastPrice(updatedOrderItem);
+        //await SetUnitPriceAsLastPrice(updatedOrderItem);
 
 
         await _utilityService.UpdateAllOrderItemStatusAsync(updatedOrderItem);
@@ -1011,8 +1011,6 @@ public class OrderService : BaseService, IOrderService
 
             if (string.IsNullOrEmpty(productSupplierId))
             {
-                // REFACTOR: Return success if no supplier found, consistent with original logic
-                // Simplifies flow by avoiding unnecessary processing
                 return new { success = true };
             }
 
@@ -1030,7 +1028,6 @@ public class OrderService : BaseService, IOrderService
                              ps.CurrencyUomId == orderCurrency)
                 .FirstOrDefaultAsync();
 
-            // REFACTOR: Use DateTime.UtcNow directly instead of ticks
             // Aligns with database field type (DateTime) and avoids type mismatch
             nowTimestamp = DateTime.UtcNow;
 
@@ -1107,8 +1104,6 @@ public class OrderService : BaseService, IOrderService
 
                     if (existingDuplicate != null)
                     {
-                        // REFACTOR: Update existing record instead of failing
-                        // Handles duplicates by updating LastPrice, avoiding key violation
                         _logger.LogInformation(
                             "Duplicate SupplierProduct found: ProductId: {ProductId}, PartyId: {PartyId}, CurrencyUomId: {CurrencyUomId}, AvailableFromDate: {AvailableFromDate}. Updating LastPrice.",
                             orderItem.ProductId, productSupplierId, orderCurrency, nowTimestamp);
@@ -1134,24 +1129,20 @@ public class OrderService : BaseService, IOrderService
                 }
             }
 
-            // REFACTOR: Return success without committing transaction
             // Relies on caller's transaction for commit or rollback
             return new { success = true };
         }
         catch (DbUpdateException ex) when (ex.InnerException is MySqlException mysqlEx && mysqlEx.Number == 1062)
         {
-            // REFACTOR: Log and handle unexpected duplicate key errors
             // Uses variables declared outside try block for logging
             _logger.LogError(ex,
                 "Unexpected duplicate key error for SupplierProduct with ProductId: {ProductId}, PartyId: {PartyId}, CurrencyUomId: {CurrencyUomId}, AvailableFromDate: {AvailableFromDate}",
                 orderItem.ProductId, productSupplierId ?? "N/A", orderCurrency ?? "N/A", nowTimestamp);
-            // REFACTOR: Return success to avoid failing caller's transaction
             // Assumes duplicate is non-critical; caller can decide to rollback
             return new { success = true };
         }
         catch (Exception ex)
         {
-            // REFACTOR: Log unexpected errors and rethrow
             // Uses variables declared outside try block for logging
             _logger.LogError(ex,
                 "Error processing SupplierProduct for ProductId: {ProductId}, PartyId: {PartyId}, CurrencyUomId: {CurrencyUomId}, AvailableFromDate: {AvailableFromDate}",

@@ -55022,7 +55022,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("MINIMUM_ORDER_QUANTITY");
 
                 entity.Property(e => e.AvailableFromDate)
-                    .HasColumnType("datetime")
+                    .HasColumnType("DATETIME(6)")
                     .HasColumnName("AVAILABLE_FROM_DATE");
 
                 entity.Property(e => e.AgreementId)
@@ -55036,7 +55036,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("AGREEMENT_ITEM_SEQ_ID");
 
                 entity.Property(e => e.AvailableThruDate)
-                    .HasColumnType("datetime")
+                    .HasColumnType("DATETIME(6)")
                     .HasColumnName("AVAILABLE_THRU_DATE");
 
                 entity.Property(e => e.CanDropShip)

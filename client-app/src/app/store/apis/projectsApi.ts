@@ -37,7 +37,7 @@ const projectsApi = createApi({
                     return { url, method: "GET" };
                 },
                 transformResponse: (response: any, meta, arg) => {
-                    const totalCount = JSON.parse(meta!.response!.headers.get("count")!);
+                    const {totalCount} = JSON.parse(meta!.response!.headers.get("count")!);
                     return {
                         data: response,
                         total: totalCount,

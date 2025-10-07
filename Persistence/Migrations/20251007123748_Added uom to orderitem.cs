@@ -26583,10 +26583,10 @@ namespace Persistence.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    AVAILABLE_FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
+                    AVAILABLE_FROM_DATE = table.Column<DateTime>(type: "DATETIME(6)", nullable: false),
                     CURRENCY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    AVAILABLE_THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    AVAILABLE_THRU_DATE = table.Column<DateTime>(type: "DATETIME(6)", nullable: true),
                     SUPPLIER_PREF_ORDER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     SUPPLIER_RATING_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)

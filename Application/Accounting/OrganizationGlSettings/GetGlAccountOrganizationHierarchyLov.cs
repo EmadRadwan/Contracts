@@ -10,13 +10,14 @@ namespace Application.Accounting.OrganizationGlSettings
     public class GetGlAccountOrganizationHierarchyLov
     {
         // Helper: Recursively builds the hierarchy of GL accounts.
-        private static List<GlAccountHierarchyViewLovDto> GetChildGlAccounts(string parentId, List<GlAccount> flatGlAccounts)
+        // REFACTOR: Added language parameter to support "en" or "ar" for account name selection
+        private static List<GlAccountHierarchyViewLovDto> GetChildGlAccounts(string parentId, List<GlAccount> flatGlAccounts, string language)
         {
             return flatGlAccounts
                 .Where(account => account.ParentGlAccountId == parentId)
                 .Select(account =>
                 {
-                    var children = GetChildGlAccounts(account.GlAccountId, flatGlAccounts);
+                    var children = GetChildGlAccounts(account.GlAccountId, flatGlAccounts, language);
                     return new GlAccountHierarchyViewLovDto
                     {
                         GlAccountId = account.GlAccountId,
@@ -25,10 +26,12 @@ namespace Application.Accounting.OrganizationGlSettings
                         GlResourceTypeId = account.GlResourceTypeId,
                         ParentGlAccountId = account.ParentGlAccountId,
                         AccountCode = account.AccountCode,
-                        Text = $"{account.AccountName} ({account.GlAccountId})",
+                        // REFACTOR: Use Arabic account name in Text if language is "ar"
+                        Text = (language == "ar" ? account.AccountNameArabic ?? account.AccountName : account.AccountName) + " (" + account.GlAccountId + ")",
+                        // REFACTOR: Select ParentAccountName based on language; use Arabic name if language is "ar"
                         ParentAccountName = flatGlAccounts
                             .Where(a => a.GlAccountId == account.ParentGlAccountId)
-                            .Select(a => a.AccountName)
+                            .Select(a => language == "ar" ? a.AccountNameArabic ?? a.AccountName : a.AccountName)
                             .FirstOrDefault(),
                         Items = children,
                         IsLeaf = !children.Any()
@@ -41,6 +44,8 @@ namespace Application.Accounting.OrganizationGlSettings
         {
             // Accepts the CompanyId (i.e. OrganizationPartyId)
             public string CompanyId { get; set; }
+            // REFACTOR: Added Language property to support "en" or "ar" for account name selection
+            public string Language { get; set; }
         }
 
         public class Handler : IRequestHandler<Query, Result<List<GlAccountHierarchyViewLovDto>>>
@@ -72,7 +77,7 @@ namespace Application.Accounting.OrganizationGlSettings
                         .Where(account => account.ParentGlAccountId == null)
                         .Select(account =>
                         {
-                            var children = GetChildGlAccounts(account.GlAccountId, flatGlAccounts);
+                            var children = GetChildGlAccounts(account.GlAccountId, flatGlAccounts, request.Language);
                             return new GlAccountHierarchyViewLovDto
                             {
                                 GlAccountId = account.GlAccountId,
@@ -81,7 +86,8 @@ namespace Application.Accounting.OrganizationGlSettings
                                 GlResourceTypeId = account.GlResourceTypeId,
                                 ParentGlAccountId = account.ParentGlAccountId,
                                 AccountCode = account.AccountCode,
-                                Text = $"{account.AccountName} ({account.GlAccountId})",
+                                // REFACTOR: Use Arabic account name in Text if language is "ar"
+                                Text = (request.Language == "ar" ? account.AccountNameArabic ?? account.AccountName : account.AccountName) + " (" + account.GlAccountId + ")",
                                 ParentAccountName = null, // Root nodes have no parent
                                 Items = children,
                                 IsLeaf = !children.Any()

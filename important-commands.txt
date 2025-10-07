@@ -49,7 +49,7 @@ dotnet ef migrations add CreateDatabaseViews -p Persistence -s API
     - then add the database view creation code to the newly created migration file
     - if view migrations to be dropped, remove their files from the migration folder
       and from the __EFMigrationHistory table
-2 - dotnet ef database update -p Persistence -s API
+dotnet ef database update -p Persistence -s API
 3 - if main migration is dropped, copy the view migration file first to temp and create the above after it.
 
 
@@ -274,5 +274,6 @@ New way to return meaningful
  
  the following a put in my CV, give me some details so i can answer questions about it
  
-
+5505
+730
 

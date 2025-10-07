@@ -101,11 +101,13 @@ public class OrganizationGlController : BaseApiController
     [HttpGet("{companyId}/getGlAccountOrganizationHierarchyLov")]
     public async Task<IActionResult> GetGlAccountHierarchy(string companyId)
     {
-        var query = new GetGlAccountOrganizationHierarchyLov.Query
-        {
-            CompanyId = companyId
+        // REFACTOR: Added language retrieval to pass to the query for Arabic support
+        var language = GetLanguage(); // Assuming GetLanguage() is defined elsewhere
+        var query = new GetGlAccountOrganizationHierarchyLov.Query 
+        { 
+            CompanyId = companyId,
+            Language = language
         };
-
         return HandleResult(await Mediator.Send(query));
     }
 
