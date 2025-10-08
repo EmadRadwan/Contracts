@@ -61,7 +61,6 @@ public class ProjectController : BaseApiController
         {
             ContractorId = contractorId,
             SupplierId = supplierId,
-            CertificateType = certificateType,
             Language = language
         });
         return HandleResult(result);

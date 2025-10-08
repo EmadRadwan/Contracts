@@ -222,6 +222,7 @@ sudo rm -rf erp-contracts
  cd logs/contracts
  cd ../logs/contracts
  sudo rm -f *
+ cd /home/ubuntu/erp-contracts
 scp ubuntu@129.146.22.240:/home/ubuntu/logs/contracts/\*.log .
 scp ubuntu@129.146.22.240:/home/ubuntu/logs/contracts/logfile20251007.log .
 
@@ -276,6 +277,5 @@ New way to return meaningful
  
  the following a put in my CV, give me some details so i can answer questions about it
  
-5505
-730
+
 

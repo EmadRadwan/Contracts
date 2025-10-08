@@ -333,13 +333,15 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                 selectedMenuItem: action,
             };
             try {
-                await handleCreate(statusUpdate);
-                toast.success(
-                    getTranslatedLabel(
-                        action === 'Approve Certificate' ? 'certificate.approved' : 'certificate.completed',
-                        action === 'Approve Certificate' ? 'Certificate approved' : 'Certificate completed'
-                    )
-                );
+                const result = await handleCreate(statusUpdate);
+                if (result.success) {
+                    toast.success(
+                        getTranslatedLabel(
+                            action === 'Approve Certificate' ? 'certificate.approved' : 'certificate.completed',
+                            action === 'Approve Certificate' ? 'Certificate approved' : 'Certificate completed'
+                        )
+                    );
+                }
             } catch (error) {
                 toast.error(getTranslatedLabel("certificate.statusUpdate.error", "Failed to update certificate status"));
             } finally {
@@ -423,8 +425,12 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
             if (type === 'SUPPLY_PROCUREMENT_CERTIFICATE' && (!item.unitPrice || item.unitPrice <= 0)) {
                 errors.push('unitPrice must be greater than 0 for supply certificate');
             }
-            if (type === 'WORKMANSHIP_CONTRACTING_CERTIFICATE' && (!item.materialPrice || !item.laborPrice)) {
-                errors.push('materialPrice and laborPrice are required for workmanship certificate');
+            if (type === 'WORKMANSHIP_CONTRACTING_CERTIFICATE') {
+                const hasValidMaterialPrice = item.materialPrice && item.materialPrice > 0;
+                const hasValidLaborPrice = item.laborPrice && item.laborPrice > 0;
+                if (!hasValidMaterialPrice && !hasValidLaborPrice) {
+                    errors.push('At least one of materialPrice or laborPrice must be greater than 0 for workmanship certificate');
+                }
             }
             return { itemId: item.id, errors };
         });
@@ -633,7 +639,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                                         name="estimatedStartDate"
                                                         id="estimatedStartDate"
                                                         label={getTranslatedLabel("projects.certificate.form.startDate", "Start Date")}
-                                                        disabled={editMode > 1}
+                                                        disabled={editMode > 3}
                                                         component={FormDatePicker}
                                                         validator={requiredValidator}
                                                     />
@@ -644,7 +650,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                                         name="estimatedCompletionDate"
                                                         id="estimatedCompletionDate"
                                                         label={getTranslatedLabel("projects.certificate.form.completionDate", "Completion Date")}
-                                                        disabled={editMode > 1}
+                                                        disabled={editMode > 3}
                                                         component={FormDatePicker}
                                                         validator={requiredValidator}
                                                     />

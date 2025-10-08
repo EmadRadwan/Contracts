@@ -57,6 +57,10 @@ const useProjectCertificate = ({
             description: item.description || "",
             deductionDescription: item.deductionDescription || "", // Include deductionDescription
             procurementDate: item.procurementDate ? new Date(item.procurementDate).toISOString() : undefined,
+            achievementPercentage:
+                typeof item.achievementPercentage === "string"
+                    ? Math.round(parseFloat(item.achievementPercentage.replace("%", "")) || 0)
+                    : Math.round(item.achievementPercentage || 0),
         }));
     }, [nonDeletedCertificateItems]);
 
@@ -64,6 +68,8 @@ const useProjectCertificate = ({
     const validateCertificate = useCallback(
         (cert: Certificate, items: CertificateItem[]) => {
             let isHeaderValid = true;
+
+            // Validate header based on certificate type
             if (currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE") {
                 isHeaderValid = !!cert.partyIdSupplier && (editMode !== 2 || cert.workEffortId);
                 if (!cert.partyIdSupplier) toast.error("Supplier ID is required");
@@ -71,24 +77,57 @@ const useProjectCertificate = ({
                 isHeaderValid = !!cert.partyIdContractor && (editMode !== 2 || cert.workEffortId);
                 if (!cert.partyIdContractor) toast.error("Contractor ID is required");
             }
-            // Purpose: Align validation with new requirement for contractor field visibility
-            // Improvement: Ensures contractor field is mandatory where displayed, maintaining data integrity
-            if (!isHeaderValid && editMode === 2 && !cert.workEffortId) {
+
+            // Purpose: Clarifies condition and avoids redundant toast messages
+            // Improvement: Consolidates logic for editMode === 2 check to prevent duplicate errors
+            if (editMode === 2 && !cert.workEffortId) {
+                isHeaderValid = false;
                 toast.error("Work Effort ID is required");
             }
+
+            // Validate certificate items
             const isItemsValid = items.every((item) => {
+                const achievementPercentage =
+                    typeof item.achievementPercentage === "string"
+                        ? Math.round(parseFloat(item.achievementPercentage.replace("%", "")) || 0)
+                        : Math.round(item.achievementPercentage || 0);
+
+
                 const isValid =
-                    item.productId &&
-                    item.description &&
+                    !!item.productId &&
+                    !!item.description &&
                     item.quantity > 0 &&
                     item.unitPrice >= 0 &&
                     (currentCertificateType !== "WORKMANSHIP_CONTRACTING_CERTIFICATE" ||
-                        (item.achievementPercentage && item.achievementPercentage >= 1 && item.achievementPercentage <= 100));
+                        (achievementPercentage !== null &&
+                            achievementPercentage >= 1 &&
+                            achievementPercentage <= 100));
+
+                // Purpose: Provide clearer feedback for invalid fields
+                // Improvement: Pinpoints which field caused the validation failure
                 if (!isValid) {
-                    toast.error("Invalid certificate item: ensure product, quantity, price, and completion percentage (for contracting) are valid.");
+                    if (!item.productId) toast.error("Invalid certificate item: Product ID is required");
+                    else if (!item.description) toast.error("Invalid certificate item: Description is required");
+                    else if (item.quantity <= 0) toast.error("Invalid certificate item: Quantity must be greater than 0");
+                    else if (item.unitPrice < 0) toast.error("Invalid certificate item: Unit price cannot be negative");
+                    else if (
+                        currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE" &&
+                        (achievementPercentage === null || achievementPercentage < 1 || achievementPercentage > 100)
+                    ) {
+                        toast.error("Invalid certificate item: Completion percentage must be between 1 and 100");
+                    }
                 }
+
                 return isValid;
             });
+
+            // REFACTOR: Add check for empty items array
+            // Purpose: Provide specific feedback when no items are present
+            // Improvement: Enhances user experience with clear error messaging
+            if (items.length === 0) {
+                toast.error("At least one valid certificate item is required");
+            }
+
             return isHeaderValid && isItemsValid && items.length > 0;
         },
         [editMode, currentCertificateType]
@@ -277,23 +316,25 @@ const useProjectCertificate = ({
 
                 if (nonDeletedCertificateItems.length === 0) {
                     toast.error("Certificate items cannot be empty");
-                    return;
+                    return { success: false };
                 }
 
                 if (editMode === 2 && !newCertificate.workEffortId) {
                     toast.error("Work Effort ID is required for updating certificate");
-                    return;
+                    return { success: false };
                 }
 
                 const action = data.selectedMenuItem || selectedMenuItem;
                 if (action === "Create Certificate" || editMode === 1) {
-                    return await createCertificate(newCertificate);
+                    await createCertificate(newCertificate);
+                    return { success: true };
                 } else if (action === "Update Certificate") {
-                    return await updateCertificate(newCertificate);
+                    await updateCertificate(newCertificate);
+                    return { success: true };
                 } else if (action === "Approve Certificate") {
                     if (!selectedCertificate?.workEffortId) {
                         toast.error("Work Effort ID is required for approving certificate");
-                        return;
+                        return { success: false };
                     }
 
                     let result;
@@ -302,7 +343,7 @@ const useProjectCertificate = ({
                     } else if (currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE") {
                         if (!selectedCertificate?.relatedOrderId || !selectedCertificate?.facilityId) {
                             toast.error("Missing orderId or facilityId for receiving inventory.");
-                            return;
+                            return { success: false };
                         }
                         result = await receiveInventoryFromPurchaseOrder({
                             orderId: selectedCertificate.relatedOrderId,
@@ -323,11 +364,12 @@ const useProjectCertificate = ({
                             } else {
                                 toast.error(error?.data?.message || "Failed to issue materials for certificate");
                             }
-                            throw error;
+                            setIsLoading(false); // Ensure loading state is reset
+                            return { success: false };
                         }
                     } else {
                         toast.error("Invalid certificate type for approval");
-                        return;
+                        return { success: false };
                     }
 
                     // REFACTOR: Update selectedCertificate state with WEPR_APPROVED status after successful approval
@@ -346,14 +388,14 @@ const useProjectCertificate = ({
                     dispatch(setCertificateFormEditMode(3)); // Set to edit mode for APPROVED status
                     formRef2.current = !formRef2.current; // Trigger form re-render
                     toast.success("Certificate approved successfully");
-                    return;
+                    return { success: true };
                 } else {
                     toast.error("Invalid action type");
-                    return;
+                    return { success: false };
                 }
             } catch (error: any) {
                 toast.error(error?.data?.message || "Failed to process certificate action");
-                throw error;
+                return { success: false };
             } finally {
                 setIsLoading(false);
             }

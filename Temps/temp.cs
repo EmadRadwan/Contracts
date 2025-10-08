@@ -1,169 +1,128 @@
-private async Task<object> SetUnitPriceAsLastPrice(OrderItemDto2 orderItem)
+public async Task<Result<List<ProjectCertificateSummaryDto>>> Handle(Query request, CancellationToken cancellationToken)
 {
-    // REFACTOR: Declare variables outside try block to ensure scope in catch block
-    // Fixes "Cannot resolve symbol" errors by making variables accessible for logging
-    string productSupplierId = null;
-    string orderCurrency = null;
-    DateTime? nowTimestamp = null;
-
     try
     {
-        // Query OrderRoles for BILL_FROM_VENDOR party ID
-        productSupplierId = await _context.OrderRoles
-            .Where(x => x.OrderId == orderItem.OrderId && x.RoleTypeId == "BILL_FROM_VENDOR")
-            .Select(x => x.PartyId)
-            .OrderBy(x => x.PartyId) // REFACTOR: Add OrderBy to ensure predictable results
-            .FirstOrDefaultAsync();
+        // Validate input: ensure at least one ID is provided
+        if (string.IsNullOrEmpty(request.ContractorId) && string.IsNullOrEmpty(request.SupplierId))
+            return Result<List<ProjectCertificateSummaryDto>>.Failure(
+                "Either ContractorId or SupplierId must be provided.");
 
-        if (string.IsNullOrEmpty(productSupplierId))
+        // REFACTOR: Simplified base query to filter by WorkEffortTypeId and optional CertificateType
+        // Purpose: Allow flexibility to include all certificate types if CertificateType is not specified
+        // Improvement: Reduces restrictive filtering to ensure all relevant records are included
+        var query = _context.WorkEfforts
+            .AsNoTracking()
+            .Where(we => we.WorkEffortTypeId == "PROJECT_CERTIFICATE");
+
+        // Apply CertificateType filter only if provided
+        if (!string.IsNullOrEmpty(request.CertificateType))
         {
-            // REFACTOR: Return success if no supplier found, consistent with original logic
-            // Simplifies flow by avoiding unnecessary processing
-            return new { success = true };
+            // Validate CertificateType
+            if (!new[] { "SUPPLY_PROCUREMENT_CERTIFICATE", "WORKMANSHIP_CONTRACTING_CERTIFICATE", "COMPANY_SUPPLY_SALE_CERTIFICATE" }
+                .Contains(request.CertificateType))
+                return Result<List<ProjectCertificateSummaryDto>>.Failure("Invalid CertificateType.");
+            query = query.Where(we => we.CertificateCategory == request.CertificateType);
         }
 
-        // Query OrderHeaders for currency
-        orderCurrency = await _context.OrderHeaders
-            .Where(x => x.OrderId == orderItem.OrderId)
-            .Select(x => x.CurrencyUom)
-            .OrderBy(x => x.CurrencyUom) // REFACTOR: Add OrderBy to ensure predictable results
-            .FirstOrDefaultAsync();
+        // REFACTOR: Flexible party filter to include both ContractorId and SupplierId
+        // Purpose: Ensure records are included if either ContractorId or SupplierId matches
+        // Improvement: Handles cases where both IDs are provided or only one is relevant
+        query = query.Where(we => 
+            (request.ContractorId != null && we.PartyIdContractor == request.ContractorId) ||
+            (request.SupplierId != null && we.PartyIdSupplier == request.SupplierId));
 
-        // Query SupplierProducts for active record
-        var supplierProduct = await _context.SupplierProducts
-            .Where(ps => ps.ProductId == orderItem.ProductId &&
-                         ps.PartyId == productSupplierId &&
-                         ps.AvailableThruDate == null &&
-                         ps.CurrencyUomId == orderCurrency)
-            .OrderBy(ps => ps.AvailableFromDate) // REFACTOR: Add OrderBy to ensure predictable results
-            .FirstOrDefaultAsync();
+        // REFACTOR: Simplified joins using GroupJoin for all relationships
+        // Purpose: Ensure consistent LEFT JOIN pattern that EF Core can translate
+        // Improvement: Reduces complexity by handling nulls explicitly in the projection
+        var joinedQuery = from we in query
+                         join si in _context.StatusItems on we.CurrentStatusId equals si.StatusId into statusGroup
+                         from si in statusGroup.DefaultIfEmpty()
+                         join proj in _context.WorkEfforts on we.ProjectId equals proj.WorkEffortId into projectGroup
+                         from proj in projectGroup.DefaultIfEmpty()
+                         join supplier in _context.Parties on we.PartyIdSupplier equals supplier.PartyId into supplierGroup
+                         from supplier in supplierGroup.DefaultIfEmpty()
+                         join contractor in _context.Parties on we.PartyIdContractor equals contractor.PartyId into contractorGroup
+                         from contractor in contractorGroup.DefaultIfEmpty()
+                         join fac in _context.Facilities on we.FacilityId equals fac.FacilityId into facGroup
+                         from fac in facGroup.DefaultIfEmpty()
+                         select new { we, si, proj, supplier, contractor, fac };
 
-        // REFACTOR: Use DateTime.UtcNow with microsecond precision
-        // Leverages DATETIME(6) column to minimize duplicate key collisions
-        nowTimestamp = DateTime.UtcNow;
-
-        if (supplierProduct != null)
-        {
-            // Update SupplierProduct if price differs
-            if (orderItem.UnitPrice.HasValue && orderItem.UnitPrice != supplierProduct.LastPrice)
+        // REFACTOR: Split certificate items join and aggregation
+        // Purpose: Separate the certificate items join to simplify the GroupBy and aggregation
+        // Improvement: Improves SQL translation by reducing complexity in the GroupBy key
+        var certificates = await joinedQuery
+            .GroupJoin(
+                _context.WorkEfforts.AsNoTracking().Where(we => we.WorkEffortTypeId == "CERTIFICATE_ITEM"),
+                cert => cert.we.WorkEffortId,
+                item => item.WorkEffortParentId,
+                (cert, items) => new { cert, items }
+            )
+            .SelectMany(
+                x => x.items.DefaultIfEmpty(),
+                (cert, item) => new
+                {
+                    cert.cert.we,
+                    cert.cert.si,
+                    cert.cert.proj,
+                    cert.cert.supplier,
+                    cert.cert.contractor,
+                    cert.cert.fac,
+                    CertificateItem = item
+                }
+            )
+            .GroupBy(x => new
             {
-                supplierProduct.AvailableThruDate = nowTimestamp;
-                _context.SupplierProducts.Update(supplierProduct);
-
-                // REFACTOR: Check for existing record with the new primary key
-                // Handles rare duplicates despite microsecond precision
-                var newSupplierProductKey = new
-                {
-                    ProductId = orderItem.ProductId,
-                    PartyId = productSupplierId,
-                    CurrencyUomId = orderCurrency,
-                    AvailableFromDate = nowTimestamp
-                };
-                var existingDuplicate = await _context.SupplierProducts
-                    .Where(ps => ps.ProductId == newSupplierProductKey.ProductId &&
-                                 ps.PartyId == newSupplierProductKey.PartyId &&
-                                 ps.CurrencyUomId == newSupplierProductKey.CurrencyUomId &&
-                                 ps.AvailableFromDate == newSupplierProductKey.AvailableFromDate)
-                    .OrderBy(ps => ps.AvailableFromDate) // REFACTOR: Add OrderBy to ensure predictable results
-                    .FirstOrDefaultAsync();
-
-                if (existingDuplicate != null)
-                {
-                    // REFACTOR: Update existing record instead of failing
-                    // Handles duplicates by updating LastPrice, avoiding key violation
-                    _logger.LogInformation(
-                        "Duplicate SupplierProduct found: ProductId: {ProductId}, PartyId: {PartyId}, CurrencyUomId: {CurrencyUomId}, AvailableFromDate: {AvailableFromDate}. Updating LastPrice.",
-                        orderItem.ProductId, productSupplierId, orderCurrency, nowTimestamp);
-                    existingDuplicate.LastPrice = orderItem.UnitPrice.Value;
-                    existingDuplicate.AvailableThruDate = null; // Keep it active
-                    _context.SupplierProducts.Update(existingDuplicate);
-                }
-                else
-                {
-                    // Create new SupplierProduct if no duplicate exists
-                    var newSupplierProduct = new SupplierProduct
-                    {
-                        ProductId = orderItem.ProductId,
-                        PartyId = productSupplierId,
-                        CurrencyUomId = orderCurrency,
-                        AvailableFromDate = (DateTime)nowTimestamp,
-                        LastPrice = orderItem.UnitPrice.Value
-                    };
-                    _context.SupplierProducts.Add(newSupplierProduct);
-                }
-
-                await _context.SaveChangesAsync();
-            }
-        }
-        else
-        {
-            // Create new SupplierProduct if no active record exists
-            if (orderItem.UnitPrice.HasValue)
+                x.we.WorkEffortId,
+                x.we.CertificateNumber,
+                x.we.CertificateCategory,
+                x.we.ProjectId,
+                ProjectName = x.proj != null ? x.proj.ProjectName : x.we.ProjectName,
+                x.we.Description,
+                x.we.EstimatedStartDate,
+                x.we.EstimatedCompletionDate,
+                x.we.CurrentStatusId,
+                StatusDescription = request.Language == "ar" ? x.si != null ? x.si.DescriptionArabic : "غير معروف" : x.si != null ? x.si.Description : "Unknown",
+                StatusDescriptionArabic = x.si != null ? x.si.DescriptionArabic : "غير معروف",
+                x.we.PartyIdSupplier,
+                SupplierDescription = x.supplier != null ? x.supplier.Description : null,
+                x.we.PartyIdContractor,
+                ContractorDescription = x.contractor != null ? x.contractor.Description : null,
+                x.we.FacilityId,
+                FacilityName = x.fac != null ? x.fac.FacilityName : null
+            })
+            .Select(g => new ProjectCertificateSummaryDto
             {
-                // REFACTOR: Check for existing record with the new primary key
-                // Handles rare duplicates despite microsecond precision
-                var newSupplierProductKey = new
-                {
-                    ProductId = orderItem.ProductId,
-                    PartyId = productSupplierId,
-                    CurrencyUomId = orderCurrency,
-                    AvailableFromDate = nowTimestamp
-                };
-                var existingDuplicate = await _context.SupplierProducts
-                    .Where(ps => ps.ProductId == newSupplierProductKey.ProductId &&
-                                 ps.PartyId == newSupplierProductKey.PartyId &&
-                                 ps.CurrencyUomId == newSupplierProductKey.CurrencyUomId &&
-                                 ps.AvailableFromDate == newSupplierProductKey.AvailableFromDate)
-                    .OrderBy(ps => ps.AvailableFromDate) // REFACTOR: Add OrderBy to ensure predictable results
-                    .FirstOrDefaultAsync();
+                WorkEffortId = g.Key.WorkEffortId,
+                CertificateNumber = g.Key.CertificateNumber,
+                CertificateCategory = g.Key.CertificateCategory,
+                CertificateCategoryDescription = GetCertificateCategoryDescription(g.Key.CertificateCategory),
+                ProjectId = g.Key.ProjectId,
+                ProjectName = g.Key.ProjectName ?? "",
+                Description = g.Key.Description ?? "",
+                EstimatedStartDate = g.Key.EstimatedStartDate,
+                EstimatedCompletionDate = g.Key.EstimatedCompletionDate,
+                StatusDescription = g.Key.StatusDescription,
+                StatusDescriptionArabic = g.Key.StatusDescriptionArabic,
+                CurrentStatusId = g.Key.CurrentStatusId,
+                PartyIdSupplier = g.Key.PartyIdSupplier,
+                PartyNameSupplier = g.Key.SupplierDescription,
+                PartyIdContractor = g.Key.PartyIdContractor,
+                PartyNameContractor = g.Key.ContractorDescription,
+                FacilityId = g.Key.FacilityId,
+                FacilityName = g.Key.FacilityName,
+                // REFACTOR: Simplified and SQL-friendly total calculation
+                // Purpose: Use explicit null checks and avoid complex expressions
+                // Improvement: Ensures aggregation is translatable by avoiding nested conditionals
+                Total = Math.Round((decimal)(g.Key.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                    ? g.Sum(x => x.CertificateItem != null ? x.CertificateItem.Quantity * (x.CertificateItem.MaterialPrice + x.CertificateItem.LaborPrice) - (x.CertificateItem.Deductions ?? 0m) - (x.CertificateItem.Insurance ?? 0m) - (x.CertificateItem.AdditionalInsurance ?? 0m) : 0m)
+                    : g.Sum(x => x.CertificateItem != null ? x.CertificateItem.Quantity * (x.CertificateItem.Rate ?? 0m) + (x.CertificateItem.TransportationExpenses ?? 0m) + (x.CertificateItem.Gratuities ?? 0m) - (x.CertificateItem.Discount ?? 0m) : 0m)), 2)
+            })
+            .ToListAsync(cancellationToken);
 
-                if (existingDuplicate != null)
-                {
-                    // REFACTOR: Update existing record instead of failing
-                    // Handles duplicates by updating LastPrice, avoiding key violation
-                    _logger.LogInformation(
-                        "Duplicate SupplierProduct found: ProductId: {ProductId}, PartyId: {PartyId}, CurrencyUomId: {CurrencyUomId}, AvailableFromDate: {AvailableFromDate}. Updating LastPrice.",
-                        orderItem.ProductId, productSupplierId, orderCurrency, nowTimestamp);
-                    existingDuplicate.LastPrice = orderItem.UnitPrice.Value;
-                    existingDuplicate.AvailableThruDate = null; // Keep it active
-                    _context.SupplierProducts.Update(existingDuplicate);
-                }
-                else
-                {
-                    // Create new SupplierProduct if no duplicate exists
-                    var newSupplierProduct = new SupplierProduct
-                    {
-                        ProductId = orderItem.ProductId,
-                        PartyId = productSupplierId,
-                        CurrencyUomId = orderCurrency,
-                        AvailableFromDate = (DateTime)nowTimestamp,
-                        LastPrice = orderItem.UnitPrice.Value
-                    };
-                    _context.SupplierProducts.Add(newSupplierProduct);
-                }
-
-                await _context.SaveChangesAsync();
-            }
-        }
-
-        // Relies on caller's transaction for commit or rollback
-        return new { success = true };
-    }
-    catch (DbUpdateException ex) when (ex.InnerException is MySqlException mysqlEx && mysqlEx.Number == 1062)
-    {
-        // Uses variables declared outside try block for logging
-        _logger.LogError(ex,
-            "Unexpected duplicate key error for SupplierProduct with ProductId: {ProductId}, PartyId: {PartyId}, CurrencyUomId: {CurrencyUomId}, AvailableFromDate: {AvailableFromDate}",
-            orderItem.ProductId, productSupplierId ?? "N/A", orderCurrency ?? "N/A", nowTimestamp);
-        return new { success = true }; // Still return success to avoid failing caller's transaction
+        return Result<List<ProjectCertificateSummaryDto>>.Success(certificates);
     }
     catch (Exception ex)
     {
-        // REFACTOR: Log unexpected errors and rethrow
-        // Uses variables declared outside try block for logging
-        _logger.LogError(ex,
-            "Error processing SupplierProduct for ProductId: {ProductId}, PartyId: {PartyId}, CurrencyUomId: {CurrencyUomId}, AvailableFromDate: {AvailableFromDate}",
-            orderItem.ProductId, productSupplierId ?? "N/A", orderCurrency ?? "N/A", nowTimestamp);
-        throw;
+        return Result<List<ProjectCertificateSummaryDto>>.Failure($"Failed to retrieve certificates: {ex.Message}");
     }
 }
