@@ -836,8 +836,9 @@
             "postedDate": "تاريخ الترحيل"
           },
           "txnEntries": {
-            "acctgTransEntrySeqId": "معرف التسلسل",
-            "glAccountId": "كود الحساب المحاسبي",
+            "acctgTransEntrySeqId": "مسلسل",
+            "glAccountId": "كود الحساب ",
+            "glAccountName": "اسم الحساب ",
             "glAccountType": "نوع الحساب المحاسبي",
             "workEffortId": "رمز العمل"
           }

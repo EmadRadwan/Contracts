@@ -21,8 +21,13 @@ const acctTransApi = createApi({
         prepareHeaders: (headers, {getState}) => {
             // By default, if we have a token in the store, let's use that for authenticated requests
             const token = store.getState().account.user?.token;
+            const lang = store.getState().localization.language;
+
             if (token) {
                 headers.set("authorization", `Bearer ${token}`);
+            }
+            if (lang) {
+                headers.set("Accept-Language", lang);
             }
             return headers;
         },

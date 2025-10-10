@@ -1,10 +1,10 @@
 import React from "react";
-import ChartOfAccountsList from "./chartOfAccounts/dashboard/ChartOfAccountsList";
+import CustomTimePeriods from "./customTimePeriods/dashboard/CustomTimePeriods";
 
 const GlobalGlSettingsList = () => {
     return (
         <>
-            <ChartOfAccountsList/>
+            <CustomTimePeriods/>
         </>
 
     );

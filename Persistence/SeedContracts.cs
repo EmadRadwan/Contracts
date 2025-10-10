@@ -2473,6 +2473,7 @@ public class SeedContracts
         }
 
         // accounting transaction entries
+        /*
         if (!context.AcctgTransEntries.Any())
         {
             var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/acctg_trans_entries.json");
@@ -2482,6 +2483,7 @@ public class SeedContracts
             await context.AcctgTransEntries.AddRangeAsync(acctgTransEntries);
             await context.SaveChangesAsync();
         }
+        */
 
         //Party Gl Accounts
         if (!context.PartyGlAccounts.Any())

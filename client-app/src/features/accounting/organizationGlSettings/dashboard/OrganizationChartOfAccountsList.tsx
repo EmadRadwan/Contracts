@@ -21,16 +21,22 @@ import { handleDatesArray } from "../../../../app/util/utils";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import { StyledTab } from "../../../../app/components/StyledTab";
 import { StyledTabs } from "../../../../app/components/StyledTabs";
-import { useFetchOrgChartOfAccountsLovQuery } from "../../../../app/store/apis";
+import {
+  useFetchGlAccountOrganizationHierarchyLovQuery,
+  useFetchOrgChartOfAccountsLovQuery
+} from "../../../../app/store/apis";
 import { GlAccount } from "../../../../app/models/accounting/globalGlSettings";
 import { TabContext, TabPanel } from "@mui/lab";
 import { Box, Grid, Typography } from "@mui/material";
+import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
+import {ChartOfAccountsExcel} from "../report/ChartOfAccountsExcel";
 
 interface Props {
   companyId?: string | undefined;
 }
 
 const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
+  const {getTranslatedLabel} = useTranslationHelper();
 
   
   const DetailComponent = (props: GridDetailRowProps) => {
@@ -45,6 +51,7 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
           detail={DetailComponent}
           expandField="expanded"
           onExpandChange={expandChange}
+          resizable={true}
         >
           <GridToolbar>
             <Typography variant="body1">
@@ -108,7 +115,7 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
   console.log('fullCompanyChartOfAccounts', fullCompanyChartOfAccounts);
 
   const { data: structuredGlAccounts, isFetching: isStructuredGlFetching } =
-    useFetchOrgChartOfAccountsLovQuery(undefined, {
+      useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
       skip: companyId === undefined,
     });
 
@@ -224,6 +231,16 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
               data={accounts ?? []}
               reorderable={true}
             >
+              <GridToolbar>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Typography variant="body1">Chart of Accounts</Typography>
+                  <ChartOfAccountsExcel
+                      accounts={accounts}
+                      companyId={companyId}
+                      getTranslatedLabel={getTranslatedLabel}
+                  />
+                </Box>
+              </GridToolbar>
               <Column
                 field="glAccountId"
                 title="Account Number"
@@ -270,11 +287,7 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
               </KendoGrid>
             </Grid>
           </TabPanel>
-          <TabPanel value="3">
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Chart of Accounts Diagram
-            </Typography>
-          </TabPanel>
+         
         </TabContext>
         {isFetching && <LoadingComponent message="Loading Accounts..." />}
       </div>

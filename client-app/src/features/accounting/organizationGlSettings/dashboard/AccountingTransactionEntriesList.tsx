@@ -1,10 +1,10 @@
-import React, {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {useTableKeyboardNavigation} from "@progress/kendo-react-data-tools";
 import {
     Grid as KendoGrid,
     GRID_COL_INDEX_ATTRIBUTE,
     GridColumn as Column,
-    GridDataStateChangeEvent,
+    GridDataStateChangeEvent, GridRowProps,
 } from "@progress/kendo-react-grid";
 import {DataResult, State} from '@progress/kendo-data-query';
 import Button from "@mui/material/Button";
@@ -122,6 +122,15 @@ export default function AccountingTransactionEntriesList() {
         )
     };
 
+    const rowRender = useCallback(
+        (trElement: React.ReactElement<HTMLTableRowElement>, props: GridRowProps) => {
+            const isDebit = props.dataItem.debitCreditFlag === "D";
+            const style = { backgroundColor: isDebit ? "rgba(55, 180, 0, 0.32)" : "#ffffff" };
+            return React.cloneElement(trElement, { style }, trElement.props.children);
+        },
+        []
+    );
+
 
     // convert cancelEdit function to memoized function
     const cancelEdit = React.useCallback(() => {
@@ -148,6 +157,7 @@ export default function AccountingTransactionEntriesList() {
                             {...dataState}
                             data={accountingTransEntries ? accountingTransEntries : {data: [], total: 77}}
                             onDataStateChange={dataStateChange}
+                            rowRender={rowRender}
                         >
 
                             <Column field="acctTransId"
@@ -165,63 +175,74 @@ export default function AccountingTransactionEntriesList() {
                                 width={100}
                                 format="{0:n}"
                             />
+                            
                             <Column field="acctgTransEntrySeqId" title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txnEntries.acctgTransEntrySeqId",
                                 "SEQ Id"
-                            )} width={130}/>
+                            )} width={70}/>
+                            
+                            <Column field="debitCreditFlag" title={getTranslatedLabel(
+                                "accounting.orgGL.accounting.summary.txnEntries.acctgTransEntrySeqId",
+                                "SEQ Id"
+                            )} width={80}/>
 
                             <Column field="transactionDate" title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txns.transactionDate",
                                 "Transaction Date"
                             )} width={130}
                                     format="{0: dd/MM/yyyy}"/>
-                            <Column field="acctgTransactionTypeDescription" title={getTranslatedLabel(
-                                "accounting.orgGL.accounting.summary.txns.acctgTransType",
-                                "Acctg Trans Type"
-                            )} width={150}/>
-
-                            <Column field="glFiscalTypeId" title={getTranslatedLabel(
-                                "accounting.orgGL.accounting.summary.txns.glFiscalType",
-                                "Fiscal Gl Type"
-                            )} width={100}/>
+                            
                             <Column field="glAccountId" title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txnEntries.glAccountId",
                                 "Gl Account Id"
                             )} width={100}/>
-                            <Column field="glAccountTypeDescription" title={getTranslatedLabel(
-                                "accounting.orgGL.accounting.summary.txnEntries.glAccountType",
-                                "Gl Account"
-                            )} width={150}/>
+                            
+                            <Column field="glAccountName" title={getTranslatedLabel(
+                                "accounting.orgGL.accounting.summary.txnEntries.glAccountName",
+                                "Gl Account Id"
+                            )} width={250}/>
+                            
+                            <Column field="description" title={getTranslatedLabel(
+                                "accounting.orgGL.accounting.summary.txns.description",
+                                "Description"
+                            )} width={230}/>
+                            
                             <Column field="invoiceId" title={getTranslatedLabel(
                                 "accounting.invoices.list.invoiceId",
                                 "Invoice Id"
                             )} width={100}/>
+                            
                             <Column field="paymentId" title={getTranslatedLabel(
                                 "accounting.payments.list.paymentId",
                                 "Payment Id"
                             )} width={100}/>
+                            
                             <Column field="workEffortId" title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txnEntries.workEffortId",
                                 "WorkEffort Id"
                             )} width={100}/>
+                            
                             <Column field="shipmentId" title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txns.shipmentId",
                                 "Shipment Id"
                             )} width={100}/>
+                            
                             <Column field="isPosted" title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txns.isPosted",
                                 "Is Posted"
                             )} width={100}/>
+                            
                             <Column field="postedDate" title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txns.postedDate",
                                 "Posted Date"
                             )} width={150}
                                     format="{0: dd/MM/yyyy}"/>
-                            <Column field="description" title={getTranslatedLabel(
-                                "accounting.orgGL.accounting.summary.txns.description",
-                                "Description"
-                            )} width={130}/>
 
+                            <Column field="acctgTransactionTypeDescription" title={getTranslatedLabel(
+                                "accounting.orgGL.accounting.summary.txns.acctgTransType",
+                                "Acctg Trans Type"
+                            )} width={150}/>
+                            
                         </KendoGrid>
                         {isFetching && <LoadingComponent message={getTranslatedLabel(
                             "accounting.orgGL.accounting.summary.loading",
