@@ -148,6 +148,8 @@ const RoutingWrapper = () => {
     return <Outlet context={{ workEffortId }} />;
 };
 
+
+
 export const routes: RouteObject[] = [
     {
         path: "/",
@@ -165,7 +167,10 @@ export const routes: RouteObject[] = [
                     {path: "facilitiesDashboard", element: <FacilityDashboard/>},
                     {path: "servicesDashboard", element: <ServiceDashboard/>},
                     {path: "invoicesDashboard", element: <AccountingDashboard/>},
-                    {path: "orders", element: <OrdersList/>},
+                    { path: "orders/sales", element: <OrdersList orderType="SALES_ORDER" /> },
+                    { path: "orders/purchase", element: <OrdersList orderType="PURCHASE_ORDER" /> },
+                    { path: "payments/incoming", element: <PaymentsList paymentType="incoming" />  },
+                    { path: "payments/outgoing", element: <PaymentsList paymentType="outgoing" /> },
                     {path: "returns", element: <ReturnsList/>},
                     {path: "returns/:returnId", element: <EditReturn/>},
                     {path: "returns/:returnId/items", element: <OrderReturnItems/>},
@@ -174,7 +179,6 @@ export const routes: RouteObject[] = [
                     {path: "stores", element: <StoresList/>},
                     { path: "projects", element: <ProjectsDashboard /> },
                     { path: "projectCertificates", element: <ProjectCertificatesList /> },
-                    {path: "payments", element: <PaymentsList/>},
                     {
                         path: "invoices",
                         children: [

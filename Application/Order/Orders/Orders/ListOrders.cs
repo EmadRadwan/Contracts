@@ -2,19 +2,19 @@ using Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Persistence;
 
 namespace Application.Order.Orders.Orders;
 
 public class ListOrders
 {
+    // REFACTOR: Add OrderType property to Query to support filtering
     public class Query : IRequest<IQueryable<OrderRecord>>
     {
         public ODataQueryOptions<OrderRecord> Options { get; set; }
         public string Language { get; set; }
+        public string OrderType { get; set; }
     }
-
 
     public class Handler : IRequestHandler<Query, IQueryable<OrderRecord>>
     {
@@ -25,52 +25,40 @@ public class ListOrders
             _context = context;
         }
 
-
         public async Task<IQueryable<OrderRecord>> Handle(Query request, CancellationToken cancellationToken)
         {
             var language = request.Language;
             var query = from ov in _context.OrderView.AsNoTracking()
-                join we in _context.WorkEfforts on ov.OrderId equals we.RelatedOrderId into weGroup
-                from we in weGroup.DefaultIfEmpty()
-                select new OrderRecord
-                {
-                    OrderId = ov.OrderId,
-                    FromPartyName = ov.FromPartyName + " ( " + ov.FromPartyContactNumber + " )",
-                    OrderDate = ov.OrderDate,
-                    StatusId = ov.OrderStatus,
-                    StatusDescription = language == "ar" 
-                        ? ov.StatusDescriptionArabic 
-                        : language == "tr" 
-                            ? ov.StatusDescriptionTurkish 
-                            : ov.StatusDescription,
-                    BillingAccountId = ov.BillingAccountId,
-                    PaymentMethodId = ov.PaymentMethodId,
-                    PaymentMethodTypeId = ov.PaymentMethodTypeId,
-                    AgreementId = ov.AgreementId,
-                    PaymentId = ov.PaymentId,
-                    InvoiceId = ov.InvoiceId,
-                    InternalRemarks = ov.InternalRemarks,
-                    GrandTotal = ov.GrandTotal,
-                    OrderTypeId = ov.OrderTypeId,
-                    OrderTypeDescription = language == "ar" 
-                        ? ov.OrderTypeDescriptionArabic 
-                        : language == "tr" 
-                            ? ov.OrderTypeDescriptionTurkish 
-                            : ov.OrderTypeDescription,
-                    CurrencyUomId = ov.CurrencyUomId,
-                    CurrencyUomDescription = language == "ar" 
-                        ? ov.CurrencyUomDescriptionArabic 
-                        : language == "tr" 
-                            ? ov.CurrencyUomDescriptionTurkish 
-                            : ov.CurrencyUomDescription,
-                    FromPartyId = new OrderPartyDto
-                    {
-                        FromPartyId = ov.FromPartyId,
-                        FromPartyName = ov.FromPartyNameDescription
-                    },
-                    CertificateNumber = we != null ? we.CertificateNumber : null
-                };
+                        join we in _context.WorkEfforts on ov.OrderId equals we.RelatedOrderId into weGroup
+                        from we in weGroup.DefaultIfEmpty()
+                        select new OrderRecord
+                        {
+                            OrderId = ov.OrderId,
+                            FromPartyName = ov.FromPartyName + " ( " + ov.FromPartyContactNumber + " )",
+                            OrderDate = ov.OrderDate,
+                            StatusId = ov.OrderStatus,
+                            StatusDescription = language == "ar" ? ov.StatusDescriptionArabic : language == "tr" ? ov.StatusDescriptionTurkish : ov.StatusDescription,
+                            BillingAccountId = ov.BillingAccountId,
+                            PaymentMethodId = ov.PaymentMethodId,
+                            PaymentMethodTypeId = ov.PaymentMethodTypeId,
+                            AgreementId = ov.AgreementId,
+                            PaymentId = ov.PaymentId,
+                            InvoiceId = ov.InvoiceId,
+                            InternalRemarks = ov.InternalRemarks,
+                            GrandTotal = ov.GrandTotal,
+                            OrderTypeId = ov.OrderTypeId,
+                            OrderTypeDescription = language == "ar" ? ov.OrderTypeDescriptionArabic : language == "tr" ? ov.OrderTypeDescriptionTurkish : ov.OrderTypeDescription,
+                            CurrencyUomId = ov.CurrencyUomId,
+                            CurrencyUomDescription = language == "ar" ? ov.CurrencyUomDescriptionArabic : language == "tr" ? ov.CurrencyUomDescriptionTurkish : ov.CurrencyUomDescription,
+                            FromPartyId = new OrderPartyDto { FromPartyId = ov.FromPartyId, FromPartyName = ov.FromPartyNameDescription },
+                            CertificateNumber = we != null ? we.CertificateNumber : null
+                        };
 
+            // REFACTOR: Apply orderType filter if provided
+            if (!string.IsNullOrEmpty(request.OrderType))
+            {
+                query = query.Where(o => o.OrderTypeId == request.OrderType);
+            }
 
             return query;
         }

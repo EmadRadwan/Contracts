@@ -28,7 +28,6 @@ const midLinks = [
     { title: "catalog", path: "/products", key: "catalog", icon: <ShoppingCartOutlinedIcon sx={{ color: "#FFA500" }} /> },
     { title: "facility", path: "/facilitiesDashboard", key: "facility", icon: <StoreMallDirectory sx={{ color: "#FF4081" }} /> },
     { title: "party", path: "/parties", key: "party", icon: <GroupOutlinedIcon sx={{ color: "#00BFFF" }} /> },
-    { title: "order", path: "/ordersDashboard", key: "order", icon: <AssignmentOutlinedIcon sx={{ color: "#4CAF50" }} /> },
     { title: "accounting", path: "/invoicesDashboard", key: "accounting", icon: <ReceiptOutlinedIcon sx={{ color: "#9C27B0" }} /> },
     { title: "projects", path: "/projects", key: "projects", icon: <HomeWork sx={{ color: "#03A9F4" }} /> },
 ];

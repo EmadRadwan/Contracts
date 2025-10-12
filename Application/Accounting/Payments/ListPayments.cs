@@ -3,11 +3,9 @@ using Application.Order.Orders;
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.OData.Query;
-using Microsoft.Extensions.Logging;
 using Persistence;
 
 namespace Application.Accounting.Payments;
-
 
 public class ListPayments
 {
@@ -15,6 +13,8 @@ public class ListPayments
     {
         public ODataQueryOptions<PaymentRecord> Options { get; set; }
         public string Language { get; set; }
+        // REFACTOR: Added PaymentType property to filter incoming or outgoing payments
+        public string? PaymentType { get; set; }
     }
 
     public class Handler : IRequestHandler<Query, IQueryable<PaymentRecord>>
@@ -36,7 +36,7 @@ public class ListPayments
                 join ptyto in _context.Parties on pyt.PartyIdTo equals ptyto.PartyId
                 join pmt in _context.PaymentMethodTypes on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId
                 join cc in _context.CreditCards on pyt.PaymentMethodId equals cc.PaymentMethodId into creditCardJoin
-                from cc in creditCardJoin.DefaultIfEmpty() // Left join to include payments without credit cards
+                from cc in creditCardJoin.DefaultIfEmpty()
                 select new PaymentRecord
                 {
                     PaymentId = pyt.PaymentId,
@@ -72,7 +72,14 @@ public class ListPayments
                     IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT" 
                 }).AsQueryable();
 
-            return query;
+            // REFACTOR: Filter query based on PaymentType (incoming or outgoing)
+            if (!string.IsNullOrEmpty(request.PaymentType))
+            {
+                bool isDisbursement = request.PaymentType.ToLower() == "outgoing";
+                query = query.Where(p => p.IsDisbursement == isDisbursement);
+            }
+
+            return await Task.FromResult(query);
         }
     }
 }

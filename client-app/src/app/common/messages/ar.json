@@ -734,6 +734,10 @@
   },
   "accounting": {
     "menu": {
+      "salesOrders": "طلبات المبيعات",
+      "purchaseOrders": "طلبات الشراء",
+      "incomingPayments": "سندات القبض",
+      "outgoingPayments": "سندات الصرف",
       "invoices": "الفواتير",
       "payments": "المدفوعات",
       "pay-group": "الشيكات",
@@ -748,9 +752,9 @@
     "payments": {
       "list": {
         "actions": {
-          "new": "دفعة جديدة",
-          "incoming": "دفعة واردة",
-          "outgoing": "دفعة صادرة"
+          "new": "سند",
+          "incoming": " سند قبض جديد",
+          "outgoing": "سند صرف جديد"
         },
         "paymentId": "رقم الدفعة",
         "paymentType": "نوع الدفعة",

@@ -84,22 +84,15 @@ const ordersApi = createApi({
         },
       }),
 
-      fetchOrders: builder.query<ListResponse<Order>, State>({
+      fetchOrders: builder.query<ListResponse<Order>, { take?: number; skip?: number; orderType?: string }>({
         query: (queryArgs) => {
-          const url = `/odata/OrderRecords?$count=true&${toODataString(
-            queryArgs
-          )}`;
+          const url = `/odata/OrderRecords?$count=true&${toODataString(queryArgs)}${queryArgs.orderType ? `&orderType=${queryArgs.orderType}` : ''}`;
           return { url, method: "GET" };
         },
         providesTags: ["orders", "PurchaseOrders"],
         transformResponse: (response: any, meta, arg) => {
-          const { totalCount } = JSON.parse(
-            meta!.response!.headers.get("count")!
-          );
-          return {
-            data: response,
-            total: totalCount,
-          };
+          const { totalCount } = JSON.parse(meta!.response!.headers.get("count")!);
+          return { data: response, total: totalCount };
         },
       }),
       addSalesOrder: builder.mutation({

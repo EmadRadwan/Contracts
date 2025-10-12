@@ -28,24 +28,24 @@ const paymentsApi = createApi({
     tagTypes: ["Payments"],
     endpoints(builder) {
         return {
-            fetchPayments: builder.query<ListResponse<Payment>, State>({
-                providesTags: ["Payments"],
+            fetchPayments: builder.query<ListResponse<Payment>, PaymentQueryArgs>({
+                providesTags: ['Payments'],
                 query: (queryArgs) => {
-                    const url = `/odata/paymentRecords?count=true&${toODataString(queryArgs)}`
+                    // REFACTOR: Include paymentType in the query string if provided
+                    const baseUrl = `/odata/paymentRecords?count=true&${toODataString(queryArgs)}`;
+                    const paymentTypeParam = queryArgs.paymentType ? `&paymentType=${queryArgs.paymentType}` : '';
                     return {
-                        url,
-                        method: "GET",
+                        url: `${baseUrl}${paymentTypeParam}`,
+                        method: 'GET',
                     };
                 },
                 transformResponse: (response: any, meta, arg) => {
-                    const {totalCount} = JSON.parse(
-                        meta!.response!.headers.get("count")!,
-                    );
+                    const { totalCount } = JSON.parse(meta!.response!.headers.get('count')!);
                     return {
                         data: response,
                         total: totalCount,
                     };
-                }
+                },
             }),
             addSalesOrderPayments: builder.mutation({
                 invalidatesTags: ["Payments"],

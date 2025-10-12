@@ -12,15 +12,22 @@ import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
 import GroupIcon from '@mui/icons-material/Group';
 import { PrecisionManufacturing } from "@mui/icons-material";
 import withFloatingLabelFlexible from '../../../../app/components/FloatingLabel'; 
-import { useTranslationHelper } from '../../../../app/hooks/useTranslationHelper'; 
+import { useTranslationHelper } from '../../../../app/hooks/useTranslationHelper';
+import LocalMallIcon from "@mui/icons-material/LocalMall";
+import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
+import StoreIcon from '@mui/icons-material/Store';
+import React from "react"; 
 
 interface AccountingMenuProps {
     selectedMenuItem?: string;
 }
 
 const links = [
+    { title: "Sales Orders", key: "salesOrders", path: "/orders/sales", icon: <AddShoppingCartIcon sx={{ color: "#FF4081" }} /> },
+    { title: "Purchase Orders", key: "purchaseOrders", path: "/orders/purchase", icon: <StoreIcon sx={{ color: "#FF4081" }} /> },
     { title: 'Invoices', key: 'invoices', path: '/invoices', icon: <ReceiptOutlinedIcon sx={{ color: "#FFA500" }} /> },
-    { title: 'Payments', key: 'payments', path: '/payments', icon: <PaymentOutlinedIcon sx={{ color: "#FF4081" }} /> },
+    { title: 'Incoming Payments', key: 'incomingPayments', path: '/payments/incoming', icon: <PaymentOutlinedIcon sx={{ color: "#4CAF50" }} /> }, // REFACTOR: Added Incoming Payments menu item
+    { title: 'Outgoing Payments', key: 'outgoingPayments', path: '/payments/outgoing', icon: <PaymentOutlinedIcon sx={{ color: "#F44336" }} /> }, // REFACTOR: Added Outgoing Payments menu item
     { title: 'Payment Groups', key: 'pay-group', path: '/paymentGroups', icon: <GroupIcon sx={{ color: "#03A9F4" }} /> },
     //{ title: 'Fixed Assets', key: 'fixedAssets', path: '/fixedAssets', icon: <PrecisionManufacturing sx={{ color: "#00BFFF" }} /> },
     //{ title: 'Tax Authorities', key: 'taxAuthorities', path: '/taxAuth', icon: <AccountBalanceWalletOutlinedIcon sx={{ color: "#4CAF50" }} /> },

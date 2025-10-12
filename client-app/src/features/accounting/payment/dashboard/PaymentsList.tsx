@@ -9,7 +9,7 @@ import {
   Grid as KendoGrid,
   GRID_COL_INDEX_ATTRIBUTE,
   GridColumn as Column,
-  GridDataStateChangeEvent,
+  GridDataStateChangeEvent, GridToolbar,
 } from "@progress/kendo-react-grid";
 import { DataResult, State } from "@progress/kendo-data-query";
 import { Payment } from "../../../../app/models/accounting/payment";
@@ -25,7 +25,11 @@ import {useCalculatePaymentTotalsMutation} from "../../../../app/store/apis";
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
 import { useLocation } from "react-router";
 
-export default function PaymentsList() {
+interface PaymentsListProps {
+  paymentType: 'incoming' | 'outgoing';
+}
+
+export default function PaymentsList({ paymentType }: PaymentsListProps) {
   const { getTranslatedLabel } = useTranslationHelper();
   const localizationKey = "accounting.payments.list";
   const location = useLocation()
@@ -48,8 +52,12 @@ export default function PaymentsList() {
     setDataState(e.dataState);
   };
   const selectedPaymentFromUi = useAppSelector(state => state.accountingSharedUi.selectedPayment)
-  const { data, error, isFetching, refetch } = useFetchPaymentsQuery({ ...dataState });
 
+  const { data, error, isFetching, refetch } = useFetchPaymentsQuery({
+    ...dataState,
+    paymentType
+  });
+  
   const [show, setShow] = useState(false);
 
   const dispatch = useAppDispatch();
@@ -69,16 +77,8 @@ export default function PaymentsList() {
     );
     setPayment(selectedPayment);
 
-    // based on paymentTypeId set paymentType to 1 for incoming payment
-    // and 2 for outgoing payment in redux store
-    if (
-      selectedPayment?.paymentTypeId === "CUSTOMER_DEPOSIT" ||
-      selectedPayment?.paymentTypeId === "CUSTOMER_PAYMENT"
-    ) {
-      dispatch(setPaymentType(1));
-    } else {
-      dispatch(setPaymentType(2));
-    }
+    dispatch(setPaymentType(paymentType === 'incoming' ? 1 : 2));
+
     setFormEditModeFromStatus(selectedPayment?.statusDescriptionEnglish)
     
   }
@@ -152,16 +152,11 @@ export default function PaymentsList() {
     );
   };
 
-  function handleMenuSelect(e: MenuSelectEvent) {
-    if (e.item.data === "new") return
-    if (e.item.data === "incoming") {
-      dispatch(setPaymentType(1));
-    } else {
-      dispatch(setPaymentType(2));
-    }
+  const handleNewPayment = () => {
+    dispatch(setPaymentType(paymentType === 'incoming' ? 1 : 2));
     setPayment(undefined);
     setEditMode(1);
-  }
+  };
 
   if (editMode > 0) {
     return (
@@ -221,32 +216,7 @@ const GetSummaryCell = (props: any) => {
       <AccountingMenu selectedMenuItem={"/payments"} />
       <Paper elevation={5} className={`div-container-withBorderCurved`}>
         <Grid container columnSpacing={1} alignItems="center">
-          <Grid item xs={4}>
-            <Menu onSelect={handleMenuSelect}>
-              <MenuItem
-                text={getTranslatedLabel(
-                  `${localizationKey}.actions.new`,
-                  "New Payment"
-                )}
-                data="new"
-              >
-                <MenuItem
-                  text={getTranslatedLabel(
-                    `${localizationKey}.actions.incoming`,
-                    "Incoming Payment"
-                  )}
-                  data={"incoming"}
-                />
-                <MenuItem
-                  text={getTranslatedLabel(
-                    `${localizationKey}.actions.outgoing`,
-                    "Outgoing Payment"
-                  )}
-                  data={"outgoing"}
-                />
-              </MenuItem>
-            </Menu>
-          </Grid>
+          
           <Grid item xs={12}>
             <div className="div-container">
               <KendoGrid
@@ -259,6 +229,18 @@ const GetSummaryCell = (props: any) => {
                 {...dataState}
                 onDataStateChange={dataStateChange}
               >
+                <GridToolbar>
+                  <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleNewPayment}
+                  >
+                    {getTranslatedLabel(
+                        `${localizationKey}.actions.${paymentType}`, // Dynamically use 'incoming' or 'outgoing'
+                        `New ${paymentType === 'incoming' ? 'Incoming' : 'Outgoing'} Payment` // Fallback
+                    )}
+                  </Button>
+                </GridToolbar>
                 <Column
                   field="paymentId"
                   title={getTranslatedLabel(`${localizationKey}.paymentId`,"Payment Number")}
