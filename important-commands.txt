@@ -219,7 +219,7 @@ sudo rm -rf erp-contracts
  fi
  sudo docker-compose -f docker-compose.vm.yml up -d --build
  
- cd logs/contracts
+ 
  cd ../logs/contracts
  sudo rm -f *
  cd /home/ubuntu/erp-contracts

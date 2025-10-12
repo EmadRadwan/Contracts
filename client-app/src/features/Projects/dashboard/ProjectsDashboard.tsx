@@ -6,7 +6,7 @@ export default function ProjectsDashboard() {
 
     return (
         <>
-            <ProjectCertificatesList/>
+            <ProjectsList/>
         </>
 
 

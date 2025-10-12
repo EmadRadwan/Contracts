@@ -39,6 +39,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                    }) => {
     const localizationKey = "accounting.payments.form";
 
+    console.log('filteredPaymentTypes', filteredPaymentTypes)
     
     // Handle form submission
     const handleSubmit = (values: any) => {
@@ -62,7 +63,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                 amount: 0,
                 paymentRefNum: "",
                 currencyUomId: "EGP",
-                organizationPartyId: "",
+                organizationPartyId: companies && companies.length > 0 ? companies[0].organizationPartyId : "",
                 isDepositWithDrawPayment: "Y",
                 finAccountTransTypeId: "DEPOSIT",
                 isDisbursement: false,

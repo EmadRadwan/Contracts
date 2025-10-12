@@ -210,17 +210,26 @@ export default function EditMultiAcctgTrans() {
     const GlAccountCell = useCallback(
         ({ dataItem }: GridCellProps) => {
             const glAccountId = dataItem.debitGlAccountId || dataItem.creditGlAccountId;
-            const glAccount = glAccounts?.find((acc) => acc.glAccountId === glAccountId);
+            // REFACTOR: Fetch glAccountTypeDescription directly from transEntriesData
+            // Purpose: Use transEntriesData as the source for both glAccountId and glAccountTypeDescription, as it's the data source for the grid
+            // Improvement: Eliminates dependency on glAccounts, ensuring accurate display of glAccountTypeDescription (e.g., "UNINVOICED ITEM RECEIPTS")
+            const transEntry = transEntriesData?.find((entry: AcctgTransEntry) => entry.glAccountId === glAccountId);
+            const displayText = transEntry
+                ? `${transEntry.glAccountId} - ${transEntry.glAccountTypeDescription || 'N/A'}`
+                : glAccountId
+                    ? `${glAccountId} - N/A`
+                    : "-";
+
             return (
                 <td
                     style={{ cursor: "pointer", color: "#1976d2" }}
                     onClick={() => handleEditEntry(dataItem.id)}
                 >
-                    {glAccount?.text || glAccountId || "-"}
+                    {displayText}
                 </td>
             );
         },
-        [glAccounts, handleEditEntry]
+        [transEntriesData, handleEditEntry]
     );
 
     const UpdateCell = useCallback(
