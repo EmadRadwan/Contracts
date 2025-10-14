@@ -4,7 +4,7 @@ import {
     Grid as KendoGrid,
     GRID_COL_INDEX_ATTRIBUTE,
     GridColumn as Column,
-    GridDataStateChangeEvent,
+    GridDataStateChangeEvent, GridToolbar,
 } from "@progress/kendo-react-grid";
 import { DataResult, State } from "@progress/kendo-data-query";
 import Button from "@mui/material/Button";
@@ -28,6 +28,11 @@ import ProjectCertificateForm from "../form/ProjectCertificateForm";
 import {Certificate, CertificateStatus} from "../../../app/models/project/certificate";
 import {resetUiCertificateItems} from "../slice/certificateItemsUiSlice";
 import {certificateItemsApi} from "../../../app/store/apis/certificateItemsApi";
+import {toast} from "react-toastify";
+import ExcelJS from "exceljs";
+import {CertificateItem} from "../../../app/models/project/certificateItem";
+import {generateSupplyExcel, generateWorkmanshipExcel} from "../report/excelUtils";
+import {saveAs} from "file-saver";
 
 
 interface ProjectCertificate {
@@ -35,9 +40,9 @@ interface ProjectCertificate {
     certificateNumber?: string;
     projectName?: string;
     projectId?: string;
-    partyIdSupplier?: string; 
+    partyIdSupplier?: string;
     partyNameSupplier?: string;
-    partyIdContractor?: string; 
+    partyIdContractor?: string;
     partyNameContractor?: string;
     description?: string;
     estimatedStartDate?: string;
@@ -63,9 +68,10 @@ export default function ProjectCertificatesList() {
     const [certificate, setCertificate] = useState<ProjectCertificate | undefined>(undefined);
     const { data, isFetching, refetch } = useFetchProjectCertificatesQuery({ ...dataState });
     const [viewMode, setViewMode] = useState<"list" | "form">("list");
+    const [isGeneratingAll, setIsGeneratingAll] = useState(false);
 
     console.log("Certificates data:", data);
-    
+
     // console.log('List rendered')
 
     const debounce = (func: Function, wait: number) => {
@@ -138,7 +144,7 @@ export default function ProjectCertificatesList() {
             }
             dispatch(resetUiCertificateItems());
             dispatch(certificateItemsApi.util.invalidateTags(['CertificateItems']));
-            
+
             dispatch(
                 setSelectedCertificate({
                     workEffortId: selectedCert.workEffortId || "",
@@ -160,7 +166,7 @@ export default function ProjectCertificatesList() {
                             fromPartyId:
                                 typeof selectedCert.partyIdContractor === "object"
                                     ? selectedCert.partyIdContractor.fromPartyId
-                                    : selectedCert.partyIdContractor, 
+                                    : selectedCert.partyIdContractor,
                             // Purpose: Correctly map contractor ID from query data
                             // Context: Fixes binding for contractor ComboBox
                             partyName: selectedCert.partyNameContractor || "",
@@ -195,10 +201,10 @@ export default function ProjectCertificatesList() {
             dispatch(certificateItemsApi.endpoints.fetchCertificateItems.initiate(workEffortId));
 
         }, 500),
-        [dispatch, certificates.data, editModeMap] 
+        [dispatch, certificates.data, editModeMap]
     );
-    
-    
+
+
     const cancelEdit = useCallback(() => {
         setCertificate(undefined);
         dispatch(setCertificateFormEditMode(0));
@@ -269,7 +275,6 @@ export default function ProjectCertificatesList() {
             </td>
         );
     };
-    // // console.log('certificateFormEditMode:', certificateFormEditMode)
 
     if (viewMode === "form" && certificateFormEditMode > 0) {
         return (
@@ -295,7 +300,195 @@ export default function ProjectCertificatesList() {
         estimatedStartDate: 150,
         estimatedCompletionDate: 150,
         facilityName: 200,
+        excelCommand: 150,
     };
+
+
+    const handleGenerateAllCertificates = async () => {
+        if (!data?.data?.length) {
+            toast.warn(
+                getTranslatedLabel(
+                    "certificate.list.empty",
+                    "No certificates available to generate"
+                )
+            );
+            return;
+        }
+
+        setIsGeneratingAll(true);
+        const workbook = new ExcelJS.Workbook();
+        workbook.created = new Date();
+        workbook.creator = "System";
+
+        let logoImageId: number | null = null;
+        try {
+            const response = await fetch("/goldenlandlogo.jpg");
+            if (!response.ok) throw new Error("Failed to fetch logo");
+            const blob = await response.blob();
+            const arrayBuffer = await blob.arrayBuffer();
+            logoImageId = workbook.addImage({
+                buffer: arrayBuffer,
+                extension: "jpeg",
+            });
+        } catch (error) {
+            console.warn("Logo fetch failed:", error);
+        }
+
+        const errors: string[] = [];
+
+        // Process each certificate sequentially
+        for (const certificate of data.data) {
+            if (!certificate.workEffortId || !certificate.certificateNumber) {
+                console.warn("Skipping certificate due to invalid data:", {
+                    workEffortId: certificate.workEffortId,
+                    certificateNumber: certificate.certificateNumber,
+                });
+                errors.push(`Certificate ${certificate.certificateNumber || "unknown"}: Invalid data`);
+                continue;
+            }
+
+            try {
+                // REFACTOR: Use certificateItemsApi.endpoints.fetchCertificateItems.initiate
+                // Purpose: Programmatically fetch certificate items using RTK Query's initiate method
+                // Improvement: Correctly triggers the query and handles response, fixing 'fetch is not a function' error
+                const response = await dispatch(
+                    certificateItemsApi.endpoints.fetchCertificateItems.initiate(certificate.workEffortId)
+                ).unwrap();
+
+                const itemsArray: CertificateItem[] = Array.isArray(response) ? response : [];
+                if (!itemsArray.length) {
+                    console.warn(`No items found for workEffortId: ${certificate.workEffortId}`);
+                    errors.push(`Certificate ${certificate.certificateNumber}: No items available`);
+                    continue;
+                }
+
+                // Calculate subtotal
+                const subtotal = itemsArray.reduce((sum: number, item: CertificateItem) => {
+                    const total =
+                        certificate.certificateCategory === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                            ? item.net || 0
+                            : item.totalAmount || 0;
+                    return sum + total;
+                }, 0);
+
+                // Format items to match Excel generation props
+                const formattedItems: CertificateItem[] = itemsArray.map((item) => ({
+                    ...item,
+                    productName: item.productName || "N/A",
+                    code: item.code || "N/A",
+                    description: item.description || "",
+                    quantity: item.quantity || 0,
+                    uomName: item.uomName || "N/A",
+                    unitPrice: item.unitPrice || 0,
+                    displayTotal: item.totalAmount || 0,
+                    discount: item.discount || 0,
+                    formattedProcurementDate: item.procurementDate
+                        ? new Date(item.procurementDate).toLocaleDateString("en-US")
+                        : "N/A",
+                    transportationExpenses: item.transportationExpenses || 0,
+                    gratuities: item.gratuities || 0,
+                    materialPrice: item.materialPrice || 0,
+                    laborPrice: item.laborPrice || 0,
+                    deductions: item.deductions || 0,
+                    deductionDescription: item.deductionDescription || "",
+                    deserved: item.deserved || 0,
+                    insurance: item.insurance || 0,
+                    additionalInsurance: item.additionalInsurance || 0,
+                    net: item.net || 0,
+                    achievementPercentage: item.achievementPercentage || "0%",
+                    isLastInGroup: item.isLastInGroup || false,
+                    productSubtotal: item.productSubtotal || 0,
+                    mainItemDescription: item.mainItemDescription || "",
+                    discountNote: item.discountNote || "",
+                }));
+
+                // Generate worksheet(s) for the certificate
+                const generateFn =
+                    certificate.certificateCategory === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                        ? generateWorkmanshipExcel
+                        : generateSupplyExcel;
+
+                const buffer = await generateFn(certificate, formattedItems, subtotal, getTranslatedLabel);
+                if (buffer) {
+                    // Load the generated workbook to extract worksheets
+                    const tempWorkbook = new ExcelJS.Workbook();
+                    await tempWorkbook.xlsx.load(buffer);
+                    tempWorkbook.eachSheet((worksheet, sheetId) => {
+                        const newWorksheet = workbook.addWorksheet(
+                            `${certificate.certificateNumber}_${worksheet.name}`
+                        );
+                        worksheet.eachRow((row, rowNumber) => {
+                            const newRow = newWorksheet.getRow(rowNumber);
+                            row.eachCell((cell, colNumber) => {
+                                const newCell = newRow.getCell(colNumber);
+                                newCell.value = cell.value;
+                                newCell.style = cell.style;
+                                newCell.numFmt = cell.numFmt;
+                            });
+                            newRow.commit();
+                        });
+                        // Copy image if present
+                        if (logoImageId !== null && worksheet.getImages().length > 0) {
+                            newWorksheet.addImage(logoImageId, worksheet.getImages()[0].range);
+                        }
+                        newWorksheet.pageSetup = worksheet.pageSetup;
+                        newWorksheet.views = worksheet.views;
+                        newWorksheet.columns = worksheet.columns;
+                    });
+                } else {
+                    errors.push(`Certificate ${certificate.certificateNumber}: Failed to generate worksheet`);
+                }
+            } catch (err: any) {
+                console.error(`Error processing certificate ${certificate.certificateNumber}:`, err);
+                errors.push(`Certificate ${certificate.certificateNumber}: ${err.message || "Unknown error"}`);
+            }
+        }
+
+        if (workbook.worksheets.length === 0) {
+            toast.error(
+                getTranslatedLabel(
+                    "certificate.excel.all.error",
+                    "Failed to generate Excel report for all certificates"
+                )
+            );
+            setIsGeneratingAll(false);
+            return;
+        }
+
+        try {
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            });
+            saveAs(blob, `AllCertificates_${new Date().toISOString().slice(0, 10)}.xlsx`);
+            toast.success(
+                getTranslatedLabel(
+                    "certificate.excel.all.success",
+                    "Excel report for all certificates generated successfully"
+                )
+            );
+
+            if (errors.length > 0) {
+                toast.warn(
+                    getTranslatedLabel(
+                        "certificate.excel.all.partial",
+                        "Excel generated with issues: " + errors.join("; ")
+                    )
+                );
+            }
+        } catch (err) {
+            console.error("Error generating final Excel file:", err);
+            toast.error(
+                getTranslatedLabel(
+                    "certificate.excel.all.error",
+                    "Failed to generate Excel report for all certificates"
+                )
+            );
+        } finally {
+            setIsGeneratingAll(false);
+        }
+    };
+
     
     return (
         <>
@@ -348,6 +541,18 @@ export default function ProjectCertificatesList() {
                             data={certificates ? certificates : { data: [], total: 0 }}
                             onDataStateChange={dataStateChange}
                         >
+                            <GridToolbar>
+                                <Button
+                                    color="primary"
+                                    variant="contained"
+                                    disabled={isGeneratingAll || !data?.data?.length}
+                                    onClick={handleGenerateAllCertificates}
+                                >
+                                    {isGeneratingAll
+                                        ? getTranslatedLabel("certificate.excel.all.loading", "Generating All...")
+                                        : getTranslatedLabel("certificate.excel.all", "Generate All Certificates")}
+                                </Button>
+                            </GridToolbar>
                             <Column
                                 field="certificateNumber"
                                 title={getTranslatedLabel(
@@ -448,7 +653,7 @@ export default function ProjectCertificatesList() {
                             />
                         )}
                     </Grid>
-                   
+
                 </Grid>
             </Paper>
         </>

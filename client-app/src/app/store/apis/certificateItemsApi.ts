@@ -2,6 +2,7 @@ import {createApi, fetchBaseQuery} from "@reduxjs/toolkit/query/react";
 import {store} from "../configureStore";
 import {CertificateItem} from "../../models/project/certificateItem";
 import {
+    resetUiCertificateItems,
     setCertificateItemsError,
     setUiCertificateItemsFromApi
 } from "../../../features/Projects/slice/certificateItemsUiSlice";
