@@ -122,6 +122,30 @@ export default function InvoicesList() {
                                         "Invoice Type"
                                     )}
                                     width={150}
+                                /> 
+                                <Column
+                                    field="total"
+                                    title={getTranslatedLabel(
+                                        `${localizationKey}.total`,
+                                        "total"
+                                    )}
+                                    width={150}
+                                />
+                                <Column
+                                    field="orderId"
+                                    title={getTranslatedLabel(
+                                        `${localizationKey}.orderId`,
+                                        "orderId"
+                                    )}
+                                    width={100}
+                                />
+                                <Column
+                                    field="certificateNumber"
+                                    title={getTranslatedLabel(
+                                        `${localizationKey}.certificateNumber`,
+                                        "certificateNumber"
+                                    )}
+                                    width={100}
                                 />
                                 <Column
                                     field="invoiceDate"

@@ -378,6 +378,7 @@ export default function PaymentForm({
                             getTranslatedLabel={getTranslatedLabel}
                             handleMenuSelect={handleMenuSelect}
                             getAvailableStatusTransitions={getAvailableStatusTransitions}
+                            isFormValid={formRef.current?.isValid() ?? false} 
                         />
                     </Grid>
                 </Grid>

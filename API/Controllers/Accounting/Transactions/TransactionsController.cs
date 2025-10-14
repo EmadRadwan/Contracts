@@ -23,7 +23,12 @@ public class TransactionsController : BaseApiController
     [HttpGet("{paymentId}/getPaymentTransactions")]
     public async Task<IActionResult> GetPaymentTransactions(string paymentId)
     {
-        return HandleResult(await Mediator.Send(new GetPaymentTransactionEntries.Query { PaymentId = paymentId }));
+        var language = GetLanguage();
+        return HandleResult(await Mediator.Send(new GetPaymentTransactionEntries.Query 
+        { 
+            PaymentId = paymentId, 
+            Language = language 
+        }));
     }
 
     [HttpGet("{acctgTransId}/getGeneralTransactions")]

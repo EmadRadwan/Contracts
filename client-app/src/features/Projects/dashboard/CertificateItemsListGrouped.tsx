@@ -217,7 +217,7 @@ export default function CertificateItemsListGrouped({ editMode, workEffortId, is
         })()
         : [];
 
-
+    
 
     return (
         <>

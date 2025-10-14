@@ -254,6 +254,16 @@ const GetSummaryCell = (props: any) => {
                   width={150}
                 />
                 <Column
+                  field="orderId"
+                  title={getTranslatedLabel(`${localizationKey}.orderId`,"orderId")}
+                  width={150}
+                />
+                <Column
+                  field="certificateNumber"
+                  title={getTranslatedLabel(`${localizationKey}.certificateNumber`,"certificateNumber")}
+                  width={150}
+                />
+                <Column
                   field="partyIdFromName"
                   title={getTranslatedLabel(`${localizationKey}.from`,"From Party")}
                   width={150}

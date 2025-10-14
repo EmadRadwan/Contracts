@@ -11,6 +11,7 @@ public class GetPaymentTransactionEntries
     public class Query : IRequest<Result<List<AcctgTransEntryDto>>>
     {
         public string PaymentId { get; set; }
+        public string Language { get; set; }
     }
 
     public class Handler : IRequestHandler<Query, Result<List<AcctgTransEntryDto>>>
@@ -28,6 +29,8 @@ public class GetPaymentTransactionEntries
         {
             try
             {
+                var language = request.Language?.ToLower() ?? "en";
+
                 var invoiceTransactionEntries = await _context.AcctgTransEntries
                     .Join(_context.AcctgTrans,
                         acctgTransEntry => acctgTransEntry.AcctgTransId,
@@ -53,7 +56,13 @@ public class GetPaymentTransactionEntries
                         TheirProductId = c.joinedData.AcctgTransEntry.TheirProductId,
                         InventoryItemId = c.joinedData.AcctgTransEntry.InventoryItemId,
                         GlAccountTypeId = c.joinedData.AcctgTransEntry.GlAccountTypeId,
-                        GlAccountTypeDescription = c.joinedData.AcctgTransEntry.GlAccount.AccountName,
+                        GlAccountTypeDescription = c.joinedData.AcctgTransEntry.GlAccount != null 
+                            ? (language == "en" 
+                                ? c.joinedData.AcctgTransEntry.GlAccount.AccountName 
+                                : c.joinedData.AcctgTransEntry.GlAccount.AccountNameArabic ?? c.joinedData.AcctgTransEntry.GlAccount.AccountName) 
+                            : "N/A",
+                        // REFACTOR: Select English or Arabic description for GlAccountClassDescription.
+                        // Fallback to "N/A" if GlAccountClass is null, ensuring robust null handling.
                         GlAccountClassDescription = c.joinedData.AcctgTransEntry.GlAccount.GlAccountClass.Description,
                         GlAccountId = c.joinedData.AcctgTransEntry.GlAccountId,
                         OrganizationPartyId = c.joinedData.AcctgTransEntry.OrganizationPartyId,

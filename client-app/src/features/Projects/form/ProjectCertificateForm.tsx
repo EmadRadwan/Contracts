@@ -137,12 +137,15 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
 
     const certificateItems = useAppSelector(displayCertificateItemsSelector);
 
+    const [contractorId, setContractorId] = useState<string | undefined>(
+        selectedCertificate?.partyIdContractor?.fromPartyId
+    );
+    const [supplierId, setSupplierId] = useState<string | undefined>(
+        selectedCertificate?.partyIdSupplier?.fromPartyId
+    );
     const formRenderPropsRef = useRef<FormRenderProps | null>(null);
 
-
-    const contractorId = formRenderPropsRef.current?.valueGetter('partyIdContractor')?.fromPartyId;
-    const supplierId = formRenderPropsRef.current?.valueGetter('partyIdSupplier')?.fromPartyId;
-
+    
     useEffect(() => {
         console.log('ProjectCertificateForm fetchCertificateItems:', { items, isFetching, isError, error });
     }, [items, isFetching, isError, error]);
@@ -498,6 +501,25 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
         );
     };
 
+    const handleContractorChange = useCallback(
+        (event: any) => {
+            const contractor = event.value;
+            setContractorId(contractor?.fromPartyId);
+        },
+        []
+    );
+
+    const handleSupplierChange = useCallback(
+        (event: any) => {
+            const supplier = event.value;
+            setSupplierId(supplier?.fromPartyId);
+        },
+        []
+    );
+    
+    console.log('contractorId', contractorId)
+    console.log('supplierId', supplierId)
+
     return (
         <>
             <ProjectMenu onMenuSelect={(key) => {
@@ -599,6 +621,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                                             textField="fromPartyName"
                                                             validator={requiredValidator}
                                                             disabled={editMode > 3}
+                                                            onChange={handleSupplierChange}
                                                         />
                                                     </Grid>
                                                 )}
@@ -614,6 +637,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                                             textField="fromPartyName"
                                                             validator={requiredValidator}
                                                             disabled={editMode > 3}
+                                                            onChange={handleContractorChange}
                                                         />
                                                     </Grid>
                                                 )}

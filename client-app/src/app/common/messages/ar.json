@@ -765,6 +765,8 @@
         "amount": "المبلغ",
         "outstanding": "المبلغ المستحق",
         "comments": "التعليقات",
+        "orderId": "رقم الطلب",
+        "certificateNumber": "رقم المستخلص",
         "loading": "جاري تحميل الدفعات..."
       },
       "form": {
@@ -772,9 +774,20 @@
           "create": "إنشاء دفعة",
           "update": "تحديث الدفعة",
           "receive": "تغيير الحالة إلى مستلمة",
+          "send": "تغيير الحالة إلى مدفوعة",
           "confirm": "تغيير الحالة إلى مؤكدة",
-          "transactions": "المعاملات",
-          "applications": "تطبيقات الدفع"
+          "transactions": "القيود المحاسبية",
+          "applications": "الفواتير"
+        },
+        "statuses": {
+          "new": "جديد",
+          "not-paid": "غير مدفوع",
+          "received": "تم الاستلام",
+          "completed": "مكتمل",
+          "sent": "مرسل",
+          "confirmed": "مؤكد",
+          "cancelled": "ملغى",
+          "unknown": "غير معروف"
         },
         "new-incoming": "دفعة واردة جديدة",
         "new-outgoing": "دفعة صادرة جديدة",
@@ -974,6 +987,8 @@
         "dueDate": "تاريخ الاستحقاق",
         "status": "الحالة",
         "description": "الوصف",
+        "orderId": "رقم الطلب",
+        "certificateNumber": "رقم المستخلص",
         "type": "نوع الفاتورة",
         "actions": {
           "create": "إنشاء فاتورة",
@@ -1066,6 +1081,8 @@
         "startDate": "تاريخ البدء",
         "completionDate": "تاريخ الانتهاء",
         "facilityName": "اسم المخزن",
+        "statusDescription": "الحالة",
+        "totalAmount": "الإجمالي",
         "loading": "جاري تحميل المستخلصات..."
       },
       "type": "النوع",

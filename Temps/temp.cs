@@ -1,128 +1,108 @@
-public async Task<Result<List<ProjectCertificateSummaryDto>>> Handle(Query request, CancellationToken cancellationToken)
+using Application.Interfaces;
+using Application.Order.Orders;
+using AutoMapper;
+using MediatR;
+using Microsoft.AspNetCore.OData.Query;
+using Persistence;
+
+namespace Application.Accounting.Payments;
+
+public class ListPayments
 {
-    try
+    public class Query : IRequest<IQueryable<PaymentRecord>>
     {
-        // Validate input: ensure at least one ID is provided
-        if (string.IsNullOrEmpty(request.ContractorId) && string.IsNullOrEmpty(request.SupplierId))
-            return Result<List<ProjectCertificateSummaryDto>>.Failure(
-                "Either ContractorId or SupplierId must be provided.");
+        public ODataQueryOptions<PaymentRecord> Options { get; set; }
+        public string Language { get; set; }
+        public string? PaymentType { get; set; }
+    }
 
-        // REFACTOR: Simplified base query to filter by WorkEffortTypeId and optional CertificateType
-        // Purpose: Allow flexibility to include all certificate types if CertificateType is not specified
-        // Improvement: Reduces restrictive filtering to ensure all relevant records are included
-        var query = _context.WorkEfforts
-            .AsNoTracking()
-            .Where(we => we.WorkEffortTypeId == "PROJECT_CERTIFICATE");
+    public class Handler : IRequestHandler<Query, IQueryable<PaymentRecord>>
+    {
+        private readonly DataContext _context;
 
-        // Apply CertificateType filter only if provided
-        if (!string.IsNullOrEmpty(request.CertificateType))
+        public Handler(DataContext context)
         {
-            // Validate CertificateType
-            if (!new[] { "SUPPLY_PROCUREMENT_CERTIFICATE", "WORKMANSHIP_CONTRACTING_CERTIFICATE", "COMPANY_SUPPLY_SALE_CERTIFICATE" }
-                .Contains(request.CertificateType))
-                return Result<List<ProjectCertificateSummaryDto>>.Failure("Invalid CertificateType.");
-            query = query.Where(we => we.CertificateCategory == request.CertificateType);
+            _context = context;
         }
 
-        // REFACTOR: Flexible party filter to include both ContractorId and SupplierId
-        // Purpose: Ensure records are included if either ContractorId or SupplierId matches
-        // Improvement: Handles cases where both IDs are provided or only one is relevant
-        query = query.Where(we => 
-            (request.ContractorId != null && we.PartyIdContractor == request.ContractorId) ||
-            (request.SupplierId != null && we.PartyIdSupplier == request.SupplierId));
-
-        // REFACTOR: Simplified joins using GroupJoin for all relationships
-        // Purpose: Ensure consistent LEFT JOIN pattern that EF Core can translate
-        // Improvement: Reduces complexity by handling nulls explicitly in the projection
-        var joinedQuery = from we in query
-                         join si in _context.StatusItems on we.CurrentStatusId equals si.StatusId into statusGroup
-                         from si in statusGroup.DefaultIfEmpty()
-                         join proj in _context.WorkEfforts on we.ProjectId equals proj.WorkEffortId into projectGroup
-                         from proj in projectGroup.DefaultIfEmpty()
-                         join supplier in _context.Parties on we.PartyIdSupplier equals supplier.PartyId into supplierGroup
-                         from supplier in supplierGroup.DefaultIfEmpty()
-                         join contractor in _context.Parties on we.PartyIdContractor equals contractor.PartyId into contractorGroup
-                         from contractor in contractorGroup.DefaultIfEmpty()
-                         join fac in _context.Facilities on we.FacilityId equals fac.FacilityId into facGroup
-                         from fac in facGroup.DefaultIfEmpty()
-                         select new { we, si, proj, supplier, contractor, fac };
-
-        // REFACTOR: Split certificate items join and aggregation
-        // Purpose: Separate the certificate items join to simplify the GroupBy and aggregation
-        // Improvement: Improves SQL translation by reducing complexity in the GroupBy key
-        var certificates = await joinedQuery
-            .GroupJoin(
-                _context.WorkEfforts.AsNoTracking().Where(we => we.WorkEffortTypeId == "CERTIFICATE_ITEM"),
-                cert => cert.we.WorkEffortId,
-                item => item.WorkEffortParentId,
-                (cert, items) => new { cert, items }
-            )
-            .SelectMany(
-                x => x.items.DefaultIfEmpty(),
-                (cert, item) => new
+        public async Task<IQueryable<PaymentRecord>> Handle(Query request, CancellationToken cancellationToken)
+        {
+            var language = request.Language;
+            var query = (from pyt in _context.Payments
+                join ptt in _context.PaymentTypes on pyt.PaymentTypeId equals ptt.PaymentTypeId
+                join sts in _context.StatusItems on pyt.StatusId equals sts.StatusId
+                join pty in _context.Parties on pyt.PartyIdFrom equals pty.PartyId
+                join ptyto in _context.Parties on pyt.PartyIdTo equals ptyto.PartyId
+                join pmt in _context.PaymentMethodTypes on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId
+                join cc in _context.CreditCards on pyt.PaymentMethodId equals cc.PaymentMethodId into creditCardJoin
+                from cc in creditCardJoin.DefaultIfEmpty()
+                // REFACTOR: Using subquery to select the latest OrderPaymentPreference (consistent with OrderView)
+                // Ensures only the latest preference is used for payment-to-order linkage
+                join opp in (from opp1 in _context.OrderPaymentPreferences
+                             where opp1.CreatedStamp == (
+                                 select max(opp2.CreatedStamp)
+                                 from _context.OrderPaymentPreferences opp2
+                                 where opp2.OrderId == opp1.OrderId
+                             )
+                             select new { opp1.OrderId, opp1.OrderPaymentPreferenceId }
+                            ) on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId into orderPaymentJoin
+                from opp in orderPaymentJoin.DefaultIfEmpty()
+                join ord in _context.Orders on opp.OrderId equals ord.OrderId into orderJoin
+                from ord in orderJoin.DefaultIfEmpty()
+                // REFACTOR: Added left joins with OrderHeaderWorkEffort and WorkEffort to fetch certificateNumber
+                // This links payments to work efforts via orderId and retrieves certificateNumber when available
+                join ohwe in _context.OrderHeaderWorkEffort on ord.OrderId equals ohwe.OrderId into workEffortJoin
+                from ohwe in workEffortJoin.DefaultIfEmpty()
+                join we in _context.WorkEffort on ohwe.WorkEffortId equals we.WorkEffortId into workEffortDetails
+                from we in workEffortDetails.DefaultIfEmpty()
+                select new PaymentRecord
                 {
-                    cert.cert.we,
-                    cert.cert.si,
-                    cert.cert.proj,
-                    cert.cert.supplier,
-                    cert.cert.contractor,
-                    cert.cert.fac,
-                    CertificateItem = item
-                }
-            )
-            .GroupBy(x => new
-            {
-                x.we.WorkEffortId,
-                x.we.CertificateNumber,
-                x.we.CertificateCategory,
-                x.we.ProjectId,
-                ProjectName = x.proj != null ? x.proj.ProjectName : x.we.ProjectName,
-                x.we.Description,
-                x.we.EstimatedStartDate,
-                x.we.EstimatedCompletionDate,
-                x.we.CurrentStatusId,
-                StatusDescription = request.Language == "ar" ? x.si != null ? x.si.DescriptionArabic : "غير معروف" : x.si != null ? x.si.Description : "Unknown",
-                StatusDescriptionArabic = x.si != null ? x.si.DescriptionArabic : "غير معروف",
-                x.we.PartyIdSupplier,
-                SupplierDescription = x.supplier != null ? x.supplier.Description : null,
-                x.we.PartyIdContractor,
-                ContractorDescription = x.contractor != null ? x.contractor.Description : null,
-                x.we.FacilityId,
-                FacilityName = x.fac != null ? x.fac.FacilityName : null
-            })
-            .Select(g => new ProjectCertificateSummaryDto
-            {
-                WorkEffortId = g.Key.WorkEffortId,
-                CertificateNumber = g.Key.CertificateNumber,
-                CertificateCategory = g.Key.CertificateCategory,
-                CertificateCategoryDescription = GetCertificateCategoryDescription(g.Key.CertificateCategory),
-                ProjectId = g.Key.ProjectId,
-                ProjectName = g.Key.ProjectName ?? "",
-                Description = g.Key.Description ?? "",
-                EstimatedStartDate = g.Key.EstimatedStartDate,
-                EstimatedCompletionDate = g.Key.EstimatedCompletionDate,
-                StatusDescription = g.Key.StatusDescription,
-                StatusDescriptionArabic = g.Key.StatusDescriptionArabic,
-                CurrentStatusId = g.Key.CurrentStatusId,
-                PartyIdSupplier = g.Key.PartyIdSupplier,
-                PartyNameSupplier = g.Key.SupplierDescription,
-                PartyIdContractor = g.Key.PartyIdContractor,
-                PartyNameContractor = g.Key.ContractorDescription,
-                FacilityId = g.Key.FacilityId,
-                FacilityName = g.Key.FacilityName,
-                // REFACTOR: Simplified and SQL-friendly total calculation
-                // Purpose: Use explicit null checks and avoid complex expressions
-                // Improvement: Ensures aggregation is translatable by avoiding nested conditionals
-                Total = Math.Round((decimal)(g.Key.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
-                    ? g.Sum(x => x.CertificateItem != null ? x.CertificateItem.Quantity * (x.CertificateItem.MaterialPrice + x.CertificateItem.LaborPrice) - (x.CertificateItem.Deductions ?? 0m) - (x.CertificateItem.Insurance ?? 0m) - (x.CertificateItem.AdditionalInsurance ?? 0m) : 0m)
-                    : g.Sum(x => x.CertificateItem != null ? x.CertificateItem.Quantity * (x.CertificateItem.Rate ?? 0m) + (x.CertificateItem.TransportationExpenses ?? 0m) + (x.CertificateItem.Gratuities ?? 0m) - (x.CertificateItem.Discount ?? 0m) : 0m)), 2)
-            })
-            .ToListAsync(cancellationToken);
+                    PaymentId = pyt.PaymentId,
+                    PaymentTypeId = pyt.PaymentTypeId,
+                    PaymentTypeDescription = language == "ar" ? ptt.DescriptionArabic : ptt.Description,
+                    PaymentMethodId = pyt.PaymentMethodId,
+                    PaymentMethodTypeId = pyt.PaymentMethodTypeId,
+                    PaymentMethodTypeDescription = language == "ar" ? pmt.DescriptionArabic : pmt.Description,
+                    PartyIdFrom = pyt.PartyIdFrom,
+                    PartyIdFromName = pty.Description,
+                    PartyIdTo = pyt.PartyIdTo,
+                    PartyIdToName = ptyto.Description,
+                    StatusId = pyt.StatusId,
+                    StatusDescription = language == "ar" ? sts.DescriptionArabic : sts.Description,
+                    StatusDescriptionEnglish = sts.Description,
+                    EffectiveDate = (DateTime)pyt.EffectiveDate,
+                    Comments = pyt.Comments,
+                    PaymentRefNum = pyt.PaymentRefNum,
+                    PaymentPreferenceId = pyt.PaymentPreferenceId,
+                    ActualCurrencyAmount = pyt.ActualCurrencyAmount,
+                    OverrideGlAccountId = pyt.OverrideGlAccountId,
+                    OrganizationPartyId = ptt.ParentTypeId == "DISBURSEMENT" ? pyt.PartyIdFrom : pyt.PartyIdTo,
+                    Amount = pyt.Amount,
+                    CurrencyUomId = pyt.CurrencyUomId,
+                    FinAccountTransId = pyt.FinAccountTransId,
+                    CreditCardNumber = cc != null ? cc.CardNumber : null,
+                    CreditCardExpiryDate = cc != null ? cc.ExpireDate : null,
+                    FromPartyId = new OrderPartyDto
+                    {
+                        FromPartyId = pty.PartyId,
+                        FromPartyName = pty.Description ?? string.Empty
+                    },
+                    IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
+                    OrderId = ord != null ? ord.OrderId : null,
+                    OrderName = ord != null ? ord.OrderName : null,
+                    // REFACTOR: Added certificateNumber from WorkEffort table
+                    // This provides the certificate number when a valid work effort link exists
+                    CertificateNumber = we != null ? we.CertificateNumber : null
+                }).AsQueryable();
 
-        return Result<List<ProjectCertificateSummaryDto>>.Success(certificates);
-    }
-    catch (Exception ex)
-    {
-        return Result<List<ProjectCertificateSummaryDto>>.Failure($"Failed to retrieve certificates: {ex.Message}");
+            // REFACTOR: Filter query based on PaymentType (incoming or outgoing)
+            if (!string.IsNullOrEmpty(request.PaymentType))
+            {
+                bool isDisbursement = request.PaymentType.ToLower() == "outgoing";
+                query = query.Where(p => p.IsDisbursement == isDisbursement);
+            }
+
+            return await Task.FromResult(query);
+        }
     }
 }

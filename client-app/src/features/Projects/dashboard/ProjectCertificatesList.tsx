@@ -8,7 +8,8 @@ import {
 } from "@progress/kendo-react-grid";
 import { DataResult, State } from "@progress/kendo-data-query";
 import Button from "@mui/material/Button";
-import { Grid, Paper } from "@mui/material";
+import {Grid, Paper} from "@mui/material";
+
 import { Menu, MenuItem, MenuSelectEvent } from "@progress/kendo-react-layout";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -27,6 +28,7 @@ import ProjectCertificateForm from "../form/ProjectCertificateForm";
 import {Certificate, CertificateStatus} from "../../../app/models/project/certificate";
 import {resetUiCertificateItems} from "../slice/certificateItemsUiSlice";
 import {certificateItemsApi} from "../../../app/store/apis/certificateItemsApi";
+
 
 interface ProjectCertificate {
     workEffortId?: string;
@@ -62,7 +64,7 @@ export default function ProjectCertificatesList() {
     const { data, isFetching, refetch } = useFetchProjectCertificatesQuery({ ...dataState });
     const [viewMode, setViewMode] = useState<"list" | "form">("list");
 
-    // // console.log("Certificates data:", data);
+    console.log("Certificates data:", data);
     
     // console.log('List rendered')
 
@@ -278,6 +280,22 @@ export default function ProjectCertificatesList() {
             />
         );
     }
+
+    const columnWidths = {
+        certificateNumber: 150,
+        projectName: 200,
+        certificateCategoryDescription: 320,
+        statusDescription: 120,
+        totalAmount: 120,
+        partyIdSupplier: 150,
+        partyNameSupplier: 200,
+        partyIdContractor: 150,
+        partyNameContractor: 200,
+        description: 250,
+        estimatedStartDate: 150,
+        estimatedCompletionDate: 150,
+        facilityName: 200,
+    };
     
     return (
         <>
@@ -317,99 +335,120 @@ export default function ProjectCertificatesList() {
                         </Menu>
                     </Grid>
                     <Grid item xs={12}>
-                        <div className="div-container">
-                            <KendoGrid
-                                style={{ height: "65vh" }}
-                                resizable={true}
-                                filterable={true}
-                                sortable={true}
-                                pageable={true}
-                                {...dataState}
-                                data={certificates ? certificates : { data: [], total: 0 }}
-                                onDataStateChange={dataStateChange}
-                            >
-                                <Column
-                                    field="certificateNumber"
-                                    title={getTranslatedLabel(
-                                        "projects.certificate.list.certificateNumber",
-                                        "Project Number"
-                                    )}
-                                    width={150}
-                                    locked={false}
-                                    cell={ProjectNumberCell}
-                                />
-                                <Column
-                                    field="projectName"
-                                    title={getTranslatedLabel("projects.certificate.list.projectName", "Project Name")}
-                                />
-                                <Column
-                                    field="certificateCategoryDescription"
-                                    title={getTranslatedLabel("projects.certificate.list.certificateType", "Type")}
-                                    width={320}
-                                />
-                                <Column
-                                    field="partyIdSupplier"
-                                    title={getTranslatedLabel(
-                                        "projects.certificate.list.supplierPartyId",
-                                        "Supplier ID"
-                                    )}
-                                />
-                                <Column
-                                    field="partyNameSupplier"
-                                    title={getTranslatedLabel(
-                                        "projects.certificate.list.supplierPartyName",
-                                        "Supplier Name"
-                                    )}
-                                />
-                                <Column
-                                    field="partyIdContractor"
-                                    title={getTranslatedLabel(
-                                        "projects.certificate.list.contractorPartyId",
-                                        "Contractor ID"
-                                    )}
-                                />
-                                <Column
-                                    field="partyNameContractor"
-                                    title={getTranslatedLabel(
-                                        "projects.certificate.list.contractorPartyName",
-                                        "Contractor Name"
-                                    )}
-                                />
-                                <Column
-                                    field="description"
-                                    title={getTranslatedLabel(
-                                        "projects.certificate.list.description",
-                                        "Certificate Description"
-                                    )}
-                                />
-                                <Column
-                                    field="estimatedStartDate"
-                                    title={getTranslatedLabel("projects.certificate.list.startDate", "From Date")}
-                                    format="{0: dd/MM/yyyy}"
-                                />
-                                <Column
-                                    field="estimatedCompletionDate"
-                                    title={getTranslatedLabel(
-                                        "projects.certificate.list.completionDate",
-                                        "To Date"
-                                    )}
-                                    format="{0: dd/MM/yyyy}"
-                                />
-                                <Column
-                                    field="facilityName"
-                                    title={getTranslatedLabel("projects.certificate.list.facilityName", "Facility Name")}
-                                />
-                            </KendoGrid>
-                            {isFetching && (
-                                <LoadingComponent
-                                    message={getTranslatedLabel(
-                                        "projects.certificate.list.loading",
-                                        "Loading Certificates..."
-                                    )}
-                                />
-                            )}
-                        </div>
+                        <KendoGrid
+                            style={{ height: "65vh" }}
+                            scrollable="scrollable" // REFACTOR: Add scrollable prop
+                            // Purpose: Explicitly enables horizontal and vertical scrolling
+                            // Context: Matches CertificateItemsList* configuration
+                            resizable={true}
+                            filterable={true}
+                            sortable={true}
+                            pageable={true}
+                            {...dataState}
+                            data={certificates ? certificates : { data: [], total: 0 }}
+                            onDataStateChange={dataStateChange}
+                        >
+                            <Column
+                                field="certificateNumber"
+                                title={getTranslatedLabel(
+                                    "projects.certificate.list.certificateNumber",
+                                    "Project Number"
+                                )}
+                                width={columnWidths.certificateNumber}
+                                locked={false}
+                                cell={ProjectNumberCell}
+                            />
+                            <Column
+                                field="projectName"
+                                title={getTranslatedLabel("projects.certificate.list.projectName", "Project Name")}
+                                width={columnWidths.projectName}
+                            />
+                            <Column
+                                field="certificateCategoryDescription"
+                                title={getTranslatedLabel("projects.certificate.list.certificateType", "Type")}
+                                width={columnWidths.certificateCategoryDescription}
+                            />
+                            <Column
+                                field="statusDescription"
+                                title={getTranslatedLabel("projects.certificate.list.statusDescription", "Type")}
+                                width={columnWidths.statusDescription}
+                            />
+                            <Column
+                                field="totalAmount"
+                                title={getTranslatedLabel("projects.certificate.list.totalAmount", "Type")}
+                                width={columnWidths.totalAmount}
+                            />
+                            <Column
+                                field="partyIdSupplier"
+                                title={getTranslatedLabel(
+                                    "projects.certificate.list.supplierPartyId",
+                                    "Supplier ID"
+                                )}
+                                width={columnWidths.partyIdSupplier}
+                            />
+                            <Column
+                                field="partyNameSupplier"
+                                title={getTranslatedLabel(
+                                    "projects.certificate.list.supplierPartyName",
+                                    "Supplier Name"
+                                )}
+                                width={columnWidths.partyNameSupplier}
+                            />
+                            <Column
+                                field="partyIdContractor"
+                                title={getTranslatedLabel(
+                                    "projects.certificate.list.contractorPartyId",
+                                    "Contractor ID"
+                                )}
+                                width={columnWidths.partyIdContractor}
+                            />
+                            <Column
+                                field="partyNameContractor"
+                                title={getTranslatedLabel(
+                                    "projects.certificate.list.contractorPartyName",
+                                    "Contractor Name"
+                                )}
+                                width={columnWidths.partyNameContractor}
+                            />
+                            <Column
+                                field="description"
+                                title={getTranslatedLabel(
+                                    "projects.certificate.list.description",
+                                    "Certificate Description"
+                                )}
+                                width={columnWidths.description}
+                            />
+                            <Column
+                                field="estimatedStartDate"
+                                title={getTranslatedLabel("projects.certificate.list.startDate", "From Date")}
+                                format="{0: dd/MM/yyyy}"
+                                width={columnWidths.estimatedStartDate}
+                            />
+                            <Column
+                                field="estimatedCompletionDate"
+                                title={getTranslatedLabel(
+                                    "projects.certificate.list.completionDate",
+                                    "To Date"
+                                )}
+                                format="{0: dd/MM/yyyy}"
+                                width={columnWidths.estimatedCompletionDate}
+                            />
+                            <Column
+                                field="facilityName"
+                                title={getTranslatedLabel("projects.certificate.list.facilityName", "Facility Name")}
+                                width={columnWidths.facilityName}
+                            />
+                        </KendoGrid>
+                        {isFetching && (
+                            <LoadingComponent
+                                message={getTranslatedLabel(
+                                    "projects.certificate.list.loading",
+                                    "Loading Certificates..."
+                                )}
+                            />
+                        )}
                     </Grid>
+                   
                 </Grid>
             </Paper>
         </>

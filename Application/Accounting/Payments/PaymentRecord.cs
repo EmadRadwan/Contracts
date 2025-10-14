@@ -11,6 +11,7 @@ public class PaymentRecord
     public string PaymentTypeDescription { get; set; }
     public string PaymentMethodId { get; set; }
     public string PaymentMethodTypeId { get; set; }
+    public string CertificateNumber { get; set; }
     public string PaymentMethodTypeDescription { get; set; }
     public string PartyIdFrom { get; set; }
     public string PartyIdFromName { get; set; }
@@ -33,6 +34,7 @@ public class PaymentRecord
     public string FinAccountTransId { get; set; }
     public string CreditCardNumber { get; set; }
     public string? CreditCardExpiryDate { get; set; }
+    public string? OrderId { get; set; }
     public bool IsDisbursement { get; set; }
     public OrderPartyDto FromPartyId { get; set; }
 }

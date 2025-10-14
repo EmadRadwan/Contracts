@@ -23,16 +23,32 @@ const PaymentHeader: React.FC<PaymentHeaderProps> = ({
                                                      }) => {
     const localizationKey = "accounting.payments.form";
     const status = useMemo(() => {
-        switch (formEditMode) {
-            case 1: return { label: "New", backgroundColor: "green", foreColor: "#ffffff" };
-            case 2: return { label: "Not Paid", backgroundColor: "yellow", foreColor: "#000000" };
-            case 3: return { label: "Received", backgroundColor: "green", foreColor: "#ffffff" };
-            case 4: return { label: "Sent", backgroundColor: "blue", foreColor: "#ffffff" };
-            case 5: return { label: "Confirmed", backgroundColor: "yellow", foreColor: "#000000" };
-            case 6: return { label: "Cancelled", backgroundColor: "red", foreColor: "#ffffff" };
-            default: return { label: "Unknown", backgroundColor: "gray", foreColor: "#ffffff" };
+        const statuses = {
+            1: { key: "new", backgroundColor: "green", foreColor: "#ffffff" },
+            2: { key: "not-paid", backgroundColor: "yellow", foreColor: "#000000" },
+            3: { key: "received", backgroundColor: "green", foreColor: "#ffffff" },
+            4: { key: "sent", backgroundColor: "blue", foreColor: "#ffffff" },
+            5: { key: "confirmed", backgroundColor: "yellow", foreColor: "#000000" },
+            6: { key: "cancelled", backgroundColor: "red", foreColor: "#ffffff" },
+            default: { key: "unknown", backgroundColor: "gray", foreColor: "#ffffff" },
+        };
+        const statusKey = statuses[formEditMode] || statuses.default;
+        return {
+            label: getTranslatedLabel(`${localizationKey}.statuses.${statusKey.key}`, statusKey.key),
+            backgroundColor: statusKey.backgroundColor,
+            foreColor: statusKey.foreColor,
+        };
+    }, [formEditMode, getTranslatedLabel]);
+
+    const title = useMemo(() => {
+        if (payment) {
+            return `${getTranslatedLabel(`${localizationKey}.title`, "Payment No:")} ${payment.paymentId}`;
         }
-    }, [formEditMode]);
+        return paymentType === 1
+            ? getTranslatedLabel(`${localizationKey}.new-incoming`, "New Incoming Payment")
+            : getTranslatedLabel(`${localizationKey}.new-outgoing`, "New Outgoing Payment");
+    }, [payment, paymentType, getTranslatedLabel, localizationKey]);
+
 
     return (
         <Grid container spacing={2} alignItems="center">
@@ -46,11 +62,7 @@ const PaymentHeader: React.FC<PaymentHeaderProps> = ({
                     }}
                     variant="h6"
                 >
-                    {payment
-                        ? `${getTranslatedLabel(`${localizationKey}.title`, "Payment No:")} ${payment.paymentId}`
-                        : paymentType === 1
-                            ? getTranslatedLabel(`${localizationKey}.new-incoming`, "New Incoming Payment")
-                            : getTranslatedLabel(`${localizationKey}.new-outgoing`, "New Outgoing Payment")}
+                    {title}
                 </Typography>
             </Grid>
             <Grid item xs={1}>

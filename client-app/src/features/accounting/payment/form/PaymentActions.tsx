@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Button, Menu, MenuItem } from '@mui/material';
 import { Payment } from "../../../../app/models/accounting/payment";
 
-// REFACTOR: Define constant for localization key to avoid repetition and improve maintainability
 const LOCALIZATION_KEY = "accounting.payments.form";
 
 interface PaymentActionsProps {
@@ -10,9 +9,9 @@ interface PaymentActionsProps {
     formEditMode: number;
     getTranslatedLabel: (key: string, defaultValue: string) => string;
     handleMenuSelect: (e: { item: { data: string } }) => void;
+    isFormValid: boolean;
 }
 
-// REFACTOR: Move status transitions logic to a separate function for clarity and reusability
 const getAvailableStatusTransitions = (payment?: Payment) => {
     if (!payment) {
         return { toSent: false, toReceived: false, toCancelled: false, toConfirmed: false, toVoid: false };
@@ -32,22 +31,19 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                                                            formEditMode,
                                                            getTranslatedLabel,
                                                            handleMenuSelect,
+                                                           isFormValid,
                                                        }) => {
-    // REFACTOR: Add state for managing MUI Menu anchor element, following the CreateCustomerMenu example
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
 
-    // REFACTOR: Handle button click to open the menu, aligning with MUI Menu behavior
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
     };
 
-    // REFACTOR: Handle menu close to reset anchor element, aligning with MUI Menu behavior
     const handleClose = () => {
         setAnchorEl(null);
     };
 
-    // REFACTOR: Adapt menu selection handler to MUI Menu, maintaining confirmation logic for destructive actions
     const onMenuSelect = (action: string) => {
         if (action === 'cancel' && !window.confirm(`Cancel payment ${payment?.paymentId}?`)) {
             return;
@@ -68,7 +64,7 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                     color="primary"
                     onClick={handleClick}
                     sx={{ mt: 2, mr: 2 }}
-                    disabled={!payment} // REFACTOR: Disable button if no payment is provided
+                    disabled={!payment} 
                 >
                     {getTranslatedLabel("general.actions", "Actions")}
                 </Button>
@@ -98,7 +94,7 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                 color="primary"
                 onClick={handleClick}
                 sx={{ mt: 2, mr: 2 }}
-                disabled={!payment} // REFACTOR: Disable button if no payment is provided
+                disabled={!payment} 
             >
                 {getTranslatedLabel("general.actions", "Actions")}
             </Button>
@@ -110,17 +106,17 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
                 
-                {getAvailableStatusTransitions(payment).toSent && (
+                {getAvailableStatusTransitions(payment).toSent && isFormValid && (
                     <MenuItem onClick={() => onMenuSelect('send')}>
                         {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.send`, "Status to Sent")}
                     </MenuItem>
                 )}
-                {getAvailableStatusTransitions(payment).toReceived && (
+                {getAvailableStatusTransitions(payment).toReceived && isFormValid && (
                     <MenuItem onClick={() => onMenuSelect('receive')}>
                         {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.receive`, "Status to Received")}
                     </MenuItem>
                 )}
-                {getAvailableStatusTransitions(payment).toCancelled && (
+                {/*{getAvailableStatusTransitions(payment).toCancelled && (
                     <MenuItem onClick={() => onMenuSelect('cancel')}>
                         {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.cancel`, "Status to Cancelled")}
                     </MenuItem>
@@ -140,7 +136,7 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                 </MenuItem>
                 <MenuItem onClick={() => onMenuSelect('outgoing')}>
                     {getTranslatedLabel(`${LOCALIZATION_KEY}.new-outgoing`, "New Outgoing Payment")}
-                </MenuItem>
+                </MenuItem>*/}
                 <MenuItem onClick={() => onMenuSelect('transactions')}>
                     {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.transactions`, "Transactions")}
                 </MenuItem>

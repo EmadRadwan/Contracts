@@ -32,9 +32,13 @@ namespace Application.Accounting.Invoices
                     join fromParty in _context.Parties on inv.PartyIdFrom equals fromParty.PartyId
                     join toParty in _context.Parties on inv.PartyId equals toParty.PartyId
                     join sts in _context.StatusItems on inv.StatusId equals sts.StatusId
-                    join bil in _context.BillingAccounts on inv.BillingAccountId equals bil.BillingAccountId into
-                        billingGroup
+                    join bil in _context.BillingAccounts on inv.BillingAccountId equals bil.BillingAccountId into billingGroup
                     from bil in billingGroup.DefaultIfEmpty()
+                    join oib in _context.OrderItemBillings on inv.InvoiceId equals oib.InvoiceId into orderBillingGroup
+                    from oib in orderBillingGroup.DefaultIfEmpty() // Left join for invoices without orders
+                    join we in _context.WorkEfforts on new { oib.OrderId, WorkEffortTypeId = "PROJECT_CERTIFICATE" } 
+                        equals new { OrderId = we.RelatedOrderId, we.WorkEffortTypeId } into workEffortGroup
+                    from we in workEffortGroup.DefaultIfEmpty() // Left join for orders without project certificates
                     select new InvoiceRecord
                     {
                         InvoiceId = inv.InvoiceId,
@@ -60,11 +64,13 @@ namespace Application.Accounting.Invoices
                         FromPartyName = fromParty.Description,
                         BillingAccountId = inv.BillingAccountId,
                         BillingAccountName = bil.Description,
-                        // Return zero for now
-                        Total = 0,
-                        OutstandingAmount = 0
+                        Total = (from item in _context.InvoiceItems
+                            where item.InvoiceId == inv.InvoiceId
+                            select item.Quantity * item.Amount).Sum(),
+                        OutstandingAmount = 0,
+                        OrderId = oib != null ? oib.OrderId : null,
+                        CertificateNumber = we != null ? we.CertificateNumber : null
                     };
-
 
                 return baseQuery;
             }

@@ -27,4 +27,6 @@ public class ProjectCertificateRecord
     public string? RelatedOrderId { get; set; }
     public string? FacilityId { get; set; }
     public string FacilityName { get; set; }
+    public decimal TotalAmount { get; set; }
+
 }

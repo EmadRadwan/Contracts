@@ -44,11 +44,24 @@ namespace Application.Projects
             public async Task<IQueryable<ProjectCertificateRecord>> Handle(Query request, CancellationToken cancellationToken)
             {
                 var language = request.Language;
+                
+                var itemsTotalSubquery = from item in _context.WorkEfforts.AsNoTracking()
+                    where item.WorkEffortTypeId == "CERTIFICATE_ITEM"
+                    join parent in _context.WorkEfforts.AsNoTracking()
+                        on item.WorkEffortParentId equals parent.WorkEffortId
+                    where parent.WorkEffortTypeId == "PROJECT_CERTIFICATE"
+                    group new { item, parent } by item.WorkEffortParentId into itemGroup
+                    select new
+                    {
+                        WorkEffortParentId = itemGroup.Key,
+                        TotalAmount = itemGroup.Sum(i =>
+                            i.parent.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                                ? ((i.item.Quantity ?? 0m) * ((i.item.MaterialPrice ?? 0m) + (i.item.LaborPrice ?? 0m))) -
+                                  (i.item.Discount ?? 0m) - (i.item.Insurance ?? 0m) - (i.item.AdditionalInsurance ?? 0m) - (i.item.Deductions ?? 0m)
+                                : (i.item.TotalAmount ?? ((i.item.Quantity ?? 0m) * (i.item.Rate ?? 0m)) +
+                                    (i.item.TransportationExpenses ?? 0m) + (i.item.Gratuities ?? 0m) - (i.item.Discount ?? 0m)))
+                    };
 
-                // REFACTOR: Added join to Facilities table for FacilityId and FacilityName
-                // Purpose: Include facility data at header level in ProjectCertificateRecord
-                // Improvement: Enables frontend to display facility without additional queries
-                // Context: FacilityId moved from item to header; left join ensures null for non-facility types
                 var query = from we in _context.WorkEfforts.AsNoTracking()
                             join si in _context.StatusItems on we.CurrentStatusId equals si.StatusId into statusGroup
                             from si in statusGroup.DefaultIfEmpty()
@@ -60,6 +73,8 @@ namespace Application.Projects
                             from contractor in contractorGroup.DefaultIfEmpty()
                             join fac in _context.Facilities on we.FacilityId equals fac.FacilityId into facGroup
                             from fac in facGroup.DefaultIfEmpty()
+                            join total in itemsTotalSubquery on we.WorkEffortId equals total.WorkEffortParentId into totalGroup
+                            from total in totalGroup.DefaultIfEmpty()
                             where we.WorkEffortTypeId == "PROJECT_CERTIFICATE"
                             select new ProjectCertificateRecord
                             {
@@ -80,7 +95,8 @@ namespace Application.Projects
                                 PartyNameContractor = contractor != null ? contractor.Description : null,
                                 RelatedOrderId = we.RelatedOrderId,
                                 FacilityId = we.FacilityId,
-                                FacilityName = fac != null ? fac.FacilityName : null
+                                FacilityName = fac != null ? fac.FacilityName : null,
+                                TotalAmount = total != null ? total.TotalAmount : 0m
                             };
 
                 var result = query.Select(record => new ProjectCertificateRecord
@@ -102,7 +118,8 @@ namespace Application.Projects
                     PartyNameContractor = record.PartyNameContractor,
                     RelatedOrderId = record.RelatedOrderId,
                     FacilityId = record.FacilityId,
-                    FacilityName = record.FacilityName
+                    FacilityName = record.FacilityName,
+                    TotalAmount = record.TotalAmount
                 });
                 
                 return result;

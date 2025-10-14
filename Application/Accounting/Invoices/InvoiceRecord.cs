@@ -12,7 +12,8 @@ public class InvoiceRecord
     public string FromPartyName { get; set; }
     public InvoicePartyDto? PartyId { get; set; }
     public string ToPartyName { get; set; }
-    public string? RoleTypeId { get; set; }
+    public string? OrderId { get; set; }
+    public string? CertificateNumber { get; set; }
     public string? StatusId { get; set; }
 
 

@@ -13,7 +13,6 @@ public class ListPayments
     {
         public ODataQueryOptions<PaymentRecord> Options { get; set; }
         public string Language { get; set; }
-        // REFACTOR: Added PaymentType property to filter incoming or outgoing payments
         public string? PaymentType { get; set; }
     }
 
@@ -37,6 +36,15 @@ public class ListPayments
                 join pmt in _context.PaymentMethodTypes on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId
                 join cc in _context.CreditCards on pyt.PaymentMethodId equals cc.PaymentMethodId into creditCardJoin
                 from cc in creditCardJoin.DefaultIfEmpty()
+                join opp in _context.OrderPaymentPreferences on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId into orderPaymentJoin
+                from opp in orderPaymentJoin.DefaultIfEmpty()
+                join ord in _context.OrderHeaders on opp.OrderId equals ord.OrderId into orderJoin
+                from ord in orderJoin.DefaultIfEmpty()
+                // REFACTOR: Added left outer join with WorkEfforts to retrieve certificateNumber
+                // This join uses RelatedOrderId to link with OrderId, ensuring optional matching
+                // Left outer join ensures payments without associated WorkEfforts are still included
+                join we in _context.WorkEfforts on ord.OrderId equals we.RelatedOrderId into workEffortJoin
+                from we in workEffortJoin.DefaultIfEmpty()
                 select new PaymentRecord
                 {
                     PaymentId = pyt.PaymentId,
@@ -69,7 +77,11 @@ public class ListPayments
                         FromPartyId = pty.PartyId,
                         FromPartyName = pty.Description ?? string.Empty
                     },
-                    IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT" 
+                    IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
+                    OrderId = ord != null ? ord.OrderId : null,
+                    // REFACTOR: Added CertificateNumber from WorkEfforts
+                    // This field is included to provide the certificate number associated with the order, if available
+                    CertificateNumber = we != null ? we.CertificateNumber : null
                 }).AsQueryable();
 
             // REFACTOR: Filter query based on PaymentType (incoming or outgoing)
