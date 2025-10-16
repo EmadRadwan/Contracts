@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Application.Accounting.Invoices;
 using Application.Accounting.Services;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Persistence;
 
 public class ChangeInvoiceStatus
@@ -43,6 +44,32 @@ public class ChangeInvoiceStatus
                     request.PaidDate,
                     request.ActualCurrency
                 );
+                
+                var affectedRecords = _context.ChangeTracker
+                    .Entries()
+                    .Where(e => e.State == EntityState.Added ||
+                                e.State == EntityState.Modified ||
+                                e.State == EntityState.Deleted)
+                    .Select(e => new ChangeRecord
+                    {
+                        TableName = e.Entity.GetType().Name,
+                        PKValues = string.Join(", ", e.Properties
+                            .Where(p => p.Metadata.IsPrimaryKey())
+                            .Select(p => $"{p.Metadata.Name}: {p.CurrentValue}")),
+                        Operation = e.State.ToString(),
+                        // REFACTOR: Added conditional check to include GlAccountId for AcctgTransEntries
+                        // Purpose: Captures GlAccountId specifically for AcctgTransEntries entities
+                        // Improvement: Enhances audit trail with critical financial data
+                        AdditionalInfo = e.Entity.GetType().Name == "AcctgTransEntries" 
+                            ? $"GlAccountId: {e.Property("GlAccountId")?.CurrentValue ?? "N/A"}"
+                            : null
+                    })
+                    .ToList();
+       
+                foreach (var record in affectedRecords)
+                {
+                    Console.WriteLine(record);
+                }
 
                 
                 await _context.SaveChangesAsync(cancellationToken);

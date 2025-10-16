@@ -12,10 +12,14 @@ public class TransactionsController : BaseApiController
     [HttpGet("{invoiceId}/{acctgTransTypeId}/getInvoiceTransactions")]
     public async Task<IActionResult> GetInvoiceTransactions(string invoiceId, string acctgTransTypeId)
     {
-        return HandleResult(await Mediator.Send(new GetInvoiceTransactionEntries.Query 
-        { 
-            InvoiceId = invoiceId, 
-            AcctgTransTypeId = acctgTransTypeId 
+        // REFACTOR: Add language parameter to support Arabic/English descriptions
+        // Retrieves language from request context (e.g., headers or user settings)
+        var language = GetLanguage();
+        return HandleResult(await Mediator.Send(new GetInvoiceTransactionEntries.Query
+        {
+            InvoiceId = invoiceId,
+            AcctgTransTypeId = acctgTransTypeId,
+            Language = language
         }));
     }
 

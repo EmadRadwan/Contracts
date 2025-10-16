@@ -157,7 +157,6 @@ export default function InvoiceDisplayForm({ invoiceId: propInvoiceId, mode}: Pr
     // Improvement: Adds support for transactions/payments routes and improves UX
     const handleMenuSelect = async (e: MenuSelectEvent) => {
         const menuData = e.item.data || e.item.text;
-        //console.log("handleMenuSelect:", { menuData, invoiceId, statusId: invoice?.statusId, invoice });
 
         switch (menuData) {
             case "new":

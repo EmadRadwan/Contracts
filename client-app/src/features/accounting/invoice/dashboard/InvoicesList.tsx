@@ -24,7 +24,8 @@ export default function InvoicesList() {
     const [invoices, setInvoices] = useState<DataResult>({data: [], total: 0});
     const navigate = useNavigate();
 
-    const initialDataState = {take: 6, skip: 0};
+    const initialDataState = {take: 6, skip: 0,
+        sort: [{ field: "invoiceDate", dir: "desc" }],};
     const [dataState, setDataState] = React.useState<State>(initialDataState);
 
     const dataStateChange = (e: GridDataStateChangeEvent) => {

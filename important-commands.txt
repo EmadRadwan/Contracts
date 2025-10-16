@@ -124,7 +124,7 @@ var affectedRecords5 = _context.ChangeTracker
     ----------------------------------------------------------------  
     
    var affectedRecords4 = _context.ChangeTracker
-       .Entries<SupplierProduct>() 
+       .Entries<AcctgTransEntry>() 
        .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted)
        .Select(e => new
        {
@@ -277,5 +277,13 @@ New way to return meaningful
  
  the following a put in my CV, give me some details so i can answer questions about it
  
+ //////
+ 
+ SetPaymentStatus -> to_sent
+ 
+ CheckPaymentInvoices
+    - checks payment application for payment
+    - CheckInvoicePaymentApplications
+ - CreateAcctgTransAndEntriesForOutgoingPayment
 
 

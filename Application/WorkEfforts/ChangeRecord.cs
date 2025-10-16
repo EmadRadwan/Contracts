@@ -3,6 +3,7 @@ public class ChangeRecord
     public string TableName { get; set; }
     public string PKValues { get; set; }
     public string Operation { get; set; }
+    public string AdditionalInfo { get; set; }
 
     public override string ToString()
     {

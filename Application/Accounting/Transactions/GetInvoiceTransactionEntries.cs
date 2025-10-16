@@ -8,11 +8,11 @@ namespace Application.Shipments.Transactions
 {
     public class GetInvoiceTransactionEntries
     {
-        // Modified Query to filter by InvoiceId and AcctgTransTypeId
         public class Query : IRequest<Result<List<AcctgTransEntryDto>>>
         {
             public string InvoiceId { get; set; }
-            public string AcctgTransTypeId { get; set; }  // e.g., SALES_INVOICE or PAYMENT_APPL
+            public string AcctgTransTypeId { get; set; }
+            public string Language { get; set; }
         }
 
         public class Handler : IRequestHandler<Query, Result<List<AcctgTransEntryDto>>>
@@ -20,19 +20,22 @@ namespace Application.Shipments.Transactions
             private readonly DataContext _context;
             private readonly IMapper _mapper;
 
+            // REFACTOR: Add IMapper dependency to align with GetPaymentTransactionEntries
+            // Ensures consistent mapping behavior if needed for DTO transformations
             public Handler(DataContext context, IMapper mapper)
             {
-                _mapper = mapper;
                 _context = context;
+                _mapper = mapper;
             }
 
             public async Task<Result<List<AcctgTransEntryDto>>> Handle(Query request, CancellationToken cancellationToken)
             {
                 try
                 {
-                    // Build query:
-                    // Join AcctgTransEntries to AcctgTrans, then optionally join Products.
-                    // Filter on InvoiceId and AcctgTransTypeId.
+                    // REFACTOR: Normalize language input to lowercase and default to "en"
+                    // Ensures consistent language handling and prevents null reference issues
+                    var language = request.Language?.ToLower() ?? "en";
+
                     var query = _context.AcctgTransEntries
                         .Join(_context.AcctgTrans,
                             acctgTransEntry => acctgTransEntry.AcctgTransId,
@@ -51,16 +54,16 @@ namespace Application.Shipments.Transactions
                             AcctgTransEntrySeqId = c.joinedData.AcctgTransEntry.AcctgTransEntrySeqId,
                             AcctgTransTypeDescription = c.joinedData.AcctgTrans.AcctgTransType.Description,
                             Description = c.joinedData.AcctgTransEntry.Description,
-                            VoucherRef = c.joinedData.AcctgTransEntry.VoucherRef,
                             PartyId = c.joinedData.AcctgTransEntry.PartyId,
-                            RoleTypeId = c.joinedData.AcctgTransEntry.RoleTypeId,
-                            TheirPartyId = c.joinedData.AcctgTransEntry.TheirPartyId,
                             ProductId = c.joinedData.AcctgTransEntry.ProductId,
-                            TheirProductId = c.joinedData.AcctgTransEntry.TheirProductId,
-                            InventoryItemId = c.joinedData.AcctgTransEntry.InventoryItemId,
                             GlAccountTypeId = c.joinedData.AcctgTransEntry.GlAccountTypeId,
-                            GlAccountTypeDescription = c.joinedData.AcctgTransEntry.GlAccount.AccountName,
-                            GlAccountClassDescription = c.joinedData.AcctgTransEntry.GlAccount.GlAccountClass.Description,
+                            // REFACTOR: Add Arabic support for GlAccountTypeDescription
+                            // Selects AccountNameArabic for "ar" language, falls back to AccountName if null or language is "en"
+                            GlAccountTypeDescription = c.joinedData.AcctgTransEntry.GlAccount != null
+                                ? (language == "ar"
+                                    ? c.joinedData.AcctgTransEntry.GlAccount.AccountNameArabic ?? c.joinedData.AcctgTransEntry.GlAccount.AccountName
+                                    : c.joinedData.AcctgTransEntry.GlAccount.AccountName)
+                                : "N/A",
                             GlAccountId = c.joinedData.AcctgTransEntry.GlAccountId,
                             OrganizationPartyId = c.joinedData.AcctgTransEntry.OrganizationPartyId,
                             Amount = c.joinedData.AcctgTransEntry.Amount,
@@ -69,16 +72,10 @@ namespace Application.Shipments.Transactions
                             OrigCurrencyUomId = c.joinedData.AcctgTransEntry.OrigCurrencyUomId,
                             DebitCreditFlag = c.joinedData.AcctgTransEntry.DebitCreditFlag,
                             DueDate = c.joinedData.AcctgTransEntry.DueDate,
-                            GroupId = c.joinedData.AcctgTransEntry.GroupId,
-                            TaxId = c.joinedData.AcctgTransEntry.TaxId,
-                            ReconcileStatusId = c.joinedData.AcctgTransEntry.ReconcileStatusId,
-                            SettlementTermId = c.joinedData.AcctgTransEntry.SettlementTermId,
-                            IsSummary = c.joinedData.AcctgTransEntry.IsSummary,
                             IsPosted = c.joinedData.AcctgTrans.IsPosted,
-                            ProductName = c.Products.FirstOrDefault() != null ? c.Products.First().ProductName : null,
-                            GlFiscalTypeId = c.joinedData.AcctgTrans.GlFiscalTypeId,
                             TransactionDate = c.joinedData.AcctgTrans.TransactionDate,
-                            PostedDate = c.joinedData.AcctgTrans.PostedDate
+                            PostedDate = c.joinedData.AcctgTrans.PostedDate,
+                            ProductName = c.Products.FirstOrDefault() != null ? c.Products.First().ProductName : null
                         });
 
                     var invoiceTransactionEntries = await query.ToListAsync(cancellationToken);
@@ -87,7 +84,6 @@ namespace Application.Shipments.Transactions
                 }
                 catch (Exception ex)
                 {
-                    // Handle exception and return an error result
                     return Result<List<AcctgTransEntryDto>>.Failure(ex.Message);
                 }
             }

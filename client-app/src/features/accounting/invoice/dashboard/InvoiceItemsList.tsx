@@ -15,6 +15,8 @@ import {InvoiceItem} from "../../../../app/models/accounting/invoiceItem";
 import {nonDeletedInvoiceItemsSelector} from "../slice/invoiceSelectors";
 import ModalContainer from "../../../../app/common/modals/ModalContainer";
 import EditInvoiceItem from "../form/EditInvoiceItem";
+import LoadingComponent from "../../../../app/layout/LoadingComponent";
+import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
 
 interface Props {
     invoiceId: string | undefined
@@ -35,8 +37,9 @@ export default function InvoiceItemsList({invoiceId, canEdit}: Props) {
     const uiInvoiceItems: any = useSelector(nonDeletedInvoiceItemsSelector);
     const [editMode, setEditMode] = useState(0)
     const [show, setShow] = useState(false)
-    
-    const {data: invoiceItemsData} = useFetchInvoiceItemsQuery(invoiceId,
+    const {getTranslatedLabel} = useTranslationHelper()
+
+    const {data: invoiceItemsData, error, isLoading} = useFetchInvoiceItemsQuery(invoiceId,
         {skip: invoiceId === undefined});
 
     const handleSelectInvoiceItem = useCallback(
@@ -150,6 +153,7 @@ export default function InvoiceItemsList({invoiceId, canEdit}: Props) {
                     <Column field="description" title="Description" width={200}/>
 
                 </KendoGrid>
+                {isLoading && <LoadingComponent message={getTranslatedLabel("product.promos.list.loading", "Loading Invoice Items...")} />}
             </Grid>
         </>
 

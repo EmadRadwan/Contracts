@@ -85,8 +85,6 @@ export default function AccountingTransactionsList() {
     }
   }, [data]);
 
-  console.log("accountingTrans", accountingTrans);
-  // When component mounts or location.state.acctTrans changes, decide whether to show form
   useEffect(() => {
     if (location.state?.acctTrans) {
       setShouldShowTransactionForm(true);

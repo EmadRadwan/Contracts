@@ -255,23 +255,6 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                                     />
                                     <Column field="glAccountClassDescription" title="Account Class" width={140} />
                                     <Column field="origCurrencyUomId" title="Currency" width={90} />
-                                    <Column
-                                        title="Diagram"
-                                        width={100}
-                                        cell={(props) => (
-                                            <td>
-                                                <Button
-                                                    variant="contained"
-                                                    size="small"
-                                                    onClick={() =>
-                                                        handleShowDiagram(props.dataItem.acctgTransId)
-                                                    }
-                                                >
-                                                    View
-                                                </Button>
-                                            </td>
-                                        )}
-                                    />
                                 </KendoGrid>
                             </Grid>
                         </Grid>

@@ -301,7 +301,7 @@ namespace Application.Projects
 
                             // Purpose: Ensures GrandTotal reflects the sum of adjusted SubTotals
                             // Context: Avoids redundant calculations and aligns with OrderItem SubTotals
-                            var grandTotal = orderItems.Sum(i => i.SubTotal) +
+                            var grandTotal = orderItems.Sum(i => i.Quantity * i.UnitPrice) +
                                              orderAdjustments.Sum(a => a.Amount);
 
                             var orderDto = new OrderDto

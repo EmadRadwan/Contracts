@@ -550,7 +550,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             var acctgTransId = await CreateAcctgTransAndEntries(createParams);
 
             // 9. Return the newly created accounting transaction ID
-            _logger.LogInformation($"AcctgTrans {acctgTransId} created for PaymentApplication {paymentApplicationId}.");
+            //_logger.LogInformation($"AcctgTrans {acctgTransId} created for PaymentApplication {paymentApplicationId}.");
             return acctgTransId;
         }
         catch (Exception ex)
