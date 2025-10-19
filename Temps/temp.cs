@@ -1,175 +1,118 @@
-using Bogus;
-using Domain;
-using Microsoft.AspNetCore.Identity;
+using Application.Common;
+using FluentValidation;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
+using Persistence;
 
-namespace Persistence;
+namespace Application.Projects;
 
-public class SeedContracts
+public class ListMultiPaymentItems
 {
-    public static async Task SeedData(DataContext context,
-        UserManager<AppUserLogin> userManager, RoleManager<ApplicationRole> roleManager)
+    public class Query : IRequest<Result<List<MultiPaymentItemDto>>>
     {
-        var dateNow = DateTime.UtcNow;
-        var nowDateTime = new DateTime(dateNow.Year, dateNow.Month, dateNow.Day, dateNow.Hour, dateNow.Minute,
-            dateNow.Second, 0, DateTimeKind.Utc);
+        public string WorkEffortId { get; set; }
+    }
 
-        // [Existing seeding logic for other entities unchanged...]
-        // MimeTypes, DataResourceTypes, ContentTypes, etc., remain as provided.
-
-        // [Skipping to user and role seeding section]
-
-        // REFACTOR: Wrapped user and role seeding in a transaction to ensure atomicity.
-        // This ensures consistency between UserLogins, AspNetUsers, and AspNetUserRoles.
-        using var transaction = await context.Database.BeginTransactionAsync();
-        try
+    // REFACTOR: Simplified validation to focus only on WorkEffortId
+    // Purpose: Ensure the required WorkEffortId is provided
+    // Context: Reduced complexity compared to original, focusing on essential validation
+    public class QueryValidator : AbstractValidator<Query>
+    {
+        public QueryValidator()
         {
-            // Create roles
-            var requiredRoles = new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate" };
-            foreach (var role in requiredRoles)
+            RuleFor(x => x.WorkEffortId).NotEmpty().WithMessage("Work Effort ID is required");
+        }
+    }
+
+    public class Handler : IRequestHandler<Query, Result<List<MultiPaymentItemDto>>>
+    {
+        private readonly DataContext _context;
+
+        public Handler(DataContext context)
+        {
+            _context = context;
+        }
+
+        public async Task<Result<List<MultiPaymentItemDto>>> Handle(Query request, CancellationToken cancellationToken)
+        {
+            // REFACTOR: Added validation step before query execution
+            // Purpose: Prevent invalid queries from hitting the database
+            // Context: Matches simplified validation pattern
+            var validator = new QueryValidator();
+            var validationResult = await validator.ValidateAsync(request, cancellationToken);
+            if (!validationResult.IsValid)
+                return Result<List<MultiPaymentItemDto>>.Failure(string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
+
+            try
             {
-                // REFACTOR: Added error handling for role creation to catch and report failures.
-                // This ensures roles are created successfully before user assignments.
-                if (!await roleManager.RoleExistsAsync(role))
-                {
-                    var result = await roleManager.CreateAsync(new ApplicationRole { Name = role });
-                    if (!result.Succeeded)
+                // REFACTOR: Simplified query to fetch essential MultiPaymentItem fields
+                // Purpose: Reduce complexity by limiting joins and focusing on core data
+                // Context: Optimized for performance and readability
+                var multiPaymentItems = await _context.MultiPaymentItems
+                    .Where(item => item.WorkEffortId == request.WorkEffortId)
+                    .Select(item => new MultiPaymentItemDto
                     {
-                        throw new InvalidOperationException($"Failed to create role {role}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-                    }
-                }
+                        ItemId = item.ItemId,
+                        WorkEffortId = item.WorkEffortId,
+                        ProjectId = item.ProjectId,
+                        ProjectName = item.ProjectName,
+                        SubProjectId = item.SubProjectId,
+                        SubProjectName = item.SubProjectName,
+                        ItemType = item.ItemType,
+                        ProductId = item.ProductId,
+                        ProductName = item.ProductName,
+                        UomId = item.UomId,
+                        UomName = item.UomName,
+                        Description = item.Description,
+                        Amount = item.Amount,
+                        Discount = item.Discount,
+                        DiscountMode = item.DiscountMode,
+                        TransportationExpenses = item.TransportationExpenses,
+                        Gratuities = item.Gratuities,
+                        Total = item.Total
+                    })
+                    .ToListAsync(cancellationToken);
+
+                // REFACTOR: Added check for empty results
+                // Purpose: Provide clear feedback when no items are found
+                // Context: Improves user experience with meaningful responses
+                if (!multiPaymentItems.Any())
+                    return Result<List<MultiPaymentItemDto>>.Success(new List<MultiPaymentItemDto>());
+
+                return Result<List<MultiPaymentItemDto>>.Success(multiPaymentItems);
             }
-
-            // Seed UserLogins
-            if (!await context.UserLogins.AnyAsync())
+            catch (Exception ex)
             {
-                // REFACTOR: Reused original UserLogin creation logic for consistency.
-                // This maintains the same behavior while ensuring proper saving.
-                var userLogins = CreateUserLogins(nowDateTime);
-                context.UserLogins.AddRange(userLogins);
-                await context.SaveChangesAsync();
-            }
-
-            // Seed AppUserLogins and assign roles
-            if (!await userManager.Users.AnyAsync())
-            {
-                var users = CreateAppUserLogins(nowDateTime);
-
-                // REFACTOR: Replaced Task.WhenAll with sequential user creation for better error handling.
-                // This ensures each user creation is validated, preventing silent failures.
-                foreach (var user in users)
-                {
-                    var createResult = await userManager.CreateAsync(user, "Pa$$w0rd123!"); // Updated password to meet common policies
-                    if (!createResult.Succeeded)
-                    {
-                        throw new InvalidOperationException($"Failed to create user {user.Email}: {string.Join(", ", createResult.Errors.Select(e => e.Description))}");
-                    }
-                }
-
-                // REFACTOR: Enhanced role assignment with validation and error handling.
-                // This ensures roles are assigned only to existing users and reports failures.
-                await AssignRoles(userManager, nowDateTime);
-            }
-
-            await transaction.CommitAsync();
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync();
-            throw new InvalidOperationException($"User and role seeding failed: {ex.Message}", ex);
-        }
-
-        // [Rest of the seeding logic unchanged...]
-        // Facilities, WorkEfforts, BillingAccounts, etc., remain as provided.
-    }
-
-    static List<UserLogin> CreateUserLogins(DateTime nowDateTime)
-    {
-        return new List<UserLogin>
-        {
-            new UserLogin
-            {
-                UserLoginId = "3bb4e859-1157-4cc7-81b5-10f419359a41",
-                PartyId = "26",
-                CreatedStamp = nowDateTime,
-                LastUpdatedStamp = nowDateTime
-            },
-            new UserLogin
-            {
-                UserLoginId = "29a02dc0-70ea-46d0-a687-6a72b2f91d07",
-                PartyId = "27",
-                CreatedStamp = nowDateTime,
-                LastUpdatedStamp = nowDateTime
-            }
-        };
-    }
-
-    static List<AppUserLogin> CreateAppUserLogins(DateTime nowDateTime)
-    {
-        return new List<AppUserLogin>
-        {
-            new()
-            {
-                Id = "3bb4e859-1157-4cc7-81b5-10f419359a41", // REFACTOR: Added Id to match UserLoginId for consistency.
-                DisplayName = "Emad Radwan",
-                UserName = "Emad",
-                PartyId = "26",
-                OrganizationPartyId = "Company",
-                ProductStoreId = "9000",
-                Email = "eradwan1967@gmail.com",
-                DualLanguage = "N",
-                EmailConfirmed = true,
-                CreatedStamp = nowDateTime,
-                LastUpdatedStamp = nowDateTime
-            },
-            new()
-            {
-                Id = "29a02dc0-70ea-46d0-a687-6a72b2f91d07", // REFACTOR: Added Id to match UserLoginId for consistency.
-                DisplayName = "Ahmad Agiba",
-                UserName = "Ahmad",
-                PartyId = "27",
-                OrganizationPartyId = "Company",
-                ProductStoreId = "9000",
-                Email = "aagiba@gmail.com",
-                DualLanguage = "N",
-                EmailConfirmed = true,
-                CreatedStamp = nowDateTime,
-                LastUpdatedStamp = nowDateTime
-            }
-        };
-    }
-
-    static async Task AssignRoles(UserManager<AppUserLogin> userManager, DateTime nowDateTime)
-    {
-        // REFACTOR: Added error handling and validation for role assignments.
-        // This ensures roles are assigned only to existing users and reports failures.
-        var userRoles = new Dictionary<string, string[]>
-        {
-            { "eradwan1967@gmail.com", new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate" } },
-            { "aagiba@gmail.com", new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate" } }
-        };
-
-        foreach (var (email, roles) in userRoles)
-        {
-            var user = await userManager.FindByEmailAsync(email);
-            if (user == null)
-            {
-                throw new InvalidOperationException($"User with email {email} not found for role assignment.");
-            }
-
-            // REFACTOR: Check existing roles to avoid duplicate assignments.
-            // This improves performance by skipping unnecessary database operations.
-            var existingRoles = await userManager.GetRolesAsync(user);
-            var rolesToAdd = roles.Except(existingRoles).ToArray();
-            if (rolesToAdd.Any())
-            {
-                var roleResult = await userManager.AddToRolesAsync(user, rolesToAdd);
-                if (!roleResult.Succeeded)
-                {
-                    throw new InvalidOperationException($"Failed to assign roles to {email}: {string.Join(", ", roleResult.Errors.Select(e => e.Description))}");
-                }
+                // REFACTOR: Standardized error handling
+                // Purpose: Provide clear error messages for debugging
+                // Context: Consistent with simplified error handling approach
+                return Result<List<MultiPaymentItemDto>>.Failure($"Failed to retrieve multi-payment items: {ex.Message}");
             }
         }
     }
+}
+
+// REFACTOR: Added DTO to match the form's expected structure
+// Purpose: Ensure compatibility with frontend MultiPaymentItem model
+// Context: Simplified to include only fields used in the form
+public class MultiPaymentItemDto
+{
+    public string ItemId { get; set; }
+    public string WorkEffortId { get; set; }
+    public string ProjectId { get; set; }
+    public string ProjectName { get; set; }
+    public string SubProjectId { get; set; }
+    public string SubProjectName { get; set; }
+    public string ItemType { get; set; }
+    public string ProductId { get; set; }
+    public string ProductName { get; set; }
+    public string UomId { get; set; }
+    public string UomName { get; set; }
+    public string Description { get; set; }
+    public decimal Amount { get; set; }
+    public decimal Discount { get; set; }
+    public string DiscountMode { get; set; }
+    public decimal TransportationExpenses { get; set; }
+    public decimal Gratuities { get; set; }
+    public decimal Total { get; set; }
 }

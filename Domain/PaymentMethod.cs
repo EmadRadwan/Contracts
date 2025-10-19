@@ -46,4 +46,5 @@ public class PaymentMethod
     public ICollection<Payment> Payments { get; set; }
     public ICollection<ReturnHeader> ReturnHeaders { get; set; }
     public ICollection<ShoppingList> ShoppingLists { get; set; }
+    public ICollection<WorkEffort> WorkEfforts { get; set; }
 }

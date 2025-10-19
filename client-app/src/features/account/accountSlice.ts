@@ -61,7 +61,7 @@ export const accountSlice = createSlice({
     setUser: (state, action) => {
       // REFACTOR: Use UserDto roles directly, with fallback to empty array.
       state.user = { ...action.payload, roles: action.payload.roles || [] };
-      console.log('Set user:', { ...state.user, roles: state.user.roles });
+      //console.log('Set user:', { ...state.user, roles: state.user.roles });
     },
   },
   extraReducers: (builder) => {
@@ -76,7 +76,7 @@ export const accountSlice = createSlice({
         (state, action) => {
           // REFACTOR: Use UserDto roles, log for debugging.
           state.user = { ...action.payload, roles: action.payload.roles || [] };
-          console.log('Updated user state:', { ...state.user, roles: state.user.roles });
+          //console.log('Updated user state:', { ...state.user, roles: state.user.roles });
         }
     );
     builder.addMatcher(isAnyOf(signInUser.rejected), (state, action) => {

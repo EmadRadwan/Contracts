@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class Addeduomtoorderitem : Migration
+    public partial class AddedpaymentMethodtoworkeffort : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -26753,11 +26753,17 @@ namespace Persistence.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     PROJECT_NAME = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    SUB_PROJECT_NAME = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    COST_TYPE = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     TOTAL_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
                     DISCOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
                     TransportationExpenses = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
                     Gratuities = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
                     PROJECT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SUB_PROJECT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     FACILITY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -26788,7 +26794,11 @@ namespace Persistence.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     PRODUCT_ID = table.Column<string>(type: "varchar(36)", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    SERVICE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     QuantityUomId = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PaymentMethodId = table.Column<string>(type: "varchar(36)", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     AccommodationMapId = table.Column<string>(type: "varchar(36)", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -26823,6 +26833,11 @@ namespace Persistence.Migrations
                         column: x => x.ScopeEnumEnumId,
                         principalTable: "ENUMERATION",
                         principalColumn: "ENUM_ID");
+                    table.ForeignKey(
+                        name: "FK_WORK_EFFORT_PAYMENT_METHOD_PaymentMethodId",
+                        column: x => x.PaymentMethodId,
+                        principalTable: "PAYMENT_METHOD",
+                        principalColumn: "PAYMENT_METHOD_ID");
                     table.ForeignKey(
                         name: "FK_WORK_EFFORT_RECURRENCE_INFO_RecurrenceInfoId",
                         column: x => x.RecurrenceInfoId,
@@ -26898,6 +26913,16 @@ namespace Persistence.Migrations
                         column: x => x.RELATED_ORDER_ID,
                         principalTable: "ORDER_HEADER",
                         principalColumn: "ORDER_ID");
+                    table.ForeignKey(
+                        name: "WK_EFFRT_SERVICE",
+                        column: x => x.SERVICE_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "WK_EFFRT_SUBPROJECT",
+                        column: x => x.SUB_PROJECT_ID,
+                        principalTable: "WORK_EFFORT",
+                        principalColumn: "WORK_EFFORT_ID");
                     table.ForeignKey(
                         name: "WK_EFFRT_SUPPLIER",
                         column: x => x.PARTY_ID_SUPPLIER,
@@ -49749,6 +49774,11 @@ namespace Persistence.Migrations
                 column: "WORK_EFFORT_PARENT_ID");
 
             migrationBuilder.CreateIndex(
+                name: "WK_EFFRT_PAYMENT_METHOD",
+                table: "WORK_EFFORT",
+                column: "PaymentMethodId");
+
+            migrationBuilder.CreateIndex(
                 name: "WK_EFFRT_PRODUCT",
                 table: "WORK_EFFORT",
                 column: "PRODUCT_ID");
@@ -49767,6 +49797,16 @@ namespace Persistence.Migrations
                 name: "WK_EFFRT_RELATED_ORDER",
                 table: "WORK_EFFORT",
                 column: "RELATED_ORDER_ID");
+
+            migrationBuilder.CreateIndex(
+                name: "WK_EFFRT_SERVICE",
+                table: "WORK_EFFORT",
+                column: "SERVICE_ID");
+
+            migrationBuilder.CreateIndex(
+                name: "WK_EFFRT_SUBPROJECT",
+                table: "WORK_EFFORT",
+                column: "SUB_PROJECT_ID");
 
             migrationBuilder.CreateIndex(
                 name: "WK_EFFRT_SUPPLIER",

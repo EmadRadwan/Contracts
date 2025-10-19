@@ -1,6 +1,5 @@
 import {createApi, fetchBaseQuery} from "@reduxjs/toolkit/query/react";
 import {store} from "../configureStore";
-import {Party} from "../../models/party/party";
 import {State, toODataString} from "@progress/kendo-data-query";
 import {WorkEffort} from "../../models/manufacturing/workEffort";
 

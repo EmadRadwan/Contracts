@@ -59,6 +59,17 @@ public class ProductsController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new GetSimpleProductsLov.Query { Params = param }));
     }
+    [HttpGet("getRawMaterialProductsLov")]
+    public async Task<IActionResult> GetRawMaterialProductsLov([FromQuery] ProductLovParams param)
+    {
+        return HandleResult(await Mediator.Send(new GetRawMaterialProductsLov.Query { Params = param }));
+    }
+
+    [HttpGet("getServiceProductsLov")]
+    public async Task<IActionResult> GetServiceProductsLov([FromQuery] ProductLovParams param)
+    {
+        return HandleResult(await Mediator.Send(new GetServiceProductsLov.Query { Params = param }));
+    }
 
     [HttpGet("getInventoryItemProductsLov", Name = "GetInventoryItemProductsLov")]
     public async Task<IActionResult> GetInventoryItemProductsLov([FromQuery] ProductLovParams param)

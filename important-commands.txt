@@ -285,5 +285,9 @@ New way to return meaningful
     - checks payment application for payment
     - CheckInvoicePaymentApplications
  - CreateAcctgTransAndEntriesForOutgoingPayment
+ 
+ ////////
+ 
+ the new requirement where i want to use the same pattern for the above is related to Payments. My code is immitating Ofbiz but the above code is not Ofbiz related. in Ofbiz the payment handles a single payment and is generally related to an invoice. in the new requirement i have a multi-payment use case where i need a form like ProjectCertificateForm that will act as the header of the payment; this form will have props - we can benefit from the following paymentOut form - fromParty and toParty , paymentDate, payment method. we'll also need a payment item form like SupplyProqurementForm where the required props are almost all of the props in SupplyProqurementForm
 
 

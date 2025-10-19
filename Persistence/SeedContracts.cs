@@ -470,6 +470,16 @@ public class SeedContracts
                 "بيت الوطن لادريس اكتوبر",
                 "بيت الوطن لادريس التجمع"
             };
+
+            // REFACTOR: Added sub-projects list for "الصحراوى 10.5 فدان"
+            // Purpose: To create sub-projects linked to the specified parent project
+            var subProjects = new List<string>
+            {
+                "مبنى الادارة",
+                "اسطبل الخيول",
+                "قرية الماكولات"
+            };
+
             var stamp = DateTime.UtcNow;
             var counter = 100;
 
@@ -500,6 +510,32 @@ public class SeedContracts
                     FacilityId = facility.FacilityId
                 };
                 context.WorkEfforts.Add(project);
+
+                // REFACTOR: Added sub-project creation for "الصحراوى 10.5 فدان"
+                // Purpose: Create sub-projects linked to the parent project via SubProjectId
+                if (projectName == "الصحراوى 10.5 فدان")
+                {
+                    foreach (var subProjectName in subProjects)
+                    {
+                        var subProjectSerial = counter.ToString();
+                        counter++; // Increment counter for the next sub-project
+
+                        var subProject = new WorkEffort
+                        {
+                            WorkEffortId = subProjectSerial,
+                            SubProjectName = subProjectName,
+                            WorkEffortTypeId = "SUB_PROJECT", 
+                            CurrentStatusId = "WEPR_IN_PROGRESS",
+                            EstimatedStartDate = stamp,
+                            EstimatedCompletionDate = stamp.AddDays(30),
+                            CreatedDate = stamp,
+                            LastUpdatedStamp = stamp,
+                            FacilityId = facility.FacilityId,
+                            ProjectId = newProjectSerial // Link to parent project
+                        };
+                        context.WorkEfforts.Add(subProject);
+                    }
+                }
             }
 
             var mainStore = new Facility
@@ -514,7 +550,6 @@ public class SeedContracts
 
             await context.SaveChangesAsync();
         }
-
 
         // facility locations
         /*if (!context.FacilityLocations.Any())
@@ -2576,7 +2611,8 @@ public class SeedContracts
                     var result = await roleManager.CreateAsync(new ApplicationRole { Name = role });
                     if (!result.Succeeded)
                     {
-                        throw new InvalidOperationException($"Failed to create role {role}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                        throw new InvalidOperationException(
+                            $"Failed to create role {role}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
                     }
                 }
             }
@@ -2600,10 +2636,12 @@ public class SeedContracts
                 // This ensures each user creation is validated, preventing silent failures.
                 foreach (var user in users)
                 {
-                    var createResult = await userManager.CreateAsync(user, "Pa$$w0rd"); // Updated password to meet common policies
+                    var createResult =
+                        await userManager.CreateAsync(user, "Pa$$w0rd"); // Updated password to meet common policies
                     if (!createResult.Succeeded)
                     {
-                        throw new InvalidOperationException($"Failed to create user {user.Email}: {string.Join(", ", createResult.Errors.Select(e => e.Description))}");
+                        throw new InvalidOperationException(
+                            $"Failed to create user {user.Email}: {string.Join(", ", createResult.Errors.Select(e => e.Description))}");
                     }
                 }
 
@@ -2704,10 +2742,10 @@ public class SeedContracts
                 var roleResult = await userManager.AddToRolesAsync(user, rolesToAdd);
                 if (!roleResult.Succeeded)
                 {
-                    throw new InvalidOperationException($"Failed to assign roles to {email}: {string.Join(", ", roleResult.Errors.Select(e => e.Description))}");
+                    throw new InvalidOperationException(
+                        $"Failed to assign roles to {email}: {string.Join(", ", roleResult.Errors.Select(e => e.Description))}");
                 }
             }
         }
-        
     }
 }

@@ -62,11 +62,9 @@ export default function ProjectCertificatesList() {
     const [dataState, setDataState] = useState<State>({ take: 6, skip: 0 });
     const { selectedCertificate, certificateFormEditMode } = useAppSelector(certificateUiSelectors.selectCertificateUi);
     const { getTranslatedLabel } = useTranslationHelper();
-    const location = useLocation();
     const dispatch = useAppDispatch();
-    const navigate = useNavigate();
     const [certificate, setCertificate] = useState<ProjectCertificate | undefined>(undefined);
-    const { data, isFetching, refetch } = useFetchProjectCertificatesQuery({ ...dataState });
+    const { data, isFetching } = useFetchProjectCertificatesQuery({ ...dataState });
     const [viewMode, setViewMode] = useState<"list" | "form">("list");
     const [isGeneratingAll, setIsGeneratingAll] = useState(false);
 

@@ -1,10 +1,6 @@
-using Application.Catalog.Products;
-using Application.Manufacturing;
 using Application.Parties.Parties;
 using Application.Projects;
-using Application.WorkEfforts;
 using Microsoft.AspNetCore.Mvc;
-using CostComponentCalcDto = Application.Manufacturing.CostComponentCalcDto;
 
 namespace API.Controllers.WorkEffort;
 
@@ -70,5 +66,18 @@ public class ProjectController : BaseApiController
     public async Task<IActionResult> GetProjectsLov([FromQuery] PartyLovParams param)
     {
         return HandleResult(await Mediator.Send(new GetProjectsLov.Query { Params = param }));
+    }
+    
+    [HttpGet("subProjects/{projectId}")]
+    public async Task<IActionResult> GetSubProjects(string projectId)
+    {
+        var language = GetLanguage();
+        return HandleResult(await Mediator.Send(new ListSubProjects.Query { ProjectId = projectId, Language = language }));
+    }
+    
+    [HttpGet("{workEffortId}/items")]
+    public async Task<IActionResult> GetMultiPaymentItems(string workEffortId)
+    {
+        return HandleResult(await Mediator.Send(new ListMultiPaymentItems.Query { WorkEffortId = workEffortId }));
     }
 }

@@ -1,5 +1,6 @@
-import { Field, Form, FormElement, FormRenderProps, KeyValue } from "@progress/kendo-react-form";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {useCallback, useEffect, useMemo, useState} from "react";
+import { Field, Form, FormElement, FormRenderProps } from "@progress/kendo-react-form";
+import useMultiPaymentItem from "../hook/useMultiPaymentItem";
 import { Button, FormControlLabel, Grid, Radio, RadioGroup } from "@mui/material";
 import { v4 as uuidv4 } from "uuid";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
@@ -13,9 +14,9 @@ import FormInput from "../../../app/common/form/FormInput";
 import { FormSimpleComboBoxRawMaterialVirtual } from "../../../app/common/form/FormSimpleComboBoxRawMaterialVirtual";
 import { MemoizedFormDropDownList2 } from "../../../app/common/form/MemoizedFormDropDownList2";
 import { ComboBoxChangeEvent } from "@progress/kendo-react-dropdowns";
-import { FormSimpleComboBoxServiceVirtual } from "../../../app/common/form/FormSimpleComboBoxServiceVirtual";
-import { FormComboBoxVirtualSupplierMultiColumn } from "../../../app/common/form/FormComboBoxVirtualSupplierMultiColumn";
-import { FormComboBoxVirtualContractor } from "../../../app/common/form/FormComboBoxVirtualContractor";
+import {FormSimpleComboBoxServiceVirtual} from "../../../app/common/form/FormSimpleComboBoxServiceVirtual";
+import {FormComboBoxVirtualSupplierMultiColumn} from "../../../app/common/form/FormComboBoxVirtualSupplierMultiColumn";
+import {FormComboBoxVirtualContractor} from "../../../app/common/form/FormComboBoxVirtualContractor";
 
 interface Props {
     multiPaymentItem?: MultiPaymentItem;
@@ -78,8 +79,6 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
         partyIdContractor: multiPaymentItem?.partyIdContractor || "",
     }), [multiPaymentItem, workEffortId]);
 
-    // REFACTOR: Added form-level validator to ensure only one of partyIdSupplier or partyIdContractor is provided.
-    // Improves form validation by enforcing business logic that prevents both fields from being filled simultaneously.
     const partyValidator = (values: Partial<MultiPaymentItem>): KeyValue<string> | undefined => {
         const hasSupplier = values.partyIdSupplier && values.partyIdSupplier !== "";
         const hasContractor = values.partyIdContractor && values.partyIdContractor !== "";
@@ -113,12 +112,14 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
             const gratuities = Number(valueGetter("gratuities") || 0);
             const total = Math.max(0, Math.round((amount - discount + transportationExpenses + gratuities) * 1000) / 1000);
 
+            // Only update total if it has changed to avoid unnecessary re-renders
             if (valueGetter("total") !== total) {
                 onChange("total", { value: total });
             }
         },
         [discountMode]
     );
+
 
     const handleDiscountModeChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>, onChange: FormRenderProps["onChange"]) => {
@@ -212,12 +213,12 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                             sx={{
                                 display: 'flex',
                                 flexDirection: 'row',
-                                flexWrap: 'nowrap',
+                                flexWrap: 'nowrap', // Prevent wrapping
                                 gap: 2,
                                 mt: 1,
-                                alignItems: 'center',
+                                alignItems: 'center', // Vertically align radio buttons
                             }}
-                            className="horizontal-radio-group"
+                            className="horizontal-radio-group" // Fallback for custom CSS
                         >
                             <RadioGroup
                                 row
@@ -226,20 +227,20 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                                 sx={{
                                     display: 'flex',
                                     flexDirection: 'row',
-                                    flexWrap: 'nowrap',
+                                    flexWrap: 'nowrap', // Reinforce no wrapping
                                 }}
                             >
                                 <FormControlLabel
                                     value="value"
                                     control={<Radio disabled={formEditMode > 3 || subProjectsLoading} />}
                                     label={getTranslatedLabel(`${localizationKey}.discountValue`, "Value")}
-                                    sx={{ minWidth: '100px' }}
+                                    sx={{ minWidth: '100px' }} // Ensure label has enough space
                                 />
                                 <FormControlLabel
                                     value="percentage"
                                     control={<Radio disabled={formEditMode > 3 || subProjectsLoading} />}
                                     label={getTranslatedLabel(`${localizationKey}.discountPercentage`, "Percentage")}
-                                    sx={{ minWidth: '100px' }}
+                                    sx={{ minWidth: '100px' }} // Ensure label has enough space
                                 />
                             </RadioGroup>
                         </Grid>
@@ -277,17 +278,13 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
         <Form
             initialValues={initialValues}
             key={formKey}
-            // REFACTOR: Added validator prop to integrate partyValidator.
-            // Ensures form-level validation for exclusive party selection, improving data integrity.
-            validator={partyValidator}
             onSubmit={handleSubmit}
+            validator={partyValidator}
             render={(formRenderProps: FormRenderProps) => {
                 const isMaterials = formRenderProps.valueGetter("itemType") === "MATERIALS";
-
+                
                 return (
                     <FormElement>
-                        {/* REFACTOR: Added validation error display to show partyValidator errors.
-                           Improves user feedback by displaying form-level validation messages, consistent with SalesOrderItemForm. */}
                         {formRenderProps.visited &&
                             formRenderProps.errors &&
                             formRenderProps.errors.VALIDATION_SUMMARY && (
@@ -310,7 +307,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                                         dataItemKey="projectId"
                                         disabled={formEditMode > 3 || subProjectsLoading}
                                         value={formRenderProps.valueGetter("projectId")}
-                                        onChange={(e: ComboBoxChangeEvent) => handleProjectChange(e, formRenderProps.onChange)}
+                                        onChange={(e: ComboBoxChangeEvent) => handleProjectChange(e, formRenderProps.onChange, formRenderProps.valueGetter)}
                                     />
                                 </Grid>
                                 <Grid item xs={4}>
@@ -395,6 +392,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                                         />
                                     </Grid>
                                 </Grid>
+                                
                                 <Grid item xs={12}>
                                     <Field
                                         id="description"

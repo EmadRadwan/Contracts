@@ -125,6 +125,7 @@ import ProjectsDashboard from "../../features/Projects/dashboard/ProjectsDashboa
 import ProjectCertificatesList from "../../features/Projects/dashboard/ProjectCertificatesList";
 import MultiAcctgTransEntryForm from "../../features/accounting/transaction/form/MultiAcctgTransEntryForm";
 import EditMultiAcctgTrans from "../../features/accounting/transaction/form/EditMultiAcctgTrans";
+import MultiPaymentCertificatesList from "../../features/Projects/dashboard/MultiPaymentCertificatesList";
 
 // Wrapper component to extract partyId from URL
 const PartyFinancialHistoryWrapper = () => {
@@ -177,6 +178,7 @@ export const routes: RouteObject[] = [
                     {path: "quotes", element: <QuotesList/>},
                     {path: "promos", element: <PromosList/>},
                     {path: "stores", element: <StoresList/>},
+                    { path: "multiPaymentCertificates", element: <MultiPaymentCertificatesList /> },
                     { path: "projects", element: <ProjectsDashboard /> },
                     { path: "projectCertificates", element: <ProjectCertificatesList /> },
                     {
@@ -244,7 +246,7 @@ export const routes: RouteObject[] = [
                                 element: <RoutingWrapper />,
                                 children: [
                                     { path: 'edit', element: <EditRouting /> },
-                                    { path: 'task-assoc', element: <ListRoutingTaskAssoc /> }, // REFACTOR: Changed to ListRoutingTaskAssoc
+                                    { path: 'task-assoc', element: <ListRoutingTaskAssoc /> },
                                     { path: "product-link", element: <ListRoutingProductLink /> },
                                     { path: 'task-costs', element: <ListRoutingTaskCosts /> },
                                     { path: 'task', element: <EditRoutingTask /> },

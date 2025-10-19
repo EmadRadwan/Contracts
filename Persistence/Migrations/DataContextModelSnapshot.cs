@@ -56830,6 +56830,12 @@ namespace Persistence.Migrations
                         .HasColumnType("decimal(5, 2)")
                         .HasColumnName("COMPLETION_PERCENTAGE");
 
+                    b.Property<string>("CostType")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("COST_TYPE");
+
                     b.Property<string>("CreatedByUserLogin")
                         .HasMaxLength(250)
                         .IsUnicode(false)
@@ -56984,6 +56990,9 @@ namespace Persistence.Migrations
                         .HasColumnType("varchar(36)")
                         .HasColumnName("PARTY_ID_SUPPLIER");
 
+                    b.Property<string>("PaymentMethodId")
+                        .HasColumnType("varchar(36)");
+
                     b.Property<int?>("Priority")
                         .HasColumnType("int")
                         .HasColumnName("PRIORITY");
@@ -57071,6 +57080,24 @@ namespace Persistence.Migrations
                     b.Property<string>("ScopeEnumEnumId")
                         .HasColumnType("varchar(36)");
 
+                    b.Property<string>("ServiceId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("SERVICE_ID");
+
+                    b.Property<string>("SubProjectId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("SUB_PROJECT_ID");
+
+                    b.Property<string>("SubProjectName")
+                        .HasMaxLength(255)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("SUB_PROJECT_NAME");
+
                     b.Property<string>("SupplierOrContractorType")
                         .HasMaxLength(36)
                         .IsUnicode(false)
@@ -57143,6 +57170,8 @@ namespace Persistence.Migrations
 
                     b.HasIndex(new[] { "WorkEffortParentId" }, "WK_EFFRT_PARENT");
 
+                    b.HasIndex(new[] { "PaymentMethodId" }, "WK_EFFRT_PAYMENT_METHOD");
+
                     b.HasIndex(new[] { "ProductId" }, "WK_EFFRT_PRODUCT");
 
                     b.HasIndex(new[] { "ProjectId" }, "WK_EFFRT_PROJECT");
@@ -57150,6 +57179,10 @@ namespace Persistence.Migrations
                     b.HasIndex(new[] { "WorkEffortPurposeTypeId" }, "WK_EFFRT_PRPTYP");
 
                     b.HasIndex(new[] { "RelatedOrderId" }, "WK_EFFRT_RELATED_ORDER");
+
+                    b.HasIndex(new[] { "ServiceId" }, "WK_EFFRT_SERVICE");
+
+                    b.HasIndex(new[] { "SubProjectId" }, "WK_EFFRT_SUBPROJECT");
 
                     b.HasIndex(new[] { "PartyIdSupplier" }, "WK_EFFRT_SUPPLIER");
 
@@ -77666,6 +77699,11 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("WK_EFFRT_SUPPLIER");
 
+                    b.HasOne("Domain.PaymentMethod", "PaymentMethod")
+                        .WithMany("WorkEfforts")
+                        .HasForeignKey("PaymentMethodId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("Domain.Product", "Product")
                         .WithMany("WorkEfforts")
                         .HasForeignKey("ProductId")
@@ -77698,6 +77736,18 @@ namespace Persistence.Migrations
                         .WithMany("WorkEfforts")
                         .HasForeignKey("ScopeEnumEnumId")
                         .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Domain.Product", "Service")
+                        .WithMany("WorkEffortsAsService")
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("WK_EFFRT_SERVICE");
+
+                    b.HasOne("Domain.WorkEffort", "SubProject")
+                        .WithMany()
+                        .HasForeignKey("SubProjectId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("WK_EFFRT_SUBPROJECT");
 
                     b.HasOne("Domain.TemporalExpression", "TempExpr")
                         .WithMany("WorkEfforts")
@@ -77740,6 +77790,8 @@ namespace Persistence.Migrations
 
                     b.Navigation("Note");
 
+                    b.Navigation("PaymentMethod");
+
                     b.Navigation("Product");
 
                     b.Navigation("Project");
@@ -77751,6 +77803,10 @@ namespace Persistence.Migrations
                     b.Navigation("RuntimeData");
 
                     b.Navigation("ScopeEnum");
+
+                    b.Navigation("Service");
+
+                    b.Navigation("SubProject");
 
                     b.Navigation("SupplierParty");
 
@@ -81248,6 +81304,8 @@ namespace Persistence.Migrations
                     b.Navigation("ReturnHeaders");
 
                     b.Navigation("ShoppingLists");
+
+                    b.Navigation("WorkEfforts");
                 });
 
             modelBuilder.Entity("Domain.PaymentMethodType", b =>
@@ -81552,6 +81610,8 @@ namespace Persistence.Migrations
                     b.Navigation("WorkEffortGoodStandards");
 
                     b.Navigation("WorkEfforts");
+
+                    b.Navigation("WorkEffortsAsService");
                 });
 
             modelBuilder.Entity("Domain.ProductAssocType", b =>

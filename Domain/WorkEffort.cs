@@ -99,11 +99,14 @@ public class WorkEffort
     public string? ProjectNum { get; set; } 
     public string? CertificateNumber { get; set; } 
     public string? ProjectName { get; set; }
+    public string? SubProjectName { get; set; }
+    public string? CostType { get; set; }
     public decimal? TotalAmount { get; set; }
     public decimal? Discount { get; set; }
     public decimal? TransportationExpenses { get; set; }
     public decimal? Gratuities { get; set; }
     public string? ProjectId { get; set; } 
+    public string? SubProjectId { get; set; } 
     public string? FacilityId { get; set; }
 
     public string? PartyIdSupplier { get; set; }
@@ -130,13 +133,24 @@ public class WorkEffort
     public decimal? AchievementPercent { get; set; }
     public string? Notes { get; set; } 
     public string? ProductId { get; set; }
+    public string? ServiceId { get; set; }
     public string? QuantityUomId { get; set; }
+    public string? PaymentMethodId { get; set; }
+
+    
+    public Product? Service { get; set; }
+    public PaymentMethod? PaymentMethod { get; set; }
+
     
     public Party? SupplierParty { get; set; }
     public Party? ContractorParty { get; set; }
 
-    public WorkEffort? Project { get; set; } // Navigation for projectId to the project WorkEffort
-    public Product? Product { get; set; } // New navigation prop for ProductId
+    public WorkEffort? SubProject { get; set; } 
+
+    public WorkEffort? Project { get; set; } 
+    public Product? Product { get; set; } 
+    
+    
     public OrderHeader? RelatedOrder { get; set; }
     
     public AccommodationMap? AccommodationMap { get; set; }

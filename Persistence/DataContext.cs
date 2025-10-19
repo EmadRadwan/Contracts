@@ -61615,6 +61615,10 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 entity.HasIndex(e => e.CreatedTxStamp, "WORK_EFFORT_TXCRTS");
 
                 entity.HasIndex(e => e.LastUpdatedTxStamp, "WORK_EFFORT_TXSTMP");
+                entity.HasIndex(e => e.SubProjectId, "WK_EFFRT_SUBPROJECT");
+    
+                entity.HasIndex(e => e.ServiceId, "WK_EFFRT_SERVICE");
+    entity.HasIndex(e => e.PaymentMethodId, "WK_EFFRT_PAYMENT_METHOD");
 
                 entity.Property(e => e.WorkEffortId)
                     .HasMaxLength(36)
@@ -61769,7 +61773,42 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .IsUnicode(false)
                     .HasColumnName("WORK_EFFORT_TYPE_ID");
 
-             
+             entity.Property(e => e.SubProjectId)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("SUB_PROJECT_ID");
+        
+        entity.Property(e => e.SubProjectName)
+        .HasMaxLength(255)
+        .IsUnicode(false)
+        .HasColumnName("SUB_PROJECT_NAME");
+        
+         entity.Property(e => e.CostType)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("COST_TYPE");
+        
+         entity.Property(e => e.ServiceId)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("SERVICE_ID");
+
+entity.HasOne(d => d.SubProject)
+        .WithMany()
+        .HasForeignKey(d => d.SubProjectId)
+        .HasConstraintName("WK_EFFRT_SUBPROJECT")
+        .OnDelete(DeleteBehavior.Restrict);
+        
+        entity.HasOne(d => d.Product)
+        .WithMany(p => p.WorkEfforts)
+        .HasForeignKey(d => d.ProductId)
+        .HasConstraintName("WK_EFFRT_PRODUCT");
+        
+         entity.HasOne(d => d.Service)
+        .WithMany(p => p.WorkEffortsAsService)
+        .HasForeignKey(d => d.ServiceId)
+        .HasConstraintName("WK_EFFRT_SERVICE");
+
 
                 entity.HasOne(d => d.CurrentStatus)
                     .WithMany(p => p.WorkEfforts)

@@ -16,7 +16,6 @@ import { Payment } from "../../../../app/models/accounting/payment";
 import Button from "@mui/material/Button";
 import { Grid, Paper } from "@mui/material";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
-import { Menu, MenuItem, MenuSelectEvent } from "@progress/kendo-react-layout";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import { handleDatesArray } from "../../../../app/util/utils";
 import PaymentForm from "../form/PaymentForm";

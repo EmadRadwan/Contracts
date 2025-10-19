@@ -133,6 +133,7 @@ import {projectsApi} from "./apis/projectsApi";
 import {certificateUiSlice} from "../../features/Projects/slice/certificateUiSlice";
 import {certificateItemsSlice} from "../../features/Projects/slice/certificateItemsUiSlice";
 import {certificateItemsApi} from "./apis/certificateItemsApi";
+import {multiPaymentCertificateApi} from "./apis/multiPaymentCertificateApi";
 
 
 // REFACTOR: Added logger middleware for debugging
@@ -225,6 +226,7 @@ export const store = configureStore({
         orderTermsUi: orderTermsUiSlice.reducer,
         [partiesApi.reducerPath]: partiesApi.reducer,
         [certificateItemsApi.reducerPath]: certificateItemsApi.reducer,
+        [multiPaymentCertificateApi.reducerPath]: multiPaymentCertificateApi.reducer,
         [projectsApi.reducerPath]: projectsApi.reducer,
         [vehiclesApi.reducerPath]: vehiclesApi.reducer,
         [quoteItemsApi.reducerPath]: quoteItemsApi.reducer,
@@ -325,6 +327,7 @@ export const store = configureStore({
             //.concat(loggerMiddleware)
             .concat(partiesApi.middleware)
             .concat(projectsApi.middleware)
+            .concat(multiPaymentCertificateApi.middleware)
             .concat(quoteItemsApi.middleware)
             .concat(quoteAdjustmentsApi.middleware)
             .concat(vehiclesApi.middleware)
