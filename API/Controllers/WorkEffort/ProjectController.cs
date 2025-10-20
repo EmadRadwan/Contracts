@@ -80,4 +80,11 @@ public class ProjectController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new ListMultiPaymentItems.Query { WorkEffortId = workEffortId }));
     }
+    
+    [HttpPost("multiPaymentCertificate")]
+    public async Task<ActionResult<MultiPaymentCertificateDto>> CreateMultiPaymentCertificate([FromBody] MultiPaymentCertificateDto certificate)
+    {
+        var result = await Mediator.Send(new CreateMultiPaymentCertificate.Command { Certificate = certificate });
+        return HandleResult(result);
+    }
 }

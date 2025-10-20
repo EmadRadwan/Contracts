@@ -1,67 +1,76 @@
-import React, {useCallback, useEffect, useMemo, useState} from "react";
-import {useTableKeyboardNavigation} from "@progress/kendo-react-data-tools";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
 import {
     Grid as KendoGrid,
     GRID_COL_INDEX_ATTRIBUTE,
     GridColumn as Column,
-    GridDataStateChangeEvent, GridToolbar,
+    GridDataStateChangeEvent,
+    GridToolbar,
 } from "@progress/kendo-react-grid";
-import {DataResult, State} from "@progress/kendo-data-query";
-import {Button, Grid, Paper} from "@mui/material";
+import { DataResult, State } from "@progress/kendo-data-query";
+import { Button, Grid, Paper } from "@mui/material";
 import MultiPaymentCertificateForm from "../form/MultiPaymentCertificateForm";
-import {useAppDispatch} from "../../../app/store/configureStore";
-import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
-import {MultiPaymentCertificate} from "../../../app/models/project/MultiPaymentCertificate";
+import { useAppDispatch } from "../../../app/store/configureStore";
+import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
+import { MultiPaymentCertificate } from "../../../app/models/project/MultiPaymentCertificate";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
-import {useFetchMultiPaymentCertificatesQuery} from "../../../app/store/apis/multiPaymentCertificateApi";
+import { useFetchMultiPaymentCertificatesQuery } from "../../../app/store/apis/multiPaymentCertificateApi";
 import AccountingMenu from "../../accounting/invoice/menu/AccountingMenu";
 
 export default function MultiPaymentCertificatesList() {
-    const [certificates, setCertificates] = useState<DataResult>({data: [], total: 0});
-    const [dataState, setDataState] = useState<State>({take: 6, skip: 0});
+    const [certificates, setCertificates] = useState<DataResult>({ data: [], total: 0 });
+    const [dataState, setDataState] = useState<State>({ take: 6, skip: 0 });
     const [formEditMode, setFormEditMode] = useState<number>(0);
     const [viewMode, setViewMode] = useState<"list" | "form">("list");
-    const {getTranslatedLabel} = useTranslationHelper();
+    const { getTranslatedLabel } = useTranslationHelper();
     const [paymentCertificate, setPaymentCertificate] = useState<MultiPaymentCertificate | null>(null);
     const dispatch = useAppDispatch();
-    const {data, isFetching} = useFetchMultiPaymentCertificatesQuery({...dataState});
-
+    const { data, isFetching } = useFetchMultiPaymentCertificatesQuery({ ...dataState });
 
     useEffect(() => {
         if (data) {
             const adjustedData = data.data.map((item: MultiPaymentCertificate) => ({
                 ...item,
+                workEffortId: item.workEffortId,
                 date: item.date ? new Date(item.date).toLocaleDateString("en-GB") : "",
+                chequeDate: item.chequeDate ? new Date(item.chequeDate).toLocaleDateString("en-GB") : "",
             }));
-            setCertificates({data: adjustedData, total: data.total});
+            setCertificates({ data: adjustedData, total: data.total });
         }
     }, [data]);
+
+    useEffect(() => {
+        if (viewMode === "list") {
+            setPaymentCertificate(null);
+        }
+    }, [viewMode]);
 
     const dataStateChange = (e: GridDataStateChangeEvent) => {
         setDataState(e.dataState);
     };
 
     const handleSelectCertificate = useCallback(
-        (certificateId?: string) => {
-            if (!certificateId) return;
+        (workEffortId?: string) => {
+            if (!workEffortId) return;
             const selectedCert = certificates.data.find(
-                (cert: MultiPaymentCertificate) => cert.certificateId === certificateId
+                (cert: MultiPaymentCertificate) => cert.workEffortId === workEffortId
             );
             if (!selectedCert) return;
             setPaymentCertificate(selectedCert);
-            setFormEditMode(1);
+            setFormEditMode(2);
             setViewMode("form");
         },
-        [certificates.data, dispatch]
+        [certificates.data]
     );
 
-
     const handleCreateNew = useCallback(() => {
+        setPaymentCertificate(null);
         setFormEditMode(1);
         setViewMode("form");
-    }, [dispatch]);
+    }, []);
 
     const cancelEdit = useCallback(() => {
+        setPaymentCertificate(null);
         setFormEditMode(0);
         setViewMode("list");
     }, []);
@@ -73,20 +82,17 @@ export default function MultiPaymentCertificatesList() {
         return (
             <td
                 className={props.className}
-                style={{...props.style, color: "blue"}}
+                style={{ ...props.style, color: "blue" }}
                 colSpan={props.colSpan}
                 role="gridcell"
                 aria-colindex={props.ariaColumnIndex}
                 aria-selected={props.isSelected}
-                {...{[GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex}}
+                {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
                 {...navigationAttributes}
             >
                 <Button
                     onClick={() =>
-                        handleSelectCertificate(
-                            props.dataItem.certificateId,
-                            props.dataItem.currentStatusId
-                        )
+                        handleSelectCertificate(props.dataItem.workEffortId)
                     }
                 >
                     {value}
@@ -106,11 +112,12 @@ export default function MultiPaymentCertificatesList() {
     }
 
     const columnWidths = {
-        certificateNumber: 150,
+        workEffortId: 150,
         date: 150,
         description: 250,
         paymentMethod: 200,
-        totalAmount: 120,
+        chequeNumber: 150,
+        chequeDate: 150,
     };
 
     return (
@@ -120,14 +127,14 @@ export default function MultiPaymentCertificatesList() {
                 <Grid container columnSpacing={1} alignItems="center">
                     <Grid item xs={12}>
                         <KendoGrid
-                            style={{height: "65vh"}}
+                            style={{ height: "65vh" }}
                             scrollable="scrollable"
                             resizable={true}
                             filterable={true}
                             sortable={true}
                             pageable={true}
                             {...dataState}
-                            data={certificates ? certificates : {data: [], total: 0}}
+                            data={certificates ? certificates : { data: [], total: 0 }}
                             onDataStateChange={dataStateChange}
                         >
                             <GridToolbar>
@@ -135,7 +142,7 @@ export default function MultiPaymentCertificatesList() {
                                     variant="contained"
                                     color="primary"
                                     onClick={handleCreateNew}
-                                    style={{margin: "5px"}}
+                                    style={{ margin: "5px" }}
                                 >
                                     {getTranslatedLabel(
                                         "accounting.multiPaymentCertificate.list.createNew",
@@ -144,12 +151,12 @@ export default function MultiPaymentCertificatesList() {
                                 </Button>
                             </GridToolbar>
                             <Column
-                                field="certificateNumber"
+                                field="workEffortId"
                                 title={getTranslatedLabel(
-                                    "accounting.multiPaymentCertificate.list.certificateNumber",
-                                    "Certificate Number"
+                                    "accounting.multiPaymentCertificate.list.workEffortId",
+                                    "Certificate ID"
                                 )}
-                                width={columnWidths.certificateNumber}
+                                width={columnWidths.workEffortId}
                                 cell={CertificateNumberCell}
                             />
                             <Column
@@ -170,7 +177,7 @@ export default function MultiPaymentCertificatesList() {
                                 width={columnWidths.description}
                             />
                             <Column
-                                field="paymentMethod"
+                                field="paymentMethodDescription"
                                 title={getTranslatedLabel(
                                     "accounting.multiPaymentCertificate.list.paymentMethod",
                                     "Payment Method"
@@ -178,13 +185,21 @@ export default function MultiPaymentCertificatesList() {
                                 width={columnWidths.paymentMethod}
                             />
                             <Column
-                                field="totalAmount"
+                                field="chequeNumber"
                                 title={getTranslatedLabel(
-                                    "accounting.multiPaymentCertificate.list.totalAmount",
-                                    "Total Amount"
+                                    "accounting.multiPaymentCertificate.list.chequeNumber",
+                                    "Cheque Number"
                                 )}
-                                width={columnWidths.totalAmount}
-                                format="{0:c}"
+                                width={columnWidths.chequeNumber}
+                            />
+                            <Column
+                                field="chequeDate"
+                                title={getTranslatedLabel(
+                                    "accounting.multiPaymentCertificate.list.chequeDate",
+                                    "Cheque Date"
+                                )}
+                                format="{0: dd/MM/yyyy}"
+                                width={columnWidths.chequeDate}
                             />
                         </KendoGrid>
                         {isFetching && (
@@ -199,6 +214,5 @@ export default function MultiPaymentCertificatesList() {
                 </Grid>
             </Paper>
         </>
-        
-);
+    );
 }

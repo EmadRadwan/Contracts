@@ -1,6 +1,5 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import { Field, Form, FormElement, FormRenderProps } from "@progress/kendo-react-form";
-import useMultiPaymentItem from "../hook/useMultiPaymentItem";
 import { Button, FormControlLabel, Grid, Radio, RadioGroup } from "@mui/material";
 import { v4 as uuidv4 } from "uuid";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
@@ -24,11 +23,14 @@ interface Props {
     onClose: () => void;
     workEffortId: string;
     formEditMode: number;
+    addItem: (item: MultiPaymentItem) => void;
+    updateItem: (item: MultiPaymentItem) => void;
 }
 
-export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClose, workEffortId, formEditMode }: Props) {
+export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClose, workEffortId, formEditMode, addItem, updateItem }: Props) {
+
     const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = "accounting.multiPaymentCertificate.itemForm";
+    const localizationKey = "projects.multiPaymentCertificate.itemForm";
     const [selectedProjectId, setSelectedProjectId] = useState<string>(
         multiPaymentItem?.projectId && multiPaymentItem.projectId !== "" ? multiPaymentItem.projectId : ""
     );
@@ -39,13 +41,8 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
         selectedProjectId || "",
         { skip: !selectedProjectId }
     );
-
-    const { handleSubmitData } = useMultiPaymentItem({
-        multiPaymentItem,
-        editMode,
-        workEffortId,
-        setFormKey,
-    });
+    
+    console.log('subProjects', subProjects)
 
     const itemTypes = useMemo(
         () => [
@@ -66,6 +63,8 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
         subProjectId: multiPaymentItem?.subProjectId || "",
         subProjectName: multiPaymentItem?.subProjectName || "",
         itemType: multiPaymentItem?.itemType || "",
+        serviceId: multiPaymentItem?.serviceId || "",
+        serviceName: multiPaymentItem?.serviceName || "",
         productId: multiPaymentItem?.productId || "",
         productName: multiPaymentItem?.productName || "",
         description: multiPaymentItem?.description || "",
@@ -132,16 +131,31 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
 
     const handleSubmit = useCallback(
         (values: Partial<MultiPaymentItem>) => {
+
+            const selectedSubProject = subProjects?.find(
+                (subProject) => subProject.workEffortId === values.subProjectId
+            );
+            const subProjectName = selectedSubProject?.subProjectName || values.subProjectName || "";
+
+            const selectedItemType = itemTypes.find(
+                (type) => type.itemType === values.itemType
+            );
+            const itemTypeDescription = selectedItemType?.description || values.description || "";
+
+
             const serializedValues: MultiPaymentItem = {
                 itemId: values.itemId || uuidv4(),
                 workEffortId: workEffortId || "",
                 projectId: (values.projectId as any)?.projectId || "",
                 projectName: (values.projectId as any)?.projectName || "",
                 subProjectId: values.subProjectId || "",
-                subProjectName: values.subProjectName || "",
+                subProjectName: subProjectName || "",
                 itemType: values.itemType || "",
-                productId: values.productId || "",
-                productName: values.productName || "",
+                itemTypeDescription: itemTypeDescription,
+                serviceId: values.serviceId.ProductId || "",
+                serviceName: values.serviceId.ProductName || "",
+                productId: values.productId.ProductId || "",
+                productName: values.productId.ProductName || "",
                 description: values.description || "",
                 amount: Number(values.amount) || 0,
                 discount: Number(values.discount) || 0,
@@ -149,13 +163,20 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                 transportationExpenses: Number(values.transportationExpenses) || 0,
                 gratuities: Number(values.gratuities) || 0,
                 total: Number(values.total) || 0,
-                partyIdSupplier: values.partyIdSupplier || "",
-                partyIdContractor: values.partyIdContractor || "",
+                partyIdSupplier: values.partyIdSupplier?.fromPartyId || "",
+                partyIdSupplierName: values.partyIdSupplier?.fromPartyName || "",
+                partyIdContractor: values.partyIdContractor?.fromPartyId || "",
+                partyIdContractorName: values.partyIdContractor?.fromPartyName || "",
             };
-            handleSubmitData(serializedValues);
+            if (editMode === 1) {
+                addItem(serializedValues);
+            } else {
+                updateItem(serializedValues);
+            }
+            setFormKey((prev) => prev + 1);
             onClose();
         },
-        [handleSubmitData, onClose, workEffortId, discountMode]
+        [addItem, updateItem, editMode, workEffortId, discountMode, onClose, subProjects]
     );
 
     const handleProjectChange = useCallback(

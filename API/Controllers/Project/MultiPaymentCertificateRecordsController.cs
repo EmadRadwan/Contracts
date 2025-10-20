@@ -1,7 +1,6 @@
 using API.Controllers.OData;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Query;
-using Application.MultiPaymentCertificates;
 using Application.Projects;
 
 namespace API.Controllers.Project

@@ -52,12 +52,21 @@ const multiPaymentCertificateApi = createApi({
                 query: (projectId) => `project/subProjects/${projectId}`,
                 providesTags: ["SubProjects"],
             }),
+            addMultiPaymentCertificate: builder.mutation<MultiPaymentCertificate, MultiPaymentCertificate>({
+                query: (certificate) => ({
+                    url: '/project/multiPaymentCertificate',
+                    method: 'POST',
+                    body: certificate,
+                }),
+                invalidatesTags: ['MultiPaymentCertificates'],
+            }),
         };
     },
 });
 
 export const { useFetchMultiPaymentCertificatesQuery,
-    useGetMultiPaymentItemsQuery, useFetchSubProjectsQuery
+    useGetMultiPaymentItemsQuery,
+    useFetchSubProjectsQuery, useAddMultiPaymentCertificateMutation
 } = multiPaymentCertificateApi;
 export { multiPaymentCertificateApi };
 

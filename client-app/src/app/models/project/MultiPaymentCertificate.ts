@@ -1,3 +1,5 @@
+import {MultiPaymentItem} from "./MultiPaymentItem";
+
 export enum MultiPaymentCertificateStatus {
     CREATED = "CREATED",
     APPROVED = "APPROVED",
@@ -6,12 +8,13 @@ export enum MultiPaymentCertificateStatus {
 export interface MultiPaymentCertificate {
     workEffortId: string;
     code: string;
-    date: string;
-    chequeDate: string;
+    date: string | Date;
     description: string;
-    chequeNumber: string;
     paymentMethodId: string;
-    paymentMethod?: string; 
-    totalAmount?: number; 
-    currentStatusId?: MultiPaymentCertificateStatus;
+    chequeNumber?: string;
+    chequeDate?: string | Date | null;
+    currentStatusId?: string;
+    statusDescription?: string;
+    statusDescriptionArabic?: string;
+    items: MultiPaymentItem[];
 }

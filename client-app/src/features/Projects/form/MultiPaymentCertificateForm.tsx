@@ -5,7 +5,7 @@ import { RibbonContainer } from "react-ribbons";
 import useMultiPaymentCertificate from "../hook/useMultiPaymentCertificate";
 import { v4 as uuidv4 } from "uuid";
 import {MultiPaymentCertificate} from "../../../app/models/project/MultiPaymentCertificate";
-import {useAppDispatch, useAppSelector, useFetchPaymentMethodsQuery} from "../../../app/store/configureStore";
+import {useAppSelector, useFetchPaymentMethodsQuery} from "../../../app/store/configureStore";
 import MultiPaymentItemsList from "../dashboard/MultiPaymentItemsList";
 import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
 import AccountingMenu from "../../accounting/invoice/menu/AccountingMenu";
@@ -26,7 +26,6 @@ interface Props {
 export default function MultiPaymentCertificateForm({ selectedCertificate, editMode, cancelEdit }: Props) {
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = "accounting.multiPaymentCertificate.form";
-    const { language } = useAppSelector((state) => state.localization);
     const { data: paymentMethods, isLoading: paymentMethodsLoading } = useFetchPaymentMethodsQuery(undefined);
     const [isFormCollapsed, setIsFormCollapsed] = useState(false);
 
@@ -38,12 +37,16 @@ export default function MultiPaymentCertificateForm({ selectedCertificate, editM
             (method) => method.paymentMethodTypeId === "COMPANY_CHECK" || method.paymentMethodTypeId === "CASH"
         ) || [];
     }, [paymentMethods]);
-    
+
     const {
         certificate,
         setCertificate,
+        items,
+        addItem,
+        updateItem,
+        deleteItem,
         handleCreate,
-        handleUpdate,
+        handleUpdate, setItems,
         isLoading: apiLoading,
     } = useMultiPaymentCertificate({
         selectedCertificate,
@@ -62,6 +65,7 @@ export default function MultiPaymentCertificateForm({ selectedCertificate, editM
     }), [selectedCertificate]);
 
 
+    
     useEffect(() => {
         if (selectedCertificate) {
             setCertificate(selectedCertificate);
@@ -69,11 +73,14 @@ export default function MultiPaymentCertificateForm({ selectedCertificate, editM
             setCertificate(undefined);
         }
     }, [selectedCertificate, setCertificate]);
-
+    
     const handleCancelForm = useCallback(() => {
+        // REFACTOR: Explicitly clear certificate and items to ensure clean state on cancel
+        // This complements the useEffect cleanup in the hook and handles user-initiated cancellation
         setCertificate(undefined);
-        setFormKey((prev) => prev + 1);
-        cancelEdit();
+        setItems([]);
+        setFormKey((prev) => prev + 1); // Reset form to clear input fields
+        cancelEdit(); // Notify parent to close/hide form
     }, [setCertificate, cancelEdit]);
 
     const handleSubmit = useCallback((values: any) => {
@@ -85,21 +92,20 @@ export default function MultiPaymentCertificateForm({ selectedCertificate, editM
             paymentMethodId: values.paymentMethodId || "",
             chequeNumber: values.chequeNumber || "",
             chequeDate: values.chequeDate instanceof Date ? values.chequeDate.toISOString() : null,
+            items, 
         };
         if (editMode === 1) {
             handleCreate({
                 values: serializedValues,
                 isValid: formRef.current?.isValid(),
-                menuItem: "Create Certificate",
             });
         } else {
             handleUpdate({
                 values: serializedValues,
                 isValid: formRef.current?.isValid(),
-                menuItem: "Update Certificate",
             });
         }
-    }, [handleCreate, handleUpdate, editMode]);
+    }, [handleCreate, handleUpdate, editMode, items]);
 
 
     const titleText = editMode === 1
@@ -169,7 +175,7 @@ export default function MultiPaymentCertificateForm({ selectedCertificate, editM
                                         </Grid>
                                         {formRenderProps.valueGetter('paymentMethodId') !== 'CASH' && (
                                             <>
-                                                <Grid item xs={1}>
+                                                <Grid item xs={2}>
                                                     <Field
                                                         id="chequeNumber"
                                                         name="chequeNumber"
@@ -192,8 +198,8 @@ export default function MultiPaymentCertificateForm({ selectedCertificate, editM
                                                 <Button
                                                     type="submit"
                                                     variant="contained"
-                                                    disabled={!formRenderProps.valid}
-                                                    sx={{ mr: 2 }} // REFACTOR: Added margin-right for spacing between buttons
+                                                    disabled={!formRenderProps.valid || apiLoading}
+                                                    sx={{ mr: 2 }} 
                                                 >
                                                     {getTranslatedLabel(
                                                         `${localizationKey}.${editMode === 1 ? "create" : "update"}`,
@@ -206,6 +212,7 @@ export default function MultiPaymentCertificateForm({ selectedCertificate, editM
                                                     onClick={handleCancelForm}
                                                     color="error"
                                                     variant="contained"
+                                                    disabled={apiLoading}
                                                 >
                                                     {getTranslatedLabel("general.cancel", "Cancel")}
                                                 </Button>
@@ -217,7 +224,13 @@ export default function MultiPaymentCertificateForm({ selectedCertificate, editM
                         )}
                     />
                 </Collapse>
-                <MultiPaymentItemsList workEffortId={certificate?.workEffortId || ""} />
+                <MultiPaymentItemsList
+                    workEffortId={certificate?.workEffortId || ""}
+                    items={items}
+                    addItem={addItem}
+                    updateItem={updateItem}
+                    deleteItem={deleteItem}
+                />
             </Paper>
         </RibbonContainer>
     );

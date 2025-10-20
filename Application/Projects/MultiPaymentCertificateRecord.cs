@@ -12,5 +12,7 @@ public class MultiPaymentCertificateRecord
     public string PaymentMethodId { get; init; }
     public string PaymentMethodDescription { get; init; }
     public string StatusDescription { get; init; }
-    public string CurrentStatusId { get; init; }   
+    public string CurrentStatusId { get; init; } 
+    public string? ChequeNumber { get; set; }
+    public DateTime? ChequeDate { get; set; }
 }

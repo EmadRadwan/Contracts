@@ -61616,7 +61616,9 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
 
                 entity.HasIndex(e => e.LastUpdatedTxStamp, "WORK_EFFORT_TXSTMP");
                 entity.HasIndex(e => e.SubProjectId, "WK_EFFRT_SUBPROJECT");
-    
+    entity.HasIndex(e => e.CertificateNumber, "WK_EFFRT_CERT_NUM");
+    entity.HasIndex(e => e.ChequeNumber, "WK_EFFRT_CHEQUE_NUM");
+
                 entity.HasIndex(e => e.ServiceId, "WK_EFFRT_SERVICE");
     entity.HasIndex(e => e.PaymentMethodId, "WK_EFFRT_PAYMENT_METHOD");
 
@@ -61774,9 +61776,18 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("WORK_EFFORT_TYPE_ID");
 
              entity.Property(e => e.SubProjectId)
-        .HasMaxLength(36)
+                 .HasMaxLength(36)
         .IsUnicode(false)
         .HasColumnName("SUB_PROJECT_ID");
+        
+        entity.Property(e => e.ChequeNumber)
+        .HasMaxLength(50)
+        .IsUnicode(false)
+        .HasColumnName("CHEQUE_NUMBER");
+
+    entity.Property(e => e.ChequeDate)
+        .HasColumnType("datetime")
+        .HasColumnName("CHEQUE_DATE");
         
         entity.Property(e => e.SubProjectName)
         .HasMaxLength(255)

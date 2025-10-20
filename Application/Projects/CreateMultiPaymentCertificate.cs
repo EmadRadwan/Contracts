@@ -1,20 +1,3 @@
-// Backend controller endpoint for create
-// This adds a new POST endpoint to handle multi-payment certificate creation.
-// Purpose: Exposes the MediatR command for creating the certificate via API.
-// Why: Standardizes API access, allowing frontend to call via RTK Query.
-// Context: Mirrors the provided CreateProjectCertificate controller; assumes HandleResult is from a base controller.
-[HttpPost("/multi-payment-certificates")]
-public async Task<ActionResult<MultiPaymentCertificateDto>> CreateMultiPaymentCertificate([FromBody] MultiPaymentCertificateDto certificate)
-{
-    var result = await Mediator.Send(new CreateMultiPaymentCertificate.Command { Certificate = certificate });
-    return HandleResult(result);
-}
-
-// Backend handler: CreateMultiPaymentCertificate
-// This handler is adapted from CreateProjectCertificate, saving header and items to WorkEffort without PO creation.
-// Purpose: Generates unique IDs/code, creates header WorkEffort, child item WorkEfforts, and returns DTO with fetched names.
-// Why: Ensures data consistency in transaction, auto-generates code, aligns with Ofbiz-style sequencing.
-// Context: No PO creation as specified; assumes WorkEffort entity has extended fields (e.g., PaymentMethodId, DiscountMode); fetches names for DTO like example.
 using Application.Core;
 using FluentValidation;
 using MediatR;
@@ -66,23 +49,11 @@ namespace Application.Projects
                     var certificate = request.Certificate!;
                     var newWorkEffortSerial = await _utilityService.GetNextSequence("WorkEffort");
 
-                    // REFACTOR: Simplified code generation without party-based prefix.
-                    // Purpose: Uses a simple MPC- prefix with count for uniqueness.
-                    // Why: No party ID in header; keeps it general for multi-party items.
-                    // Context: Adapted from example's party-specific serial; assumes WorkEffortTypeId filters correctly.
-                    var certificateCount = await _context.WorkEfforts
-                        .CountAsync(we => we.WorkEffortTypeId == "MULTI_PAYMENT_CERTIFICATE", cancellationToken);
-                    var newCode = $"MPC-{certificateCount + 1:D4}";
 
-                    // REFACTOR: Created header WorkEffort with multi-payment specific fields.
-                    // Purpose: Stores header data like date, payment details.
-                    // Why: Aligns with Ofbiz model; uses EstimatedStartDate for the single 'date' field.
-                    // Context: No project/party in header as it's multi; assumes entity has PaymentMethodId, ChequeNumber, ChequeDate.
                     var workEffort = new WorkEffort
                     {
                         WorkEffortId = newWorkEffortSerial,
-                        WorkEffortTypeId = "MULTI_PAYMENT_CERTIFICATE",
-                        CertificateNumber = newCode,  // Using CertificateNumber for code consistency with example
+                        WorkEffortTypeId = "PAYMENT_CERTIFICATE",
                         EstimatedStartDate = certificate.Date,
                         Description = certificate.Description,
                         PaymentMethodId = certificate.PaymentMethodId,
@@ -95,10 +66,6 @@ namespace Application.Projects
 
                     _context.WorkEfforts.Add(workEffort);
 
-                    // REFACTOR: Loop to create child WorkEfforts for items, without PO logic.
-                    // Purpose: Saves item details as child efforts.
-                    // Why: Removes unnecessary PO creation; stores item-specific fields like parties, types.
-                    // Context: Assumes WorkEffort has extended fields (e.g., ItemType, DiscountMode, ServiceId); generates child IDs.
                     foreach (var item in certificate.Items!)
                     {
                         var itemWorkEffortSerial = await _utilityService.GetNextSequence("WorkEffort");
@@ -106,22 +73,19 @@ namespace Application.Projects
                         {
                             WorkEffortId = itemWorkEffortSerial,
                             WorkEffortParentId = newWorkEffortSerial,
-                            WorkEffortTypeId = "MULTI_PAYMENT_ITEM",
+                            WorkEffortTypeId = "PAYMENT_CERTIFICATE_ITEM",
                             ProjectId = item.ProjectId,
-                            // Assuming SubProjectId maps to a field like WorkEffortAssoc or custom SubProjectId
                             SubProjectId = item.SubProjectId,
-                            ItemType = item.ItemType,
+                            CostType = item.ItemType,
                             ServiceId = item.ServiceId,
-                            ProductId = item.ProductId,
+                            ProductId = !string.IsNullOrEmpty(item.ProductId) ? item.ProductId : null,
                             Description = item.Description,
-                            EstimatedCost = item.Amount,  // Or custom Amount field
                             Discount = item.Discount ?? 0,
-                            DiscountMode = item.DiscountMode,
                             TransportationExpenses = item.TransportationExpenses ?? 0,
                             Gratuities = item.Gratuities ?? 0,
-                            TotalAmount = item.Total ?? 0,
-                            PartyIdSupplier = item.PartyIdSupplier,
-                            PartyIdContractor = item.PartyIdContractor,
+                            TotalAmount = item.Total,
+                            PartyIdSupplier = !string.IsNullOrEmpty(item.PartyIdSupplier) ? item.PartyIdSupplier : null,
+                            PartyIdContractor = !string.IsNullOrEmpty(item.PartyIdContractor) ? item.PartyIdContractor : null,
                             CurrentStatusId = "WEPR_CREATED",
                             CreatedDate = stamp,
                             LastUpdatedStamp = stamp
@@ -197,7 +161,7 @@ namespace Application.Projects
 
                         resultItems.Add(new MultiPaymentItemDto
                         {
-                            ItemId = item.ItemId,  // Or generated WorkEffortId
+                            WorkEffortId = item.WorkEffortId,  // Or generated WorkEffortId
                             ProjectId = item.ProjectId,
                             ProjectName = project?.ProjectName ?? "",
                             SubProjectId = item.SubProjectId,

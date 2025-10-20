@@ -1142,6 +1142,39 @@
     "menu": {
       "projects": "المشاريع",
       "projectCertificates": "مستخلصات المشاريع"
+    },
+    "multiPaymentCertificate": {
+      "form": {
+        "title": "شهادة دفع متعددة",
+        "date": "التاريخ *",
+        "paymentMethod": "طريقة الدفع *",
+        "description": "الوصف",
+        "chequeNumber": "رقم الشيك",
+        "chequeDate": "تاريخ الشيك",
+        "create": "إنشاء شهادة",
+        "update": "تحديث الشهادة"
+      },
+      "itemForm": {
+        "project": " اسم المشروع",
+        "subProject": "بنود المشروع",
+        "itemType": "تحليلى الاعمال",
+        "product": "تحليلى المواد المباشرة",
+        "service": "نوع الاعمال",
+        "description": "الوصف",
+        "amount": "المبلغ",
+        "discount": "الخصم",
+        "discountValue": "القيمة",
+        "discountPercentage": "النسبة المئوية",
+        "transportationExpenses": "مصاريف النقل",
+        "gratuities": "الإكراميات",
+        "total": "الإجمالي",
+        "create": "إنشاء البند",
+        "update": "تحديث البند",
+        "validation": {
+          "partyExclusive": "يرجى اختيار إما مورد أو مقاول، وليس كلاهما.",
+          "partyRequired": "يجب اختيار مورد أو مقاول على الأقل."
+        }
+      }
     }
   }
 }

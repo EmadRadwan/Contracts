@@ -61,7 +61,7 @@ public class ListMultiPaymentItems
                             ProductId = product.ProductId,
                             ProductName = product.ProductName,
                             Description = workEffort.Description,
-                            TotalAmount = (decimal)workEffort.TotalAmount,
+                            Amount = (decimal)workEffort.TotalAmount,
                             Discount = (decimal)workEffort.Discount,
                             TransportationExpenses = (decimal)workEffort.TransportationExpenses,
                             Gratuities = (decimal)workEffort.Gratuities
@@ -79,21 +79,4 @@ public class ListMultiPaymentItems
             }
         }
     }
-}
-
-public class MultiPaymentItemDto
-{
-    public string WorkEffortId { get; set; }
-    public string ProjectId { get; set; }
-    public string ProjectName { get; set; }
-    public string SubProjectId { get; set; }
-    public string SubProjectName { get; set; }
-    public string ItemType { get; set; }
-    public string ProductId { get; set; }
-    public string ProductName { get; set; }
-    public string Description { get; set; }
-    public decimal TotalAmount { get; set; }
-    public decimal Discount { get; set; }
-    public decimal TransportationExpenses { get; set; }
-    public decimal Gratuities { get; set; }
 }

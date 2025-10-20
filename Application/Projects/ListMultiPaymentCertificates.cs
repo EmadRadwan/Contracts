@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Application.Projects;
 
-namespace Application.MultiPaymentCertificates
+namespace Application.Projects
 {
     public class ListMultiPaymentCertificates
     {
@@ -31,9 +31,10 @@ namespace Application.MultiPaymentCertificates
             {
                 var language = request.Language;
 
-                // REFACTOR: Structured query to fetch MultiPaymentCertificate data with necessary joins
-                // Purpose: Aligns with MultiPaymentCertificate interface, ensuring all required fields are included
-                // Context: Matches the structure of ProjectCertificateRecords handler but tailored for PAYMENT_CERTIFICATE
+                // REFACTOR: Enhanced query to include all fields inserted in CreateMultiPaymentCertificate
+                // Purpose: Ensure query returns all relevant fields (e.g., ChequeNumber, ChequeDate) to match inserted data
+                // Why: Aligns with CreateMultiPaymentCertificate's WorkEffort creation for complete data retrieval
+                // Context: Added ChequeNumber, ChequeDate, and status translations to match DTO; kept joins for descriptions
                 var query = from we in _context.WorkEfforts.AsNoTracking()
                             join si in _context.StatusItems on we.CurrentStatusId equals si.StatusId into statusGroup
                             from si in statusGroup.DefaultIfEmpty()
@@ -47,14 +48,29 @@ namespace Application.MultiPaymentCertificates
                                 Date = (DateTime)we.CreatedDate,
                                 Description = we.Description,
                                 PaymentMethodId = we.PaymentMethodId,
-                                PaymentMethodDescription = pm.Description,
-                                StatusDescription = language == "ar" ? si.DescriptionArabic : si.Description,
-                                CurrentStatusId = we.CurrentStatusId
+                                PaymentMethodDescription = pm != null ? pm.Description : null,
+                                // REFACTOR: Added status translation logic to match CreateMultiPaymentCertificate
+                                // Purpose: Provide consistent status descriptions in English and Arabic
+                                // Why: Mirrors the statusDescriptions dictionary used in CreateMultiPaymentCertificate
+                                StatusDescription = language == "ar" 
+                                    ? (si != null ? si.DescriptionArabic : 
+                                        (we.CurrentStatusId == "WEPR_CREATED" ? "تم الإنشاء" : 
+                                         we.CurrentStatusId == "WEPR_APPROVED" ? "تمت الموافقة" : 
+                                         we.CurrentStatusId == "WEPR_COMPLETE" ? "مكتمل" : "غير معروف"))
+                                    : (si != null ? si.Description : 
+                                        (we.CurrentStatusId == "WEPR_CREATED" ? "Created" : 
+                                         we.CurrentStatusId == "WEPR_APPROVED" ? "Approved" : 
+                                         we.CurrentStatusId == "WEPR_COMPLETE" ? "Complete" : "Unknown")),
+                                CurrentStatusId = we.CurrentStatusId,
+                                // REFACTOR: Added ChequeNumber and ChequeDate to match inserted WorkEffort fields
+                                // Purpose: Reflect all fields populated during certificate creation
+                                // Why: Ensures query output matches the data structure inserted by CreateMultiPaymentCertificate
+                                ChequeNumber = we.ChequeNumber,
+                                ChequeDate = we.ChequeDate
                             };
 
                 return query;
             }
         }
     }
-
 }

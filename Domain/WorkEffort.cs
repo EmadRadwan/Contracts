@@ -136,7 +136,8 @@ public class WorkEffort
     public string? ServiceId { get; set; }
     public string? QuantityUomId { get; set; }
     public string? PaymentMethodId { get; set; }
-
+    public string? ChequeNumber { get; set; }
+    public DateTime? ChequeDate { get; set; }
     
     public Product? Service { get; set; }
     public PaymentMethod? PaymentMethod { get; set; }
