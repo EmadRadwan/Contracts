@@ -16,6 +16,7 @@ import {MemoizedFormDropDownList} from "../../../app/common/form/MemoizedFormDro
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import FormInput from "../../../app/common/form/FormInput";
+import {useFetchAdvancePaymentGlAccountsQuery} from "../../../app/store/apis/accounting/globalGlSettingsApi";
 
 
 interface CertificateActionsMenuProps {
@@ -88,6 +89,7 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
     const {data: paymentMethods, isLoading: paymentMethodsLoading} = useFetchPaymentMethodsQuery(undefined);
     const [isFormCollapsed, setIsFormCollapsed] = useState(false);
     const {language} = useAppSelector((state) => state.localization);
+    const { data: glAccounts, isLoading: glAccountsLoading } = useFetchAdvancePaymentGlAccountsQuery(undefined);
 
     const [formKey, setFormKey] = useState<number>(1);
     const formRef = useRef<any>(null);
@@ -125,6 +127,8 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
         currentStatusId: selectedCertificate?.currentStatusId || "WEPR_CREATED",
         statusDescription: selectedCertificate?.statusDescription || "Created",
         statusDescriptionArabic: selectedCertificate?.statusDescriptionArabic || "تم الإنشاء",
+        glAccountIdAdvancedPayment: selectedCertificate?.glAccountIdAdvancedPayment || "", // Added glAccountId
+
     }), [selectedCertificate]);
 
     const renderSwitchStatus = useCallback(() => {
@@ -172,6 +176,7 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
             paymentMethodId: values.paymentMethodId || "",
             chequeNumber: values.chequeNumber || "",
             chequeDate: values.chequeDate instanceof Date ? values.chequeDate.toISOString() : null,
+            glAccountIdAdvancedPayment: values.glAccountIdAdvancedPayment || "", // Added glAccountId
             items,
         };
         if (editMode === 1) {
@@ -276,6 +281,18 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
                                                 dataItemKey="paymentMethodId"
                                                 textField="description"
                                                 data={filteredPaymentMethods}
+                                                validator={requiredValidator}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={2}>
+                                            <Field
+                                                id="glAccountIdAdvancedPayment"
+                                                name="glAccountIdAdvancedPayment"
+                                                label={getTranslatedLabel(`${localizationKey}.glAccount`, "GL Account *")}
+                                                component={MemoizedFormDropDownList}
+                                                dataItemKey="glAccountIdAdvancedPayment"
+                                                textField="accountName"
+                                                data={glAccounts || []}
                                                 validator={requiredValidator}
                                             />
                                         </Grid>

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Application.Shipments.GlobalGlSettings;
 using System.Threading.Tasks;
+using Application.GlAccounts;
 
 namespace API.Controllers.Accounting
 {
@@ -17,6 +18,13 @@ namespace API.Controllers.Accounting
         public async Task<IActionResult> GetChildGlAccounts(string parentGlAccountId)
         {
             return HandleResult(await Mediator.Send(new GetChildGlAccounts.Query { ParentGlAccountId = parentGlAccountId }));
+        }
+        
+        [HttpGet("getAdvancePaymentGlAccounts")]
+        public async Task<IActionResult> GetAdvancePaymentGlAccounts()
+        {
+            var lang = GetLanguage(); // Assuming GetLanguage is defined elsewhere
+            return HandleResult(await Mediator.Send(new ListAdvancePaymentGlAccounts.Query { Language = lang }));
         }
     }
 }

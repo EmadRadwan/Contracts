@@ -56931,6 +56931,9 @@ namespace Persistence.Migrations
                     b.Property<string>("GlAccountId")
                         .HasColumnType("varchar(36)");
 
+                    b.Property<string>("GlAccountIdAdvancedPayment")
+                        .HasColumnType("varchar(36)");
+
                     b.Property<decimal?>("Gratuities")
                         .HasColumnType("decimal(65,30)");
 
@@ -57158,6 +57161,8 @@ namespace Persistence.Migrations
                     b.HasIndex("AccommodationSpotId");
 
                     b.HasIndex("GlAccountId");
+
+                    b.HasIndex("GlAccountIdAdvancedPayment");
 
                     b.HasIndex("MoneyUomUomId");
 
@@ -77698,6 +77703,11 @@ namespace Persistence.Migrations
                         .HasForeignKey("GlAccountId")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("Domain.GlAccount", "AdvancedPaymentGlAccount")
+                        .WithMany("WorkEffortsAdvancedPayment")
+                        .HasForeignKey("GlAccountIdAdvancedPayment")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("Domain.Uom", "MoneyUom")
                         .WithMany("WorkEfforts")
                         .HasForeignKey("MoneyUomUomId")
@@ -77797,6 +77807,8 @@ namespace Persistence.Migrations
                     b.Navigation("AccommodationMap");
 
                     b.Navigation("AccommodationSpot");
+
+                    b.Navigation("AdvancedPaymentGlAccount");
 
                     b.Navigation("ContractorParty");
 
@@ -80104,6 +80116,8 @@ namespace Persistence.Migrations
                     b.Navigation("VarianceReasonGlAccounts");
 
                     b.Navigation("WorkEfforts");
+
+                    b.Navigation("WorkEffortsAdvancedPayment");
                 });
 
             modelBuilder.Entity("Domain.GlAccountCategory", b =>

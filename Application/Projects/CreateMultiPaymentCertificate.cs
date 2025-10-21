@@ -15,10 +15,6 @@ namespace Application.Projects
             public MultiPaymentCertificateDto? Certificate { get; set; }
         }
 
-        // REFACTOR: Added validator to ensure at least one item.
-        // Purpose: Prevents creation of empty certificates.
-        // Why: Improves data integrity, mirrors example's item requirement.
-        // Context: Optional; can be removed if empty certificates are allowed.
         public class CommandValidator : AbstractValidator<Command>
         {
             public CommandValidator()
@@ -60,6 +56,7 @@ namespace Application.Projects
                         ChequeNumber = certificate.ChequeNumber,
                         ChequeDate = certificate.ChequeDate,
                         CurrentStatusId = "WEPR_CREATED",
+                        GlAccountIdAdvancedPayment = certificate.GlAccountIdAdvancedPayment,
                         CreatedDate = stamp,
                         LastUpdatedStamp = stamp
                     };
@@ -75,7 +72,7 @@ namespace Application.Projects
                             WorkEffortParentId = newWorkEffortSerial,
                             WorkEffortTypeId = "PAYMENT_CERTIFICATE_ITEM",
                             ProjectId = item.ProjectId,
-                            SubProjectId = item.SubProjectId,
+                            SubProjectId = !string.IsNullOrEmpty(item.SubProjectId) ? item.SubProjectId : null,
                             CostType = item.ItemType,
                             ServiceId = item.ServiceId,
                             ProductId = !string.IsNullOrEmpty(item.ProductId) ? item.ProductId : null,
@@ -102,10 +99,6 @@ namespace Application.Projects
 
                     await transaction.CommitAsync(cancellationToken);
 
-                    // REFACTOR: Fetched names for DTO, similar to example.
-                    // Purpose: Enriches return DTO with display names.
-                    // Why: Ensures consistent output; fetches from DB for accuracy.
-                    // Context: Multi-item, so loop to fetch per item; assumes Arabic descriptions hardcoded or fetched.
                     var resultItems = new List<MultiPaymentItemDto>();
                     foreach (var item in certificate.Items!)
                     {
@@ -198,10 +191,6 @@ namespace Application.Projects
                             ? statusDescriptions[workEffort.CurrentStatusId]
                             : ("Unknown", "غير معروف");
 
-                    // REFACTOR: Constructed result DTO with header and enriched items.
-                    // Purpose: Returns complete object for frontend use.
-                    // Why: Matches example's structure; includes status translations.
-                    // Context: No relatedOrderId since no PO.
                     var resultDto = new MultiPaymentCertificateDto
                     {
                         WorkEffortId = workEffort.WorkEffortId,

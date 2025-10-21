@@ -40,9 +40,6 @@ namespace Application.Projects
                 await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
                 try
                 {
-                    // REFACTOR: Fetch certificate and validate existence
-                    // Purpose: Ensures the certificate exists before updating
-                    // Improvement: Prevents invalid updates and provides clear errors
                     var certificate = await _context.WorkEfforts
                         .Where(w => w.WorkEffortId == request.WorkEffortId && w.WorkEffortTypeId == "PAYMENT_CERTIFICATE")
                         .FirstOrDefaultAsync(cancellationToken);
@@ -52,9 +49,6 @@ namespace Application.Projects
                         return Result<MultiPaymentCertificateDto>.Failure("Certificate not found");
                     }
 
-                    // REFACTOR: Check current status to prevent re-approval
-                    // Purpose: Avoids redundant updates if already approved
-                    // Improvement: Enhances robustness of status transitions
                     if (certificate.CurrentStatusId == "WEPR_APPROVED")
                     {
                         return Result<MultiPaymentCertificateDto>.Failure("Certificate is already approved");
@@ -64,9 +58,6 @@ namespace Application.Projects
                     certificate.CurrentStatusId = "WEPR_APPROVED";
                     certificate.LastUpdatedStamp = DateTime.UtcNow;
 
-                    // REFACTOR: Update items' status to WEPR_APPROVED
-                    // Purpose: Ensures items reflect the certificate's status
-                    // Improvement: Maintains consistency across related records
                     var items = await _context.WorkEfforts
                         .Where(w => w.WorkEffortParentId == request.WorkEffortId && w.WorkEffortTypeId == "PAYMENT_CERTIFICATE_ITEM")
                         .ToListAsync(cancellationToken);
@@ -86,9 +77,6 @@ namespace Application.Projects
 
                     await transaction.CommitAsync(cancellationToken);
 
-                    // REFACTOR: Enrich DTO with item details, similar to Create handler
-                    // Purpose: Returns complete certificate data for frontend
-                    // Improvement: Ensures consistency with create response
                     var resultItems = new List<MultiPaymentItemDto>();
                     foreach (var item in items)
                     {
@@ -180,9 +168,6 @@ namespace Application.Projects
                             ? statusDescriptions[certificate.CurrentStatusId]
                             : ("Unknown", "غير معروف");
 
-                    // REFACTOR: Construct result DTO with updated status
-                    // Purpose: Returns complete certificate data for frontend
-                    // Improvement: Matches Create handler’s response structure
                     var resultDto = new MultiPaymentCertificateDto
                     {
                         WorkEffortId = certificate.WorkEffortId,

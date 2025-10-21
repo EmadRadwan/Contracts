@@ -15,6 +15,7 @@ namespace Application.Projects
         public string? CurrentStatusId { get; set; }
         public string? StatusDescription { get; set; }
         public string? StatusDescriptionArabic { get; set; }
+        public string? GlAccountIdAdvancedPayment { get; set; }
         public List<MultiPaymentItemDto> Items { get; set; }
     }
 

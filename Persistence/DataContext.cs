@@ -61777,8 +61777,8 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
 
              entity.Property(e => e.SubProjectId)
                  .HasMaxLength(36)
-        .IsUnicode(false)
-        .HasColumnName("SUB_PROJECT_ID");
+                    .IsUnicode(false)
+                    .HasColumnName("SUB_PROJECT_ID");
         
         entity.Property(e => e.ChequeNumber)
         .HasMaxLength(50)
@@ -61804,9 +61804,10 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
         .IsUnicode(false)
         .HasColumnName("SERVICE_ID");
 
-entity.HasOne(d => d.SubProject)
+    entity.HasOne(d => d.SubProject)
         .WithMany()
         .HasForeignKey(d => d.SubProjectId)
+        .IsRequired(false) // Explicitly mark as optional
         .HasConstraintName("WK_EFFRT_SUBPROJECT")
         .OnDelete(DeleteBehavior.Restrict);
         
@@ -61871,6 +61872,10 @@ entity.HasOne(d => d.SubProject)
             .WithMany(gl => gl.WorkEfforts)
             .HasForeignKey(we => we.GlAccountId);
 
+            entity.HasOne(we => we.AdvancedPaymentGlAccount)
+                .WithMany(ga => ga.WorkEffortsAdvancedPayment)
+                .HasForeignKey(we => we.GlAccountIdAdvancedPayment)
+                .IsRequired(false);
                     
                  entity.Property(e => e.ProjectNum)
                 .HasMaxLength(60)

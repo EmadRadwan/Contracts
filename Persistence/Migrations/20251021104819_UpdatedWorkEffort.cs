@@ -26805,6 +26805,8 @@ namespace Persistence.Migrations
                     CHEQUE_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
                     GlAccountId = table.Column<string>(type: "varchar(36)", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    GlAccountIdAdvancedPayment = table.Column<string>(type: "varchar(36)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     AccommodationMapId = table.Column<string>(type: "varchar(36)", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     AccommodationSpotId = table.Column<string>(type: "varchar(36)", nullable: true)
@@ -26841,6 +26843,11 @@ namespace Persistence.Migrations
                     table.ForeignKey(
                         name: "FK_WORK_EFFORT_GL_ACCOUNT_GlAccountId",
                         column: x => x.GlAccountId,
+                        principalTable: "GL_ACCOUNT",
+                        principalColumn: "GL_ACCOUNT_ID");
+                    table.ForeignKey(
+                        name: "FK_WORK_EFFORT_GL_ACCOUNT_GlAccountIdAdvancedPayment",
+                        column: x => x.GlAccountIdAdvancedPayment,
                         principalTable: "GL_ACCOUNT",
                         principalColumn: "GL_ACCOUNT_ID");
                     table.ForeignKey(
@@ -49722,6 +49729,11 @@ namespace Persistence.Migrations
                 name: "IX_WORK_EFFORT_GlAccountId",
                 table: "WORK_EFFORT",
                 column: "GlAccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WORK_EFFORT_GlAccountIdAdvancedPayment",
+                table: "WORK_EFFORT",
+                column: "GlAccountIdAdvancedPayment");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WORK_EFFORT_MoneyUomUomId",

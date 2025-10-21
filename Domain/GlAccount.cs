@@ -43,6 +43,7 @@ public class GlAccount
         TaxAuthorityGlAccounts = new HashSet<TaxAuthorityGlAccount>();
         VarianceReasonGlAccounts = new HashSet<VarianceReasonGlAccount>();
         WorkEfforts = new HashSet<WorkEffort>();
+        WorkEffortsAdvancedPayment = new HashSet<WorkEffort>();
     }
 
     public string GlAccountId { get; set; } = null!;
@@ -102,4 +103,5 @@ public class GlAccount
     public ICollection<TaxAuthorityGlAccount> TaxAuthorityGlAccounts { get; set; }
     public ICollection<VarianceReasonGlAccount> VarianceReasonGlAccounts { get; set; }
     public ICollection<WorkEffort> WorkEfforts { get; set; }
+    public ICollection<WorkEffort> WorkEffortsAdvancedPayment { get; set; }
 }

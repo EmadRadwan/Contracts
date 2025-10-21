@@ -63,43 +63,11 @@ const globalGlSettingsApi = createApi({
                         method: "GET",
                     };
                 },
-                // transformResponse: (response: any, meta) => {
-                //     let classesSet = [...new Set(response.map((res: any) => res.glAccountClassId))]
-                //     let typesSet = [...new Set(response.map((res: any) => res.glAccountTypeId))].filter(t => t)
-                //     let resourcesSet = [...new Set(response.map((res: any) => res.glResourceTypeId))]
-                //     let parentAccounts = [...new Set(response.filter((res: any) => !res.parentGlAccountId).map((p: any) => {
-                //         return {
-                //             glParentAccountId: p.glAccountId,
-                //             glParentAccountName: p.accountName
-                //         }
-                //     }))]
-                //     // console.log(parentAccounts)
-                //     let accountClasses = classesSet.map((c: any) => {
-                //         return {
-                //             glAccountClassId: c,
-                //             glAccountClassDescription: c.split("_").map((g: string) => g[0].concat(g.substring(1).toLowerCase())).join(" ")
-                //         }
-                //     })
-                //     let accountTypes = typesSet.map((t: any) => {
-                //         return {
-                //             glAccountTypeId: t,
-                //             glAccountTypeDescription: t.split("_").map((g: string) => g[0].concat(g.substring(1).toLowerCase())).join(" ")
-                //         }
-                //     })
-                //     let resourceTypes = resourcesSet.map((r: any) => {
-                //         return {
-                //             glResourceTypeId: r,
-                //             glResourceTypeDescription: r.split("_").map((g: string) => g[0].concat(g.substring(1).toLowerCase())).join(" ")
-                //         }
-                //     })
-                //     return {
-                //         "accountClasses": accountClasses,
-                //         "accountTypes": accountTypes,
-                //         "resourceTypes": resourceTypes,
-                //         "parentAccounts": parentAccounts
-                //     }
-
-                // },
+            }),
+            fetchAdvancePaymentGlAccounts: builder.query<AdvancePaymentGlAccountDto[], void>({
+                query: () => ({
+                    url: '/glAccounts/getAdvancePaymentGlAccounts',
+                }),
             }),
         };
     },
@@ -110,6 +78,16 @@ export const {
     useFetchGlobalGlAccountSettingsQuery,
     useLazyFetchGlobalGlAccountSettingsQuery,
     useFetchTopLevelGlobalGlAccountsQuery,
-    useFetchChildrenGlAccountsQuery
+    useFetchChildrenGlAccountsQuery, useFetchAdvancePaymentGlAccountsQuery,
 } = globalGlSettingsApi;
 export {globalGlSettingsApi};
+
+export interface AdvancePaymentGlAccountDto {
+    glAccountId: string;
+    accountCode: string;
+    accountName: string;
+    description: string;
+    glAccountTypeId: string;
+    glAccountClassId: string;
+}
+

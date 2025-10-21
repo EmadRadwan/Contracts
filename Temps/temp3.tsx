@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Field, Form, FormElement, FormRenderProps } from "@progress/kendo-react-form";
 import { Box, Button, Collapse, Grid, IconButton, Menu, MenuItem, Paper, Typography } from "@mui/material";
-import { Ribbon } from "react-ribbons";
+import { Ribbon, RibbonContainer } from "react-ribbons";
 import useMultiPaymentCertificate from "../hook/useMultiPaymentCertificate";
 import { v4 as uuidv4 } from "uuid";
 import { MultiPaymentCertificate } from "../../../app/models/project/MultiPaymentCertificate";
-import { useAppSelector, useFetchPaymentMethodsQuery } from "../../../app/store/configureStore";
+import { useAppSelector, useFetchPaymentMethodsQuery, useFetchAdvancePaymentGlAccountsQuery } from "../../../app/store/configureStore";
 import MultiPaymentItemsList from "../dashboard/MultiPaymentItemsList";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
+import AccountingMenu from "../../accounting/invoice/menu/AccountingMenu";
 import FormDatePicker from "../../../app/common/form/FormDatePicker";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
 import { requiredValidator } from "../../../app/common/form/Validators";
@@ -15,12 +16,6 @@ import { MemoizedFormDropDownList } from "../../../app/common/form/MemoizedFormD
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import FormInput from "../../../app/common/form/FormInput";
-
-interface Props {
-    selectedCertificate?: MultiPaymentCertificate;
-    editMode: number; // 1: add, 2: edit
-    cancelEdit: () => void;
-}
 
 interface CertificateActionsMenuProps {
     workEffortId: string | undefined;
@@ -80,12 +75,22 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
     );
 };
 
+interface Props {
+    selectedCertificate?: MultiPaymentCertificate;
+    editMode: number; // 1: add, 2: edit
+    cancelEdit: () => void;
+}
+
 export default function MultiPaymentCertificateForm({ selectedCertificate, editMode, cancelEdit }: Props) {
     const { getTranslatedLabel } = useTranslationHelper();
-    const { language } = useAppSelector((state) => state.localization);
     const localizationKey = "accounting.multiPaymentCertificate.form";
     const { data: paymentMethods, isLoading: paymentMethodsLoading } = useFetchPaymentMethodsQuery(undefined);
+    // REFACTOR: Added RTK Query hook to fetch Advance Payment GL Accounts
+    // Purpose: Fetches GL Accounts for dropdown, leveraging RTK Query caching
+    const { data: glAccounts, isLoading: glAccountsLoading } = useFetchAdvancePaymentGlAccountsQuery(undefined);
     const [isFormCollapsed, setIsFormCollapsed] = useState(false);
+    const { language } = useAppSelector((state) => state.localization);
+
     const [formKey, setFormKey] = useState<number>(1);
     const formRef = useRef<any>(null);
 
@@ -104,8 +109,8 @@ export default function MultiPaymentCertificateForm({ selectedCertificate, editM
         deleteItem,
         handleCreate,
         handleUpdate,
-        handleApprove,
         setItems,
+        handleApprove,
         isLoading: apiLoading,
     } = useMultiPaymentCertificate({
         selectedCertificate,
@@ -113,6 +118,8 @@ export default function MultiPaymentCertificateForm({ selectedCertificate, editM
         setFormKey,
     });
 
+    // REFACTOR: Added glAccountId to initial form values
+    // Purpose: Ensures form supports GL Account selection from fetched data
     const initialValues = useMemo(() => ({
         workEffortId: selectedCertificate?.workEffortId || "",
         code: selectedCertificate?.code || "",
@@ -124,6 +131,7 @@ export default function MultiPaymentCertificateForm({ selectedCertificate, editM
         currentStatusId: selectedCertificate?.currentStatusId || "WEPR_CREATED",
         statusDescription: selectedCertificate?.statusDescription || "Created",
         statusDescriptionArabic: selectedCertificate?.statusDescriptionArabic || "تم الإنشاء",
+        glAccountId: selectedCertificate?.glAccountId || "", // Added glAccountId
     }), [selectedCertificate]);
 
     const renderSwitchStatus = useCallback(() => {
@@ -157,10 +165,12 @@ export default function MultiPaymentCertificateForm({ selectedCertificate, editM
     const handleCancelForm = useCallback(() => {
         setCertificate(undefined);
         setItems([]);
-        setFormKey((prev) => prev + 1);
-        cancelEdit();
-    }, [setCertificate, setItems, cancelEdit]);
+        setFormKey((prev) => prev + 1); // Reset form to clear input fields
+        cancelEdit(); // Notify parent to close/hide form
+    }, [setCertificate, cancelEdit]);
 
+    // REFACTOR: Updated handleSubmit to include glAccountId in serialized values
+    // Purpose: Ensures GL Account selection is included in form submission
     const handleSubmit = useCallback((values: any) => {
         const serializedValues: MultiPaymentCertificate = {
             workEffortId: values.workEffortId || uuidv4(),
@@ -170,9 +180,7 @@ export default function MultiPaymentCertificateForm({ selectedCertificate, editM
             paymentMethodId: values.paymentMethodId || "",
             chequeNumber: values.chequeNumber || "",
             chequeDate: values.chequeDate instanceof Date ? values.chequeDate.toISOString() : null,
-            currentStatusId: values.currentStatusId || "WEPR_CREATED",
-            statusDescription: values.statusDescription || "Created",
-            statusDescriptionArabic: values.statusDescriptionArabic || "تم الإنشاء",
+            glAccountId: values.glAccountId || "", // Added glAccountId
             items,
         };
         if (editMode === 1) {
@@ -188,9 +196,13 @@ export default function MultiPaymentCertificateForm({ selectedCertificate, editM
         }
     }, [handleCreate, handleUpdate, editMode, items]);
 
+    const titleText = editMode === 1
+        ? getTranslatedLabel(`${localizationKey}.title`, "New Multi-Payment Certificate")
+        : `${getTranslatedLabel(`${localizationKey}.title`, "Multi Payment Certificate")} ${selectedCertificate?.workEffortId || ""}`;
+
     const handleApproveCertificate = useCallback(() => {
         if (!certificate?.workEffortId) {
-            return;
+            return; // Prevent approval if no workEffortId
         }
         handleApprove({
             workEffortId: certificate.workEffortId,
@@ -198,16 +210,19 @@ export default function MultiPaymentCertificateForm({ selectedCertificate, editM
         });
     }, [certificate, handleApprove, items]);
 
-    const titleText = editMode === 1
-        ? getTranslatedLabel(`${localizationKey}.title`, "New Multi-Payment Certificate")
-        : `${getTranslatedLabel(`${localizationKey}.title`, "Multi Payment Certificate")} ${selectedCertificate?.workEffortId || ""}`;
-
     const status = renderSwitchStatus();
+
+    // REFACTOR: Added loading check for GL Accounts
+    // Purpose: Displays loading indicator while fetching GL Accounts
+    if (paymentMethodsLoading || glAccountsLoading) {
+        return <LoadingComponent />;
+    }
 
     return (
         <>
+            <AccountingMenu selectedMenuItem="/multi-payment-certificates" />
             <Paper elevation={5} className="div-container-withBorderCurved">
-                <Grid container spacing={2} alignItems="center" position="relative">
+                <Grid container spacing={2} alignItems="center">
                     <Grid item xs={11}>
                         <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ paddingLeft: 3 }}>
                             <Typography variant="h6">
@@ -227,20 +242,19 @@ export default function MultiPaymentCertificateForm({ selectedCertificate, editM
                         </Box>
                     </Grid>
                     <Grid item xs={1}>
-                        {/* REFACTOR: Remove RibbonContainer, use Ribbon directly */}
-                        {/* Purpose: Matches ProjectCertificateForm's ribbon implementation */}
-                        {/* Improvement: Simplifies rendering and avoids unnecessary wrapper */}
                         {editMode === 2 && (
-                            <Ribbon
-                                side={language === "ar" ? "left" : "right"}
-                                type="corner"
-                                size="large"
-                                backgroundColor={status.backgroundColor}
-                                color={status.foreColor}
-                                fontFamily="sans-serif"
-                            >
-                                {status.label}
-                            </Ribbon>
+                            <RibbonContainer>
+                                <Ribbon
+                                    side={language === "ar" ? "left" : "right"}
+                                    type="corner"
+                                    size="large"
+                                    backgroundColor={status.backgroundColor}
+                                    color={status.foreColor}
+                                    fontFamily="sans-serif"
+                                >
+                                    {status.label}
+                                </Ribbon>
+                            </RibbonContainer>
                         )}
                     </Grid>
                 </Grid>
@@ -276,6 +290,20 @@ export default function MultiPaymentCertificateForm({ selectedCertificate, editM
                                                 validator={requiredValidator}
                                             />
                                         </Grid>
+                                        {/* REFACTOR: Added GL Account dropdown */}
+                                        {/* Purpose: Allows selection of Advance Payment GL Account */}
+                                        <Grid item xs={2}>
+                                            <Field
+                                                id="glAccountId"
+                                                name="glAccountId"
+                                                label={getTranslatedLabel(`${localizationKey}.glAccount`, "GL Account *")}
+                                                component={MemoizedFormDropDownList}
+                                                dataItemKey="glAccountId"
+                                                textField="accountName"
+                                                data={glAccounts || []}
+                                                validator={requiredValidator}
+                                            />
+                                        </Grid>
                                         <Grid item xs={3}>
                                             <Field
                                                 id="description"
@@ -306,10 +334,12 @@ export default function MultiPaymentCertificateForm({ selectedCertificate, editM
                                                 </Grid>
                                             </>
                                         )}
-                                        <Grid container item spacing={2} sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-start', mt: 2 }}>
-                                            {/* REFACTOR: Conditionally render submit button based on certificate status */}
-                                            {/* Purpose: Hide submit button when certificate is approved */}
-                                            {/* Improvement: Prevents editing of approved certificates, aligning with ProjectCertificateForm */}
+                                        <Grid container item spacing={2} sx={{
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            justifyContent: 'flex-start',
+                                            mt: 2
+                                        }}>
                                             {(editMode === 1 || (editMode === 2 && certificate?.currentStatusId !== "WEPR_APPROVED")) && (
                                                 <Grid item>
                                                     <Button
@@ -342,21 +372,14 @@ export default function MultiPaymentCertificateForm({ selectedCertificate, editM
                         )}
                     />
                 </Collapse>
-                <Grid item xs={12}>
-                    <MultiPaymentItemsList
-                        workEffortId={certificate?.workEffortId || ""}
-                        items={items}
-                        addItem={addItem}
-                        updateItem={updateItem}
-                        deleteItem={deleteItem}
-                    />
-                </Grid>
-            </Paper>
-            {apiLoading && (
-                <LoadingComponent
-                    message={getTranslatedLabel(`${localizationKey}.saving`, "Saving Certificate...")}
+                <MultiPaymentItemsList
+                    workEffortId={certificate?.workEffortId || ""}
+                    items={items}
+                    addItem={addItem}
+                    updateItem={updateItem}
+                    deleteItem={deleteItem}
                 />
-            )}
+            </Paper>
         </>
     );
 }
