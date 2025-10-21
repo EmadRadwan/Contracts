@@ -1,4 +1,3 @@
-using Application.Common;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -39,34 +38,89 @@ public class ListMultiPaymentItems
 
             try
             {
-                // REFACTOR: Modified query to filter by WorkEffortParentId instead of WorkEffortId
-                // and added WorkEffortTypeId filter for PAYMENT_CERTIFICATE_ITEM.
-                // Joined with Products table to retrieve ProductId and ProductName.
-                // This ensures we fetch child work efforts of the specified parent
-                // and only include payment certificate items, with accurate product details.
+                // REFACTOR: Fixed contractor field access and added project/subproject joins.
+                // Purpose: Ensures contractor is correctly referenced; fetches ProjectName/SubProjectName.
+                // Why: Fixes 'Cannot resolve symbol contractor' by using SelectMany parameter directly; aligns with CreateMultiPaymentCertificate for project/subproject names.
+                // Context: Uses left joins for nullable fields; matches previous working contractor logic.
                 var multiPaymentItems = await _context.WorkEfforts
                     .Where(item => item.WorkEffortParentId == request.WorkEffortId 
                         && item.WorkEffortTypeId == "PAYMENT_CERTIFICATE_ITEM")
-                    .Join(_context.Products,
-                        workEffort => workEffort.ProductId,
+                    .GroupJoin(_context.WorkEfforts.Where(p => p.WorkEffortTypeId == "PROJECT"),
+                        item => item.ProjectId,
+                        project => project.WorkEffortId,
+                        (item, projects) => new { item, projects })
+                    .SelectMany(x => x.projects.DefaultIfEmpty(), (x, project) => new { x.item, project })
+                    .GroupJoin(_context.WorkEfforts.Where(sp => sp.WorkEffortTypeId == "SUB_PROJECT"),
+                        x => x.item.SubProjectId,
+                        subProject => subProject.WorkEffortId,
+                        (x, subProjects) => new { x.item, x.project, subProjects })
+                    .SelectMany(x => x.subProjects.DefaultIfEmpty(), (x, subProject) => new { x.item, x.project, subProject })
+                    .GroupJoin(_context.Products,
+                        x => x.item.ServiceId,
+                        service => service.ProductId,
+                        (x, services) => new { x.item, x.project, x.subProject, services })
+                    .SelectMany(x => x.services.DefaultIfEmpty(), (x, service) => new { x.item, x.project, x.subProject, service })
+                    .GroupJoin(_context.Products,
+                        x => x.item.ProductId,
                         product => product.ProductId,
-                        (workEffort, product) => new MultiPaymentItemDto
-                        {
-                            WorkEffortId = workEffort.WorkEffortId,
-                            ProjectId = workEffort.ProjectId,
-                            ProjectName = workEffort.ProjectName,
-                            SubProjectId = workEffort.SubProjectId,
-                            SubProjectName = workEffort.SubProjectName,
-                            ItemType = workEffort.CostType,
-                            ProductId = product.ProductId,
-                            ProductName = product.ProductName,
-                            Description = workEffort.Description,
-                            Amount = (decimal)workEffort.TotalAmount,
-                            Discount = (decimal)workEffort.Discount,
-                            TransportationExpenses = (decimal)workEffort.TransportationExpenses,
-                            Gratuities = (decimal)workEffort.Gratuities
-                        })
+                        (x, products) => new { x.item, x.project, x.subProject, x.service, products })
+                    .SelectMany(x => x.products.DefaultIfEmpty(), (x, product) => new { x.item, x.project, x.subProject, x.service, product })
+                    .GroupJoin(_context.Parties,
+                        x => x.item.PartyIdSupplier,
+                        supplier => supplier.PartyId,
+                        (x, suppliers) => new { x.item, x.project, x.subProject, x.service, x.product, suppliers })
+                    .SelectMany(x => x.suppliers.DefaultIfEmpty(), (x, supplier) => new { x.item, x.project, x.subProject, x.service, x.product, supplier })
+                    .GroupJoin(_context.Parties,
+                        x => x.item.PartyIdContractor,
+                        contractor => contractor.PartyId,
+                        (x, contractors) => new { x.item, x.project, x.subProject, x.service, x.product, x.supplier, contractors })
+                    .SelectMany(x => x.contractors.DefaultIfEmpty(), (x, contractor) => new MultiPaymentItemDto
+                    {
+                        WorkEffortId = x.item.WorkEffortId,
+                        ProjectId = x.item.ProjectId,
+                        ProjectName = x.project != null ? x.project.ProjectName : "",
+                        SubProjectId = x.item.SubProjectId,
+                        SubProjectName = x.subProject != null ? x.subProject.SubProjectName : "",
+                        ItemType = x.item.CostType,
+                        ServiceId = x.item.ServiceId,
+                        ServiceName = x.service != null ? x.service.ProductName : "",
+                        ProductId = x.item.ProductId,
+                        ProductName = x.product != null ? x.product.ProductName : "",
+                        Description = x.item.Description,
+                        Amount = (decimal?)x.item.TotalAmount, // Adjust if Amount is a separate DB field
+                        Discount = (decimal?)x.item.Discount,
+                        TransportationExpenses = (decimal?)x.item.TransportationExpenses,
+                        Gratuities = (decimal?)x.item.Gratuities,
+                        Total = (decimal?)x.item.TotalAmount,
+                        PartyIdSupplier = x.item.PartyIdSupplier,
+                        PartyIdSupplierName = x.supplier != null ? x.supplier.Description : "",
+                        PartyIdContractor = x.item.PartyIdContractor,
+                        // REFACTOR: Fixed contractor field access.
+                        // Purpose: Uses contractor parameter directly from SelectMany.
+                        // Why: Corrects 'Cannot resolve symbol contractor' by avoiding incorrect x.contractor reference.
+                        // Context: Matches structure of previous working version; ensures contractor is accessible.
+                        PartyIdContractorName = contractor != null ? contractor.Description : ""
+                    })
                     .ToListAsync(cancellationToken);
+
+                // REFACTOR: Moved ItemTypeDescription logic to client side.
+                // Purpose: Applies Arabic translations after DB query to avoid EF Core translation issues.
+                // Why: Prevents InvalidOperationException from dictionary lookup in LINQ query.
+                // Context: Matches create handler's translation logic.
+                var itemTypeDescriptions = new Dictionary<string, string>
+                {
+                    { "MATERIALS", "المواد" },
+                    { "LABOR", "العمالة" },
+                    { "EQUIPMENT", "المعدات" },
+                    { "EXPENSES", "المصروفات" }
+                };
+
+                foreach (var item in multiPaymentItems)
+                {
+                    item.ItemTypeDescription = itemTypeDescriptions.ContainsKey(item.ItemType ?? "")
+                        ? itemTypeDescriptions[item.ItemType]
+                        : "";
+                }
 
                 if (!multiPaymentItems.Any())
                     return Result<List<MultiPaymentItemDto>>.Success(new List<MultiPaymentItemDto>());

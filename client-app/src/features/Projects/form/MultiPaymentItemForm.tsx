@@ -369,7 +369,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                                     <Field
                                         id="serviceId"
                                         name="serviceId"
-                                        label={getTranslatedLabel(`${localizationKey}.product`, "Service *")}
+                                        label={getTranslatedLabel(`${localizationKey}.service`, "Service *")}
                                         component={FormSimpleComboBoxServiceVirtual}
                                         validator={requiredValidator}
                                         textField="productName"

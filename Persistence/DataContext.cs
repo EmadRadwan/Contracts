@@ -61867,6 +61867,10 @@ entity.HasOne(d => d.SubProject)
                     .HasConstraintName("WK_EFFRT_TYPE");
                     
                  
+            entity.HasOne(we => we.ProjectGlAccount)
+            .WithMany(gl => gl.WorkEfforts)
+            .HasForeignKey(we => we.GlAccountId);
+
                     
                  entity.Property(e => e.ProjectNum)
                 .HasMaxLength(60)

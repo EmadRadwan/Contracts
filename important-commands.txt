@@ -194,8 +194,7 @@ Can you break down the number of distinct logic parts in the following Ofbiz fun
 Select Internet
 F@mily#97@
 
-//-- copy from local to server
-./deploy_to_vm.sh
+
 
 
 //-----Oracle Cloud VM
@@ -288,6 +287,5 @@ New way to return meaningful
  
  ////////
  
- the new requirement where i want to use the same pattern for the above is related to Payments. My code is immitating Ofbiz but the above code is not Ofbiz related. in Ofbiz the payment handles a single payment and is generally related to an invoice. in the new requirement i have a multi-payment use case where i need a form like ProjectCertificateForm that will act as the header of the payment; this form will have props - we can benefit from the following paymentOut form - fromParty and toParty , paymentDate, payment method. we'll also need a payment item form like SupplyProqurementForm where the required props are almost all of the props in SupplyProqurementForm
-
+ i need your help extending this handler. first of all, this handler is part of an ofbiz clone. the handler is simply creating a multi payment certificate and its items. i know its weired to save this in the workeffort table but this was due to the fact that ofbiz doesnt support the concept of - header and line item payment - . any way, in the header, we have the payment method that's common to all items. this payment method is coming from PaymentMethods table 
 

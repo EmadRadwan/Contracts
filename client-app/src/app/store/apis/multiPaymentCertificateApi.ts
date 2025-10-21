@@ -46,7 +46,7 @@ const multiPaymentCertificateApi = createApi({
                 providesTags: ["MultiPaymentCertificates"],
             }),
             getMultiPaymentItems: builder.query<MultiPaymentItem[], string>({
-                query: (certificateId) => `multiPaymentCertificate/${certificateId}/items`,
+                query: (certificateId) => `project/${certificateId}/items`,
             }),
             fetchSubProjects: builder.query<ListResponse<SubProject>, string>({
                 query: (projectId) => `project/subProjects/${projectId}`,
@@ -60,13 +60,20 @@ const multiPaymentCertificateApi = createApi({
                 }),
                 invalidatesTags: ['MultiPaymentCertificates'],
             }),
+            approveMultiPaymentCertificate: builder.mutation<MultiPaymentCertificate, { workEffortId: string }>({
+                query: ({ workEffortId }) => ({
+                    url: `/project/${workEffortId}/approveMultiPaymentCertificate`,
+                    method: 'POST',
+                }),
+                invalidatesTags: ['MultiPaymentCertificate', 'MultiPaymentItems'],
+            }),
         };
     },
 });
 
 export const { useFetchMultiPaymentCertificatesQuery,
     useGetMultiPaymentItemsQuery,
-    useFetchSubProjectsQuery, useAddMultiPaymentCertificateMutation
+    useFetchSubProjectsQuery, useAddMultiPaymentCertificateMutation, useApproveMultiPaymentCertificateMutation
 } = multiPaymentCertificateApi;
 export { multiPaymentCertificateApi };
 

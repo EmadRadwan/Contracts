@@ -56928,6 +56928,9 @@ namespace Persistence.Migrations
                         .HasColumnType("varchar(36)")
                         .HasColumnName("FIXED_ASSET_ID");
 
+                    b.Property<string>("GlAccountId")
+                        .HasColumnType("varchar(36)");
+
                     b.Property<decimal?>("Gratuities")
                         .HasColumnType("decimal(65,30)");
 
@@ -57153,6 +57156,8 @@ namespace Persistence.Migrations
                     b.HasIndex("AccommodationMapId");
 
                     b.HasIndex("AccommodationSpotId");
+
+                    b.HasIndex("GlAccountId");
 
                     b.HasIndex("MoneyUomUomId");
 
@@ -77688,6 +77693,11 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("WK_EFFRT_FXDASST");
 
+                    b.HasOne("Domain.GlAccount", "ProjectGlAccount")
+                        .WithMany("WorkEfforts")
+                        .HasForeignKey("GlAccountId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("Domain.Uom", "MoneyUom")
                         .WithMany("WorkEfforts")
                         .HasForeignKey("MoneyUomUomId")
@@ -77807,6 +77817,8 @@ namespace Persistence.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("Project");
+
+                    b.Navigation("ProjectGlAccount");
 
                     b.Navigation("RecurrenceInfo");
 
@@ -80090,6 +80102,8 @@ namespace Persistence.Migrations
                     b.Navigation("TaxAuthorityGlAccounts");
 
                     b.Navigation("VarianceReasonGlAccounts");
+
+                    b.Navigation("WorkEfforts");
                 });
 
             modelBuilder.Entity("Domain.GlAccountCategory", b =>

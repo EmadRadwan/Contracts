@@ -1,40 +1,362 @@
-// In MultiPaymentCertificatesList.tsx
-const handleSelectCertificate = useCallback(
-    (workEffortId?: string) => {
-        if (!workEffortId) return;
-        const selectedCert = certificates.data.find(
-            (cert: MultiPaymentCertificate) => cert.workEffortId === workEffortId
-        );
-        if (!selectedCert) return;
-        setPaymentCertificate(selectedCert);
-        // REFACTOR: Set editMode to 2 for editing an existing certificate
-        // This ensures the form operates in edit mode, aligning with the hook's logic
-        setFormEditMode(2); // Changed from 1 to 2
-        setViewMode("form");
-    },
-    [certificates.data]
-);
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Field, Form, FormElement, FormRenderProps } from "@progress/kendo-react-form";
+import { Box, Button, Collapse, Grid, IconButton, Menu, MenuItem, Paper, Typography } from "@mui/material";
+import { Ribbon } from "react-ribbons";
+import useMultiPaymentCertificate from "../hook/useMultiPaymentCertificate";
+import { v4 as uuidv4 } from "uuid";
+import { MultiPaymentCertificate } from "../../../app/models/project/MultiPaymentCertificate";
+import { useAppSelector, useFetchPaymentMethodsQuery } from "../../../app/store/configureStore";
+import MultiPaymentItemsList from "../dashboard/MultiPaymentItemsList";
+import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
+import FormDatePicker from "../../../app/common/form/FormDatePicker";
+import LoadingComponent from "../../../app/layout/LoadingComponent";
+import { requiredValidator } from "../../../app/common/form/Validators";
+import { MemoizedFormDropDownList } from "../../../app/common/form/MemoizedFormDropDownList";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import FormInput from "../../../app/common/form/FormInput";
 
-const handleCreateNew = useCallback(() => {
-    // REFACTOR: Clear paymentCertificate to ensure a clean slate for new certificate
-    // This prevents stale data from persisting in the form
-    setPaymentCertificate(null);
-    setFormEditMode(1);
-    setViewMode("form");
-}, []);
+interface Props {
+    selectedCertificate?: MultiPaymentCertificate;
+    editMode: number; // 1: add, 2: edit
+    cancelEdit: () => void;
+}
 
-const cancelEdit = useCallback(() => {
-    // REFACTOR: Clear paymentCertificate when canceling to reset form state
-    // This ensures no stale certificate data persists when returning to list view
-    setPaymentCertificate(null);
-    setFormEditMode(0);
-    setViewMode("list");
-}, []);
+interface CertificateActionsMenuProps {
+    workEffortId: string | undefined;
+    currentStatusId: string | undefined;
+    handleApprove: () => void;
+    disabled: boolean;
+}
 
-// REFACTOR: Add useEffect to clear paymentCertificate when viewMode changes to 'list'
-// This ensures the form starts fresh when re-opened
-useEffect(() => {
-    if (viewMode === "list") {
-        setPaymentCertificate(null);
-    }
-}, [viewMode]);
+const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
+                                                                           workEffortId,
+                                                                           currentStatusId,
+                                                                           handleApprove,
+                                                                           disabled,
+                                                                       }) => {
+    const { getTranslatedLabel } = useTranslationHelper();
+    const localizationKey = "accounting.multiPaymentCertificate.form";
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const open = Boolean(anchorEl);
+
+    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
+    return (
+        <>
+            <Button
+                variant="contained"
+                color="primary"
+                onClick={handleClick}
+                disabled={disabled || !workEffortId || currentStatusId === "WEPR_APPROVED"}
+                sx={{ mt: 2, mr: 2 }}
+            >
+                {getTranslatedLabel(`${localizationKey}.actions`, "Actions")}
+            </Button>
+            <Menu
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleClose}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+            >
+                <MenuItem
+                    onClick={() => {
+                        handleApprove();
+                        handleClose();
+                    }}
+                    disabled={!workEffortId || currentStatusId === "WEPR_APPROVED"}
+                >
+                    {getTranslatedLabel(`${localizationKey}.approve`, "Approve")}
+                </MenuItem>
+            </Menu>
+        </>
+    );
+};
+
+export default function MultiPaymentCertificateForm({ selectedCertificate, editMode, cancelEdit }: Props) {
+    const { getTranslatedLabel } = useTranslationHelper();
+    const { language } = useAppSelector((state) => state.localization);
+    const localizationKey = "accounting.multiPaymentCertificate.form";
+    const { data: paymentMethods, isLoading: paymentMethodsLoading } = useFetchPaymentMethodsQuery(undefined);
+    const [isFormCollapsed, setIsFormCollapsed] = useState(false);
+    const [formKey, setFormKey] = useState<number>(1);
+    const formRef = useRef<any>(null);
+
+    const filteredPaymentMethods = useMemo(() => {
+        return paymentMethods?.filter(
+            (method) => method.paymentMethodTypeId === "COMPANY_CHECK" || method.paymentMethodTypeId === "CASH"
+        ) || [];
+    }, [paymentMethods]);
+
+    const {
+        certificate,
+        setCertificate,
+        items,
+        addItem,
+        updateItem,
+        deleteItem,
+        handleCreate,
+        handleUpdate,
+        handleApprove,
+        setItems,
+        isLoading: apiLoading,
+    } = useMultiPaymentCertificate({
+        selectedCertificate,
+        editMode,
+        setFormKey,
+    });
+
+    const initialValues = useMemo(() => ({
+        workEffortId: selectedCertificate?.workEffortId || "",
+        code: selectedCertificate?.code || "",
+        date: selectedCertificate?.date ? new Date(selectedCertificate.date) : new Date(),
+        description: selectedCertificate?.description || "",
+        paymentMethodId: selectedCertificate?.paymentMethodId || "",
+        chequeNumber: selectedCertificate?.chequeNumber || "",
+        chequeDate: selectedCertificate?.chequeDate ? new Date(selectedCertificate.chequeDate) : null,
+        currentStatusId: selectedCertificate?.currentStatusId || "WEPR_CREATED",
+        statusDescription: selectedCertificate?.statusDescription || "Created",
+        statusDescriptionArabic: selectedCertificate?.statusDescriptionArabic || "تم الإنشاء",
+    }), [selectedCertificate]);
+
+    const renderSwitchStatus = useCallback(() => {
+        const status = certificate?.currentStatusId || "WEPR_CREATED";
+        if (certificate?.statusDescription && certificate?.statusDescriptionArabic) {
+            return {
+                label: language === "ar" ? certificate.statusDescriptionArabic : certificate.statusDescription,
+                backgroundColor: status === "WEPR_CREATED" ? "blue" : "green",
+                foreColor: "#ffffff",
+            };
+        }
+        const statusLabels: { [key: string]: { en: string; ar: string } } = {
+            WEPR_CREATED: { en: "Created", ar: "تم الإنشاء" },
+            WEPR_APPROVED: { en: "Approved", ar: "تمت الموافقة" },
+        };
+        return {
+            label: language === "ar" ? statusLabels[status]?.ar || "غير معروف" : statusLabels[status]?.en || "Unknown",
+            backgroundColor: status === "WEPR_CREATED" ? "blue" : "green",
+            foreColor: "#ffffff",
+        };
+    }, [certificate, language]);
+
+    useEffect(() => {
+        if (selectedCertificate) {
+            setCertificate(selectedCertificate);
+        } else {
+            setCertificate(undefined);
+        }
+    }, [selectedCertificate, setCertificate]);
+
+    const handleCancelForm = useCallback(() => {
+        setCertificate(undefined);
+        setItems([]);
+        setFormKey((prev) => prev + 1);
+        cancelEdit();
+    }, [setCertificate, setItems, cancelEdit]);
+
+    const handleSubmit = useCallback((values: any) => {
+        const serializedValues: MultiPaymentCertificate = {
+            workEffortId: values.workEffortId || uuidv4(),
+            code: values.code || "",
+            date: values.date instanceof Date ? values.date.toISOString() : new Date().toISOString(),
+            description: values.description || "",
+            paymentMethodId: values.paymentMethodId || "",
+            chequeNumber: values.chequeNumber || "",
+            chequeDate: values.chequeDate instanceof Date ? values.chequeDate.toISOString() : null,
+            currentStatusId: values.currentStatusId || "WEPR_CREATED",
+            statusDescription: values.statusDescription || "Created",
+            statusDescriptionArabic: values.statusDescriptionArabic || "تم الإنشاء",
+            items,
+        };
+        if (editMode === 1) {
+            handleCreate({
+                values: serializedValues,
+                isValid: formRef.current?.isValid(),
+            });
+        } else {
+            handleUpdate({
+                values: serializedValues,
+                isValid: formRef.current?.isValid(),
+            });
+        }
+    }, [handleCreate, handleUpdate, editMode, items]);
+
+    const handleApproveCertificate = useCallback(() => {
+        if (!certificate?.workEffortId) {
+            return;
+        }
+        handleApprove({
+            workEffortId: certificate.workEffortId,
+            isValid: formRef.current?.isValid() && items.length > 0,
+        });
+    }, [certificate, handleApprove, items]);
+
+    const titleText = editMode === 1
+        ? getTranslatedLabel(`${localizationKey}.title`, "New Multi-Payment Certificate")
+        : `${getTranslatedLabel(`${localizationKey}.title`, "Multi Payment Certificate")} ${selectedCertificate?.workEffortId || ""}`;
+
+    const status = renderSwitchStatus();
+
+    return (
+        <>
+            <Paper elevation={5} className="div-container-withBorderCurved">
+                <Grid container spacing={2} alignItems="center" position="relative">
+                    <Grid item xs={11}>
+                        <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ paddingLeft: 3 }}>
+                            <Typography variant="h6">
+                                {titleText}
+                            </Typography>
+                            <IconButton onClick={() => setIsFormCollapsed(!isFormCollapsed)}>
+                                {isFormCollapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+                            </IconButton>
+                            {editMode === 2 && (
+                                <CertificateActionsMenu
+                                    workEffortId={certificate?.workEffortId}
+                                    currentStatusId={certificate?.currentStatusId}
+                                    handleApprove={handleApproveCertificate}
+                                    disabled={apiLoading || items.length === 0}
+                                />
+                            )}
+                        </Box>
+                    </Grid>
+                    <Grid item xs={1}>
+                        {/* REFACTOR: Remove RibbonContainer, use Ribbon directly */}
+                        {/* Purpose: Matches ProjectCertificateForm's ribbon implementation */}
+                        {/* Improvement: Simplifies rendering and avoids unnecessary wrapper */}
+                        {editMode === 2 && (
+                            <Ribbon
+                                side={language === "ar" ? "left" : "right"}
+                                type="corner"
+                                size="large"
+                                backgroundColor={status.backgroundColor}
+                                color={status.foreColor}
+                                fontFamily="sans-serif"
+                            >
+                                {status.label}
+                            </Ribbon>
+                        )}
+                    </Grid>
+                </Grid>
+                <Collapse in={!isFormCollapsed}>
+                    <Form
+                        ref={formRef}
+                        initialValues={initialValues}
+                        key={formKey}
+                        onSubmit={handleSubmit}
+                        render={(formRenderProps: FormRenderProps) => (
+                            <FormElement>
+                                <fieldset className="k-form-fieldset">
+                                    <Grid container spacing={2} sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+                                        <Field name="workEffortId" component="input" type="hidden" />
+                                        <Grid item xs={2}>
+                                            <Field
+                                                id="date"
+                                                name="date"
+                                                label={getTranslatedLabel(`${localizationKey}.date`, "Date *")}
+                                                component={FormDatePicker}
+                                                validator={requiredValidator}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={2}>
+                                            <Field
+                                                id="paymentMethodId"
+                                                name="paymentMethodId"
+                                                label={getTranslatedLabel(`${localizationKey}.paymentMethod`, "Payment Method *")}
+                                                component={MemoizedFormDropDownList}
+                                                dataItemKey="paymentMethodId"
+                                                textField="description"
+                                                data={filteredPaymentMethods}
+                                                validator={requiredValidator}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={3}>
+                                            <Field
+                                                id="description"
+                                                name="description"
+                                                label={getTranslatedLabel(`${localizationKey}.description`, "Description")}
+                                                component={FormInput}
+                                            />
+                                        </Grid>
+                                        {formRenderProps.valueGetter('paymentMethodId') !== 'CASH' && (
+                                            <>
+                                                <Grid item xs={2}>
+                                                    <Field
+                                                        id="chequeNumber"
+                                                        name="chequeNumber"
+                                                        label={getTranslatedLabel(`${localizationKey}.chequeNumber`, "Cheque Number")}
+                                                        component={FormInput}
+                                                        validator={requiredValidator}
+                                                    />
+                                                </Grid>
+                                                <Grid item xs={2}>
+                                                    <Field
+                                                        id="chequeDate"
+                                                        name="chequeDate"
+                                                        label={getTranslatedLabel(`${localizationKey}.chequeDate`, "Cheque Date")}
+                                                        component={FormDatePicker}
+                                                        validator={requiredValidator}
+                                                    />
+                                                </Grid>
+                                            </>
+                                        )}
+                                        <Grid container item spacing={2} sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-start', mt: 2 }}>
+                                            {/* REFACTOR: Conditionally render submit button based on certificate status */}
+                                            {/* Purpose: Hide submit button when certificate is approved */}
+                                            {/* Improvement: Prevents editing of approved certificates, aligning with ProjectCertificateForm */}
+                                            {(editMode === 1 || (editMode === 2 && certificate?.currentStatusId !== "WEPR_APPROVED")) && (
+                                                <Grid item>
+                                                    <Button
+                                                        type="submit"
+                                                        variant="contained"
+                                                        disabled={!formRenderProps.valid || apiLoading}
+                                                        sx={{ mr: 2 }}
+                                                    >
+                                                        {getTranslatedLabel(
+                                                            `${localizationKey}.${editMode === 1 ? "create" : "update"}`,
+                                                            editMode === 1 ? "Create Certificate" : "Update Certificate"
+                                                        )}
+                                                    </Button>
+                                                </Grid>
+                                            )}
+                                            <Grid item>
+                                                <Button
+                                                    onClick={handleCancelForm}
+                                                    color="error"
+                                                    variant="contained"
+                                                    disabled={apiLoading}
+                                                >
+                                                    {getTranslatedLabel("general.cancel", "Cancel")}
+                                                </Button>
+                                            </Grid>
+                                        </Grid>
+                                    </Grid>
+                                </fieldset>
+                            </FormElement>
+                        )}
+                    />
+                </Collapse>
+                <Grid item xs={12}>
+                    <MultiPaymentItemsList
+                        workEffortId={certificate?.workEffortId || ""}
+                        items={items}
+                        addItem={addItem}
+                        updateItem={updateItem}
+                        deleteItem={deleteItem}
+                    />
+                </Grid>
+            </Paper>
+            {apiLoading && (
+                <LoadingComponent
+                    message={getTranslatedLabel(`${localizationKey}.saving`, "Saving Certificate...")}
+                />
+            )}
+        </>
+    );
+}

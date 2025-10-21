@@ -3,7 +3,7 @@ import { MultiPaymentCertificate } from "../../../app/models/project/MultiPaymen
 import { MultiPaymentItem } from "../../../app/models/project/MultiPaymentItem";
 import { toast } from "react-toastify";
 import {
-    useAddMultiPaymentCertificateMutation,
+    useAddMultiPaymentCertificateMutation, useApproveMultiPaymentCertificateMutation,
     useGetMultiPaymentItemsQuery
 } from "../../../app/store/apis/multiPaymentCertificateApi";
 
@@ -22,6 +22,7 @@ export default function useMultiPaymentCertificate({
     const [items, setItems] = useState<MultiPaymentItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [addMultiPaymentCertificate, { isLoading: addLoading }] = useAddMultiPaymentCertificateMutation();
+    const [approveMultiPaymentCertificate, { isLoading: approveLoading }] = useApproveMultiPaymentCertificateMutation();
 
     const { data: fetchedItems = [], isLoading: itemsLoading } = useGetMultiPaymentItemsQuery(
         certificate?.workEffortId || "",
@@ -44,8 +45,6 @@ export default function useMultiPaymentCertificate({
 
         // Cleanup function to reset state when component unmounts or props change
         return () => {
-            // REFACTOR: Clear certificate and items when the component unmounts or editMode/selectedCertificate changes
-            // This ensures a clean slate when the form is no longer visible or mode changes
             setCertificate(undefined);
             setItems([]);
         };
@@ -67,10 +66,30 @@ export default function useMultiPaymentCertificate({
         setItems((prev) => prev.filter((item) => item.itemId !== itemId));
     }, []);
 
+    const validateCertificate = useCallback((certificate: MultiPaymentCertificate, items: MultiPaymentItem[]) => {
+        if (items.length === 0) {
+            toast.error("Certificate must have at least one item.");
+            return false;
+        }
+        const isItemsValid = items.every((item) => {
+            const isValid = item.amount > 0 && !!item.description;
+            if (!isValid) {
+                if (item.amount <= 0) toast.error("Item amount must be greater than 0");
+                if (!item.description) toast.error("Item description is required");
+            }
+            return isValid;
+        });
+        return isItemsValid;
+    }, []);
+
+
     const handleCreate = useCallback(
         async ({ values, isValid }: { values: MultiPaymentCertificate; isValid: boolean }) => {
             if (!isValid) {
                 toast.error("Form is invalid. Please check all fields.");
+                return;
+            }
+            if (!validateCertificate(values, items)) {
                 return;
             }
             setIsLoading(true);
@@ -78,6 +97,9 @@ export default function useMultiPaymentCertificate({
                 const payload = {
                     ...values,
                     items,
+                    currentStatusId: "WEPR_CREATED", // REFACTOR: Set status to WEPR_CREATED
+                    statusDescription: "Created",
+                    statusDescriptionArabic: "تم الإنشاء",
                 };
                 const response = await addMultiPaymentCertificate(payload).unwrap();
                 setCertificate(response); 
@@ -127,8 +149,39 @@ export default function useMultiPaymentCertificate({
         },
         [items, setFormKey]
     );
-    
-    console.log('items', items)
+
+
+    const handleApprove = useCallback(
+        async ({ workEffortId, isValid }: { workEffortId: string; isValid: boolean }) => {
+            if (!isValid) {
+                toast.error("Form is invalid. Please check all fields.");
+                return;
+            }
+            if (!validateCertificate(certificate || { workEffortId }, items)) {
+                return;
+            }
+            if (!workEffortId) {
+                toast.error("Work Effort ID is required for approval");
+                return;
+            }
+            setIsLoading(true);
+            try {
+                const response = await approveMultiPaymentCertificate({ workEffortId }).unwrap();
+                setCertificate({
+                    ...certificate,
+                    currentStatusId: "WEPR_APPROVED",
+                    statusDescription: "Approved",
+                    statusDescriptionArabic: "تمت الموافقة",
+                });
+                toast.success("Certificate approved successfully");
+            } catch (error: any) {
+                toast.error("Error approving certificate: " + (error?.data?.message || error.message));
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [certificate, items, approveMultiPaymentCertificate, validateCertificate]
+    );
 
     return {
         certificate,
@@ -138,7 +191,9 @@ export default function useMultiPaymentCertificate({
         updateItem,
         deleteItem,
         handleCreate,
-        handleUpdate, setItems,
-        isLoading: isLoading || itemsLoading,
+        handleUpdate,
+        handleApprove,
+        setItems,
+        isLoading: isLoading || itemsLoading || addLoading || approveLoading,
     };
 }

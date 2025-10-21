@@ -16,6 +16,7 @@ import { MultiPaymentCertificate } from "../../../app/models/project/MultiPaymen
 import LoadingComponent from "../../../app/layout/LoadingComponent";
 import { useFetchMultiPaymentCertificatesQuery } from "../../../app/store/apis/multiPaymentCertificateApi";
 import AccountingMenu from "../../accounting/invoice/menu/AccountingMenu";
+import {handleDatesArray} from "../../../app/util/utils";
 
 export default function MultiPaymentCertificatesList() {
     const [certificates, setCertificates] = useState<DataResult>({ data: [], total: 0 });
@@ -29,12 +30,7 @@ export default function MultiPaymentCertificatesList() {
 
     useEffect(() => {
         if (data) {
-            const adjustedData = data.data.map((item: MultiPaymentCertificate) => ({
-                ...item,
-                workEffortId: item.workEffortId,
-                date: item.date ? new Date(item.date).toLocaleDateString("en-GB") : "",
-                chequeDate: item.chequeDate ? new Date(item.chequeDate).toLocaleDateString("en-GB") : "",
-            }));
+            const adjustedData = handleDatesArray(data.data);
             setCertificates({ data: adjustedData, total: data.total });
         }
     }, [data]);

@@ -1,266 +1,128 @@
-// Backend controller endpoint for create
-// This adds a new POST endpoint to handle multi-payment certificate creation.
-// Purpose: Exposes the MediatR command for creating the certificate via API.
-// Why: Standardizes API access, allowing frontend to call via RTK Query.
-// Context: Mirrors the provided CreateProjectCertificate controller; assumes HandleResult is from a base controller.
-[HttpPost("/multi-payment-certificates")]
-public async Task<ActionResult<MultiPaymentCertificateDto>> CreateMultiPaymentCertificate([FromBody] MultiPaymentCertificateDto certificate)
-{
-    var result = await Mediator.Send(new CreateMultiPaymentCertificate.Command { Certificate = certificate });
-    return HandleResult(result);
-}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
-// Backend handler: CreateMultiPaymentCertificate
-// This handler is adapted from CreateProjectCertificate, saving header and items to WorkEffort without PO creation.
-// Purpose: Generates unique IDs/code, creates header WorkEffort, child item WorkEfforts, and returns DTO with fetched names.
-// Why: Ensures data consistency in transaction, auto-generates code, aligns with Ofbiz-style sequencing.
-// Context: No PO creation as specified; assumes WorkEffort entity has extended fields (e.g., PaymentMethodId, DiscountMode); fetches names for DTO like example.
-using Application.Core;
-using FluentValidation;
-using MediatR;
-using Persistence;
-using Domain;
-using Application.Interfaces;
-using Microsoft.EntityFrameworkCore;
-
-namespace Application.Projects
+public class SeedData
 {
-    public class CreateMultiPaymentCertificate
+    public static async Task Initialize(MyDbContext context)
     {
-        public class Command : IRequest<Result<MultiPaymentCertificateDto>>
+        if (!context.Facilities.Any() && !context.WorkEfforts.Any())
         {
-            public MultiPaymentCertificateDto? Certificate { get; set; }
-        }
-
-        // REFACTOR: Added validator to ensure at least one item.
-        // Purpose: Prevents creation of empty certificates.
-        // Why: Improves data integrity, mirrors example's item requirement.
-        // Context: Optional; can be removed if empty certificates are allowed.
-        public class CommandValidator : AbstractValidator<Command>
-        {
-            public CommandValidator()
+            var projectNames = new List<string>
             {
-                RuleFor(x => x.Certificate!.Items)
-                    .Must(items => items != null && items.Any())
-                    .WithMessage("At least one certificate item is required");
-            }
-        }
+                "مول الصحراوى 2 فدان",
+                "الصحراوى 10.5 فدان",
+                "الصحراوى 3 فدان",
+                "الصحراوى 4 فدان",
+                "الثروة الخضراء - علاء العمدة",
+                "الثروة الخضراء - سعودى",
+                "الثروة الخضراء - نسيم",
+                "الثالث زايد",
+                "السابع زايد",
+                "التاسع زايد",
+                "بيت الوطن لادريس أكتوبر",
+                "بيت الوطن لادريس التجمع"
+            };
 
-        public class Handler : IRequestHandler<Command, Result<MultiPaymentCertificateDto>>
-        {
-            private readonly DataContext _context;
-            private readonly IUtilityService _utilityService;
-
-            public Handler(DataContext context, IUtilityService utilityService)
+            var subProjects = new List<string>
             {
-                _context = context;
-                _utilityService = utilityService;
-            }
+                "مبنى الادارة",
+                "اسطبل الخيول",
+                "قرية الماكولات"
+            };
 
-            public async Task<Result<MultiPaymentCertificateDto>> Handle(Command request, CancellationToken cancellationToken)
+            var glAccountMapping = new Dictionary<string, string>
             {
-                await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-                try
+                { "مول الصحراوى 2 فدان", "124424" },
+                { "الصحراوى 10.5 فدان", "124425" },
+                { "الصحراوى 3 فدان", "124426" },
+                { "الصحراوى 4 فدان", "124427" },
+                { "الثروة الخضراء - علاء العمدة", "124428" },
+                { "الثروة الخضراء - سعودى", "124429" },
+                { "الثروة الخضراء - نسيم", "124430" },
+                { "الثالث زايد", "124431" },
+                { "السابع زايد", "124432" },
+                { "التاسع زايد", "124433" },
+                { "بيت الوطن لادريس أكتوبر", "124422" },
+                { "بيت الوطن لادريس التجمع", "124421" }
+            };
+
+            var stamp = DateTime.UtcNow;
+            var counter = 100;
+
+            foreach (var projectName in projectNames)
+            {
+                var newProjectSerial = counter.ToString();
+                counter++; // Increment counter for the next project
+
+                var facility = CreateFacility(projectName, stamp);
+                context.Facilities.Add(facility);
+
+                var project = new WorkEffort
                 {
-                    var stamp = DateTime.UtcNow;
-                    var certificate = request.Certificate!;
-                    var newWorkEffortSerial = await _utilityService.GetNextSequence("WorkEffort");
+                    WorkEffortId = newProjectSerial,
+                    ProjectName = projectName,
+                    WorkEffortTypeId = "PROJECT",
+                    CurrentStatusId = "WEPR_IN_PROGRESS", // Default status as placeholder
+                    EstimatedStartDate = stamp, // Default start date
+                    EstimatedCompletionDate = stamp.AddDays(30), // Default completion date
+                    CreatedDate = stamp,
+                    LastUpdatedStamp = stamp,
+                    FacilityId = facility.FacilityId,
+                    GlAccountId = glAccountMapping.ContainsKey(projectName) ? glAccountMapping[projectName] : null
+                };
+                context.WorkEfforts.Add(project);
 
-                    // REFACTOR: Simplified code generation without party-based prefix.
-                    // Purpose: Uses a simple MPC- prefix with count for uniqueness.
-                    // Why: No party ID in header; keeps it general for multi-party items.
-                    // Context: Adapted from example's party-specific serial; assumes WorkEffortTypeId filters correctly.
-                    var certificateCount = await _context.WorkEfforts
-                        .CountAsync(we => we.WorkEffortTypeId == "MULTI_PAYMENT_CERTIFICATE", cancellationToken);
-                    var newCode = $"MPC-{certificateCount + 1:D4}";
-
-                    // REFACTOR: Created header WorkEffort with multi-payment specific fields.
-                    // Purpose: Stores header data like date, payment details.
-                    // Why: Aligns with Ofbiz model; uses EstimatedStartDate for the single 'date' field.
-                    // Context: No project/party in header as it's multi; assumes entity has PaymentMethodId, ChequeNumber, ChequeDate.
-                    var workEffort = new WorkEffort
+                if (projectName == "الصحراوى 10.5 فدان")
+                {
+                    foreach (var subProjectName in subProjects)
                     {
-                        WorkEffortId = newWorkEffortSerial,
-                        WorkEffortTypeId = "MULTI_PAYMENT_CERTIFICATE",
-                        CertificateNumber = newCode,  // Using CertificateNumber for code consistency with example
-                        EstimatedStartDate = certificate.Date,
-                        Description = certificate.Description,
-                        PaymentMethodId = certificate.PaymentMethodId,
-                        ChequeNumber = certificate.ChequeNumber,
-                        ChequeDate = certificate.ChequeDate,
-                        CurrentStatusId = "WEPR_CREATED",
-                        CreatedDate = stamp,
-                        LastUpdatedStamp = stamp
-                    };
+                        var subProjectSerial = counter.ToString();
+                        counter++; // Increment counter for the next sub-project
 
-                    _context.WorkEfforts.Add(workEffort);
-
-                    // REFACTOR: Loop to create child WorkEfforts for items, without PO logic.
-                    // Purpose: Saves item details as child efforts.
-                    // Why: Removes unnecessary PO creation; stores item-specific fields like parties, types.
-                    // Context: Assumes WorkEffort has extended fields (e.g., ItemType, DiscountMode, ServiceId); generates child IDs.
-                    foreach (var item in certificate.Items!)
-                    {
-                        var itemWorkEffortSerial = await _utilityService.GetNextSequence("WorkEffort");
-                        var itemWorkEffort = new WorkEffort
+                        var subProject = new WorkEffort
                         {
-                            WorkEffortId = itemWorkEffortSerial,
-                            WorkEffortParentId = newWorkEffortSerial,
-                            WorkEffortTypeId = "MULTI_PAYMENT_ITEM",
-                            ProjectId = item.ProjectId,
-                            // Assuming SubProjectId maps to a field like WorkEffortAssoc or custom SubProjectId
-                            SubProjectId = item.SubProjectId,
-                            ItemType = item.ItemType,
-                            ServiceId = item.ServiceId,
-                            ProductId = item.ProductId,
-                            Description = item.Description,
-                            EstimatedCost = item.Amount,  // Or custom Amount field
-                            Discount = item.Discount ?? 0,
-                            DiscountMode = item.DiscountMode,
-                            TransportationExpenses = item.TransportationExpenses ?? 0,
-                            Gratuities = item.Gratuities ?? 0,
-                            TotalAmount = item.Total ?? 0,
-                            PartyIdSupplier = item.PartyIdSupplier,
-                            PartyIdContractor = item.PartyIdContractor,
-                            CurrentStatusId = "WEPR_CREATED",
+                            WorkEffortId = subProjectSerial,
+                            SubProjectName = subProjectName,
+                            WorkEffortTypeId = "SUB_PROJECT",
+                            CurrentStatusId = "WEPR_IN_PROGRESS",
+                            EstimatedStartDate = stamp,
+                            EstimatedCompletionDate = stamp.AddDays(30),
                             CreatedDate = stamp,
-                            LastUpdatedStamp = stamp
+                            LastUpdatedStamp = stamp,
+                            FacilityId = facility.FacilityId,
+                            ProjectId = newProjectSerial, // Link to parent project
+                            GlAccountId = glAccountMapping.ContainsKey(projectName) ? glAccountMapping[projectName] : null
                         };
-                        _context.WorkEfforts.Add(itemWorkEffort);
+                        context.WorkEfforts.Add(subProject);
                     }
-
-                    var createResult = await _context.SaveChangesAsync(cancellationToken);
-                    if (createResult <= 0)
-                    {
-                        await transaction.RollbackAsync(cancellationToken);
-                        return Result<MultiPaymentCertificateDto>.Failure("Failed to create certificate and items");
-                    }
-
-                    await transaction.CommitAsync(cancellationToken);
-
-                    // REFACTOR: Fetched names for DTO, similar to example.
-                    // Purpose: Enriches return DTO with display names.
-                    // Why: Ensures consistent output; fetches from DB for accuracy.
-                    // Context: Multi-item, so loop to fetch per item; assumes Arabic descriptions hardcoded or fetched.
-                    var resultItems = new List<MultiPaymentItemDto>();
-                    foreach (var item in certificate.Items!)
-                    {
-                        var project = await _context.WorkEfforts
-                            .Where(p => p.WorkEffortId == item.ProjectId)
-                            .Select(p => new { p.ProjectName })
-                            .FirstOrDefaultAsync(cancellationToken);
-
-                        var subProject = await _context.WorkEfforts
-                            .Where(sp => sp.WorkEffortId == item.SubProjectId)
-                            .Select(sp => new { sp.SubProjectName })
-                            .FirstOrDefaultAsync(cancellationToken);
-
-                        var supplier = item.PartyIdSupplier != null
-                            ? await _context.Parties
-                                .Where(p => p.PartyId == item.PartyIdSupplier)
-                                .Select(p => new { p.Description })
-                                .FirstOrDefaultAsync(cancellationToken)
-                            : null;
-
-                        var contractor = item.PartyIdContractor != null
-                            ? await _context.Parties
-                                .Where(p => p.PartyId == item.PartyIdContractor)
-                                .Select(p => new { p.Description })
-                                .FirstOrDefaultAsync(cancellationToken)
-                            : null;
-
-                        var service = item.ServiceId != null
-                            ? await _context.Products
-                                .Where(s => s.ProductId == item.ServiceId)
-                                .Select(s => new { s.ProductName })
-                                .FirstOrDefaultAsync(cancellationToken)
-                            : null;
-
-                        var product = item.ProductId != null
-                            ? await _context.Products
-                                .Where(pr => pr.ProductId == item.ProductId)
-                                .Select(pr => new { pr.ProductName })
-                                .FirstOrDefaultAsync(cancellationToken)
-                            : null;
-
-                        // Assuming itemTypeDescription is Arabic based on itemType (hardcoded like frontend)
-                        var itemTypeDescriptions = new Dictionary<string, string>
-                        {
-                            { "MATERIALS", "المواد" },
-                            { "LABOR", "العمالة" },
-                            { "EQUIPMENT", "المعدات" },
-                            { "EXPENSES", "المصروفات" }
-                        };
-                        var itemTypeDescription = itemTypeDescriptions.ContainsKey(item.ItemType ?? "")
-                            ? itemTypeDescriptions[item.ItemType]
-                            : "";
-
-                        resultItems.Add(new MultiPaymentItemDto
-                        {
-                            ItemId = item.ItemId,  // Or generated WorkEffortId
-                            ProjectId = item.ProjectId,
-                            ProjectName = project?.ProjectName ?? "",
-                            SubProjectId = item.SubProjectId,
-                            SubProjectName = subProject?.SubProjectName ?? "",
-                            ItemType = item.ItemType,
-                            ItemTypeDescription = itemTypeDescription,
-                            ServiceId = item.ServiceId,
-                            ServiceName = service?.ProductName ?? "",
-                            ProductId = item.ProductId,
-                            ProductName = product?.ProductName ?? "",
-                            Description = item.Description,
-                            Amount = item.Amount,
-                            Discount = item.Discount,
-                            DiscountMode = item.DiscountMode,
-                            TransportationExpenses = item.TransportationExpenses,
-                            Gratuities = item.Gratuities,
-                            Total = item.Total,
-                            PartyIdSupplier = item.PartyIdSupplier,
-                            PartyIdSupplierName = supplier?.Description ?? "",
-                            PartyIdContractor = item.PartyIdContractor,
-                            PartyIdContractorName = contractor?.Description ?? ""
-                        });
-                    }
-
-                    var statusDescriptions = new Dictionary<string, (string English, string Arabic)>
-                    {
-                        { "WEPR_CREATED", ("Created", "تم الإنشاء") },
-                        { "WEPR_APPROVED", ("Approved", "تمت الموافقة") },
-                        { "WEPR_COMPLETE", ("Complete", "مكتمل") }
-                    };
-
-                    var (statusDescription, statusDescriptionArabic) =
-                        statusDescriptions.ContainsKey(workEffort.CurrentStatusId)
-                            ? statusDescriptions[workEffort.CurrentStatusId]
-                            : ("Unknown", "غير معروف");
-
-                    // REFACTOR: Constructed result DTO with header and enriched items.
-                    // Purpose: Returns complete object for frontend use.
-                    // Why: Matches example's structure; includes status translations.
-                    // Context: No relatedOrderId since no PO.
-                    var resultDto = new MultiPaymentCertificateDto
-                    {
-                        WorkEffortId = workEffort.WorkEffortId,
-                        Code = workEffort.CertificateNumber,
-                        Date = workEffort.EstimatedStartDate,
-                        Description = workEffort.Description,
-                        PaymentMethodId = workEffort.PaymentMethodId,
-                        ChequeNumber = workEffort.ChequeNumber,
-                        ChequeDate = workEffort.ChequeDate,
-                        CurrentStatusId = workEffort.CurrentStatusId,
-                        StatusDescription = statusDescription,
-                        StatusDescriptionArabic = statusDescriptionArabic,
-                        Items = resultItems
-                    };
-
-                    return Result<MultiPaymentCertificateDto>.Success(resultDto);
-                }
-                catch (Exception ex)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                    return Result<MultiPaymentCertificateDto>.Failure($"Failed to create certificate: {ex.Message}");
                 }
             }
+
+            var mainStore = new Facility
+            {
+                FacilityId = "b6705327-bb0b-421f-9a1e-e94bbf7a68d2",
+                FacilityTypeId = "MAIN_STORE",
+                FacilityName = "المخزن الرءيسى",
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            };
+            context.Facilities.Add(mainStore);
+
+            await context.SaveChangesAsync();
         }
+    }
+
+    private static Facility CreateFacility(string projectName, DateTime stamp)
+    {
+        return new Facility
+        {
+            FacilityId = Guid.NewGuid().ToString(),
+            FacilityTypeId = "PROJECT_FACILITY",
+            FacilityName = projectName,
+            CreatedStamp = stamp,
+            LastUpdatedStamp = stamp
+        };
     }
 }

@@ -14,12 +14,12 @@ public class MultiPaymentItemDto
     public string ProductId { get; set; }
     public string ProductName { get; set; }
     public string Description { get; set; }
-    public decimal Amount { get; set; }
+    public decimal? Amount { get; set; }
     public decimal? Discount { get; set; }
     public string DiscountMode { get; set; }
     public decimal? TransportationExpenses { get; set; }
     public decimal? Gratuities { get; set; }
-    public decimal Total { get; set; }
+    public decimal? Total { get; set; }
     public string PartyIdSupplier { get; set; }
     public string PartyIdSupplierName { get; set; }
     public string PartyIdContractor { get; set; }

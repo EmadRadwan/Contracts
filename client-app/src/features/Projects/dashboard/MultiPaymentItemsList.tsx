@@ -112,31 +112,31 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
                 field: "amount",
                 title: getTranslatedLabel(`${localizationKey}.amount`, "Amount"),
                 width: "100px",
-                format: "{0:c}",
+                format: "{0:n2}",
             },
             {
                 field: "discount",
                 title: getTranslatedLabel(`${localizationKey}.discount`, "Discount"),
                 width: "100px",
-                format: "{0:c}",
+                format: "{0:n2}",
             },
             {
                 field: "transportationExpenses",
                 title: getTranslatedLabel(`${localizationKey}.transportationExpenses`, "Transportation Expenses"),
                 width: "150px",
-                format: "{0:c}",
+                format: "{0:n2}",
             },
             {
                 field: "gratuities",
                 title: getTranslatedLabel(`${localizationKey}.gratuities`, "Gratuities"),
                 width: "100px",
-                format: "{0:c}",
+                format: "{0:n2}",
             },
             {
                 field: "total",
                 title: getTranslatedLabel(`${localizationKey}.total`, "Total"),
                 width: "100px",
-                format: "{0:c}",
+                format: "{0:n2}",
             },
             {
                 title: getTranslatedLabel("general.delete", "Delete"),
@@ -157,6 +157,7 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
             <Grid
                 data={items} 
                 sortable={true}
+                resizable={true}
                 pageable={true}
                 style={{ height: "400px", marginTop: "20px" }}
             >

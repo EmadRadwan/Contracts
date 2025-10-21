@@ -747,7 +747,8 @@
       "financialAccount": "البنوك",
       "billingAccounts": "حسابات الاجل",
       "globalGLSettings": "إعدادات دفتر الأستاذ العام العامة",
-      "organizationGLSettings": "إعدادات دفتر الأستاذ العام للشركة"
+      "organizationGLSettings": "إعدادات دفتر الأستاذ العام للشركة",
+      "multiPaymentCertificates": "مستند صرف متعدد"
     },
     "payments": {
       "list": {
