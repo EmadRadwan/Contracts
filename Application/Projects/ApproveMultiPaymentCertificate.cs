@@ -104,6 +104,75 @@ namespace Application.Projects
                         LastUpdatedStamp = DateTime.UtcNow
                     };
                     _context.Payments.Add(payment);
+                    
+                    var acctgTransId = await _utilityService.GetNextSequence("AcctgTrans");
+                    var employeeParty = await _context.Parties
+                        .Where(p => p.PartyId == certificate.PartyIdEmployee)
+                        .Select(p => new { p.GlAccountIdAdvancedPayment })
+                        .FirstOrDefaultAsync(cancellationToken);
+
+                    if (employeeParty == null || string.IsNullOrEmpty(employeeParty.GlAccountIdAdvancedPayment))
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                        return Result<MultiPaymentCertificateDto>.Failure("Employee party or advanced payment GL account not found");
+                    }
+                    
+                    var acctgTrans = new AcctgTran
+                    {
+                        AcctgTransId = acctgTransId,
+                        AcctgTransTypeId = "DISBURSEMENT",
+                        Description = $"Payment for certificate {certificate.WorkEffortId}",
+                        TransactionDate = DateTime.UtcNow,
+                        IsPosted = "Y",
+                        PostedDate = DateTime.UtcNow,
+                        GlFiscalTypeId = "ACTUAL",
+                        PaymentId = paymentId,
+                        CreatedStamp = DateTime.UtcNow,
+                        LastUpdatedStamp = DateTime.UtcNow
+                    };
+                    _context.AcctgTrans.Add(acctgTrans);
+                    
+                    var entrySeqId1 = "00001";
+                    var entrySeqId2 = "00002";
+                    
+                    var debitEntry = new AcctgTransEntry
+                    {
+                        AcctgTransId = acctgTransId,
+                        AcctgTransEntrySeqId = entrySeqId1,
+                        AcctgTransEntryTypeId = "_NA_",
+                        Description = $"Advance payment to employee {certificate.PartyIdEmployee} for certificate {certificate.WorkEffortId}",
+                        GlAccountId = employeeParty.GlAccountIdAdvancedPayment,
+                        OrganizationPartyId = request.CompanyId,
+                        Amount = totalAmount,
+                        CurrencyUomId = "EGP",
+                        OrigAmount = totalAmount,
+                        OrigCurrencyUomId = "EGP",
+                        DebitCreditFlag = "D",
+                        ReconcileStatusId = "AES_NOT_RECONCILED",
+                        CreatedStamp = DateTime.UtcNow,
+                        LastUpdatedStamp = DateTime.UtcNow
+                    };
+                    _context.AcctgTransEntries.Add(debitEntry);
+                    
+                    var creditEntry = new AcctgTransEntry
+                    {
+                        AcctgTransId = acctgTransId,
+                        AcctgTransEntrySeqId = entrySeqId2,
+                        AcctgTransEntryTypeId = "_NA_",
+                        Description = $"Payment from {paymentMethod.Description} for certificate {certificate.WorkEffortId}",
+                        GlAccountId = paymentMethod.GlAccountId,
+                        OrganizationPartyId = request.CompanyId,
+                        Amount = totalAmount,
+                        CurrencyUomId = "EGP",
+                        OrigAmount = totalAmount,
+                        OrigCurrencyUomId = "EGP",
+                        DebitCreditFlag = "C",
+                        ReconcileStatusId = "AES_NOT_RECONCILED",
+                        CreatedStamp = DateTime.UtcNow,
+                        LastUpdatedStamp = DateTime.UtcNow
+                    };
+                    _context.AcctgTransEntries.Add(creditEntry);
+                    
 
                     var updateResult = await _context.SaveChangesAsync(cancellationToken);
                     if (updateResult <= 0)
