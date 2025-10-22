@@ -6,23 +6,30 @@ import {
     useAddMultiPaymentCertificateMutation, useApproveMultiPaymentCertificateMutation,
     useGetMultiPaymentItemsQuery
 } from "../../../app/store/apis/multiPaymentCertificateApi";
+import {useAppSelector} from "../../../app/store/configureStore";
 
 interface UseMultiPaymentCertificateProps {
     selectedCertificate?: MultiPaymentCertificate;
     editMode: number; // 1: add, 2: edit
     setFormKey: (key: number) => void;
+    setEditMode?: (mode: number) => void;
+    setParentCertificate?: (certificate: MultiPaymentCertificate | null) => void;
 }
 
 export default function useMultiPaymentCertificate({
                                                        selectedCertificate,
                                                        editMode,
                                                        setFormKey,
+                                                       setEditMode,
+                                                       setParentCertificate
                                                    }: UseMultiPaymentCertificateProps) {
     const [certificate, setCertificate] = useState<MultiPaymentCertificate | undefined>(selectedCertificate);
     const [items, setItems] = useState<MultiPaymentItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [addMultiPaymentCertificate, { isLoading: addLoading }] = useAddMultiPaymentCertificateMutation();
     const [approveMultiPaymentCertificate, { isLoading: approveLoading }] = useApproveMultiPaymentCertificateMutation();
+    const { user } = useAppSelector((state) => state.account);
+    const companyId = user?.organizationPartyId || "";
 
     const { data: fetchedItems = [], isLoading: itemsLoading } = useGetMultiPaymentItemsQuery(
         certificate?.workEffortId || "",
@@ -36,17 +43,18 @@ export default function useMultiPaymentCertificate({
     }, [fetchedItems, editMode]);
 
     useEffect(() => {
-        // Set certificate and items based on selectedCertificate or editMode
         if (selectedCertificate) {
             setCertificate(selectedCertificate);
-        } else {
-            setCertificate(undefined);
         }
-
-        // Cleanup function to reset state when component unmounts or props change
-        return () => {
+        if (editMode === 1) {
             setCertificate(undefined);
             setItems([]);
+        }
+        return () => {
+            if (editMode === 1) {
+                setCertificate(undefined);
+                setItems([]);
+            }
         };
     }, [selectedCertificate, editMode]);
 
@@ -103,15 +111,18 @@ export default function useMultiPaymentCertificate({
                 };
                 const response = await addMultiPaymentCertificate(payload).unwrap();
                 setCertificate(response); 
-                setItems(response.items || items); 
+                setItems(response.items || items);
+                setParentCertificate?.(response);
                 toast.success("Certificate created successfully");
+                setEditMode?.(2);
+                return { success: true, certificate: response };
             } catch (error: any) {
                 toast.error("Error creating certificate: " + (error?.data?.message || error.message));
             } finally {
                 setIsLoading(false);
             }
         },
-        [items, setFormKey, addMultiPaymentCertificate]
+        [items, setFormKey, addMultiPaymentCertificate, setParentCertificate]
     );
 
     const handleUpdate = useCallback(
@@ -136,6 +147,7 @@ export default function useMultiPaymentCertificate({
                 if (!response.ok) {
                     throw new Error("Failed to update certificate");
                 }
+                setParentCertificate?.(await response.json());
 
                 toast.success("Certificate updated successfully");
                 setCertificate(undefined);
@@ -147,7 +159,7 @@ export default function useMultiPaymentCertificate({
                 setIsLoading(false);
             }
         },
-        [items, setFormKey]
+        [items, setFormKey, setParentCertificate]
     );
 
 
@@ -166,14 +178,18 @@ export default function useMultiPaymentCertificate({
             }
             setIsLoading(true);
             try {
-                const response = await approveMultiPaymentCertificate({ workEffortId }).unwrap();
-                setCertificate({
+                const response = await approveMultiPaymentCertificate({ workEffortId, companyId }).unwrap();
+                const updatedCertificate = {
                     ...certificate,
                     currentStatusId: "WEPR_APPROVED",
                     statusDescription: "Approved",
                     statusDescriptionArabic: "تمت الموافقة",
-                });
+                };
+                setCertificate(updatedCertificate);
+                setParentCertificate?.(updatedCertificate);
+                setEditMode?.(3); // Keep post-approval mode as 3 per your preference
                 toast.success("Certificate approved successfully");
+                return { success: true, certificate: response };
             } catch (error: any) {
                 toast.error("Error approving certificate: " + (error?.data?.message || error.message));
             } finally {

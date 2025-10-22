@@ -20674,6 +20674,8 @@ namespace Persistence.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     IS_UNREAD = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    GL_ACCOUNT_ID_ADVANCED_PAYMENT = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
                     LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
                     CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
@@ -20682,6 +20684,11 @@ namespace Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PARTY", x => x.PARTY_ID);
+                    table.ForeignKey(
+                        name: "FK_PARTY_GL_ACCOUNT_GL_ACCOUNT_ID_ADVANCED_PAYMENT",
+                        column: x => x.GL_ACCOUNT_ID_ADVANCED_PAYMENT,
+                        principalTable: "GL_ACCOUNT",
+                        principalColumn: "GL_ACCOUNT_ID");
                     table.ForeignKey(
                         name: "PARTY_DATSRC",
                         column: x => x.DATA_SOURCE_ID,
@@ -26771,6 +26778,8 @@ namespace Persistence.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     PARTY_ID_CONTRACTOR = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    PartyIdEmployee = table.Column<string>(type: "varchar(36)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     RELATED_ORDER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CERTIFICATE_CATEGORY = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
@@ -26804,8 +26813,6 @@ namespace Persistence.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CHEQUE_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
                     GlAccountId = table.Column<string>(type: "varchar(36)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    GlAccountIdAdvancedPayment = table.Column<string>(type: "varchar(36)", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     AccommodationMapId = table.Column<string>(type: "varchar(36)", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -26846,10 +26853,10 @@ namespace Persistence.Migrations
                         principalTable: "GL_ACCOUNT",
                         principalColumn: "GL_ACCOUNT_ID");
                     table.ForeignKey(
-                        name: "FK_WORK_EFFORT_GL_ACCOUNT_GlAccountIdAdvancedPayment",
-                        column: x => x.GlAccountIdAdvancedPayment,
-                        principalTable: "GL_ACCOUNT",
-                        principalColumn: "GL_ACCOUNT_ID");
+                        name: "FK_WORK_EFFORT_PARTY_PartyIdEmployee",
+                        column: x => x.PartyIdEmployee,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
                     table.ForeignKey(
                         name: "FK_WORK_EFFORT_PAYMENT_METHOD_PaymentMethodId",
                         column: x => x.PaymentMethodId,
@@ -40181,6 +40188,11 @@ namespace Persistence.Migrations
                 column: "LAST_UPDATED_TX_STAMP");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PARTY_GL_ACCOUNT_ID_ADVANCED_PAYMENT",
+                table: "PARTY",
+                column: "GL_ACCOUNT_ID_ADVANCED_PAYMENT");
+
+            migrationBuilder.CreateIndex(
                 name: "PARTY_CUL",
                 table: "PARTY",
                 column: "CREATED_BY_USER_LOGIN");
@@ -49731,14 +49743,14 @@ namespace Persistence.Migrations
                 column: "GlAccountId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_WORK_EFFORT_GlAccountIdAdvancedPayment",
-                table: "WORK_EFFORT",
-                column: "GlAccountIdAdvancedPayment");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_WORK_EFFORT_MoneyUomUomId",
                 table: "WORK_EFFORT",
                 column: "MoneyUomUomId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WORK_EFFORT_PartyIdEmployee",
+                table: "WORK_EFFORT",
+                column: "PartyIdEmployee");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WORK_EFFORT_RecurrenceInfoId",

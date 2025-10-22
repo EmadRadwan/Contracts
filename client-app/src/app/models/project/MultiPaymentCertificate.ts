@@ -16,6 +16,6 @@ export interface MultiPaymentCertificate {
     currentStatusId?: string;
     statusDescription?: string;
     statusDescriptionArabic?: string;
-    glAccountIdAdvancedPayment?: string;
+    partyIdEmployee?: string;
     items: MultiPaymentItem[];
 }

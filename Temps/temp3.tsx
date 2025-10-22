@@ -1,384 +1,217 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Field, Form, FormElement, FormRenderProps } from "@progress/kendo-react-form";
-import { Box, Button, Collapse, Grid, IconButton, Menu, MenuItem, Paper, Typography } from "@mui/material";
-import { Ribbon, RibbonContainer } from "react-ribbons";
-import useMultiPaymentCertificate from "../hook/useMultiPaymentCertificate";
-import { v4 as uuidv4 } from "uuid";
-import { MultiPaymentCertificate } from "../../../app/models/project/MultiPaymentCertificate";
-import { useAppSelector, useFetchPaymentMethodsQuery, useFetchAdvancePaymentGlAccountsQuery } from "../../../app/store/configureStore";
-import MultiPaymentItemsList from "../dashboard/MultiPaymentItemsList";
+// MultiPaymentCertificatesList.tsx
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
+import {
+    Grid as KendoGrid,
+    GRID_COL_INDEX_ATTRIBUTE,
+    GridColumn as Column,
+    GridDataStateChangeEvent,
+    GridToolbar,
+} from "@progress/kendo-react-grid";
+import { DataResult, State } from "@progress/kendo-data-query";
+import { Button, Grid, Paper } from "@mui/material";
+import MultiPaymentCertificateForm from "../form/MultiPaymentCertificateForm";
+import { useAppDispatch } from "../../../app/store/configureStore";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
-import AccountingMenu from "../../accounting/invoice/menu/AccountingMenu";
-import FormDatePicker from "../../../app/common/form/FormDatePicker";
+import { MultiPaymentCertificate } from "../../../app/models/project/MultiPaymentCertificate";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
-import { requiredValidator } from "../../../app/common/form/Validators";
-import { MemoizedFormDropDownList } from "../../../app/common/form/MemoizedFormDropDownList";
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import FormInput from "../../../app/common/form/FormInput";
+import { useFetchMultiPaymentCertificatesQuery } from "../../../app/store/apis/multiPaymentCertificateApi";
+import AccountingMenu from "../../accounting/invoice/menu/AccountingMenu";
+import { handleDatesArray } from "../../../app/util/utils";
 
-interface CertificateActionsMenuProps {
-    workEffortId: string | undefined;
-    currentStatusId: string | undefined;
-    handleApprove: () => void;
-    disabled: boolean;
-}
-
-const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
-                                                                           workEffortId,
-                                                                           currentStatusId,
-                                                                           handleApprove,
-                                                                           disabled,
-                                                                       }) => {
+export default function MultiPaymentCertificatesList() {
+    const [certificates, setCertificates] = useState<DataResult>({ data: [], total: 0 });
+    const [dataState, setDataState] = useState<State>({ take: 6, skip: 0 });
+    const [formEditMode, setFormEditMode] = useState<number>(0);
+    const [viewMode, setViewMode] = useState<"list" | "form">("list");
     const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = "accounting.multiPaymentCertificate.form";
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const open = Boolean(anchorEl);
-
-    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
-
-    return (
-        <>
-            <Button
-                variant="contained"
-                color="primary"
-                onClick={handleClick}
-                disabled={disabled || !workEffortId || currentStatusId === "WEPR_APPROVED"}
-                sx={{ mt: 2, mr: 2 }}
-            >
-                {getTranslatedLabel(`${localizationKey}.actions`, "Actions")}
-            </Button>
-            <Menu
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleClose}
-                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                transformOrigin={{ vertical: "top", horizontal: "right" }}
-            >
-                <MenuItem
-                    onClick={() => {
-                        handleApprove();
-                        handleClose();
-                    }}
-                    disabled={!workEffortId || currentStatusId === "WEPR_APPROVED"}
-                >
-                    {getTranslatedLabel(`${localizationKey}.approve`, "Approve")}
-                </MenuItem>
-            </Menu>
-        </>
-    );
-};
-
-interface Props {
-    selectedCertificate?: MultiPaymentCertificate;
-    editMode: number; // 1: add, 2: edit
-    cancelEdit: () => void;
-}
-
-export default function MultiPaymentCertificateForm({ selectedCertificate, editMode, cancelEdit }: Props) {
-    const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = "accounting.multiPaymentCertificate.form";
-    const { data: paymentMethods, isLoading: paymentMethodsLoading } = useFetchPaymentMethodsQuery(undefined);
-    // REFACTOR: Added RTK Query hook to fetch Advance Payment GL Accounts
-    // Purpose: Fetches GL Accounts for dropdown, leveraging RTK Query caching
-    const { data: glAccounts, isLoading: glAccountsLoading } = useFetchAdvancePaymentGlAccountsQuery(undefined);
-    const [isFormCollapsed, setIsFormCollapsed] = useState(false);
-    const { language } = useAppSelector((state) => state.localization);
-
-    const [formKey, setFormKey] = useState<number>(1);
-    const formRef = useRef<any>(null);
-
-    const filteredPaymentMethods = useMemo(() => {
-        return paymentMethods?.filter(
-            (method) => method.paymentMethodTypeId === "COMPANY_CHECK" || method.paymentMethodTypeId === "CASH"
-        ) || [];
-    }, [paymentMethods]);
-
-    const {
-        certificate,
-        setCertificate,
-        items,
-        addItem,
-        updateItem,
-        deleteItem,
-        handleCreate,
-        handleUpdate,
-        setItems,
-        handleApprove,
-        isLoading: apiLoading,
-    } = useMultiPaymentCertificate({
-        selectedCertificate,
-        editMode,
-        setFormKey,
-    });
-
-    // REFACTOR: Added glAccountId to initial form values
-    // Purpose: Ensures form supports GL Account selection from fetched data
-    const initialValues = useMemo(() => ({
-        workEffortId: selectedCertificate?.workEffortId || "",
-        code: selectedCertificate?.code || "",
-        date: selectedCertificate?.date ? new Date(selectedCertificate.date) : new Date(),
-        description: selectedCertificate?.description || "",
-        paymentMethodId: selectedCertificate?.paymentMethodId || "",
-        chequeNumber: selectedCertificate?.chequeNumber || "",
-        chequeDate: selectedCertificate?.chequeDate ? new Date(selectedCertificate.chequeDate) : null,
-        currentStatusId: selectedCertificate?.currentStatusId || "WEPR_CREATED",
-        statusDescription: selectedCertificate?.statusDescription || "Created",
-        statusDescriptionArabic: selectedCertificate?.statusDescriptionArabic || "تم الإنشاء",
-        glAccountId: selectedCertificate?.glAccountId || "", // Added glAccountId
-    }), [selectedCertificate]);
-
-    const renderSwitchStatus = useCallback(() => {
-        const status = certificate?.currentStatusId || "WEPR_CREATED";
-        if (certificate?.statusDescription && certificate?.statusDescriptionArabic) {
-            return {
-                label: language === "ar" ? certificate.statusDescriptionArabic : certificate.statusDescription,
-                backgroundColor: status === "WEPR_CREATED" ? "blue" : "green",
-                foreColor: "#ffffff",
-            };
-        }
-        const statusLabels: { [key: string]: { en: string; ar: string } } = {
-            WEPR_CREATED: { en: "Created", ar: "تم الإنشاء" },
-            WEPR_APPROVED: { en: "Approved", ar: "تمت الموافقة" },
-        };
-        return {
-            label: language === "ar" ? statusLabels[status]?.ar || "غير معروف" : statusLabels[status]?.en || "Unknown",
-            backgroundColor: status === "WEPR_CREATED" ? "blue" : "green",
-            foreColor: "#ffffff",
-        };
-    }, [certificate, language]);
+    const [paymentCertificate, setPaymentCertificate] = useState<MultiPaymentCertificate | null>(null);
+    const dispatch = useAppDispatch();
+    const { data, isFetching } = useFetchMultiPaymentCertificatesQuery({ ...dataState });
 
     useEffect(() => {
-        if (selectedCertificate) {
-            setCertificate(selectedCertificate);
-        } else {
-            setCertificate(undefined);
+        if (data) {
+            const adjustedData = handleDatesArray(data.data);
+            setCertificates({ data: adjustedData, total: data.total });
         }
-    }, [selectedCertificate, setCertificate]);
+    }, [data]);
 
-    const handleCancelForm = useCallback(() => {
-        setCertificate(undefined);
-        setItems([]);
-        setFormKey((prev) => prev + 1); // Reset form to clear input fields
-        cancelEdit(); // Notify parent to close/hide form
-    }, [setCertificate, cancelEdit]);
-
-    // REFACTOR: Updated handleSubmit to include glAccountId in serialized values
-    // Purpose: Ensures GL Account selection is included in form submission
-    const handleSubmit = useCallback((values: any) => {
-        const serializedValues: MultiPaymentCertificate = {
-            workEffortId: values.workEffortId || uuidv4(),
-            code: values.code || "",
-            date: values.date instanceof Date ? values.date.toISOString() : new Date().toISOString(),
-            description: values.description || "",
-            paymentMethodId: values.paymentMethodId || "",
-            chequeNumber: values.chequeNumber || "",
-            chequeDate: values.chequeDate instanceof Date ? values.chequeDate.toISOString() : null,
-            glAccountId: values.glAccountId || "", // Added glAccountId
-            items,
-        };
-        if (editMode === 1) {
-            handleCreate({
-                values: serializedValues,
-                isValid: formRef.current?.isValid(),
-            });
-        } else {
-            handleUpdate({
-                values: serializedValues,
-                isValid: formRef.current?.isValid(),
-            });
+    useEffect(() => {
+        if (viewMode === "list") {
+            setPaymentCertificate(null);
+            setFormEditMode(0); // REFACTOR: Ensure editMode is reset when returning to list view
         }
-    }, [handleCreate, handleUpdate, editMode, items]);
+    }, [viewMode]);
 
-    const titleText = editMode === 1
-        ? getTranslatedLabel(`${localizationKey}.title`, "New Multi-Payment Certificate")
-        : `${getTranslatedLabel(`${localizationKey}.title`, "Multi Payment Certificate")} ${selectedCertificate?.workEffortId || ""}`;
+    const dataStateChange = (e: GridDataStateChangeEvent) => {
+        setDataState(e.dataState);
+    };
 
-    const handleApproveCertificate = useCallback(() => {
-        if (!certificate?.workEffortId) {
-            return; // Prevent approval if no workEffortId
-        }
-        handleApprove({
-            workEffortId: certificate.workEffortId,
-            isValid: formRef.current?.isValid() && items.length > 0,
-        });
-    }, [certificate, handleApprove, items]);
+    const handleSelectCertificate = useCallback(
+        (workEffortId?: string) => {
+            if (!workEffortId) return;
+            const selectedCert = certificates.data.find(
+                (cert: MultiPaymentCertificate) => cert.workEffortId === workEffortId
+            );
+            if (!selectedCert) return;
+            setPaymentCertificate(selectedCert);
+            setFormEditMode(2);
+            setViewMode("form");
+        },
+        [certificates.data]
+    );
 
-    const status = renderSwitchStatus();
+    const handleCreateNew = useCallback(() => {
+        setPaymentCertificate(null);
+        setFormEditMode(1);
+        setViewMode("form");
+    }, []);
 
-    // REFACTOR: Added loading check for GL Accounts
-    // Purpose: Displays loading indicator while fetching GL Accounts
-    if (paymentMethodsLoading || glAccountsLoading) {
-        return <LoadingComponent />;
+    const cancelEdit = useCallback(() => {
+        setPaymentCertificate(null);
+        setFormEditMode(0);
+        setViewMode("list");
+    }, []);
+
+    const CertificateNumberCell = (props: any) => {
+        const field = props.field || "";
+        const value = props.dataItem[field];
+        const navigationAttributes = useTableKeyboardNavigation(props.id);
+        return (
+            <td
+                className={props.className}
+                style={{ ...props.style, color: "blue" }}
+                colSpan={props.colSpan}
+                role="gridcell"
+                aria-colindex={props.ariaColumnIndex}
+                aria-selected={props.isSelected}
+                {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
+                {...navigationAttributes}
+            >
+                <Button
+                    onClick={() =>
+                        handleSelectCertificate(props.dataItem.workEffortId)
+                    }
+                >
+                    {value}
+                </Button>
+            </td>
+        );
+    };
+
+    if (viewMode === "form" && formEditMode > 0) {
+        return (
+            <MultiPaymentCertificateForm
+                selectedCertificate={paymentCertificate}
+                cancelEdit={cancelEdit}
+                editMode={formEditMode}
+                setEditMode={setFormEditMode}
+                setParentCertificate={setPaymentCertificate} // REFACTOR: Pass setPaymentCertificate to form
+            />
+        );
     }
+
+    const columnWidths = {
+        workEffortId: 150,
+        date: 150,
+        description: 250,
+        paymentMethod: 200,
+        chequeNumber: 150,
+        chequeDate: 150,
+    };
 
     return (
         <>
-            <AccountingMenu selectedMenuItem="/multi-payment-certificates" />
+            <AccountingMenu selectedMenuItem={"/multiPaymentCertificates"} />
             <Paper elevation={5} className="div-container-withBorderCurved">
-                <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={11}>
-                        <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ paddingLeft: 3 }}>
-                            <Typography variant="h6">
-                                {titleText}
-                            </Typography>
-                            <IconButton onClick={() => setIsFormCollapsed(!isFormCollapsed)}>
-                                {isFormCollapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
-                            </IconButton>
-                            {editMode === 2 && (
-                                <CertificateActionsMenu
-                                    workEffortId={certificate?.workEffortId}
-                                    currentStatusId={certificate?.currentStatusId}
-                                    handleApprove={handleApproveCertificate}
-                                    disabled={apiLoading || items.length === 0}
-                                />
-                            )}
-                        </Box>
-                    </Grid>
-                    <Grid item xs={1}>
-                        {editMode === 2 && (
-                            <RibbonContainer>
-                                <Ribbon
-                                    side={language === "ar" ? "left" : "right"}
-                                    type="corner"
-                                    size="large"
-                                    backgroundColor={status.backgroundColor}
-                                    color={status.foreColor}
-                                    fontFamily="sans-serif"
+                <Grid container columnSpacing={1} alignItems="center">
+                    <Grid item xs={12}>
+                        <KendoGrid
+                            style={{ height: "65vh" }}
+                            scrollable="scrollable"
+                            resizable={true}
+                            filterable={true}
+                            sortable={true}
+                            pageable={true}
+                            {...dataState}
+                            data={certificates ? certificates : { data: [], total: 0 }}
+                            onDataStateChange={dataStateChange}
+                        >
+                            <GridToolbar>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={handleCreateNew}
+                                    style={{ margin: "5px" }}
                                 >
-                                    {status.label}
-                                </Ribbon>
-                            </RibbonContainer>
+                                    {getTranslatedLabel(
+                                        "accounting.multiPaymentCertificate.list.createNew",
+                                        "Create New Certificate"
+                                    )}
+                                </Button>
+                            </GridToolbar>
+                            <Column
+                                field="workEffortId"
+                                title={getTranslatedLabel(
+                                    "accounting.multiPaymentCertificate.list.workEffortId",
+                                    "Certificate ID"
+                                )}
+                                width={columnWidths.workEffortId}
+                                cell={CertificateNumberCell}
+                            />
+                            <Column
+                                field="date"
+                                title={getTranslatedLabel(
+                                    "accounting.multiPaymentCertificate.list.date",
+                                    "Date"
+                                )}
+                                format="{0: dd/MM/yyyy}"
+                                width={columnWidths.date}
+                            />
+                            <Column
+                                field="description"
+                                title={getTranslatedLabel(
+                                    "accounting.multiPaymentCertificate.list.description",
+                                    "Description"
+                                )}
+                                width={columnWidths.description}
+                            />
+                            <Column
+                                field="paymentMethodDescription"
+                                title={getTranslatedLabel(
+                                    "accounting.multiPaymentCertificate.list.paymentMethod",
+                                    "Payment Method"
+                                )}
+                                width={columnWidths.paymentMethod}
+                            />
+                            <Column
+                                field="chequeNumber"
+                                title={getTranslatedLabel(
+                                    "accounting.multiPaymentCertificate.list.chequeNumber",
+                                    "Cheque Number"
+                                )}
+                                width={columnWidths.chequeNumber}
+                            />
+                            <Column
+                                field="chequeDate"
+                                title={getTranslatedLabel(
+                                    "accounting.multiPaymentCertificate.list.chequeDate",
+                                    "Cheque Date"
+                                )}
+                                format="{0: dd/MM/yyyy}"
+                                width={columnWidths.chequeDate}
+                            />
+                        </KendoGrid>
+                        {isFetching && (
+                            <LoadingComponent
+                                message={getTranslatedLabel(
+                                    "accounting.multiPaymentCertificate.list.loading",
+                                    "Loading Certificates..."
+                                )}
+                            />
                         )}
                     </Grid>
                 </Grid>
-                <Collapse in={!isFormCollapsed}>
-                    <Form
-                        ref={formRef}
-                        initialValues={initialValues}
-                        key={formKey}
-                        onSubmit={handleSubmit}
-                        render={(formRenderProps: FormRenderProps) => (
-                            <FormElement>
-                                <fieldset className="k-form-fieldset">
-                                    <Grid container spacing={2} sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-                                        <Field name="workEffortId" component="input" type="hidden" />
-                                        <Grid item xs={2}>
-                                            <Field
-                                                id="date"
-                                                name="date"
-                                                label={getTranslatedLabel(`${localizationKey}.date`, "Date *")}
-                                                component={FormDatePicker}
-                                                validator={requiredValidator}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={2}>
-                                            <Field
-                                                id="paymentMethodId"
-                                                name="paymentMethodId"
-                                                label={getTranslatedLabel(`${localizationKey}.paymentMethod`, "Payment Method *")}
-                                                component={MemoizedFormDropDownList}
-                                                dataItemKey="paymentMethodId"
-                                                textField="description"
-                                                data={filteredPaymentMethods}
-                                                validator={requiredValidator}
-                                            />
-                                        </Grid>
-                                        {/* REFACTOR: Added GL Account dropdown */}
-                                        {/* Purpose: Allows selection of Advance Payment GL Account */}
-                                        <Grid item xs={2}>
-                                            <Field
-                                                id="glAccountId"
-                                                name="glAccountId"
-                                                label={getTranslatedLabel(`${localizationKey}.glAccount`, "GL Account *")}
-                                                component={MemoizedFormDropDownList}
-                                                dataItemKey="glAccountId"
-                                                textField="accountName"
-                                                data={glAccounts || []}
-                                                validator={requiredValidator}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={3}>
-                                            <Field
-                                                id="description"
-                                                name="description"
-                                                label={getTranslatedLabel(`${localizationKey}.description`, "Description")}
-                                                component={FormInput}
-                                            />
-                                        </Grid>
-                                        {formRenderProps.valueGetter('paymentMethodId') !== 'CASH' && (
-                                            <>
-                                                <Grid item xs={2}>
-                                                    <Field
-                                                        id="chequeNumber"
-                                                        name="chequeNumber"
-                                                        label={getTranslatedLabel(`${localizationKey}.chequeNumber`, "Cheque Number")}
-                                                        component={FormInput}
-                                                        validator={requiredValidator}
-                                                    />
-                                                </Grid>
-                                                <Grid item xs={2}>
-                                                    <Field
-                                                        id="chequeDate"
-                                                        name="chequeDate"
-                                                        label={getTranslatedLabel(`${localizationKey}.chequeDate`, "Cheque Date")}
-                                                        component={FormDatePicker}
-                                                        validator={requiredValidator}
-                                                    />
-                                                </Grid>
-                                            </>
-                                        )}
-                                        <Grid container item spacing={2} sx={{
-                                            display: 'flex',
-                                            flexDirection: 'row',
-                                            justifyContent: 'flex-start',
-                                            mt: 2
-                                        }}>
-                                            {(editMode === 1 || (editMode === 2 && certificate?.currentStatusId !== "WEPR_APPROVED")) && (
-                                                <Grid item>
-                                                    <Button
-                                                        type="submit"
-                                                        variant="contained"
-                                                        disabled={!formRenderProps.valid || apiLoading}
-                                                        sx={{ mr: 2 }}
-                                                    >
-                                                        {getTranslatedLabel(
-                                                            `${localizationKey}.${editMode === 1 ? "create" : "update"}`,
-                                                            editMode === 1 ? "Create Certificate" : "Update Certificate"
-                                                        )}
-                                                    </Button>
-                                                </Grid>
-                                            )}
-                                            <Grid item>
-                                                <Button
-                                                    onClick={handleCancelForm}
-                                                    color="error"
-                                                    variant="contained"
-                                                    disabled={apiLoading}
-                                                >
-                                                    {getTranslatedLabel("general.cancel", "Cancel")}
-                                                </Button>
-                                            </Grid>
-                                        </Grid>
-                                    </Grid>
-                                </fieldset>
-                            </FormElement>
-                        )}
-                    />
-                </Collapse>
-                <MultiPaymentItemsList
-                    workEffortId={certificate?.workEffortId || ""}
-                    items={items}
-                    addItem={addItem}
-                    updateItem={updateItem}
-                    deleteItem={deleteItem}
-                />
             </Paper>
         </>
     );

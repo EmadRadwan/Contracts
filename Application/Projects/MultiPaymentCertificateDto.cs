@@ -13,9 +13,10 @@ namespace Application.Projects
         public string? ChequeNumber { get; set; }
         public DateTime? ChequeDate { get; set; }
         public string? CurrentStatusId { get; set; }
+        public string? CompanyId { get; set; }
         public string? StatusDescription { get; set; }
         public string? StatusDescriptionArabic { get; set; }
-        public string? GlAccountIdAdvancedPayment { get; set; }
+        public string? PartyIdEmployee { get; set; }
         public List<MultiPaymentItemDto> Items { get; set; }
     }
 

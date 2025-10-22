@@ -38,9 +38,10 @@ export default function MultiPaymentCertificatesList() {
     useEffect(() => {
         if (viewMode === "list") {
             setPaymentCertificate(null);
+            setFormEditMode(0); // REFACTOR: Ensure editMode is reset when returning to list view
         }
     }, [viewMode]);
-
+    
     const dataStateChange = (e: GridDataStateChangeEvent) => {
         setDataState(e.dataState);
     };
@@ -103,6 +104,8 @@ export default function MultiPaymentCertificatesList() {
                 selectedCertificate={paymentCertificate}
                 cancelEdit={cancelEdit}
                 editMode={formEditMode}
+                setEditMode={setFormEditMode}
+                setParentCertificate={setPaymentCertificate}
             />
         );
     }

@@ -340,7 +340,6 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                                         data={subProjects || []}
                                         dataItemKey="workEffortId"
                                         textField="subProjectName"
-                                        //validator={requiredValidator}
                                         disabled={formEditMode > 3 || subProjectsLoading}
                                         value={
                                             formRenderProps.valueGetter("subProjectId")

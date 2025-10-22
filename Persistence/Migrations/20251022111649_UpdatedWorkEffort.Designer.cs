@@ -11,7 +11,7 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20251021104819_UpdatedWorkEffort")]
+    [Migration("20251022111649_UpdatedWorkEffort")]
     partial class UpdatedWorkEffort
     {
         /// <inheritdoc />
@@ -25600,6 +25600,11 @@ namespace Persistence.Migrations
                         .HasColumnType("varchar(36)")
                         .HasColumnName("EXTERNAL_ID");
 
+                    b.Property<string>("GlAccountIdAdvancedPayment")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("GL_ACCOUNT_ID_ADVANCED_PAYMENT");
+
                     b.Property<string>("IsUnread")
                         .HasMaxLength(1)
                         .IsUnicode(false)
@@ -25648,6 +25653,8 @@ namespace Persistence.Migrations
                         .HasColumnName("STATUS_ID");
 
                     b.HasKey("PartyId");
+
+                    b.HasIndex("GlAccountIdAdvancedPayment");
 
                     b.HasIndex(new[] { "ExternalId" }, "PARTYEXT_ID_IDX");
 
@@ -56934,9 +56941,6 @@ namespace Persistence.Migrations
                     b.Property<string>("GlAccountId")
                         .HasColumnType("varchar(36)");
 
-                    b.Property<string>("GlAccountIdAdvancedPayment")
-                        .HasColumnType("varchar(36)");
-
                     b.Property<decimal?>("Gratuities")
                         .HasColumnType("decimal(65,30)");
 
@@ -57002,6 +57006,9 @@ namespace Persistence.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(36)")
                         .HasColumnName("PARTY_ID_CONTRACTOR");
+
+                    b.Property<string>("PartyIdEmployee")
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("PartyIdSupplier")
                         .HasMaxLength(36)
@@ -57165,9 +57172,9 @@ namespace Persistence.Migrations
 
                     b.HasIndex("GlAccountId");
 
-                    b.HasIndex("GlAccountIdAdvancedPayment");
-
                     b.HasIndex("MoneyUomUomId");
+
+                    b.HasIndex("PartyIdEmployee");
 
                     b.HasIndex("RecurrenceInfoId");
 
@@ -67976,6 +67983,11 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("PARTY_DATSRC");
 
+                    b.HasOne("Domain.GlAccount", "GlAccountAdvancedPayment")
+                        .WithMany("PartiesWithAdvancedPayment")
+                        .HasForeignKey("GlAccountIdAdvancedPayment")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("Domain.UserLogin", "LastModifiedByUserLoginNavigation")
                         .WithMany("PartyLastModifiedByUserLoginNavigations")
                         .HasForeignKey("LastModifiedByUserLogin")
@@ -68003,6 +68015,8 @@ namespace Persistence.Migrations
                     b.Navigation("CreatedByUserLoginNavigation");
 
                     b.Navigation("DataSource");
+
+                    b.Navigation("GlAccountAdvancedPayment");
 
                     b.Navigation("LastModifiedByUserLoginNavigation");
 
@@ -77706,11 +77720,6 @@ namespace Persistence.Migrations
                         .HasForeignKey("GlAccountId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("Domain.GlAccount", "AdvancedPaymentGlAccount")
-                        .WithMany("WorkEffortsAdvancedPayment")
-                        .HasForeignKey("GlAccountIdAdvancedPayment")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.HasOne("Domain.Uom", "MoneyUom")
                         .WithMany("WorkEfforts")
                         .HasForeignKey("MoneyUomUomId")
@@ -77727,6 +77736,11 @@ namespace Persistence.Migrations
                         .HasForeignKey("PartyIdContractor")
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("WK_EFFRT_CONTRACTOR");
+
+                    b.HasOne("Domain.Party", "EmployeeParty")
+                        .WithMany("WorkEffortsAsEmployee")
+                        .HasForeignKey("PartyIdEmployee")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Domain.Party", "SupplierParty")
                         .WithMany("WorkEffortsAsSupplier")
@@ -77811,11 +77825,11 @@ namespace Persistence.Migrations
 
                     b.Navigation("AccommodationSpot");
 
-                    b.Navigation("AdvancedPaymentGlAccount");
-
                     b.Navigation("ContractorParty");
 
                     b.Navigation("CurrentStatus");
+
+                    b.Navigation("EmployeeParty");
 
                     b.Navigation("EstimateCalcMethodNavigation");
 
@@ -80094,6 +80108,8 @@ namespace Persistence.Migrations
 
                     b.Navigation("OrderItems");
 
+                    b.Navigation("PartiesWithAdvancedPayment");
+
                     b.Navigation("PartyGlAccounts");
 
                     b.Navigation("PaymentApplications");
@@ -80119,8 +80135,6 @@ namespace Persistence.Migrations
                     b.Navigation("VarianceReasonGlAccounts");
 
                     b.Navigation("WorkEfforts");
-
-                    b.Navigation("WorkEffortsAdvancedPayment");
                 });
 
             modelBuilder.Entity("Domain.GlAccountCategory", b =>
@@ -81039,6 +81053,8 @@ namespace Persistence.Migrations
                     b.Navigation("WorkEffortEventReminders");
 
                     b.Navigation("WorkEffortsAsContractor");
+
+                    b.Navigation("WorkEffortsAsEmployee");
 
                     b.Navigation("WorkEffortsAsSupplier");
                 });

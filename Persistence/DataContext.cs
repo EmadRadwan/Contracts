@@ -28193,6 +28193,10 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasMaxLength(36)
                     .IsUnicode(false)
                     .HasColumnName("PARTY_ID");
+                    
+                    entity.Property(p => p.GlAccountIdAdvancedPayment)
+                    .HasColumnName("GL_ACCOUNT_ID_ADVANCED_PAYMENT")
+                        .HasMaxLength(20);
 
                 entity.Property(e => e.CreatedByUserLogin)
                     .HasMaxLength(250)
@@ -28265,6 +28269,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .IsUnicode(false)
                     .HasColumnName("STATUS_ID");
 
+            entity.HasOne(p => p.GlAccountAdvancedPayment)
+               .WithMany(g => g.PartiesWithAdvancedPayment)
+               .HasForeignKey(p => p.GlAccountIdAdvancedPayment)
+               .IsRequired(false);
+               
                 entity.HasOne(d => d.CreatedByUserLoginNavigation)
                     .WithMany(p => p.PartyCreatedByUserLoginNavigations)
                     .HasForeignKey(d => d.CreatedByUserLogin)
@@ -61811,6 +61820,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
         .HasConstraintName("WK_EFFRT_SUBPROJECT")
         .OnDelete(DeleteBehavior.Restrict);
         
+        entity.HasOne(e => e.EmployeeParty)
+            .WithMany(p => p.WorkEffortsAsEmployee)
+            .HasForeignKey(e => e.PartyIdEmployee)
+            .OnDelete(DeleteBehavior.Restrict); 
+        
         entity.HasOne(d => d.Product)
         .WithMany(p => p.WorkEfforts)
         .HasForeignKey(d => d.ProductId)
@@ -61872,10 +61886,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
             .WithMany(gl => gl.WorkEfforts)
             .HasForeignKey(we => we.GlAccountId);
 
-            entity.HasOne(we => we.AdvancedPaymentGlAccount)
-                .WithMany(ga => ga.WorkEffortsAdvancedPayment)
-                .HasForeignKey(we => we.GlAccountIdAdvancedPayment)
-                .IsRequired(false);
+           
                     
                  entity.Property(e => e.ProjectNum)
                 .HasMaxLength(60)

@@ -17,6 +17,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import FormInput from "../../../app/common/form/FormInput";
 import {useFetchAdvancePaymentGlAccountsQuery} from "../../../app/store/apis/accounting/globalGlSettingsApi";
+import {FormComboBoxVirtualPartyWithEmployees} from "../../../app/common/form/FormComboBoxVirtualPartyWithEmployee";
+import {FormComboBoxVirtualSupplierMultiColumn} from "../../../app/common/form/FormComboBoxVirtualSupplierMultiColumn";
 
 
 interface CertificateActionsMenuProps {
@@ -81,15 +83,16 @@ interface Props {
     selectedCertificate?: MultiPaymentCertificate;
     editMode: number; // 1: add, 2: edit
     cancelEdit: () => void;
+    setEditMode: (mode: number) => void;
+    setParentCertificate: (certificate: MultiPaymentCertificate | null) => void; 
 }
 
-export default function MultiPaymentCertificateForm({selectedCertificate, editMode, cancelEdit}: Props) {
+export default function MultiPaymentCertificateForm({selectedCertificate, editMode, cancelEdit, setEditMode, setParentCertificate}: Props) {
     const {getTranslatedLabel} = useTranslationHelper();
     const localizationKey = "accounting.multiPaymentCertificate.form";
     const {data: paymentMethods, isLoading: paymentMethodsLoading} = useFetchPaymentMethodsQuery(undefined);
     const [isFormCollapsed, setIsFormCollapsed] = useState(false);
     const {language} = useAppSelector((state) => state.localization);
-    const { data: glAccounts, isLoading: glAccountsLoading } = useFetchAdvancePaymentGlAccountsQuery(undefined);
 
     const [formKey, setFormKey] = useState<number>(1);
     const formRef = useRef<any>(null);
@@ -114,22 +117,22 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
         selectedCertificate,
         editMode,
         setFormKey,
+        setEditMode, setParentCertificate
     });
 
     const initialValues = useMemo(() => ({
-        workEffortId: selectedCertificate?.workEffortId || "",
-        code: selectedCertificate?.code || "",
-        date: selectedCertificate?.date ? new Date(selectedCertificate.date) : new Date(),
-        description: selectedCertificate?.description || "",
-        paymentMethodId: selectedCertificate?.paymentMethodId || "",
-        chequeNumber: selectedCertificate?.chequeNumber || "",
-        chequeDate: selectedCertificate?.chequeDate ? new Date(selectedCertificate.chequeDate) : null,
-        currentStatusId: selectedCertificate?.currentStatusId || "WEPR_CREATED",
-        statusDescription: selectedCertificate?.statusDescription || "Created",
-        statusDescriptionArabic: selectedCertificate?.statusDescriptionArabic || "تم الإنشاء",
-        glAccountIdAdvancedPayment: selectedCertificate?.glAccountIdAdvancedPayment || "", // Added glAccountId
-
-    }), [selectedCertificate]);
+        workEffortId: selectedCertificate?.workEffortId || certificate?.workEffortId || "",
+        code: selectedCertificate?.code || certificate?.code || "",
+        date: selectedCertificate?.date ? new Date(selectedCertificate.date) : certificate?.date ? new Date(certificate.date) : new Date(),
+        description: selectedCertificate?.description || certificate?.description || "",
+        paymentMethodId: selectedCertificate?.paymentMethodId || certificate?.paymentMethodId || "",
+        chequeNumber: selectedCertificate?.chequeNumber || certificate?.chequeNumber || "",
+        chequeDate: selectedCertificate?.chequeDate ? new Date(selectedCertificate.chequeDate) : certificate?.chequeDate ? new Date(certificate.chequeDate) : null,
+        currentStatusId: selectedCertificate?.currentStatusId || certificate?.currentStatusId || "WEPR_CREATED",
+        statusDescription: selectedCertificate?.statusDescription || certificate?.statusDescription || "Created",
+        statusDescriptionArabic: selectedCertificate?.statusDescriptionArabic || certificate?.statusDescriptionArabic || "تم الإنشاء",
+        partyIdEmployee: selectedCertificate?.partyIdEmployee || certificate?.partyIdEmployee || "",
+    }), [selectedCertificate, certificate]);
 
     const renderSwitchStatus = useCallback(() => {
         const status = certificate?.currentStatusId || "WEPR_CREATED";
@@ -155,17 +158,17 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
     useEffect(() => {
         if (selectedCertificate) {
             setCertificate(selectedCertificate);
-        } else {
-            setCertificate(undefined);
         }
     }, [selectedCertificate, setCertificate]);
+
 
     const handleCancelForm = useCallback(() => {
         setCertificate(undefined);
         setItems([]);
-        setFormKey((prev) => prev + 1); // Reset form to clear input fields
-        cancelEdit(); // Notify parent to close/hide form
-    }, [setCertificate, cancelEdit]);
+        setFormKey((prev) => prev + 1);
+        setParentCertificate(null);
+        cancelEdit();
+    }, [setCertificate, setItems, cancelEdit, setParentCertificate]);
 
     const handleSubmit = useCallback((values: any) => {
         const serializedValues: MultiPaymentCertificate = {
@@ -176,21 +179,31 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
             paymentMethodId: values.paymentMethodId || "",
             chequeNumber: values.chequeNumber || "",
             chequeDate: values.chequeDate instanceof Date ? values.chequeDate.toISOString() : null,
-            glAccountIdAdvancedPayment: values.glAccountIdAdvancedPayment || "", // Added glAccountId
+            partyIdEmployee: values.partyIdEmployee.fromPartyId || "",
             items,
         };
         if (editMode === 1) {
             handleCreate({
                 values: serializedValues,
                 isValid: formRef.current?.isValid(),
+            }).then((result) => {
+                if (result.success && result.certificate) {
+                    setCertificate(result.certificate);
+                    setEditMode(2);
+                    setParentCertificate(result.certificate);
+                }
             });
         } else {
             handleUpdate({
                 values: serializedValues,
                 isValid: formRef.current?.isValid(),
+            }).then((result) => {
+                if (result.success) {
+                    setParentCertificate(certificate);
+                }
             });
         }
-    }, [handleCreate, handleUpdate, editMode, items]);
+    }, [handleCreate, handleUpdate, editMode, items, setEditMode, setParentCertificate, certificate]);
 
 
     const titleText = editMode === 1
@@ -199,16 +212,25 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
 
     const handleApproveCertificate = useCallback(() => {
         if (!certificate?.workEffortId) {
-            return; // Prevent approval if no workEffortId
+            return;
         }
         handleApprove({
             workEffortId: certificate.workEffortId,
             isValid: formRef.current?.isValid() && items.length > 0,
+        }).then((result) => {
+            if (result.success && result.certificate) {
+                setEditMode(3); // Per your preference for post-approval
+                setParentCertificate(result.certificate); 
+            }
         });
-    }, [certificate, handleApprove, items]);
+    }, [certificate, handleApprove, items, setEditMode, setParentCertificate]);
+
 
 
     const status = renderSwitchStatus();
+    
+    console.log('certificate', certificate)
+    console.log('editMode', editMode)
 
     return (
         <>
@@ -286,13 +308,12 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
                                         </Grid>
                                         <Grid item xs={2}>
                                             <Field
-                                                id="glAccountIdAdvancedPayment"
-                                                name="glAccountIdAdvancedPayment"
-                                                label={getTranslatedLabel(`${localizationKey}.glAccount`, "GL Account *")}
-                                                component={MemoizedFormDropDownList}
-                                                dataItemKey="glAccountIdAdvancedPayment"
-                                                textField="accountName"
-                                                data={glAccounts || []}
+                                                id="partyIdEmployee"
+                                                name="partyIdEmployee"
+                                                component={FormComboBoxVirtualPartyWithEmployees}
+                                                label={getTranslatedLabel("projects.certificate.form.supplier", "Employee")}
+                                                valueField="fromPartyId"
+                                                textField="fromPartyName"
                                                 validator={requiredValidator}
                                             />
                                         </Grid>

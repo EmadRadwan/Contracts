@@ -3,7 +3,6 @@ using FluentValidation;
 using MediatR;
 using Persistence;
 using Domain;
-using Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Projects
@@ -56,7 +55,7 @@ namespace Application.Projects
                         ChequeNumber = certificate.ChequeNumber,
                         ChequeDate = certificate.ChequeDate,
                         CurrentStatusId = "WEPR_CREATED",
-                        GlAccountIdAdvancedPayment = certificate.GlAccountIdAdvancedPayment,
+                        PartyIdEmployee = certificate.PartyIdEmployee,
                         CreatedDate = stamp,
                         LastUpdatedStamp = stamp
                     };

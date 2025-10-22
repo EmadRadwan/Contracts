@@ -111,6 +111,7 @@ public class WorkEffort
 
     public string? PartyIdSupplier { get; set; }
     public string? PartyIdContractor { get; set; }
+    public string? PartyIdEmployee { get; set; }
    
     public string? RelatedOrderId { get; set; }
     
@@ -139,15 +140,14 @@ public class WorkEffort
     public string? ChequeNumber { get; set; }
     public DateTime? ChequeDate { get; set; }
     public string? GlAccountId { get; set; }
-    public string? GlAccountIdAdvancedPayment { get; set; }
 
 
     
     public Product? Service { get; set; }
     public PaymentMethod? PaymentMethod { get; set; }
     public GlAccount? ProjectGlAccount { get; set; }
-    public GlAccount? AdvancedPaymentGlAccount { get; set; }
     
+    public Party? EmployeeParty { get; set; }
     public Party? SupplierParty { get; set; }
     public Party? ContractorParty { get; set; }
 

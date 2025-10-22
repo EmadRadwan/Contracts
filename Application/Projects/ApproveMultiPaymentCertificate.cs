@@ -1,10 +1,9 @@
 using Application.Core;
+using Domain;
 using FluentValidation;
 using MediatR;
 using Persistence;
-using Domain;
 using Microsoft.EntityFrameworkCore;
-using Application.Interfaces;
 
 namespace Application.Projects
 {
@@ -13,6 +12,7 @@ namespace Application.Projects
         public class Command : IRequest<Result<MultiPaymentCertificateDto>>
         {
             public string WorkEffortId { get; set; }
+            public string CompanyId { get; set; }
         }
 
         public class CommandValidator : AbstractValidator<Command>
@@ -21,6 +21,10 @@ namespace Application.Projects
             {
                 RuleFor(x => x.WorkEffortId)
                     .NotEmpty().WithMessage("WorkEffortId is required");
+                // REFACTOR: Added validation for CompanyId to ensure it is provided,
+                // as it is now a required parameter sent from the frontend and used in the handler.
+                RuleFor(x => x.CompanyId)
+                    .NotEmpty().WithMessage("CompanyId is required");
             }
         }
 
@@ -35,13 +39,15 @@ namespace Application.Projects
                 _utilityService = utilityService;
             }
 
-            public async Task<Result<MultiPaymentCertificateDto>> Handle(Command request, CancellationToken cancellationToken)
+            public async Task<Result<MultiPaymentCertificateDto>> Handle(Command request,
+                CancellationToken cancellationToken)
             {
                 await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
                 try
                 {
                     var certificate = await _context.WorkEfforts
-                        .Where(w => w.WorkEffortId == request.WorkEffortId && w.WorkEffortTypeId == "PAYMENT_CERTIFICATE")
+                        .Where(w => w.WorkEffortId == request.WorkEffortId &&
+                                    w.WorkEffortTypeId == "PAYMENT_CERTIFICATE")
                         .FirstOrDefaultAsync(cancellationToken);
 
                     if (certificate == null)
@@ -59,7 +65,8 @@ namespace Application.Projects
                     certificate.LastUpdatedStamp = DateTime.UtcNow;
 
                     var items = await _context.WorkEfforts
-                        .Where(w => w.WorkEffortParentId == request.WorkEffortId && w.WorkEffortTypeId == "PAYMENT_CERTIFICATE_ITEM")
+                        .Where(w => w.WorkEffortParentId == request.WorkEffortId &&
+                                    w.WorkEffortTypeId == "PAYMENT_CERTIFICATE_ITEM")
                         .ToListAsync(cancellationToken);
 
                     foreach (var item in items)
@@ -67,6 +74,36 @@ namespace Application.Projects
                         item.CurrentStatusId = "WEPR_APPROVED";
                         item.LastUpdatedStamp = DateTime.UtcNow;
                     }
+
+                    var totalAmount = items.Sum(i => i.TotalAmount ?? 0);
+                    
+                    var paymentMethod = await _context.PaymentMethods
+                        .Where(pm => pm.PaymentMethodId == certificate.PaymentMethodId)
+                        .FirstOrDefaultAsync(cancellationToken);
+
+                    if (paymentMethod == null)
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                        return Result<MultiPaymentCertificateDto>.Failure("Payment method not found");
+                    }
+
+                    
+                    var paymentId = await _utilityService.GetNextSequence("Payment");
+                    var payment = new Payment
+                    {
+                        PaymentId = paymentId,
+                        PaymentTypeId = "VENDOR_PAYMENT",
+                        PartyIdFrom = request.CompanyId,
+                        PartyIdTo = certificate.PartyIdEmployee,
+                        PaymentMethodId = certificate.PaymentMethodId,
+                        PaymentMethodTypeId = paymentMethod.PaymentMethodTypeId,
+                        Amount = totalAmount,
+                        StatusId = "PMNT_SENT",
+                        EffectiveDate = certificate.EstimatedStartDate ?? DateTime.UtcNow,
+                        CreatedStamp = DateTime.UtcNow,
+                        LastUpdatedStamp = DateTime.UtcNow
+                    };
+                    _context.Payments.Add(payment);
 
                     var updateResult = await _context.SaveChangesAsync(cancellationToken);
                     if (updateResult <= 0)

@@ -88,10 +88,14 @@ public class ProjectController : BaseApiController
         return HandleResult(result);
     }
     
-    [HttpPost("{workEffortId}/approveMultiPaymentCertificate")]
-    public async Task<ActionResult<MultiPaymentCertificateDto>> ApproveMultiPaymentCertificate(string workEffortId)
+    [HttpPost("approveMultiPaymentCertificate")]
+    public async Task<ActionResult<MultiPaymentCertificateDto>> ApproveMultiPaymentCertificate([FromBody] ApproveMultiPaymentCertificateRequest request)
     {
-        var result = await Mediator.Send(new ApproveMultiPaymentCertificate.Command { WorkEffortId = workEffortId });
+        var result = await Mediator.Send(new ApproveMultiPaymentCertificate.Command 
+        { 
+            WorkEffortId = request.WorkEffortId, 
+            CompanyId = request.CompanyId 
+        });
         return HandleResult(result);
     }
 }

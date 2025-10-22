@@ -158,6 +158,7 @@ public class Party
         WorkEffortEventReminders = new HashSet<WorkEffortEventReminder>();
         WorkEffortsAsSupplier = new HashSet<WorkEffort>();
         WorkEffortsAsContractor = new HashSet<WorkEffort>();
+        WorkEffortsAsEmployee = new HashSet<WorkEffort>();
     }
 
     public string PartyId { get; set; } = null!;
@@ -173,11 +174,13 @@ public class Party
     public string? LastModifiedByUserLogin { get; set; }
     public string? DataSourceId { get; set; }
     public string? IsUnread { get; set; }
+    public string? GlAccountIdAdvancedPayment { get; set; }
     public DateTime? LastUpdatedStamp { get; set; }
     public DateTime? LastUpdatedTxStamp { get; set; }
     public DateTime? CreatedStamp { get; set; }
     public DateTime? CreatedTxStamp { get; set; }
 
+    public GlAccount? GlAccountAdvancedPayment { get; set; }
     public UserLogin? CreatedByUserLoginNavigation { get; set; }
     public DataSource? DataSource { get; set; }
     public UserLogin? LastModifiedByUserLoginNavigation { get; set; }
@@ -341,5 +344,5 @@ public class Party
     public ICollection<AppUserLogin> AppUserLogins { get; set; }
     public ICollection<WorkEffort> WorkEffortsAsSupplier { get; set; }
     public ICollection<WorkEffort> WorkEffortsAsContractor { get; set; }
-   
+    public ICollection<WorkEffort> WorkEffortsAsEmployee { get; set; }
 }
