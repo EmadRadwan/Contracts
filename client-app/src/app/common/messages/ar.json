@@ -1146,8 +1146,9 @@
     },
     "multiPaymentCertificate": {
       "form": {
-        "title": "شهادة دفع متعددة",
+        "title": "مستند دفع متعدد",
         "date": "التاريخ *",
+        "employee": "الموظف *",
         "paymentMethod": "طريقة الدفع *",
         "description": "الوصف",
         "chequeNumber": "رقم الشيك",
@@ -1175,6 +1176,28 @@
           "partyExclusive": "يرجى اختيار إما مورد أو مقاول، وليس كلاهما.",
           "partyRequired": "يجب اختيار مورد أو مقاول على الأقل."
         }
+      },
+      "items": {
+        "project": "اسم المشروع",
+        "subProject": "بنود المشروع",
+        "itemType": "تحليلي الأعمال",
+        "serviceId": "معرف الخدمة",
+        "serviceName": "اسم الخدمة",
+        "product": "المنتج",
+        "description": "الوصف",
+        "amount": "المبلغ",
+        "discount": "الخصم",
+        "transportationExpenses": "مصاريف النقل",
+        "gratuities": "الإكراميات",
+        "total": "الإجمالي",
+        "addItem": "إضافة بند دفع",
+        "totalAmount": "الإجمالي"
+      },
+      "HeaderList": {
+        "createNew": "إنشاء مستند جديد",
+        "workEffortId": "رقم المستند",
+        "date": "التاريخ",
+        "description": "الوصف"
       }
     }
   }

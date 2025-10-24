@@ -1,28 +1,28 @@
+using System.Text.Json;
 using Application.Core;
-using Domain;
 using FluentValidation;
 using MediatR;
 using Persistence;
+using Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Projects
 {
-    public class ApproveMultiPaymentCertificate
+    public class CreateMultiPaymentCertificate
     {
         public class Command : IRequest<Result<MultiPaymentCertificateDto>>
         {
-            public string WorkEffortId { get; set; }
-            public string CompanyId { get; set; }
+            public MultiPaymentCertificateDto? Certificate { get; set; }
         }
 
         public class CommandValidator : AbstractValidator<Command>
         {
             public CommandValidator()
             {
-                RuleFor(x => x.WorkEffortId)
-                    .NotEmpty().WithMessage("WorkEffortId is required");
-                RuleFor(x => x.CompanyId)
-                    .NotEmpty().WithMessage("CompanyId is required");
+                RuleFor(x => x.Certificate!.Items)
+                    .Must(items => items != null && items.Any())
+                    .WithMessage("At least one certificate item is required");
             }
         }
 
@@ -30,160 +30,153 @@ namespace Application.Projects
         {
             private readonly DataContext _context;
             private readonly IUtilityService _utilityService;
+            private readonly ILogger<Handler> _logger;
 
-            public Handler(DataContext context, IUtilityService utilityService)
+            public Handler(DataContext context, IUtilityService utilityService, ILogger<Handler> logger)
             {
                 _context = context;
                 _utilityService = utilityService;
+                _logger = logger;
             }
 
-            public async Task<Result<MultiPaymentCertificateDto>> Handle(Command request, CancellationToken cancellationToken)
+            public async Task<Result<MultiPaymentCertificateDto>> Handle(Command request,
+                CancellationToken cancellationToken)
             {
                 await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
                 try
                 {
-                    var certificate = await _context.WorkEfforts
-                        .Where(w => w.WorkEffortId == request.WorkEffortId &&
-                                    w.WorkEffortTypeId == "PAYMENT_CERTIFICATE")
-                        .FirstOrDefaultAsync(cancellationToken);
+                    var stamp = DateTime.UtcNow;
+                    var certificate = request.Certificate!;
+                    var newWorkEffortSerial = await _utilityService.GetNextSequence("WorkEffort");
+                    _logger.LogInformation("Received certificate items: {Items}",
+                        JsonSerializer.Serialize(certificate.Items));
 
-                    if (certificate == null)
+                    var workEffort = new WorkEffort
                     {
-                        return Result<MultiPaymentCertificateDto>.Failure("Certificate not found");
+                        WorkEffortId = newWorkEffortSerial,
+                        WorkEffortTypeId = "PAYMENT_CERTIFICATE",
+                        EstimatedStartDate = certificate.Date,
+                        Description = certificate.Description,
+                        CurrentStatusId = "WEPR_CREATED",
+                        PartyIdEmployee = certificate.PartyIdEmployee,
+                        CreatedDate = stamp,
+                        LastUpdatedStamp = stamp
+                    };
+
+                    _context.WorkEfforts.Add(workEffort);
+
+                    _logger.LogInformation(
+                        "Adding parent WorkEffort: WorkEffortId={WorkEffortId}, Type={WorkEffortTypeId}",
+                        workEffort.WorkEffortId, workEffort.WorkEffortTypeId);
+
+                    foreach (var item in certificate.Items!)
+                    {
+                        var itemWorkEffortSerial = await _utilityService.GetNextSequence("WorkEffort");
+                        var itemWorkEffort = new WorkEffort
+                        {
+                            WorkEffortId = itemWorkEffortSerial,
+                            WorkEffortParentId = newWorkEffortSerial,
+                            WorkEffortTypeId = "PAYMENT_CERTIFICATE_ITEM",
+                            ProjectId = item.ProjectId,
+                            SubProjectId = !string.IsNullOrEmpty(item.SubProjectId) ? item.SubProjectId : null,
+                            CostType = item.ItemType,
+                            ServiceId = item.ServiceId,
+                            ProductId = !string.IsNullOrEmpty(item.ProductId) ? item.ProductId : null,
+                            Description = item.Description,
+                            Discount = item.Discount ?? 0,
+                            TransportationExpenses = item.TransportationExpenses ?? 0,
+                            Gratuities = item.Gratuities ?? 0,
+                            TotalAmount = item.Total,
+                            PartyIdSupplier = !string.IsNullOrEmpty(item.PartyIdSupplier) ? item.PartyIdSupplier : null,
+                            PartyIdContractor = !string.IsNullOrEmpty(item.PartyIdContractor)
+                                ? item.PartyIdContractor
+                                : null,
+                            CurrentStatusId = "WEPR_CREATED",
+                            CreatedDate = stamp,
+                            LastUpdatedStamp = stamp
+                        };
+
+                        if (string.IsNullOrEmpty(itemWorkEffort.ServiceId))
+                        {
+                            _logger.LogWarning(
+                                "ServiceId is null or empty for WorkEffortId={WorkEffortId}. ServiceId is mandatory.",
+                                itemWorkEffort.WorkEffortId);
+                            throw new InvalidOperationException(
+                                $"ServiceId cannot be null or empty for WorkEffortId {itemWorkEffort.WorkEffortId}.");
+                        }
+
+                        var serviceExists =
+                            await _context.Products.AnyAsync(p => p.ProductId == itemWorkEffort.ServiceId,
+                                cancellationToken);
+                        if (!serviceExists)
+                        {
+                            _logger.LogWarning(
+                                "Invalid ServiceId={ServiceId} for WorkEffortId={WorkEffortId}. No matching PRODUCT_ID in PRODUCT table.",
+                                itemWorkEffort.ServiceId, itemWorkEffort.WorkEffortId);
+                            throw new InvalidOperationException(
+                                $"ServiceId {itemWorkEffort.ServiceId} does not exist in PRODUCT table.");
+                        }
+
+                        _logger.LogInformation("Validated ServiceId={ServiceId} for WorkEffortId={WorkEffortId}",
+                            itemWorkEffort.ServiceId, itemWorkEffort.WorkEffortId);
+
+                        // REFACTOR: Validate ProductId only if it's not null or empty, as it's optional
+                        if (!string.IsNullOrEmpty(itemWorkEffort.ProductId))
+                        {
+                            var productExists =
+                                await _context.Products.AnyAsync(p => p.ProductId == itemWorkEffort.ProductId,
+                                    cancellationToken);
+                            if (!productExists)
+                            {
+                                _logger.LogWarning(
+                                    "Invalid ProductId={ProductId} for WorkEffortId={WorkEffortId}. No matching PRODUCT_ID in PRODUCT table.",
+                                    itemWorkEffort.ProductId, itemWorkEffort.WorkEffortId);
+                                throw new InvalidOperationException(
+                                    $"ProductId {itemWorkEffort.ProductId} does not exist in PRODUCT table.");
+                            }
+
+                            _logger.LogInformation("Validated ProductId={ProductId} for WorkEffortId={WorkEffortId}",
+                                itemWorkEffort.ProductId, itemWorkEffort.WorkEffortId);
+                        }
+                        else
+                        {
+                            _logger.LogInformation(
+                                "ProductId is null or empty for WorkEffortId={WorkEffortId}, skipping validation as it's optional",
+                                itemWorkEffort.WorkEffortId);
+                        }
+
+                        _context.WorkEfforts.Add(itemWorkEffort);
+                        
+                        _logger.LogInformation("Adding WorkEffort item: WorkEffortId={WorkEffortId}, ServiceId={ServiceId}, ProductId={ProductId}, ParentId={WorkEffortParentId}",
+                            itemWorkEffort.WorkEffortId, itemWorkEffort.ServiceId ?? "null", itemWorkEffort.ProductId ?? "null", itemWorkEffort.WorkEffortParentId);
+                    }
+                    
+                    foreach (var entry in _context.ChangeTracker.Entries<WorkEffort>())
+                    {
+                        _logger.LogInformation("ChangeTracker Entry: Entity={Entity}, State={State}, ServiceId={ServiceId}, ProductId={ProductId}",
+                            nameof(WorkEffort), entry.State, entry.Entity.ServiceId ?? "null", entry.Entity.ProductId ?? "null");
                     }
 
-                    if (certificate.CurrentStatusId == "WEPR_APPROVED")
-                    {
-                        return Result<MultiPaymentCertificateDto>.Failure("Certificate is already approved");
-                    }
-
-                    // Update certificate status
-                    certificate.CurrentStatusId = "WEPR_APPROVED";
-                    certificate.LastUpdatedStamp = DateTime.UtcNow;
-
-                    var items = await _context.WorkEfforts
-                        .Where(w => w.WorkEffortParentId == request.WorkEffortId &&
-                                    w.WorkEffortTypeId == "PAYMENT_CERTIFICATE_ITEM")
-                        .ToListAsync(cancellationToken);
-
-                    foreach (var item in items)
-                    {
-                        item.CurrentStatusId = "WEPR_APPROVED";
-                        item.LastUpdatedStamp = DateTime.UtcNow;
-                    }
-
-                    var totalAmount = items.Sum(i => i.TotalAmount ?? 0);
-
-                    var paymentMethod = await _context.PaymentMethods
-                        .Where(pm => pm.PaymentMethodId == certificate.PaymentMethodId)
-                        .FirstOrDefaultAsync(cancellationToken);
-
-                    if (paymentMethod == null)
+                    var createResult = await _context.SaveChangesAsync(cancellationToken);
+                    if (createResult <= 0)
                     {
                         await transaction.RollbackAsync(cancellationToken);
-                        return Result<MultiPaymentCertificateDto>.Failure("Payment method not found");
-                    }
-
-                    var paymentId = await _utilityService.GetNextSequence("Payment");
-                    var payment = new Payment
-                    {
-                        PaymentId = paymentId,
-                        PaymentTypeId = "VENDOR_PAYMENT",
-                        PartyIdFrom = request.CompanyId,
-                        PartyIdTo = certificate.PartyIdEmployee,
-                        PaymentMethodId = certificate.PaymentMethodId,
-                        PaymentMethodTypeId = paymentMethod.PaymentMethodTypeId,
-                        Amount = totalAmount,
-                        StatusId = "PMNT_SENT",
-                        EffectiveDate = certificate.EstimatedStartDate ?? DateTime.UtcNow,
-                        CreatedStamp = DateTime.UtcNow,
-                        LastUpdatedStamp = DateTime.UtcNow
-                    };
-                    _context.Payments.Add(payment);
-
-                    // Create accounting transaction
-                    var acctgTransId = await _utilityService.GetNextSequence("AcctgTrans");
-                    var employeeParty = await _context.Parties
-                        .Where(p => p.PartyId == certificate.PartyIdEmployee)
-                        .Select(p => new { p.GlAccountIdAdvancedPayment })
-                        .FirstOrDefaultAsync(cancellationToken);
-
-                    if (employeeParty == null || string.IsNullOrEmpty(employeeParty.GlAccountIdAdvancedPayment))
-                    {
-                        await transaction.RollbackAsync(cancellationToken);
-                        return Result<MultiPaymentCertificateDto>.Failure("Employee party or advanced payment GL account not found");
-                    }
-
-                    var acctgTrans = new AcctgTrans
-                    {
-                        AcctgTransId = acctgTransId,
-                        AcctgTransTypeId = "DISBURSEMENT",
-                        Description = $"Payment for certificate {certificate.WorkEffortId}",
-                        TransactionDate = DateTime.UtcNow,
-                        IsPosted = "Y",
-                        PostedDate = DateTime.UtcNow,
-                        GlFiscalTypeId = "ACTUAL",
-                        PaymentId = paymentId,
-                        CreatedStamp = DateTime.UtcNow,
-                        LastUpdatedStamp = DateTime.UtcNow
-                    };
-                    _context.AcctgTrans.Add(acctgTrans);
-
-                    // Create accounting transaction entries
-                    var entrySeqId1 = "00001";
-                    var entrySeqId2 = "00002";
-
-                    // Debit: Employee's advanced payment GL account
-                    var debitEntry = new AcctgTransEntry
-                    {
-                        AcctgTransId = acctgTransId,
-                        AcctgTransEntrySeqId = entrySeqId1,
-                        AcctgTransEntryTypeId = "_NA_",
-                        Description = $"Advance payment to employee {certificate.PartyIdEmployee} for certificate {certificate.WorkEffortId}",
-                        GlAccountId = employeeParty.GlAccountIdAdvancedPayment,
-                        OrganizationPartyId = request.CompanyId,
-                        Amount = totalAmount,
-                        CurrencyUomId = "EGP",
-                        OrigAmount = totalAmount,
-                        OrigCurrencyUomId = "EGP",
-                        DebitCreditFlag = "D",
-                        ReconcileStatusId = "AES_NOT_RECONCILED",
-                        CreatedStamp = DateTime.UtcNow,
-                        LastUpdatedStamp = DateTime.UtcNow
-                    };
-                    _context.AcctgTransEntries.Add(debitEntry);
-
-                    // Credit: Payment method's GL account (Cash or Bank)
-                    var creditEntry = new AcctgTransEntry
-                    {
-                        AcctgTransId = acctgTransId,
-                        AcctgTransEntrySeqId = entrySeqId2,
-                        AcctgTransEntryTypeId = "_NA_",
-                        Description = $"Payment from {paymentMethod.Description} for certificate {certificate.WorkEffortId}",
-                        GlAccountId = paymentMethod.GlAccountId,
-                        OrganizationPartyId = request.CompanyId,
-                        Amount = totalAmount,
-                        CurrencyUomId = "EGP",
-                        OrigAmount = totalAmount,
-                        OrigCurrencyUomId = "EGP",
-                        DebitCreditFlag = "C",
-                        ReconcileStatusId = "AES_NOT_RECONCILED",
-                        CreatedStamp = DateTime.UtcNow,
-                        LastUpdatedStamp = DateTime.UtcNow
-                    };
-                    _context.AcctgTransEntries.Add(creditEntry);
-
-                    var updateResult = await _context.SaveChangesAsync(cancellationToken);
-                    if (updateResult <= 0)
-                    {
-                        await transaction.RollbackAsync(cancellationToken);
-                        return Result<MultiPaymentCertificateDto>.Failure("Failed to approve certificate or create accounting transaction");
+                        return Result<MultiPaymentCertificateDto>.Failure("Failed to create certificate and items");
                     }
 
                     await transaction.CommitAsync(cancellationToken);
 
+                    // REFACTOR: Add employee party lookup to retrieve PartyIdEmployee and PartyEmployeeName, matching the Update handler's behavior
+                    // This ensures the response DTO includes employee data consistently across Create and Update operations
+                    var employeeParty = workEffort.PartyIdEmployee != null
+                        ? await _context.Parties
+                            .Where(p => p.PartyId == workEffort.PartyIdEmployee)
+                            .Select(p => new { p.PartyId, p.Description })
+                            .FirstOrDefaultAsync(cancellationToken)
+                        : null;
+
                     var resultItems = new List<MultiPaymentItemDto>();
-                    foreach (var item in items)
+                    foreach (var item in certificate.Items!)
                     {
                         var project = await _context.WorkEfforts
                             .Where(p => p.WorkEffortId == item.ProjectId)
@@ -230,30 +223,30 @@ namespace Application.Projects
                             { "EQUIPMENT", "المعدات" },
                             { "EXPENSES", "المصروفات" }
                         };
-                        var itemTypeDescription = itemTypeDescriptions.ContainsKey(item.CostType ?? "")
-                            ? itemTypeDescriptions[item.CostType]
+                        var itemTypeDescription = itemTypeDescriptions.ContainsKey(item.ItemType ?? "")
+                            ? itemTypeDescriptions[item.ItemType]
                             : "";
 
                         resultItems.Add(new MultiPaymentItemDto
                         {
-                            WorkEffortId = item.WorkEffortId,
+                            WorkEffortId = item.WorkEffortId, // Or generated WorkEffortId
                             ProjectId = item.ProjectId,
                             ProjectName = project?.ProjectName ?? "",
                             SubProjectId = item.SubProjectId,
                             SubProjectName = subProject?.SubProjectName ?? "",
-                            ItemType = item.CostType,
+                            ItemType = item.ItemType,
                             ItemTypeDescription = itemTypeDescription,
                             ServiceId = item.ServiceId,
                             ServiceName = service?.ProductName ?? "",
                             ProductId = item.ProductId,
                             ProductName = product?.ProductName ?? "",
                             Description = item.Description,
-                            Amount = item.TotalAmount,
+                            Amount = item.Amount,
                             Discount = item.Discount,
-                            DiscountMode = item.Discount != null ? "value" : null,
+                            DiscountMode = item.DiscountMode,
                             TransportationExpenses = item.TransportationExpenses,
                             Gratuities = item.Gratuities,
-                            Total = item.TotalAmount,
+                            Total = item.Total,
                             PartyIdSupplier = item.PartyIdSupplier,
                             PartyIdSupplierName = supplier?.Description ?? "",
                             PartyIdContractor = item.PartyIdContractor,
@@ -269,22 +262,22 @@ namespace Application.Projects
                     };
 
                     var (statusDescription, statusDescriptionArabic) =
-                        statusDescriptions.ContainsKey(certificate.CurrentStatusId)
-                            ? statusDescriptions[certificate.CurrentStatusId]
+                        statusDescriptions.ContainsKey(workEffort.CurrentStatusId)
+                            ? statusDescriptions[workEffort.CurrentStatusId]
                             : ("Unknown", "غير معروف");
 
+                    // REFACTOR: Update the result DTO to include PartyIdEmployee and PartyEmployeeName
+                    // This aligns the Create handler's response with the Update handler, ensuring consistent API output
                     var resultDto = new MultiPaymentCertificateDto
                     {
-                        WorkEffortId = certificate.WorkEffortId,
-                        Code = certificate.CertificateNumber,
-                        Date = certificate.EstimatedStartDate,
-                        Description = certificate.Description,
-                        PaymentMethodId = certificate.PaymentMethodId,
-                        ChequeNumber = certificate.ChequeNumber,
-                        ChequeDate = certificate.ChequeDate,
-                        CurrentStatusId = certificate.CurrentStatusId,
+                        WorkEffortId = workEffort.WorkEffortId,
+                        Date = workEffort.EstimatedStartDate,
+                        Description = workEffort.Description,
+                        CurrentStatusId = workEffort.CurrentStatusId,
                         StatusDescription = statusDescription,
                         StatusDescriptionArabic = statusDescriptionArabic,
+                        PartyIdEmployee = workEffort.PartyIdEmployee,
+                        PartyEmployeeName = employeeParty?.Description ?? null,
                         Items = resultItems
                     };
 
@@ -293,7 +286,7 @@ namespace Application.Projects
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync(cancellationToken);
-                    return Result<MultiPaymentCertificateDto>.Failure($"Failed to approve certificate: {ex.Message}");
+                    return Result<MultiPaymentCertificateDto>.Failure($"Failed to create certificate: {ex.Message}");
                 }
             }
         }

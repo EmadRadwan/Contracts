@@ -1,5 +1,4 @@
 export interface MultiPaymentItem {
-    itemId: string;
     workEffortId: string;
     projectId: string;
     projectName: string;

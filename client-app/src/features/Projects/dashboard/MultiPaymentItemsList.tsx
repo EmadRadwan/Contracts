@@ -16,7 +16,7 @@ interface MultiPaymentItemsListProps {
 
 export default function MultiPaymentItemsList({ workEffortId, items, addItem, updateItem, deleteItem }: MultiPaymentItemsListProps) {
     const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = "accounting.multiPaymentCertificate.items";
+    const localizationKey = "projects.multiPaymentCertificate.items";
     const [show, setShow] = useState<boolean>(false);
     const [itemEditMode, setItemEditMode] = useState<number>(0);
     const [selectedItem, setSelectedItem] = useState<MultiPaymentItem | undefined>(undefined);
@@ -33,8 +33,8 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
         setShow(true);
     };
 
-    const handleDeleteClick = (itemId: string) => {
-        deleteItem(itemId);
+    const handleDeleteClick = (workEffortId: string) => {
+        deleteItem(workEffortId);
     };
 
     const handleClose = () => {
@@ -62,7 +62,7 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
                 variant="outlined"
                 color="error"
                 size="small"
-                onClick={() => handleDeleteClick(props.dataItem.itemId)}
+                onClick={() => handleDeleteClick(props.dataItem.workEffortId)}
             >
                 {getTranslatedLabel("general.delete", "Delete")}
             </Button>
@@ -84,7 +84,7 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
                 width: "150px",
             },
             {
-                field: "itemType",
+                field: "itemTypeDescription",
                 title: getTranslatedLabel(`${localizationKey}.itemType`, "Item Type"),
                 width: "120px",
             },
@@ -151,6 +151,8 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
         () => items.reduce((sum, item) => sum + (item.total || 0), 0),
         [items]
     );
+    
+    console.log('items', items)
 
     return (
         <>
@@ -160,6 +162,7 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
                 resizable={true}
                 pageable={true}
                 style={{ height: "400px", marginTop: "20px" }}
+                key={items.map(item => item.workEffortId).join('-')}
             >
                 <GridToolbar>
                     <Button

@@ -4,7 +4,7 @@ import {Box, Button, Collapse, Grid, IconButton, Menu, MenuItem, Paper, Typograp
 import {Ribbon, RibbonContainer} from "react-ribbons";
 import useMultiPaymentCertificate from "../hook/useMultiPaymentCertificate";
 import {v4 as uuidv4} from "uuid";
-import {FormInitialValues, MultiPaymentCertificate} from "../../../app/models/project/MultiPaymentCertificate";
+import {MultiPaymentCertificate} from "../../../app/models/project/MultiPaymentCertificate";
 import {useAppSelector, useFetchPaymentMethodsQuery} from "../../../app/store/configureStore";
 import MultiPaymentItemsList from "../dashboard/MultiPaymentItemsList";
 import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
@@ -19,9 +19,6 @@ import FormInput from "../../../app/common/form/FormInput";
 import {useFetchAdvancePaymentGlAccountsQuery} from "../../../app/store/apis/accounting/globalGlSettingsApi";
 import {FormComboBoxVirtualPartyWithEmployees} from "../../../app/common/form/FormComboBoxVirtualPartyWithEmployee";
 import {FormComboBoxVirtualSupplierMultiColumn} from "../../../app/common/form/FormComboBoxVirtualSupplierMultiColumn";
-import {
-    FormComboBoxVirtualPartyEmployeeAdvancedPayment
-} from "../../../app/common/form/FormComboBoxVirtualPartyEmployeeAdvancedPayment";
 
 
 interface CertificateActionsMenuProps {
@@ -92,13 +89,20 @@ interface Props {
 
 export default function MultiPaymentCertificateForm({selectedCertificate, editMode, cancelEdit, setEditMode, setParentCertificate}: Props) {
     const {getTranslatedLabel} = useTranslationHelper();
-    const localizationKey = "projects.multiPaymentCertificate.form";
+    const localizationKey = "accounting.multiPaymentCertificate.form";
+    const {data: paymentMethods, isLoading: paymentMethodsLoading} = useFetchPaymentMethodsQuery(undefined);
     const [isFormCollapsed, setIsFormCollapsed] = useState(false);
     const {language} = useAppSelector((state) => state.localization);
 
     const [formKey, setFormKey] = useState<number>(1);
     const formRef = useRef<any>(null);
-    
+
+    const filteredPaymentMethods = useMemo(() => {
+        return paymentMethods?.filter(
+            (method) => method.paymentMethodTypeId === "COMPANY_CHECK" || method.paymentMethodTypeId === "CASH"
+        ) || [];
+    }, [paymentMethods]);
+
     const {
         certificate,
         setCertificate,
@@ -116,42 +120,19 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
         setEditMode, setParentCertificate
     });
 
-    const initialValues = useMemo((): FormInitialValues => {
-        // REFACTOR: Use a type guard to safely access properties of source
-        const source = certificate || selectedCertificate;
-        const defaultValues: FormInitialValues = {
-            workEffortId: "",
-            date: new Date(),
-            description: "",
-            currentStatusId: "WEPR_CREATED",
-            statusDescription: "Created",
-            statusDescriptionArabic: "تم الإنشاء",
-            partyIdEmployee: {
-                fromPartyId: "",
-                fromPartyName: "",
-            },
-        };
-
-        // REFACTOR: Only override default values if source exists and has valid properties
-        if (source) {
-            return {
-                ...defaultValues,
-                workEffortId: source.workEffortId || defaultValues.workEffortId,
-                date: source.date ? new Date(source.date) : defaultValues.date,
-                description: source.description || defaultValues.description,
-                currentStatusId: source.currentStatusId || defaultValues.currentStatusId,
-                statusDescription: source.statusDescription || defaultValues.statusDescription,
-                statusDescriptionArabic: source.statusDescriptionArabic || defaultValues.statusDescriptionArabic,
-                partyIdEmployee: {
-                    fromPartyId: source.partyIdEmployee || defaultValues.partyIdEmployee.fromPartyId,
-                    fromPartyName: source.partyEmployeeName || defaultValues.partyIdEmployee.fromPartyName,
-                },
-            };
-        }
-
-        return defaultValues;
-    }, [certificate, selectedCertificate]);
-
+    const initialValues = useMemo(() => ({
+        workEffortId: selectedCertificate?.workEffortId || certificate?.workEffortId || "",
+        code: selectedCertificate?.code || certificate?.code || "",
+        date: selectedCertificate?.date ? new Date(selectedCertificate.date) : certificate?.date ? new Date(certificate.date) : new Date(),
+        description: selectedCertificate?.description || certificate?.description || "",
+        paymentMethodId: selectedCertificate?.paymentMethodId || certificate?.paymentMethodId || "",
+        chequeNumber: selectedCertificate?.chequeNumber || certificate?.chequeNumber || "",
+        chequeDate: selectedCertificate?.chequeDate ? new Date(selectedCertificate.chequeDate) : certificate?.chequeDate ? new Date(certificate.chequeDate) : null,
+        currentStatusId: selectedCertificate?.currentStatusId || certificate?.currentStatusId || "WEPR_CREATED",
+        statusDescription: selectedCertificate?.statusDescription || certificate?.statusDescription || "Created",
+        statusDescriptionArabic: selectedCertificate?.statusDescriptionArabic || certificate?.statusDescriptionArabic || "تم الإنشاء",
+        partyIdEmployee: selectedCertificate?.partyIdEmployee || certificate?.partyIdEmployee || "",
+    }), [selectedCertificate, certificate]);
 
     const renderSwitchStatus = useCallback(() => {
         const status = certificate?.currentStatusId || "WEPR_CREATED";
@@ -172,7 +153,14 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
             foreColor: "#ffffff",
         };
     }, [certificate, language]);
-    
+
+
+    useEffect(() => {
+        if (selectedCertificate) {
+            setCertificate(selectedCertificate);
+        }
+    }, [selectedCertificate, setCertificate]);
+
 
     const handleCancelForm = useCallback(() => {
         setCertificate(undefined);
@@ -184,9 +172,13 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
 
     const handleSubmit = useCallback((values: any) => {
         const serializedValues: MultiPaymentCertificate = {
-            workEffortId: certificate?.workEffortId || values.workEffortId || "",
+            workEffortId: values.workEffortId || uuidv4(),
+            code: values.code || "",
             date: values.date instanceof Date ? values.date.toISOString() : new Date().toISOString(),
             description: values.description || "",
+            paymentMethodId: values.paymentMethodId || "",
+            chequeNumber: values.chequeNumber || "",
+            chequeDate: values.chequeDate instanceof Date ? values.chequeDate.toISOString() : null,
             partyIdEmployee: values.partyIdEmployee.fromPartyId || "",
             items,
         };
@@ -206,10 +198,8 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
                 values: serializedValues,
                 isValid: formRef.current?.isValid(),
             }).then((result) => {
-                if (result.success && result.certificate) {
-                    setCertificate(result.certificate);
-                    setParentCertificate(result.certificate);
-                    setFormKey((prev) => prev + 1);
+                if (result.success) {
+                    setParentCertificate(certificate);
                 }
             });
         }
@@ -240,7 +230,6 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
     const status = renderSwitchStatus();
     
     console.log('certificate', certificate)
-    console.log('selectedCertificate', selectedCertificate)
     console.log('editMode', editMode)
 
     return (
@@ -305,13 +294,24 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
                                                 validator={requiredValidator}
                                             />
                                         </Grid>
-                                        
+                                        <Grid item xs={2}>
+                                            <Field
+                                                id="paymentMethodId"
+                                                name="paymentMethodId"
+                                                label={getTranslatedLabel(`${localizationKey}.paymentMethod`, "Payment Method *")}
+                                                component={MemoizedFormDropDownList}
+                                                dataItemKey="paymentMethodId"
+                                                textField="description"
+                                                data={filteredPaymentMethods}
+                                                validator={requiredValidator}
+                                            />
+                                        </Grid>
                                         <Grid item xs={2}>
                                             <Field
                                                 id="partyIdEmployee"
                                                 name="partyIdEmployee"
-                                                component={FormComboBoxVirtualPartyEmployeeAdvancedPayment}
-                                                label={getTranslatedLabel(`${localizationKey}.employee`, "Employee")}
+                                                component={FormComboBoxVirtualPartyWithEmployees}
+                                                label={getTranslatedLabel("projects.certificate.form.supplier", "Employee")}
                                                 valueField="fromPartyId"
                                                 textField="fromPartyName"
                                                 validator={requiredValidator}
@@ -325,7 +325,28 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
                                                 component={FormInput}
                                             />
                                         </Grid>
-                                        
+                                        {formRenderProps.valueGetter('paymentMethodId') !== 'CASH' && (
+                                            <>
+                                                <Grid item xs={2}>
+                                                    <Field
+                                                        id="chequeNumber"
+                                                        name="chequeNumber"
+                                                        label={getTranslatedLabel(`${localizationKey}.chequeNumber`, "Cheque Number")}
+                                                        component={FormInput}
+                                                        validator={requiredValidator}
+                                                    />
+                                                </Grid>
+                                                <Grid item xs={2}>
+                                                    <Field
+                                                        id="chequeDate"
+                                                        name="chequeDate"
+                                                        label={getTranslatedLabel(`${localizationKey}.chequeDate`, "Cheque Date")}
+                                                        component={FormDatePicker}
+                                                        validator={requiredValidator}
+                                                    />
+                                                </Grid>
+                                            </>
+                                        )}
                                         <Grid container item spacing={2} sx={{
                                             display: 'flex',
                                             flexDirection: 'row',
@@ -337,7 +358,7 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
                                                     <Button
                                                         type="submit"
                                                         variant="contained"
-                                                        disabled={!formRenderProps.valid || !formRenderProps.modified || apiLoading}
+                                                        disabled={!formRenderProps.valid || apiLoading}
                                                         sx={{ mr: 2 }}
                                                     >
                                                         {getTranslatedLabel(

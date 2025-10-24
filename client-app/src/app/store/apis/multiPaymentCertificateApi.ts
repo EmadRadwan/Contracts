@@ -60,6 +60,14 @@ const multiPaymentCertificateApi = createApi({
                 }),
                 invalidatesTags: ['MultiPaymentCertificates'],
             }),
+            updateMultiPaymentCertificate: builder.mutation<MultiPaymentCertificate, MultiPaymentCertificate>({
+                query: (certificate) => ({
+                    url: `/project/multiPaymentCertificate/${certificate.workEffortId}`,
+                    method: 'PUT',
+                    body: certificate,
+                }),
+                invalidatesTags: ['MultiPaymentCertificates'],
+            }),
             approveMultiPaymentCertificate: builder.mutation<MultiPaymentCertificate, { workEffortId: string; companyId: string }>({
                 query: ({ workEffortId, companyId }) => ({
                     // REFACTOR: Changed to a fixed endpoint URL and moved workEffortId to the request body,
@@ -77,7 +85,8 @@ const multiPaymentCertificateApi = createApi({
 
 export const { useFetchMultiPaymentCertificatesQuery,
     useGetMultiPaymentItemsQuery,
-    useFetchSubProjectsQuery, useAddMultiPaymentCertificateMutation, useApproveMultiPaymentCertificateMutation
+    useFetchSubProjectsQuery, useAddMultiPaymentCertificateMutation,
+    useApproveMultiPaymentCertificateMutation, useUpdateMultiPaymentCertificateMutation
 } = multiPaymentCertificateApi;
 export { multiPaymentCertificateApi };
 

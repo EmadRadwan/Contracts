@@ -21,8 +21,6 @@ namespace Application.Projects
             {
                 RuleFor(x => x.WorkEffortId)
                     .NotEmpty().WithMessage("WorkEffortId is required");
-                // REFACTOR: Added validation for CompanyId to ensure it is provided,
-                // as it is now a required parameter sent from the frontend and used in the handler.
                 RuleFor(x => x.CompanyId)
                     .NotEmpty().WithMessage("CompanyId is required");
             }
@@ -76,36 +74,8 @@ namespace Application.Projects
                     }
 
                     var totalAmount = items.Sum(i => i.TotalAmount ?? 0);
-                    
-                    var paymentMethod = await _context.PaymentMethods
-                        .Where(pm => pm.PaymentMethodId == certificate.PaymentMethodId)
-                        .FirstOrDefaultAsync(cancellationToken);
 
-                    if (paymentMethod == null)
-                    {
-                        await transaction.RollbackAsync(cancellationToken);
-                        return Result<MultiPaymentCertificateDto>.Failure("Payment method not found");
-                    }
 
-                    
-                    var paymentId = await _utilityService.GetNextSequence("Payment");
-                    var payment = new Payment
-                    {
-                        PaymentId = paymentId,
-                        PaymentTypeId = "VENDOR_PAYMENT",
-                        PartyIdFrom = request.CompanyId,
-                        PartyIdTo = certificate.PartyIdEmployee,
-                        PaymentMethodId = certificate.PaymentMethodId,
-                        PaymentMethodTypeId = paymentMethod.PaymentMethodTypeId,
-                        Amount = totalAmount,
-                        StatusId = "PMNT_SENT",
-                        EffectiveDate = certificate.EstimatedStartDate ?? DateTime.UtcNow,
-                        CreatedStamp = DateTime.UtcNow,
-                        LastUpdatedStamp = DateTime.UtcNow
-                    };
-                    _context.Payments.Add(payment);
-                    
-                    var acctgTransId = await _utilityService.GetNextSequence("AcctgTrans");
                     var employeeParty = await _context.Parties
                         .Where(p => p.PartyId == certificate.PartyIdEmployee)
                         .Select(p => new { p.GlAccountIdAdvancedPayment })
@@ -114,65 +84,9 @@ namespace Application.Projects
                     if (employeeParty == null || string.IsNullOrEmpty(employeeParty.GlAccountIdAdvancedPayment))
                     {
                         await transaction.RollbackAsync(cancellationToken);
-                        return Result<MultiPaymentCertificateDto>.Failure("Employee party or advanced payment GL account not found");
+                        return Result<MultiPaymentCertificateDto>.Failure(
+                            "Employee party or advanced payment GL account not found");
                     }
-                    
-                    var acctgTrans = new AcctgTran
-                    {
-                        AcctgTransId = acctgTransId,
-                        AcctgTransTypeId = "DISBURSEMENT",
-                        Description = $"Payment for certificate {certificate.WorkEffortId}",
-                        TransactionDate = DateTime.UtcNow,
-                        IsPosted = "Y",
-                        PostedDate = DateTime.UtcNow,
-                        GlFiscalTypeId = "ACTUAL",
-                        PaymentId = paymentId,
-                        CreatedStamp = DateTime.UtcNow,
-                        LastUpdatedStamp = DateTime.UtcNow
-                    };
-                    _context.AcctgTrans.Add(acctgTrans);
-                    
-                    var entrySeqId1 = "00001";
-                    var entrySeqId2 = "00002";
-                    
-                    var debitEntry = new AcctgTransEntry
-                    {
-                        AcctgTransId = acctgTransId,
-                        AcctgTransEntrySeqId = entrySeqId1,
-                        AcctgTransEntryTypeId = "_NA_",
-                        Description = $"Advance payment to employee {certificate.PartyIdEmployee} for certificate {certificate.WorkEffortId}",
-                        GlAccountId = employeeParty.GlAccountIdAdvancedPayment,
-                        OrganizationPartyId = request.CompanyId,
-                        Amount = totalAmount,
-                        CurrencyUomId = "EGP",
-                        OrigAmount = totalAmount,
-                        OrigCurrencyUomId = "EGP",
-                        DebitCreditFlag = "D",
-                        ReconcileStatusId = "AES_NOT_RECONCILED",
-                        CreatedStamp = DateTime.UtcNow,
-                        LastUpdatedStamp = DateTime.UtcNow
-                    };
-                    _context.AcctgTransEntries.Add(debitEntry);
-                    
-                    var creditEntry = new AcctgTransEntry
-                    {
-                        AcctgTransId = acctgTransId,
-                        AcctgTransEntrySeqId = entrySeqId2,
-                        AcctgTransEntryTypeId = "_NA_",
-                        Description = $"Payment from {paymentMethod.Description} for certificate {certificate.WorkEffortId}",
-                        GlAccountId = paymentMethod.GlAccountId,
-                        OrganizationPartyId = request.CompanyId,
-                        Amount = totalAmount,
-                        CurrencyUomId = "EGP",
-                        OrigAmount = totalAmount,
-                        OrigCurrencyUomId = "EGP",
-                        DebitCreditFlag = "C",
-                        ReconcileStatusId = "AES_NOT_RECONCILED",
-                        CreatedStamp = DateTime.UtcNow,
-                        LastUpdatedStamp = DateTime.UtcNow
-                    };
-                    _context.AcctgTransEntries.Add(creditEntry);
-                    
 
                     var updateResult = await _context.SaveChangesAsync(cancellationToken);
                     if (updateResult <= 0)
@@ -181,7 +95,187 @@ namespace Application.Projects
                         return Result<MultiPaymentCertificateDto>.Failure("Failed to approve certificate");
                     }
 
+                    var acctgTransId = await _utilityService.GetNextSequence("AcctgTrans");
+                    var acctgTrans = new AcctgTran
+                    {
+                        AcctgTransId = acctgTransId,
+                        AcctgTransTypeId = "DISBURSEMENT",
+                        Description = $"Payment Certificate {certificate.WorkEffortId}",
+                        TransactionDate = DateTime.UtcNow,
+                        IsPosted = "Y",
+                        PostedDate = DateTime.UtcNow,
+                        GlFiscalTypeId = "ACTUAL",
+                    };
+                    _context.AcctgTrans.Add(acctgTrans);
+
+                    var creditEntry = new AcctgTransEntry
+                    {
+                        AcctgTransId = acctgTransId,
+                        AcctgTransEntrySeqId = "00001",
+                        AcctgTransEntryTypeId = "_NA_",
+                        Description = $"Adjustments for Certificate {certificate.WorkEffortId}",
+                        GlAccountId = employeeParty.GlAccountIdAdvancedPayment,
+                        OrganizationPartyId = request.CompanyId,
+                        Amount = totalAmount,
+                        CurrencyUomId = "EGP",
+                        OrigAmount = totalAmount,
+                        OrigCurrencyUomId = "EGP",
+                        DebitCreditFlag = "C",
+                        ReconcileStatusId = "AES_NOT_RECONCILED"
+                    };
+                    _context.AcctgTransEntries.Add(creditEntry);
+
+                    int entrySeq = 2; // Start from 00002 as 00001 is used for credit entry
+                    foreach (var item in items)
+                    {
+                        var project = await _context.WorkEfforts
+                            .Where(p => p.WorkEffortId == item.ProjectId)
+                            .Select(p => new { p.GlAccountId })
+                            .FirstOrDefaultAsync(cancellationToken);
+
+                        if (project == null || string.IsNullOrEmpty(project.GlAccountId))
+                        {
+                            await transaction.RollbackAsync(cancellationToken);
+                            return Result<MultiPaymentCertificateDto>.Failure(
+                                $"Project or GL account not found for item {item.WorkEffortId}");
+                        }
+
+                        var debitEntry = new AcctgTransEntry
+                        {
+                            AcctgTransId = acctgTransId,
+                            AcctgTransEntrySeqId = entrySeq.ToString("D5"),
+                            AcctgTransEntryTypeId = "_NA_",
+                            Description = $"Adjustment for Certificate Item {item.WorkEffortId}",
+                            GlAccountId = project.GlAccountId,
+                            OrganizationPartyId = request.CompanyId,
+                            Amount = item.TotalAmount ?? 0,
+                            CurrencyUomId = "EGP",
+                            OrigAmount = item.TotalAmount ?? 0,
+                            OrigCurrencyUomId = "EGP",
+                            DebitCreditFlag = "D",
+                            ReconcileStatusId = "AES_NOT_RECONCILED"
+                        };
+                        _context.AcctgTransEntries.Add(debitEntry);
+                        entrySeq++;
+                    }
+
+                    foreach (var item in items)
+                    {
+                        var invoiceId = await _utilityService.GetNextSequence("Invoice");
+                        var invoice = new Invoice
+                        {
+                            InvoiceId = invoiceId,
+                            InvoiceTypeId = "PURCHASE_INVOICE",
+                            PartyIdFrom = item.PartyIdSupplier ?? item.PartyIdContractor,
+                            PartyId = request.CompanyId,
+                            StatusId = "INVOICE_PAID",
+                            InvoiceDate = DateTime.UtcNow,
+                            CurrencyUomId = "EGP",
+                            CreatedStamp = DateTime.UtcNow,
+                            LastUpdatedStamp = DateTime.UtcNow
+                        };
+                        _context.Invoices.Add(invoice);
+
+                        int invoiceItemSeq = 1;
+
+                        decimal? adjustedTotalAmount = item.TotalAmount;
+                        if (item.CostType != "MATERIALS")
+                        {
+                            adjustedTotalAmount = (item.TotalAmount ?? 0) -
+                                                  (item.Discount ?? 0) -
+                                                  (item.TransportationExpenses ?? 0) -
+                                                  (item.Gratuities ?? 0);
+                        }
+
+                        // Create InvoiceItem for adjusted TotalAmount
+                        if (adjustedTotalAmount != null && adjustedTotalAmount != 0)
+                        {
+                            var totalAmountItem = new InvoiceItem
+                            {
+                                InvoiceId = invoiceId,
+                                InvoiceItemSeqId = invoiceItemSeq.ToString("D5"),
+                                InvoiceItemTypeId = "PINV_SPROD_ITEM",
+                                ProductId = item.ProductId,
+                                Quantity = 1,
+                                Amount = Math.Abs(adjustedTotalAmount.Value),
+                                Description = item.Description ?? "Base Amount",
+                                CreatedStamp = DateTime.UtcNow,
+                                LastUpdatedStamp = DateTime.UtcNow
+                            };
+                            _context.InvoiceItems.Add(totalAmountItem);
+                            invoiceItemSeq++;
+                        }
+
+                        // Create InvoiceItem for Discount if it exists
+                        if (item.Discount != null && item.Discount != 0)
+                        {
+                            var discountItem = new InvoiceItem
+                            {
+                                InvoiceId = invoiceId,
+                                InvoiceItemSeqId = invoiceItemSeq.ToString("D5"),
+                                InvoiceItemTypeId = "INVOICE_ITM_ADJ",
+                                ProductId = item.ProductId,
+                                Quantity = 1,
+                                Amount = -Math.Abs(item.Discount.Value),
+                                Description = "Discount",
+                                CreatedStamp = DateTime.UtcNow,
+                                LastUpdatedStamp = DateTime.UtcNow
+                            };
+                            _context.InvoiceItems.Add(discountItem);
+                            invoiceItemSeq++;
+                        }
+
+                        // Create InvoiceItem for TransportationExpenses if it exists
+                        if (item.TransportationExpenses != null && item.TransportationExpenses != 0)
+                        {
+                            var transportItem = new InvoiceItem
+                            {
+                                InvoiceId = invoiceId,
+                                InvoiceItemSeqId = invoiceItemSeq.ToString("D5"),
+                                InvoiceItemTypeId = "INVOICE_ITM_ADJ",
+                                ProductId = item.ProductId,
+                                Quantity = 1,
+                                Amount = Math.Abs(item.TransportationExpenses.Value),
+                                Description = "Transportation Expenses",
+                                CreatedStamp = DateTime.UtcNow,
+                                LastUpdatedStamp = DateTime.UtcNow
+                            };
+                            _context.InvoiceItems.Add(transportItem);
+                            invoiceItemSeq++;
+                        }
+
+                        // Create InvoiceItem for Gratuities if it exists
+                        if (item.Gratuities != null && item.Gratuities != 0)
+                        {
+                            var gratuityItem = new InvoiceItem
+                            {
+                                InvoiceId = invoiceId,
+                                InvoiceItemSeqId = invoiceItemSeq.ToString("D5"),
+                                InvoiceItemTypeId = "INVOICE_ITM_ADJ",
+                                ProductId = item.ProductId,
+                                Quantity = 1,
+                                Amount = Math.Abs(item.Gratuities.Value),
+                                Description = "Gratuities",
+                                CreatedStamp = DateTime.UtcNow,
+                                LastUpdatedStamp = DateTime.UtcNow
+                            };
+                            _context.InvoiceItems.Add(gratuityItem);
+                            invoiceItemSeq++;
+                        }
+                    }
+
+
+                    // Save accounting entries to ensure they are persisted before committing the transaction.
+                    // This ensures all changes (approval and accounting entries) are saved atomically.
+                    var acctgSaveResult = await _context.SaveChangesAsync(cancellationToken);
+                    if (acctgSaveResult <= 0)
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                        return Result<MultiPaymentCertificateDto>.Failure("Failed to create accounting transactions");
+                    }
+
                     await transaction.CommitAsync(cancellationToken);
+
 
                     var resultItems = new List<MultiPaymentItemDto>();
                     foreach (var item in items)
@@ -249,7 +343,7 @@ namespace Application.Projects
                             ProductId = item.ProductId,
                             ProductName = product?.ProductName ?? "",
                             Description = item.Description,
-                            Amount = item.TotalAmount, // Assuming TotalAmount maps to Amount
+                            Amount = item.TotalAmount,
                             Discount = item.Discount,
                             DiscountMode = item.Discount != null ? "value" : null, // Simplified assumption
                             TransportationExpenses = item.TransportationExpenses,
@@ -277,12 +371,8 @@ namespace Application.Projects
                     var resultDto = new MultiPaymentCertificateDto
                     {
                         WorkEffortId = certificate.WorkEffortId,
-                        Code = certificate.CertificateNumber,
                         Date = certificate.EstimatedStartDate,
                         Description = certificate.Description,
-                        PaymentMethodId = certificate.PaymentMethodId,
-                        ChequeNumber = certificate.ChequeNumber,
-                        ChequeDate = certificate.ChequeDate,
                         CurrentStatusId = certificate.CurrentStatusId,
                         StatusDescription = statusDescription,
                         StatusDescriptionArabic = statusDescriptionArabic,

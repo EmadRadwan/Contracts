@@ -7,15 +7,29 @@ export enum MultiPaymentCertificateStatus {
 
 export interface MultiPaymentCertificate {
     workEffortId: string;
-    code: string;
     date: string | Date;
     description: string;
-    paymentMethodId: string;
-    chequeNumber?: string;
-    chequeDate?: string | Date | null;
     currentStatusId?: string;
     statusDescription?: string;
     statusDescriptionArabic?: string;
     partyIdEmployee?: string;
     items: MultiPaymentItem[];
+}
+
+export interface FormInitialValues {
+    workEffortId: string;
+    date: Date;
+    description: string;
+    currentStatusId: string;
+    statusDescription: string;
+    statusDescriptionArabic: string;
+    partyIdEmployee: {
+        fromPartyId: string;
+        fromPartyName: string;
+    };
+}
+
+export interface CertificateActionResult {
+    success: boolean;
+    certificate?: MultiPaymentCertificate;
 }

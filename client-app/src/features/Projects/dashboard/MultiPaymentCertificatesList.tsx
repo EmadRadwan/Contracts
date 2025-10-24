@@ -24,6 +24,8 @@ export default function MultiPaymentCertificatesList() {
     const [formEditMode, setFormEditMode] = useState<number>(0);
     const [viewMode, setViewMode] = useState<"list" | "form">("list");
     const { getTranslatedLabel } = useTranslationHelper();
+    const localizationKey = "projects.multiPaymentCertificate.HeaderList";
+
     const [paymentCertificate, setPaymentCertificate] = useState<MultiPaymentCertificate | null>(null);
     const dispatch = useAppDispatch();
     const { data, isFetching } = useFetchMultiPaymentCertificatesQuery({ ...dataState });
@@ -113,10 +115,7 @@ export default function MultiPaymentCertificatesList() {
     const columnWidths = {
         workEffortId: 150,
         date: 150,
-        description: 250,
-        paymentMethod: 200,
-        chequeNumber: 150,
-        chequeDate: 150,
+        description: 350,
     };
 
     return (
@@ -143,63 +142,27 @@ export default function MultiPaymentCertificatesList() {
                                     onClick={handleCreateNew}
                                     style={{ margin: "5px" }}
                                 >
-                                    {getTranslatedLabel(
-                                        "accounting.multiPaymentCertificate.list.createNew",
-                                        "Create New Certificate"
-                                    )}
+                                    {getTranslatedLabel(`${localizationKey}.createNew`, "Create New Certificate")}
                                 </Button>
                             </GridToolbar>
                             <Column
                                 field="workEffortId"
-                                title={getTranslatedLabel(
-                                    "accounting.multiPaymentCertificate.list.workEffortId",
-                                    "Certificate ID"
-                                )}
+                                title={getTranslatedLabel(`${localizationKey}.workEffortId`, "Certificate ID")}
                                 width={columnWidths.workEffortId}
                                 cell={CertificateNumberCell}
                             />
                             <Column
                                 field="date"
-                                title={getTranslatedLabel(
-                                    "accounting.multiPaymentCertificate.list.date",
-                                    "Date"
-                                )}
+                                title={getTranslatedLabel(`${localizationKey}.date`, "Date")}
                                 format="{0: dd/MM/yyyy}"
                                 width={columnWidths.date}
                             />
                             <Column
                                 field="description"
-                                title={getTranslatedLabel(
-                                    "accounting.multiPaymentCertificate.list.description",
-                                    "Description"
-                                )}
+                                title={getTranslatedLabel(`${localizationKey}.description`, "Description")}
                                 width={columnWidths.description}
                             />
-                            <Column
-                                field="paymentMethodDescription"
-                                title={getTranslatedLabel(
-                                    "accounting.multiPaymentCertificate.list.paymentMethod",
-                                    "Payment Method"
-                                )}
-                                width={columnWidths.paymentMethod}
-                            />
-                            <Column
-                                field="chequeNumber"
-                                title={getTranslatedLabel(
-                                    "accounting.multiPaymentCertificate.list.chequeNumber",
-                                    "Cheque Number"
-                                )}
-                                width={columnWidths.chequeNumber}
-                            />
-                            <Column
-                                field="chequeDate"
-                                title={getTranslatedLabel(
-                                    "accounting.multiPaymentCertificate.list.chequeDate",
-                                    "Cheque Date"
-                                )}
-                                format="{0: dd/MM/yyyy}"
-                                width={columnWidths.chequeDate}
-                            />
+                           
                         </KendoGrid>
                         {isFetching && (
                             <LoadingComponent

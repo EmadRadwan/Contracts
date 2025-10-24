@@ -1,28 +1,30 @@
-using System.Text.Json;
 using Application.Core;
 using FluentValidation;
 using MediatR;
-using Persistence;
-using Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Persistence;
+using Domain;
 
 namespace Application.Projects
 {
-    public class CreateMultiPaymentCertificate
+    public class UpdateMultiPaymentCertificate
     {
         public class Command : IRequest<Result<MultiPaymentCertificateDto>>
         {
-            public MultiPaymentCertificateDto? Certificate { get; set; }
+            public string WorkEffortId { get; set; }
+            public MultiPaymentCertificateDto Certificate { get; set; }
         }
 
         public class CommandValidator : AbstractValidator<Command>
         {
             public CommandValidator()
             {
-                RuleFor(x => x.Certificate!.Items)
+                RuleFor(x => x.Certificate).NotNull().WithMessage("Certificate cannot be null");
+                RuleFor(x => x.Certificate.Items)
                     .Must(items => items != null && items.Any())
                     .WithMessage("At least one certificate item is required");
+                RuleFor(x => x.WorkEffortId).NotEmpty().WithMessage("WorkEffortId is required");
             }
         }
 
@@ -31,7 +33,6 @@ namespace Application.Projects
             private readonly DataContext _context;
             private readonly IUtilityService _utilityService;
             private readonly ILogger<Handler> _logger;
-
 
             public Handler(DataContext context, IUtilityService utilityService, ILogger<Handler> logger)
             {
@@ -47,38 +48,46 @@ namespace Application.Projects
                 try
                 {
                     var stamp = DateTime.UtcNow;
-                    var certificate = request.Certificate!;
-                    var newWorkEffortSerial = await _utilityService.GetNextSequence("WorkEffort");
-                    _logger.LogInformation("Received certificate items: {Items}",
-                        JsonSerializer.Serialize(certificate.Items));
+                    var certificate = request.Certificate;
+                    var workEffortId = request.WorkEffortId;
 
+                    var existingWorkEffort = await _context.WorkEfforts
+                        .FirstOrDefaultAsync(we => we.WorkEffortId == workEffortId
+                                                   && we.WorkEffortTypeId == "PAYMENT_CERTIFICATE",
+                            cancellationToken);
 
-                    var workEffort = new WorkEffort
+                    if (existingWorkEffort == null)
                     {
-                        WorkEffortId = newWorkEffortSerial,
-                        WorkEffortTypeId = "PAYMENT_CERTIFICATE",
-                        EstimatedStartDate = certificate.Date,
-                        Description = certificate.Description,
-                        CurrentStatusId = "WEPR_CREATED",
-                        PartyIdEmployee = certificate.PartyIdEmployee,
-                        CreatedDate = stamp,
-                        LastUpdatedStamp = stamp
-                    };
+                        _logger.LogWarning("WorkEffortId {WorkEffortId} not found or is not a PAYMENT_CERTIFICATE",
+                            workEffortId);
+                        return Result<MultiPaymentCertificateDto>.Failure(
+                            $"Certificate with WorkEffortId {workEffortId} not found");
+                    }
 
-                    _context.WorkEfforts.Add(workEffort);
+                    existingWorkEffort.EstimatedStartDate = certificate.Date;
+                    existingWorkEffort.Description = certificate.Description;
+                    existingWorkEffort.PartyIdEmployee = certificate.PartyIdEmployee;
+                    existingWorkEffort.LastUpdatedStamp = stamp;
 
-                    _logger.LogInformation(
-                        "Adding parent WorkEffort: WorkEffortId={WorkEffortId}, Type={WorkEffortTypeId}",
-                        workEffort.WorkEffortId, workEffort.WorkEffortTypeId);
+                    _logger.LogInformation("Updating WorkEffort: WorkEffortId={WorkEffortId}, Type={WorkEffortTypeId}",
+                        existingWorkEffort.WorkEffortId, existingWorkEffort.WorkEffortTypeId);
 
+                    var existingItems = await _context.WorkEfforts
+                        .Where(we => we.WorkEffortParentId == workEffortId
+                                     && we.WorkEffortTypeId == "PAYMENT_CERTIFICATE_ITEM")
+                        .ToListAsync(cancellationToken);
 
-                    foreach (var item in certificate.Items!)
+                    _context.WorkEfforts.RemoveRange(existingItems);
+                    _logger.LogInformation("Removed {Count} existing items for WorkEffortId={WorkEffortId}",
+                        existingItems.Count, workEffortId);
+
+                    foreach (var item in certificate.Items)
                     {
                         var itemWorkEffortSerial = await _utilityService.GetNextSequence("WorkEffort");
                         var itemWorkEffort = new WorkEffort
                         {
                             WorkEffortId = itemWorkEffortSerial,
-                            WorkEffortParentId = newWorkEffortSerial,
+                            WorkEffortParentId = workEffortId,
                             WorkEffortTypeId = "PAYMENT_CERTIFICATE_ITEM",
                             ProjectId = item.ProjectId,
                             SubProjectId = !string.IsNullOrEmpty(item.SubProjectId) ? item.SubProjectId : null,
@@ -94,18 +103,17 @@ namespace Application.Projects
                             PartyIdContractor = !string.IsNullOrEmpty(item.PartyIdContractor)
                                 ? item.PartyIdContractor
                                 : null,
-                            CurrentStatusId = "WEPR_CREATED",
+                            CurrentStatusId = existingWorkEffort.CurrentStatusId, // Inherit parent status
                             CreatedDate = stamp,
                             LastUpdatedStamp = stamp
                         };
 
                         if (string.IsNullOrEmpty(itemWorkEffort.ServiceId))
                         {
-                            _logger.LogWarning(
-                                "ServiceId is null or empty for WorkEffortId={WorkEffortId}. ServiceId is mandatory.",
+                            _logger.LogWarning("ServiceId is null for WorkEffortId={WorkEffortId}",
                                 itemWorkEffort.WorkEffortId);
                             throw new InvalidOperationException(
-                                $"ServiceId cannot be null or empty for WorkEffortId {itemWorkEffort.WorkEffortId}.");
+                                $"ServiceId cannot be null for WorkEffortId {itemWorkEffort.WorkEffortId}");
                         }
 
                         var serviceExists =
@@ -113,17 +121,11 @@ namespace Application.Projects
                                 cancellationToken);
                         if (!serviceExists)
                         {
-                            _logger.LogWarning(
-                                "Invalid ServiceId={ServiceId} for WorkEffortId={WorkEffortId}. No matching PRODUCT_ID in PRODUCT table.",
+                            _logger.LogWarning("Invalid ServiceId={ServiceId} for WorkEffortId={WorkEffortId}",
                                 itemWorkEffort.ServiceId, itemWorkEffort.WorkEffortId);
-                            throw new InvalidOperationException(
-                                $"ServiceId {itemWorkEffort.ServiceId} does not exist in PRODUCT table.");
+                            throw new InvalidOperationException($"ServiceId {itemWorkEffort.ServiceId} does not exist");
                         }
 
-                        _logger.LogInformation("Validated ServiceId={ServiceId} for WorkEffortId={WorkEffortId}",
-                            itemWorkEffort.ServiceId, itemWorkEffort.WorkEffortId);
-
-                        // REFACTOR: Validate ProductId only if it's not null or empty, as it's optional
                         if (!string.IsNullOrEmpty(itemWorkEffort.ProductId))
                         {
                             var productExists =
@@ -131,57 +133,31 @@ namespace Application.Projects
                                     cancellationToken);
                             if (!productExists)
                             {
-                                _logger.LogWarning(
-                                    "Invalid ProductId={ProductId} for WorkEffortId={WorkEffortId}. No matching PRODUCT_ID in PRODUCT table.",
+                                _logger.LogWarning("Invalid ProductId={ProductId} for WorkEffortId={WorkEffortId}",
                                     itemWorkEffort.ProductId, itemWorkEffort.WorkEffortId);
                                 throw new InvalidOperationException(
-                                    $"ProductId {itemWorkEffort.ProductId} does not exist in PRODUCT table.");
+                                    $"ProductId {itemWorkEffort.ProductId} does not exist");
                             }
-
-                            _logger.LogInformation("Validated ProductId={ProductId} for WorkEffortId={WorkEffortId}",
-                                itemWorkEffort.ProductId, itemWorkEffort.WorkEffortId);
-                        }
-                        else
-                        {
-                            _logger.LogInformation(
-                                "ProductId is null or empty for WorkEffortId={WorkEffortId}, skipping validation as it's optional",
-                                itemWorkEffort.WorkEffortId);
                         }
 
                         _context.WorkEfforts.Add(itemWorkEffort);
-
                         _logger.LogInformation(
-                            "Adding WorkEffort item: WorkEffortId={WorkEffortId}, ServiceId={ServiceId}, ProductId={ProductId}, ParentId={WorkEffortParentId}",
+                            "Adding WorkEffort item: WorkEffortId={WorkEffortId}, ServiceId={ServiceId}, ProductId={ProductId}",
                             itemWorkEffort.WorkEffortId, itemWorkEffort.ServiceId ?? "null",
-                            itemWorkEffort.ProductId ?? "null", itemWorkEffort.WorkEffortParentId);
+                            itemWorkEffort.ProductId ?? "null");
                     }
 
-                    foreach (var entry in _context.ChangeTracker.Entries<WorkEffort>())
-                    {
-                        _logger.LogInformation(
-                            "ChangeTracker Entry: Entity={Entity}, State={State}, ServiceId={ServiceId}, ProductId={ProductId}",
-                            nameof(WorkEffort), entry.State, entry.Entity.ServiceId ?? "null",
-                            entry.Entity.ProductId ?? "null");
-                    }
-
-                    var createResult = await _context.SaveChangesAsync(cancellationToken);
-                    if (createResult <= 0)
+                    var updateResult = await _context.SaveChangesAsync(cancellationToken);
+                    if (updateResult <= 0)
                     {
                         await transaction.RollbackAsync(cancellationToken);
-                        return Result<MultiPaymentCertificateDto>.Failure("Failed to create certificate and items");
+                        return Result<MultiPaymentCertificateDto>.Failure("Failed to update certificate and items");
                     }
 
                     await transaction.CommitAsync(cancellationToken);
 
-                    var employeeParty = workEffort.PartyIdEmployee != null
-                        ? await _context.Parties
-                            .Where(p => p.PartyId == workEffort.PartyIdEmployee)
-                            .Select(p => new { p.PartyId, p.Description })
-                            .FirstOrDefaultAsync(cancellationToken)
-                        : null;
-
                     var resultItems = new List<MultiPaymentItemDto>();
-                    foreach (var item in certificate.Items!)
+                    foreach (var item in certificate.Items)
                     {
                         var project = await _context.WorkEfforts
                             .Where(p => p.WorkEffortId == item.ProjectId)
@@ -221,7 +197,6 @@ namespace Application.Projects
                                 .FirstOrDefaultAsync(cancellationToken)
                             : null;
 
-                        // Assuming itemTypeDescription is Arabic based on itemType (hardcoded like frontend)
                         var itemTypeDescriptions = new Dictionary<string, string>
                         {
                             { "MATERIALS", "المواد" },
@@ -235,7 +210,7 @@ namespace Application.Projects
 
                         resultItems.Add(new MultiPaymentItemDto
                         {
-                            WorkEffortId = item.WorkEffortId, // Or generated WorkEffortId
+                            WorkEffortId = item.WorkEffortId,
                             ProjectId = item.ProjectId,
                             ProjectName = project?.ProjectName ?? "",
                             SubProjectId = item.SubProjectId,
@@ -268,20 +243,26 @@ namespace Application.Projects
                     };
 
                     var (statusDescription, statusDescriptionArabic) =
-                        statusDescriptions.ContainsKey(workEffort.CurrentStatusId)
-                            ? statusDescriptions[workEffort.CurrentStatusId]
+                        statusDescriptions.ContainsKey(existingWorkEffort.CurrentStatusId)
+                            ? statusDescriptions[existingWorkEffort.CurrentStatusId]
                             : ("Unknown", "غير معروف");
 
+                    var employeeParty = existingWorkEffort.PartyIdEmployee != null
+                        ? await _context.Parties
+                            .Where(p => p.PartyId == existingWorkEffort.PartyIdEmployee)
+                            .Select(p => new { p.PartyId, p.Description })
+                            .FirstOrDefaultAsync(cancellationToken)
+                        : null;
 
                     var resultDto = new MultiPaymentCertificateDto
                     {
-                        WorkEffortId = workEffort.WorkEffortId,
-                        Date = workEffort.EstimatedStartDate,
-                        Description = workEffort.Description,
-                        CurrentStatusId = workEffort.CurrentStatusId,
+                        WorkEffortId = existingWorkEffort.WorkEffortId,
+                        Date = existingWorkEffort.EstimatedStartDate,
+                        Description = existingWorkEffort.Description,
+                        CurrentStatusId = existingWorkEffort.CurrentStatusId,
                         StatusDescription = statusDescription,
                         StatusDescriptionArabic = statusDescriptionArabic,
-                        PartyIdEmployee = workEffort.PartyIdEmployee,
+                        PartyIdEmployee = existingWorkEffort.PartyIdEmployee,
                         PartyEmployeeName = employeeParty?.Description ?? null,
                         Items = resultItems
                     };
@@ -291,7 +272,9 @@ namespace Application.Projects
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync(cancellationToken);
-                    return Result<MultiPaymentCertificateDto>.Failure($"Failed to create certificate: {ex.Message}");
+                    _logger.LogError(ex, "Failed to update certificate: WorkEffortId={WorkEffortId}",
+                        request.WorkEffortId);
+                    return Result<MultiPaymentCertificateDto>.Failure($"Failed to update certificate: {ex.Message}");
                 }
             }
         }

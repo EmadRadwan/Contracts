@@ -322,6 +322,10 @@ const Parties = {
         axios
             .get<Party[]>(`/parties/getPartiesWithEmployeesLov`, {params})
             .then(responseBody),
+    getPartiesEmployeesLov: (params: URLSearchParams) =>
+        axios
+            .get<Party[]>(`/parties/getPartiesEmployeesLov`, {params})
+            .then(responseBody),
     createCustomer: (customer: any) =>
         requests.post("/parties/createCustomer", customer),
     updateCustomer: (customer: any) =>

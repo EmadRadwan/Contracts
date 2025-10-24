@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
-import { Field, Form, FormElement, FormRenderProps } from "@progress/kendo-react-form";
+import {Field, Form, FormElement, FormRenderProps, KeyValue} from "@progress/kendo-react-form";
 import { Button, FormControlLabel, Grid, Radio, RadioGroup } from "@mui/material";
 import { v4 as uuidv4 } from "uuid";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
@@ -55,18 +55,20 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
     );
 
     const initialValues = useMemo((): Partial<MultiPaymentItem> => ({
-        itemId: multiPaymentItem?.itemId || "",
-        workEffortId: workEffortId || "",
+        workEffortId: multiPaymentItem?.workEffortId || "",
+        workEffortIdParent: workEffortId || "",
         projectId: multiPaymentItem?.projectId
             ? { projectId: multiPaymentItem.projectId, projectName: multiPaymentItem.projectName || "" }
             : null,
         subProjectId: multiPaymentItem?.subProjectId || "",
         subProjectName: multiPaymentItem?.subProjectName || "",
         itemType: multiPaymentItem?.itemType || "",
-        serviceId: multiPaymentItem?.serviceId || "",
-        serviceName: multiPaymentItem?.serviceName || "",
-        productId: multiPaymentItem?.productId || "",
-        productName: multiPaymentItem?.productName || "",
+        serviceId: multiPaymentItem?.serviceId
+            ? { ProductId: multiPaymentItem.serviceId, ProductName: multiPaymentItem.serviceName || "" }
+            : null,
+        productId: multiPaymentItem?.productId
+            ? { ProductId: multiPaymentItem.productId, ProductName: multiPaymentItem.productName || "" }
+            : null,
         description: multiPaymentItem?.description || "",
         amount: multiPaymentItem?.amount || 0,
         discount: multiPaymentItem?.discount || 0,
@@ -74,9 +76,14 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
         transportationExpenses: multiPaymentItem?.transportationExpenses || 0,
         gratuities: multiPaymentItem?.gratuities || 0,
         total: multiPaymentItem?.total || 0,
-        partyIdSupplier: multiPaymentItem?.partyIdSupplier || "",
-        partyIdContractor: multiPaymentItem?.partyIdContractor || "",
+        partyIdSupplier: multiPaymentItem?.partyIdSupplier
+            ? { fromPartyId: multiPaymentItem.partyIdSupplier, fromPartyName: multiPaymentItem.partyIdSupplierName || "" }
+            : null,
+        partyIdContractor: multiPaymentItem?.partyIdContractor
+            ? { fromPartyId: multiPaymentItem.partyIdContractor, fromPartyName: multiPaymentItem.partyIdContractorName || "" }
+            : null,
     }), [multiPaymentItem, workEffortId]);
+
 
     const partyValidator = (values: Partial<MultiPaymentItem>): KeyValue<string> | undefined => {
         const hasSupplier = values.partyIdSupplier && values.partyIdSupplier !== "";
@@ -144,8 +151,8 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
 
 
             const serializedValues: MultiPaymentItem = {
-                itemId: values.itemId || uuidv4(),
-                workEffortId: workEffortId || "",
+                workEffortId: editMode === 2 ? multiPaymentItem?.workEffortId || values.workEffortId || `temp-${Date.now()}` : `temp-${Date.now()}`,
+                workEffortIdParent: workEffortId || "",
                 projectId: (values.projectId as any)?.projectId || "",
                 projectName: (values.projectId as any)?.projectName || "",
                 subProjectId: values.subProjectId || "",
@@ -154,8 +161,8 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                 itemTypeDescription: itemTypeDescription,
                 serviceId: values.serviceId.ProductId || "",
                 serviceName: values.serviceId.ProductName || "",
-                productId: values.productId.ProductId || "",
-                productName: values.productId.ProductName || "",
+                productId: values.productId?.ProductId || "",
+                productName: values.productId?.ProductName || "",
                 description: values.description || "",
                 amount: Number(values.amount) || 0,
                 discount: Number(values.discount) || 0,
@@ -163,11 +170,12 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                 transportationExpenses: Number(values.transportationExpenses) || 0,
                 gratuities: Number(values.gratuities) || 0,
                 total: Number(values.total) || 0,
-                partyIdSupplier: values.partyIdSupplier?.fromPartyId || "",
-                partyIdSupplierName: values.partyIdSupplier?.fromPartyName || "",
-                partyIdContractor: values.partyIdContractor?.fromPartyId || "",
-                partyIdContractorName: values.partyIdContractor?.fromPartyName || "",
+                partyIdSupplier: (values.partyIdSupplier as any)?.fromPartyId || "",
+                partyIdSupplierName: (values.partyIdSupplier as any)?.fromPartyName || "",
+                partyIdContractor: (values.partyIdContractor as any)?.fromPartyId || "",
+                partyIdContractorName: (values.partyIdContractor as any)?.fromPartyName || "",
             };
+            console.log('Serialized values:', serializedValues);
             if (editMode === 1) {
                 addItem(serializedValues);
             } else {
@@ -294,6 +302,8 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
             </>
         );
     };
+    
+    console.log('initialValues', initialValues);
 
     return (
         <Form
@@ -315,8 +325,8 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                             )}
                         <fieldset className="k-form-fieldset" disabled={subProjectsLoading}>
                             <Grid container spacing={2}>
-                                <Field name="itemId" component="input" type="hidden" />
                                 <Field name="workEffortId" component="input" type="hidden" />
+                                <Field name="workEffortIdParent" component="input" type="hidden" />
                                 <Grid item xs={4}>
                                     <Field
                                         id="projectId"
@@ -419,6 +429,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                                         name="description"
                                         label={getTranslatedLabel(`${localizationKey}.description`, "Description")}
                                         component={FormInput}
+                                        validator={requiredValidator}
                                         disabled={formEditMode > 3 || subProjectsLoading}
                                     />
                                 </Grid>

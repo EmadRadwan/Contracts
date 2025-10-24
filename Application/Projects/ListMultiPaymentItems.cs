@@ -38,10 +38,6 @@ public class ListMultiPaymentItems
 
             try
             {
-                // REFACTOR: Fixed contractor field access and added project/subproject joins.
-                // Purpose: Ensures contractor is correctly referenced; fetches ProjectName/SubProjectName.
-                // Why: Fixes 'Cannot resolve symbol contractor' by using SelectMany parameter directly; aligns with CreateMultiPaymentCertificate for project/subproject names.
-                // Context: Uses left joins for nullable fields; matches previous working contractor logic.
                 var multiPaymentItems = await _context.WorkEfforts
                     .Where(item => item.WorkEffortParentId == request.WorkEffortId 
                         && item.WorkEffortTypeId == "PAYMENT_CERTIFICATE_ITEM")
@@ -95,18 +91,10 @@ public class ListMultiPaymentItems
                         PartyIdSupplier = x.item.PartyIdSupplier,
                         PartyIdSupplierName = x.supplier != null ? x.supplier.Description : "",
                         PartyIdContractor = x.item.PartyIdContractor,
-                        // REFACTOR: Fixed contractor field access.
-                        // Purpose: Uses contractor parameter directly from SelectMany.
-                        // Why: Corrects 'Cannot resolve symbol contractor' by avoiding incorrect x.contractor reference.
-                        // Context: Matches structure of previous working version; ensures contractor is accessible.
                         PartyIdContractorName = contractor != null ? contractor.Description : ""
                     })
                     .ToListAsync(cancellationToken);
 
-                // REFACTOR: Moved ItemTypeDescription logic to client side.
-                // Purpose: Applies Arabic translations after DB query to avoid EF Core translation issues.
-                // Why: Prevents InvalidOperationException from dictionary lookup in LINQ query.
-                // Context: Matches create handler's translation logic.
                 var itemTypeDescriptions = new Dictionary<string, string>
                 {
                     { "MATERIALS", "المواد" },

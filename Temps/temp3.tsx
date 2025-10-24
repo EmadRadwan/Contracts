@@ -1,218 +1,482 @@
-// MultiPaymentCertificatesList.tsx
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
-import {
-    Grid as KendoGrid,
-    GRID_COL_INDEX_ATTRIBUTE,
-    GridColumn as Column,
-    GridDataStateChangeEvent,
-    GridToolbar,
-} from "@progress/kendo-react-grid";
-import { DataResult, State } from "@progress/kendo-data-query";
-import { Button, Grid, Paper } from "@mui/material";
-import MultiPaymentCertificateForm from "../form/MultiPaymentCertificateForm";
-import { useAppDispatch } from "../../../app/store/configureStore";
+import {useCallback, useEffect, useMemo, useState} from "react";
+import {Field, Form, FormElement, FormRenderProps, KeyValue} from "@progress/kendo-react-form";
+import { Button, FormControlLabel, Grid, Radio, RadioGroup } from "@mui/material";
+import { v4 as uuidv4 } from "uuid";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
-import { MultiPaymentCertificate } from "../../../app/models/project/MultiPaymentCertificate";
-import LoadingComponent from "../../../app/layout/LoadingComponent";
-import { useFetchMultiPaymentCertificatesQuery } from "../../../app/store/apis/multiPaymentCertificateApi";
-import AccountingMenu from "../../accounting/invoice/menu/AccountingMenu";
-import { handleDatesArray } from "../../../app/util/utils";
+import { FormComboBoxVirtualProject } from "../../../app/common/form/FormComboBoxVirtualProject";
+import { MultiPaymentItem } from "../../../app/models/project/MultiPaymentItem";
+import FormNumericTextBox from "../../../app/common/form/FormNumericTextBox";
+import { requiredValidator, percentageValidator } from "../../../app/common/form/Validators";
+import { MemoizedFormDropDownList } from "../../../app/common/form/MemoizedFormDropDownList";
+import { useFetchSubProjectsQuery } from "../../../app/store/apis/multiPaymentCertificateApi";
+import FormInput from "../../../app/common/form/FormInput";
+import { FormSimpleComboBoxRawMaterialVirtual } from "../../../app/common/form/FormSimpleComboBoxRawMaterialVirtual";
+import { MemoizedFormDropDownList2 } from "../../../app/common/form/MemoizedFormDropDownList2";
+import { ComboBoxChangeEvent } from "@progress/kendo-react-dropdowns";
+import {FormSimpleComboBoxServiceVirtual} from "../../../app/common/form/FormSimpleComboBoxServiceVirtual";
+import {FormComboBoxVirtualSupplierMultiColumn} from "../../../app/common/form/FormComboBoxVirtualSupplierMultiColumn";
+import {FormComboBoxVirtualContractor} from "../../../app/common/form/FormComboBoxVirtualContractor";
 
-export default function MultiPaymentCertificatesList() {
-    const [certificates, setCertificates] = useState<DataResult>({ data: [], total: 0 });
-    const [dataState, setDataState] = useState<State>({ take: 6, skip: 0 });
-    const [formEditMode, setFormEditMode] = useState<number>(0);
-    const [viewMode, setViewMode] = useState<"list" | "form">("list");
+interface Props {
+    multiPaymentItem?: MultiPaymentItem;
+    editMode: number; // 1: add, 2: edit
+    onClose: () => void;
+    workEffortId: string;
+    formEditMode: number;
+    addItem: (item: MultiPaymentItem) => void;
+    updateItem: (item: MultiPaymentItem) => void;
+}
+
+export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClose, workEffortId, formEditMode, addItem, updateItem }: Props) {
+
     const { getTranslatedLabel } = useTranslationHelper();
-    const [paymentCertificate, setPaymentCertificate] = useState<MultiPaymentCertificate | null>(null);
-    const dispatch = useAppDispatch();
-    const { data, isFetching } = useFetchMultiPaymentCertificatesQuery({ ...dataState });
+    const localizationKey = "projects.multiPaymentCertificate.itemForm";
+    const [selectedProjectId, setSelectedProjectId] = useState<string>(
+        multiPaymentItem?.projectId && multiPaymentItem.projectId !== "" ? multiPaymentItem.projectId : ""
+    );
+    const [formKey, setFormKey] = useState<number>(1);
+    const [discountMode, setDiscountMode] = useState<"value" | "percentage">(multiPaymentItem?.discountMode || "value");
 
-    useEffect(() => {
-        if (data) {
-            const adjustedData = handleDatesArray(data.data);
-            setCertificates({ data: adjustedData, total: data.total });
-        }
-    }, [data]);
-
-    useEffect(() => {
-        if (viewMode === "list") {
-            setPaymentCertificate(null);
-            setFormEditMode(0); // REFACTOR: Ensure editMode is reset when returning to list view
-        }
-    }, [viewMode]);
-
-    const dataStateChange = (e: GridDataStateChangeEvent) => {
-        setDataState(e.dataState);
-    };
-
-    const handleSelectCertificate = useCallback(
-        (workEffortId?: string) => {
-            if (!workEffortId) return;
-            const selectedCert = certificates.data.find(
-                (cert: MultiPaymentCertificate) => cert.workEffortId === workEffortId
-            );
-            if (!selectedCert) return;
-            setPaymentCertificate(selectedCert);
-            setFormEditMode(2);
-            setViewMode("form");
-        },
-        [certificates.data]
+    const { data: subProjects, isLoading: subProjectsLoading } = useFetchSubProjectsQuery(
+        selectedProjectId || "",
+        { skip: !selectedProjectId }
     );
 
-    const handleCreateNew = useCallback(() => {
-        setPaymentCertificate(null);
-        setFormEditMode(1);
-        setViewMode("form");
-    }, []);
+    console.log('subProjects', subProjects)
 
-    const cancelEdit = useCallback(() => {
-        setPaymentCertificate(null);
-        setFormEditMode(0);
-        setViewMode("list");
-    }, []);
+    const itemTypes = useMemo(
+        () => [
+            { itemType: "MATERIALS", description: "المواد" },
+            { itemType: "LABOR", description: "العمالة" },
+            { itemType: "EQUIPMENT", description: "المعدات" },
+            { itemType: "EXPENSES", description: "المصروفات" },
+        ],
+        []
+    );
 
-    const CertificateNumberCell = (props: any) => {
-        const field = props.field || "";
-        const value = props.dataItem[field];
-        const navigationAttributes = useTableKeyboardNavigation(props.id);
-        return (
-            <td
-                className={props.className}
-                style={{ ...props.style, color: "blue" }}
-                colSpan={props.colSpan}
-                role="gridcell"
-                aria-colindex={props.ariaColumnIndex}
-                aria-selected={props.isSelected}
-                {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
-                {...navigationAttributes}
-            >
-                <Button
-                    onClick={() =>
-                        handleSelectCertificate(props.dataItem.workEffortId)
-                    }
-                >
-                    {value}
-                </Button>
-            </td>
-        );
+    const initialValues = useMemo((): Partial<MultiPaymentItem> => ({
+        workEffortId: multiPaymentItem?.workEffortId || "",
+        workEffortIdParent: workEffortId || "",
+        projectId: multiPaymentItem?.projectId
+            ? { projectId: multiPaymentItem.projectId, projectName: multiPaymentItem.projectName || "" }
+            : null,
+        subProjectId: multiPaymentItem?.subProjectId || "",
+        subProjectName: multiPaymentItem?.subProjectName || "",
+        itemType: multiPaymentItem?.itemType || "",
+        serviceId: multiPaymentItem?.serviceId
+            ? { ProductId: multiPaymentItem.serviceId, ProductName: multiPaymentItem.serviceName || "" }
+            : null,
+        productId: multiPaymentItem?.productId
+            ? { ProductId: multiPaymentItem.productId, ProductName: multiPaymentItem.productName || "" }
+            : null,
+        description: multiPaymentItem?.description || "",
+        amount: multiPaymentItem?.amount || 0,
+        discount: multiPaymentItem?.discount || 0,
+        discountMode: multiPaymentItem?.discountMode || "value",
+        transportationExpenses: multiPaymentItem?.transportationExpenses || 0,
+        gratuities: multiPaymentItem?.gratuities || 0,
+        total: multiPaymentItem?.total || 0,
+        partyIdSupplier: multiPaymentItem?.partyIdSupplier
+            ? { fromPartyId: multiPaymentItem.partyIdSupplier, fromPartyName: multiPaymentItem.partyIdSupplierName || "" }
+            : null,
+        partyIdContractor: multiPaymentItem?.partyIdContractor
+            ? { fromPartyId: multiPaymentItem.partyIdContractor, fromPartyName: multiPaymentItem.partyIdContractorName || "" }
+            : null,
+    }), [multiPaymentItem, workEffortId]);
+
+
+    const partyValidator = (values: Partial<MultiPaymentItem>): KeyValue<string> | undefined => {
+        const hasSupplier = values.partyIdSupplier && values.partyIdSupplier !== "";
+        const hasContractor = values.partyIdContractor && values.partyIdContractor !== "";
+
+        if (hasSupplier && hasContractor) {
+            return {
+                VALIDATION_SUMMARY: getTranslatedLabel(
+                    `${localizationKey}.validation.partyExclusive`,
+                    "Please select either a Supplier or a Contractor, not both."
+                ),
+            };
+        }
+        // Optionally, require at least one to be filled
+        if (!hasSupplier && !hasContractor) {
+            return {
+                VALIDATION_SUMMARY: getTranslatedLabel(
+                    `${localizationKey}.validation.partyRequired`,
+                    "At least one of Supplier or Contractor must be selected."
+                ),
+            };
+        }
+        return undefined;
     };
 
-    if (viewMode === "form" && formEditMode > 0) {
-        return (
-            <MultiPaymentCertificateForm
-                selectedCertificate={paymentCertificate}
-                cancelEdit={cancelEdit}
-                editMode={formEditMode}
-                setEditMode={setFormEditMode}
-                setParentCertificate={setPaymentCertificate} // REFACTOR: Pass setPaymentCertificate to form
-            />
+    const calculateTotals = useCallback(
+        (valueGetter: FormRenderProps["valueGetter"], onChange: FormRenderProps["onChange"]) => {
+            const amount = Number(valueGetter("amount") || 0);
+            const discountInput = Number(valueGetter("discount") || 0);
+            const discount = discountMode === "value" ? discountInput : (discountInput / 100) * amount;
+            const transportationExpenses = Number(valueGetter("transportationExpenses") || 0);
+            const gratuities = Number(valueGetter("gratuities") || 0);
+            const total = Math.max(0, Math.round((amount - discount + transportationExpenses + gratuities) * 1000) / 1000);
+
+            // Only update total if it has changed to avoid unnecessary re-renders
+            if (valueGetter("total") !== total) {
+                onChange("total", { value: total });
+            }
+        },
+        [discountMode]
+    );
+
+
+    const handleDiscountModeChange = useCallback(
+        (event: React.ChangeEvent<HTMLInputElement>, onChange: FormRenderProps["onChange"]) => {
+            const newMode = event.target.value as "value" | "percentage";
+            setDiscountMode(newMode);
+            onChange("discount", { value: 0 });
+        },
+        []
+    );
+
+    const handleSubmit = useCallback(
+        (values: Partial<MultiPaymentItem>) => {
+
+            const selectedSubProject = subProjects?.find(
+                (subProject) => subProject.workEffortId === values.subProjectId
+            );
+            const subProjectName = selectedSubProject?.subProjectName || values.subProjectName || "";
+
+            const selectedItemType = itemTypes.find(
+                (type) => type.itemType === values.itemType
+            );
+            const itemTypeDescription = selectedItemType?.description || values.description || "";
+
+
+            const serializedValues: MultiPaymentItem = {
+                workEffortId: editMode === 2 ? multiPaymentItem?.workEffortId || values.workEffortId || `temp-${Date.now()}` : `temp-${Date.now()}`,
+                workEffortIdParent: workEffortId || "",
+                projectId: (values.projectId as any)?.projectId || "",
+                projectName: (values.projectId as any)?.projectName || "",
+                subProjectId: values.subProjectId || "",
+                subProjectName: subProjectName || "",
+                itemType: values.itemType || "",
+                itemTypeDescription: itemTypeDescription,
+                serviceId: values.serviceId.ProductId || "",
+                serviceName: values.serviceId.ProductName || "",
+                productId: values.productId?.ProductId || "",
+                productName: values.productId?.ProductName || "",
+                description: values.description || "",
+                amount: Number(values.amount) || 0,
+                discount: Number(values.discount) || 0,
+                discountMode: discountMode,
+                transportationExpenses: Number(values.transportationExpenses) || 0,
+                gratuities: Number(values.gratuities) || 0,
+                total: Number(values.total) || 0,
+                partyIdSupplier: (values.partyIdSupplier as any)?.fromPartyId || "",
+                partyIdSupplierName: (values.partyIdSupplier as any)?.fromPartyName || "",
+                partyIdContractor: (values.partyIdContractor as any)?.fromPartyId || "",
+                partyIdContractorName: (values.partyIdContractor as any)?.fromPartyName || "",
+            };
+            console.log('Serialized values:', serializedValues);
+            if (editMode === 1) {
+                addItem(serializedValues);
+            } else {
+                updateItem(serializedValues);
+            }
+            setFormKey((prev) => prev + 1);
+            onClose();
+        },
+        [addItem, updateItem, editMode, workEffortId, discountMode, onClose, subProjects]
+    );
+
+    const handleProjectChange = useCallback(
+        (e: ComboBoxChangeEvent, onChange: FormRenderProps["onChange"]) => {
+            const newProjectId = e.value?.projectId || "";
+            setSelectedProjectId(newProjectId);
+            onChange("projectId", { value: e.value });
+            onChange("subProjectId", { value: null });
+        },
+        []
+    );
+
+    const TotalUpdater = ({ formRenderProps }: { formRenderProps: FormRenderProps }) => {
+        const { valueGetter, onChange } = formRenderProps;
+
+        const handleFieldChange = useCallback(
+            (field: string) => (event: any) => {
+                onChange(field, { value: event.value });
+                calculateTotals(valueGetter, onChange);
+            },
+            [valueGetter, onChange, calculateTotals]
         );
-    }
 
-    const columnWidths = {
-        workEffortId: 150,
-        date: 150,
-        description: 250,
-        paymentMethod: 200,
-        chequeNumber: 150,
-        chequeDate: 150,
-    };
-
-    return (
-        <>
-            <AccountingMenu selectedMenuItem={"/multiPaymentCertificates"} />
-            <Paper elevation={5} className="div-container-withBorderCurved">
-                <Grid container columnSpacing={1} alignItems="center">
-                    <Grid item xs={12}>
-                        <KendoGrid
-                            style={{ height: "65vh" }}
-                            scrollable="scrollable"
-                            resizable={true}
-                            filterable={true}
-                            sortable={true}
-                            pageable={true}
-                            {...dataState}
-                            data={certificates ? certificates : { data: [], total: 0 }}
-                            onDataStateChange={dataStateChange}
+        return (
+            <>
+                <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                        <Field
+                            id="amount"
+                            name="amount"
+                            label={getTranslatedLabel(`${localizationKey}.amount`, "Amount *")}
+                            component={FormNumericTextBox}
+                            format="n2"
+                            min={0}
+                            validator={requiredValidator}
+                            disabled={formEditMode > 3 || subProjectsLoading}
+                            onChange={handleFieldChange("amount")}
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <Field
+                            id="discount"
+                            name="discount"
+                            label={getTranslatedLabel(`${localizationKey}.discount`, `Discount (${discountMode})`)}
+                            component={FormNumericTextBox}
+                            format={discountMode === "percentage" ? "n0" : "n2"}
+                            min={0}
+                            max={discountMode === "percentage" ? 100 : undefined}
+                            validator={discountMode === "percentage" ? percentageValidator : undefined}
+                            disabled={formEditMode > 3 || subProjectsLoading}
+                            onChange={handleFieldChange("discount")}
+                        />
+                        <Grid
+                            container
+                            sx={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                flexWrap: 'nowrap', // Prevent wrapping
+                                gap: 2,
+                                mt: 1,
+                                alignItems: 'center', // Vertically align radio buttons
+                            }}
+                            className="horizontal-radio-group" // Fallback for custom CSS
                         >
-                            <GridToolbar>
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    onClick={handleCreateNew}
-                                    style={{ margin: "5px" }}
-                                >
-                                    {getTranslatedLabel(
-                                        "accounting.multiPaymentCertificate.list.createNew",
-                                        "Create New Certificate"
-                                    )}
-                                </Button>
-                            </GridToolbar>
-                            <Column
-                                field="workEffortId"
-                                title={getTranslatedLabel(
-                                    "accounting.multiPaymentCertificate.list.workEffortId",
-                                    "Certificate ID"
-                                )}
-                                width={columnWidths.workEffortId}
-                                cell={CertificateNumberCell}
-                            />
-                            <Column
-                                field="date"
-                                title={getTranslatedLabel(
-                                    "accounting.multiPaymentCertificate.list.date",
-                                    "Date"
-                                )}
-                                format="{0: dd/MM/yyyy}"
-                                width={columnWidths.date}
-                            />
-                            <Column
-                                field="description"
-                                title={getTranslatedLabel(
-                                    "accounting.multiPaymentCertificate.list.description",
-                                    "Description"
-                                )}
-                                width={columnWidths.description}
-                            />
-                            <Column
-                                field="paymentMethodDescription"
-                                title={getTranslatedLabel(
-                                    "accounting.multiPaymentCertificate.list.paymentMethod",
-                                    "Payment Method"
-                                )}
-                                width={columnWidths.paymentMethod}
-                            />
-                            <Column
-                                field="chequeNumber"
-                                title={getTranslatedLabel(
-                                    "accounting.multiPaymentCertificate.list.chequeNumber",
-                                    "Cheque Number"
-                                )}
-                                width={columnWidths.chequeNumber}
-                            />
-                            <Column
-                                field="chequeDate"
-                                title={getTranslatedLabel(
-                                    "accounting.multiPaymentCertificate.list.chequeDate",
-                                    "Cheque Date"
-                                )}
-                                format="{0: dd/MM/yyyy}"
-                                width={columnWidths.chequeDate}
-                            />
-                        </KendoGrid>
-                        {isFetching && (
-                            <LoadingComponent
-                                message={getTranslatedLabel(
-                                    "accounting.multiPaymentCertificate.list.loading",
-                                    "Loading Certificates..."
-                                )}
-                            />
-                        )}
+                            <RadioGroup
+                                row
+                                value={discountMode}
+                                onChange={(e) => handleDiscountModeChange(e, formRenderProps.onChange)}
+                                sx={{
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    flexWrap: 'nowrap', // Reinforce no wrapping
+                                }}
+                            >
+                                <FormControlLabel
+                                    value="value"
+                                    control={<Radio disabled={formEditMode > 3 || subProjectsLoading} />}
+                                    label={getTranslatedLabel(`${localizationKey}.discountValue`, "Value")}
+                                    sx={{ minWidth: '100px' }} // Ensure label has enough space
+                                />
+                                <FormControlLabel
+                                    value="percentage"
+                                    control={<Radio disabled={formEditMode > 3 || subProjectsLoading} />}
+                                    label={getTranslatedLabel(`${localizationKey}.discountPercentage`, "Percentage")}
+                                    sx={{ minWidth: '100px' }} // Ensure label has enough space
+                                />
+                            </RadioGroup>
+                        </Grid>
+                    </Grid>
+                    <Grid item xs={6}>
+                        <Field
+                            id="transportationExpenses"
+                            name="transportationExpenses"
+                            label={getTranslatedLabel(`${localizationKey}.transportationExpenses`, "Transportation Expenses")}
+                            component={FormNumericTextBox}
+                            format="n2"
+                            min={0}
+                            disabled={formEditMode > 3 || subProjectsLoading}
+                            onChange={handleFieldChange("transportationExpenses")}
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <Field
+                            id="gratuities"
+                            name="gratuities"
+                            label={getTranslatedLabel(`${localizationKey}.gratuities`, "Gratuities")}
+                            component={FormNumericTextBox}
+                            format="n2"
+                            min={0}
+                            disabled={formEditMode > 3 || subProjectsLoading}
+                            onChange={handleFieldChange("gratuities")}
+                        />
                     </Grid>
                 </Grid>
-            </Paper>
-        </>
+            </>
+        );
+    };
+
+    console.log('initialValues', initialValues);
+
+    return (
+        <Form
+            initialValues={initialValues}
+            key={formKey}
+            onSubmit={handleSubmit}
+            validator={partyValidator}
+            render={(formRenderProps: FormRenderProps) => {
+                const isMaterials = formRenderProps.valueGetter("itemType") === "MATERIALS";
+
+                return (
+                    <FormElement>
+                        {formRenderProps.visited &&
+                            formRenderProps.errors &&
+                            formRenderProps.errors.VALIDATION_SUMMARY && (
+                                <div className={"k-messagebox k-messagebox-error"}>
+                                    {formRenderProps.errors.VALIDATION_SUMMARY}
+                                </div>
+                            )}
+                        <fieldset className="k-form-fieldset" disabled={subProjectsLoading}>
+                            <Grid container spacing={2}>
+                                <Field name="workEffortId" component="input" type="hidden" />
+                                <Field name="workEffortIdParent" component="input" type="hidden" />
+                                <Grid item xs={4}>
+                                    <Field
+                                        id="projectId"
+                                        name="projectId"
+                                        label={getTranslatedLabel(`${localizationKey}.project`, "Project *")}
+                                        component={FormComboBoxVirtualProject}
+                                        validator={requiredValidator}
+                                        textField="projectName"
+                                        dataItemKey="projectId"
+                                        disabled={formEditMode > 3 || subProjectsLoading}
+                                        value={formRenderProps.valueGetter("projectId")}
+                                        onChange={(e: ComboBoxChangeEvent) => handleProjectChange(e, formRenderProps.onChange, formRenderProps.valueGetter)}
+                                    />
+                                </Grid>
+                                <Grid item xs={4}>
+                                    <Field
+                                        id="subProjectId"
+                                        name="subProjectId"
+                                        label={getTranslatedLabel(`${localizationKey}.subProject`, "Sub-Project *")}
+                                        component={MemoizedFormDropDownList2}
+                                        data={subProjects || []}
+                                        dataItemKey="workEffortId"
+                                        textField="subProjectName"
+                                        disabled={formEditMode > 3 || subProjectsLoading}
+                                        value={
+                                            formRenderProps.valueGetter("subProjectId")
+                                                ? {
+                                                    workEffortId: formRenderProps.valueGetter("subProjectId"),
+                                                    subProjectName: formRenderProps.valueGetter("subProjectName") || "",
+                                                }
+                                                : null
+                                        }
+                                    />
+                                </Grid>
+                                <Grid item xs={4}>
+                                    <Field
+                                        id="itemType"
+                                        name="itemType"
+                                        label={getTranslatedLabel(`${localizationKey}.itemType`, "Item Type *")}
+                                        component={MemoizedFormDropDownList}
+                                        dataItemKey="itemType"
+                                        textField="description"
+                                        data={itemTypes}
+                                        validator={requiredValidator}
+                                        disabled={formEditMode > 3 || subProjectsLoading}
+                                    />
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <Field
+                                        id="serviceId"
+                                        name="serviceId"
+                                        label={getTranslatedLabel(`${localizationKey}.service`, "Service *")}
+                                        component={FormSimpleComboBoxServiceVirtual}
+                                        validator={requiredValidator}
+                                        textField="productName"
+                                        dataItemKey="productId"
+                                        disabled={formEditMode > 3 || subProjectsLoading}
+                                    />
+                                </Grid>
+                                <Grid item xs={6}>
+                                    {isMaterials && (
+                                        <Field
+                                            id="productId"
+                                            name="productId"
+                                            label={getTranslatedLabel(`${localizationKey}.product`, "Product *")}
+                                            component={FormSimpleComboBoxRawMaterialVirtual}
+                                            validator={requiredValidator}
+                                            textField="productName"
+                                            dataItemKey="productId"
+                                            disabled={formEditMode > 3 || subProjectsLoading}
+                                        />
+                                    )}
+                                </Grid>
+                                <Grid container item xs={12} spacing={2}>
+                                    <Grid item xs={6}>
+                                        <Field
+                                            id="partyIdSupplier"
+                                            name="partyIdSupplier"
+                                            component={FormComboBoxVirtualSupplierMultiColumn}
+                                            label={getTranslatedLabel("projects.certificate.form.supplier", "Supplier")}
+                                            valueField="fromPartyId"
+                                            textField="fromPartyName"
+                                        />
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <Field
+                                            id="partyIdContractor"
+                                            name="partyIdContractor"
+                                            component={FormComboBoxVirtualContractor}
+                                            label={getTranslatedLabel("projects.certificate.form.contractor", "Contractor")}
+                                            valueField="fromPartyId"
+                                            textField="fromPartyName"
+                                        />
+                                    </Grid>
+                                </Grid>
+
+                                <Grid item xs={12}>
+                                    <Field
+                                        id="description"
+                                        name="description"
+                                        label={getTranslatedLabel(`${localizationKey}.createNew`, "Create New Certificate")}
+                                        component={FormInput}
+                                        validator={requiredValidator}
+                                        disabled={formEditMode > 3 || subProjectsLoading}
+                                    />
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <TotalUpdater formRenderProps={formRenderProps} />
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <Field
+                                        id="total"
+                                        name="total"
+                                        label={getTranslatedLabel(`${localizationKey}.total`, "Total")}
+                                        component={FormNumericTextBox}
+                                        format="n2"
+                                        disabled
+                                    />
+                                </Grid>
+                                <Grid container spacing={2} justifyContent="flex-start">
+                                    <Grid item xs={2}>
+                                        <Button
+                                            type="submit"
+                                            variant="contained"
+                                            disabled={!formRenderProps.valid || subProjectsLoading}
+                                            sx={{ mt: 2, ml: 2 }}
+                                        >
+                                            {getTranslatedLabel(
+                                                `${localizationKey}.${editMode === 1 ? "create" : "update"}`,
+                                                editMode === 1 ? "Create Item" : "Update Item"
+                                            )}
+                                        </Button>
+                                    </Grid>
+                                    <Grid item xs={2}>
+                                        <Button
+                                            sx={{ mt: 2 }}
+                                            onClick={onClose}
+                                            color="error"
+                                            variant="contained"
+                                            disabled={subProjectsLoading}
+                                        >
+                                            {getTranslatedLabel("general.cancel", "Cancel")}
+                                        </Button>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                        </fieldset>
+                    </FormElement>
+                );
+            }}
+        />
     );
 }

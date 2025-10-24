@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { MultiPaymentCertificate } from "../../../app/models/project/MultiPaymentCertificate";
+import {CertificateActionResult, MultiPaymentCertificate} from "../../../app/models/project/MultiPaymentCertificate";
 import { MultiPaymentItem } from "../../../app/models/project/MultiPaymentItem";
 import { toast } from "react-toastify";
 import {
     useAddMultiPaymentCertificateMutation, useApproveMultiPaymentCertificateMutation,
-    useGetMultiPaymentItemsQuery
+    useGetMultiPaymentItemsQuery, useUpdateMultiPaymentCertificateMutation
 } from "../../../app/store/apis/multiPaymentCertificateApi";
 import {useAppSelector} from "../../../app/store/configureStore";
 
@@ -27,6 +27,7 @@ export default function useMultiPaymentCertificate({
     const [items, setItems] = useState<MultiPaymentItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [addMultiPaymentCertificate, { isLoading: addLoading }] = useAddMultiPaymentCertificateMutation();
+    const [updateMultiPaymentCertificate, { isLoading: updateLoading }] = useUpdateMultiPaymentCertificateMutation();
     const [approveMultiPaymentCertificate, { isLoading: approveLoading }] = useApproveMultiPaymentCertificateMutation();
     const { user } = useAppSelector((state) => state.account);
     const companyId = user?.organizationPartyId || "";
@@ -42,36 +43,35 @@ export default function useMultiPaymentCertificate({
         }
     }, [fetchedItems, editMode]);
 
+
+
     useEffect(() => {
-        if (selectedCertificate) {
-            setCertificate(selectedCertificate);
-        }
         if (editMode === 1) {
             setCertificate(undefined);
             setItems([]);
+        } else if (editMode === 2 && selectedCertificate) {
+            setCertificate(selectedCertificate);
+            setItems(selectedCertificate.items || []);
         }
-        return () => {
-            if (editMode === 1) {
-                setCertificate(undefined);
-                setItems([]);
-            }
-        };
     }, [selectedCertificate, editMode]);
 
     const addItem = useCallback((item: MultiPaymentItem) => {
-        setItems((prev) => [...prev, { ...item, itemId: item.itemId || uuidv4() }]);
+        setItems((prev) => [...prev, { ...item, workEffortId: item.workEffortId || `temp-${Date.now()}` }]);
     }, []);
 
     const updateItem = useCallback((updatedItem: MultiPaymentItem) => {
-        setItems((prev) =>
-            prev.map((item) =>
-                item.itemId === updatedItem.itemId ? { ...updatedItem } : item
-            )
-        );
+        setItems((prev) => {
+            const newItems = prev.map((item) =>
+                item.workEffortId === updatedItem.workEffortId ? { ...updatedItem } : item
+            );
+            console.log('Updating item:', updatedItem);
+            console.log('New items array:', newItems);
+            return newItems;
+        });
     }, []);
 
-    const deleteItem = useCallback((itemId: string) => {
-        setItems((prev) => prev.filter((item) => item.itemId !== itemId));
+    const deleteItem = useCallback((workEffortId: string) => {
+        setItems((prev) => prev.filter((item) => item.workEffortId !== workEffortId));
     }, []);
 
     const validateCertificate = useCallback((certificate: MultiPaymentCertificate, items: MultiPaymentItem[]) => {
@@ -92,7 +92,7 @@ export default function useMultiPaymentCertificate({
 
 
     const handleCreate = useCallback(
-        async ({ values, isValid }: { values: MultiPaymentCertificate; isValid: boolean }) => {
+        async ({ values, isValid }: { values: MultiPaymentCertificate; isValid: boolean }): Promise<CertificateActionResult> => {
             if (!isValid) {
                 toast.error("Form is invalid. Please check all fields.");
                 return;
@@ -110,11 +110,12 @@ export default function useMultiPaymentCertificate({
                     statusDescriptionArabic: "تم الإنشاء",
                 };
                 const response = await addMultiPaymentCertificate(payload).unwrap();
-                setCertificate(response); 
+                setCertificate(response);
                 setItems(response.items || items);
                 setParentCertificate?.(response);
-                toast.success("Certificate created successfully");
+                setFormKey((prev) => prev + 1);
                 setEditMode?.(2);
+                toast.success("Certificate created successfully");
                 return { success: true, certificate: response };
             } catch (error: any) {
                 toast.error("Error creating certificate: " + (error?.data?.message || error.message));
@@ -126,41 +127,43 @@ export default function useMultiPaymentCertificate({
     );
 
     const handleUpdate = useCallback(
-        async ({ values, isValid }: { values: MultiPaymentCertificate; isValid: boolean }) => {
+        async ({ values, isValid }: { values: MultiPaymentCertificate; isValid: boolean }): Promise<CertificateActionResult> => {
             if (!isValid) {
                 toast.error("Form is invalid. Please check all fields.");
-                return;
+                return { success: false };
+            }
+            if (!validateCertificate(values, items)) {
+                return { success: false };
             }
             setIsLoading(true);
             try {
                 const payload = {
                     ...values,
+                    workEffortId: certificate.workEffortId,
                     items,
+                    currentStatusId: certificate.currentStatusId || "WEPR_CREATED",
+                    statusDescription: certificate.statusDescription || "Created",
+                    statusDescriptionArabic: certificate.statusDescriptionArabic || "تم الإنشاء",
                 };
-
-                const response = await fetch(`/api/multi-payment-certificates/${values.workEffortId}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-                });
-
-                if (!response.ok) {
-                    throw new Error("Failed to update certificate");
+                const response = await updateMultiPaymentCertificate(payload).unwrap();
+                if (response.items && response.items.length > 0) {
+                    setItems(response.items);
                 }
-                setParentCertificate?.(await response.json());
-
-                toast.success("Certificate updated successfully");
-                setCertificate(undefined);
-                setItems([]);
+                setCertificate(response);
+                setParentCertificate?.(response);
                 setFormKey((prev) => prev + 1);
+                toast.success("Certificate updated successfully");
+                return { success: true, certificate: response };
             } catch (error: any) {
-                toast.error("Error updating certificate: " + error.message);
+                toast.error("Error updating certificate: " + (error?.data?.message || error.message));
+                return { success: false };
             } finally {
                 setIsLoading(false);
             }
         },
-        [items, setFormKey, setParentCertificate]
+        [items, updateMultiPaymentCertificate, setParentCertificate, setFormKey, certificate]
     );
+
 
 
     const handleApprove = useCallback(
