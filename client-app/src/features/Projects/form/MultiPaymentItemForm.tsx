@@ -1,7 +1,6 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {Field, Form, FormElement, FormRenderProps, KeyValue} from "@progress/kendo-react-form";
 import { Button, FormControlLabel, Grid, Radio, RadioGroup } from "@mui/material";
-import { v4 as uuidv4 } from "uuid";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import { FormComboBoxVirtualProject } from "../../../app/common/form/FormComboBoxVirtualProject";
 import { MultiPaymentItem } from "../../../app/models/project/MultiPaymentItem";
@@ -34,7 +33,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
     const [selectedProjectId, setSelectedProjectId] = useState<string>(
         multiPaymentItem?.projectId && multiPaymentItem.projectId !== "" ? multiPaymentItem.projectId : ""
     );
-    const [formKey, setFormKey] = useState<number>(1);
+    const [formKey, setFormKey] = useState<number>(Math.random());
     const [discountMode, setDiscountMode] = useState<"value" | "percentage">(multiPaymentItem?.discountMode || "value");
 
     const { data: subProjects, isLoading: subProjectsLoading } = useFetchSubProjectsQuery(
@@ -42,7 +41,6 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
         { skip: !selectedProjectId }
     );
     
-    console.log('subProjects', subProjects)
 
     const itemTypes = useMemo(
         () => [
@@ -54,36 +52,32 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
         []
     );
 
-    const initialValues = useMemo((): Partial<MultiPaymentItem> => ({
-        workEffortId: multiPaymentItem?.workEffortId || "",
-        workEffortIdParent: workEffortId || "",
-        projectId: multiPaymentItem?.projectId
-            ? { projectId: multiPaymentItem.projectId, projectName: multiPaymentItem.projectName || "" }
-            : null,
-        subProjectId: multiPaymentItem?.subProjectId || "",
-        subProjectName: multiPaymentItem?.subProjectName || "",
-        itemType: multiPaymentItem?.itemType || "",
-        serviceId: multiPaymentItem?.serviceId
-            ? { ProductId: multiPaymentItem.serviceId, ProductName: multiPaymentItem.serviceName || "" }
-            : null,
-        productId: multiPaymentItem?.productId
-            ? { ProductId: multiPaymentItem.productId, ProductName: multiPaymentItem.productName || "" }
-            : null,
-        description: multiPaymentItem?.description || "",
-        amount: multiPaymentItem?.amount || 0,
-        discount: multiPaymentItem?.discount || 0,
-        discountMode: multiPaymentItem?.discountMode || "value",
-        transportationExpenses: multiPaymentItem?.transportationExpenses || 0,
-        gratuities: multiPaymentItem?.gratuities || 0,
-        total: multiPaymentItem?.total || 0,
-        partyIdSupplier: multiPaymentItem?.partyIdSupplier
-            ? { fromPartyId: multiPaymentItem.partyIdSupplier, fromPartyName: multiPaymentItem.partyIdSupplierName || "" }
-            : null,
-        partyIdContractor: multiPaymentItem?.partyIdContractor
-            ? { fromPartyId: multiPaymentItem.partyIdContractor, fromPartyName: multiPaymentItem.partyIdContractorName || "" }
-            : null,
-    }), [multiPaymentItem, workEffortId]);
-
+    const initialValues = useMemo((): Partial<MultiPaymentItem> => {
+        const values = {
+            workEffortId: multiPaymentItem?.workEffortId || "",
+            workEffortIdParent: workEffortId || "",
+            projectId: multiPaymentItem?.projectId
+                ? { projectId: multiPaymentItem.projectId, projectName: multiPaymentItem.projectName || "" }
+                : null,
+            subProjectId: multiPaymentItem?.subProjectId || "",
+            subProjectName: multiPaymentItem?.subProjectName || "",
+            itemType: multiPaymentItem?.itemType || "",
+            serviceId: multiPaymentItem?.serviceId
+                ? { ProductId: multiPaymentItem.serviceId, ProductName: multiPaymentItem.serviceName || "" }
+                : null,
+            productId: multiPaymentItem?.productId
+                ? { ProductId: multiPaymentItem.productId, ProductName: multiPaymentItem.productName || "" }
+                : null,
+            description: multiPaymentItem?.description || "",
+            amount: multiPaymentItem?.amount ?? 0, // Explicitly use amount, with fallback to 0
+            discount: multiPaymentItem?.discount ?? 0,
+            discountMode: multiPaymentItem?.discountMode || "value",
+            transportationExpenses: multiPaymentItem?.transportationExpenses ?? 0,
+            gratuities: multiPaymentItem?.gratuities ?? 0,
+            total: multiPaymentItem?.total ?? 0, // Initialize total separately
+        };
+        return values;
+    }, [multiPaymentItem, workEffortId]);
 
     const partyValidator = (values: Partial<MultiPaymentItem>): KeyValue<string> | undefined => {
         const hasSupplier = values.partyIdSupplier && values.partyIdSupplier !== "";
@@ -118,7 +112,6 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
             const gratuities = Number(valueGetter("gratuities") || 0);
             const total = Math.max(0, Math.round((amount - discount + transportationExpenses + gratuities) * 1000) / 1000);
 
-            // Only update total if it has changed to avoid unnecessary re-renders
             if (valueGetter("total") !== total) {
                 onChange("total", { value: total });
             }
@@ -181,7 +174,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
             } else {
                 updateItem(serializedValues);
             }
-            setFormKey((prev) => prev + 1);
+            setFormKey(Math.random());
             onClose();
         },
         [addItem, updateItem, editMode, workEffortId, discountMode, onClose, subProjects]
@@ -196,6 +189,11 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
         },
         []
     );
+
+    useEffect(() => {
+        setFormKey(Math.random());
+    }, [multiPaymentItem]);
+
 
     const TotalUpdater = ({ formRenderProps }: { formRenderProps: FormRenderProps }) => {
         const { valueGetter, onChange } = formRenderProps;

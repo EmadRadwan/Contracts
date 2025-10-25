@@ -17,7 +17,7 @@
     "PAYMENT_METHOD_ID": "CIB_CHECKING",
     "PAYMENT_METHOD_TYPE_ID": "COMPANY_CHECK",
     "PARTY_ID": "Company",
-    "GL_ACCOUNT_ID": "111100",
+    "GL_ACCOUNT_ID": "110100",
     "FIN_ACCOUNT_ID": "CIB_CHECKING",
     "DESCRIPTION": "البنك التجاري الدولى",
     "FROM_DATE": "2009-04-01 00:00:00.000",

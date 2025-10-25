@@ -11,6 +11,9 @@ import withFloatingLabelFlexible from '../../../../app/components/FloatingLabel'
 import { useTranslationHelper } from '../../../../app/hooks/useTranslationHelper';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import StoreIcon from '@mui/icons-material/Store';
+import ReceiptIcon from '@mui/icons-material/Receipt';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import PaidIcon from '@mui/icons-material/Paid';
 import React from "react"; 
 
 interface AccountingMenuProps {
@@ -24,9 +27,13 @@ const links = [
     { title: 'Incoming Payments', key: 'incomingPayments', path: '/payments/incoming', icon: <PaymentOutlinedIcon sx={{ color: "#4CAF50" }} /> }, 
     { title: 'Outgoing Payments', key: 'outgoingPayments', path: '/payments/outgoing', icon: <PaymentOutlinedIcon sx={{ color: "#F44336" }} /> }, 
     { title: 'Payment Groups', key: 'pay-group', path: '/paymentGroups', icon: <GroupIcon sx={{ color: "#03A9F4" }} /> },
+    { title: "Multi-Payment Certificates", key: "multiPaymentCertificates", path: "/multiPaymentCertificates", icon: <AccountBalanceWalletOutlinedIcon sx={{ color: "#3F51B5" }} /> },
     { title: 'Global GL Settings', key: 'globalGLSettings', path: '/globalGL', icon: <LocalAtmOutlinedIcon sx={{ color: "#E91E63" }} /> },
     { title: 'Organization GL Settings', key: 'organizationGLSettings', path: '/orgGL', icon: <AccountTreeOutlinedIcon sx={{ color: "#8BC34A" }} /> },
-    { title: "Multi-Payment Certificates", key: "multiPaymentCertificates", path: "/multiPaymentCertificates", icon: <AccountBalanceWalletOutlinedIcon sx={{ color: "#3F51B5" }} /> },
+    { title: 'Transactions', key: 'transactions', path: '/accountingTransaction', icon: <ReceiptIcon sx={{ color: "#8BC34A" }} /> },
+    { title: 'Transactions Entries', key: 'transactions-entries', path: '/accountingTransactionEntries', icon: <ReceiptLongIcon sx={{ color: "#FF4081" }} /> },
+    { title: 'Create Transactions', key: 'create-transactions', path: '/glCreateAccountingTransaction', icon: <PaidIcon sx={{ color: "#4CAF50" }} /> },
+
 
 ];
 

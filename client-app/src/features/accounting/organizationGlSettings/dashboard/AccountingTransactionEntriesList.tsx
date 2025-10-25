@@ -12,7 +12,12 @@ import {Grid, Paper} from "@mui/material";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import {handleDatesArray} from "../../../../app/util/utils";
 
-import {RootState, useAppDispatch, useFetchAcctTransEntriesQuery,} from "../../../../app/store/configureStore";
+import {
+    RootState,
+    useAppDispatch,
+    useAppSelector,
+    useFetchAcctTransEntriesQuery,
+} from "../../../../app/store/configureStore";
 import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
 import {useLocation} from "react-router-dom";
 import {AcctgTrans} from "../../../../app/models/accounting/acctgTrans";
@@ -27,6 +32,8 @@ export default function AccountingTransactionEntriesList() {
 
     const [accountingTransEntries, setAccountingTransEntries] = React.useState<DataResult>({data: [], total: 0});
     const [dataState, setDataState] = React.useState<State>({take: 6, skip: 0});
+    const { user } = useAppSelector((state) => state.account);
+    const companyId = user?.organizationPartyId || "";
 
     const dataStateChange = (e: GridDataStateChangeEvent) => {
         setDataState(e.dataState);
@@ -35,12 +42,7 @@ export default function AccountingTransactionEntriesList() {
     const dispatch = useAppDispatch();
     const companyName = useSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
 
-    // if company name is not set, then redirect to the orgGl
-    useEffect(() => {
-        if (!companyName) {
-            router.navigate("/orgGl");
-        }
-    }, [companyName]);
+   
 
     const location = useLocation()
 
@@ -71,7 +73,11 @@ export default function AccountingTransactionEntriesList() {
     const [show, setShow] = useState(false);
 
 
-    const {data, error, isFetching} = useFetchAcctTransEntriesQuery({...dataState});
+    const queryArgs = { ...dataState, companyId };
+    console.log("Query args sent to useFetchAcctTransEntriesQuery:", queryArgs);
+    const { data, error, isFetching } = companyId
+        ? useFetchAcctTransEntriesQuery(queryArgs)
+        : { data: null, error: new Error("CompanyId is missing"), isFetching: false };
 
     useEffect(() => {
             if (data) {
@@ -160,7 +166,7 @@ export default function AccountingTransactionEntriesList() {
                             rowRender={rowRender}
                         >
 
-                            <Column field="acctTransId"
+                            <Column field="acctgTransId"
                                     cell={AcctTransDescriptionCell} width={110}
                                     locked={!show} title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txns.acctgTransId",

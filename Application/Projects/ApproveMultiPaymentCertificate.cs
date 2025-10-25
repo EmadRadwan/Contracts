@@ -75,7 +75,6 @@ namespace Application.Projects
 
                     var totalAmount = items.Sum(i => i.TotalAmount ?? 0);
 
-
                     var employeeParty = await _context.Parties
                         .Where(p => p.PartyId == certificate.PartyIdEmployee)
                         .Select(p => new { p.GlAccountIdAdvancedPayment })
@@ -100,7 +99,7 @@ namespace Application.Projects
                     {
                         AcctgTransId = acctgTransId,
                         AcctgTransTypeId = "DISBURSEMENT",
-                        Description = $"Payment Certificate {certificate.WorkEffortId}",
+                        Description = $"مستند دفع متعدد {certificate.WorkEffortId}",
                         TransactionDate = DateTime.UtcNow,
                         IsPosted = "Y",
                         PostedDate = DateTime.UtcNow,
@@ -113,7 +112,7 @@ namespace Application.Projects
                         AcctgTransId = acctgTransId,
                         AcctgTransEntrySeqId = "00001",
                         AcctgTransEntryTypeId = "_NA_",
-                        Description = $"Adjustments for Certificate {certificate.WorkEffortId}",
+                        Description = $"مستند دفع متعدد {certificate.WorkEffortId}",
                         GlAccountId = employeeParty.GlAccountIdAdvancedPayment,
                         OrganizationPartyId = request.CompanyId,
                         Amount = totalAmount,
@@ -125,9 +124,38 @@ namespace Application.Projects
                     };
                     _context.AcctgTransEntries.Add(creditEntry);
 
+                    // REFACTOR: Move debit entry creation to the invoice loop to associate InvoiceId
+                    // This ensures each debit entry can be linked to the corresponding invoice
                     int entrySeq = 2; // Start from 00002 as 00001 is used for credit entry
                     foreach (var item in items)
                     {
+                        // Validate PartyIdSupplier or PartyIdContractor
+                        var partyId = item.PartyIdSupplier ?? item.PartyIdContractor;
+                        if (string.IsNullOrEmpty(partyId))
+                        {
+                            await transaction.RollbackAsync(cancellationToken);
+                            return Result<MultiPaymentCertificateDto>.Failure(
+                                $"No Supplier or Contractor specified for item {item.WorkEffortId}");
+                        }
+
+                        var invoiceId = await _utilityService.GetNextSequence("Invoice");
+                        var invoice = new Invoice
+                        {
+                            InvoiceId = invoiceId,
+                            InvoiceTypeId = "PURCHASE_INVOICE",
+                            PartyIdFrom = partyId,
+                            PartyId = request.CompanyId,
+                            StatusId = "INVOICE_PAID",
+                            InvoiceDate = DateTime.UtcNow,
+                            CurrencyUomId = "EGP",
+                            Description = $"مستند دفع متعدد {certificate.WorkEffortId}",
+                            CreatedStamp = DateTime.UtcNow,
+                            LastUpdatedStamp = DateTime.UtcNow
+                        };
+                        _context.Invoices.Add(invoice);
+
+                        // REFACTOR: Create debit entry here to associate with InvoiceId and PartyId
+                        // This links the debit entry to the invoice and uses the item's PartyIdSupplier or PartyIdContractor
                         var project = await _context.WorkEfforts
                             .Where(p => p.WorkEffortId == item.ProjectId)
                             .Select(p => new { p.GlAccountId })
@@ -145,9 +173,13 @@ namespace Application.Projects
                             AcctgTransId = acctgTransId,
                             AcctgTransEntrySeqId = entrySeq.ToString("D5"),
                             AcctgTransEntryTypeId = "_NA_",
-                            Description = $"Adjustment for Certificate Item {item.WorkEffortId}",
+                            Description = item.Description,
                             GlAccountId = project.GlAccountId,
-                            OrganizationPartyId = request.CompanyId,
+                            // REFACTOR: Use PartyIdSupplier or PartyIdContractor for PartyId
+                            // This links the debit entry to the supplier or contractor
+                            PartyId = partyId,
+                            //InvoiceId = invoiceId, // REFACTOR: Add InvoiceId to debit entry
+                            // This associates the debit entry with the created invoice
                             Amount = item.TotalAmount ?? 0,
                             CurrencyUomId = "EGP",
                             OrigAmount = item.TotalAmount ?? 0,
@@ -157,56 +189,35 @@ namespace Application.Projects
                         };
                         _context.AcctgTransEntries.Add(debitEntry);
                         entrySeq++;
-                    }
-
-                    foreach (var item in items)
-                    {
-                        var invoiceId = await _utilityService.GetNextSequence("Invoice");
-                        var invoice = new Invoice
-                        {
-                            InvoiceId = invoiceId,
-                            InvoiceTypeId = "PURCHASE_INVOICE",
-                            PartyIdFrom = item.PartyIdSupplier ?? item.PartyIdContractor,
-                            PartyId = request.CompanyId,
-                            StatusId = "INVOICE_PAID",
-                            InvoiceDate = DateTime.UtcNow,
-                            CurrencyUomId = "EGP",
-                            CreatedStamp = DateTime.UtcNow,
-                            LastUpdatedStamp = DateTime.UtcNow
-                        };
-                        _context.Invoices.Add(invoice);
 
                         int invoiceItemSeq = 1;
 
-                        decimal? adjustedTotalAmount = item.TotalAmount;
-                        if (item.CostType != "MATERIALS")
+                        var adjustmentTypeDescriptions = new Dictionary<string, string>
                         {
-                            adjustedTotalAmount = (item.TotalAmount ?? 0) -
-                                                  (item.Discount ?? 0) -
-                                                  (item.TransportationExpenses ?? 0) -
-                                                  (item.Gratuities ?? 0);
-                        }
+                            { "BASE_AMOUNT", "المبلغ الأساسي" },
+                            { "DISCOUNT", "الخصم" },
+                            { "TRANSPORTATION", "مصاريف النقل" },
+                            { "GRATUITIES", "الإكراميات" }
+                        };
 
-                        // Create InvoiceItem for adjusted TotalAmount
-                        if (adjustedTotalAmount != null && adjustedTotalAmount != 0)
+                        if (item.Amount != null && item.Amount != 0)
                         {
-                            var totalAmountItem = new InvoiceItem
+                            var baseAmountItem = new InvoiceItem
                             {
                                 InvoiceId = invoiceId,
                                 InvoiceItemSeqId = invoiceItemSeq.ToString("D5"),
                                 InvoiceItemTypeId = "PINV_SPROD_ITEM",
                                 ProductId = item.ProductId,
                                 Quantity = 1,
-                                Amount = Math.Abs(adjustedTotalAmount.Value),
-                                Description = item.Description ?? "Base Amount",
+                                Amount = Math.Abs(item.Amount.Value),
+                                Description = $"{item.Description} - {adjustmentTypeDescriptions["BASE_AMOUNT"]}",
                                 CreatedStamp = DateTime.UtcNow,
                                 LastUpdatedStamp = DateTime.UtcNow
                             };
-                            _context.InvoiceItems.Add(totalAmountItem);
+                            _context.InvoiceItems.Add(baseAmountItem);
                             invoiceItemSeq++;
                         }
 
-                        // Create InvoiceItem for Discount if it exists
                         if (item.Discount != null && item.Discount != 0)
                         {
                             var discountItem = new InvoiceItem
@@ -217,7 +228,7 @@ namespace Application.Projects
                                 ProductId = item.ProductId,
                                 Quantity = 1,
                                 Amount = -Math.Abs(item.Discount.Value),
-                                Description = "Discount",
+                                Description = $"{item.Description} - {adjustmentTypeDescriptions["DISCOUNT"]}",
                                 CreatedStamp = DateTime.UtcNow,
                                 LastUpdatedStamp = DateTime.UtcNow
                             };
@@ -225,7 +236,6 @@ namespace Application.Projects
                             invoiceItemSeq++;
                         }
 
-                        // Create InvoiceItem for TransportationExpenses if it exists
                         if (item.TransportationExpenses != null && item.TransportationExpenses != 0)
                         {
                             var transportItem = new InvoiceItem
@@ -236,7 +246,7 @@ namespace Application.Projects
                                 ProductId = item.ProductId,
                                 Quantity = 1,
                                 Amount = Math.Abs(item.TransportationExpenses.Value),
-                                Description = "Transportation Expenses",
+                                Description = $"{item.Description} - {adjustmentTypeDescriptions["TRANSPORTATION"]}",
                                 CreatedStamp = DateTime.UtcNow,
                                 LastUpdatedStamp = DateTime.UtcNow
                             };
@@ -244,7 +254,6 @@ namespace Application.Projects
                             invoiceItemSeq++;
                         }
 
-                        // Create InvoiceItem for Gratuities if it exists
                         if (item.Gratuities != null && item.Gratuities != 0)
                         {
                             var gratuityItem = new InvoiceItem
@@ -255,7 +264,7 @@ namespace Application.Projects
                                 ProductId = item.ProductId,
                                 Quantity = 1,
                                 Amount = Math.Abs(item.Gratuities.Value),
-                                Description = "Gratuities",
+                                Description = $"{item.Description} - {adjustmentTypeDescriptions["GRATUITIES"]}",
                                 CreatedStamp = DateTime.UtcNow,
                                 LastUpdatedStamp = DateTime.UtcNow
                             };
@@ -264,9 +273,6 @@ namespace Application.Projects
                         }
                     }
 
-
-                    // Save accounting entries to ensure they are persisted before committing the transaction.
-                    // This ensures all changes (approval and accounting entries) are saved atomically.
                     var acctgSaveResult = await _context.SaveChangesAsync(cancellationToken);
                     if (acctgSaveResult <= 0)
                     {
@@ -275,7 +281,6 @@ namespace Application.Projects
                     }
 
                     await transaction.CommitAsync(cancellationToken);
-
 
                     var resultItems = new List<MultiPaymentItemDto>();
                     foreach (var item in items)
@@ -343,9 +348,9 @@ namespace Application.Projects
                             ProductId = item.ProductId,
                             ProductName = product?.ProductName ?? "",
                             Description = item.Description,
-                            Amount = item.TotalAmount,
+                            Amount = item.Amount,
                             Discount = item.Discount,
-                            DiscountMode = item.Discount != null ? "value" : null, // Simplified assumption
+                            DiscountMode = item.Discount != null && item.Discount > 0 ? "value" : "percentage",
                             TransportationExpenses = item.TransportationExpenses,
                             Gratuities = item.Gratuities,
                             Total = item.TotalAmount,

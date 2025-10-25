@@ -165,25 +165,22 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
                 key={items.map(item => item.workEffortId).join('-')}
             >
                 <GridToolbar>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={handleAddClick}
-                    >
-                        {getTranslatedLabel(`${localizationKey}.addItem`, "Add Payment Item")}
-                    </Button>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={handleAddClick}
+                        >
+                            {getTranslatedLabel(`${localizationKey}.addItem`, "Add Payment Item")}
+                        </Button>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                            {getTranslatedLabel(`${localizationKey}.totalAmount`, "Total Amount")}: {totalAmount.toFixed(2)}
+                        </Typography>
+                    </div>
                 </GridToolbar>
                 {columns.map((column, index) => (
                     <GridColumn key={index} {...column} />
                 ))}
-                <GridColumn
-                    title={getTranslatedLabel(`${localizationKey}.total`, "Total")}
-                    cell={() => (
-                        <td colSpan={columns.length}>
-                            {getTranslatedLabel(`${localizationKey}.totalAmount`, "Total Amount")}: {totalAmount.toFixed(2)}
-                        </td>
-                    )}
-                />
             </Grid>
             {show && (
                 <ModalContainer show={show} onClose={handleClose} width={900}>

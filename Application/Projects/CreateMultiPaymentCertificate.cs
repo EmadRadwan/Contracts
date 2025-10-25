@@ -90,6 +90,7 @@ namespace Application.Projects
                             TransportationExpenses = item.TransportationExpenses ?? 0,
                             Gratuities = item.Gratuities ?? 0,
                             TotalAmount = item.Total,
+                            Amount = item.Amount ?? 0,
                             PartyIdSupplier = !string.IsNullOrEmpty(item.PartyIdSupplier) ? item.PartyIdSupplier : null,
                             PartyIdContractor = !string.IsNullOrEmpty(item.PartyIdContractor)
                                 ? item.PartyIdContractor

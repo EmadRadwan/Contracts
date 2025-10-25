@@ -102,6 +102,7 @@ public class WorkEffort
     public string? SubProjectName { get; set; }
     public string? CostType { get; set; }
     public decimal? TotalAmount { get; set; }
+    public decimal? Amount { get; set; }
     public decimal? Discount { get; set; }
     public decimal? TransportationExpenses { get; set; }
     public decimal? Gratuities { get; set; }

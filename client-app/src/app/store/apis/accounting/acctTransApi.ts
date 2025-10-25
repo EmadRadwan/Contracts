@@ -37,8 +37,17 @@ const acctTransApi = createApi({
         return {
             fetchAcctTrans: builder.query<ListResponse<AcctgTrans>, State>({
                 query: (queryArgs) => {
-                    const url = `/odata/accountingTransactionRecords?$count=true&${toODataString(queryArgs)}`;
-                    return {url, method: "GET"};
+                    // REFACTOR: Explicitly include companyId in the query URL
+                    // This ensures the backend receives companyId as a query parameter, which the controller
+                    // can extract and pass to the ListAccountingTransactions.Query object.
+                    const odataQuery = toODataString({
+                        ...queryArgs,
+                        filter: queryArgs.filter || { logic: 'and', filters: [] },
+                    });
+                    return {
+                        url: `/odata/accountingTransactionRecords?$count=true&${odataQuery}&companyId=${encodeURIComponent(queryArgs.companyId)}`,
+                        method: 'GET',
+                    };
                 },
                 transformResponse: (response: any, meta, arg) => {
 
@@ -163,8 +172,15 @@ const acctTransApi = createApi({
             }),
             fetchAcctTransEntries: builder.query<ListResponse<AcctgTransEntry>, State>({
                 query: (queryArgs) => {
-                    const url = `/odata/accountingTransactionEntryRecords?$count=true&${toODataString(queryArgs)}`;
-                    return {url, method: "GET"};
+                    const odataQuery = toODataString({
+                        ...queryArgs,
+                        filter: queryArgs.filter || { logic: 'and', filters: [] },
+                    });
+                    console.log(`Sending request to: /odata/accountingTransactionEntryRecords?$count=true&${odataQuery}&companyId=${encodeURIComponent(queryArgs.companyId)}`);
+                    return {
+                        url: `/odata/accountingTransactionEntryRecords?$count=true&${odataQuery}&companyId=${encodeURIComponent(queryArgs.companyId)}`,
+                        method: 'GET',
+                    };
                 },
                 providesTags: ["Transactions"],
                 transformResponse: (response: any, meta, arg) => {

@@ -8,18 +8,18 @@ namespace API.Controllers.Accounting.Transactions;
 
 public class AccountingTransactionEntryRecordsController : BaseODataController<AccountingTransactionEntryRecord>
 {
-    // REFACTOR: Updated Get method to include Language parameter in the Query.
-    // Purpose: Passes the language from the request to the handler to support Arabic field selection.
-    // Context: Aligns with the provided example where GetLanguage() is used to set the Language property.
     [HttpGet]
     [EnableQuery]
-    public async Task<IActionResult> Get(ODataQueryOptions<AccountingTransactionEntryRecord> options)
+    public async Task<IActionResult> Get(ODataQueryOptions<AccountingTransactionEntryRecord> options, [FromQuery] string companyId)
     {
+        // Log the received companyId for debugging
+        Console.WriteLine($"Received companyId in controller: {companyId}");
         var language = GetLanguage();
         var query = await Mediator.Send(new ListAccountingTransactionEntries.Query 
         { 
-            Options = options, 
-            Language = language 
+            Options = options,
+            Language = language,
+            CompanyId = companyId // Pass companyId to the query
         });
         return await HandleODataQueryAsync(query, options);
     }

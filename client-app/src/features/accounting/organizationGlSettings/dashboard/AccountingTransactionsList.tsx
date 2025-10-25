@@ -35,19 +35,24 @@ import { router } from "../../../../app/router/Routes";
 import { useNavigate } from "react-router";
 
 export default function AccountingTransactionsList() {
+  const { user } = useAppSelector((state) => state.account);
+  const companyId = user?.organizationPartyId || "";
+  
+  console.log("companyId in AccountingTransactionsList:", companyId);
+
   const navigate = useNavigate();
   const [accountingTrans, setAccountingTrans] = React.useState<DataResult>({
     data: [],
     total: 0,
   });
-  
-  const [dataState, setDataState] = React.useState<State>({
+
+  const [dataState, setDataState] = useState<State>({
     take: 6,
     skip: 0,
     sort: [{ field: "transactionDate", dir: "desc" }],
   });
 
- 
+
 
   const dataStateChange = (e: GridDataStateChangeEvent) => {
     setDataState(e.dataState);
@@ -58,13 +63,13 @@ export default function AccountingTransactionsList() {
     (state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName
   );
 
-  // if company name is not set, then redirect to the orgGl
+  
 
-  useEffect(() => {
+ /* useEffect(() => {
     if (!companyName) {
       router.navigate("/orgGl");
     }
-  }, [companyName]);
+  }, [companyName]);*/
 
   const { getTranslatedLabel } = useTranslationHelper();
   const location = useLocation();
@@ -76,7 +81,12 @@ export default function AccountingTransactionsList() {
 
   const [show, setShow] = useState(false);
 
-  const { data, error, isFetching } = useFetchAcctTransQuery({ ...dataState });
+  const queryArgs = { ...dataState, companyId };
+
+  const { data, error, isFetching } = companyId
+      ? useFetchAcctTransQuery(queryArgs)
+      : { data: null, error: new Error("CompanyId is missing"), isFetching: false };
+
 
   useEffect(() => {
     if (data) {
@@ -110,7 +120,7 @@ export default function AccountingTransactionsList() {
   }, [location.state?.isPosted]);
 
   function handleSelectAcctTrans(acctTransId: string) {
-    dispatch(setWhatWasClicked("acctTransId"));
+    dispatch(setWhatWasClicked("acctgTransId"));
     console.log("acctTransId param", acctTransId);
     // select the acctTrans from data array based on acctTransId
     const selectedAcctTrans: AcctgTrans | undefined = data?.data.find(

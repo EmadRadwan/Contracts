@@ -61906,6 +61906,10 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 entity.Property(e => e.TotalAmount)
                     .HasColumnType("decimal(18,3)")
                     .HasColumnName("TOTAL_AMOUNT");
+                    
+                    entity.Property(e => e.Amount)
+                    .HasColumnType("decimal(18,3)")
+                    .HasColumnName("AMOUNT");
             
                 entity.Property(e => e.ProjectId)
                     .HasMaxLength(36)

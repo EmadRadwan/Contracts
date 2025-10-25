@@ -748,7 +748,10 @@
       "billingAccounts": "حسابات الاجل",
       "globalGLSettings": "إعدادات دفتر الأستاذ العام العامة",
       "organizationGLSettings": "إعدادات دفتر الأستاذ العام للشركة",
-      "multiPaymentCertificates": "مستند صرف متعدد"
+      "multiPaymentCertificates": "مستند صرف متعدد",
+      "transactions": "القيود المحاسبية",
+      "transactions-entries": "تفاصيل القيود المحاسبية",
+      "create-transactions": "إنشاء قيد محاسبي"
     },
     "payments": {
       "list": {

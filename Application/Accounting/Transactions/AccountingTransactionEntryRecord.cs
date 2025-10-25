@@ -6,7 +6,7 @@ public class AccountingTransactionEntryRecord
 {
     [Key] public string AcctgTransId { get; set; } = null!;
 
-    [Key] public string AcctgTransEntrySeqId { get; set; } = null!;
+    public string AcctgTransEntrySeqId { get; set; } = null!;
 
     public string? GlAccountTypeDescription { get; set; }
     public string? AcctgTransactionTypeDescription { get; set; }

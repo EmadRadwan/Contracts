@@ -86,7 +86,7 @@ namespace Application.Projects
                         var itemWorkEffortSerial = await _utilityService.GetNextSequence("WorkEffort");
                         var itemWorkEffort = new WorkEffort
                         {
-                            WorkEffortId = itemWorkEffortSerial,
+                            WorkEffortId = item.WorkEffortId ?? itemWorkEffortSerial,
                             WorkEffortParentId = workEffortId,
                             WorkEffortTypeId = "PAYMENT_CERTIFICATE_ITEM",
                             ProjectId = item.ProjectId,
@@ -99,6 +99,7 @@ namespace Application.Projects
                             TransportationExpenses = item.TransportationExpenses ?? 0,
                             Gratuities = item.Gratuities ?? 0,
                             TotalAmount = item.Total,
+                            Amount = item.Amount ?? 0,
                             PartyIdSupplier = !string.IsNullOrEmpty(item.PartyIdSupplier) ? item.PartyIdSupplier : null,
                             PartyIdContractor = !string.IsNullOrEmpty(item.PartyIdContractor)
                                 ? item.PartyIdContractor
@@ -224,7 +225,7 @@ namespace Application.Projects
                             Description = item.Description,
                             Amount = item.Amount,
                             Discount = item.Discount,
-                            DiscountMode = item.DiscountMode,
+                            DiscountMode = item.DiscountMode ?? (item.Discount > 0 ? "value" : "percentage"),
                             TransportationExpenses = item.TransportationExpenses,
                             Gratuities = item.Gratuities,
                             Total = item.Total,

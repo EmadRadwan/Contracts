@@ -83,7 +83,7 @@ public class ListMultiPaymentItems
                         ProductId = x.item.ProductId,
                         ProductName = x.product != null ? x.product.ProductName : "",
                         Description = x.item.Description,
-                        Amount = (decimal?)x.item.TotalAmount, // Adjust if Amount is a separate DB field
+                        Amount = (decimal?)x.item.Amount, // Adjust if Amount is a separate DB field
                         Discount = (decimal?)x.item.Discount,
                         TransportationExpenses = (decimal?)x.item.TransportationExpenses,
                         Gratuities = (decimal?)x.item.Gratuities,
@@ -108,6 +108,8 @@ public class ListMultiPaymentItems
                     item.ItemTypeDescription = itemTypeDescriptions.ContainsKey(item.ItemType ?? "")
                         ? itemTypeDescriptions[item.ItemType]
                         : "";
+                    
+                    item.DiscountMode = item.Discount > 0 ? "value" : "percentage";
                 }
 
                 if (!multiPaymentItems.Any())

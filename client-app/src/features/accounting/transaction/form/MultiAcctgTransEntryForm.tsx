@@ -43,7 +43,8 @@ interface FormValues {
 export default function MultiAcctgTransEntryForm() {
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = "accounting.orgGL.accounting.trans.multi";
-    const companyId = useAppSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyId);
+    const { user } = useAppSelector((state) => state.account);
+    const companyId = user?.organizationPartyId || "";
     const companyName = useAppSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
     const { data: glAccounts, isLoading: isLoadingGlAccounts } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
         skip: !companyId,
@@ -64,14 +65,7 @@ export default function MultiAcctgTransEntryForm() {
     const [transactionId, setTransactionId] = useState<string | null>(null);
     const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
     let formRenderProps: any;
-
-    console.log('transactionId:', transactionId);
     
-    useEffect(() => {
-        if (!companyId) {
-            router.navigate("/orgGl");
-        }
-    }, [companyId]);
 
     // REFACTOR: Define initialFormValues for entry-level fields only
     const initialFormValues: FormValues = useMemo(
