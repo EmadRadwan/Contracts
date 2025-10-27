@@ -100,8 +100,8 @@ const usePurchaseOrder = ({
                 currencyUomId: createdOrder.currencyUomId,
                 agreementId: createdOrder.agreementId
             });
-            setFormEditMode(3);
-            dispatch(setOrderFormEditMode(3));
+            setFormEditMode(2);
+            dispatch(setOrderFormEditMode(2));
             formRef2.current = !formRef2.current;
             toast.success("Order Created Successfully");
             return { orderId: createdOrder.orderId };

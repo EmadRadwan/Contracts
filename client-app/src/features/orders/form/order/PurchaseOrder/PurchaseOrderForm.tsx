@@ -351,7 +351,6 @@ export default function PurchaseOrderForm({selectedOrder, cancelEdit, editMode}:
                         <Menu onSelect={handleMenuSelect}>
                             <MenuItem text={getTranslatedLabel("general.actions", "Actions")}>
                                 <MenuItem text="New Order"/>
-                                {formEditMode === 3 && <MenuItem text="Receive Inventory"/>}
                                 {formEditMode === 2 && <MenuItem text="Approve Order" />}
                             </MenuItem>
                         </Menu>
