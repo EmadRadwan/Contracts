@@ -37,54 +37,55 @@ public class CreatePurchaseOrder
 
         public async Task<Result<OrderDto>> Handle(Command request, CancellationToken cancellationToken)
         {
-            var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-
-            // create purchase order
-            var newPurchaseOrder = await _orderService.CreatePurchaseOrder(request.OrderDto);
-
-
-            var result = await _context.SaveChangesAsync(cancellationToken) > 0;
-
-            if (!result)
+            // REFACTOR: Wrap the entire operation in a try-catch to handle any unexpected exceptions
+            // Improves error handling by ensuring all potential failures are caught and reported
+            try
             {
-                transaction.Rollback();
-                return Result<OrderDto>.Failure("Failed to create Purchase Order");
-            }
+                var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
-            transaction.Commit();
+                // create purchase order
+                var newPurchaseOrder = await _orderService.CreatePurchaseOrder(request.OrderDto);
 
-
-            var orderToReturn = new OrderDto
-            {
-                OrderId = newPurchaseOrder.OrderId,
-                FromPartyId = request.OrderDto.FromPartyId,
-                StatusDescription = "Created",
-                InternalRemarks = request.OrderDto.InternalRemarks,
-                AgreementId = request.OrderDto.AgreementId,
-                CurrencyUomId = request.OrderDto.CurrencyUomId
-            };
-            
-            var affectedRecords = _context.ChangeTracker
-                .Entries()
-                .Where(e => e.State == EntityState.Added ||
-                            e.State == EntityState.Modified ||
-                            e.State == EntityState.Deleted)
-                .Select(e => new ChangeRecord
+                // REFACTOR: Added try-catch around SaveChangesAsync to specifically handle database exceptions
+                // This isolates the database save operation, allowing specific error handling and transaction rollback
+                try
                 {
-                    TableName = e.Entity.GetType().Name,
-                    PKValues = string.Join(", ", e.Properties
-                        .Where(p => p.Metadata.IsPrimaryKey())
-                        .Select(p => $"{p.Metadata.Name}: {p.CurrentValue}")),
-                    Operation = e.State.ToString()
-                })
-                .ToList();
-       
-            foreach (var record in affectedRecords)
-            {
-                Console.WriteLine(record);
-            }
+                    var result = await _context.SaveChangesAsync(cancellationToken) > 0;
 
-            return Result<OrderDto>.Success(orderToReturn);
+                    /*if (!result)
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                        return Result<OrderDto>.Failure("Failed to create Purchase Order");
+                    }*/
+
+                    await transaction.CommitAsync(cancellationToken);
+                }
+                catch (DbUpdateException ex)
+                {
+                    // REFACTOR: Added specific exception handling for DbUpdateException
+                    // Provides more detailed error information and ensures transaction rollback
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Result<OrderDto>.Failure($"Database error while saving purchase order: {ex.Message}");
+                }
+
+                var orderToReturn = new OrderDto
+                {
+                    OrderId = newPurchaseOrder.OrderId,
+                    FromPartyId = request.OrderDto.FromPartyId,
+                    StatusDescription = "Created",
+                    InternalRemarks = request.OrderDto.InternalRemarks,
+                    AgreementId = request.OrderDto.AgreementId,
+                    CurrencyUomId = request.OrderDto.CurrencyUomId
+                };
+                
+                return Result<OrderDto>.Success(orderToReturn);
+            }
+            catch (Exception ex)
+            {
+                // REFACTOR: Catch all other unexpected exceptions
+                // Ensures the application doesn't crash and provides a user-friendly error message
+                return Result<OrderDto>.Failure($"An error occurred while creating purchase order: {ex.Message}");
+            }
         }
     }
 }

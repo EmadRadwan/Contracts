@@ -5,12 +5,12 @@ import FormNumericTextBox from "../../../../../app/common/form/FormNumericTextBo
 import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
 import {requiredValidator} from "../../../../../app/common/form/Validators";
-import {
-    FormMultiColumnComboBoxVirtualPurchaseProduct
-} from "../../../../../app/common/form/FormMultiColumnComboBoxVirtualPurchaseProduct";
-import {ComboBoxChangeEvent} from "@progress/kendo-react-dropdowns";
 import usePurchaseOrderItem from "../../../hook/usePurchaseOrderItem";
-import { Typography } from "@mui/material";
+import {
+    FormMultiColumnComboBoxVirtualSimplePurchaseProduct
+} from "../../../../../app/common/form/FormMultiColumnComboBoxVirtualSimplePurchaseProduct";
+import {FormComboBoxVirtualUOM} from "../../../../../app/common/form/FormComboBoxVirtualUOM";
+import {useTranslationHelper} from "../../../../../app/hooks/useTranslationHelper";
 
 interface Props {
     orderItem?: any;
@@ -28,33 +28,35 @@ export default function PurchaseOrderItemForm({
 
 
     // const [buttonFlag, setButtonFlag] = useState(false);
-    const [lastPrice, setLastPrice] = useState('');
-    const [selectedProduct, setSelectedProduct] = React.useState(undefined)
     const MyForm = React.useRef<any>()
     const [formKey, setFormKey] = React.useState(1);
-    const [initValue, setInitValue] = React.useState<OrderItem | undefined>(orderItem);
+    const {getTranslatedLabel} = useTranslationHelper();
+
+    const transformedInitialValues = orderItem
+        ? {
+            ...orderItem,
+            uomId: orderItem.uomId && orderItem.uomName
+                ? { UomId: orderItem.uomId, Description: orderItem.uomName }
+                : null,
+        }
+        : undefined;
+    
+    const [initValue, setInitValue] = React.useState<OrderItem | undefined>(transformedInitialValues);
 
     const {
         handleSubmitData
     } = usePurchaseOrderItem({orderItem, editMode, setFormKey, setInitValue});
 
-
-    const onCloseCombo = (event: ComboBoxChangeEvent) => {
-        if (event!.target!.value!) {
-            setLastPrice(event.target.value.lastPrice)
-        }
-    };
-
+    console.log('initValue', initValue)
+   
     return (
         <React.Fragment>
             <Form
                 ref={MyForm}
-                initialValues={initValue === undefined ? undefined : orderItem}
+                initialValues={initValue}
                 key={formKey}
                 onSubmit={(values: any) => {
                     handleSubmitData(values as OrderItem)
-                    setLastPrice('')
-                    setSelectedProduct(undefined)
                 }}
                 render={(formRenderProps) => (
 
@@ -67,39 +69,35 @@ export default function PurchaseOrderItemForm({
                                         id={"productId"}
                                         name={"productId"}
                                         label={"Product"}
-                                        component={FormMultiColumnComboBoxVirtualPurchaseProduct}
+                                        component={FormMultiColumnComboBoxVirtualSimplePurchaseProduct}
                                         autoComplete={"off"}
                                         validator={requiredValidator}
-                                        onClose={onCloseCombo}
-                                        onChange={(e) => {
-                                            if (e.value === null || e.value === undefined) {
-                                                setLastPrice("")
-                                            }
-                                            setSelectedProduct(e.value)
-                                        }}
                                         disabled={editMode === 2}
                                     />
                                 </Grid>
-    
-                                <Grid item container xs={12} spacing={2} alignItems={"flex-end"}>
-                                    <Grid item xs={8}>
-                                        <Field
-                                            id={'quantity'}
-                                            format="n0"
-                                            min={1}
-                                            name={'quantity'}
-                                            label={'Quantity *'}
-                                            component={FormNumericTextBox}
-                                            validator={requiredValidator}
-                                            disabled={orderFormEditMode > 2}
-                                        />
-                                    </Grid>
-                                    {selectedProduct && (
-                                        <Grid item xs={4}>
-                                            <Typography variant="h6" color={"blue"} fontWeight={"bold"}>{selectedProduct?.uomDescription!}</Typography>
-                                        </Grid>
-                                    )}
-                                </Grid>
+
+                            <Grid item xs={8}>
+                                <Field
+                                    id="uomId"
+                                    name="uomId"
+                                    label={getTranslatedLabel("projects.certificate.items.list.unitOfMeasure", "Unit of Measure *")}
+                                    component={FormComboBoxVirtualUOM}
+                                    validator={requiredValidator}
+                                />
+                            </Grid>
+
+                            <Grid item xs={8}>
+                                <Field
+                                    id={'quantity'}
+                                    format="n0"
+                                    min={1}
+                                    name={'quantity'}
+                                    label={'Quantity *'}
+                                    component={FormNumericTextBox}
+                                    validator={requiredValidator}
+                                    disabled={orderFormEditMode > 2}
+                                />
+                            </Grid>
     
                                 <Grid item xs={8}>
                                     <Field
@@ -113,7 +111,6 @@ export default function PurchaseOrderItemForm({
                                         disabled={orderFormEditMode > 2}
                                     />
                                 </Grid>
-                                <Grid item xs={3}>{lastPrice && <div>Last Price: {lastPrice}</div>}</Grid>
                             <div className="k-form-buttons">
                                 <Grid container>
                                     <Grid item xs={5}>
@@ -128,7 +125,6 @@ export default function PurchaseOrderItemForm({
                                     </Grid>
                                     <Grid item xs={2}>
                                         <Button onClick={() => {
-                                            setLastPrice('');
                                             onClose()
                                         }} variant="contained" color="error">
                                             Cancel

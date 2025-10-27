@@ -1,305 +1,170 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
-import {
-    Grid as KendoGrid,
-    GRID_COL_INDEX_ATTRIBUTE,
-    GridColumn as Column,
-    GridDataStateChangeEvent,
-    GridRowProps,
-} from "@progress/kendo-react-grid";
-import { DataResult, State } from "@progress/kendo-data-query";
-import Button from "@mui/material/Button";
-import { Grid, Paper } from "@mui/material";
-import LoadingComponent from "../../../../app/layout/LoadingComponent";
-import { handleDatesArray } from "../../../../app/util/utils";
-import {
-    RootState,
-    useAppDispatch,
-    useAppSelector,
-    useFetchAcctTransEntriesQuery,
-} from "../../../../app/store/configureStore";
-import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
-import { useLocation } from "react-router-dom";
-import { AcctgTrans } from "../../../../app/models/accounting/acctgTrans";
-import AccountingMenu from "../../invoice/menu/AccountingMenu";
-import SetupAccountingMenu from "../menu/SetupAccountingMenu";
-import AccountingSummaryMenu from "../menu/AccountingSummaryMenu";
-import { useSelector } from "react-redux";
-import { router } from "../../../../app/router/Routes";
+// ... (all imports remain unchanged)
 
-export default function AccountingTransactionEntriesList() {
-    const { user } = useAppSelector((state) => state.account);
-    const companyId = user?.organizationPartyId || "";
-    console.log("companyId in AccountingTransactionEntriesList:", companyId);
-
-    const [accountingTransEntries, setAccountingTransEntries] = useState<DataResult>({ data: [], total: 0 });
-    const [dataState, setDataState] = useState<State>({ take: 6, skip: 0 });
-
-    const dataStateChange = (e: GridDataStateChangeEvent) => {
-        // REFACTOR: Simplify dataStateChange
-        // No need to manage companyId in filters since it's passed explicitly in the query.
-        setDataState(e.dataState);
-    };
-
-    const dispatch = useAppDispatch();
-    const companyName = useSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
-
+export default function PurchaseOrderForm({ selectedOrder, cancelEdit, editMode }: Props) {
+    const formRef = React.useRef<any>(null);
+    const formRef2 = React.useRef<boolean>(false);
+    const [selectedMenuItem, setSelectedMenuItem] = React.useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const { getTranslatedLabel } = useTranslationHelper();
-    const location = useLocation();
+    const localizationKey = 'order.po.form';
+    const selectedMenuItemRef = useRef<string>(""); // To store selectedMenuItem for submission
+    const { language } = useAppSelector(state => state.localization);
+    // ... (other state and hooks remain unchanged)
 
-    useEffect(() => {
-        if (location?.state?.glAccountId) {
-            setDataState({
-                filter: {
-                    logic: "and",
-                    filters: [
-                        {
-                            field: "glAccountId",
-                            operator: "eq",
-                            value: location.state.glAccountId,
-                        },
-                    ],
-                },
-                take: 6,
-                skip: 0,
-            });
-        }
-    }, [location?.state?.glAccountId]);
-
-    const [editMode, setEditMode] = useState(0);
-    const [acctTrans, setAcctTrans] = useState<AcctgTrans | undefined>(undefined);
-    const [show, setShow] = useState(false);
-
-    // REFACTOR: Include companyId in query arguments
-    // Ensures companyId is sent to the backend to filter transaction entries by organization.
-    const queryArgs = { ...dataState, companyId };
-    console.log("Query args sent to useFetchAcctTransEntriesQuery:", queryArgs);
-    const { data, error, isFetching } = companyId
-        ? useFetchAcctTransEntriesQuery(queryArgs)
-        : { data: null, error: new Error("CompanyId is missing"), isFetching: false };
-
-    useEffect(() => {
-        if (data) {
-            const adjustedData = handleDatesArray(data.data);
-            setAccountingTransEntries({ data: adjustedData, total: data.total });
-        }
-    }, [data]);
-
-    function handleSelectAcctTrans(acctTransId: string) {
-        const selectedAcctTrans: AcctgTrans | undefined = data?.data.find(
-            (acctTrans: any) => acctTrans.acctgTransId === acctTransId
-        );
-        setAcctTrans(selectedAcctTrans);
-    }
-
-    const AcctTransDescriptionCell = (props: any) => {
-        const field = props.field || "";
-        const value = props.dataItem[field];
-        const navigationAttributes = useTableKeyboardNavigation(props.id);
-        return (
-            <td
-                className={props.className}
-                style={{ ...props.style, color: "blue" }}
-                colSpan={props.colSpan}
-                role={"gridcell"}
-                aria-colindex={props.ariaColumnIndex}
-                aria-selected={props.isSelected}
-                {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
-                {...navigationAttributes}
-            >
-                <Button
-                    onClick={() => {
-                        handleSelectAcctTrans(props.dataItem.acctgTransId);
-                    }}
-                >
-                    {props.dataItem.acctgTransId}
-                </Button>
-            </td>
-        );
-    };
-
-    const rowRender = useCallback(
-        (trElement: React.ReactElement<HTMLTableRowElement>, props: GridRowProps) => {
-            const isDebit = props.dataItem.debitCreditFlag === "D";
-            const style = { backgroundColor: isDebit ? "rgba(55, 180, 0, 0.32)" : "#ffffff" };
-            return React.cloneElement(trElement, { style }, trElement.props.children);
+    // REFACTOR: Modified handleMenuSelect to store selectedMenuItem in a ref and trigger form submission correctly
+    // Purpose: Ensure selectedMenuItem is preserved and passed to handleSubmit, fixing the issue where formProps.selectedMenuItem was undefined
+    // This avoids relying on formProps to carry the selectedMenuItem and ensures the "Approve Order" action is correctly triggered
+    const handleMenuSelect = useCallback(
+        (e: MenuSelectEvent) => {
+            const menuItem = e.item.text;
+            setSelectedMenuItem(menuItem); // Update state for UI consistency
+            selectedMenuItemRef.current = menuItem; // Store in ref for submission
+            if (menuItem === "New Order") {
+                handleNewOrder();
+            } else if (menuItem === "Receive Inventory") {
+                dispatch(setSelectedApprovedPurchaseOrder({ orderId: selectedOrder ? selectedOrder.orderId! : order?.orderId }));
+                navigate("/receiveInventory");
+            } else if (menuItem === "Approve Order") {
+                // Trigger form submission without passing selectedMenuItem as part of form values
+                if (formRef.current) {
+                    console.log('Approve Order selected. Form state:', {
+                        isValid: formRef.current.isValid,
+                        modified: formRef.current.modified,
+                        allowSubmit: formRef.current.allowSubmit,
+                        values: formRef.current.valueGetter(),
+                        touched: formRef.current.touched
+                    });
+                    formRef.current.onSubmit(); // Trigger form submission
+                }
+            }
         },
-        []
+        [dispatch, navigate, selectedOrder, order, handleNewOrder]
     );
 
-    const cancelEdit = useCallback(() => {
-        setEditMode(0);
-        setAcctTrans(undefined);
-    }, []);
+    // REFACTOR: Updated handleSubmit to use selectedMenuItemRef instead of formProps.selectedMenuItem
+    // Purpose: Fix the issue where formProps.selectedMenuItem was undefined by using a ref to store the selected menu item
+    // This ensures the "Approve Order" action is correctly passed to handleCreate, sending the "APPROVE" flag to the backend
+    const handleSubmit = useCallback(
+        async (formProps: any) => {
+            if (!formProps.isValid) {
+                toast.error("Form is invalid");
+                setIsLoading(false);
+                return false;
+            }
+            if (isSubmitting) {
+                // Prevent multiple submissions
+                return false;
+            }
+            setIsSubmitting(true); // Lock submission
+            const values = formProps.values;
+            // Use selectedMenuItemRef.current instead of formProps.selectedMenuItem
+            const actionType =
+                selectedMenuItemRef.current === "Approve Order"
+                    ? "Approve Order"
+                    : formEditMode === 1
+                        ? "Create Order"
+                        : formEditMode === 2
+                            ? "Update Order"
+                            : "Approve Order";
 
-    // REFACTOR: Handle missing companyId case
-    // Display an error message if companyId is missing to prevent invalid queries.
-    if (!companyId) {
-        return (
-            <Paper elevation={5} className="div-container-withBorderCurved">
-                <Grid container>
-                    <Grid item xs={12}>
-                        <div className="div-container">
-                            <p style={{ color: "red" }}>
-                                {getTranslatedLabel(
-                                    "accounting.orgGL.error.noCompany",
-                                    "No company selected. Please select a company to view transaction entries."
-                                )}
-                            </p>
-                        </div>
-                    </Grid>
-                </Grid>
-            </Paper>
-        );
-    }
+            try {
+                // Perform the primary action (Create, Update, or Approve)
+                const result = await handleCreate({ values, selectedMenuItem: actionType });
+                /*if (formEditMode === 1 && result?.orderId) {
+                    await handleCreate({
+                        values: { ...values, orderId: result.orderId },
+                        selectedMenuItem: "Approve Order"
+                    });
+                }*/
+            } catch (error) {
+                toast.error("Operation failed");
+                setIsSubmitting(false);
+            } finally {
+                // Clear selectedMenuItemRef after submission to prevent stale values
+                selectedMenuItemRef.current = "";
+            }
+        },
+        [handleCreate, formEditMode, isSubmitting]
+    );
+
+    // ... (rest of the code remains unchanged, including the Menu component and Form rendering)
 
     return (
         <>
-            <AccountingMenu selectedMenuItem={"acctTrans"} />
+            {isLoadingCombined && (
+                <LoadingComponent
+                    message='Processing Order...'
+                    style={{ zIndex: 9999, position: 'fixed', top: 0, left: 0, width: '100%', height: '100%' }}
+                />
+            )}
+            <OrderMenu selectedMenuItem={'/orders'} />
+
             <Paper elevation={5} className={`div-container-withBorderCurved`}>
-                <Grid container columnSpacing={1} alignItems="center">
-                    <SetupAccountingMenu />
-                    <AccountingSummaryMenu />
-                    <Grid item xs={12}>
-                        <div className="div-container">
-                            <KendoGrid
-                                resizable={true}
-                                filterable={true}
-                                sortable={true}
-                                pageable={true}
-                                {...dataState}
-                                data={accountingTransEntries ? accountingTransEntries : { data: [], total: 77 }}
-                                onDataStateChange={dataStateChange}
-                                rowRender={rowRender}
+                <Grid container spacing={2} alignItems={"center"} position={"relative"}>
+                    <Grid item xs={10}>
+                        <Box display='flex' justifyContent='space-between'>
+                            <Typography
+                                sx={{
+                                    fontWeight: "bold",
+                                    paddingLeft: 3,
+                                    fontSize: '18px',
+                                    color: formEditMode === 1 ? "green" : "black"
+                                }}
+                                variant="h6"
                             >
-                                <Column
-                                    field="acctgTransId"
-                                    cell={AcctTransDescriptionCell}
-                                    width={110}
-                                    locked={!show}
-                                    title={getTranslatedLabel(
-                                        "accounting.orgGL.accounting.summary.txns.acctgTransId",
-                                        "Acctg Trans Id"
-                                    )}
-                                />
-                                <Column
-                                    field="amount"
-                                    title={getTranslatedLabel("accounting.payments.list.amount", "Amount")}
-                                    width={100}
-                                    format="{0:n}"
-                                />
-                                <Column
-                                    field="acctgTransEntrySeqId"
-                                    title={getTranslatedLabel(
-                                        "accounting.orgGL.accounting.summary.txnEntries.acctgTransEntrySeqId",
-                                        "SEQ Id"
-                                    )}
-                                    width={70}
-                                />
-                                <Column
-                                    field="debitCreditFlag"
-                                    title={getTranslatedLabel(
-                                        "accounting.orgGL.accounting.summary.txnEntries.debitCreditFlag",
-                                        "Debit/Credit"
-                                    )}
-                                    width={80}
-                                />
-                                <Column
-                                    field="transactionDate"
-                                    title={getTranslatedLabel(
-                                        "accounting.orgGL.accounting.summary.txns.transactionDate",
-                                        "Transaction Date"
-                                    )}
-                                    width={130}
-                                    format="{0: dd/MM/yyyy}"
-                                />
-                                <Column
-                                    field="glAccountId"
-                                    title={getTranslatedLabel(
-                                        "accounting.orgGL.accounting.summary.txnEntries.glAccountId",
-                                        "Gl Account Id"
-                                    )}
-                                    width={100}
-                                />
-                                <Column
-                                    field="glAccountName"
-                                    title={getTranslatedLabel(
-                                        "accounting.orgGL.accounting.summary.txnEntries.glAccountName",
-                                        "Gl Account Name"
-                                    )}
-                                    width={250}
-                                />
-                                <Column
-                                    field="description"
-                                    title={getTranslatedLabel(
-                                        "accounting.orgGL.accounting.summary.txns.description",
-                                        "Description"
-                                    )}
-                                    width={230}
-                                />
-                                <Column
-                                    field="invoiceId"
-                                    title={getTranslatedLabel("accounting.invoices.list.invoiceId", "Invoice Id")}
-                                    width={100}
-                                />
-                                <Column
-                                    field="paymentId"
-                                    title={getTranslatedLabel("accounting.payments.list.paymentId", "Payment Id")}
-                                    width={100}
-                                />
-                                <Column
-                                    field="workEffortId"
-                                    title={getTranslatedLabel(
-                                        "accounting.orgGL.accounting.summary.txnEntries.workEffortId",
-                                        "WorkEffort Id"
-                                    )}
-                                    width={100}
-                                />
-                                <Column
-                                    field="shipmentId"
-                                    title={getTranslatedLabel(
-                                        "accounting.orgGL.accounting.summary.txns.shipmentId",
-                                        "Shipment Id"
-                                    )}
-                                    width={100}
-                                />
-                                <Column
-                                    field="isPosted"
-                                    title={getTranslatedLabel(
-                                        "accounting.orgGL.accounting.summary.txns.isPosted",
-                                        "Is Posted"
-                                    )}
-                                    width={100}
-                                />
-                                <Column
-                                    field="postedDate"
-                                    title={getTranslatedLabel(
-                                        "accounting.orgGL.accounting.summary.txns.postedDate",
-                                        "Posted Date"
-                                    )}
-                                    width={150}
-                                    format="{0: dd/MM/yyyy}"
-                                />
-                                <Column
-                                    field="acctgTransactionTypeDescription"
-                                    title={getTranslatedLabel(
-                                        "accounting.orgGL.accounting.summary.txns.acctgTransType",
-                                        "Acctg Trans Type"
-                                    )}
-                                    width={150}
-                                />
-                            </KendoGrid>
-                            {isFetching && (
-                                <LoadingComponent
-                                    message={getTranslatedLabel(
-                                        "accounting.orgGL.accounting.summary.loading",
-                                        "Loading Accounting Trans Entries..."
-                                    )}
-                                />
+                                {" "}
+                                {order && order?.orderId ? `Purchase Order No: ${order?.orderId}` : "New Purchase Order"}{" "}
+                            </Typography>
+                            {order?.certificateNumber && (
+                                <Typography
+                                    sx={{ paddingLeft: 3, fontSize: '16px', color: 'textSecondary' }}
+                                    variant="subtitle1"
+                                >
+                                    Certificate Number: {order.certificateNumber}
+                                </Typography>
                             )}
-                        </div>
+                        </Box>
+                    </Grid>
+
+                    <Grid item xs={1}>
+                        <Menu onSelect={handleMenuSelect}>
+                            <MenuItem text={getTranslatedLabel("general.actions", "Actions")}>
+                                <MenuItem text="New Order" />
+                                {formEditMode === 3 && <MenuItem text="Receive Inventory" />}
+                                {formEditMode === 2 && <MenuItem text="Approve Order" />}
+                            </MenuItem>
+                        </Menu>
+                    </Grid>
+                    <Grid item xs={1}>
+                        {formEditMode > 1 && (
+                            <RibbonContainer>
+                                <Ribbon
+                                    side={language === "ar" ? "left" : "right"}
+                                    type="corner"
+                                    size="large"
+                                    backgroundColor={status.backgroundColor}
+                                    color={status.foreColor}
+                                    fontFamily="sans-serif"
+                                >
+                                    {order?.statusDescription}
+                                </Ribbon>
+                            </RibbonContainer>
+                        )}
                     </Grid>
                 </Grid>
+
+                <Form
+                    ref={formRef}
+                    initialValues={initialFormValues}
+                    key={formKey}
+                    onSubmitClick={values => handleSubmit(values)}
+                    render={(formRenderProps) => (
+                        <FormElement>
+                            {/* ... (rest of the Form and other components remain unchanged) */}
+                        </FormElement>
+                    )}
+                />
             </Paper>
         </>
     );

@@ -106,7 +106,6 @@ public class OrderService : BaseService, IOrderService
             CreatedStamp = stamp
         };
 
-        //TODO: consider using entity OrderHeaderNote for both internal and customer remarks
 
         _context.OrderHeaders.Add(newOrder);
         await _context.SaveChangesAsync();
@@ -134,10 +133,7 @@ public class OrderService : BaseService, IOrderService
 
         // create order items
         await CreatePurchaseOrderItems(orderDto.OrderItems, newOrderSerial);
-
-        /*var createdOrderItems = await _utilityService.FindLocalOrDatabaseListAsync<OrderItem>(
-            query => query.Where(ii => ii.OrderId == newOrderSerial)
-        );*/
+        
 
         var createdOrderItems = await _context.OrderItems
             .Where(ii => ii.OrderId == newOrderSerial)

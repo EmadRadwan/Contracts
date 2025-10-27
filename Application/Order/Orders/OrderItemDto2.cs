@@ -12,6 +12,7 @@ public class OrderItemDto2
     public string? ReserveOrderEnumId { get; set; }
     public string? ProductId { get; set; }
     public string? UomId { get; set; }
+    public string? UomName { get; set; }
     public string? FacilityId { get; set; }
     public string? SupplierId { get; set; }
     public string? ProductTypeId { get; set; }

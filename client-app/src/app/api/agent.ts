@@ -197,6 +197,10 @@ const Products = {
         axios
             .get<ProductLov>(`/products/getPurchaseProductsLov`, {params})
             .then(responseBody),
+    getSimplePurchaseProductsLov: (params: URLSearchParams) =>
+        axios
+            .get<ProductLov>(`/products/getSimplePurchaseProductsLov`, {params})
+            .then(responseBody),
     getSimpleProductsLov: (params: URLSearchParams) =>
         axios
             .get<ProductLov>(`/products/getSimpleProductsLov`, {params})

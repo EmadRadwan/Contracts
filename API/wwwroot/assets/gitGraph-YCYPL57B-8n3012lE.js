@@ -1,1 +1,0 @@
-import{G as a,f as m}from"./mermaid-parser.core-8zhoW3MG.js";import"./index-4FZ96tzn.js";import"./defaults-0587XrSD.js";import"./_baseClone-iCstanLz.js";import"./clone-0yooRqjJ.js";export{a as GitGraphModule,m as createGitGraphServices};

@@ -29,4 +29,5 @@ export interface OrderItem {
     includeThisItem?: boolean;
     validItem?: any;
     facilityId?: string;
+    uomId?: string;
 }

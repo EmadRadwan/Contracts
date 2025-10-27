@@ -221,8 +221,6 @@ export default function PurchaseOrderItemsList({orderFormEditMode, orderId}: Pro
         const taxNotProcessedYet =
             props.dataItem.totalItemTaxAdjustments !== salesTaxValue;
 
-        // REFACTOR: Default to 0 if undefined or null
-        // Purpose: Ensures finalDiscount and finalTax are numbers to prevent toFixed errors
         const finalDiscount = discountsNotProcessedYet
             ? discountValue
             : (props.dataItem.discountAndPromotionAdjustments ?? 0);
@@ -235,8 +233,6 @@ export default function PurchaseOrderItemsList({orderFormEditMode, orderId}: Pro
 
         const showBreakdown = finalDiscount !== 0 && finalTax > 0;
 
-        // REFACTOR: Add debug logging for adjustment values
-        // Purpose: Tracks values to diagnose null/undefined issues after addTax and invoice creation
         console.log('ItemDiscountCommandCell:', {
             productId: props.dataItem.productId,
             orderItemSeqId: props.dataItem.orderItemSeqId,
@@ -379,9 +375,6 @@ export default function PurchaseOrderItemsList({orderFormEditMode, orderId}: Pro
                                             setShowList(true)
                                         }} variant="outlined" disabled={orderSTotal === 0}>
                                             Order Adjustments
-                                        </Button>
-                                        <Button sx={{ml: 2}} onClick={() => setShowTermsModal(true)} variant="outlined">
-                                            Order Terms
                                         </Button>
                                     </Grid>
                                 </Grid>

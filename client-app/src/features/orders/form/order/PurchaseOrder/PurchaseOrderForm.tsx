@@ -239,13 +239,20 @@ export default function PurchaseOrderForm({selectedOrder, cancelEdit, editMode}:
     const handleMenuSelect = useCallback(
         (e: MenuSelectEvent) => {
             const menuItem = e.item.text;
+            setSelectedMenuItem(menuItem);
+            selectedMenuItemRef.current = menuItem;
             if (menuItem === "New Order") {
                 handleNewOrder();
             } else if (menuItem === "Receive Inventory") {
                 dispatch(setSelectedApprovedPurchaseOrder({orderId: selectedOrder ? selectedOrder.orderId! : order?.orderId}));
                 navigate("/receiveInventory");
+            } else if (menuItem === "Approve Order") {
+                // Trigger form submission with "Approve Order" action
+                if (formRef.current) {
+                    formRef.current.onSubmit();
+                }
             }
-            // No submission actions in menu
+            
         },
         [dispatch, navigate, selectedOrder, order, handleNewOrder]
     );
@@ -263,22 +270,22 @@ export default function PurchaseOrderForm({selectedOrder, cancelEdit, editMode}:
             }
             setIsSubmitting(true); // Lock submission
             const values = formProps.values;
-            const actionType = formEditMode === 1 ? "Create Order" : formEditMode === 2 ? "Update Order" : "Approve Order";
-
+            const actionType =
+                selectedMenuItemRef.current === "Approve Order"
+                    ? "Approve Order"
+                    : formEditMode === 1
+                        ? "Create Order"
+                        : formEditMode === 2
+                            ? "Update Order"
+                            : "Approve Order";
             try {
                 // Perform the primary action (Create or Update)
                 const result = await handleCreate({ values, selectedMenuItem: actionType });
-
-                // Chain Approve Order only after a successful Create Order
-                if (formEditMode === 1 && result?.orderId) {
-                    await handleCreate({
-                        values: { ...values, orderId: result.orderId },
-                        selectedMenuItem: "Approve Order"
-                    });
-                }
             } catch (error) {
                 toast.error("Operation failed");
                 setIsSubmitting(false);
+            } finally {
+                selectedMenuItemRef.current = "";
             }
         },
         [handleCreate, formEditMode, isSubmitting]
@@ -345,6 +352,7 @@ export default function PurchaseOrderForm({selectedOrder, cancelEdit, editMode}:
                             <MenuItem text={getTranslatedLabel("general.actions", "Actions")}>
                                 <MenuItem text="New Order"/>
                                 {formEditMode === 3 && <MenuItem text="Receive Inventory"/>}
+                                {formEditMode === 2 && <MenuItem text="Approve Order" />}
                             </MenuItem>
                         </Menu>
                     </Grid>
@@ -376,7 +384,7 @@ export default function PurchaseOrderForm({selectedOrder, cancelEdit, editMode}:
                             <fieldset className={'k-form-fieldset'}>
                                 <Grid container alignItems={"start"} justifyContent="start" spacing={1}>
 
-                                    <Grid container spacing={2} alignItems={"center"} justifyContent={"flex-start"}
+                                    <Grid item container spacing={2} alignItems={"center"} justifyContent={"flex-start"}
                                           xs={12} sx={{paddingLeft: 3}}>
                                         <Grid item container xs={9} spacing={2} alignItems={"flex-end"}>
                                             <Grid item xs={3}

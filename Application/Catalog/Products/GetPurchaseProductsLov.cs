@@ -25,14 +25,10 @@ public class GetPurchaseProductsLov
     {
         private readonly DataContext _context;
         private readonly ILogger<Handler> _logger;
-        private readonly IMapper _mapper;
-        private readonly IUserAccessor _userAccessor;
 
-        public Handler(DataContext context, IMapper mapper, IUserAccessor userAccessor, ILogger<Handler> logger)
+        public Handler(DataContext context, ILogger<Handler> logger)
         {
-            _mapper = mapper;
             _context = context;
-            _userAccessor = userAccessor;
             _logger = logger;
         }
 

@@ -51,6 +51,7 @@ export default function usePurchaseOrderItem({
                 quantity: data.quantity,
                 unitPrice: +data.unitPrice.toFixed(2),
                 subTotal: +data.unitPrice.toFixed(2) * data.quantity,
+                uomId: data.uomId,
                 collectTax: addTax, // Optional: Remove if not needed
             };
         } else {
@@ -70,7 +71,8 @@ export default function usePurchaseOrderItem({
                 quantity: data.quantity,
                 unitPrice: +data.unitPrice.toFixed(2),
                 subTotal: +data.unitPrice.toFixed(2) * data.quantity,
-                collectTax: addTax, // Optional: Remove if not needed
+                collectTax: addTax,
+                uomId: data.uomId,
             };
             if (orderItem) {
                 newOrderItem.orderId = orderItem.orderId;

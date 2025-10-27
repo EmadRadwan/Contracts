@@ -57,17 +57,28 @@ const usePurchaseOrder = ({
     const sTotal: any = useSelector(orderSubTotal)
     const aTotal: any = useSelector(orderLevelAdjustmentsTotal)
     const allItemsAreDeletedOrNot: any = useSelector(allItemsAreDeletedOrNone);
+    
     const orderItemFlat = orderItemsFromUi.map((item: any) => {
-        if (typeof item.productId === "object") {
-            return {...item, productId: item.productId.productId}
-        } else {
-            return item
-        }
+      // REFACTOR: Initialize a new object to avoid mutating the original item
+      let updatedItem = { ...item };
+
+      // REFACTOR: Split the combined condition into separate if statements for clarity and maintainability.
+      // Each condition is now checked independently, making it easier to debug and extend in the future.
+      if (typeof item.productId === "object") {
+        updatedItem.productId = item.productId.productId;
+      }
+
+      if (typeof item.uomId === "object") {
+        updatedItem.uomId = item.uomId?.UomId;
+      }
+
+      // REFACTOR: Return the updated item, which will either have modified fields or be the original item copy
+      return updatedItem;
     });
 
     const updatedOrderItemFlat = adjustedOrderItemsWithMarkedForDeletionItems.map((item: any) => {
         if (typeof item.productId === "object") {
-            return {...item, productId: item.productId.productId}
+            return {...item, productId: item.productId.productId, uomId: item.uomId?.UomId}
         } else {
             return item
         }

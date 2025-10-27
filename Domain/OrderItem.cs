@@ -68,7 +68,8 @@ public class OrderItem
     public string? CorrespondingPoId { get; set; }
     public string? StatusId { get; set; }
     public string? SyncStatusId { get; set; }
-    public string? UomId { get; set; }
+    public string UomId { get; set; }
+    //public string UomName { get; set; }
 
     public DateTime? EstimatedShipDate { get; set; }
     public DateTime? EstimatedDeliveryDate { get; set; }

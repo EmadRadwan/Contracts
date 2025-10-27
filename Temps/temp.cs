@@ -1,105 +1,101 @@
-using Application.Interfaces;
-using Application.Shipments.Transactions;
-using AutoMapper;
-using MediatR;
-using Microsoft.AspNetCore.OData.Query;
-using Microsoft.Extensions.Logging;
-using Persistence;
-using FluentValidation;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Application.Accounting.Transactions;
-
-public class ListAccountingTransactionEntries
+public async Task<Result<List<OrderItemDto2>>> Handle(Query request, CancellationToken cancellationToken)
 {
-    public class Query : IRequest<IQueryable<AccountingTransactionEntryRecord>>
+    if (string.IsNullOrEmpty(request.OrderId))
     {
-        public ODataQueryOptions<AccountingTransactionEntryRecord> Options { get; set; }
-        public string Language { get; set; }
-        // REFACTOR: Add CompanyId to the query model
-        // Allows the frontend to pass companyId for filtering transaction entries by organization.
-        public string CompanyId { get; set; }
+        return Result<List<OrderItemDto2>>.Failure("OrderId cannot be null or empty.");
     }
 
-    public class QueryValidator : AbstractValidator<Query>
+    var language = request.Language ?? "en";
+
+    var productStoreInventoryFacilityId = await _productStoreService.GetProductFacilityId();
+
+    // REFACTOR: Added left join with Uoms table and included UomId and UomName in the OrderItemDto2 projection.
+    // This fetches UOM data directly in the initial query, aligning with the requirement to place UomId and UomName
+    // at the same level as ProductId and ProductName, reducing dependency on the nested OrderItemProduct.
+    var orderItems = await (from itm in _context.OrderItems.AsNoTracking()
+        join prd in _context.Products.AsNoTracking() on itm.ProductId equals prd.ProductId
+        join uom in _context.Uoms.AsNoTracking() on prd.QuantityUomId equals uom.UomId into uomGroup
+        from uom in uomGroup.DefaultIfEmpty()
+        where itm.OrderId == request.OrderId
+        let discountAdjustments = _context.OrderAdjustments
+            .AsNoTracking()
+            .Where(adjustment => adjustment.OrderId == itm.OrderId
+                                 && adjustment.OrderItemSeqId == itm.OrderItemSeqId
+                                 && adjustment.OrderAdjustmentTypeId == "DISCOUNT_ADJUSTMENT")
+            .ToList()
+        let totalDiscountAdjustments = discountAdjustments.Sum(adjustment => adjustment.Amount)
+        select new OrderItemDto2
+        {
+            OrderId = itm.OrderId,
+            OrderItemSeqId = itm.OrderItemSeqId,
+            ProductId = itm.ProductId,
+            ProductName = prd.ProductName,
+            Quantity = itm.Quantity,
+            UnitPrice = itm.UnitPrice,
+            SubTotal = itm.Quantity * itm.UnitPrice,
+            IsProductDeleted = false,
+            FacilityId = productStoreInventoryFacilityId,
+            ValidItem = true,
+            TotalItemTaxAdjustments = _context.OrderAdjustments
+                .AsNoTracking()
+                .Where(adjustment => adjustment.OrderId == itm.OrderId
+                                     && adjustment.OrderItemSeqId == itm.OrderItemSeqId
+                                     && (adjustment.OrderAdjustmentTypeId == "SALES_TAX"
+                                         || adjustment.OrderAdjustmentTypeId == "VAT_TAX"))
+                .Sum(adjustment => adjustment.Amount),
+            DiscountAndPromotionAdjustments = totalDiscountAdjustments,
+            UomId = uom != null ? uom.UomId : null,
+            UomName = uom != null ? (language == "ar" ? uom.DescriptionArabic : uom.Description) : null
+        }).ToListAsync(cancellationToken);
+
+    var result = new List<OrderItemDto2>();
+
+    foreach (var orderItem in orderItems)
     {
-        public QueryValidator()
-        {
-            RuleFor(x => x.Language).NotEmpty().WithMessage("Language is required");
-            // REFACTOR: Make CompanyId validation optional
-            // Only validates CompanyId if provided, allowing queries without companyId for superusers.
-            RuleFor(x => x.CompanyId)
-                .NotEmpty()
-                .When(x => x.CompanyId != null)
-                .WithMessage("CompanyId cannot be empty if provided");
-        }
-    }
+        var shipmentReceipts = _context.ShipmentReceipts
+            .AsNoTracking()
+            .Where(x => x.OrderId == orderItem.OrderId && x.OrderItemSeqId == orderItem.OrderItemSeqId)
+            .ToList();
 
-    public class Handler : IRequestHandler<Query, IQueryable<AccountingTransactionEntryRecord>>
-    {
-        private readonly DataContext _context;
+        orderItem.QuantityAccepted = shipmentReceipts.Sum(x => x.QuantityAccepted) ?? 0;
+        orderItem.QuantityRejected = shipmentReceipts.Sum(x => x.QuantityRejected) ?? 0;
+        orderItem.IncludeThisItem = false;
 
-        public Handler(DataContext context)
-        {
-            _context = context;
-        }
-
-        public async Task<IQueryable<AccountingTransactionEntryRecord>> Handle(Query request, CancellationToken cancellationToken)
-        {
-            // Log the received CompanyId for debugging
-            Console.WriteLine($"Received CompanyId in handler: {request.CompanyId}");
-
-            var validator = new QueryValidator();
-            var validationResult = await validator.ValidateAsync(request, cancellationToken);
-            if (!validationResult.IsValid)
+        var orderItemProduct = await (from prd in _context.Products.AsNoTracking()
+            join sp in _context.SupplierProducts.AsNoTracking() on prd.ProductId equals sp.ProductId into spGroup
+            from sp in spGroup.DefaultIfEmpty()
+            join uom in _context.Uoms.AsNoTracking() on prd.QuantityUomId equals uom.UomId into uomGroup
+            from uom in uomGroup.DefaultIfEmpty()
+            join iif in _context.InventoryItemFeatures.AsNoTracking() on prd.ProductId equals iif.ProductId into iifGroup
+            from iif in iifGroup.DefaultIfEmpty()
+            join pf in _context.ProductFeatures.AsNoTracking()
+                    .Where(pf => pf.ProductFeatureTypeId == "COLOR") on iif != null
+                    ? iif.ProductFeatureId
+                    : null
+                equals pf.ProductFeatureId into pfGroup
+            from pf in pfGroup.DefaultIfEmpty()
+            where prd.ProductId == orderItem.ProductId
+            select new ProductLovDto
             {
-                throw new ValidationException(string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
-            }
+                ProductId = prd.ProductId,
+                ProductName = prd.ProductName,
+                ColorDescription = pf != null ? (language == "ar" ? pf.DescriptionArabic : pf.Description) : null,
+                LastPrice = sp != null ? sp.LastPrice : null,
+                QuantityUom = uom != null ? uom.UomId : null,
+                UomDescription = uom != null ? (language == "ar" ? uom.DescriptionArabic : uom.Description) : null
+            }).FirstOrDefaultAsync(cancellationToken);
 
-            var language = request.Language?.ToLower() == "ar" ? "ar" : "en";
-
-            // REFACTOR: Add join with GlAccountOrganization and filter by CompanyId
-            // Filters transaction entries based on OrganizationPartyId, using LEFT JOINs to include
-            // entries without associated GlAccountOrganization records if CompanyId is null.
-            var query = (from te in _context.AcctgTransEntries
-                         join t in _context.AcctgTrans on te.AcctgTransId equals t.AcctgTransId into transJoin
-                         from trans in transJoin.DefaultIfEmpty()
-                         join a in _context.AcctgTransTypes on trans.AcctgTransTypeId equals a.AcctgTransTypeId into transTypeJoin
-                         from transType in transTypeJoin.DefaultIfEmpty()
-                         join g in _context.GlAccounts on te.GlAccountId equals g.GlAccountId into glAccountJoin
-                         from glAccount in glAccountJoin.DefaultIfEmpty()
-                         join go in _context.GlAccountOrganizations on glAccount != null ? glAccount.GlAccountId : null equals go.GlAccountId into glAccountOrgJoin
-                         from glAccountOrg in glAccountOrgJoin.DefaultIfEmpty()
-                         join p in _context.Parties on te.PartyId equals p.PartyId into partyJoin
-                         from party in partyJoin.DefaultIfEmpty()
-                         where request.CompanyId == null || (glAccountOrg != null && glAccountOrg.OrganizationPartyId == request.CompanyId)
-                         select new AccountingTransactionEntryRecord
-                         {
-                             AcctgTransId = te.AcctgTransId,
-                             AcctgTransEntrySeqId = te.AcctgTransEntrySeqId,
-                             GlAccountName = glAccount != null ? (language == "ar" ? glAccount.AccountNameArabic : glAccount.AccountName) : null,
-                             Description = te.Description,
-                             PartyId = te.PartyId,
-                             PartyName = party != null ? party.Description : null,
-                             ProductId = te.ProductId,
-                             InvoiceId = trans.InvoiceId,
-                             PaymentId = trans.PaymentId,
-                             ShipmentId = trans.ShipmentId,
-                             WorkEffortId = trans.WorkEffortId,
-                             GlAccountTypeId = te.GlAccountTypeId,
-                             GlAccountId = te.GlAccountId,
-                             Amount = te.Amount,
-                             DebitCreditFlag = te.DebitCreditFlag,
-                             IsPosted = trans.IsPosted,
-                             PostedDate = trans.PostedDate,
-                             TransactionDate = trans.TransactionDate,
-                             GlFiscalTypeId = trans.GlFiscalTypeId,
-                             AcctgTransactionTypeDescription = transType != null ? transType.Description : null
-                         }).AsQueryable();
-
-            return await Task.FromResult(query);
+        if (orderItemProduct != null)
+        {
+            // REFACTOR: Updated ProductName assignment to maintain existing behavior.
+            // Since UomId and UomName are now fetched in the initial query, no UOM-related assignments are needed here.
+            orderItem.ProductName = orderItemProduct.ProductName + " " +
+                                    (orderItemProduct.ColorDescription ?? string.Empty);
+            orderItem.OrderItemProduct = orderItemProduct;
         }
+
+        result.Add(orderItem);
     }
+
+    return Result<List<OrderItemDto2>>.Success(result);
 }
