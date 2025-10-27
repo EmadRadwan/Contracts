@@ -1,0 +1,1 @@
+import{A as m,e as p}from"./mermaid-parser.core-5k32b2Hb.js";import"./index-GCvzUHIO.js";import"./defaults-yMk8QfMK.js";import"./_baseClone-QvXfNBJ-.js";import"./clone-29XHbqsx.js";export{m as ArchitectureModule,p as createArchitectureServices};
