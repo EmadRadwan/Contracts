@@ -24,6 +24,7 @@ import NewPaymentIn from "./NewPaymentIn";
 import EditPaymentForm from "./EditPaymentForm";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import EditPaymentApplications from "./EditPaymentApplications";
+import {setCustomerId} from "../../../orders/slice/sharedOrderUiSlice";
 
 // Props interface for the PaymentForm component
 interface Props {
@@ -49,6 +50,13 @@ const PAYMENT_TYPE_FILTERS = {
         "CUSTOMER_DEPOSIT",
         "INTEREST_RECEIPT",
         "GC_DEPOSIT",
+        // New incoming types that exist in the system
+        "RECEIPT_ADVANCE_PAYMENT",
+        "RECEIPT_CHECK_REPLACEMENT",
+        "RECEIPT_DUE_INSTALLMENT",
+        "RECEIPT_MAINTENANCE_AMOUNT",
+        "RECEIPT_PARTIAL_PAYMENT",
+        "RECEIPT_RETURNED_CHECK",
     ],
     outgoing: [
         "DISBURSEMENT",
@@ -63,6 +71,12 @@ const PAYMENT_TYPE_FILTERS = {
         "CUSTOMER_REFUND",
         "GC_WITHDRAWAL",
         "COMMISSION_PAYMENT",
+        // New outgoing types that exist in the system
+        "ADVANCE_TO_VENDOR_CONTRACTOR",
+        "CONTRACTOR_INSTALLMENT",
+        "PERMANENT_CUSTODY",
+        "TEMP_ADVANCE",
+        "VENDOR_INVOICE_PAYMENT",
     ],
 };
 
@@ -108,9 +122,12 @@ export default function PaymentForm({
     // Compute filtered payment types
     const filteredPaymentTypes = useMemo(() => {
         if (!paymentTypes || !Array.isArray(paymentTypes)) return [];
+
         const filterKey = paymentType === 1 ? "incoming" : "outgoing";
+        const allowedIds = PAYMENT_TYPE_FILTERS[filterKey];
+
         return paymentTypes.filter((type) =>
-            PAYMENT_TYPE_FILTERS[filterKey].includes(type.paymentTypeId)
+            allowedIds.includes(type.paymentTypeId)
         );
     }, [paymentTypes, paymentType]);
 
@@ -358,6 +375,8 @@ export default function PaymentForm({
             </div>
         );
     }
+    
+    console.log('paymentTypes', paymentTypes);
 
     return (
         <RibbonContainer>

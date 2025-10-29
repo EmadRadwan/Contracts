@@ -6,6 +6,9 @@ import { MemoizedFormDropDownList } from "../../../../app/common/form/MemoizedFo
 import { Button, Grid, Typography } from "@mui/material";
 import FormNumericTextBox from "../../../../app/common/form/FormNumericTextBox";
 import FormTextArea from "../../../../app/common/form/FormTextArea";
+import FormInput from "../../../../app/common/form/FormInput";
+import FormDatePicker from "../../../../app/common/form/FormDatePicker";
+import {MemoizedFormDropDownList2} from "../../../../app/common/form/MemoizedFormDropDownList2";
 
 interface NewPaymentOutProps {
     formRef: React.MutableRefObject<any>;
@@ -42,6 +45,9 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
         });
     };
 
+    const defaultOrganizationPartyId = companies && companies.length > 0 ? companies[0].organizationPartyId : "";
+
+
     return (
         <Form
             ref={formRef}
@@ -55,10 +61,12 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                 amount: 0,
                 paymentRefNum: "",
                 currencyUomId: "EGP",
-                organizationPartyId: "",
+                organizationPartyId: defaultOrganizationPartyId,
                 isDepositWithDrawPayment: "Y",
                 finAccountTransTypeId: "WITHDRAWAL",
                 isDisbursement: true,
+                chequeNumber: "",
+                chequeDate: null,
             }}
             onSubmit={handleSubmit}
             render={(formRenderProps: FormRenderProps) => (
@@ -83,7 +91,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
 
                             <Grid item xs={12}>
                                 <Grid container spacing={2} alignItems="flex-end">
-                                    <Grid item xs={4}>
+                                    <Grid item xs={3}>
                                         <Field
                                             id="organizationPartyId"
                                             name="organizationPartyId"
@@ -91,14 +99,14 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                 `${localizationKey}.orgPartyId`,
                                                 "Organization Party Id *"
                                             )}
-                                            component={MemoizedFormDropDownList}
+                                            component={MemoizedFormDropDownList2}
                                             dataItemKey="organizationPartyId"
                                             textField="organizationPartyName"
                                             data={companies || []}
                                             validator={requiredValidator}
                                         />
                                     </Grid>
-                                    <Grid item xs={4}>
+                                    <Grid item xs={3}>
                                         <Field
                                             id="partyIdTo"
                                             name="partyIdTo"
@@ -129,7 +137,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
 
                             <Grid item xs={12}>
                                 <Grid container spacing={2} alignItems="flex-end">
-                                    <Grid item xs={4}>
+                                    <Grid item xs={3}>
                                         <Field
                                             id="paymentTypeId"
                                             name="paymentTypeId"
@@ -145,7 +153,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                             disabled={filteredPaymentTypes.length === 0}
                                         />
                                     </Grid>
-                                    <Grid item xs={4}>
+                                    <Grid item xs={3}>
                                         <Field
                                             id="paymentMethodId"
                                             name="paymentMethodId"
@@ -158,6 +166,24 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                             textField="description"
                                             data={paymentMethods || []}
                                             validator={requiredValidator}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={2}>
+                                        <Field
+                                            id="chequeNumber"
+                                            name="chequeNumber"
+                                            label={getTranslatedLabel(`${localizationKey}.chequeNumber`, "Cheque Number")}
+                                            component={FormInput}
+                                            autoComplete="off"
+                                        />
+                                    </Grid>
+                                    <Grid item xs={2}>
+                                        <Field
+                                            id="chequeDate"
+                                            name="chequeDate"
+                                            label={getTranslatedLabel(`${localizationKey}.chequeDate`, "Cheque Date")}
+                                            component={FormDatePicker}
+                                            format="yyyy-MM-dd"
                                         />
                                     </Grid>
                                     <Grid item xs={4}>

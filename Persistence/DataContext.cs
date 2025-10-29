@@ -31654,6 +31654,12 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasMaxLength(36)
                     .IsUnicode(false)
                     .HasColumnName("STATUS_ID");
+                    
+                    entity.Property(e => e.ChequeNumber)
+                    .HasMaxLength(50); // Adjust length based on requirements
+
+                entity.Property(e => e.ChequeDate)
+                    .HasColumnType("datetime");
 
                 entity.HasOne(d => d.ActualCurrencyUom)
                     .WithMany(p => p.PaymentActualCurrencyUoms)

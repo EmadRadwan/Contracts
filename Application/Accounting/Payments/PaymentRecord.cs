@@ -36,5 +36,7 @@ public class PaymentRecord
     public string? CreditCardExpiryDate { get; set; }
     public string? OrderId { get; set; }
     public bool IsDisbursement { get; set; }
+    public string? ChequeNumber { get; set; }
+    public DateTime? ChequeDate { get; set; }
     public OrderPartyDto FromPartyId { get; set; }
 }

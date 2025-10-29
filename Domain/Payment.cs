@@ -36,6 +36,8 @@ public class Payment
     public string? OverrideGlAccountId { get; set; }
     public decimal? ActualCurrencyAmount { get; set; }
     public string? ActualCurrencyUomId { get; set; }
+    public string? ChequeNumber { get; set; }
+    public DateTime? ChequeDate { get; set; }
     public DateTime? LastUpdatedStamp { get; set; }
     public DateTime? LastUpdatedTxStamp { get; set; }
     public DateTime? CreatedStamp { get; set; }

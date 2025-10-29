@@ -107,6 +107,8 @@ export default function usePayment({
       isDepositWithDrawPayment: "Y",
       finAccountTransTypeId: "",
       isDisbursement: false,
+      chequeNumber: "",
+      chequeDate: null,
     };
   });
 
@@ -151,6 +153,8 @@ export default function usePayment({
       isDisbursement: updatedPayment.isDisbursement ?? payment?.isDisbursement ?? false,
       currencyUomId: updatedPayment.currencyUomId ?? payment?.currencyUomId ?? "",
       finAccountTransId: updatedPayment.finAccountTransId ?? payment?.finAccountTransId ?? "",
+      chequeNumber: updatedPayment.chequeNumber ?? payment?.chequeNumber ?? "",
+      chequeDate: updatedPayment.chequeDate ?? payment?.chequeDate ?? null,
     });
     if (newStatusId && statusToEditMode[newStatusId]) {
       const newEditMode = statusToEditMode[newStatusId];
@@ -195,6 +199,8 @@ export default function usePayment({
         amount: newPayment.amount,
         statusId: PAYMENT_STATUSES.NOT_PAID,
         paymentDate: newPayment.effectiveDate || new Date().toISOString(),
+        chequeNumber: newPayment.chequeNumber,
+        chequeDate: newPayment.chequeDate,
       };
 
       const createdPayment = await createPaymentAndFinAccountTrans(request).unwrap();
@@ -204,6 +210,8 @@ export default function usePayment({
         statusDescription: "Not Paid",
         currencyUomId: createdPayment.currencyUomId,
         finAccountTransId: createdPayment.finAccountTransId,
+        chequeNumber: createdPayment.chequeNumber ?? newPayment.chequeNumber,
+        chequeDate: createdPayment.chequeDate ?? newPayment.chequeDate,
       };
       if (process.env.NODE_ENV !== "production") {
         console.log("updated payment", updatedPayment);
@@ -230,7 +238,11 @@ export default function usePayment({
   ) => {
     try {
       setIsLoading(true);
-      const updatedPayment = await updatePayment(newPayment).unwrap();
+      const updatedPayment = await updatePayment({
+        ...newPayment,
+        chequeNumber: newPayment.chequeNumber,
+        chequeDate: newPayment.chequeDate,
+      }).unwrap();
       updatePaymentState(updatedPayment, customerId, organizationId);
       toast.success("Payment Updated Successfully");
       dispatch(acctTransApi.util.invalidateTags(["Payments"]));
@@ -321,6 +333,9 @@ export default function usePayment({
               data.values.paymentMethodId && data.values.isDepositWithDrawPayment ? "Y" : "N",
           finAcctTransTypeId: data.values.isDisbursement ? "WITHDRAWAL" : "DEPOSIT",
           isDisbursement: data.values.isDisbursement || selectedMenuItem === "outgoing",
+          chequeNumber: data.values.chequeNumber || "", // Added
+          chequeDate: data.values.chequeDate ? new Date(data.values.chequeDate).toISOString() : null, // Added
+
         };
 
         if (process.env.NODE_ENV !== "production") {
@@ -365,6 +380,7 @@ export default function usePayment({
             (company) => company.organizationPartyId === organizationId
         );
         const organizationName = organization?.organizationPartyName || "Unknown Organization";
+        const partyIdFrom =  undefined;
 
         const partyIdFromName = data.values.isDisbursement
             ? organizationName
@@ -376,6 +392,7 @@ export default function usePayment({
         const updatedPayment: Payment = {
           ...payment,
           paymentMethodId: data.values.paymentMethodId,
+          partyIdFrom,
           partyIdFromName,
           partyIdToName,
           amount: data.values.amount || payment.amount,
@@ -392,6 +409,10 @@ export default function usePayment({
           comments: data.values.comments || payment.comments || "",
           actualCurrencyUomId: data.values.actualCurrencyUomId || payment.actualCurrencyUomId || "",
           actualCurrencyAmount: data.values.actualCurrencyAmount || payment.actualCurrencyAmount || 0,
+          chequeNumber: data.values.chequeNumber || payment.chequeNumber || "", // Added
+          chequeDate: data.values.chequeDate
+              ? new Date(data.values.chequeDate).toISOString()
+              : payment.chequeDate || null, // Added
         };
 
         try {

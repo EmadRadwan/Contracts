@@ -12,7 +12,7 @@ import FormTextArea from "../../../../app/common/form/FormTextArea";
 import {Payment} from "../../../../app/models/accounting/payment";
 import FormInput from "../../../../app/common/form/FormInput";
 import FormDatePicker from "../../../../app/common/form/FormDatePicker";
-import {useMemo} from "react";
+import {useCallback, useMemo} from "react";
 
 interface EditPaymentFormProps {
     formRef: React.MutableRefObject<any>;
@@ -37,7 +37,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                              paymentType,
                                                              currencies,
                                                              handleCancelForm
-                                                         }) => {
+}) => {
 
     const nonEditableStatuses = ['PMNT_RECEIVED', 'PMNT_SENT', 'PMNT_CONFIRMED' /*, 'PMNT_CANCELLED' */];
     const isFormDisabled = payment && nonEditableStatuses.includes(payment.statusId);
@@ -60,6 +60,8 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
     }, [currencies]);
 
     const localizationKey = "accounting.payments.form";
+    const CASH_PAYMENT_METHOD_ID = "CASH";
+
 
     // Guard clause: return message if no payment is provided
     if (!payment) {
@@ -89,29 +91,36 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
     )?.description || payment.paymentTypeId;
 
     // Initialize form with payment values
-    const initialValues = {
-        paymentId: payment.paymentId ?? undefined,
-        paymentTypeId: payment.paymentTypeId ?? undefined,
-        paymentMethodId: payment.paymentMethodId ?? undefined,
-        statusId: payment.statusId ?? undefined,
-        fromPartyId: payment.fromPartyId ?? undefined,
-        partyIdFromName: payment.partyIdFromName ?? '',
-        partyIdTo: payment.partyIdTo ?? undefined,
-        partyIdToName: payment.partyIdToName ?? '',
-        amount: payment.amount ?? undefined,
-        currencyUomId: payment.currencyUomId ?? undefined,
-        effectiveDate: payment.effectiveDate ? new Date(payment.effectiveDate) : undefined,
-        paymentRefNum: payment.paymentRefNum ?? '',
-        comments: payment.comments ?? '',
-        finAccountTransId: payment.finAccountTransId ?? undefined,
-        overrideGlAccountId: payment.overrideGlAccountId ?? undefined,
-        paymentPreferenceId: payment.paymentPreferenceId ?? undefined,
-        paymentGatewayResponseId: payment.paymentGatewayResponseId ?? undefined,
-        isDepositWithDrawPayment: payment.isDepositWithDrawPayment ?? undefined,
-        finAcctTransTypeId: payment.finAcctTransTypeId ?? undefined,
-        isDisbursement: payment.isDisbursement ?? undefined,
-        actualCurrencyUomId: '',
-    };
+    const initialValues = useMemo(() => {
+        const isCash = payment.paymentMethodId === CASH_PAYMENT_METHOD_ID;
+        return {
+            paymentId: payment.paymentId ?? undefined,
+            paymentTypeId: payment.paymentTypeId ?? undefined,
+            paymentMethodId: payment.paymentMethodId ?? undefined,
+            statusId: payment.statusId ?? undefined,
+            fromPartyId: payment.fromPartyId ?? undefined,
+            partyIdFromName: payment.partyIdFromName ?? '',
+            partyIdTo: payment.partyIdTo ?? undefined,
+            partyIdToName: payment.partyIdToName ?? '',
+            amount: payment.amount ?? undefined,
+            currencyUomId: payment.currencyUomId ?? undefined,
+            effectiveDate: payment.effectiveDate ? new Date(payment.effectiveDate) : undefined,
+            paymentRefNum: payment.paymentRefNum ?? '',
+            comments: payment.comments ?? '',
+            finAccountTransId: payment.finAccountTransId ?? undefined,
+            overrideGlAccountId: payment.overrideGlAccountId ?? undefined,
+            paymentPreferenceId: payment.paymentPreferenceId ?? undefined,
+            paymentGatewayResponseId: payment.paymentGatewayResponseId ?? undefined,
+            isDepositWithDrawPayment: payment.isDepositWithDrawPayment ?? undefined,
+            finAcctTransTypeId: payment.finAcctTransTypeId ?? undefined,
+            isDisbursement: payment.isDisbursement ?? undefined,
+            actualCurrencyUomId: '',
+            actualCurrencyAmount: undefined,
+            chequeNumber: isCash ? '' : (payment.chequeNumber ?? ''),
+            chequeDate: isCash ? null : (payment.chequeDate ? new Date(payment.chequeDate) : null),
+        };
+    }, [payment]);
+
 
 
     return (
@@ -120,10 +129,27 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                     ref={formRef}
                     initialValues={initialValues}
                     onSubmit={handleSubmit}
-                    render={(formRenderProps: FormRenderProps) => (
+                    render={(formRenderProps: FormRenderProps) => {
+                        // REFACTOR: Extract onChange from formRenderProps to update dependent fields
+                        const { onChange, valueGetter } = formRenderProps;
+
+                        // REFACTOR: Custom handler for payment method change
+                        const handlePaymentMethodChange = (event: any) => {
+                            const selectedMethodId = event.value;
+                            const isCash = selectedMethodId === CASH_PAYMENT_METHOD_ID;
+
+                            // Update the payment method
+                            onChange('paymentMethodId', { value: selectedMethodId });
+
+                            // Clear cheque fields if CASH is selected
+                            if (isCash) {
+                                onChange('chequeNumber', { value: '' });
+                                onChange('chequeDate', { value: null });
+                            }
+                        };
+
+                        return (
                         <FormElement>
-                            {/* REFACTOR: Apply grid-disabled/grid-normal classes to fieldset, inspired by PurchaseOrderForm
-                            This disables user interactions at the container level for non-editable statuses */}
                             <fieldset
                                 className={`k-form-fieldset ${isFormDisabled ? 'grid-disabled' : 'grid-normal'}`}
                                 aria-disabled={isFormDisabled}
@@ -147,7 +173,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                     {/* Section 2: Party Details */}
                                     <Grid item xs={12}>
                                         <Grid container spacing={1} alignItems="flex-end">
-                                            <Grid item xs={4}>
+                                            <Grid item xs={3}>
                                                 <Typography variant="h6" sx={{ pl: 2, pb: 1 }}>
                                                     {getTranslatedLabel(
                                                         paymentType === 1 ? `${localizationKey}.from` : `${localizationKey}.to`,
@@ -160,7 +186,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     </strong>
                                                 </Typography>
                                             </Grid>
-                                            <Grid item xs={4}>
+                                            <Grid item xs={3}>
                                                 <Typography variant="h6" sx={{ pl: 2, pb: 1 }}>
                                                     {getTranslatedLabel(
                                                         paymentType === 1 ? `${localizationKey}.to` : `${localizationKey}.from`,
@@ -179,7 +205,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                     {/* Section 1: Core Details */}
                                     <Grid item xs={12}>
                                         <Grid container spacing={1} alignItems="flex-end">
-                                            <Grid item xs={4}>
+                                            <Grid item xs={3}>
                                                 <Typography variant="h6" sx={{ pl: 2, pb: 1 }}>
                                                     {getTranslatedLabel(
                                                         `${localizationKey}.paymentType`,
@@ -190,7 +216,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     <strong style={{ color: "blue" }}>{paymentTypeDesc}</strong>
                                                 </Typography>
                                             </Grid>
-                                            <Grid item xs={4}>
+                                            <Grid item xs={3}>
                                                 <Field
                                                     id="paymentMethodId"
                                                     name="paymentMethodId"
@@ -203,6 +229,25 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     textField="description"
                                                     data={paymentMethods || []}
                                                     validator={requiredValidator}
+                                                    onChange={handlePaymentMethodChange}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={2}>
+                                                <Field
+                                                    id="chequeNumber"
+                                                    name="chequeNumber"
+                                                    label={getTranslatedLabel(`${localizationKey}.chequeNumber`, "Cheque Number")}
+                                                    component={FormInput}
+                                                    autoComplete="off"
+                                                />
+                                            </Grid>
+                                            <Grid item xs={2}>
+                                                <Field
+                                                    id="chequeDate"
+                                                    name="chequeDate"
+                                                    label={getTranslatedLabel(`${localizationKey}.chequeDate`, "Cheque Date")}
+                                                    component={FormDatePicker}
+                                                    format="yyyy-MM-dd"
                                                 />
                                             </Grid>
                                         </Grid>
@@ -313,7 +358,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                     </Grid>
 
                                     {/* Section 5: Accounting Details */}
-                                    <Grid item xs={12}>
+                                    {/*<Grid item xs={12}>
                                         <Grid container spacing={1} alignItems="flex-end">
                                             <Grid item xs={2}>
                                                 <Typography variant="h6" sx={{ pl: 2, pb: 1 }}>
@@ -331,7 +376,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                 </Typography>
                                             </Grid>
                                         </Grid>
-                                    </Grid>
+                                    </Grid>*/}
                                 </Grid>
                             </fieldset>
                             <div className="k-form-buttons">
@@ -362,7 +407,8 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                 </Grid>
                             </div>
                         </FormElement>
-                    )}
+                        );
+                    }}
                 />
             </Grid>
     );

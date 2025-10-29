@@ -1,2 +1,7 @@
-- get paymentGlAccountTypeMap for payment type
-and organization.
+213000
+518000
+515000
+215000
+125000
+150000
+336000

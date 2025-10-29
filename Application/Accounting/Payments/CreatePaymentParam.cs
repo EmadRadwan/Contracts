@@ -19,4 +19,6 @@ public class CreatePaymentParam
     public decimal? ActualCurrencyAmount { get; set; }
     public string? PaymentRefNum { get; set; }
     public string? Comments { get; set; }
+    public string? ChequeNumber { get; set; }
+    public DateTime? ChequeDate { get; set; }
 }

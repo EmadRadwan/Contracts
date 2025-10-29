@@ -11,8 +11,8 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20251025165914_CreateDatabaseViews")]
-    partial class CreateDatabaseViews
+    [Migration("20251027160717_Updated Payment")]
+    partial class UpdatedPayment
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -23430,6 +23430,7 @@ namespace Persistence.Migrations
                         .HasColumnName("UNIT_RECURRING_PRICE");
 
                     b.Property<string>("UomId")
+                        .IsRequired()
                         .HasMaxLength(36)
                         .IsUnicode(false)
                         .HasColumnType("varchar(36)")
@@ -28551,6 +28552,13 @@ namespace Persistence.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,3)")
                         .HasColumnName("AMOUNT");
+
+                    b.Property<DateTime?>("ChequeDate")
+                        .HasColumnType("datetime");
+
+                    b.Property<string>("ChequeNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<string>("Comments")
                         .HasMaxLength(255)
@@ -67182,6 +67190,7 @@ namespace Persistence.Migrations
                         .WithMany("OrderItemsByUom")
                         .HasForeignKey("UomId")
                         .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired()
                         .HasConstraintName("FK_OrderItem_Uom");
 
                     b.HasOne("Domain.OrderItemGroup", "OrderI")

@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdatedWorkeffort : Migration
+    public partial class UpdatedPayment : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -19775,7 +19775,7 @@ namespace Persistence.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     SYNC_STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                    UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ESTIMATED_SHIP_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
                     ESTIMATED_DELIVERY_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
@@ -24212,6 +24212,9 @@ namespace Persistence.Migrations
                     ACTUAL_CURRENCY_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
                     ACTUAL_CURRENCY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    ChequeNumber = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ChequeDate = table.Column<DateTime>(type: "datetime", nullable: true),
                     LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
                     LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
                     CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),

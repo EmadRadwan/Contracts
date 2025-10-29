@@ -116,9 +116,10 @@ public class PaymentHelperService : IPaymentHelperService
             PartyIdTo = parameters.PartyIdTo,
             PaymentTypeId = parameters.PaymentTypeId,
             CurrencyUomId = partyAccountingPreferences!.BaseCurrencyUomId,
-            //todo: needs to be added in the form
             ActualCurrencyUomId = partyAccountingPreferences!.BaseCurrencyUomId,
             ActualCurrencyAmount = parameters.Amount,
+            ChequeNumber = parameters.ChequeNumber, // Added
+            ChequeDate = parameters.ChequeDate, // Added
             CreatedStamp = stamp,
             LastUpdatedStamp = stamp
         };
@@ -207,9 +208,6 @@ public class PaymentHelperService : IPaymentHelperService
 
             if (param.PaymentMethodTypeId != paymentMethod.PaymentMethodTypeId)
             {
-                // Log replacement (OFBiz: logInfo)
-                Console.WriteLine(
-                    $"Replacing payment method type [{param.PaymentMethodTypeId}] with [{paymentMethod.PaymentMethodTypeId}] for payment method [{param.PaymentMethodId}]");
                 payment.PaymentMethodTypeId = paymentMethod.PaymentMethodTypeId;
             }
             else
@@ -1193,7 +1191,9 @@ public class PaymentHelperService : IPaymentHelperService
                 Amount = request.Amount,
                 StatusId = request.StatusId,
                 EffectiveDate = request.PaymentDate ?? DateTime.UtcNow,
-                PaymentTypeId = request.PaymentTypeId
+                PaymentTypeId = request.PaymentTypeId,
+                ChequeNumber = request.ChequeNumber, // Added
+                ChequeDate = request.ChequeDate // Added
             };
 
             // If PaymentMethodId is provided, fetch PaymentMethod and set PaymentMethodTypeId
@@ -1291,7 +1291,9 @@ public class PaymentHelperService : IPaymentHelperService
                 PaymentId = paymentId,
                 CurrencyUomId = payment.CurrencyUomId,
                 ActualCurrencyUomId = payment.ActualCurrencyUomId,
-                FinAccountTransId = finAccountTransId
+                FinAccountTransId = finAccountTransId,
+                ChequeNumber = payment.ChequeNumber, // Added
+                ChequeDate = payment.ChequeDate // Added
             };
 
             return Result<CreatePaymentAndFinAccountTransResponse>.Success(response);

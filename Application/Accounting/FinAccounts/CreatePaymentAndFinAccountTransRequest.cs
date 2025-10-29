@@ -12,4 +12,6 @@ public class CreatePaymentAndFinAccountTransRequest
     public decimal Amount { get; set; }
     public string StatusId { get; set; }
     public DateTime? PaymentDate { get; set; }
+    public string? ChequeNumber { get; set; }
+    public DateTime? ChequeDate { get; set; }
 }

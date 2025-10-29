@@ -33,6 +33,8 @@ export interface Payment {
   inEdit?: boolean | string;
   isPaymentDeleted?: boolean;
   isDisbursement?: boolean;
+  chequeNumber?: string;
+  chequeDate?: string | Date;
   paymentApplications?: any[];
 }
 

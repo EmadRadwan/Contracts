@@ -12,6 +12,9 @@ import { Button, Grid, Typography } from "@mui/material";
 import FormNumericTextBox from "../../../../app/common/form/FormNumericTextBox";
 import FormTextArea from "../../../../app/common/form/FormTextArea";
 import { Error } from "@progress/kendo-react-labels";
+import FormInput from "../../../../app/common/form/FormInput";
+import FormDatePicker from "../../../../app/common/form/FormDatePicker";
+import {MemoizedFormDropDownList2} from "../../../../app/common/form/MemoizedFormDropDownList2";
 
 interface NewPaymentInProps {
     formRef: React.MutableRefObject<any>;
@@ -50,6 +53,9 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
         });
     };
 
+    const defaultOrganizationPartyId = companies && companies.length > 0 ? companies[0].organizationPartyId : "";
+
+
     return (
         <Form
             ref={formRef}
@@ -63,10 +69,12 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                 amount: 0,
                 paymentRefNum: "",
                 currencyUomId: "EGP",
-                organizationPartyId: companies && companies.length > 0 ? companies[0].organizationPartyId : "",
+                organizationPartyId: defaultOrganizationPartyId,
                 isDepositWithDrawPayment: "Y",
                 finAccountTransTypeId: "DEPOSIT",
                 isDisbursement: false,
+                chequeNumber: "",
+                chequeDate: null,
             }}
             onSubmit={handleSubmit}
             render={(formRenderProps: FormRenderProps) => {
@@ -92,7 +100,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
 
                                 <Grid item xs={12}>
                                     <Grid container spacing={2} alignItems="flex-end">
-                                        <Grid item xs={4}>
+                                        <Grid item xs={3}>
                                             <Field
                                                 id="organizationPartyId"
                                                 name="organizationPartyId"
@@ -100,7 +108,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                     `${localizationKey}.orgPartyId`,
                                                     "Organization Party Id *"
                                                 )}
-                                                component={MemoizedFormDropDownList}
+                                                component={MemoizedFormDropDownList2}
                                                 dataItemKey="organizationPartyId"
                                                 textField="organizationPartyName"
                                                 data={companies || []}
@@ -108,7 +116,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                             />
                                            
                                         </Grid>
-                                        <Grid item xs={4}>
+                                        <Grid item xs={3}>
                                             <Field
                                                 id="partyIdFrom"
                                                 name="partyIdFrom"
@@ -139,7 +147,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
 
                                 <Grid item xs={12}>
                                     <Grid container spacing={2} alignItems="flex-end">
-                                        <Grid item xs={4}>
+                                        <Grid item xs={3}>
                                             <Field
                                                 id="paymentTypeId"
                                                 name="paymentTypeId"
@@ -155,7 +163,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                 disabled={filteredPaymentTypes.length === 0}
                                             />
                                         </Grid>
-                                        <Grid item xs={4}>
+                                        <Grid item xs={3}>
                                             <Field
                                                 id="paymentMethodId"
                                                 name="paymentMethodId"
@@ -170,12 +178,30 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                 validator={requiredValidator}
                                             />
                                         </Grid>
+                                        <Grid item xs={2}>
+                                            <Field
+                                                id="chequeNumber"
+                                                name="chequeNumber"
+                                                label={getTranslatedLabel(`${localizationKey}.chequeNumber`, "Cheque Number")}
+                                                component={FormInput}
+                                                autoComplete="off"
+                                            />
+                                        </Grid>
+                                        <Grid item xs={2}>
+                                            <Field
+                                                id="chequeDate"
+                                                name="chequeDate"
+                                                label={getTranslatedLabel(`${localizationKey}.chequeDate`, "Cheque Date")}
+                                                component={FormDatePicker}
+                                                format="yyyy-MM-dd"
+                                            />
+                                        </Grid>
                                     </Grid>
                                 </Grid>
 
                                 <Grid item xs={12}>
                                     <Grid container spacing={2} alignItems="flex-end">
-                                        <Grid item xs={4}>
+                                        <Grid item xs={3}>
                                             <Field
                                                 id="amount"
                                                 format="n2"
@@ -189,7 +215,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                 validator={requiredValidator}
                                             />
                                         </Grid>
-                                        <Grid item xs={4}>
+                                        <Grid item xs={3}>
                                             <Field
                                                 id="paymentRefNum"
                                                 name="paymentRefNum"
@@ -200,6 +226,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                 component={FormTextArea}
                                                 autoComplete="off"
                                             />
+                                            
                                         </Grid>
                                     </Grid>
                                 </Grid>

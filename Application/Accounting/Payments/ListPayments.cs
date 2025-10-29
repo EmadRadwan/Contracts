@@ -79,9 +79,9 @@ public class ListPayments
                     },
                     IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
                     OrderId = ord != null ? ord.OrderId : null,
-                    // REFACTOR: Added CertificateNumber from WorkEfforts
-                    // This field is included to provide the certificate number associated with the order, if available
-                    CertificateNumber = we != null ? we.CertificateNumber : null
+                    CertificateNumber = we != null ? we.CertificateNumber : null,
+                    ChequeNumber = pyt.ChequeNumber,
+                    ChequeDate = pyt.ChequeDate
                 }).AsQueryable();
 
             // REFACTOR: Filter query based on PaymentType (incoming or outgoing)
