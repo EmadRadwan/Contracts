@@ -6,13 +6,16 @@ import {
     FormRenderProps,
 } from "@progress/kendo-react-form";
 import {MemoizedFormDropDownList} from "../../../../app/common/form/MemoizedFormDropDownList";
-import {Button, Grid, Typography} from "@mui/material";
+import {Button, Grid, Skeleton, Typography} from "@mui/material";
 import FormNumericTextBox from "../../../../app/common/form/FormNumericTextBox";
 import FormTextArea from "../../../../app/common/form/FormTextArea";
 import {Payment} from "../../../../app/models/accounting/payment";
 import FormInput from "../../../../app/common/form/FormInput";
 import FormDatePicker from "../../../../app/common/form/FormDatePicker";
 import {useCallback, useMemo} from "react";
+import {RootState, useAppSelector} from "../../../../app/store/configureStore";
+import {useFetchGlAccountOrganizationHierarchyLovQuery} from "../../../../app/store/apis";
+import {FormDropDownTreeGlAccount2} from "../../../../app/common/form/FormDropDownTreeGlAccount2";
 
 interface EditPaymentFormProps {
     formRef: React.MutableRefObject<any>;
@@ -41,6 +44,12 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
 
     const nonEditableStatuses = ['PMNT_RECEIVED', 'PMNT_SENT', 'PMNT_CONFIRMED' /*, 'PMNT_CANCELLED' */];
     const isFormDisabled = payment && nonEditableStatuses.includes(payment.statusId);
+    const { user } = useAppSelector((state) => state.account);
+    const companyId = user?.organizationPartyId || "";
+    const companyName = useAppSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
+    const { data: glAccounts, isLoading: isLoadingGlAccounts } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
+        skip: !companyId,
+    });
 
     const statusDesc = useMemo(() => ({
         'PMNT_NOT_PAID': 'Not Paid',
@@ -282,8 +291,24 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     <strong style={{ color: "blue" }}>{payment.currencyUomId}</strong>
                                                 </Typography>
                                             </Grid>
-
-                                            <Grid item xs={2}>
+                                            <Grid item xs={4}>
+                                                {isLoadingGlAccounts ? (
+                                                    <Skeleton variant="rounded" height={56} />
+                                                ) : (
+                                                    <Field
+                                                        id="debitGlAccountId"
+                                                        name="debitGlAccountId"
+                                                        label={getTranslatedLabel(`${localizationKey}.debitGlAccount`, "Override GL Account")}
+                                                        data={glAccounts || []}
+                                                        component={FormDropDownTreeGlAccount2}
+                                                        dataItemKey="glAccountId"
+                                                        textField="text"
+                                                        selectField="selected"
+                                                        expandField="expanded"
+                                                    />
+                                                )}
+                                            </Grid>
+                                           {/* <Grid item xs={2}>
                                                 <Field
                                                     id="actualCurrencyUomId"
                                                     label={getTranslatedLabel(
@@ -310,7 +335,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     min={0}
                                                     component={FormNumericTextBox}
                                                 />
-                                            </Grid>
+                                            </Grid>*/}
                                         </Grid>
                                     </Grid>
 

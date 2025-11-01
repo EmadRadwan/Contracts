@@ -1,6 +1,5 @@
 using Application.Accounting.FinAccounts;
 using Application.Accounting.Payments;
-using Application.Shipments.Payments;
 using Application.Order.Orders;
 using Microsoft.AspNetCore.Mvc;
 
@@ -130,6 +129,18 @@ public class PaymentsController : BaseApiController
         [FromBody] CreatePaymentAndApplicationCommand command)
     {
         var result = await Mediator.Send(command);
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result.Error);
+        }
+
+        return Ok(result.Value);
+    }
+    
+    [HttpPost("createPaymentApplication")]
+    public async Task<IActionResult> CreatePaymentApplication([FromBody] PaymentApplicationParam param)
+    {
+        var result = await Mediator.Send(new CreatePaymentApplication.Command { Param = param });
         if (!result.IsSuccess)
         {
             return BadRequest(result.Error);

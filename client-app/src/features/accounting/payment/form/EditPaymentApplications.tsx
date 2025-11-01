@@ -72,12 +72,6 @@ const EditPaymentApplications: React.FC<EditPaymentApplicationsProps> = ({paymen
         }
     };
 
-    const handleApplyPayment = (values: any) => {
-        if (isFormDisabled) return;
-        // TODO: Implement API call to apply payment
-        console.log("Applying payment:", values);
-    };
-
     if (isApplicationsLoading) {
         return (
             <LoadingComponent
@@ -142,7 +136,6 @@ const EditPaymentApplications: React.FC<EditPaymentApplicationsProps> = ({paymen
                             notAppliedInvoices={notAppliedInvoices}
                             notAppliedAmount={notAppliedAmount}
                             disabled={isFormDisabled}
-                            onSubmit={handleApplyPayment}
                             onCancel={onClose}
                         />
                     </>

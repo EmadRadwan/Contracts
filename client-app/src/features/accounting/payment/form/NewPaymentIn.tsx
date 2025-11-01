@@ -8,13 +8,16 @@ import {
     FormRenderProps,
 } from "@progress/kendo-react-form";
 import { MemoizedFormDropDownList } from "../../../../app/common/form/MemoizedFormDropDownList";
-import { Button, Grid, Typography } from "@mui/material";
+import {Button, Grid, Skeleton, Typography} from "@mui/material";
 import FormNumericTextBox from "../../../../app/common/form/FormNumericTextBox";
 import FormTextArea from "../../../../app/common/form/FormTextArea";
 import { Error } from "@progress/kendo-react-labels";
 import FormInput from "../../../../app/common/form/FormInput";
 import FormDatePicker from "../../../../app/common/form/FormDatePicker";
 import {MemoizedFormDropDownList2} from "../../../../app/common/form/MemoizedFormDropDownList2";
+import {RootState, useAppSelector} from "../../../../app/store/configureStore";
+import {useFetchGlAccountOrganizationHierarchyLovQuery} from "../../../../app/store/apis";
+import {FormDropDownTreeGlAccount2} from "../../../../app/common/form/FormDropDownTreeGlAccount2";
 
 interface NewPaymentInProps {
     formRef: React.MutableRefObject<any>;
@@ -41,8 +44,14 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                          handleCancelForm,
                                                    }) => {
     const localizationKey = "accounting.payments.form";
-
-    console.log('filteredPaymentTypes', filteredPaymentTypes)
+    const { user } = useAppSelector((state) => state.account);
+    const companyId = user?.organizationPartyId || "";
+    const companyName = useAppSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
+    const { data: glAccounts, isLoading: isLoadingGlAccounts } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
+        skip: !companyId,
+    });
+    
+    
     
     // Handle form submission
     const handleSubmit = (values: any) => {
@@ -53,8 +62,9 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
         });
     };
 
-    const defaultOrganizationPartyId = companies && companies.length > 0 ? companies[0].organizationPartyId : "";
-
+    const getDefaultOrganizationPartyId = useCallback(() => {
+        return companies && companies.length > 0 ? companies[0].organizationPartyId : "";
+    }, [companies]);
 
     return (
         <Form
@@ -69,7 +79,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                 amount: 0,
                 paymentRefNum: "",
                 currencyUomId: "EGP",
-                organizationPartyId: defaultOrganizationPartyId,
+                organizationPartyId: getDefaultOrganizationPartyId(),
                 isDepositWithDrawPayment: "Y",
                 finAccountTransTypeId: "DEPOSIT",
                 isDisbursement: false,
@@ -214,6 +224,23 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                 component={FormNumericTextBox}
                                                 validator={requiredValidator}
                                             />
+                                        </Grid>
+                                        <Grid item xs={4}>
+                                            {isLoadingGlAccounts ? (
+                                                <Skeleton variant="rounded" height={56} />
+                                            ) : (
+                                                <Field
+                                                    id="debitGlAccountId"
+                                                    name="debitGlAccountId"
+                                                    label={getTranslatedLabel(`${localizationKey}.debitGlAccount`, "Override GL Account")}
+                                                    data={glAccounts || []}
+                                                    component={FormDropDownTreeGlAccount2}
+                                                    dataItemKey="glAccountId"
+                                                    textField="text"
+                                                    selectField="selected"
+                                                    expandField="expanded"
+                                                />
+                                            )}
                                         </Grid>
                                         <Grid item xs={3}>
                                             <Field

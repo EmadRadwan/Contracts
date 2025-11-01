@@ -107,6 +107,7 @@ export default function GLAccountTypeDefaults() {
                 }
                 pageable={true}
                 onPageChange={pageChange}
+                resizable={true}
               >
                 <Column
                   field="glAccountTypeDescription"

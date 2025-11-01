@@ -12,8 +12,6 @@ import { SortDescriptor, State, orderBy } from '@progress/kendo-data-query';
 import { useAppSelector, useFetchPaymentTypeGlAccountsQuery } from '../../../../../app/store/configureStore';
 import { router } from "../../../../../app/router/Routes";
 import { toast } from 'react-toastify';
-import { useFetchFinAccountGlAccountsQuery } from '../../../../../app/store/apis/accounting/finAccountGlAccountsApi';
-import FinAccountGlAccountsForm from '../../form/FinAccountGlAccountsForm';
 import PaymentTypeGlAccountsForm from '../../form/PaymentTypeGlAccountsForm';
 import Button from "@mui/material/Button";
 import {OrderAdjustment} from "../../../../../app/models/order/orderAdjustment";
@@ -34,7 +32,8 @@ const PaymentTypeGlAccounts = () => {
         });
     console.log(paymentTypeAccounts)
     const [sort, setSort] = React.useState(initialSort);
-    const initialDataState: State = { skip: 0, take: 9 };
+    const initialDataState: State = { skip: 0, take: 10 };
+
     const [page, setPage] = React.useState<any>(initialDataState);
     const pageChange = (event: GridPageChangeEvent) => {
         setPage(event.page);
@@ -79,24 +78,18 @@ const PaymentTypeGlAccounts = () => {
             <PaymentTypeGlAccountsForm selectedAccountingCompanyId={selectedAccountingCompanyId} onSubmit={onSubmit} />
 
             <div className="div-container">
-              <KendoGrid
-                data={orderBy(
-                  paymentTypeAccounts ? paymentTypeAccounts : [],
-                    sort
-                  ).slice(page.skip, page.take + page.skip)}
-                sortable={true}
-                sort={sort}
-                onSortChange={(e: GridSortChangeEvent) => {
-                  setSort(e.sort);
-                }}
-                skip={page.skip}
-                take={page.take}
-                total={
-                  0
-                }
-                pageable={true}
-                onPageChange={pageChange}
-              >
+                <KendoGrid
+                    data={orderBy(paymentTypeAccounts ?? [], sort).slice(page.skip, page.skip + page.take)}
+                    sortable={true}
+                    sort={sort}
+                    onSortChange={(e) => setSort(e.sort)}
+                    skip={page.skip}
+                    take={page.take}
+                    total={paymentTypeAccounts?.length ?? 0}  // REFACTOR: Fixed total to reflect actual data length, enabling full pagination
+                    pageable={true}
+                    onPageChange={pageChange}
+                    resizable={true}
+                >
                 <Column
                   field="paymentTypeDescription"
                   title="Payment Type"

@@ -53,7 +53,7 @@ dotnet ef database update -p Persistence -s API
 3 - if main migration is dropped, copy the view migration file first to temp and create the above after it.
 
 
-translate the code into C# using EF, don't use Dictionaries use normal objects and DTO instead.
+translate the code into C# using EF, don't use Dictionaries - if there's a need - use normal objects and DTO instead.
  With each line of code - you know everything about Ofbiz - add detailed comments that describe what the 
  code is doing and the intention of the developer or it from both technical and business perspectives. 
  Translate each and every line and dont skip anything. Also don't use condition builder or delegator, use LINQ instead.

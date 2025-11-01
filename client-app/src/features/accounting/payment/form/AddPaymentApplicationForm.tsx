@@ -5,6 +5,7 @@ import {requiredValidator} from "../../../../app/common/form/Validators";
 import {FormDropDownList} from "../../../../app/common/form/FormDropDownList";
 import {Payment} from "../../../../app/models/accounting/payment";
 import FormNumericTextBox from "../../../../app/common/form/FormNumericTextBox";
+import {useApplyPayment} from "../hook/useApplyPayment";
 
 
 interface AddPaymentApplicationFormProps {
@@ -12,7 +13,6 @@ interface AddPaymentApplicationFormProps {
     notAppliedInvoices: NotAppliedInvoice[];
     notAppliedAmount: number;
     disabled: boolean;
-    onSubmit: (values: any) => void;
     onCancel: () => void;
 }
 
@@ -21,19 +21,23 @@ const AddPaymentApplicationForm: React.FC<AddPaymentApplicationFormProps> = ({
                                                                                  notAppliedInvoices,
                                                                                  notAppliedAmount,
                                                                                  disabled,
-                                                                                 onSubmit,
                                                                                  onCancel,
                                                                              }) => {
     const {getTranslatedLabel} = useTranslationHelper();
     const localizationKey = "accounting.payments.applications";
 
+    const { handleSubmit, isLoading } = useApplyPayment({
+        paymentId: payment?.paymentId ?? "",
+        onSuccess: onCancel,               // close the modal on success
+    });
+    
     return (
         <MuiGrid item xs={12}>
             <Typography variant="h5">
                 {getTranslatedLabel(`${localizationKey}.applyPayment`, "Apply Payment To")}
             </Typography>
             <Form
-                onSubmit={onSubmit}
+                onSubmit={handleSubmit}
                 render={(formRenderProps: FormRenderProps) => (
                     <FormElement>
                         <fieldset>
@@ -70,7 +74,7 @@ const AddPaymentApplicationForm: React.FC<AddPaymentApplicationFormProps> = ({
                                     <Button
                                         type="submit"
                                         variant="contained"
-                                        disabled={!formRenderProps.valid || disabled}
+                                        disabled={!formRenderProps.valid}
                                         sx={{mt: 2}}
                                     >
                                         {getTranslatedLabel(`${localizationKey}.apply`, "Apply Payment")}

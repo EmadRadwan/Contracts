@@ -181,6 +181,17 @@ const paymentsApi = createApi({
                     };
                 },
             }),
+            createPaymentApplication: builder.mutation<
+                PaymentApplicationParam,
+                PaymentApplicationParam
+                >({
+                query: (body) => ({
+                    url: "/payments/createPaymentApplication",
+                    method: "POST",
+                    body,
+                }),
+                invalidatesTags: ["PaymentApplications", "Payments"],
+            }),
             calculatePaymentTotals: builder.mutation<
                 { id: string; amountToApply: number }[],
                 string[]
@@ -221,6 +232,7 @@ export const {
     useUpdatePaymentMutation,
     useSetPaymentStatusToReceivedMutation,
     useFetchPaymentApplicationsForPaymentQuery,
-    useCalculatePaymentTotalsMutation, useRemovePaymentApplicationMutation
+    useCalculatePaymentTotalsMutation,
+    useRemovePaymentApplicationMutation, useCreatePaymentApplicationMutation,
 } = paymentsApi;
 export {paymentsApi};

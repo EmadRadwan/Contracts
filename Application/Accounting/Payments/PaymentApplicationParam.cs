@@ -3,7 +3,7 @@ namespace Application.Accounting.Payments;
 
 public class PaymentApplicationParam
 {
-    public string PaymentApplicationId { get; set; } = null!;
+    public string? PaymentApplicationId { get; set; } = null!;
     public string? PaymentId { get; set; }
     public string? InvoiceId { get; set; }
     public string? InvoiceItemSeqId { get; set; }

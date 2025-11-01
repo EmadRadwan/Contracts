@@ -191,6 +191,8 @@ public class InvoiceService : IInvoiceService
 
         context.Invoices = await GetInvoices(invoices, false, payment);
 
+        if (payment.CurrencyUomId == payment.ActualCurrencyUomId) return context;
+        
         var invoicesOtherCurrency = await topCondActual
             .OrderBy(inv => inv.InvoiceDate)
             .Select(inv => new InvoiceMap
@@ -235,6 +237,7 @@ public class InvoiceService : IInvoiceService
                     invoice.AmountToApply =
                         (decimal)(paymentToApply < invoiceToApply ? paymentToApply : invoiceToApply);
 
+                    invoice.Amount = invoiceAmount;
                     invoicesList.Add(invoice);
                 }
             }

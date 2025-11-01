@@ -22,14 +22,18 @@ public class PaymentApplicationService : IPaymentApplicationService
     private readonly IUtilityService _utilityService;
     private readonly IInvoiceUtilityService _invoiceUtilityService;
     private readonly ILogger<PaymentApplicationService> _logger;
+    private readonly Lazy<IInvoiceService> _invoiceService;
+    private readonly Lazy<IGeneralLedgerService> _generalLedgerService;
 
 
     public PaymentApplicationService(DataContext context, IUtilityService utilityService,
-        IInvoiceUtilityService invoiceUtilityService, ILogger<PaymentApplicationService> logger)
+        IInvoiceUtilityService invoiceUtilityService, ILogger<PaymentApplicationService> logger, Lazy<IInvoiceService> invoiceService, Lazy<IGeneralLedgerService> generalLedgerService)
     {
         _context = context;
         _utilityService = utilityService;
         _invoiceUtilityService = invoiceUtilityService;
+        _invoiceService = invoiceService;
+        _generalLedgerService = generalLedgerService;
         _logger = logger;
     }
 
@@ -169,14 +173,17 @@ public class PaymentApplicationService : IPaymentApplicationService
                 }
 
                 // Calculate amount to be applied from payment to invoice
-                var notAppliedInvoice = await _invoiceUtilityService.GetInvoiceNotApplied(invoice.InvoiceId);
-                if (notAppliedInvoice <= notAppliedPayment)
+                if (!paymentApplicationParam.AmountApplied.HasValue)
                 {
-                    paymentApplicationParam.AmountApplied = notAppliedInvoice;
-                }
-                else
-                {
-                    paymentApplicationParam.AmountApplied = notAppliedPayment;
+                    var notAppliedInvoice = await _invoiceUtilityService.GetInvoiceNotApplied(invoice.InvoiceId);
+                    if (notAppliedInvoice <= notAppliedPayment)
+                    {
+                        paymentApplicationParam.AmountApplied = notAppliedInvoice;
+                    }
+                    else
+                    {
+                        paymentApplicationParam.AmountApplied = notAppliedPayment;
+                    }
                 }
 
                 // Associate billing account if available
@@ -259,7 +266,31 @@ public class PaymentApplicationService : IPaymentApplicationService
 
             // Save payment application to the database
             _context.PaymentApplications.Add(paymentApplication);
+            await _context.SaveChangesAsync();
+            
+            // --------------------------------------------------------------
+            // 9. ECA #1 – checkInvoicePaymentApplications (only when invoiceId)
+            // --------------------------------------------------------------
+            if (!string.IsNullOrEmpty(paymentApplicationParam.InvoiceId))
+            {
+                await _invoiceService.Value.CheckInvoicePaymentApplications(paymentApplicationParam.InvoiceId);
+            }
 
+
+            if (!string.IsNullOrEmpty(paymentApplicationParam.InvoiceId))
+            {
+                var paymentEntity = await _context.Payments
+                    .FirstOrDefaultAsync(p => p.PaymentId == paymentApplicationParam.PaymentId);
+
+                if (paymentEntity != null && paymentEntity.PaymentTypeId != "CUSTOMER_REFUND")
+                {
+                    // REFACTOR: Delegate to the dedicated service method – keeps
+                    //           CreatePaymentApplication thin and testable.
+                    await _generalLedgerService.Value.CreateAcctgTransAndEntriesForPaymentApplication(
+                        paymentApplicationId: paymentApplicationId);
+                }
+            }
+            
             // Return the created payment application DTO
             return paymentApplicationParam;
         }
@@ -328,7 +359,6 @@ public class PaymentApplicationService : IPaymentApplicationService
                     // Technical: Calls setInvoiceStatus to revert invoice
                     // Business Purpose: Ensures invoice is available for new payments after unapplying
                     await _invoiceUtilityService.SetInvoiceStatus(invoice.InvoiceId, "INVOICE_READY", null);
-                    
                 }
 
                 toMessage = $"AccountingPaymentApplToInvoice: InvoiceId={paymentApplication.InvoiceId}";
