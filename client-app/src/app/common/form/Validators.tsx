@@ -96,3 +96,15 @@ export const percentageValidator = (value) => {
     }
 };
 
+export const chequeValidator = (value, getter, _, formRenderProps) => {
+    // `getter` gives us the value of any other field in the form
+    const paymentMethodId = getter?.("paymentMethodId") as string | undefined;
+    const CASH_METHOD_ID = "CASH";
+
+    // If method is CASH → cheque fields are optional
+    if (paymentMethodId === CASH_METHOD_ID) return undefined;
+
+    // Otherwise the field must have a non-empty value
+    return value ? undefined : "Required when payment method is not Cash";
+};
+

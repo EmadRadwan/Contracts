@@ -1,7 +1,4 @@
 using Application.Accounting.Services;
-
-
-
 using Domain;
 using FluentValidation;
 using MediatR;
@@ -10,7 +7,6 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Persistence;
 
 namespace Application.Accounting.Payments;
-
 
 public class UpdatePayment
 {
@@ -34,7 +30,8 @@ public class UpdatePayment
         private readonly IPaymentHelperService _paymentHelperService;
 
 
-        public Handler(DataContext context, IFinAccountService finAccountService, IPaymentHelperService paymentHelperService)
+        public Handler(DataContext context, IFinAccountService finAccountService,
+            IPaymentHelperService paymentHelperService)
         {
             _context = context;
             _finAccountService = finAccountService;
@@ -149,6 +146,7 @@ public class UpdatePayment
                         PartyIdTo = request.PaymentDto.PartyIdTo,
                         PaymentTypeId = request.PaymentDto.PaymentTypeId,
                         FinAccountTransId = finAccountTransId,
+                        OverrideGlAccountId = request.PaymentDto.OverrideGlAccountId
                     };
                     // update the payment itself
                     await _paymentHelperService.UpdatePayment(updatePaymentParam);
@@ -165,13 +163,16 @@ public class UpdatePayment
                     EffectiveDate = request.PaymentDto.EffectiveDate,
                     Amount = request.PaymentDto.Amount,
                     ActualCurrencyAmount = request.PaymentDto.ActualCurrencyAmount,
-                    ActualCurrencyUomId = request.PaymentDto.ActualCurrencyUomId == "" ? null : request.PaymentDto.ActualCurrencyUomId,
+                    ActualCurrencyUomId = request.PaymentDto.ActualCurrencyUomId == ""
+                        ? null
+                        : request.PaymentDto.ActualCurrencyUomId,
                     Comments = request.PaymentDto.Comments,
                     PaymentRefNum = request.PaymentDto.PaymentRefNum,
                     PartyIdFrom = request.PaymentDto.PartyIdFrom,
                     PartyIdTo = request.PaymentDto.PartyIdTo,
                     PaymentTypeId = request.PaymentDto.PaymentTypeId,
                     FinAccountTransId = finAccountTransId,
+                    OverrideGlAccountId = request.PaymentDto.OverrideGlAccountId
                 };
                 // update the payment itself
                 var payment = await _paymentHelperService.UpdatePayment(updatePaymentParam2);
@@ -198,6 +199,16 @@ public class UpdatePayment
 
                 await transaction.CommitAsync(cancellationToken);
 
+                var fromParty = await _context.Parties
+                    .Where(p => p.PartyId == request.PaymentDto.PartyIdFrom)
+                    .Select(p => p.Description)
+                    .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+
+                var toParty = await _context.Parties
+                    .Where(p => p.PartyId == request.PaymentDto.PartyIdTo)
+                    .Select(p => p.Description)
+                    .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+
 
                 var paymentToReturn = new PaymentDto
                 {
@@ -209,7 +220,10 @@ public class UpdatePayment
                     Amount = payment.Amount,
                     PaymentMethodId = payment.PaymentMethodId,
                     PaymentTypeId = payment.PaymentTypeId,
-                    EffectiveDate = payment.EffectiveDate
+                    EffectiveDate = payment.EffectiveDate,
+                    PartyIdFromName = fromParty,
+                    PartyIdToName = toParty,
+                    OverrideGlAccountId = payment.OverrideGlAccountId
                 };
 
 

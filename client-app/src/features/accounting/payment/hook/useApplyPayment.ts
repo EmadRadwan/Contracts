@@ -1,6 +1,10 @@
 import { toast } from "react-toastify";
 import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
-import {useCreatePaymentApplicationMutation} from "../../../../app/store/apis";
+import {
+    useCreatePaymentApplicationMutation,
+    useFetchPaymentApplicationsForPaymentQuery
+} from "../../../../app/store/apis";
+import {useFetchNotListedInvoicesQuery} from "../../../../app/store/apis/invoice/invoicesApi";
 
 interface UseApplyPaymentProps {
     paymentId: string;
@@ -16,6 +20,12 @@ export const useApplyPayment = ({
                                     onSuccess,
                                 }: UseApplyPaymentProps) => {
     const [createApplication, { isLoading }] = useCreatePaymentApplicationMutation();
+
+    const { refetch: refetchApps } = useFetchPaymentApplicationsForPaymentQuery(paymentId);
+    const { refetch: refetchInvoices } = useFetchNotListedInvoicesQuery(paymentId, {
+        skip: !paymentId,
+    });
+    
     const { getTranslatedLabel } = useTranslationHelper();
     const loc = "accounting.payments.applications";
 
@@ -44,6 +54,9 @@ export const useApplyPayment = ({
             };
 
             await createApplication(payload).unwrap();
+
+            refetchApps();          // triggers the same cache entry the UI reads
+            refetchInvoices();
 
             toast.success(
                 getTranslatedLabel(`${loc}.applySuccess`, "Payment applied successfully")

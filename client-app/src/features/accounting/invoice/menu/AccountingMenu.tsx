@@ -1,5 +1,5 @@
 import { Box, List, ListItem, Toolbar, Typography } from "@mui/material";
-import { NavLink } from "react-router-dom";
+import {NavLink, NavLinkProps} from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import ReceiptOutlinedIcon from '@mui/icons-material/ReceiptOutlined';
 import PaymentOutlinedIcon from '@mui/icons-material/PaymentOutlined';
@@ -19,6 +19,20 @@ import React from "react";
 interface AccountingMenuProps {
     selectedMenuItem?: string;
 }
+
+const NavLinkWithReset = React.forwardRef<HTMLAnchorElement, NavLinkProps>(
+    (props, ref) => (
+        <NavLink
+            ref={ref}
+            {...props}
+            // `state` is a normal prop – we just spread the incoming props
+            // and override/add the state we need
+            state={{ ...(props.state ?? {}), resetPaymentForm: true }}
+        />
+    )
+);
+NavLinkWithReset.displayName = "NavLinkWithReset";
+
 
 const links = [
     { title: "Sales Orders", key: "salesOrders", path: "/orders/sales", icon: <AddShoppingCartIcon sx={{ color: "#FF4081" }} /> },
@@ -75,19 +89,29 @@ export default function AccountingMenu({ selectedMenuItem }: AccountingMenuProps
         <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'left' }}>
             <Box display="flex" alignItems="left">
                 <List sx={{ display: 'flex' }}>
-                    {links.map(({ title, path, icon, key }) => (
-                        <ListItem
-                            component={NavLink}
-                            to={path}
-                            key={path}
-                            sx={navStyles(path)}
-                        >
-                            {icon}
-                            <FloatingLabelText label={title} translationKey={`accounting.orgGL.menu.${key}`}>
-                                {getTranslatedLabel(`accounting.menu.${key}`, title).toUpperCase()}
-                            </FloatingLabelText>
-                        </ListItem>
-                    ))}
+                    {links.map(({ title, path, icon, key }) => {
+                        const isPaymentLink = key === 'incomingPayments' || key === 'outgoingPayments';
+
+                        const LinkComponent = isPaymentLink ? NavLinkWithReset : NavLink;
+
+
+                        return (
+                            <ListItem
+                                component={LinkComponent}
+                                to={path}
+                                key={path}
+                                sx={navStyles(path)}
+                            >
+                                {icon}
+                                <FloatingLabelText
+                                    label={title}
+                                    translationKey={`accounting.orgGL.menu.${key}`}
+                                >
+                                    {getTranslatedLabel(`accounting.menu.${key}`, title).toUpperCase()}
+                                </FloatingLabelText>
+                            </ListItem>
+                        );
+                    })}
                 </List>
             </Box>
         </Toolbar>

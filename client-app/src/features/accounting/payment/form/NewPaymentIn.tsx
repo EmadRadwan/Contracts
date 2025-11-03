@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { FormComboBoxVirtualParty } from "../../../../app/common/form/FormComboBoxVirtualParty";
-import { requiredValidator } from "../../../../app/common/form/Validators";
+import {chequeValidator, requiredValidator} from "../../../../app/common/form/Validators";
 import {
     Field,
     Form,
@@ -20,19 +20,19 @@ import {useFetchGlAccountOrganizationHierarchyLovQuery} from "../../../../app/st
 import {FormDropDownTreeGlAccount2} from "../../../../app/common/form/FormDropDownTreeGlAccount2";
 
 interface NewPaymentInProps {
-    formRef: React.MutableRefObject<any>;
+    onValidityChange?: (valid: boolean) => void;
     partyInputRef: React.RefObject<HTMLInputElement>;
     companies?: any[];
     filteredPaymentTypes: any[];
     paymentMethods?: any[];
     getTranslatedLabel: (key: string, defaultValue: string) => string;
     setShowNewCustomer: (show: boolean) => void;
-    onCreate: (data: { values: any; isValid: boolean; menuItem: string }) => void;
+    onCreate: (data: { values: any; menuItem: string }) => void;
     handleCancelForm: () => void;
 }
 
 const NewPaymentIn: React.FC<NewPaymentInProps> = ({
-                                                       formRef,
+                                                       onValidityChange,
                                                        partyInputRef,
                                                        companies,
                                                        filteredPaymentTypes,
@@ -50,14 +50,15 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
     const { data: glAccounts, isLoading: isLoadingGlAccounts } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
         skip: !companyId,
     });
-    
-    
-    
-    // Handle form submission
+
+
+
+  
+
+    // Kendo onSubmit → values + valid
     const handleSubmit = (values: any) => {
         onCreate({
             values,
-            isValid: formRef.current?.isValid(),
             menuItem: "Create Payment",
         });
     };
@@ -68,7 +69,6 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
 
     return (
         <Form
-            ref={formRef}
             initialValues={{
                 paymentId: "",
                 paymentTypeId: "",
@@ -88,6 +88,8 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
             }}
             onSubmit={handleSubmit}
             render={(formRenderProps: FormRenderProps) => {
+                const { valid, onSubmit, onChange } = formRenderProps;
+
                 return (
                     <FormElement>
                         <fieldset className="k-form-fieldset">
@@ -195,6 +197,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                 label={getTranslatedLabel(`${localizationKey}.chequeNumber`, "Cheque Number")}
                                                 component={FormInput}
                                                 autoComplete="off"
+                                                validator={(value, getter) => chequeValidator(value, getter, undefined, formRenderProps)}
                                             />
                                         </Grid>
                                         <Grid item xs={2}>
@@ -204,6 +207,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                 label={getTranslatedLabel(`${localizationKey}.chequeDate`, "Cheque Date")}
                                                 component={FormDatePicker}
                                                 format="yyyy-MM-dd"
+                                                validator={(value, getter) => chequeValidator(value, getter, undefined, formRenderProps)}
                                             />
                                         </Grid>
                                     </Grid>
@@ -230,8 +234,8 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                 <Skeleton variant="rounded" height={56} />
                                             ) : (
                                                 <Field
-                                                    id="debitGlAccountId"
-                                                    name="debitGlAccountId"
+                                                    id="overrideGlAccountId"
+                                                    name="overrideGlAccountId"
                                                     label={getTranslatedLabel(`${localizationKey}.debitGlAccount`, "Override GL Account")}
                                                     data={glAccounts || []}
                                                     component={FormDropDownTreeGlAccount2}
@@ -244,16 +248,16 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                         </Grid>
                                         <Grid item xs={3}>
                                             <Field
-                                                id="paymentRefNum"
-                                                name="paymentRefNum"
+                                                id="comments"
+                                                name="comments"
                                                 label={getTranslatedLabel(
-                                                    `${localizationKey}.paymentRefNum`,
-                                                    "Reference Number"
+                                                    `${localizationKey}.comments`,
+                                                    "Comments"
                                                 )}
                                                 component={FormTextArea}
                                                 autoComplete="off"
+                                                validator={requiredValidator}
                                             />
-                                            
                                         </Grid>
                                     </Grid>
                                 </Grid>

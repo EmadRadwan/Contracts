@@ -7,13 +7,37 @@ using Application.Core;
 
 namespace Application.Accounting.Payments;
 
+/// <summary>
+/// DTO that mirrors the response of CreatePaymentAndFinAccountTrans
+/// </summary>
+public class PaymentDetailsResponse
+{
+    public string PaymentId { get; set; }
+    public string StatusId { get; set; }
+    public string StatusDescription { get; set; }
+    public string CurrencyUomId { get; set; }
+    public string ActualCurrencyUomId { get; set; }
+    public string FinAccountTransId { get; set; }
+    public string ChequeNumber { get; set; }
+    public DateTime? ChequeDate { get; set; }
+    public string Comments { get; set; }
+    public string PartyIdFromName { get; set; }
+    public string PartyIdToName { get; set; }
+}
+
 public class SetPaymentStatusToReceived
 {
-    public class Command : IRequest<Results<PaymentChangeStatusDto>>
+    // ------------------------------------------------------------
+    // 1. Command
+    // ------------------------------------------------------------
+    public class Command : IRequest<Results<PaymentDetailsResponse>>
     {
         public PaymentChangeStatusDto PaymentChangeStatusDto { get; set; }
     }
 
+    // ------------------------------------------------------------
+    // 2. Validation (unchanged – just points to the existing validator)
+    // ------------------------------------------------------------
     public class CommandValidator : AbstractValidator<Command>
     {
         public CommandValidator()
@@ -22,7 +46,10 @@ public class SetPaymentStatusToReceived
         }
     }
 
-    public class Handler : IRequestHandler<Command, Results<PaymentChangeStatusDto>>
+    // ------------------------------------------------------------
+    // 3. Handler
+    // ------------------------------------------------------------
+    public class Handler : IRequestHandler<Command, Results<PaymentDetailsResponse>>
     {
         private readonly DataContext _context;
         private readonly IPaymentHelperService _paymentHelperService;
@@ -33,63 +60,111 @@ public class SetPaymentStatusToReceived
             _paymentHelperService = paymentHelperService;
         }
 
-        public async Task<Results<PaymentChangeStatusDto>> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Results<PaymentDetailsResponse>> Handle(Command request,
+                                                                CancellationToken ct)
         {
-            var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            var transaction = await _context.Database.BeginTransactionAsync(ct);
 
             try
             {
-                // Call SetPaymentStatus and capture the result
+                // ---- 1. Change the status -------------------------------------------------
                 var paymentResult = await _paymentHelperService.SetPaymentStatus(
                     request.PaymentChangeStatusDto.PaymentId,
                     request.PaymentChangeStatusDto.StatusId);
 
-                // REFACTOR: Check PaymentStatusChangeResult for success before proceeding
                 if (!paymentResult.Success)
                 {
-                    await transaction.RollbackAsync(cancellationToken);
-                    // REFACTOR: Use Results.Failure with ErrorMessage and ErrorCode
-                    return Results<PaymentChangeStatusDto>.Failure(
+                    await transaction.RollbackAsync(ct);
+                    return Results<PaymentDetailsResponse>.Failure(
                         paymentResult.ErrorMessage,
-                        paymentResult.ErrorCode
-                    );
+                        paymentResult.ErrorCode);
                 }
 
-                await _context.SaveChangesAsync(cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
+                // Save the status change (the helper already persisted the payment)
+                await _context.SaveChangesAsync(ct);
 
-                // Retrieve the new status description
-                var newStatus = await _context.StatusItems
-                    .SingleOrDefaultAsync(x => x.StatusId == paymentResult.UpdatedPayment.StatusId, cancellationToken);
-                
-                // REFACTOR: Handle case where status item is not found
-                if (newStatus == null)
+                // ---- 2. Load the **full** payment with required navigation data ----------
+                var payment = await _context.Payments
+                    .AsNoTracking()
+                    .Where(p => p.PaymentId == request.PaymentChangeStatusDto.PaymentId)
+                    .Select(p => new
+                    {
+                        p.PaymentId,
+                        p.StatusId,
+                        p.CurrencyUomId,
+                        p.ActualCurrencyUomId,
+                        p.FinAccountTransId,
+                        p.ChequeNumber,
+                        p.ChequeDate,
+                        p.Comments,
+                        p.PartyIdFrom,
+                        p.PartyIdTo
+                    })
+                    .FirstOrDefaultAsync(ct);
+
+                if (payment == null)
                 {
-                    await transaction.RollbackAsync(cancellationToken);
-                    // REFACTOR: Use Results.Failure with ErrorMessage and ErrorCode
-                    return Results<PaymentChangeStatusDto>.Failure(
+                    await transaction.RollbackAsync(ct);
+                    return Results<PaymentDetailsResponse>.Failure(
+                        "Payment not found after status change.",
+                        "PAYMENT_NOT_FOUND");
+                }
+
+                // ---- 3. Resolve status description ----------------------------------------
+                var statusItem = await _context.StatusItems
+                    .AsNoTracking()
+                    .Where(s => s.StatusId == payment.StatusId)
+                    .Select(s => s.Description)
+                    .FirstOrDefaultAsync(ct);
+
+                if (statusItem == null)
+                {
+                    await transaction.RollbackAsync(ct);
+                    return Results<PaymentDetailsResponse>.Failure(
                         "Status description not found.",
-                        "STATUS_DESCRIPTION_NOT_FOUND"
-                    );
+                        "STATUS_DESCRIPTION_NOT_FOUND");
                 }
 
-                var paymentToReturn = new PaymentChangeStatusDto
+                // ---- 4. Resolve party names ------------------------------------------------
+                var fromPartyName = await _context.Parties
+                    .AsNoTracking()
+                    .Where(p => p.PartyId == payment.PartyIdFrom)
+                    .Select(p => p.Description)
+                    .FirstOrDefaultAsync(ct);
+
+                var toPartyName = await _context.Parties
+                    .AsNoTracking()
+                    .Where(p => p.PartyId == payment.PartyIdTo)
+                    .Select(p => p.Description)
+                    .FirstOrDefaultAsync(ct);
+
+                // ---- 5. Commit transaction -------------------------------------------------
+                await transaction.CommitAsync(ct);
+
+                // ---- 6. Build the rich response --------------------------------------------
+                var response = new PaymentDetailsResponse
                 {
-                    StatusId = paymentResult.UpdatedPayment.StatusId,
-                    StatusDescription = newStatus.Description,
+                    PaymentId            = payment.PaymentId,
+                    StatusId             = payment.StatusId,
+                    StatusDescription    = statusItem,
+                    CurrencyUomId        = payment.CurrencyUomId,
+                    ActualCurrencyUomId  = payment.ActualCurrencyUomId,
+                    FinAccountTransId    = payment.FinAccountTransId,
+                    ChequeNumber         = payment.ChequeNumber,
+                    ChequeDate           = payment.ChequeDate,
+                    Comments             = payment.Comments,
+                    PartyIdFromName      = fromPartyName,
+                    PartyIdToName        = toPartyName
                 };
 
-                return Results<PaymentChangeStatusDto>.Success(paymentToReturn);
+                return Results<PaymentDetailsResponse>.Success(response);
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync(cancellationToken);
-
-                // REFACTOR: Use Results.Failure with ErrorMessage and ErrorCode for unexpected failures
-                return Results<PaymentChangeStatusDto>.Failure(
+                await transaction.RollbackAsync(ct);
+                return Results<PaymentDetailsResponse>.Failure(
                     ex.Message ?? "An unexpected error occurred while setting payment status.",
-                    "UNEXPECTED_ERROR"
-                );
+                    "UNEXPECTED_ERROR");
             }
         }
     }

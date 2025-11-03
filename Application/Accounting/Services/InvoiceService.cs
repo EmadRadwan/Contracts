@@ -77,7 +77,6 @@ public class InvoiceService : IInvoiceService
         // Retrieve the invoice entity based on the invoiceId
         var invoice = await _context.Invoices.FindAsync(invoiceId);
 
-
         // Ignore invoices that aren't ready yet
         if (invoice.StatusId != "INVOICE_READY") return;
 
@@ -111,14 +110,31 @@ public class InvoiceService : IInvoiceService
         var payments = new Dictionary<string, decimal>();
         DateTime? paidDate = null;
 
+        // REFACTOR: Switch iteration to filteredPaymentApplications to only consider valid applications
+        //           (matches intent of filtering logic, which was unused before; prevents invalid apps
+        //           from contributing to totals).
+        // REFACTOR: Accumulate total amountApplied per paymentId instead of overwriting/adding duplicates
+        //           (supports partial payments with multiple PaymentApplication records for the same
+        //           paymentId and invoiceId, as allowed in OFBiz; fixes ArgumentException on duplicate keys
+        //           while ensuring accurate summation for payment check logic).
         // Iterate over payment applications
-        foreach (var paymentApplication in paymentApplications)
+        foreach (var paymentApplication in filteredPaymentApplications)
         {
             var paymentId = paymentApplication.PaymentId;
             var amountApplied = (decimal)paymentApplication.AmountApplied;
 
-            // Add payment amount to payments dictionary
-            if (paymentId != null) payments.Add(paymentId, amountApplied);
+            // Add payment amount to payments dictionary (accumulate if key exists)
+            if (paymentId != null)
+            {
+                if (payments.ContainsKey(paymentId))
+                {
+                    payments[paymentId] += amountApplied;
+                }
+                else
+                {
+                    payments.Add(paymentId, amountApplied);
+                }
+            }
 
             // Determine the paidDate as the last date (chronologically) of all payments applied to this invoice
             var paymentDate = paymentApplication.Payment.EffectiveDate;
@@ -140,7 +156,6 @@ public class InvoiceService : IInvoiceService
                     paidDate, true);
         }
     }
-
 
     public async Task<InvoiceContext> ListNotAppliedInvoices(string paymentId)
     {
@@ -192,7 +207,7 @@ public class InvoiceService : IInvoiceService
         context.Invoices = await GetInvoices(invoices, false, payment);
 
         if (payment.CurrencyUomId == payment.ActualCurrencyUomId) return context;
-        
+
         var invoicesOtherCurrency = await topCondActual
             .OrderBy(inv => inv.InvoiceDate)
             .Select(inv => new InvoiceMap

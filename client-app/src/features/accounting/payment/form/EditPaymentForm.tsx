@@ -1,4 +1,4 @@
-import {requiredValidator} from "../../../../app/common/form/Validators";
+import {chequeValidator, requiredValidator} from "../../../../app/common/form/Validators";
 import {
     Field,
     Form,
@@ -12,26 +12,27 @@ import FormTextArea from "../../../../app/common/form/FormTextArea";
 import {Payment} from "../../../../app/models/accounting/payment";
 import FormInput from "../../../../app/common/form/FormInput";
 import FormDatePicker from "../../../../app/common/form/FormDatePicker";
-import {useCallback, useMemo} from "react";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
 import {RootState, useAppSelector} from "../../../../app/store/configureStore";
 import {useFetchGlAccountOrganizationHierarchyLovQuery} from "../../../../app/store/apis";
 import {FormDropDownTreeGlAccount2} from "../../../../app/common/form/FormDropDownTreeGlAccount2";
 
 interface EditPaymentFormProps {
-    formRef: React.MutableRefObject<any>;
+    onValidityChange?: (valid: boolean) => void;
     filteredPaymentTypes: any[];
     paymentMethods?: any[];
     getTranslatedLabel: (key: string, defaultValue: string) => string;
-    onUpdate: (data: { values: any; isValid: boolean; menuItem: string }) => void;
+    onUpdate: (data: { values: any; menuItem: string }) => void;
     payment: Payment;
     paymentType: number;
     formEditMode: number;
     currencies: any[];
     handleCancelForm: () => void;
+    debugForm?: boolean;
 }
 
 const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
-                                                             formRef,
+                                                             onValidityChange,
                                                              filteredPaymentTypes,
                                                              paymentMethods,
                                                              getTranslatedLabel,
@@ -39,9 +40,10 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                              payment,
                                                              paymentType,
                                                              currencies,
-                                                             handleCancelForm
+                                                             handleCancelForm, debugForm
 }) => {
-
+    const localizationKey = "accounting.payments.form";
+    const CASH_PAYMENT_METHOD_ID = "CASH";
     const nonEditableStatuses = ['PMNT_RECEIVED', 'PMNT_SENT', 'PMNT_CONFIRMED' /*, 'PMNT_CANCELLED' */];
     const isFormDisabled = payment && nonEditableStatuses.includes(payment.statusId);
     const { user } = useAppSelector((state) => state.account);
@@ -50,6 +52,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
     const { data: glAccounts, isLoading: isLoadingGlAccounts } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
         skip: !companyId,
     });
+
 
     const statusDesc = useMemo(() => ({
         'PMNT_NOT_PAID': 'Not Paid',
@@ -68,39 +71,20 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
         }));
     }, [currencies]);
 
-    const localizationKey = "accounting.payments.form";
-    const CASH_PAYMENT_METHOD_ID = "CASH";
+    
 
-
-    // Guard clause: return message if no payment is provided
-    if (!payment) {
+    const paymentTypeDesc = useMemo(() => {
+        if (!payment?.paymentTypeId) return "";
         return (
-            <Typography variant="h6" sx={{pl: 2}}>
-                {getTranslatedLabel(
-                    `${localizationKey}.noPayment`,
-                    "No payment selected for editing."
-                )}
-            </Typography>
+            filteredPaymentTypes.find(
+                (pt: any) => pt.paymentTypeId === payment.paymentTypeId
+            )?.description ?? payment.paymentTypeId
         );
-    }
-
-    // Handle form submission     
-    const handleSubmit = (values: any) => {
-        if (isFormDisabled) return;
-        onUpdate({
-            values,
-            isValid: formRef.current?.isValid(),
-            menuItem: "Update Payment",
-        });
-    };
-
-    // Lookup descriptions for read-only fields
-    const paymentTypeDesc = filteredPaymentTypes.find(
-        (pt: any) => pt.paymentTypeId === payment.paymentTypeId
-    )?.description || payment.paymentTypeId;
+    }, [filteredPaymentTypes, payment?.paymentTypeId]);
 
     // Initialize form with payment values
     const initialValues = useMemo(() => {
+        if (!payment) return {};
         const isCash = payment.paymentMethodId === CASH_PAYMENT_METHOD_ID;
         return {
             paymentId: payment.paymentId ?? undefined,
@@ -114,12 +98,9 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
             amount: payment.amount ?? undefined,
             currencyUomId: payment.currencyUomId ?? undefined,
             effectiveDate: payment.effectiveDate ? new Date(payment.effectiveDate) : undefined,
-            paymentRefNum: payment.paymentRefNum ?? '',
             comments: payment.comments ?? '',
             finAccountTransId: payment.finAccountTransId ?? undefined,
             overrideGlAccountId: payment.overrideGlAccountId ?? undefined,
-            paymentPreferenceId: payment.paymentPreferenceId ?? undefined,
-            paymentGatewayResponseId: payment.paymentGatewayResponseId ?? undefined,
             isDepositWithDrawPayment: payment.isDepositWithDrawPayment ?? undefined,
             finAcctTransTypeId: payment.finAcctTransTypeId ?? undefined,
             isDisbursement: payment.isDisbursement ?? undefined,
@@ -130,18 +111,51 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
         };
     }, [payment]);
 
+    if (!payment) {
+        return (
+            <Typography variant="h6" sx={{pl: 2}}>
+                {getTranslatedLabel(
+                    `${localizationKey}.noPayment`,
+                    "No payment selected for editing."
+                )}
+            </Typography>
+        );
+    }
+    
+    
 
+    // Handle form submission     
+    const handleSubmit = (values: any) => {
+        if (isFormDisabled) return;
+        onUpdate({
+            values,
+            menuItem: "Update Payment",
+        });
+    };
+
+
+
+    console.log("Rendering EditPaymentForm with payment:", payment);
+    console.log("Initial Values:", initialValues);
 
     return (
             <Grid container>
                 <Form
-                    ref={formRef}
                     initialValues={initialValues}
                     onSubmit={handleSubmit}
+                    key={payment.paymentId}
                     render={(formRenderProps: FormRenderProps) => {
-                        // REFACTOR: Extract onChange from formRenderProps to update dependent fields
-                        const { onChange, valueGetter } = formRenderProps;
+                        const {
+                            valid,
+                            validator, onSubmit,
+                            errors,
+                            touched,
+                            visited,
+                            valueGetter,
+                            onChange,
+                        } = formRenderProps;
 
+                        
                         // REFACTOR: Custom handler for payment method change
                         const handlePaymentMethodChange = (event: any) => {
                             const selectedMethodId = event.value;
@@ -157,6 +171,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                             }
                         };
 
+                        
                         return (
                         <FormElement>
                             <fieldset
@@ -248,6 +263,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     label={getTranslatedLabel(`${localizationKey}.chequeNumber`, "Cheque Number")}
                                                     component={FormInput}
                                                     autoComplete="off"
+                                                    validator={(value, getter) => chequeValidator(value, getter, undefined, formRenderProps)}
                                                 />
                                             </Grid>
                                             <Grid item xs={2}>
@@ -257,6 +273,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     label={getTranslatedLabel(`${localizationKey}.chequeDate`, "Cheque Date")}
                                                     component={FormDatePicker}
                                                     format="yyyy-MM-dd"
+                                                    validator={(value, getter) => chequeValidator(value, getter, undefined, formRenderProps)}
                                                 />
                                             </Grid>
                                         </Grid>
@@ -296,8 +313,8 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     <Skeleton variant="rounded" height={56} />
                                                 ) : (
                                                     <Field
-                                                        id="debitGlAccountId"
-                                                        name="debitGlAccountId"
+                                                        id="overrideGlAccountId"
+                                                        name="overrideGlAccountId"
                                                         label={getTranslatedLabel(`${localizationKey}.debitGlAccount`, "Override GL Account")}
                                                         data={glAccounts || []}
                                                         component={FormDropDownTreeGlAccount2}
@@ -355,18 +372,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     validator={requiredValidator}
                                                 />
                                             </Grid>
-                                            <Grid item xs={4}>
-                                                <Field
-                                                    id="paymentRefNum"
-                                                    name="paymentRefNum"
-                                                    label={getTranslatedLabel(
-                                                        `${localizationKey}.paymentRefNum`,
-                                                        "Payment Reference Number"
-                                                    )}
-                                                    component={FormInput}
-                                                    autoComplete="off"
-                                                />
-                                            </Grid>
+                                            
                                             <Grid item xs={4}>
                                                 <Field
                                                     id="comments"
@@ -377,6 +383,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     )}
                                                     component={FormTextArea}
                                                     autoComplete="off"
+                                                    validator={requiredValidator}
                                                 />
                                             </Grid>
                                         </Grid>

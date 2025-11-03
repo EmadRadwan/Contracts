@@ -48,6 +48,7 @@ public class ListPayment
                     },
                     PaymentDate = pyt.EffectiveDate,
                     StatusDescription = sts.Description,
+                    OverrideGlAccountId = pyt.OverrideGlAccountId,
                     AllowSubmit = false
                 };
 

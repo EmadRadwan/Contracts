@@ -781,7 +781,7 @@
           "send": "تغيير الحالة إلى مدفوعة",
           "confirm": "تغيير الحالة إلى مؤكدة",
           "transactions": "القيود المحاسبية",
-          "applications": "الفواتير"
+          "applications": "تطبيقات الدفع"
         },
         "statuses": {
           "new": "جديد",
@@ -797,7 +797,7 @@
         "new-outgoing": "دفعة صادرة جديدة",
         "title": "الدفعة رقم: ",
         "status": "الحالة",
-        "orgPartyId": "كود منظمة الطرف *",
+        "orgPartyId": "الشركة *",
         "from": "من *",
         "to": "إلى *",
         "new-customer": "عميل جديد",
@@ -806,7 +806,7 @@
         "finAccount-trans": "كود المعاملة المالية",
         "amount": "المبلغ *",
         "date": "التاريخ الفعلي *",
-        "comments": "التعليقات",
+        "comments": "البيان",
         "loading": "جاري معالجة الدفعة..."
       },
       "applications": {

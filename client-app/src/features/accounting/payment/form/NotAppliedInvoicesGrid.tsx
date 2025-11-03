@@ -8,6 +8,8 @@ import {Payment} from "../../../../app/models/accounting/payment";
 interface NotAppliedInvoice {
     invoiceId: string;
     amount: number;
+    amountApplied: number;        // already applied from other payments
+    amountToApply: number;
 }
 
 interface NotAppliedInvoicesGridProps {
@@ -54,6 +56,19 @@ const NotAppliedInvoicesGrid: React.FC<NotAppliedInvoicesGridProps> = ({
                     format="{0:c}"
                     cell={(props) => (
                         <td>{props.dataItem.amount.toFixed(2)} {payment?.currencyUomId}</td>
+                    )}
+                />
+                <GridColumn
+                    title={getTranslatedLabel(`${localizationKey}.alreadyApplied`, "Applied")}
+                    cell={({dataItem}) => (
+                        <td>{dataItem.amountApplied.toFixed(2)} {payment?.currencyUomId}</td>
+                    )}
+                />
+
+                <GridColumn
+                    title={getTranslatedLabel(`${localizationKey}.remaining`, "Remaining")}
+                    cell={({dataItem}) => (
+                        <td>{dataItem.amountToApply.toFixed(2)} {payment?.currencyUomId}</td>
                     )}
                 />
             </KendoGrid>

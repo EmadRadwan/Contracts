@@ -7,6 +7,12 @@ import {Payment} from "../../../../app/models/accounting/payment";
 import FormNumericTextBox from "../../../../app/common/form/FormNumericTextBox";
 import {useApplyPayment} from "../hook/useApplyPayment";
 
+interface NotAppliedInvoice {
+    invoiceId: string;
+    amount: number;
+    amountApplied: number;
+    amountToApply: number;
+}
 
 interface AddPaymentApplicationFormProps {
     payment: Payment | undefined;
@@ -30,7 +36,31 @@ const AddPaymentApplicationForm: React.FC<AddPaymentApplicationFormProps> = ({
         paymentId: payment?.paymentId ?? "",
         onSuccess: onCancel,               // close the modal on success
     });
-    
+
+    const amountAppliedValidator = (value: any, formValues: any) => {
+        const selected = formValues?.invoiceId as NotAppliedInvoice | undefined;
+
+        if (!value) return requiredValidator(value);
+        const num = Number(value);
+
+        if (num > notAppliedAmount) {
+            return getTranslatedLabel(
+                `${localizationKey}.validation.exceedsPayment`,
+                `Cannot exceed payment remaining (${notAppliedAmount.toFixed(2)} ${payment?.currencyUomId})`
+            );
+        }
+
+        if (selected && num > selected.amountToApply) {
+            return getTranslatedLabel(
+                `${localizationKey}.validation.exceedsInvoice`,
+                `Cannot exceed invoice remaining (${selected.amountToApply.toFixed(2)} ${payment?.currencyUomId})`
+            );
+        }
+
+        return "";
+    };
+
+
     return (
         <MuiGrid item xs={12}>
             <Typography variant="h5">
@@ -38,7 +68,17 @@ const AddPaymentApplicationForm: React.FC<AddPaymentApplicationFormProps> = ({
             </Typography>
             <Form
                 onSubmit={handleSubmit}
-                render={(formRenderProps: FormRenderProps) => (
+                render={(formRenderProps: FormRenderProps) => {
+                    const selectedInvoice = formRenderProps.valueGetter("invoiceId") as NotAppliedInvoice | undefined;
+
+                    const maxOverall = selectedInvoice
+                        ? Math.min(notAppliedAmount, selectedInvoice.amountToApply)
+                        : 0;
+
+                    console.log("Selected Invoice:", selectedInvoice);
+                    console.log("Max Overall:", maxOverall);
+                    return (
+                        
                     <FormElement>
                         <fieldset>
                             <MuiGrid container spacing={2}>
@@ -62,8 +102,8 @@ const AddPaymentApplicationForm: React.FC<AddPaymentApplicationFormProps> = ({
                                         component={FormNumericTextBox}
                                         format="n2"
                                         min={0}
-                                        max={notAppliedAmount}
-                                        validator={requiredValidator}
+                                        max={maxOverall}
+                                        validator={amountAppliedValidator}
                                     />
                                 </MuiGrid>
                             </MuiGrid>
@@ -93,7 +133,8 @@ const AddPaymentApplicationForm: React.FC<AddPaymentApplicationFormProps> = ({
                             </MuiGrid>
                         </div>
                     </FormElement>
-                )}
+                    );
+                }}
             />
         </MuiGrid>
     );

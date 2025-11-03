@@ -120,6 +120,8 @@ public class PaymentHelperService : IPaymentHelperService
             ActualCurrencyAmount = parameters.Amount,
             ChequeNumber = parameters.ChequeNumber, // Added
             ChequeDate = parameters.ChequeDate, // Added
+            OverrideGlAccountId = parameters.OverrideGlAccountId,
+            Comments = parameters.Comments,
             CreatedStamp = stamp,
             LastUpdatedStamp = stamp
         };
@@ -1193,7 +1195,9 @@ public class PaymentHelperService : IPaymentHelperService
                 EffectiveDate = request.PaymentDate ?? DateTime.UtcNow,
                 PaymentTypeId = request.PaymentTypeId,
                 ChequeNumber = request.ChequeNumber, // Added
-                ChequeDate = request.ChequeDate // Added
+                ChequeDate = request.ChequeDate, // Added
+                Comments = request.Comments,
+                OverrideGlAccountId = request.OverrideGlAccountId
             };
 
             // If PaymentMethodId is provided, fetch PaymentMethod and set PaymentMethodTypeId
@@ -1284,6 +1288,17 @@ public class PaymentHelperService : IPaymentHelperService
                     }
                 }
             }
+            
+            // AFTER you have paymentId (and still have request.PartyIdFrom/To)
+            var fromParty = await _context.Parties
+                .Where(p => p.PartyId == request.PartyIdFrom)
+                .Select(p => p.Description)
+                .FirstOrDefaultAsync();
+
+            var toParty = await _context.Parties
+                .Where(p => p.PartyId == request.PartyIdTo)
+                .Select(p => p.Description)
+                    .FirstOrDefaultAsync();
 
             // 4) Return result
             var response = new CreatePaymentAndFinAccountTransResponse
@@ -1293,7 +1308,10 @@ public class PaymentHelperService : IPaymentHelperService
                 ActualCurrencyUomId = payment.ActualCurrencyUomId,
                 FinAccountTransId = finAccountTransId,
                 ChequeNumber = payment.ChequeNumber, // Added
-                ChequeDate = payment.ChequeDate // Added
+                ChequeDate = payment.ChequeDate, // Added
+                Comments = payment.Comments,
+                PartyIdFromName = fromParty,
+                PartyIdToName = toParty
             };
 
             return Result<CreatePaymentAndFinAccountTransResponse>.Success(response);

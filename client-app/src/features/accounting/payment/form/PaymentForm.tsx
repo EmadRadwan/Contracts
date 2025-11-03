@@ -13,7 +13,7 @@ import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import CreateCustomerModalForm from "../../../parties/form/CreateCustomerModalForm";
 import {Payment} from "../../../../app/models/accounting/payment";
 import ModalContainer from "../../../../app/common/modals/ModalContainer";
-import {setPaymentType} from "../slice/paymentsUiSlice";
+import {setFormEditMode, setPaymentType} from "../slice/paymentsUiSlice";
 import { Grid, Paper} from "@mui/material";
 import PaymentTransactionsList from "../../transaction/dashboard/PaymentTransactionsList";
 import {RibbonContainer} from "react-ribbons";
@@ -28,7 +28,6 @@ import {setCustomerId} from "../../../orders/slice/sharedOrderUiSlice";
 
 // Props interface for the PaymentForm component
 interface Props {
-    selectedPayment?: Payment;
     editMode: number;
     cancelEdit: () => void;
 }
@@ -45,7 +44,6 @@ const PAYMENT_STATUSES = {
 // Constants for payment type filters
 const PAYMENT_TYPE_FILTERS = {
     incoming: [
-        "RECEIPT",
         "CUSTOMER_PAYMENT",
         "CUSTOMER_DEPOSIT",
         "INTEREST_RECEIPT",
@@ -59,7 +57,6 @@ const PAYMENT_TYPE_FILTERS = {
         "RECEIPT_RETURNED_CHECK",
     ],
     outgoing: [
-        "DISBURSEMENT",
         "TAX_PAYMENT",
         "SALES_TAX_PAYMENT",
         "PAYROLL_TAX_PAYMENT",
@@ -81,7 +78,6 @@ const PAYMENT_TYPE_FILTERS = {
 };
 
 export default function PaymentForm({
-                                        selectedPayment,
                                         cancelEdit,
                                         editMode,
                                     }: Props) {
@@ -102,21 +98,20 @@ export default function PaymentForm({
     const [isLoading, setIsLoading] = useState(false);
     const formRef = useRef<any>(null);
     const partyInputRef = useRef<HTMLInputElement>(null);
-
+    const selectedPayment = useAppSelector((s) => s.accountingSharedUi.selectedPayment);
+    const [isFormValid, setIsFormValid] = useState(false);
+    
     const {
         payment,
-        setPayment,
-        formEditMode,
-        setFormEditMode,
-        handleCreate, handleUpdate, handleStatusChange,
-        isLoading: apiLoading,
+        handleCreate,
+        handleUpdate,
+        handleStatusChange,
+        isLoading: hookLoading,
     } = usePayment({
-        selectedMenuItem: "",
         editMode,
         selectedPayment,
         setIsLoading,
-        formFieldsUpdated: false,
-        companies
+        companies,
     });
 
     // Compute filtered payment types
@@ -131,20 +126,10 @@ export default function PaymentForm({
         );
     }, [paymentTypes, paymentType]);
 
-    // Synchronize payment state
-    useEffect(() => {
-        if (selectedPayment) {
-            setPayment(selectedPayment);
-        } else {
-            setPayment(undefined);
-        }
-        return () => {
-            dispatch(setSelectedPayment(undefined));
-        };
-    }, [selectedPayment, setPayment, dispatch]);
+
 
     // Focus party input and reset invalid payment type
-    useEffect(() => {
+   /* useEffect(() => {
         if (formEditMode === 1 && partyInputRef.current) {
             partyInputRef.current.focus();
         }
@@ -160,9 +145,9 @@ export default function PaymentForm({
             }
         }
     }, [formEditMode, filteredPaymentTypes]);
-
+*/
     // Handle new payment creation
-    const handleNewPayment = useCallback(
+   /* const handleNewPayment = useCallback(
         (newPaymentType: number) => {
             dispatch(setPaymentType(newPaymentType));
             setPayment(undefined);
@@ -193,71 +178,39 @@ export default function PaymentForm({
             });
         },
         [dispatch, setFormEditMode, setPayment]
-    );
+    );*/
 
-    // Handle form cancellation
-    const handleCancelForm = useCallback(() => {
-        setPayment(undefined);
-        setFormEditMode(1);
-        dispatch(setPaymentType(1));
-        cancelEdit();
-    }, [setPayment, setFormEditMode, dispatch, cancelEdit]);
-
+    
     const handleCancelApplications = useCallback(() => {
         setShowPaymentApplicationsList(false);
     }, []);
 
-    // Handle menu selections (excluding "create")
-    const handleMenuSelect = useCallback(
-        (e: any) => {
-            const data = e.item.data;
-            const formValues = formRef.current?.values;
-            const isValid = formRef.current?.isValid();
-
-            console.debug("handleMenuSelect", {data, isValid, formValues});
-
-            if (data === "update") {
-                handleCreate({
-                    values: formValues,
-                    isValid,
-                    menuItem: "Update Payment",
-                });
-            } else if (data === "receive") {
-                handleStatusChange({
-                    values: formValues,
-                    isValid,
-                    menuItem: "Status to Received",
-                });
-            } else if (data === "send") {
-                handleStatusChange({
-                    values: formValues,
-                    isValid,
-                    menuItem: "Status to Sent",
-                });
-            } else if (data === "cancel") {
-                handleStatusChange({
-                    values: formValues,
-                    isValid,
-                    menuItem: "Status to Cancelled",
-                });
-            } else if (data === "confirm") {
-                handleStatusChange({
-                    values: formValues,
-                    isValid,
-                    menuItem: "Status to Confirmed",
-                });
-            } else if (data === "incoming") {
-                handleNewPayment(1);
-            } else if (data === "outgoing") {
-                handleNewPayment(2);
-            } else if (data === "transactions") {
-                setShowTransactionsList(true);
-            } else if (data === "applications") {
-                setShowPaymentApplicationsList(true);
-            }
-        },
-        [handleCreate, handleNewPayment]
-    );
+    const handleMenuSelect = (e: any) => {
+        const action = e.item.data;
+        // the forms call the appropriate handler with {values, isValid, menuItem}
+        // we simply forward – the actual logic lives in usePayment
+        if (action === "update") {
+            // formRef is inside child components – they call handleUpdate directly
+        } else if (["receive"].includes(action)) {
+            handleStatusChange({
+                menuItem: "Status to Received",
+            });
+        } else if (["send"].includes(action)) {
+            handleStatusChange({
+                menuItem: "Status to Sent",
+            });
+        } else if (action === "incoming") {
+            dispatch(setPaymentType(1));
+            dispatch(setFormEditMode(1));
+        } else if (action === "outgoing") {
+            dispatch(setPaymentType(2));
+            dispatch(setFormEditMode(1));
+        } else if (action === "transactions") {
+            setShowTransactionsList(true);
+        } else if (action === "applications") {
+            setShowPaymentApplicationsList(true);
+        }
+    };
 
     // Update customer dropdown
     const updateCustomerDropDown = useCallback(
@@ -303,15 +256,17 @@ export default function PaymentForm({
         },
         []
     );
+    
 
 
     // Render the appropriate form
     const renderForm = () => {
-        if (formEditMode === 1) {
+        const DEBUG_FORM = true;
+        if (editMode === 1) {
             if (paymentType === 1) {
                 return (
                     <NewPaymentIn
-                        formRef={formRef}
+                        onValidityChange={setIsFormValid}
                         partyInputRef={partyInputRef}
                         companies={companies}
                         filteredPaymentTypes={filteredPaymentTypes}
@@ -319,13 +274,13 @@ export default function PaymentForm({
                         getTranslatedLabel={getTranslatedLabel}
                         setShowNewCustomer={setShowNewCustomer}
                         onCreate={handleCreate}
-                        handleCancelForm={handleCancelForm}
+                        handleCancelForm={cancelEdit}
                     />
                 );
             } else {
                 return (
                     <NewPaymentOut
-                        formRef={formRef}
+                        onValidityChange={setIsFormValid}
                         partyInputRef={partyInputRef}
                         companies={companies}
                         filteredPaymentTypes={filteredPaymentTypes}
@@ -333,7 +288,7 @@ export default function PaymentForm({
                         getTranslatedLabel={getTranslatedLabel}
                         setShowNewCustomer={setShowNewCustomer}
                         onCreate={handleCreate}
-                        handleCancelForm={handleCancelForm}
+                        handleCancelForm={cancelEdit}
                     />
                 );
             }
@@ -342,15 +297,16 @@ export default function PaymentForm({
             <EditPaymentForm
                 payment={payment}
                 paymentType={paymentType}
-                formEditMode={formEditMode}
-                formRef={formRef}
+                formEditMode={editMode}
+                onValidityChange={setIsFormValid}
                 companies={companies}
                 filteredPaymentTypes={filteredPaymentTypes}
                 paymentMethods={paymentMethods}
                 getTranslatedLabel={getTranslatedLabel}
                 onUpdate={handleUpdate}
                 currencies={currencies}
-                handleCancelForm={handleCancelForm}
+                handleCancelForm={cancelEdit}
+                debugForm={DEBUG_FORM}
             />
         );
     };
@@ -376,8 +332,6 @@ export default function PaymentForm({
         );
     }
     
-    console.log('paymentTypes', paymentTypes);
-
     return (
         <RibbonContainer>
             <AccountingMenu selectedMenuItem="/payments"/>
@@ -385,7 +339,7 @@ export default function PaymentForm({
                 <PaymentHeader
                     payment={payment}
                     paymentType={paymentType}
-                    formEditMode={formEditMode}
+                    formEditMode={editMode}
                     language={language}
                     getTranslatedLabel={getTranslatedLabel}
                 />
@@ -393,11 +347,10 @@ export default function PaymentForm({
                     <Grid item xs={12} sx={{display: 'flex', justifyContent: 'flex-end'}}>
                         <PaymentActions
                             payment={payment}
-                            formEditMode={formEditMode}
+                            formEditMode={editMode}
                             getTranslatedLabel={getTranslatedLabel}
                             handleMenuSelect={handleMenuSelect}
                             getAvailableStatusTransitions={getAvailableStatusTransitions}
-                            isFormValid={formRef.current?.isValid() ?? false} 
                         />
                     </Grid>
                 </Grid>
@@ -405,7 +358,7 @@ export default function PaymentForm({
 
                 
 
-                {(isLoading || apiLoading) && (
+                {(isLoading || hookLoading) && (
                     <LoadingComponent
                         message={getTranslatedLabel(
                             `${localizationKey}.loading`,

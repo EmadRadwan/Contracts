@@ -25,7 +25,7 @@ const paymentsApi = createApi({
             return headers;
         },
     }),
-    tagTypes: ["Payments"],
+    tagTypes: ["Payments", "PaymentApplications", "NotAppliedInvoices"],
     endpoints(builder) {
         return {
             fetchPayments: builder.query<ListResponse<Payment>, PaymentQueryArgs>({
@@ -190,7 +190,11 @@ const paymentsApi = createApi({
                     method: "POST",
                     body,
                 }),
-                invalidatesTags: ["PaymentApplications", "Payments"],
+                invalidatesTags: (result, error, arg) => [
+                    { type: 'PaymentApplications', id: arg.paymentId },
+                    { type: 'NotAppliedInvoices', id: arg.paymentId },
+                    "Payments"
+                ],
             }),
             calculatePaymentTotals: builder.mutation<
                 { id: string; amountToApply: number }[],
@@ -202,16 +206,20 @@ const paymentsApi = createApi({
                     body: paymentsIds, // Pass the array of invoice IDs
                 }),
             }),
-            removePaymentApplication: builder.mutation<RemovePaymentApplicationResponse, { paymentApplicationId: string }>({
-            query: ({ paymentApplicationId }) => ({
-                url: `paymentApplications/${paymentApplicationId}`,
-                method: 'DELETE',
+            removePaymentApplication: builder.mutation<RemovePaymentApplicationResponse, { paymentApplicationId: string; paymentId: string }>({
+                query: ({ paymentApplicationId }) => ({
+                    url: `paymentApplications/${paymentApplicationId}`,
+                    method: 'DELETE',
+                }),
+                // REFACTOR: Invalidate cache tags
+                // Technical: Invalidates related queries to refresh UI
+                // Business Purpose: Ensures PaymentApplications, NotAppliedInvoices, and NotAppliedPayments reflect the deletion
+                invalidatesTags: (result, error, { paymentId }) => [
+                    { type: 'PaymentApplications', id: paymentId },
+                    { type: 'NotAppliedInvoices', id: paymentId },
+                    // 'NotAppliedPayments' retained if needed elsewhere; add providesTags to relevant query if not already
+                ],
             }),
-            // REFACTOR: Invalidate cache tags
-            // Technical: Invalidates related queries to refresh UI
-            // Business Purpose: Ensures PaymentApplications, NotAppliedInvoices, and NotAppliedPayments reflect the deletion
-            invalidatesTags: ['PaymentApplications', 'NotAppliedInvoices', 'NotAppliedPayments'],
-        }),
         };
     },
 });

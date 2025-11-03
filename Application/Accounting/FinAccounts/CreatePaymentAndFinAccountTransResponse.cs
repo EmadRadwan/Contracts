@@ -6,6 +6,9 @@ public class CreatePaymentAndFinAccountTransResponse
     public string FinAccountTransId { get; set; }
     public string CurrencyUomId { get; set; }
     public string ActualCurrencyUomId { get; set; }
+    public string? Comments { get; set; }
     public string? ChequeNumber { get; set; }
     public DateTime? ChequeDate { get; set; }
+    public string? PartyIdFromName { get; set; }
+    public string? PartyIdToName { get; set; }
 }

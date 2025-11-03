@@ -102,6 +102,7 @@ public class CreatePayment
                     StatusId = "PMNT_NOT_PAID",
                     EffectiveDate = request.PaymentDto.EffectiveDate,
                     Amount = request.PaymentDto.Amount,
+                    Comments = request.PaymentDto.Comments,
                     PartyIdFrom = request.PaymentDto.PartyIdFrom,
                     PartyIdTo = request.PaymentDto.PartyIdTo,
                     PaymentTypeId = request.PaymentDto.PaymentTypeId

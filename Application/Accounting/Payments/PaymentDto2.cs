@@ -22,6 +22,7 @@ public class PaymentDto2
     public string? PaymentMessage { get; set; }
     public string? ReferenceNumber { get; set; }
     public string? Description { get; set; }
+    public string? OverrideGlAccountId { get; set; }
     public string? CurrencyUomId { get; set; }
     public string? CurrencyUomName { get; set; }
 

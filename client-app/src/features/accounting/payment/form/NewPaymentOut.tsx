@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { FormComboBoxVirtualParty } from "../../../../app/common/form/FormComboBoxVirtualParty";
-import { requiredValidator } from "../../../../app/common/form/Validators";
+import {chequeValidator, requiredValidator} from "../../../../app/common/form/Validators";
 import { Field, Form, FormElement, FormRenderProps } from "@progress/kendo-react-form";
 import { MemoizedFormDropDownList } from "../../../../app/common/form/MemoizedFormDropDownList";
 import {Button, Grid, Skeleton, Typography} from "@mui/material";
@@ -14,19 +14,19 @@ import {useFetchGlAccountOrganizationHierarchyLovQuery} from "../../../../app/st
 import {FormDropDownTreeGlAccount2} from "../../../../app/common/form/FormDropDownTreeGlAccount2";
 
 interface NewPaymentOutProps {
-    formRef: React.MutableRefObject<any>;
+    onValidityChange?: (valid: boolean) => void;
     partyInputRef: React.RefObject<HTMLInputElement>;
     companies?: any[];
     filteredPaymentTypes: any[];
     paymentMethods?: any[];
     getTranslatedLabel: (key: string, defaultValue: string) => string;
     setShowNewCustomer: (show: boolean) => void;
-    onCreate: (data: { values: any; isValid: boolean; menuItem: string }) => void;
+    onCreate: (data: { values: any;  menuItem: string }) => void;
     handleCancelForm: () => void;
 }
 
 const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
-                                                         formRef,
+                                                         onValidityChange,
                                                          partyInputRef,
                                                          companies,
                                                          filteredPaymentTypes,
@@ -44,11 +44,11 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
         skip: !companyId,
     });
 
+   
     // Handle form submission
     const handleSubmit = (values: any) => {
         onCreate({
             values,
-            isValid: formRef.current?.isValid(),
             menuItem: "Create Payment",
         });
     };
@@ -60,7 +60,6 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
 
     return (
         <Form
-            ref={formRef}
             initialValues={{
                 paymentId: "",
                 paymentTypeId: "",
@@ -79,7 +78,10 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                 chequeDate: null,
             }}
             onSubmit={handleSubmit}
-            render={(formRenderProps: FormRenderProps) => (
+            render={(formRenderProps: FormRenderProps) => {
+                const { valid, onSubmit, onChange } = formRenderProps;
+
+                return (
                 <FormElement>
                     <fieldset className="k-form-fieldset">
                         <Grid container spacing={2}>
@@ -185,6 +187,8 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                             label={getTranslatedLabel(`${localizationKey}.chequeNumber`, "Cheque Number")}
                                             component={FormInput}
                                             autoComplete="off"
+                                            validator={(value, getter) => chequeValidator(value, getter, undefined, formRenderProps)}
+
                                         />
                                     </Grid>
                                     <Grid item xs={2}>
@@ -194,6 +198,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                             label={getTranslatedLabel(`${localizationKey}.chequeDate`, "Cheque Date")}
                                             component={FormDatePicker}
                                             format="yyyy-MM-dd"
+                                            validator={(value, getter) => chequeValidator(value, getter, undefined, formRenderProps)}
                                         />
                                     </Grid>
                                     <Grid item xs={4}>
@@ -215,8 +220,8 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                             <Skeleton variant="rounded" height={56} />
                                         ) : (
                                             <Field
-                                                id="debitGlAccountId"
-                                                name="debitGlAccountId"
+                                                id="overrideGlAccountId"
+                                                name="overrideGlAccountId"
                                                 label={getTranslatedLabel(`${localizationKey}.debitGlAccount`, "Override GL Account")}
                                                 data={glAccounts || []}
                                                 component={FormDropDownTreeGlAccount2}
@@ -229,14 +234,15 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                     </Grid>
                                     <Grid item xs={3}>
                                         <Field
-                                            id="paymentRefNum"
-                                            name="paymentRefNum"
+                                            id="comments"
+                                            name="comments"
                                             label={getTranslatedLabel(
-                                                `${localizationKey}.paymentRefNum`,
-                                                "Reference Number"
+                                                `${localizationKey}.comments`,
+                                                "Comments"
                                             )}
                                             component={FormTextArea}
                                             autoComplete="off"
+                                            validator={requiredValidator}
                                         />
                                     </Grid>
                                 </Grid>
@@ -274,7 +280,8 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                         </Grid>
                     </fieldset>
                 </FormElement>
-            )}
+                );
+            }}
         />
     );
 };

@@ -9,14 +9,13 @@ interface PaymentActionsProps {
     formEditMode: number;
     getTranslatedLabel: (key: string, defaultValue: string) => string;
     handleMenuSelect: (e: { item: { data: string } }) => void;
-    isFormValid: boolean;
 }
 
 const getAvailableStatusTransitions = (payment?: Payment) => {
     if (!payment) {
         return { toSent: false, toReceived: false, toCancelled: false, toConfirmed: false, toVoid: false };
     }
-    const isOutgoing = payment.isDisbursement; // Determines if payment is outgoing (true) or incoming (false)
+    const isOutgoing = payment.isDisbursement; 
     return {
         toSent: payment.statusId === 'PMNT_NOT_PAID' && isOutgoing,
         toReceived: payment.statusId === 'PMNT_NOT_PAID' && !isOutgoing,
@@ -31,7 +30,6 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                                                            formEditMode,
                                                            getTranslatedLabel,
                                                            handleMenuSelect,
-                                                           isFormValid,
                                                        }) => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
@@ -85,6 +83,7 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
             </>
         );
     }
+    
 
     // For other modes (edit mode), show all actions
     return (
@@ -106,12 +105,12 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
                 
-                {getAvailableStatusTransitions(payment).toSent && isFormValid && (
+                {getAvailableStatusTransitions(payment).toSent  && (
                     <MenuItem onClick={() => onMenuSelect('send')}>
                         {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.send`, "Status to Sent")}
                     </MenuItem>
                 )}
-                {getAvailableStatusTransitions(payment).toReceived && isFormValid && (
+                {getAvailableStatusTransitions(payment).toReceived  && (
                     <MenuItem onClick={() => onMenuSelect('receive')}>
                         {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.receive`, "Status to Received")}
                     </MenuItem>

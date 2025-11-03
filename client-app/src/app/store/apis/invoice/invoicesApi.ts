@@ -27,7 +27,7 @@ const invoicesApi = createApi({
     },
   }),
 
-  tagTypes: ["invoices"],
+  tagTypes: ["invoices", "NotAppliedInvoices"],
   endpoints(builder) {
     return {
       fetchInvoices: builder.query<ListResponse<Invoice>, State>({
@@ -91,6 +91,7 @@ const invoicesApi = createApi({
             method: "GET",
           };
         },
+        providesTags: (result, error, paymentId) => [{ type: 'NotAppliedInvoices', id: paymentId }],
       }),
       createInvoice: builder.mutation({
         query: (invoice) => {

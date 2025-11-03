@@ -1,7 +1,6 @@
-import { useState } from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import { toast } from "react-toastify";
 import { Payment } from "../../../../app/models/accounting/payment";
-import { setPaymentFormEditMode } from "../slice/paymentsUiSlice";
 import {
   useCreatePaymentAndFinAccountTransMutation,
   useSetPaymentStatusToReceivedMutation,
@@ -9,6 +8,10 @@ import {
 } from "../../../../app/store/apis";
 import {useAppDispatch, useAppSelector} from "../../../../app/store/configureStore";
 import { acctTransApi } from "../../../../app/store/apis";
+import {
+  setFormEditMode,
+} from "../slice/paymentsUiSlice";
+import {setSelectedPayment} from "../../slice/accountingSharedUiSlice";
 
 interface Company {
   organizationPartyId: string;
@@ -16,12 +19,10 @@ interface Company {
 }
 
 interface UsePaymentProps {
-  selectedMenuItem: string;
-  editMode: number;
-  selectedPayment?: Payment;
-  formFieldsUpdated: boolean;
+  editMode: number;              
+  selectedPayment?: Payment;  
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
-  companies: Company[];
+  companies: { organizationPartyId: string; organizationPartyName: string }[];
 }
 
 const PAYMENT_STATUSES = {
@@ -75,42 +76,17 @@ const errorMessages: Record<string, Record<string, string>> = {
  * @returns Object containing state and handlers for payment operations.
  */
 export default function usePayment({
-                                     selectedMenuItem,
                                      editMode,
-                                     selectedPayment,
+                                     selectedPayment: propSelectedPayment,
                                      setIsLoading,
-                                     formFieldsUpdated,
                                      companies,
                                    }: UsePaymentProps) {
   const dispatch = useAppDispatch();
   const language = useAppSelector((state) => state.localization.language || "en"); // REFACTOR: Get language from Redux store
-
-  const [formEditMode, setFormEditMode] = useState(editMode);
-  const [payment, setPayment] = useState<Payment | undefined>(() => {
-    if (selectedPayment) {
-      return selectedPayment;
-    }
-    return {
-      paymentId: "",
-      paymentTypeId: "",
-      paymentMethodId: "",
-      statusId: PAYMENT_STATUSES.NOT_PAID,
-      statusDescription: "Not Paid",
-      partyIdFrom: "",
-      partyIdFromName: "",
-      partyIdTo: "",
-      partyIdToName: "",
-      amount: 0,
-      effectiveDate: "",
-      paymentRefNum: "",
-      organizationPartyId: "",
-      isDepositWithDrawPayment: "Y",
-      finAccountTransTypeId: "",
-      isDisbursement: false,
-      chequeNumber: "",
-      chequeDate: null,
-    };
-  });
+  const reduxSelectedPayment = useAppSelector(
+      (s) => s.accountingSharedUi.selectedPayment
+  );
+  const [payment, setPayment] = useState<Payment | undefined>(undefined);
 
   const [createPaymentAndFinAccountTrans, { isLoading: isCreateLoading }] =
       useCreatePaymentAndFinAccountTransMutation();
@@ -120,48 +96,57 @@ export default function usePayment({
 
   const isLoading = isCreateLoading || isUpdateLoading || isStatusLoading;
 
-  /**
-   * Updates the payment state with new data and optionally sets a new edit mode.
-   * @param updatedPayment - The updated payment data from the API.
-   * @param customerId - The ID of the customer party.
-   * @param organizationId - The ID of the organization party.
-   * @param newStatusId - Optional new status ID to update edit mode.
-   */
-  const updatePaymentState = (
-      updatedPayment: Partial<Payment>,
-      customerId: string,
-      organizationId: string,
+  
+  const defaultNewPayment = useMemo(() => ({
+    paymentId: "",
+    paymentTypeId: "",
+    paymentMethodId: "",
+    statusId: PAYMENT_STATUSES.NOT_PAID,
+    statusDescription: "Not Paid",
+    partyIdFrom: "",
+    partyIdFromName: "",
+    partyIdTo: "",
+    partyIdToName: "",
+    amount: 0,
+    effectiveDate: new Date().toISOString(),
+    paymentRefNum: "",
+    organizationPartyId:  "",
+    isDepositWithDrawPayment: "Y",
+    finAccountTransTypeId: "",
+    isDisbursement: false,
+    chequeNumber: "",
+    chequeDate: null,
+    comments: "",
+  }), [companies]);
+
+  // Replace the entire useEffect with this:
+  useEffect(() => {
+    // 1. Redux has a new selected payment → use it instantly
+    if (reduxSelectedPayment) {
+      setPayment(reduxSelectedPayment);
+      return;
+    }
+
+    // 2. We are in CREATE mode (editMode === 1) and we have no payment yet
+    if (editMode === 1 && !payment?.paymentId) {
+      setPayment(defaultNewPayment);
+    }
+  }, [reduxSelectedPayment, editMode, defaultNewPayment]);
+  
+  const finalizePayment = (
+      updated: Partial<Payment>,
       newStatusId?: string
   ) => {
-    setPayment({
-      ...payment,
-      paymentId: updatedPayment.paymentId ?? payment?.paymentId ?? "",
-      paymentTypeId: updatedPayment.paymentTypeId ?? payment?.paymentTypeId ?? "",
-      paymentMethodId: updatedPayment.paymentMethodId ?? payment?.paymentMethodId ?? "",
-      statusId: newStatusId ?? updatedPayment.statusId ?? payment?.statusId ?? PAYMENT_STATUSES.NOT_PAID,
-      statusDescription: updatedPayment.statusDescription ?? payment?.statusDescription ?? "Not Paid",
-      partyIdFrom: updatedPayment.isDisbursement ? organizationId : customerId,
-      partyIdFromName: updatedPayment.partyIdFromName ?? payment?.partyIdFromName ?? "",
-      partyIdTo: updatedPayment.isDisbursement ? customerId : organizationId,
-      partyIdToName: updatedPayment.partyIdToName ?? payment?.partyIdToName ?? "",
-      amount: updatedPayment.amount ?? payment?.amount ?? 0,
-      effectiveDate: updatedPayment.effectiveDate ?? payment?.effectiveDate ?? "",
-      paymentRefNum: updatedPayment.paymentRefNum ?? payment?.paymentRefNum ?? "",
-      organizationPartyId: organizationId,
-      isDepositWithDrawPayment: updatedPayment.isDepositWithDrawPayment ?? payment?.isDepositWithDrawPayment ?? "Y",
-      finAccountTransTypeId: updatedPayment.finAccountTransTypeId ?? payment?.finAcctTransTypeId ?? "",
-      isDisbursement: updatedPayment.isDisbursement ?? payment?.isDisbursement ?? false,
-      currencyUomId: updatedPayment.currencyUomId ?? payment?.currencyUomId ?? "",
-      finAccountTransId: updatedPayment.finAccountTransId ?? payment?.finAccountTransId ?? "",
-      chequeNumber: updatedPayment.chequeNumber ?? payment?.chequeNumber ?? "",
-      chequeDate: updatedPayment.chequeDate ?? payment?.chequeDate ?? null,
-    });
-    if (newStatusId && statusToEditMode[newStatusId]) {
-      const newEditMode = statusToEditMode[newStatusId];
-      setFormEditMode(newEditMode);
-      dispatch(setPaymentFormEditMode(newEditMode));
+    const full = { ...payment, ...updated } as Payment;
+    dispatch(setSelectedPayment(full));
+    if (newStatusId) {
+      const mode = statusToEditMode[newStatusId] ?? 2;
+      dispatch(setFormEditMode(mode));
     }
+    setPayment(full);
   };
+  
+  
 
   /**
    * Handles API errors by displaying a toast message based on error code and logging the error.
@@ -176,16 +161,9 @@ export default function usePayment({
     setIsLoading(false);
   };
 
-  /**
-   * Creates a new payment and updates the state with the response.
-   * @param newPayment - The payment data to create.
-   * @param customerId - The ID of the customer party.
-   * @param organizationId - The ID of the organization party.
-   */
+  
   const createPayment = async (
-      newPayment: Payment,
-      customerId: string,
-      organizationId: string
+      newPayment: Payment
   ) => {
     try {
       setIsLoading(true);
@@ -201,286 +179,149 @@ export default function usePayment({
         paymentDate: newPayment.effectiveDate || new Date().toISOString(),
         chequeNumber: newPayment.chequeNumber,
         chequeDate: newPayment.chequeDate,
+        comments: newPayment.comments || "",
+        overrideGlAccountId: newPayment.overrideGlAccountId
       };
 
-      const createdPayment = await createPaymentAndFinAccountTrans(request).unwrap();
-      const updatedPayment = {
+      const created = await createPaymentAndFinAccountTrans(request).unwrap();
+
+      const merged: Payment = {
         ...newPayment,
-        paymentId: createdPayment.paymentId,
+        paymentId: created.paymentId,
+        statusId: PAYMENT_STATUSES.NOT_PAID,
         statusDescription: "Not Paid",
-        currencyUomId: createdPayment.currencyUomId,
-        finAccountTransId: createdPayment.finAccountTransId,
-        chequeNumber: createdPayment.chequeNumber ?? newPayment.chequeNumber,
-        chequeDate: createdPayment.chequeDate ?? newPayment.chequeDate,
+        currencyUomId: created.currencyUomId ?? "EGP",
+        finAccountTransId: created.finAccountTransId,
+        partyIdFromName : created.partyIdFromName,
+        partyIdToName : created.partyIdToName
       };
-      if (process.env.NODE_ENV !== "production") {
-        console.log("updated payment", updatedPayment);
-      }
-      updatePaymentState(updatedPayment, customerId, organizationId, PAYMENT_STATUSES.NOT_PAID);
-      toast.success("Payment Created Successfully");
+
+      finalizePayment(merged, PAYMENT_STATUSES.NOT_PAID);
+      toast.success("Payment created");
       dispatch(acctTransApi.util.invalidateTags(["Payments", "PTransactions"]));
-      setIsLoading(false);
+
     } catch (error) {
       handleApiError(error, "Failed to create payment");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  /**
-   * Updates an existing payment and refreshes the state.
-   * @param newPayment - The updated payment data.
-   * @param customerId - The ID of the customer party.
-   * @param organizationId - The ID of the organization party.
-   */
+  
   const updatePaymentData = async (
-      newPayment: Payment,
-      customerId: string,
-      organizationId: string
+      updated: Payment
   ) => {
     try {
       setIsLoading(true);
-      const updatedPayment = await updatePayment({
-        ...newPayment,
-        chequeNumber: newPayment.chequeNumber,
-        chequeDate: newPayment.chequeDate,
-      }).unwrap();
-      updatePaymentState(updatedPayment, customerId, organizationId);
-      toast.success("Payment Updated Successfully");
+      const result = await updatePayment(updated).unwrap();
+      finalizePayment(result);
+      toast.success("Payment updated");
       dispatch(acctTransApi.util.invalidateTags(["Payments"]));
-      setIsLoading(false);
     } catch (error) {
       handleApiError(error, "Failed to update payment");
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  /**
-   * Changes the status of a payment and updates the state.
-   * @param paymentId - The ID of the payment to update.
-   * @param statusId - The new status ID.
-   * @param customerId - The ID of the customer party.
-   * @param organizationId - The ID of the organization party.
-   */
-  const changePaymentStatus = async (
-      paymentId: string,
-      statusId: string,
-      customerId: string,
-      organizationId: string
-  ) => {
+
+  const changeStatus = async (paymentId: string, statusId: string) => {
     try {
       setIsLoading(true);
-      if (formFieldsUpdated && payment) {
-        await updatePaymentData(payment, customerId, organizationId);
-      }
-      const updatedPayment = await setPaymentStatus({ paymentId, statusId }).unwrap();
-      updatePaymentState(updatedPayment, customerId, organizationId, statusId);
-      toast.success(`Payment Status Changed to ${updatedPayment.statusDescription} Successfully`);
+      const result = await setPaymentStatus({ paymentId, statusId }).unwrap();
+      finalizePayment(result, statusId);
+      toast.success(`Status → ${result.statusDescription}`);
       dispatch(acctTransApi.util.invalidateTags(["Payments", "PTransactions"]));
-      setIsLoading(false);
     } catch (error) {
       handleApiError(error, `Failed to change payment status to ${statusId}`);
-    }
+    } finally {
+    setIsLoading(false);
+  }
   };
 
-  /**
-   * Handles payment creation.
-   * @param data - Form data for creation.
-   */
-      // REFACTORED: Ensured only handles "Create Payment"
-  const handleCreate = async (data: any) => {
-        if (!data.isValid) {
-          toast.error("Please fix form errors before submitting");
-          setIsLoading(false);
-          return;
-        }
+const handleCreate = async (data: {
+  values: any;
+  menuItem: string;
+}) => {
 
-        if (process.env.NODE_ENV !== "production") {
-          console.log("data", data);
-        }
+  const { values } = data;
+  const isDisbursement = values.isDisbursement ?? false;
+  const customerId = isDisbursement ? values.partyIdTo?.fromPartyId : values.partyIdFrom?.fromPartyId;
+  const organizationId = values.organizationPartyId;
 
-        const customerId = data.values.isDisbursement ? data.values.partyIdTo : data.values.partyIdFrom;
-        const organizationId = data.values.organizationPartyId;
+  const org = companies.find((c) => c.organizationPartyId === organizationId);
+  const orgName = org?.organizationPartyName ?? "";
 
-        const organization = companies.find(
-            (company) => company.organizationPartyId === organizationId
-        );
-        const organizationName = organization?.organizationPartyName || "Unknown Organization";
+  const newPayment: Payment = {
+    paymentId: "",
+    paymentTypeId: values.paymentTypeId,
+    paymentMethodId: values.paymentMethodId,
+    statusId: PAYMENT_STATUSES.NOT_PAID,
+    partyIdFrom: isDisbursement ? organizationId : customerId,
+    partyIdFromName: isDisbursement ? orgName : values.partyIdFrom?.fromPartyName ?? "",
+    partyIdTo: isDisbursement ? customerId : organizationId,
+    partyIdToName: isDisbursement ? values.partyIdTo?.fromPartyName ?? "" : orgName,
+    amount: values.amount,
+    effectiveDate: values.effectiveDate ?? new Date().toISOString(),
+    comments: values.comments ?? "",
+    organizationPartyId: organizationId,
+    isDepositWithDrawPayment: values.isDepositWithDrawPayment ? "Y" : "N",
+    finAccountTransTypeId: isDisbursement ? "WITHDRAWAL" : "DEPOSIT",
+    isDisbursement,
+    chequeNumber: values.chequeNumber ?? "",
+    chequeDate: values.chequeDate ? new Date(values.chequeDate).toISOString() : null,
+    overrideGlAccountId: values.overrideGlAccountId
+  };
 
-        const partyIdFromName = data.values.isDisbursement
-            ? organizationName
-            : data.values.partyIdFrom?.fromPartyName || "";
-        const partyIdToName = data.values.isDisbursement
-            ? data.values.partyIdTo?.fromPartyName || ""
-            : organizationName;
+  await createPayment(newPayment);
+};
 
-        const newPayment: Payment = {
-          paymentId: formEditMode > 1 ? payment?.paymentId || "" : "",
-          paymentTypeId: data.values.paymentTypeId,
-          paymentMethodId: data.values.paymentMethodId,
-          statusId: data.values.statusId || PAYMENT_STATUSES.NOT_PAID,
-          partyIdFrom: data.values.isDisbursement
-              ? organizationId
-              : data.values.partyIdFrom.fromPartyId,
-          partyIdFromName,
-          partyIdTo: data.values.isDisbursement
-              ? data.values.partyIdTo.fromPartyId
-              : organizationId,
-          partyIdToName,
-          amount: data.values.amount,
-          effectiveDate: data.values.effectiveDate || new Date().toISOString(),
-          paymentRefNum: data.values.paymentRefNum,
-          organizationPartyId: organizationId,
-          isDepositWithDrawPayment:
-              data.values.paymentMethodId && data.values.isDepositWithDrawPayment ? "Y" : "N",
-          finAcctTransTypeId: data.values.isDisbursement ? "WITHDRAWAL" : "DEPOSIT",
-          isDisbursement: data.values.isDisbursement || selectedMenuItem === "outgoing",
-          chequeNumber: data.values.chequeNumber || "", // Added
-          chequeDate: data.values.chequeDate ? new Date(data.values.chequeDate).toISOString() : null, // Added
+  const handleUpdate = async (data: {
+    values: any;
+    menuItem: string;
+  }) => {
 
-        };
+    const updated: Payment = {
+      ...payment,
+      paymentMethodId: data.values.paymentMethodId,
+      amount: data.values.amount ?? payment.amount,
+      effectiveDate:
+          data.values.effectiveDate && !isNaN(new Date(data.values.effectiveDate).getTime())
+              ? new Date(data.values.effectiveDate).toISOString()
+              : payment.effectiveDate,
+      comments: data.values.comments ?? payment.comments ?? "",
+      chequeNumber: data.values.chequeNumber ?? payment.chequeNumber ?? "",
+      chequeDate: data.values.chequeDate
+          ? new Date(data.values.chequeDate).toISOString()
+          : payment.chequeDate ?? null,
+      overrideGlAccountId: data.values.overrideGlAccountId
+    };
 
-        if (process.env.NODE_ENV !== "production") {
-          console.log("new payment", newPayment);
-        }
+    await updatePaymentData(updated);
+  };
 
-        if (data.menuItem === "Create Payment") {
-          await createPayment(newPayment, customerId, organizationId);
-        } else {
-          setIsLoading(false);
-        }
-      };
+  const handleStatusChange = async (data: {
+    menuItem: string;
+  }) => {
 
-  /**
-   * Handles payment updates based on form data.
-   * @param data - Form data for the update.
-   */
-      // REFACTORED: Ensured only handles "Update Payment"
-  const handleUpdate = async (data: any) => {
-        if (!data.isValid) {
-          toast.error("Please fix form errors before submitting");
-          setIsLoading(false);
-          return;
-        }
+    const map: Record<string, string> = {
+      "Status to Received": PAYMENT_STATUSES.RECEIVED,
+      "Status to Sent": PAYMENT_STATUSES.SENT,
+      "Status to Cancelled": PAYMENT_STATUSES.CANCELLED,
+      "Status to Confirmed": PAYMENT_STATUSES.CONFIRMED,
+    };
+    const target = map[data.menuItem];
+    if (!target) return toast.error("Unknown status");
 
-        if (!payment) {
-          toast.error("No payment selected for updating");
-          setIsLoading(false);
-          return;
-        }
-
-        if (!data.values.paymentMethodId) {
-          toast.error("Payment method is required");
-          setIsLoading(false);
-          return;
-        }
-
-        const customerId = data.values.isDisbursement ? data.values.partyIdTo : data.values.partyIdFrom;
-        const organizationId = data.values.organizationPartyId;
-
-        const organization = companies.find(
-            (company) => company.organizationPartyId === organizationId
-        );
-        const organizationName = organization?.organizationPartyName || "Unknown Organization";
-        const partyIdFrom =  undefined;
-
-        const partyIdFromName = data.values.isDisbursement
-            ? organizationName
-            : data.values.partyIdFromName || payment.partyIdFromName || "";
-        const partyIdToName = data.values.isDisbursement
-            ? data.values.partyIdToName || payment.partyIdToName || ""
-            : organizationName;
-
-        const updatedPayment: Payment = {
-          ...payment,
-          paymentMethodId: data.values.paymentMethodId,
-          partyIdFrom,
-          partyIdFromName,
-          partyIdToName,
-          amount: data.values.amount || payment.amount,
-          effectiveDate:
-              data.values.effectiveDate && !isNaN(new Date(data.values.effectiveDate).getTime())
-                  ? new Date(data.values.effectiveDate).toISOString()
-                  : payment.effectiveDate,
-          paymentRefNum: data.values.paymentRefNum || payment.paymentRefNum || "",
-          organizationPartyId: organizationId,
-          isDepositWithDrawPayment:
-              data.values.paymentMethodId && data.values.isDepositWithDrawPayment
-                  ? "Y"
-                  : payment.isDepositWithDrawPayment || "N",
-          comments: data.values.comments || payment.comments || "",
-          actualCurrencyUomId: data.values.actualCurrencyUomId || payment.actualCurrencyUomId || "",
-          actualCurrencyAmount: data.values.actualCurrencyAmount || payment.actualCurrencyAmount || 0,
-          chequeNumber: data.values.chequeNumber || payment.chequeNumber || "", // Added
-          chequeDate: data.values.chequeDate
-              ? new Date(data.values.chequeDate).toISOString()
-              : payment.chequeDate || null, // Added
-        };
-
-        try {
-          if (data.menuItem === "Update Payment") {
-            await updatePaymentData(updatedPayment, customerId, organizationId);
-          } else {
-            toast.error("Invalid update action selected");
-            setIsLoading(false);
-          }
-        } catch (error) {
-          toast.error("Failed to update payment");
-          setIsLoading(false);
-        }
-      };
-
-  /**
-   * Handles payment status changes based on form data.
-   * @param data - Form data for the status change.
-   */
-      // REFACTORED: Dedicated function for status changes, independent of create/update
-  const handleStatusChange = async (data: any) => {
-        if (!data.isValid) {
-          toast.error("Please fix form errors before submitting");
-          setIsLoading(false);
-          return;
-        }
-
-        if (!payment || !payment.paymentId) {
-          toast.error("No payment selected for status change");
-          setIsLoading(false);
-          return;
-        }
-
-        const customerId = data.values.isDisbursement ? data.values.partyIdTo : data.values.partyIdFrom;
-        const organizationId = data.values.organizationPartyId;
-
-        try {
-          switch (data.menuItem) {
-            case "Status to Received":
-              await changePaymentStatus(payment.paymentId, PAYMENT_STATUSES.RECEIVED, customerId, organizationId);
-              break;
-            case "Status to Sent":
-              await changePaymentStatus(payment.paymentId, PAYMENT_STATUSES.SENT, customerId, organizationId);
-              break;
-            case "Status to Cancelled":
-              await changePaymentStatus(payment.paymentId, PAYMENT_STATUSES.CANCELLED, customerId, organizationId);
-              break;
-            case "Status to Confirmed":
-              await changePaymentStatus(payment.paymentId, PAYMENT_STATUSES.CONFIRMED, customerId, organizationId);
-              break;
-            default:
-              toast.error("Invalid status change action selected");
-              setIsLoading(false);
-          }
-        } catch (error) {
-          toast.error("Failed to change payment status");
-          setIsLoading(false);
-        }
-      };
+    await changeStatus(payment.paymentId, target);
+  };
 
   return {
-    formEditMode,
-    setFormEditMode,
     payment,
-    setPayment,
     handleCreate,
     handleUpdate,
     handleStatusChange,
-    isLoading,
+    isLoading
   };
 }

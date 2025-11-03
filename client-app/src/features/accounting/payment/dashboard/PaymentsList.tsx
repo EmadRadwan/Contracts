@@ -12,17 +12,16 @@ import {
   GridDataStateChangeEvent, GridToolbar,
 } from "@progress/kendo-react-grid";
 import { DataResult, State } from "@progress/kendo-data-query";
-import { Payment } from "../../../../app/models/accounting/payment";
 import Button from "@mui/material/Button";
 import { Grid, Paper } from "@mui/material";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import { handleDatesArray } from "../../../../app/util/utils";
 import PaymentForm from "../form/PaymentForm";
-import { setPaymentType } from "../slice/paymentsUiSlice";
-import {useCalculatePaymentTotalsMutation} from "../../../../app/store/apis";
+import {resetForm, setFormEditMode, setPaymentType} from "../slice/paymentsUiSlice";
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
-import { useLocation } from "react-router";
+import {useLocation, useNavigate} from "react-router";
+import {setSelectedPayment} from "../../slice/accountingSharedUiSlice";
 
 interface PaymentsListProps {
   paymentType: 'incoming' | 'outgoing';
@@ -32,10 +31,14 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
   const { getTranslatedLabel } = useTranslationHelper();
   const localizationKey = "accounting.payments.list";
   const location = useLocation()
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+
   const [payments, setPayments] = React.useState<DataResult>({
     data: [],
     total: 0,
   });
+
   const [dataState, setDataState] = React.useState<State>({
     sort: [
       {
@@ -47,10 +50,22 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
     take: 6,
   });
 
+  const formEditMode = useAppSelector((s) => s.paymentsUi.formEditMode);
+
+
+
+  useEffect(() => {
+    if (location.state?.resetPaymentForm) {
+      dispatch(resetForm());
+      // clean location state
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, dispatch, navigate]);
+
+
   const dataStateChange = (e: GridDataStateChangeEvent) => {
     setDataState(e.dataState);
   };
-  const selectedPaymentFromUi = useAppSelector(state => state.accountingSharedUi.selectedPayment)
 
   const { data, error, isFetching, refetch } = useFetchPaymentsQuery({
     ...dataState,
@@ -59,10 +74,7 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
   
   const [show, setShow] = useState(false);
 
-  const dispatch = useAppDispatch();
 
-  const [editMode, setEditMode] = useState(0);
-  const [payment, setPayment] = useState<Payment | undefined>(undefined);
   React.useEffect(() => {
     if (data) {
       const adjustedData = handleDatesArray(data.data);
@@ -70,145 +82,74 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
     }
   }, [data]);
 
-  function handleSelectPayment(paymentId: string) {
-    const selectedPayment: Payment | undefined = payments.data.find(
-      (payment: any) => payment.paymentId === paymentId
-    );
-    setPayment(selectedPayment);
+  const handleSelectPayment = (paymentId: string) => {
+    const pay = payments.data.find((p: any) => p.paymentId === paymentId);
+    if (!pay) return;
 
-    dispatch(setPaymentType(paymentType === 'incoming' ? 1 : 2));
+    dispatch(setSelectedPayment(pay));
+    dispatch(setPaymentType(paymentType === "incoming" ? 1 : 2));
 
-    setFormEditModeFromStatus(selectedPayment?.statusDescriptionEnglish)
-    
-  }
-
-
-  useEffect(() => {
-    if ((selectedPaymentFromUi || location?.state?.selectedPaymentId) && payments.data.length > 0) {
-      const id = location?.state?.selectedPaymentId ?? selectedPaymentFromUi?.paymentId
-      handleSelectPayment(id)
-    }
-  }, [selectedPaymentFromUi, payments, location?.state?.selectedPaymentId])
-
-  useEffect(() => {
-    console.log(editMode)
-  }, [editMode])
-
-  const setFormEditModeFromStatus = (paymentStatus: string) => {
-    if (paymentStatus === "Not Paid") {
-      setEditMode(2);
-    }
-
-    if (paymentStatus === "Received") {
-      setEditMode(3);
-    }
-
-    if (paymentStatus === "Sent") {
-      setEditMode(4);
-    }
-
-    if (paymentStatus === "Confirmed") {
-      setEditMode(5);
-    }
-
-    if (paymentStatus === "Cancelled") {
-      setEditMode(6);
-    }
-  }
-
-  function cancelEdit() {
-    setEditMode(0);
-  }
+    // Fix: Use statusId instead of statusDescriptionEnglish for mapping
+    const statusMap: Record<string, number> = {
+      "PMNT_NOT_PAID": 2,
+      "PMNT_RECEIVED": 3,
+      "PMNT_SENT": 4,
+      "PMNT_CONFIRMED": 5,
+      "PMNT_CANCELLED": 6,
+    };
+    const mode = statusMap[pay.statusId] ?? 2; // Use statusId, not statusDescriptionEnglish
+    dispatch(setFormEditMode(mode));
+  };
 
   const PaymentDescriptionCell = (props: any) => {
     const field = props.field || "";
     const value = props.dataItem[field];
     const navigationAttributes = useTableKeyboardNavigation(props.id);
     return (
-      <td
-        className={props.className}
-        style={{ ...props.style, color: "blue" }}
-        colSpan={props.colSpan}
-        role={"gridcell"}
-        aria-colindex={props.ariaColumnIndex}
-        aria-selected={props.isSelected}
-        {...{
-          [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex,
-        }}
-        {...navigationAttributes}
-      >
-        <Button
-          onClick={() => {
-            handleSelectPayment(
-              props.dataItem.paymentId,
-              props.dataItem.statusDescription
-            );
-          }}
+        <td
+            className={props.className}
+            style={{ ...props.style, color: "blue" }}
+            colSpan={props.colSpan}
+            role={"gridcell"}
+            aria-colindex={props.ariaColumnIndex}
+            aria-selected={props.isSelected}
+            {...{
+              [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex,
+            }}
+            {...navigationAttributes}
         >
-          {props.dataItem.paymentId}
-        </Button>
-      </td>
+          <Button
+              onClick={() => {
+                handleSelectPayment(
+                    props.dataItem.paymentId
+                );
+              }}
+          >
+            {props.dataItem.paymentId}
+          </Button>
+        </td>
     );
   };
 
+  
   const handleNewPayment = () => {
-    dispatch(setPaymentType(paymentType === 'incoming' ? 1 : 2));
-    setPayment(undefined);
-    setEditMode(1);
+    dispatch(setPaymentType(paymentType === "incoming" ? 1 : 2));
+    dispatch(setSelectedPayment(undefined));
+    dispatch(setFormEditMode(1)); // new form
   };
 
-  if (editMode > 0) {
+
+  if (formEditMode > 0) {
     return (
-      <PaymentForm
-        selectedPayment={payment}
-        cancelEdit={cancelEdit}
-        editMode={editMode}
-      />
+        <PaymentForm
+            editMode={formEditMode}
+            cancelEdit={() => dispatch(resetForm())}
+        />
     );
   }
 
-  const updatePayment = (paymentId: string, updates: { amountToApply?: number }) => {
-    setPayments((prevState) => {
-        const updatedData = prevState.data.map((pay: Payment) => {
-            if (pay.paymentId === paymentId) {
-                return { ...pay, ...updates };
-            }
-            return pay;
-        });
-        return { ...prevState, data: updatedData };
-    });
-};
 
-const GetSummaryCell = (props: any) => {
-    const { dataItem, updatePayment } = props;
-    const [trigger, { isLoading }] = useCalculatePaymentTotalsMutation();
 
-    const handleGetSummary = async () => {
-        try {
-            const result = await trigger([dataItem.paymentId]).unwrap();
-            if (result && result.length > 0) {
-                const { amountToApply } = result[0];
-                updatePayment(dataItem.paymentId, { amountToApply });
-            }
-        } catch (error) {
-            console.error("Error calculating payment totals:", error);
-        }
-    };
-
-    return (
-        <td className="k-command-cell">
-            <Button
-                className="k-button k-button-md k-rounded-md k-button-solid k-button-solid-base"
-                onClick={handleGetSummary}
-                variant="contained"
-                color="primary"
-                disabled={isLoading}
-            >
-                {isLoading ? "Loading..." : "Get Summary"}
-            </Button>
-        </td>
-    );
-};
 
   return (
     <>
