@@ -1,153 +1,29 @@
-{
-  "projects": {
-    "certificate": {
-      "report": {
-        "title": "تقرير المستخلص"
-      },
-      "form": {
-        "contractor": "المقاول",
-        "viewOld": "المستخلصات السابقة",
-        "supplier": "المورد",
-        "facility": "المخزن",
-        "project": "المشروع",
-        "title": "رقم المستخلص",
-        "new": "شهادة مشروع جديدة",
-        "startDate": "تاريخ البدء",
-        "completionDate": "تاريخ الانتهاء",
-        "description": "الوصف",
-        "create": "إنشاء المستخلص",
-        "update": "تحديث المستخلص",
-        "cancel": "إلغاء",
-        "saving": "جاري حفظ المستخلص...",
-        "error": "فشل في حفظ المستخلص",
-        "invalid": "النموذج غير صالح"
-      },
-      "list": {
-        "new": "مستخلص جديد",
-        "supplyProcurement": "مستخلص توريدات",
-        "workmanshipContracting": "مستخلص مقاوله",
-        "companySupplySale": "مستخلص توريدات من مخازن الشركة",
-        "certificateNumber": "رقم المستخلص",
-        "projectName": "اسم المشروع",
-        "certificateType": "النوع",
-        "supplierPartyId": "كود المورد",
-        "supplierPartyName": "اسم المورد",
-        "contractorPartyId": "كود المقاول",
-        "contractorPartyName": "اسم المقاول",
-        "description": "الوصف",
-        "startDate": "تاريخ البدء",
-        "completionDate": "تاريخ الانتهاء",
-        "facilityName": "اسم المخزن",
-        "statusDescription": "الحالة",
-        "totalAmount": "الإجمالي",
-        "loading": "جاري تحميل المستخلصات..."
-      },
-      "type": "النوع",
-      "date": "التاريخ",
-      "description": "الوصف",
-      "total": "الإجمالي",
-      "export": "تصدير إلى PDF",
-      "generating": "جاري إنشاء PDF...",
-      "actions": "الإجراءات",
-      "approve": "الموافقة على المستخلص",
-      "approved": "تمت الموافقة على المستخلص",
-      "complete": "إكمال الشهادة",
-      "completed": "تم إكمال الشهادة",
-      "noWorkEffortId": "لم يتم اختيار شهادة",
-      "statusUpdate": {
-        "error": "فشل في تحديث حالة المستخلص"
-      },
-      "print": {
-        "disabled": "الطباعة متاحة فقط للشهادات في حالة تم الإنشاء"
-      },
-      "items": {
-        "list": {
-          "item": "البند",
-          "code": "رقم البند",
-          "description": "الوصف",
-          "quantity": "الكمية",
-          "unitOfMeasure": "وحدة القياس",
-          "materialPrice": "سعر المواد",
-          "laborPrice": "سعر العمالة",
-          "totalAmount": "الإجمالي",
-          "deductions": "الخصومات",
-          "insurance": "التأمين",
-          "additionalInsurance": "التأمين الإضافي",
-          "net": "الصافي",
-          "achievementPercentage": "نسبة الإنجاز",
-          "unitPrice": "سعر الوحدة",
-          "discount": "الخصم",
-          "procurementDate": "تاريخ الشراء",
-          "transportationExpenses": "مصاريف النقل",
-          "gratuities": "الاكراميات",
-          "productSubtotal": "إجمالي المنتج",
-          "noData": "لا توجد بنود متاحة",
-          "product": "المنتج",
-          "discountValue": "القيمة",
-          "discountPercentage": "النسبة المئوية",
-          "deductionDescription": "وصف الخصم",
-          "deserved": "المستحق",
-          "insuranceValue": "القيمة",
-          "insurancePercentage": "النسبة المئوية",
-          "additionalInsuranceValue": "القيمة",
-          "additionalInsurancePercentage": "النسبة المئوية"
-        },
-        "mainDescription": "وصف البند الرئيسي",
-        "discountNote": "ملاحظة الخصم",
-        "project": "اسم المشروع",
-        "subProject": "بنود المشروع",
-        "itemType": "تحليلي الأعمال",
-        "serviceId": "معرف الخدمة",
-        "serviceName": "اسم الخدمة",
-        "product": "المنتج",
-        "description": "الوصف",
-        "amount": "المبلغ",
-        "discount": "الخصم",
-        "transportationExpenses": "مصاريف النقل",
-        "gratuities": "الإكراميات",
-        "total": "الإجمالي",
-        "addItem": "إضافة بند دفع",
-        "totalAmount": "الإجمالي"
-      }
-    },
-    "menu": {
-      "projects": "المشاريع",
-      "projectCertificates": "مستخلصات المشاريع"
-    },
-    "multiPaymentCertificate": {
-      "form": {
-        "title": "شهادة دفع متعددة",
-        "date": "التاريخ *",
-        "paymentMethod": "طريقة الدفع *",
-        "description": "الوصف",
-        "chequeNumber": "رقم الشيك",
-        "chequeDate": "تاريخ الشيك",
-        "create": "إنشاء شهادة",
-        "update": "تحديث الشهادة",
-        "actions": "الإجراءات",
-        "approve": "الموافقة"
-      },
-      "itemForm": {
-        "project": "اسم المشروع",
-        "subProject": "بنود المشروع",
-        "itemType": "تحليلي الأعمال",
-        "product": "تحليلي المواد المباشرة",
-        "service": "نوع الأعمال",
-        "description": "الوصف",
-        "amount": "المبلغ",
-        "discount": "الخصم",
-        "discountValue": "القيمة",
-        "discountPercentage": "النسبة المئوية",
-        "transportationExpenses": "مصاريف النقل",
-        "gratuities": "الإكراميات",
-        "total": "الإجمالي",
-        "create": "إنشاء البند",
-        "update": "تحديث البند",
-        "validation": {
-          "partyExclusive": "يرجى اختيار إما مورد أو مقاول، وليس كلاهما.",
-          "partyRequired": "يجب اختيار مورد أو مقاول على الأقل."
-        }
-      }
-    }
-  }
+"accounting": {
+"payments": {
+"transactions": {
+"title": "قيود الدفعة المحاسبية",
+"columns": {
+"acctgTransId": "رقم القيد",
+"acctgTransEntrySeqId": "مسلسل القيد",
+"amount": "المبلغ",
+"origAmount": "المبلغ الأصلي",
+"debitCreditFlag": "مدين/دائن",
+"glAccountId": "كود الحساب",
+"glAccountTypeDescription": "اسم الحساب",
+"productName": "المنتج",
+"isPosted": "تم الترحيل",
+"glFiscalTypeId": "نوع السنة المالية",
+"acctgTransTypeDescription": "نوع القيد",
+"transactionDate": "تاريخ القيد",
+"postedDate": "تاريخ الترحيل",
+"glAccountClassDescription": "فئة الحساب",
+"origCurrencyUomId": "العملة"
+},
+"footer": {
+"totalDebit": "إجمالي المدين",
+"totalCredit": "إجمالي الدائن"
+},
+"close": "إغلاق"
+}
+}
 }

@@ -11,7 +11,8 @@ import Button from "@mui/material/Button";
 import { Grid, Typography } from "@mui/material";
 import { useFetchPaymentAcctTransEntriesQuery } from "../../../../app/store/apis";
 import { handleDatesArray } from "../../../../app/util/utils";
-import { AcctgTransEntry } from "../../../../app/models/accounting/acctTransEntry";
+import {AcctgTransEntry} from "../../../../app/models/accounting/acctgTransEntry";
+import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
 
 interface Props {
     onClose: () => void;
@@ -19,6 +20,9 @@ interface Props {
 }
 
 export default function PaymentTransactionsList({ onClose, paymentId }: Props) {
+    const { getTranslatedLabel } = useTranslationHelper();
+    const localizationKey = "accounting.payments.transactions";
+
     const initialSort: Array<SortDescriptor> = [
         { field: "acctgTransEntrySeqId", dir: "asc" },
     ];
@@ -83,21 +87,21 @@ export default function PaymentTransactionsList({ onClose, paymentId }: Props) {
             : transactionCreditAmounts.reduce((sum, amt) => sum + amt, 0);
 
     // Custom footer cell displaying both total debit and credit.
-    const TotalsFooterCell = (props: any) => {
-        return (
-            <td
-                colSpan={15}
-                style={{
-                    textAlign: "left",
-                    fontWeight: "bold",
-                    paddingRight: "20px",
-                    color: "#1565C0",
-                }}
-            >
-                Total Debit: {totalDebit} | Total Credit: {totalCredit}
-            </td>
-        );
-    };
+    const TotalsFooterCell = () => (
+        <td
+            colSpan={15}
+            style={{
+                textAlign: "left",
+                fontWeight: "bold",
+                paddingRight: "20px",
+                color: "#1565C0",
+            }}
+        >
+            {getTranslatedLabel(`${localizationKey}.footer.totalDebit`, "Total Debit")}: {totalDebit} |{" "}
+            {getTranslatedLabel(`${localizationKey}.footer.totalCredit`, "Total Credit")}: {totalCredit}
+        </td>
+    );
+
 
 
     const pageChange = (event: GridPageChangeEvent) => {
@@ -109,7 +113,7 @@ export default function PaymentTransactionsList({ onClose, paymentId }: Props) {
             <Grid container padding={2} columnSpacing={1}>
                 <Grid item xs={4}>
                     <Typography sx={{ p: 2 }} variant="h6">
-                        Payment Transactions
+                        {getTranslatedLabel(`${localizationKey}.title`, "Payment Transactions")}
                     </Typography>
                 </Grid>
                 <Grid container>
@@ -132,88 +136,93 @@ export default function PaymentTransactionsList({ onClose, paymentId }: Props) {
                         >
                             <Column
                                 field="acctgTransId"
-                                title="Acctg Trans"
+                                title={getTranslatedLabel(`${localizationKey}.columns.acctgTransId`, "Acctg Trans")}
                                 width={100}
                                 footerCell={TotalsFooterCell}
                             />
                             <Column
                                 field="acctgTransEntrySeqId"
-                                title="Acctg Trans Seq Id"
+                                title={getTranslatedLabel(`${localizationKey}.columns.acctgTransEntrySeqId`, "Acctg Trans Seq Id")}
                                 width={0}
                                 footerCell={() => null}
                             />
-                            <Column field="amount" title="Amount" width={0} footerCell={() => null} />
+                            <Column
+                                field="amount"
+                                title={getTranslatedLabel(`${localizationKey}.columns.amount`, "Amount")}
+                                width={0}
+                                footerCell={() => null}
+                            />
                             <Column
                                 field="origAmount"
-                                title="Orig Amount"
+                                title={getTranslatedLabel(`${localizationKey}.columns.origAmount`, "Orig Amount")}
                                 width={100}
                                 footerCell={() => null}
                             />
                             <Column
                                 field="debitCreditFlag"
-                                title="Debit Credit"
+                                title={getTranslatedLabel(`${localizationKey}.columns.debitCreditFlag`, "Debit Credit")}
                                 width={70}
                                 footerCell={() => null}
                             />
                             <Column
                                 field="glAccountId"
-                                title="Gl Account"
+                                title={getTranslatedLabel(`${localizationKey}.columns.glAccountId`, "Gl Account")}
                                 width={100}
                                 footerCell={() => null}
                             />
                             <Column
                                 field="glAccountTypeDescription"
-                                title="Account Name"
+                                title={getTranslatedLabel(`${localizationKey}.columns.glAccountTypeDescription`, "Account Name")}
                                 width={220}
                                 footerCell={() => null}
                             />
                             <Column
                                 field="productName"
-                                title="Product"
+                                title={getTranslatedLabel(`${localizationKey}.columns.productName`, "Product")}
                                 width={200}
                                 footerCell={() => null}
                             />
                             <Column
                                 field="isPosted"
-                                title="Is Posted"
+                                title={getTranslatedLabel(`${localizationKey}.columns.isPosted`, "Is Posted")}
                                 width={100}
                                 footerCell={() => null}
                             />
                             <Column
                                 field="glFiscalTypeId"
-                                title="Gl FiscalType"
+                                title={getTranslatedLabel(`${localizationKey}.columns.glFiscalTypeId`, "Gl FiscalType")}
                                 width={100}
                                 footerCell={() => null}
                             />
                             <Column
                                 field="acctgTransTypeDescription"
-                                title="Acctg Trans Type"
+                                title={getTranslatedLabel(`${localizationKey}.columns.acctgTransTypeDescription`, "Acctg Trans Type")}
                                 width={130}
                                 footerCell={() => null}
                             />
                             <Column
                                 field="transactionDate"
-                                title="Transaction Date"
+                                title={getTranslatedLabel(`${localizationKey}.columns.transactionDate`, "Transaction Date")}
                                 width={150}
                                 format="{0: dd/MM/yyyy}"
                                 footerCell={() => null}
                             />
                             <Column
                                 field="postedDate"
-                                title="Posted Date"
+                                title={getTranslatedLabel(`${localizationKey}.columns.postedDate`, "Posted Date")}
                                 width={150}
                                 format="{0: dd/MM/yyyy}"
                                 footerCell={() => null}
                             />
                             <Column
                                 field="glAccountClassDescription"
-                                title="Account Class"
+                                title={getTranslatedLabel(`${localizationKey}.columns.glAccountClassDescription`, "Account Class")}
                                 width={140}
                                 footerCell={() => null}
                             />
                             <Column
                                 field="origCurrencyUomId"
-                                title="Currency"
+                                title={getTranslatedLabel(`${localizationKey}.columns.origCurrencyUomId`, "Currency")}
                                 width={110}
                                 footerCell={() => null}
                             />
@@ -222,8 +231,8 @@ export default function PaymentTransactionsList({ onClose, paymentId }: Props) {
                 </Grid>
             </Grid>
             <Grid item xs={2}>
-                <Button onClick={() => onClose()} color="error" variant="contained">
-                    Close
+                <Button onClick={onClose} color="error" variant="contained">
+                    {getTranslatedLabel(`${localizationKey}.close`, "Close")}
                 </Button>
             </Grid>
         </Fragment>

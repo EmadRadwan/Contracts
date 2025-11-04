@@ -1,5 +1,4 @@
 import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
-import {setSelectedPayment} from "../../slice/accountingSharedUiSlice";
 import usePayment from "../hook/usePayment";
 import {
     useAppDispatch,
@@ -99,7 +98,6 @@ export default function PaymentForm({
     const formRef = useRef<any>(null);
     const partyInputRef = useRef<HTMLInputElement>(null);
     const selectedPayment = useAppSelector((s) => s.accountingSharedUi.selectedPayment);
-    const [isFormValid, setIsFormValid] = useState(false);
     
     const {
         payment,
@@ -126,59 +124,6 @@ export default function PaymentForm({
         );
     }, [paymentTypes, paymentType]);
 
-
-
-    // Focus party input and reset invalid payment type
-   /* useEffect(() => {
-        if (formEditMode === 1 && partyInputRef.current) {
-            partyInputRef.current.focus();
-        }
-        if (
-            formRef.current?.values?.paymentTypeId &&
-            filteredPaymentTypes.length > 0
-        ) {
-            const isValidType = filteredPaymentTypes.some(
-                (type) => type.paymentTypeId === formRef.current.values.paymentTypeId
-            );
-            if (!isValidType) {
-                formRef.current.onChange("paymentTypeId", {value: "", valid: false});
-            }
-        }
-    }, [formEditMode, filteredPaymentTypes]);
-*/
-    // Handle new payment creation
-   /* const handleNewPayment = useCallback(
-        (newPaymentType: number) => {
-            dispatch(setPaymentType(newPaymentType));
-            setPayment(undefined);
-            setFormEditMode(1);
-            formRef.current?.reset();
-            formRef.current?.setValues({
-                paymentId: "",
-                paymentTypeId: "",
-                paymentMethodId: "",
-                statusId: PAYMENT_STATUSES.NOT_PAID,
-                partyIdFrom:
-                    newPaymentType === 1
-                        ? ""
-                        : formRef.current?.values.organizationPartyId || "",
-                partyIdFromName: "",
-                partyIdTo:
-                    newPaymentType === 2
-                        ? ""
-                        : formRef.current?.values.organizationPartyId || "",
-                partyIdToName: "",
-                amount: 0,
-                effectiveDate: new Date(),
-                paymentRefNum: "",
-                organizationPartyId: formRef.current?.values.organizationPartyId || "",
-                isDepositWithDrawPayment: "Y",
-                finAccountTransTypeId: "DEPOSIT",
-                isDisbursement: newPaymentType === 2,
-            });
-        },
-        [dispatch, setFormEditMode, setPayment]
-    );*/
 
     
     const handleCancelApplications = useCallback(() => {
@@ -266,7 +211,6 @@ export default function PaymentForm({
             if (paymentType === 1) {
                 return (
                     <NewPaymentIn
-                        onValidityChange={setIsFormValid}
                         partyInputRef={partyInputRef}
                         companies={companies}
                         filteredPaymentTypes={filteredPaymentTypes}
@@ -280,7 +224,6 @@ export default function PaymentForm({
             } else {
                 return (
                     <NewPaymentOut
-                        onValidityChange={setIsFormValid}
                         partyInputRef={partyInputRef}
                         companies={companies}
                         filteredPaymentTypes={filteredPaymentTypes}
@@ -298,7 +241,6 @@ export default function PaymentForm({
                 payment={payment}
                 paymentType={paymentType}
                 formEditMode={editMode}
-                onValidityChange={setIsFormValid}
                 companies={companies}
                 filteredPaymentTypes={filteredPaymentTypes}
                 paymentMethods={paymentMethods}

@@ -32,7 +32,6 @@ interface EditPaymentFormProps {
 }
 
 const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
-                                                             onValidityChange,
                                                              filteredPaymentTypes,
                                                              paymentMethods,
                                                              getTranslatedLabel,
@@ -135,8 +134,6 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
 
 
 
-    console.log("Rendering EditPaymentForm with payment:", payment);
-    console.log("Initial Values:", initialValues);
 
     return (
             <Grid container>
@@ -315,7 +312,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     <Field
                                                         id="overrideGlAccountId"
                                                         name="overrideGlAccountId"
-                                                        label={getTranslatedLabel(`${localizationKey}.debitGlAccount`, "Override GL Account")}
+                                                        label={getTranslatedLabel(`${localizationKey}.overrideGlAccountId`, "Override GL Account")}
                                                         data={glAccounts || []}
                                                         component={FormDropDownTreeGlAccount2}
                                                         dataItemKey="glAccountId"
@@ -325,34 +322,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     />
                                                 )}
                                             </Grid>
-                                           {/* <Grid item xs={2}>
-                                                <Field
-                                                    id="actualCurrencyUomId"
-                                                    label={getTranslatedLabel(
-                                                        `${localizationKey}.actualCurrencyUomId`,
-                                                        "Actual Currency"
-                                                    )}
-                                                    name="actualCurrencyUomId"
-                                                    component={MemoizedFormDropDownList}
-                                                    dataItemKey="actualCurrencyUomId"
-                                                    textField="description"
-                                                    data={mappedCurrencies || []}
-                                                />
-                                            </Grid>
-
-                                            <Grid item xs={2}>
-                                                <Field
-                                                    id="actualCurrencyAmount"
-                                                    name="actualCurrencyAmount"
-                                                    label={getTranslatedLabel(
-                                                        `${localizationKey}.actualCurrencyAmount`,
-                                                        "Actual Currency Amount"
-                                                    )}
-                                                    format="n2"
-                                                    min={0}
-                                                    component={FormNumericTextBox}
-                                                />
-                                            </Grid>*/}
+                                           
                                         </Grid>
                                     </Grid>
 
@@ -388,27 +358,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                             </Grid>
                                         </Grid>
                                     </Grid>
-
-                                    {/* Section 5: Accounting Details */}
-                                    {/*<Grid item xs={12}>
-                                        <Grid container spacing={1} alignItems="flex-end">
-                                            <Grid item xs={2}>
-                                                <Typography variant="h6" sx={{ pl: 2, pb: 1 }}>
-                                                    {getTranslatedLabel(
-                                                        `${localizationKey}.finAccountTransId`,
-                                                        "Fin Account Trans ID"
-                                                    )}
-                                                </Typography>
-                                            </Grid>
-                                            <Grid item xs={10}>
-                                                <Typography variant="h6" sx={{ pl: 2 }}>
-                                                    <strong style={{ color: "blue" }}>
-                                                        {payment.finAccountTransId || "N/A"}
-                                                    </strong>
-                                                </Typography>
-                                            </Grid>
-                                        </Grid>
-                                    </Grid>*/}
+                                    
                                 </Grid>
                             </fieldset>
                             <div className="k-form-buttons">

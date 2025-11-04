@@ -807,7 +807,11 @@
         "amount": "المبلغ *",
         "date": "التاريخ الفعلي *",
         "comments": "البيان",
-        "loading": "جاري معالجة الدفعة..."
+        "loading": "جاري معالجة الدفعة...",
+        "chequeNumber": "رقم الشيك",
+        "chequeDate": "تاريخ الشيك",
+        "currency": "العملة",
+        "overrideGlAccountId": "حساب دفتر الأستاذ"
       },
       "applications": {
         "title": "تطبيقات الدفع",
@@ -815,7 +819,39 @@
         "amountNotApplied": "المبلغ غير المطبق",
         "noApplications": "لم يتم العثور على تطبيقات دفع",
         "loading": "جاري تحميل تطبيقات الدفع...",
-        "noPayment": "لم يتم العثور على دفعة"
+        "noPayment": "لم يتم العثور على دفعة",
+        "applyPayment": "تطبيق الدفعة على",
+        "invoiceId": "رقم الفاتورة *",
+        "amountApplied": "المبلغ المراد تطبيقه *",
+        "apply": "تطبيق الدفعة",
+        "validation": {
+          "exceedsPayment": "لا يمكن أن يتجاوز المبلغ المتبقي من الدفعة ({0} {1})",
+          "exceedsInvoice": "لا يمكن أن يتجاوز المبلغ المتبقي من الفاتورة ({0} {1})"
+        }
+      },
+      "transactions": {
+        "title": "قيود الدفعة المحاسبية",
+        "columns": {
+          "acctgTransId": "رقم القيد",
+          "acctgTransEntrySeqId": "مسلسل القيد",
+          "amount": "المبلغ",
+          "origAmount": "المبلغ الأصلي",
+          "debitCreditFlag": "مدين/دائن",
+          "glAccountId": "كود الحساب",
+          "glAccountTypeDescription": "اسم الحساب",
+          "productName": "المنتج",
+          "isPosted": "تم الترحيل",
+          "glFiscalTypeId": "نوع السنة المالية",
+          "acctgTransTypeDescription": "نوع القيد",
+          "transactionDate": "تاريخ القيد",
+          "postedDate": "تاريخ الترحيل",
+          "glAccountClassDescription": "فئة الحساب",
+          "origCurrencyUomId": "العملة"
+        },
+        "footer": {
+          "totalDebit": "إجمالي المدين",
+          "totalCredit": "إجمالي الدائن"
+        }
       }
     },
     "orgGL": {

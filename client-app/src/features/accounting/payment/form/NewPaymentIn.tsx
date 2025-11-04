@@ -20,7 +20,6 @@ import {useFetchGlAccountOrganizationHierarchyLovQuery} from "../../../../app/st
 import {FormDropDownTreeGlAccount2} from "../../../../app/common/form/FormDropDownTreeGlAccount2";
 
 interface NewPaymentInProps {
-    onValidityChange?: (valid: boolean) => void;
     partyInputRef: React.RefObject<HTMLInputElement>;
     companies?: any[];
     filteredPaymentTypes: any[];
@@ -32,7 +31,6 @@ interface NewPaymentInProps {
 }
 
 const NewPaymentIn: React.FC<NewPaymentInProps> = ({
-                                                       onValidityChange,
                                                        partyInputRef,
                                                        companies,
                                                        filteredPaymentTypes,
@@ -236,7 +234,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                 <Field
                                                     id="overrideGlAccountId"
                                                     name="overrideGlAccountId"
-                                                    label={getTranslatedLabel(`${localizationKey}.debitGlAccount`, "Override GL Account")}
+                                                    label={getTranslatedLabel(`${localizationKey}.overrideGlAccountId`, "Override GL Account")}
                                                     data={glAccounts || []}
                                                     component={FormDropDownTreeGlAccount2}
                                                     dataItemKey="glAccountId"

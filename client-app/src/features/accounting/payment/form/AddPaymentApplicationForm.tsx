@@ -75,8 +75,6 @@ const AddPaymentApplicationForm: React.FC<AddPaymentApplicationFormProps> = ({
                         ? Math.min(notAppliedAmount, selectedInvoice.amountToApply)
                         : 0;
 
-                    console.log("Selected Invoice:", selectedInvoice);
-                    console.log("Max Overall:", maxOverall);
                     return (
                         
                     <FormElement>
