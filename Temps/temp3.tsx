@@ -1,229 +1,437 @@
-import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
-import React, { Fragment, useEffect } from "react";
+import React, { useState, useMemo } from 'react';
 import {
-    Grid as KendoGrid,
-    GridColumn as Column,
-    GridPageChangeEvent,
-    GridRowProps,
-    GridSortChangeEvent,
-} from "@progress/kendo-react-grid";
-import Button from "@mui/material/Button";
-import { Grid, Typography } from "@mui/material";
-import { useFetchPaymentAcctTransEntriesQuery } from "../../../../app/store/apis";
-import { handleDatesArray } from "../../../../app/util/utils";
-import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
+    Grid, Skeleton, Typography, Tabs, Tab, Box, Paper
+} from '@mui/material';
+import {
+    Grid as KendoGrid, GridColumn as Column, GridPageChangeEvent,
+    GridSortChangeEvent, GridCellProps
+} from '@progress/kendo-react-grid';
+import { orderBy, SortDescriptor, State } from '@progress/kendo-data-query';
+import { Link } from 'react-router-dom';
+import './partyFinancialHistory.css';
+import { useGetPartyFinancialHistoryQuery } from "../../../app/store/apis";
+import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
+import { useLocation } from 'react-router-dom';
 
-interface Props {
-    onClose: () => void;
-    paymentId: string | undefined;
+interface Props { partyId: string; partyName?: string;}
+
+interface TabPanelProps {
+    children?: React.ReactNode;
+    index: number;
+    value: number;
 }
 
-export default function PaymentTransactionsList({ onClose, paymentId }: Props) {
-    const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = "accounting.payments.transactions";
-
-    const initialSort: Array<SortDescriptor> = [
-        { field: "acctgTransEntrySeqId", dir: "asc" },
-    ];
-    const [sort, setSort] = React.useState(initialSort);
-    const initialDataState: State = { skip: 0, take: 10 };
-    const [page, setPage] = React.useState<any>(initialDataState);
-    const [acctTransEntries, setAcctTransEntries] = React.useState<AcctgTransEntry[]>([]);
-
-    const { data: acctTransEntryData } = useFetchPaymentAcctTransEntriesQuery(paymentId, {
-        skip: paymentId === undefined,
-    });
-
-    useEffect(() => {
-        if (acctTransEntryData) {
-            const adjustedData = handleDatesArray(acctTransEntryData);
-            setAcctTransEntries(adjustedData);
-        }
-    }, [acctTransEntryData]);
-
-    const rowRender = (
-        trElement: React.ReactElement<HTMLTableRowElement>,
-        props: GridRowProps
-    ) => {
-        const actionable = !(props.dataItem.debitCreditFlag === "C");
-        const green = { backgroundColor: "rgb(55, 180, 0, 0.32)" };
-        const white = { backgroundColor: "#ffffff" };
-        const trProps: any = { style: actionable ? green : white };
-        return React.cloneElement(trElement, { ...trProps }, trElement.props.children);
-    };
-
-    // Group entries by transaction ID.
-    const groupedTransactions = acctTransEntries.reduce((acc, entry) => {
-        if (!acc[entry.acctgTransId]) {
-            acc[entry.acctgTransId] = { debit: 0, credit: 0 };
-        }
-        if (entry.debitCreditFlag === "C") {
-            acc[entry.acctgTransId].credit = entry.origAmount || 0;
-        } else {
-            acc[entry.acctgTransId].debit = entry.origAmount || 0;
-        }
-        return acc;
-    }, {} as Record<string, { debit: number; credit: number }>);
-
-    const transactionDebitAmounts = Object.values(groupedTransactions).map((g) => g.debit);
-    const transactionCreditAmounts = Object.values(groupedTransactions).map((g) => g.credit);
-
-    const uniqueDebitAmounts = Array.from(new Set(transactionDebitAmounts));
-    const uniqueCreditAmounts = Array.from(new Set(transactionCreditAmounts));
-
-    const totalDebit =
-        uniqueDebitAmounts.length === 1
-            ? uniqueDebitAmounts[0]
-            : transactionDebitAmounts.reduce((sum, amt) => sum + amt, 0);
-    const totalCredit =
-        uniqueCreditAmounts.length === 1
-            ? uniqueCreditAmounts[0]
-            : transactionCreditAmounts.reduce((sum, amt) => sum + amt, 0);
-
-    const TotalsFooterCell = () => (
-        <td
-            colSpan={15}
-            style={{
-                textAlign: "left",
-                fontWeight: "bold",
-                paddingRight: "20px",
-                color: "#1565C0",
-            }}
-        >
-            {getTranslatedLabel(`${localizationKey}.footer.totalDebit`, "Total Debit")}: {totalDebit} |{" "}
-            {getTranslatedLabel(`${localizationKey}.footer.totalCredit`, "Total Credit")}: {totalCredit}
-        </td>
+const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
+    return (
+        <div role="tabpanel" hidden={value !== index} className="tab-panel">
+            {value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
+        </div>
     );
+};
 
-    const pageChange = (event: GridPageChangeEvent) => {
-        setPage(event.page);
+const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
+    const { getTranslatedLabel } = useTranslationHelper();
+    const localizationKey = 'party.financial.history';
+    const location = useLocation();
+    const partyNameFromState = (location.state as { partyName?: string } | null)?.partyName;
+    const displayName = partyNameFromState || getTranslatedLabel(`${localizationKey}.unknownParty`, 'Unknown Party');
+
+    // ALL HOOKS — UNCONDITIONAL
+    const { data, error, isLoading } = useGetPartyFinancialHistoryQuery(partyId, { skip: !partyId });
+    const [tabValue, setTabValue] = useState(0);
+    const [sort, setSort] = useState<SortDescriptor[]>([{ field: 'invoiceDate', dir: 'asc' }]);
+    const [page, setPage] = useState<State>({ skip: 0, take: 10 });
+
+    const pageChange = (event: GridPageChangeEvent) => setPage(event.page);
+    const sortChange = (event: GridSortChangeEvent) => setSort(event.sort);
+
+    // REFACTOR: formatCurrency — NO data in deps
+    const formatCurrency = useMemo(() => {
+        return (value: number, currency?: string) => {
+            const curr = currency || 'EGP';
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: curr }).format(value);
+        };
+    }, []);
+
+    // REFACTOR: Cell components — BEFORE returns
+    const InvoiceIdCell = useMemo(() => (props: GridCellProps) => {
+        const id = props.dataItem.invoiceId;
+        return <td><Link to={`/accounting/invoices/${id}`}>[{id}]</Link></td>;
+    }, []);
+
+    const PaymentIdCell = useMemo(() => (props: GridCellProps) => {
+        const id = props.dataItem.paymentId;
+        return id ? <td><Link to={`/accounting/payments/${id}`}>[{id}]</Link></td> : <td>-</td>;
+    }, []);
+
+    const CurrencyCell = useMemo(() => (props: GridCellProps) => {
+        const value = props.dataItem[props.field!];
+        const currency = props.dataItem.currencyUomId || (data ? data.preferredCurrencyUomId : 'EGP');
+        return <td className="currency-cell">{formatCurrency(value, currency)}</td>;
+    }, [formatCurrency, data?.preferredCurrencyUomId]);
+
+    // REFACTOR: Date parsing utility — extracted for reuse
+    const parseDate = useMemo(() => (dateStr: string | null | undefined): Date | null => {
+        if (!dateStr) return null;
+        const d = new Date(dateStr);
+        return isNaN(d.getTime()) ? null : d;
+    }, []);
+
+    // REFACTOR: processedData — BEFORE ANY RETURN + Date conversion
+    const processedData = useMemo(() => {
+        if (!data) {
+            return {
+                invoices: [],
+                unappliedInv: [],
+                unappliedPay: [],
+                billing: [],
+                returns: [],
+            };
+        }
+
+        const { invoicesApplPayments, unappliedInvoices, unappliedPayments, billingAccounts, returns } = data;
+
+        // REFACTOR: Helper to convert date fields in arrays
+        const withDates = <T extends Record<string, any>>(items: T[], dateFields: (keyof T)[]): T[] => {
+            return (items || []).map(item => {
+                const copy = { ...item };
+                dateFields.forEach(field => {
+                    if (copy[field]) {
+                        copy[field] = parseDate(copy[field] as unknown as string);
+                    }
+                });
+                return copy;
+            });
+        };
+
+        const invoices = withDates(invoicesApplPayments || [], ['invoiceDate', 'paymentEffectiveDate']);
+        const unappliedInv = withDates(unappliedInvoices || [], ['invoiceDate']);
+        const unappliedPay = withDates(unappliedPayments || [], ['effectiveDate']);
+        // billingAccounts and returns have no date fields in current data
+
+        return {
+            invoices: orderBy(invoices, sort).slice(page.skip, page.skip + page.take),
+            unappliedInv: orderBy(unappliedInv, sort).slice(page.skip, page.skip + page.take),
+            unappliedPay: orderBy(unappliedPay, sort).slice(page.skip, page.skip + page.take),
+            billing: orderBy(billingAccounts || [], sort).slice(page.skip, page.skip + page.take),
+            returns: orderBy(returns || [], sort).slice(page.skip, page.skip + page.take),
+        };
+    }, [data, sort, page, parseDate]);
+
+    // EARLY RETURNS — AFTER ALL HOOKS
+    if (!partyId) {
+        return (
+            <div className="empty-state">
+                <Typography color="error">
+                    {getTranslatedLabel(`${localizationKey}.noPartyId`, 'No Party ID')}
+                </Typography>
+            </div>
+        );
+    }
+
+    if (isLoading) {
+        return <LoadingSkeleton />;
+    }
+
+    if (error) {
+        return (
+            <div className="empty-state">
+                <Typography color="error">
+                    {getTranslatedLabel(`${localizationKey}.error`, 'Error loading data')} {JSON.stringify(error)}
+                </Typography>
+            </div>
+        );
+    }
+
+    if (!data) {
+        return (
+            <div className="empty-state">
+                <Typography>
+                    {getTranslatedLabel(`${localizationKey}.noData`, 'No financial data available')}
+                </Typography>
+            </div>
+        );
+    }
+
+    // SAFE: data is guaranteed
+    const { financialSummary } = data;
+    const currency = data.preferredCurrencyUomId || 'EGP';
+
+    const gridProps = {
+        sortable: true,
+        sort,
+        onSortChange: sortChange,
+        pageable: true,
+        onPageChange: pageChange,
+        skip: page.skip,
+        take: page.take,
     };
 
     return (
-        <Fragment>
-            <Grid container padding={2} columnSpacing={1}>
-                <Grid item xs={4}>
-                    <Typography sx={{ p: 2 }} variant="h6">
-                        {getTranslatedLabel(`${localizationKey}.title`, "Payment Transactions")}
-                    </Typography>
+        <Grid
+            container
+            direction="column"
+            spacing={3}
+            sx={{ p: 3 }}
+            className="party-financial-history"
+        >
+            <Typography variant="h4" gutterBottom>
+                {getTranslatedLabel(`${localizationKey}.title`, 'Financial History for')} {displayName}
+            </Typography>
+
+            {/* Financial Summary */}
+            <Paper elevation={2} sx={{ p: 3, mb: 3 }} className="financial-summary-card">
+
+                <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                        <Typography>
+                            <strong>{getTranslatedLabel(`${localizationKey}.totalSalesInvoices`, 'Total Sales Invoices')}</strong>: {formatCurrency(financialSummary.totalSalesInvoice, currency)}
+                        </Typography>
+                        <Typography>
+                            <strong>{getTranslatedLabel(`${localizationKey}.totalPurchaseInvoices`, 'Total Purchase Invoices')}</strong>: {formatCurrency(financialSummary.totalPurchaseInvoice, currency)}
+                        </Typography>
+                        <Typography>
+                            <strong>{getTranslatedLabel(`${localizationKey}.totalPaymentsIn`, 'Total Payments In')}</strong>: {formatCurrency(financialSummary.totalPaymentsIn, currency)}
+                        </Typography>
+                        <Typography>
+                            <strong>{getTranslatedLabel(`${localizationKey}.totalPaymentsOut`, 'Total Payments Out')}</strong>: {formatCurrency(financialSummary.totalPaymentsOut, currency)}
+                        </Typography>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                        <Typography>
+                            <strong>{getTranslatedLabel(`${localizationKey}.totalInvoicesNotApplied`, 'Total Invoices Not Applied')}</strong>: {formatCurrency(financialSummary.totalInvoiceNotApplied, currency)}
+                        </Typography>
+                        <Typography>
+                            <strong>{getTranslatedLabel(`${localizationKey}.totalPaymentsNotApplied`, 'Total Payments Not Applied')}</strong>: {formatCurrency(financialSummary.totalPaymentNotApplied, currency)}
+                        </Typography>
+                        {financialSummary.totalToBePaid > 0 && (
+                            <Typography className="negative">
+                                <strong>{getTranslatedLabel(`${localizationKey}.totalToBePaid`, 'Total To Be Paid')}</strong>: {formatCurrency(financialSummary.totalToBePaid, currency)}
+                            </Typography>
+                        )}
+                        {financialSummary.totalToBeReceived > 0 && (
+                            <Typography className="positive">
+                                <strong>{getTranslatedLabel(`${localizationKey}.totalToBeReceived`, 'Total To Be Received')}</strong>: {formatCurrency(financialSummary.totalToBeReceived, currency)}
+                            </Typography>
+                        )}
+                    </Grid>
                 </Grid>
-                <Grid container>
-                    <div className="div-container">
-                        <KendoGrid
-                            style={{ height: "300px", width: "850px" }}
-                            data={orderBy(acctTransEntries || [], sort).slice(page.skip, page.take + page.skip)}
-                            sortable={true}
-                            sort={sort}
-                            onSortChange={(e: GridSortChangeEvent) => setSort(e.sort)}
-                            skip={page.skip}
-                            take={page.take}
-                            total={acctTransEntries ? acctTransEntries.length : 0}
-                            pageable={true}
-                            onPageChange={pageChange}
-                            resizable={true}
-                            rowRender={rowRender}
-                        >
-                            <Column
-                                field="acctgTransId"
-                                title={getTranslatedLabel(`${localizationKey}.columns.acctgTransId`, "Acctg Trans")}
-                                width={100}
-                                footerCell={TotalsFooterCell}
-                            />
-                            <Column
-                                field="acctgTransEntrySeqId"
-                                title={getTranslatedLabel(`${localizationKey}.columns.acctgTransEntrySeqId`, "Acctg Trans Seq Id")}
-                                width={0}
-                                footerCell={() => null}
-                            />
-                            <Column
-                                field="amount"
-                                title={getTranslatedLabel(`${localizationKey}.columns.amount`, "Amount")}
-                                width={0}
-                                footerCell={() => null}
-                            />
-                            <Column
-                                field="origAmount"
-                                title={getTranslatedLabel(`${localizationKey}.columns.origAmount`, "Orig Amount")}
-                                width={100}
-                                footerCell={() => null}
-                            />
-                            <Column
-                                field="debitCreditFlag"
-                                title={getTranslatedLabel(`${localizationKey}.columns.debitCreditFlag`, "Debit Credit")}
-                                width={70}
-                                footerCell={() => null}
-                            />
-                            <Column
-                                field="glAccountId"
-                                title={getTranslatedLabel(`${localizationKey}.columns.glAccountId`, "Gl Account")}
-                                width={100}
-                                footerCell={() => null}
-                            />
-                            <Column
-                                field="glAccountTypeDescription"
-                                title={getTranslatedLabel(`${localizationKey}.columns.glAccountTypeDescription`, "Account Name")}
-                                width={220}
-                                footerCell={() => null}
-                            />
-                            <Column
-                                field="productName"
-                                title={getTranslatedLabel(`${localizationKey}.columns.productName`, "Product")}
-                                width={200}
-                                footerCell={() => null}
-                            />
-                            <Column
-                                field="isPosted"
-                                title={getTranslatedLabel(`${localizationKey}.columns.isPosted`, "Is Posted")}
-                                width={100}
-                                footerCell={() => null}
-                            />
-                            <Column
-                                field="glFiscalTypeId"
-                                title={getTranslatedLabel(`${localizationKey}.columns.glFiscalTypeId`, "Gl FiscalType")}
-                                width={100}
-                                footerCell={() => null}
-                            />
-                            <Column
-                                field="acctgTransTypeDescription"
-                                title={getTranslatedLabel(`${localizationKey}.columns.acctgTransTypeDescription`, "Acctg Trans Type")}
-                                width={130}
-                                footerCell={() => null}
-                            />
-                            <Column
-                                field="transactionDate"
-                                title={getTranslatedLabel(`${localizationKey}.columns.transactionDate`, "Transaction Date")}
-                                width={150}
-                                format="{0: dd/MM/yyyy}"
-                                footerCell={() => null}
-                            />
-                            <Column
-                                field="postedDate"
-                                title={getTranslatedLabel(`${localizationKey}.columns.postedDate`, "Posted Date")}
-                                width={150}
-                                format="{0: dd/MM/yyyy}"
-                                footerCell={() => null}
-                            />
-                            <Column
-                                field="glAccountClassDescription"
-                                title={getTranslatedLabel(`${localizationKey}.columns.glAccountClassDescription`, "Account Class")}
-                                width={140}
-                                footerCell={() => null}
-                            />
-                            <Column
-                                field="origCurrencyUomId"
-                                title={getTranslatedLabel(`${localizationKey}.columns.origCurrencyUomId`, "Currency")}
-                                width={110}
-                                footerCell={() => null}
-                            />
-                        </KendoGrid>
-                    </div>
-                </Grid>
-            </Grid>
-            <Grid item xs={2}>
-                <Button onClick={onClose} color="error" variant="contained">
-                    {getTranslatedLabel(`${localizationKey}.close`, "Close")}
-                </Button>
-            </Grid>
-        </Fragment>
+            </Paper>
+
+            {/* Tabs */}
+            <Tabs
+                value={tabValue}
+                onChange={(_, v) => setTabValue(v)}
+                variant="scrollable"
+                className="party-financial-tabs"
+            >
+                <Tab label={getTranslatedLabel('party.financial.history.tabs.invoicesPayments', 'Invoices & Payments')} />
+                <Tab label={getTranslatedLabel('party.financial.history.tabs.unappliedInvoices', 'Unapplied Invoices')} />
+                <Tab label={getTranslatedLabel('party.financial.history.tabs.unappliedPayments', 'Unapplied Payments')} />
+                {/*<Tab label={getTranslatedLabel('party.financial.history.tabs.billingAccounts', 'Billing Accounts')} />
+                <Tab label={getTranslatedLabel('party.financial.history.tabs.returns', 'Returns')} />*/}
+            </Tabs>
+
+            {/* Tab Panels */}
+            <TabPanel value={tabValue} index={0}>
+                <div className="party-financial-grid">
+                    <KendoGrid data={processedData.invoices} total={data.invoicesApplPayments?.length || 0} {...gridProps} resizable>
+                        <Column
+                            field="invoiceId"
+                            title={getTranslatedLabel('party.financial.history.grid.invoiceId', 'Invoice ID')}
+                            cell={InvoiceIdCell}
+                            width={150}
+                        />
+                        <Column
+                            field="invoiceTypeId"
+                            title={getTranslatedLabel('party.financial.history.grid.type', 'Type')}
+                            width={130}
+                        />
+                        <Column
+                            field="invoiceDate"
+                            title={getTranslatedLabel('party.financial.history.grid.date', 'Date')}
+                            format="{0:MM/dd/yyyy}"
+                            width={120}
+                        />
+                        <Column
+                            field="total"
+                            title={getTranslatedLabel('party.financial.history.grid.total', 'Total')}
+                            cell={CurrencyCell}
+                            width={120}
+                        />
+                        <Column
+                            field="amountApplied"
+                            title={getTranslatedLabel('party.financial.history.grid.applied', 'Applied')}
+                            cell={CurrencyCell}
+                            width={120}
+                        />
+                        <Column
+                            field="amountToApply"
+                            title={getTranslatedLabel('party.financial.history.grid.toApply', 'To Apply')}
+                            cell={CurrencyCell}
+                            width={120}
+                        />
+                        <Column
+                            field="paymentId"
+                            title={getTranslatedLabel('party.financial.history.grid.paymentId', 'Payment ID')}
+                            cell={PaymentIdCell}
+                            width={150}
+                        />
+                        <Column
+                            field="paymentEffectiveDate"
+                            title={getTranslatedLabel('party.financial.history.grid.payDate', 'Pay Date')}
+                            format="{0:MM/dd/yyyy}"
+                            width={120}
+                        />
+                        <Column
+                            field="paymentAmount"
+                            title={getTranslatedLabel('party.financial.history.grid.payAmount', 'Pay Amount')}
+                            cell={CurrencyCell}
+                            width={120}
+                        />
+                    </KendoGrid>
+                </div>
+            </TabPanel>
+
+            <TabPanel value={tabValue} index={1}>
+                <div className="party-financial-grid">
+                    <KendoGrid data={processedData.unappliedInv} total={data.unappliedInvoices?.length || 0} {...gridProps} resizable>
+                        <Column
+                            field="invoiceId"
+                            title={getTranslatedLabel('party.financial.history.grid.invoiceId', 'Invoice ID')}
+                            cell={InvoiceIdCell}
+                            width={150}
+                        />
+                        <Column
+                            field="typeDescription"
+                            title={getTranslatedLabel('party.financial.history.grid.type', 'Type')}
+                            width={180}
+                        />
+                        <Column
+                            field="invoiceDate"
+                            title={getTranslatedLabel('party.financial.history.grid.date', 'Date')}
+                            format="{0:MM/dd/yyyy}"
+                            width={120}
+                        />
+                        <Column
+                            field="amount"
+                            title={getTranslatedLabel('party.financial.history.grid.amount', 'Amount')}
+                            cell={CurrencyCell}
+                            width={120}
+                        />
+                        <Column
+                            field="unappliedAmount"
+                            title={getTranslatedLabel('party.financial.history.grid.unapplied', 'Unapplied')}
+                            cell={CurrencyCell}
+                            width={120}
+                        />
+                    </KendoGrid>
+                </div>
+            </TabPanel>
+
+            <TabPanel value={tabValue} index={2}>
+                <div className="party-financial-grid">
+                    <KendoGrid data={processedData.unappliedPay} total={data.unappliedPayments?.length || 0} {...gridProps} resizable>
+                        <Column
+                            field="paymentId"
+                            title={getTranslatedLabel('party.financial.history.grid.paymentId', 'Payment ID')}
+                            cell={PaymentIdCell}
+                            width={150}
+                        />
+                        <Column
+                            field="effectiveDate"
+                            title={getTranslatedLabel('party.financial.history.grid.date', 'Date')}
+                            format="{0:MM/dd/yyyy}"
+                            width={120}
+                        />
+                        <Column
+                            field="paymentTypeDescription"
+                            title={getTranslatedLabel('party.financial.history.grid.type', 'Type')}
+                            width={180}
+                        />
+                        <Column
+                            field="amount"
+                            title={getTranslatedLabel('party.financial.history.grid.amount', 'Amount')}
+                            cell={CurrencyCell}
+                            width={120}
+                        />
+                        <Column
+                            field="unappliedAmount"
+                            title={getTranslatedLabel('party.financial.history.grid.unapplied', 'Unapplied')}
+                            cell={CurrencyCell}
+                            width={120}
+                        />
+                    </KendoGrid>
+                </div>
+            </TabPanel>
+
+            <TabPanel value={tabValue} index={3}>
+                <div className="party-financial-grid">
+                    <KendoGrid data={processedData.billing} total={data.billingAccounts?.length || 0} {...gridProps}>
+                        <Column
+                            field="billingAccountId"
+                            title={getTranslatedLabel('party.financial.history.grid.accountId', 'Account ID')}
+                            width={150}
+                        />
+                        <Column
+                            field="accountLimit"
+                            title={getTranslatedLabel('party.financial.history.grid.limit', 'Limit')}
+                            cell={CurrencyCell}
+                            width={120}
+                        />
+                        <Column
+                            field="accountBalance"
+                            title={getTranslatedLabel('party.financial.history.grid.balance', 'Balance')}
+                            cell={CurrencyCell}
+                            width={120}
+                        />
+                        <Column
+                            field="description"
+                            title={getTranslatedLabel('party.financial.history.grid.description', 'Description')}
+                            width={250}
+                        />
+                    </KendoGrid>
+                </div>
+            </TabPanel>
+
+            <TabPanel value={tabValue} index={4}>
+                <div className="party-financial-grid">
+                    <KendoGrid data={processedData.returns} total={data.returns?.length || 0} {...gridProps}>
+                        <Column
+                            field="returnId"
+                            title={getTranslatedLabel('party.financial.history.grid.returnId', 'Return ID')}
+                            width={150}
+                        />
+                        <Column
+                            field="statusDescription"
+                            title={getTranslatedLabel('party.financial.history.grid.status', 'Status')}
+                            width={150}
+                        />
+                        <Column
+                            field="fromPartyId"
+                            title={getTranslatedLabel('party.financial.history.grid.from', 'From')}
+                            width={120}
+                        />
+                        <Column
+                            field="toPartyId"
+                            title={getTranslatedLabel('party.financial.history.grid.to', 'To')}
+                            width={120}
+                        />
+                    </KendoGrid>
+                </div>
+            </TabPanel>
+        </Grid>
     );
-}
+};
+
+const LoadingSkeleton = () => (
+    <Grid container spacing={3} sx={{ p: 3 }} className="loading-skeleton">
+        {[...Array(5)].map((_, i) => (
+            <Grid item xs={12} key={i}>
+                <Skeleton variant="rectangular" height={300} animation="wave" />
+            </Grid>
+        ))}
+    </Grid>
+);
+
+export default PartyFinancialHistory;

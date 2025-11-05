@@ -120,12 +120,10 @@ public class GetPartyFinancialHistory
                     join pmt in _context.Payments on pap.PaymentId equals pmt.PaymentId into pmtGroup
                     from pmt in pmtGroup.DefaultIfEmpty()
                     where ((inv.PartyId == request.PartyId && inv.PartyIdFrom == organizationPartyId) ||
-                           (inv.PartyId == organizationPartyId && inv.PartyIdFrom == request.PartyId)) &&
-                          inv.StatusId != "INVOICE_IN_PROCESS" &&
-                          inv.StatusId != "INVOICE_CANCELLED" &&
-                          inv.StatusId != "INVOICE_WRITEOFF" &&
-                          inv.InvoiceDate <= DateTime.UtcNow.Date && // Normalize date to avoid timestamp issues
-                          (pmt == null || pmt.StatusId == "PMNT_RECEIVED") // Validate payment status
+                           (inv.PartyId == organizationPartyId && inv.PartyIdFrom == request.PartyId))
+                          && inv.StatusId != "INVOICE_IN_PROCESS"
+                          && inv.StatusId != "INVOICE_CANCELLED"
+                          && inv.StatusId != "INVOICE_WRITEOFF"
                     select new
                     {
                         inv.InvoiceId,
@@ -179,11 +177,10 @@ public class GetPartyFinancialHistory
                 var unappliedInvoicesQuery = from inv in _context.Invoices
                     join it in _context.InvoiceTypes on inv.InvoiceTypeId equals it.InvoiceTypeId
                     where ((inv.PartyId == request.PartyId && inv.PartyIdFrom == organizationPartyId) ||
-                           (inv.PartyId == organizationPartyId && inv.PartyIdFrom == request.PartyId)) &&
-                          inv.StatusId != "INVOICE_IN_PROCESS" &&
-                          inv.StatusId != "INVOICE_CANCELLED" &&
-                          inv.StatusId != "INVOICE_WRITEOFF" &&
-                          inv.InvoiceDate <= DateTime.UtcNow
+                           (inv.PartyId == organizationPartyId && inv.PartyIdFrom == request.PartyId))
+                          && inv.StatusId != "INVOICE_IN_PROCESS"
+                          && inv.StatusId != "INVOICE_CANCELLED"
+                          && inv.StatusId != "INVOICE_WRITEOFF"
                     select new
                     {
                         inv.InvoiceId,
@@ -369,44 +366,38 @@ public class GetPartyFinancialHistory
                 // 8. Calculate Financial Summary
                 // Business Purpose: Calculate a financial summary to provide an overview of sales and purchase invoices, payments, and outstanding amounts.
                 // This aggregates key financial metrics for quick reference.
-                decimal totalInvSaApplied = 0,
-                    totalInvSaNotApplied = 0,
-                    totalInvPuApplied = 0,
-                    totalInvPuNotApplied = 0;
+
+                decimal totalSalesInvoice = 0, totalPurchaseInvoice = 0;
+                decimal totalSalesNotApplied = 0, totalPurchaseNotApplied = 0;
+
                 var invoiceSummaryQuery = from inv in _context.Invoices
-                    join it in _context.InvoiceTypes on inv.InvoiceTypeId equals it.InvoiceTypeId
                     where ((inv.PartyId == request.PartyId && inv.PartyIdFrom == organizationPartyId) ||
-                           (inv.PartyId == organizationPartyId && inv.PartyIdFrom == request.PartyId)) &&
-                          inv.StatusId != "INVOICE_IN_PROCESS" &&
-                          inv.StatusId != "INVOICE_CANCELLED" &&
-                          inv.StatusId != "INVOICE_WRITEOFF" &&
-                          inv.InvoiceDate <= DateTime.UtcNow &&
-                          (inv.InvoiceDate == null || inv.InvoiceDate >= DateTime.UtcNow)
-                    select new { inv.InvoiceId, inv.InvoiceTypeId, it.ParentTypeId };
+                           (inv.PartyId == organizationPartyId && inv.PartyIdFrom == request.PartyId))
+                          && inv.StatusId != "INVOICE_IN_PROCESS"
+                          && inv.StatusId != "INVOICE_CANCELLED"
+                          && inv.StatusId != "INVOICE_WRITEOFF"
+                    select new { inv.InvoiceId, inv.InvoiceTypeId };
 
                 var invoicesForSummary = await invoiceSummaryQuery.ToListAsync(cancellationToken);
 
                 foreach (var inv in invoicesForSummary)
                 {
-                    bool isSalesInvoice = inv.ParentTypeId == "SALES_INVOICE";
-                    bool isPurchaseInvoice = inv.ParentTypeId == "PURCHASE_INVOICE";
+                    decimal total = await _invoiceUtilityService.GetInvoiceTotal(inv.InvoiceId, actualCurrency);
+                    decimal applied = await _invoiceUtilityService.GetInvoiceApplied(inv.InvoiceId, DateTime.UtcNow, actualCurrency);
+                    decimal notApplied = total - applied;
 
-                    decimal applied =
-                        await _invoiceUtilityService.GetInvoiceApplied(inv.InvoiceId, DateTime.UtcNow, actualCurrency);
-                    decimal notApplied = await _invoiceUtilityService.GetInvoiceNotApplied(inv.InvoiceId);
-
-                    if (isSalesInvoice)
+                    if (inv.InvoiceTypeId == "SALES_INVOICE")
                     {
-                        totalInvSaApplied += Math.Round(applied, 2, MidpointRounding.AwayFromZero);
-                        totalInvSaNotApplied += Math.Round(notApplied, 2, MidpointRounding.AwayFromZero);
+                        totalSalesInvoice += Math.Round(total, 2, MidpointRounding.AwayFromZero);
+                        totalSalesNotApplied += Math.Round(notApplied, 2, MidpointRounding.AwayFromZero);
                     }
-                    else if (isPurchaseInvoice)
+                    else if (inv.InvoiceTypeId == "PURCHASE_INVOICE")
                     {
-                        totalInvPuApplied += Math.Round(applied, 2, MidpointRounding.AwayFromZero);
-                        totalInvPuNotApplied += Math.Round(notApplied, 2, MidpointRounding.AwayFromZero);
+                        totalPurchaseInvoice += Math.Round(total, 2, MidpointRounding.AwayFromZero);
+                        totalPurchaseNotApplied += Math.Round(notApplied, 2, MidpointRounding.AwayFromZero);
                     }
                 }
-
+                
                 // Business Purpose: Summarize payment data to distinguish between incoming and outgoing payments, both applied and unapplied.
                 // This provides a clear picture of cash flow related to the party.
 
@@ -450,26 +441,24 @@ public class GetPartyFinancialHistory
 
                 var financialSummary = new FinancialSummaryDto
                 {
-                    TotalSalesInvoice = totalInvSaApplied + totalInvSaNotApplied,
-                    TotalPurchaseInvoice = totalInvPuApplied + totalInvPuNotApplied,
+                    TotalSalesInvoice = totalSalesInvoice,
+                    TotalPurchaseInvoice = totalPurchaseInvoice,
                     TotalPaymentsIn = totalPayInApplied + totalPayInNotApplied,
                     TotalPaymentsOut = totalPayOutApplied + totalPayOutNotApplied,
-                    TotalInvoiceNotApplied = totalInvSaNotApplied - totalInvPuNotApplied,
+                    TotalInvoiceNotApplied = totalSalesNotApplied - totalPurchaseNotApplied,
                     TotalPaymentNotApplied = totalPayInNotApplied - totalPayOutNotApplied
                 };
 
-                decimal transferAmount = financialSummary.TotalSalesInvoice - financialSummary.TotalPurchaseInvoice
-                                                                            - financialSummary.TotalPaymentsIn -
-                                                                            financialSummary.TotalPaymentsOut;
+                decimal transferAmount = financialSummary.TotalSalesInvoice
+                                         - financialSummary.TotalPurchaseInvoice
+                                         - financialSummary.TotalPaymentsIn
+                                         + financialSummary.TotalPaymentsOut;
 
                 if (transferAmount < 0)
-                {
                     financialSummary.TotalToBeReceived = -transferAmount;
-                }
                 else
-                {
                     financialSummary.TotalToBePaid = transferAmount;
-                }
+
 
                 // 9. Return result
                 // Business Purpose: Compile all retrieved data into a single response object for the client.
@@ -494,4 +483,5 @@ public class GetPartyFinancialHistory
             }
         }
     }
+    
 }

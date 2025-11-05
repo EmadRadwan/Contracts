@@ -72,6 +72,7 @@ export default function CreateSupplierForm({
     setButtonFlag(false);
   }
 
+  console.log("supplier data:", supplier);
 
   return (
     <>
@@ -102,7 +103,7 @@ export default function CreateSupplierForm({
             </Box>
           </Grid>
           <Grid item xs={4}>
-            <CreateCustomerMenu />
+            <CreateCustomerMenu partyId={supplier?.partyId} partyName={supplier?.description}/>
           </Grid>
         </Grid>
 

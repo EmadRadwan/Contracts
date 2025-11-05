@@ -7,7 +7,6 @@ import {
     GridToolbar,
 } from "@progress/kendo-react-grid";
 
-import {ExcelExport} from "@progress/kendo-react-excel-export";
 import {useTableKeyboardNavigation} from "@progress/kendo-react-data-tools";
 import {Grid, Paper, Typography} from "@mui/material";
 import CreateCustomerForm from "../form/CreateCustomerForm";
@@ -28,7 +27,6 @@ export default function PartiesList() {
     const [page, setPage] = useState(1)
     const [show, setShow] = useState(false);
     const params = {pageNumber: page, pageSize: 6, orderBy: "orderIdAsc", roleTypes: []}
-    const [partyParam, setPartyParam] = useState<PartyParams>(params);
     const [dataState, setDataState] = React.useState<State>({take: 6, skip: 0});
     const dataStateChange = (e: GridDataStateChangeEvent) => {
         setDataState(e.dataState);
@@ -85,17 +83,7 @@ export default function PartiesList() {
             </td>
         )
     }
-
-
-    // Code for Grid functionality
-    const dataToExport = parties ? parties.data : [];
-
-    const _export = React.useRef(null);
-    const excelExport = () => {
-        if (_export.current !== null) {
-            _export.current!.save();
-        }
-    };
+    
 
 
     if (editMode > 0 && form === 'CUSTOMER') {
@@ -117,8 +105,6 @@ export default function PartiesList() {
 
                         <Grid container>
                             <div className="div-container">
-                                <ExcelExport data={dataToExport}
-                                             ref={_export}>
                                     <KendoGrid
                                         style={{height: "75vh", width: "94vw", flex: 1}}
                                         resizable={true}
@@ -199,7 +185,6 @@ export default function PartiesList() {
                                         {/* <Column field="partyId" title="Product ID" width={0} /> */}
 
                                     </KendoGrid>
-                                </ExcelExport>
                                 {isFetching && <LoadingComponent message={getTranslatedLabel("party.parties.list.loading", "Loading Parties...")} />}
                             </div>
 

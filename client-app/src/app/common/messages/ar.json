@@ -110,6 +110,51 @@
         "loading": "جاري تحميل المقاول...",
         "processing": "جاري معالجة المقاول..."
       }
+    },
+    "financial": {
+      "history": {
+        "title": "السجل المالي للطرف",
+        "financialSummary": "الملخص المالي",
+        "totalSalesInvoices": "إجمالي فواتير المبيعات",
+        "totalPurchaseInvoices": "إجمالي فواتير الشراء",
+        "totalPaymentsIn": "إجمالي المدفوعات الواردة",
+        "totalPaymentsOut": "إجمالي المدفوعات الصادرة",
+        "totalInvoicesNotApplied": "إجمالي الفواتير غير المطبقة",
+        "totalPaymentsNotApplied": "إجمالي المدفوعات غير المطبقة",
+        "totalToBePaid": "المبلغ المستحق للدفع",
+        "totalToBeReceived": "المبلغ المستحق للاستلام",
+        "noPartyId": "لا يوجد معرف طرف",
+        "error": "خطأ في تحميل البيانات",
+        "noData": "لا توجد بيانات مالية متاحة",
+        "tabs": {
+          "invoicesPayments": "الفواتير والمدفوعات",
+          "unappliedInvoices": "الفواتير غير المطبقة",
+          "unappliedPayments": "المدفوعات غير المطبقة",
+          "billingAccounts": "حسابات الأجل",
+          "returns": "الإرجاعات"
+        },
+        "grid": {
+          "invoiceId": "رقم الفاتورة",
+          "type": "النوع",
+          "date": "التاريخ",
+          "total": "الإجمالي",
+          "applied": "المطبق",
+          "toApply": "المطلوب تطبيقه",
+          "paymentId": "رقم الدفعة",
+          "payDate": "تاريخ الدفع",
+          "payAmount": "مبلغ الدفع",
+          "amount": "المبلغ",
+          "unapplied": "غير مطبق",
+          "accountId": "رقم الحساب",
+          "limit": "الحد",
+          "balance": "الرصيد",
+          "description": "الوصف",
+          "returnId": "رقم الإرجاع",
+          "status": "الحالة",
+          "from": "من",
+          "to": "إلى"
+        }
+      }
     }
   },
   "product": {

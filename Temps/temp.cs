@@ -1,167 +1,427 @@
-public async Task<PaymentApplicationParam> CreatePaymentApplication(PaymentApplicationParam paymentApplicationParam)
+using Application.Accounting.Services.Models;
+using Application.Interfaces;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Persistence;
+
+namespace Application.Accounting.Services;
+
+public class GetPartyFinancialHistory
 {
-    try
+    public class Query : IRequest<Result<PartyFinancialHistoryDetails>>
     {
-        // --------------------------------------------------------------
-        // 1. ORIGINAL VALIDATION (unchanged)
-        // --------------------------------------------------------------
-        if (string.IsNullOrEmpty(paymentApplicationParam.InvoiceId) &&
-            string.IsNullOrEmpty(paymentApplicationParam.BillingAccountId) &&
-            string.IsNullOrEmpty(paymentApplicationParam.TaxAuthGeoId) &&
-            string.IsNullOrEmpty(paymentApplicationParam.ToPaymentId))
-        {
-            throw new Exception("AccountingPaymentApplicationParameterMissing");
-        }
-
-        // --------------------------------------------------------------
-        // 2. RETRIEVE PAYMENT
-        // --------------------------------------------------------------
-        var payment = await _context.Payments.FindAsync(paymentApplicationParam.PaymentId);
-        if (payment == null) throw new Exception("PaymentNotFound");
-
-        // --------------------------------------------------------------
-        // 3. CALCULATE NOT-APPLIED PAYMENT (cached for later reuse)
-        // --------------------------------------------------------------
-        var notAppliedPayment = await GetPaymentNotApplied(payment, true);
-
-        // --------------------------------------------------------------
-        // 4. INVOICE PATH (unchanged – only minor null-checks added)
-        // --------------------------------------------------------------
-        if (!string.IsNullOrEmpty(paymentApplicationParam.InvoiceId))
-        {
-            var invoice = await _context.Invoices.FindAsync(paymentApplicationParam.InvoiceId);
-            if (invoice == null) throw new Exception("InvoiceNotFound");
-
-            // ---- currency compatibility -------------------------------------------------
-            if (invoice.CurrencyUomId != payment.CurrencyUomId &&
-                invoice.CurrencyUomId != payment.ActualCurrencyUomId)
-            {
-                throw new Exception("AccountingCurrenciesOfInvoiceAndPaymentNotCompatible");
-            }
-
-            // ---- foreign-currency handling ------------------------------------------------
-            if (invoice.CurrencyUomId == payment.ActualCurrencyUomId)
-                notAppliedPayment = await GetPaymentNotApplied(payment, true);
-
-            // ---- compute amount applied ---------------------------------------------------
-            var notAppliedInvoice = await _invoiceUtilityService.GetInvoiceNotApplied(invoice.InvoiceId);
-            paymentApplicationParam.AmountApplied = Math.Min(notAppliedInvoice, notAppliedPayment);
-
-            // ---- inherit billing account --------------------------------------------------
-            if (!string.IsNullOrEmpty(invoice.BillingAccountId))
-                paymentApplicationParam.BillingAccountId = invoice.BillingAccountId;
-        }
-
-        // --------------------------------------------------------------
-        // 5. TO-PAYMENT PATH (unchanged – only null-check added)
-        // --------------------------------------------------------------
-        if (!string.IsNullOrEmpty(paymentApplicationParam.ToPaymentId))
-        {
-            var toPayment = await _context.Payments.FindAsync(paymentApplicationParam.ToPaymentId);
-            if (toPayment == null) throw new Exception("ToPaymentNotFound");
-
-            var paymentType  = await _context.PaymentTypes.FirstOrDefaultAsync(pt => pt.PaymentTypeId == payment.PaymentTypeId);
-            var toPaymentType = await _context.PaymentTypes.FirstOrDefaultAsync(pt => pt.PaymentTypeId == toPayment.PaymentTypeId);
-            if (paymentType == null || toPaymentType == null) throw new Exception("PaymentTypeNotFound");
-
-            if (!paymentApplicationParam.AmountApplied.HasValue)
-            {
-                var notAppliedToPayment = await GetPaymentNotApplied(toPayment, true);
-                paymentApplicationParam.AmountApplied = Math.Min(notAppliedPayment, notAppliedToPayment);
-            }
-        }
-
-        // --------------------------------------------------------------
-        // 6. FALL-BACK AMOUNT WHEN ONLY BillingAccountId / TaxAuthGeoId
-        // --------------------------------------------------------------
-        if (!paymentApplicationParam.AmountApplied.HasValue)
-        {
-            if (!string.IsNullOrEmpty(paymentApplicationParam.BillingAccountId) ||
-                !string.IsNullOrEmpty(paymentApplicationParam.TaxAuthGeoId))
-            {
-                paymentApplicationParam.AmountApplied = notAppliedPayment;
-            }
-        }
-
-        // --------------------------------------------------------------
-        // 7. SEQUENCE & ENTITY CREATION (unchanged)
-        // --------------------------------------------------------------
-        var paymentApplicationId = await _utilityService.GetNextSequence("PaymentApplication");
-        paymentApplicationParam.PaymentApplicationId = paymentApplicationId;
-
-        var paymentApplication = new PaymentApplication
-        {
-            PaymentApplicationId = paymentApplicationId,
-            PaymentId            = paymentApplicationParam.PaymentId,
-            InvoiceId            = paymentApplicationParam.InvoiceId,
-            InvoiceItemSeqId     = paymentApplicationParam.InvoiceItemSeqId,
-            BillingAccountId     = paymentApplicationParam.BillingAccountId,
-            OverrideGlAccountId  = paymentApplicationParam.OverrideGlAccountId,
-            ToPaymentId          = paymentApplicationParam.ToPaymentId,
-            TaxAuthGeoId         = paymentApplicationParam.TaxAuthGeoId,
-            AmountApplied        = paymentApplicationParam.AmountApplied,
-            CreatedStamp         = DateTime.UtcNow,
-            LastUpdatedStamp     = DateTime.UtcNow
-        };
-
-        _context.PaymentApplications.Add(paymentApplication);
-
-        // --------------------------------------------------------------
-        // 8. *** COMMIT *** – ECA actions are executed **after** SaveChanges
-        // --------------------------------------------------------------
-        await _context.SaveChangesAsync();   // <-- transaction commit point
-
-        // --------------------------------------------------------------
-        // 9. ECA #1 – checkInvoicePaymentApplications (only when invoiceId)
-        // --------------------------------------------------------------
-        // REFACTOR: Mirror the first <eca> rule exactly.  The rule fires on commit
-        //           *only* when invoiceId is present.  Calling the service here
-        //           guarantees the same behaviour without duplicating the XML.
-        if (!string.IsNullOrEmpty(paymentApplicationParam.InvoiceId))
-        {
-            await CheckInvoicePaymentApplications(paymentApplicationParam.InvoiceId);
-        }
-
-        // --------------------------------------------------------------
-        // 10. ECA #2 – createAcctgTransAndEntriesForPaymentApplication
-        //      (only when invoiceId && paymentType != CUSTOMER_REFUND)
-        // --------------------------------------------------------------
-        // REFACTOR: Second <eca> rule adds a second condition on paymentTypeId.
-        //           We fetch the Payment (already in the change-tracker after SaveChanges)
-        //           and invoke the accounting-transaction service only when both
-        //           conditions match.  This keeps the method **pure** (no side-effects
-        //           before commit) and fully respects the OFBiz ECA contract.
-        if (!string.IsNullOrEmpty(paymentApplicationParam.InvoiceId))
-        {
-            var paymentEntity = await _context.Payments
-                .FirstOrDefaultAsync(p => p.PaymentId == paymentApplicationParam.PaymentId);
-
-            if (paymentEntity != null && paymentEntity.PaymentTypeId != "CUSTOMER_REFUND")
-            {
-                // The OFBiz service name is exactly as declared in the ECA XML.
-                // Pass the freshly created paymentApplicationId as the primary key.
-                await _ofbizServiceInvoker.InvokeAsync(
-                    serviceName: "createAcctgTransAndEntriesForPaymentApplication",
-                    inMap: new Dictionary<string, object>
-                    {
-                        { "paymentApplicationId", paymentApplicationId },
-                        { "paymentId",            paymentApplicationParam.PaymentId },
-                        { "invoiceId",            paymentApplicationParam.InvoiceId }
-                        // add any other required fields your OFBiz service expects
-                    },
-                    mode: "sync");
-            }
-        }
-
-        // --------------------------------------------------------------
-        // 11. RETURN DTO
-        // --------------------------------------------------------------
-        return paymentApplicationParam;
+        public string PartyId { get; set; }
+        public string? OrganizationPartyId { get; set; } // Optional
+        public string? DefaultCurrencyUomId { get; set; } // Optional
     }
-    catch (Exception ex)
+
+    public class Handler : IRequestHandler<Query, Result<PartyFinancialHistoryDetails>>
     {
-        // REFACTOR: Centralised logging + user-friendly wrapper – unchanged logic.
-        // _logger.Error(ex, "CreatePaymentApplication failed");
-        throw new Exception("An error occurred while creating the payment application.", ex);
+        private readonly DataContext _context;
+        private readonly IInvoiceUtilityService _invoiceUtilityService;
+        private readonly IPaymentWorkerService _paymentWorkerService;
+        private readonly IBillingAccountService _billingAccountService;
+        private readonly IUserAccessor _userAccessor;
+        private readonly IAcctgMiscService _acctgMiscService;
+
+        public Handler(
+            DataContext context,
+            IInvoiceUtilityService invoiceUtilityService,
+            IPaymentWorkerService paymentWorkerService,
+            IBillingAccountService billingAccountService,
+            IUserAccessor userAccessor,
+            IAcctgMiscService acctgMiscService)
+        {
+            _context = context;
+            _invoiceUtilityService = invoiceUtilityService;
+            _paymentWorkerService = paymentWorkerService;
+            _billingAccountService = billingAccountService;
+            _userAccessor = userAccessor;
+            _acctgMiscService = acctgMiscService;
+        }
+
+        public async Task<Result<PartyFinancialHistoryDetails>> Handle(Query request, CancellationToken cancellationToken)
+        {
+            try
+            {
+                // 1. Retrieve Party
+                var party = await _context.Parties
+                    .FirstOrDefaultAsync(p => p.PartyId == request.PartyId, cancellationToken);
+
+                if (party == null)
+                {
+                    return Result<PartyFinancialHistoryDetails>.Failure("Party not found.");
+                }
+
+                string organizationPartyId = request.OrganizationPartyId;
+                if (string.IsNullOrWhiteSpace(organizationPartyId))
+                {
+                    var user = await _context.Users
+                        .SingleOrDefaultAsync(x => x.UserName == _userAccessor.GetUsername(), cancellationToken);
+
+                    var userLogin = await _context.UserLogins
+                        .SingleOrDefaultAsync(x => x.UserLoginId == user.UserLoginId);
+
+                    if (user == null)
+                    {
+                        return Result<PartyFinancialHistoryDetails>.Failure("User not found.");
+                    }
+
+                    organizationPartyId = user.OrganizationPartyId;
+                }
+
+                // 2. Determine currency for calculations
+                // Business Purpose: Establish the currency to be used for financial calculations, prioritizing the requested currency,
+                // then the party's preferred currency, and finally the organization's base currency.
+                // This ensures consistent currency handling across all financial data retrieved.
+                string currencyUomId = request.DefaultCurrencyUomId;
+                if (string.IsNullOrWhiteSpace(currencyUomId))
+                {
+                    currencyUomId = party.PreferredCurrencyUomId;
+                    if (string.IsNullOrWhiteSpace(currencyUomId))
+                    {
+                        var partyAccountingPreferences = await _acctgMiscService.GetPartyAccountingPreferences(organizationPartyId);
+                        if (partyAccountingPreferences == null)
+                        {
+                            return Result<PartyFinancialHistoryDetails>.Failure("Party accounting preferences not found.");
+                        }
+                        currencyUomId = partyAccountingPreferences.BaseCurrencyUomId;
+                        if (string.IsNullOrWhiteSpace(currencyUomId))
+                        {
+                            return Result<PartyFinancialHistoryDetails>.Failure("Base currency not found in accounting preferences.");
+                        }
+                    }
+                }
+
+                // SPECIAL REMARK: Determine currency for calculations
+                // Business Purpose: Check if the actual currency differs from the party's preferred currency to handle conversions appropriately.
+                // This flag ensures accurate financial reporting when currency conversion is required.
+                bool actualCurrency = !string.IsNullOrEmpty(party.PreferredCurrencyUomId) && party.PreferredCurrencyUomId != currencyUomId;
+
+                // 3. Retrieve Invoices and Applied Payments
+                // Benefit: Filters valid invoices and payments, ensuring only PMNT_RECEIVED payments are applied, preventing invalid applications (e.g., PMNT_NOT_PAID)
+                // Wisdom: Aligns with OFBiz's expectation of received payments for applications, ensuring accurate financial reporting
+
+                // REFACTOR: Remove PMNT_RECEIVED filter — OFBiz applies payments regardless of status
+                var invoicesApplPaymentsQuery = from inv in _context.Invoices
+                    join pap in _context.PaymentApplications on inv.InvoiceId equals pap.InvoiceId into papGroup
+                    from pap in papGroup.DefaultIfEmpty()
+                    join pmt in _context.Payments on pap.PaymentId equals pmt.PaymentId into pmtGroup
+                    from pmt in pmtGroup.DefaultIfEmpty()
+                    where ((inv.PartyId == request.PartyId && inv.PartyIdFrom == organizationPartyId) ||
+                           (inv.PartyId == organizationPartyId && inv.PartyIdFrom == request.PartyId))
+                       && inv.StatusId != "INVOICE_IN_PROCESS"
+                       && inv.StatusId != "INVOICE_CANCELLED"
+                       && inv.StatusId != "INVOICE_WRITEOFF"
+                    select new
+                    {
+                        inv.InvoiceId,
+                        inv.InvoiceTypeId,
+                        InvoiceDate = inv.InvoiceDate,
+                        PaymentId = pmt?.PaymentId,
+                        PaymentEffectiveDate = pmt?.EffectiveDate,
+                        PaymentAppliedAmount = pap?.AmountApplied ?? 0,
+                        PaymentAmount = pmt?.Amount ?? 0,
+                        CurrencyUomId = inv.CurrencyUomId ?? (pmt?.ActualCurrencyUomId ?? currencyUomId)
+                    };
+
+                var invoicesApplPayments = await invoicesApplPaymentsQuery.ToListAsync(cancellationToken);
+
+                // Business Purpose: Transform invoice and payment data into DTOs, calculating totals and applied amounts.
+                // This provides a structured format for the financial history, including applied and unapplied amounts for reporting.
+                var invoicesApplPaymentsDtos = new List<InvoiceApplPaymentDto>();
+                foreach (var item in invoicesApplPayments)
+                {
+                    decimal total = await _invoiceUtilityService.GetInvoiceTotal(item.InvoiceId, actualCurrency);
+                    decimal amountApplied = item.PaymentAppliedAmount > 0
+                        ? item.PaymentAppliedAmount
+                        : await _invoiceUtilityService.GetInvoiceApplied(item.InvoiceId, DateTime.UtcNow, actualCurrency);
+                    decimal amountToApply = await _invoiceUtilityService.GetInvoiceNotApplied(item.InvoiceId);
+
+                    invoicesApplPaymentsDtos.Add(new InvoiceApplPaymentDto
+                    {
+                        InvoiceId = item.InvoiceId,
+                        InvoiceTypeId = item.InvoiceTypeId,
+                        InvoiceDate = item.InvoiceDate,
+                        Total = total,
+                        AmountApplied = amountApplied,
+                        AmountToApply = amountToApply,
+                        PaymentId = item.PaymentId,
+                        PaymentEffectiveDate = item.PaymentEffectiveDate,
+                        PaymentAmount = item.PaymentAmount,
+                        CurrencyUomId = item.CurrencyUomId
+                    });
+                }
+
+                invoicesApplPaymentsDtos = invoicesApplPaymentsDtos.OrderBy(x => x.InvoiceDate).ToList();
+
+                // 4. Retrieve Unapplied Invoices
+                // Business Purpose: Retrieve unapplied invoices to identify outstanding amounts owed by or to the party.
+                // Filtering ensures only valid, non-cancelled invoices are included, with date constraints for relevance.
+
+                // REFACTOR: Remove date filter + use currencyUomId instead of request.DefaultCurrencyUomId
+                var unappliedInvoicesQuery = from inv in _context.Invoices
+                    join it in _context.InvoiceTypes on inv.InvoiceTypeId equals it.InvoiceTypeId
+                    where ((inv.PartyId == request.PartyId && inv.PartyIdFrom == organizationPartyId) ||
+                           (inv.PartyId == organizationPartyId && inv.PartyIdFrom == request.PartyId))
+                       && inv.StatusId != "INVOICE_IN_PROCESS"
+                       && inv.StatusId != "INVOICE_CANCELLED"
+                       && inv.StatusId != "INVOICE_WRITEOFF"
+                    select new
+                    {
+                        inv.InvoiceId,
+                        TypeDescription = it.Description,
+                        inv.InvoiceDate,
+                        inv.InvoiceTypeId,
+                        ParentTypeId = it.ParentTypeId,
+                        CurrencyUomId = actualCurrency ? inv.CurrencyUomId : currencyUomId
+                    };
+
+                var unappliedInvoices = await unappliedInvoicesQuery.ToListAsync(cancellationToken);
+
+                var unappliedInvoicesDtos = new List<UnappliedInvoiceDto>();
+                foreach (var item in unappliedInvoices)
+                {
+                    decimal amount = Math.Round(await _invoiceUtilityService.GetInvoiceTotal(item.InvoiceId, actualCurrency), 2, MidpointRounding.AwayFromZero);
+                    decimal unappliedAmount = Math.Round(await _invoiceUtilityService.GetInvoiceNotApplied(item.InvoiceId), 2, MidpointRounding.AwayFromZero);
+
+                    if (unappliedAmount > 0)
+                    {
+                        unappliedInvoicesDtos.Add(new UnappliedInvoiceDto
+                        {
+                            InvoiceId = item.InvoiceId,
+                            TypeDescription = item.TypeDescription,
+                            InvoiceDate = item.InvoiceDate,
+                            Amount = amount,
+                            UnappliedAmount = unappliedAmount,
+                            CurrencyUomId = item.CurrencyUomId ?? currencyUomId,
+                            InvoiceTypeId = item.InvoiceTypeId,
+                            InvoiceParentTypeId = item.ParentTypeId
+                        });
+                    }
+                }
+
+                unappliedInvoicesDtos = unappliedInvoicesDtos.OrderBy(x => x.InvoiceDate).ToList();
+
+                // 5. Retrieve Unapplied Payments
+                // Business Purpose: Retrieve unapplied payments to identify payments not yet allocated to invoices.
+                // This helps in understanding available funds for future invoice applications.
+
+                // REFACTOR: Use currencyUomId instead of request.DefaultCurrencyUomId
+                var unappliedPaymentsQuery = from pmt in _context.Payments
+                    join pt in _context.PaymentTypes on pmt.PaymentTypeId equals pt.PaymentTypeId
+                    where ((pmt.PartyIdTo == request.PartyId && pmt.PartyIdFrom == organizationPartyId) ||
+                           (pmt.PartyIdTo == organizationPartyId && pmt.PartyIdFrom == request.PartyId))
+                       && pmt.StatusId != "PMNT_NOTPAID"
+                       && pmt.StatusId != "PMNT_CANCELLED"
+                    select new
+                    {
+                        pmt.PaymentId,
+                        pmt.EffectiveDate,
+                        pmt.PaymentTypeId,
+                        PaymentTypeDescription = pt.Description,
+                        pmt.ActualCurrencyAmount,
+                        pmt.ActualCurrencyUomId,
+                        pmt.Amount,
+                        CurrencyUomId = pmt.CurrencyUomId,
+                        pmt.PaymentType.ParentTypeId
+                    };
+
+                var unappliedPayments = await unappliedPaymentsQuery.ToListAsync(cancellationToken);
+
+                var unappliedPaymentsDtos = new List<UnappliedPaymentDto>();
+                foreach (var item in unappliedPayments)
+                {
+                    decimal unappliedAmount = Math.Round(await _paymentWorkerService.GetPaymentNotApplied(item.PaymentId, actualCurrency), 2, MidpointRounding.AwayFromZero);
+
+                    if (unappliedAmount > 0)
+                    {
+                        decimal amount = actualCurrency && item.ActualCurrencyAmount.HasValue && !string.IsNullOrEmpty(item.ActualCurrencyUomId)
+                            ? item.ActualCurrencyAmount.Value
+                            : item.Amount;
+
+                        string paymentCurrencyUomId = actualCurrency && !string.IsNullOrEmpty(item.ActualCurrencyUomId)
+                            ? item.ActualCurrencyUomId
+                            : item.CurrencyUomId ?? currencyUomId;
+
+                        unappliedPaymentsDtos.Add(new UnappliedPaymentDto
+                        {
+                            PaymentId = item.PaymentId,
+                            EffectiveDate = item.EffectiveDate,
+                            PaymentTypeId = item.PaymentTypeId,
+                            PaymentTypeDescription = item.PaymentTypeDescription,
+                            Amount = amount,
+                            UnappliedAmount = unappliedAmount,
+                            CurrencyUomId = paymentCurrencyUomId,
+                            PaymentParentTypeId = item.ParentTypeId
+                        });
+                    }
+                }
+
+                unappliedPaymentsDtos = unappliedPaymentsDtos.OrderBy(x => x.EffectiveDate).ToList();
+
+                // 6. Retrieve Billing Accounts
+                // Business Purpose: Retrieve billing accounts associated with the party to include their balances and limits.
+                // Filtering by date and role ensures only active, relevant billing accounts are considered.
+
+                // REFACTOR: Remove N+1 balance calc — use MakePartyBillingAccountList which now sets AccountBalance
+                string billingCurrencyUomId = currencyUomId;
+                var billingAccountRoles = await _context.BillingAccountRoles
+                    .Where(bar => bar.PartyId == request.PartyId
+                               && bar.RoleTypeId == "BILL_TO_CUSTOMER"
+                               && bar.FromDate <= DateTime.UtcNow
+                               && (bar.ThruDate == null || bar.ThruDate >= DateTime.UtcNow))
+                    .Join(_context.BillingAccounts,
+                          bar => bar.BillingAccountId,
+                          ba => ba.BillingAccountId,
+                          (bar, ba) => new { bar, ba })
+                    .ToListAsync(cancellationToken);
+
+                if (billingAccountRoles.Any())
+                {
+                    billingCurrencyUomId = billingAccountRoles.First().ba.AccountCurrencyUomId ?? currencyUomId;
+                }
+
+                var billingAccounts = await _billingAccountService.MakePartyBillingAccountList(request.PartyId, billingCurrencyUomId);
+                var billingAccountsDtos = billingAccounts.Select(ba => new BillingAccountDto
+                {
+                    BillingAccountId = ba.BillingAccountId,
+                    AccountLimit = ba.AccountLimit,
+                    AccountBalance = ba.AccountBalance, // Now set in service
+                    Description = ba.Description
+                }).ToList();
+
+                // 7. Retrieve Returns
+                // Business Purpose: Retrieve return records to include in the financial history.
+                // This ensures all relevant financial transactions, including returns, are reported.
+                var returns = await _context.ReturnHeaders
+                    .Where(rh => rh.FromPartyId == request.PartyId)
+                    .Join(_context.StatusItems,
+                          rh => rh.StatusId,
+                          si => si.StatusId,
+                          (rh, si) => new ReturnDto
+                          {
+                              ReturnId = rh.ReturnId,
+                              StatusDescription = si.Description,
+                              FromPartyId = rh.FromPartyId,
+                              ToPartyId = rh.ToPartyId
+                          })
+                    .OrderBy(x => x.ReturnId)
+                    .ToListAsync(cancellationToken);
+
+                // 8. Calculate Financial Summary
+                // Business Purpose: Calculate a financial summary to provide an overview of sales and purchase invoices, payments, and outstanding amounts.
+                // This aggregates key financial metrics for quick reference.
+
+                // REFACTOR: Remove date filter + fix sales invoice inclusion + use total, not applied only
+                decimal totalSalesInvoice = 0, totalPurchaseInvoice = 0;
+                decimal totalSalesNotApplied = 0, totalPurchaseNotApplied = 0;
+
+                var invoiceSummaryQuery = from inv in _context.Invoices
+                    join it in _context.InvoiceTypes on inv.InvoiceTypeId equals it.InvoiceTypeId
+                    where ((inv.PartyId == request.PartyId && inv.PartyIdFrom == organizationPartyId) ||
+                           (inv.PartyId == organizationPartyId && inv.PartyIdFrom == request.PartyId))
+                       && inv.StatusId != "INVOICE_IN_PROCESS"
+                       && inv.StatusId != "INVOICE_CANCELLED"
+                       && inv.StatusId != "INVOICE_WRITEOFF"
+                    select new { inv.InvoiceId, it.ParentTypeId };
+
+                var invoicesForSummary = await invoiceSummaryQuery.ToListAsync(cancellationToken);
+
+                foreach (var inv in invoicesForSummary)
+                {
+                    decimal total = await _invoiceUtilityService.GetInvoiceTotal(inv.InvoiceId, actualCurrency);
+                    decimal applied = await _invoiceUtilityService.GetInvoiceApplied(inv.InvoiceId, DateTime.UtcNow, actualCurrency);
+                    decimal notApplied = total - applied;
+
+                    if (inv.ParentTypeId == "SALES_INVOICE")
+                    {
+                        totalSalesInvoice += Math.Round(total, 2, MidpointRounding.AwayFromZero);
+                        totalSalesNotApplied += Math.Round(notApplied, 2, MidpointRounding.AwayFromZero);
+                    }
+                    else if (inv.ParentTypeId == "PURCHASE_INVOICE")
+                    {
+                        totalPurchaseInvoice += Math.Round(total, 2, MidpointRounding.AwayFromZero);
+                        totalPurchaseNotApplied += Math.Round(notApplied, 2, MidpointRounding.AwayFromZero);
+                    }
+                }
+
+                // Business Purpose: Summarize payment data to distinguish between incoming and outgoing payments, both applied and unapplied.
+                // This provides a clear picture of cash flow related to the party.
+                decimal totalPayInApplied = 0, totalPayInNotApplied = 0;
+                decimal totalPayOutApplied = 0, totalPayOutNotApplied = 0;
+
+                var paymentSummaryQuery = from pmt in _context.Payments
+                    join pt in _context.PaymentTypes on pmt.PaymentTypeId equals pt.PaymentTypeId
+                    where ((pmt.PartyIdTo == request.PartyId && pmt.PartyIdFrom == organizationPartyId) ||
+                           (pmt.PartyIdTo == organizationPartyId && pmt.PartyIdFrom == request.PartyId))
+                       && pmt.StatusId != "PMNT_NOTPAID"
+                       && pmt.StatusId != "PMNT_CANCELLED"
+                    select new { pmt.PaymentId, pt.ParentTypeId };
+
+                var paymentsForSummary = await paymentSummaryQuery.ToListAsync(cancellationToken);
+
+                foreach (var pmt in paymentsForSummary)
+                {
+                    decimal applied = await _paymentWorkerService.GetPaymentApplied(pmt.PaymentId, actualCurrency);
+                    decimal notApplied = await _paymentWorkerService.GetPaymentNotApplied(pmt.PaymentId, actualCurrency);
+
+                    bool isDisbursement = pmt.ParentTypeId == "DISBURSEMENT" || pmt.ParentTypeId == "TAX_PAYMENT";
+                    bool isReceipt = pmt.ParentTypeId == "RECEIPT";
+
+                    if (isDisbursement)
+                    {
+                        totalPayOutApplied += Math.Round(applied, 2, MidpointRounding.AwayFromZero);
+                        totalPayOutNotApplied += Math.Round(notApplied, 2, MidpointRounding.AwayFromZero);
+                    }
+                    else if (isReceipt)
+                    {
+                        totalPayInApplied += Math.Round(applied, 2, MidpointRounding.AwayFromZero);
+                        totalPayInNotApplied += Math.Round(notApplied, 2, MidpointRounding.AwayFromZero);
+                    }
+                }
+
+                // Business Purpose: Create a financial summary DTO to encapsulate key financial metrics, including net amounts to be paid or received.
+                // This simplifies the interpretation of the party's financial position.
+                var financialSummary = new FinancialSummaryDto
+                {
+                    TotalSalesInvoice = totalSalesInvoice,
+                    TotalPurchaseInvoice = totalPurchaseInvoice,
+                    TotalPaymentsIn = totalPayInApplied + totalPayInNotApplied,
+                    TotalPaymentsOut = totalPayOutApplied + totalPayOutNotApplied,
+                    TotalInvoiceNotApplied = totalSalesNotApplied - totalPurchaseNotApplied,
+                    TotalPaymentNotApplied = totalPayInNotApplied - totalPayOutNotApplied
+                };
+
+                decimal transferAmount = financialSummary.TotalSalesInvoice
+                    - financialSummary.TotalPurchaseInvoice
+                    - financialSummary.TotalPaymentsIn
+                    + financialSummary.TotalPaymentsOut;
+
+                if (transferAmount < 0)
+                    financialSummary.TotalToBeReceived = -transferAmount;
+                else
+                    financialSummary.TotalToBePaid = transferAmount;
+
+                // 9. Return result
+                // Business Purpose: Compile all retrieved data into a single response object for the client.
+                // This provides a comprehensive view of the party's financial history, including invoices, payments, billing accounts, returns, and summary.
+                return Result<PartyFinancialHistoryDetails>.Success(new PartyFinancialHistoryDetails
+                {
+                    PartyId = request.PartyId,
+                    PreferredCurrencyUomId = party.PreferredCurrencyUomId ?? currencyUomId,
+                    InvoicesApplPayments = invoicesApplPaymentsDtos,
+                    UnappliedInvoices = unappliedInvoicesDtos,
+                    UnappliedPayments = unappliedPaymentsDtos,
+                    BillingAccounts = billingAccountsDtos,
+                    Returns = returns,
+                    FinancialSummary = financialSummary
+                });
+            }
+            catch (Exception ex)
+            {
+                return Result<PartyFinancialHistoryDetails>.Failure($"Error retrieving party financial history: {ex.Message}");
+            }
+        }
     }
 }

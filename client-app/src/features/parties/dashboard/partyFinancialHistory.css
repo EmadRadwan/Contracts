@@ -1,25 +1,210 @@
-.main-grid .k-grid-content tr:nth-child(even) {
-    background-color: #f5f5f5;
+/* REFACTOR: Root container – full-width, padded, scroll-safe */
+.party-financial-history {
+    width: 100%;
+    min-height: 100vh;
+    direction: ltr; /* overridden by RTL provider */
 }
 
-.main-grid .k-grid-content tr:hover {
-    background-color: #e3f2fd;
+/* REFACTOR: Title – consistent with MUI h4 */
+.party-financial-history > .MuiGrid-container > .MuiTypography-h4 {
+    margin-bottom: 1.5rem !important;
+    font-weight: 600 !important;
 }
 
-.main-grid {
-    border: 2px solid #e0e0e0;
-    border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+/* REFACTOR: Financial Summary Card */
+.financial-summary-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 5px solid #1976d2;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.main-grid .k-grid th {
-    background-color: #e8f0fe;
-    color: #333;
+.financial-summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.12) !important;
+}
+
+/* REFACTOR: Summary grid items – tight spacing */
+.financial-summary-card .MuiGrid-item {
+    padding: 0.5rem 0 !important;
+}
+
+/* REFACTOR: Strong labels */
+.financial-summary-card strong {
+    color: #1a1a1a;
     font-weight: 600;
-    border-bottom: 1px solid #d0d0d0;
 }
 
-.main-grid .k-grid-pager {
-    background-color: #fafafa;
-    border-top: 1px solid #e0e0e0;
+/* REFACTOR: Positive/Negative values */
+.financial-summary-card .positive {
+    color: #2e7d32 !important;
+    font-weight: 600;
+}
+
+.financial-summary-card .negative {
+    color: #c62828 !important;
+    font-weight: 600;
+}
+
+/* REFACTOR: Tabs – full-width, sticky on scroll */
+.party-financial-tabs {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 10;
+    border-bottom: 1px solid #e0e0e0;
+    margin: 1.5rem 0 1rem !important;
+    padding: 0 0.5rem;
+}
+
+/* RTL support for tabs */
+[dir="rtl"] .party-financial-tabs .MuiTab-root {
+    font-family: inherit;
+}
+
+/* REFACTOR: Tab panels – smooth entry */
+.tab-panel {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* REFACTOR: Kendo Grid – consistent styling */
+.party-financial-grid .k-grid {
+    border: none !important;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.party-financial-grid .k-grid-header {
+    background: #f5f5f5 !important;
+    font-weight: 600 !important;
+    color: #424242 !important;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+
+.party-financial-grid .k-grid td {
+    padding: 0.75rem 0.5rem !important;
+    font-size: 0.875rem;
+}
+
+/* REFACTOR: Link cells – styled like buttons */
+.party-financial-grid a {
+    color: #1976d2 !important;
+    text-decoration: none !important;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+.party-financial-grid a:hover {
+    background: rgba(25, 118, 210, 0.1);
+    text-decoration: underline !important;
+}
+
+/* REFACTOR: Currency cells – right-aligned */
+.party-financial-grid .currency-cell {
+    text-align: right !important;
+    direction: ltr;
+    unicode-bidi: plaintext;
+}
+
+/* RTL: flip alignment */
+[dir="rtl"] .party-financial-grid .currency-cell {
+    text-align: left !important;
+}
+
+/* REFACTOR: Pagination – centered, compact */
+.party-financial-grid .k-pager {
+    justify-content: center !important;
+    padding: 0.75rem 0 !important;
+}
+
+.party-financial-grid .k-pager-numbers .k-link {
+    min-width: 32px !important;
+    height: 32px !important;
+    line-height: 32px !important;
+}
+
+/* REFACTOR: Empty state */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #757575;
+}
+
+.empty-state .MuiTypography-body1 {
+    font-size: 1.1rem;
+    margin-top: 1rem;
+}
+
+/* REFACTOR: Loading skeleton – match grid height */
+.loading-skeleton .MuiSkeleton-root {
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+/* REFACTOR: Responsive breakpoints */
+@media (max-width: 960px) {
+    .financial-summary-card .MuiGrid-container {
+        spacing: 2 !important;
+    }
+
+    .financial-summary-card .MuiGrid-item {
+        xs: 12 !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .party-financial-tabs {
+        padding: 0 !important;
+    }
+
+    .party-financial-tabs .MuiTab-root {
+        min-width: 80px !important;
+        font-size: 0.75rem !important;
+    }
+
+    .party-financial-grid .k-grid td,
+    .party-financial-grid .k-grid th {
+        padding: 0.5rem 0.25rem !important;
+        font-size: 0.8125rem !important;
+    }
+
+    .party-financial-grid a {
+        padding: 0.125rem 0.25rem;
+        font-size: 0.8125rem;
+    }
+}
+
+/* REFACTOR: Dark mode support (optional) */
+@media (prefers-color-scheme: dark) {
+    .financial-summary-card {
+        background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+    }
+
+    .financial-summary-card strong {
+        color: #e2e8f0;
+    }
+
+    .party-financial-tabs {
+        background: #1a202c;
+        border-bottom-color: #4a5568;
+    }
+
+    .party-financial-grid .k-grid {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .party-financial-grid .k-grid-header {
+        background: #2d3748 !important;
+        color: #e2e8f0 !important;
+    }
 }
