@@ -12,8 +12,21 @@ import './partyFinancialHistory.css';
 import { useGetPartyFinancialHistoryQuery } from "../../../app/store/apis";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import { useLocation } from 'react-router-dom';
+import {PartyFinancialHistoryExcel} from "../report/PartyFinancialHistoryExcel";
 
 interface Props { partyId: string; partyName?: string;}
+
+interface LedgerRow {
+    date: string; // ISO string (will be formatted in Excel)
+    description: string;
+    invoiceNumber?: string;
+    paymentNumber?: string;
+    value: number;
+    toPay: number;
+    paid: number;
+    balance: number;
+    notes?: string;
+}
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -73,7 +86,88 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
         const d = new Date(dateStr);
         return isNaN(d.getTime()) ? null : d;
     }, []);
-    
+
+    const ledgerItems = useMemo((): LedgerRow[] => {
+        if (!data) return [];
+
+        const rows: LedgerRow[] = [];
+        let balance = 0;
+
+        // Helper to format date as YYYY-MM-DD
+        const fmt = (d: string) => new Date(d).toISOString().split('T')[0];
+
+        // 1. Applied Invoices + Payments (from invoicesApplPayments)
+        data.invoicesApplPayments?.forEach((inv) => {
+            const invDate = fmt(inv.invoiceDate);
+            const invTotal = inv.total || 0;
+            const invApplied = inv.amountApplied || 0;
+            const invToApply = inv.amountToApply || 0;
+
+            // Invoice row
+            balance += invTotal;
+            rows.push({
+                date: invDate,
+                description: `فاتورة رقم ${inv.invoiceId}`,
+                invoiceNumber: inv.invoiceId,
+                value: invTotal,
+                toPay: invTotal,
+                paid: 0,
+                balance,
+                notes: inv.invoiceTypeId === 'PURCHASE_INVOICE' ? 'شراء' : 'بيع',
+            });
+
+            // Payment row (only if applied)
+            if (inv.paymentId && invApplied > 0) {
+                const payDate = fmt(inv.paymentEffectiveDate);
+                balance -= invApplied;
+                rows.push({
+                    date: payDate,
+                    description: `دفعة رقم ${inv.paymentId}`,
+                    paymentNumber: inv.paymentId,
+                    value: 0,
+                    toPay: 0,
+                    paid: invApplied,
+                    balance,
+                    notes: '',
+                });
+            }
+
+            // Unapplied amount on invoice
+            if (invToApply > 0) {
+                rows.push({
+                    date: invDate,
+                    description: `متبقي على الفاتورة ${inv.invoiceId}`,
+                    invoiceNumber: inv.invoiceId,
+                    value: 0,
+                    toPay: invToApply,
+                    paid: 0,
+                    balance,
+                    notes: 'غير مسدد',
+                });
+            }
+        });
+
+        // 2. Unapplied Payments
+        data.unappliedPayments?.forEach((pay) => {
+            const payDate = fmt(pay.effectiveDate);
+            const amount = pay.unappliedAmount || pay.amount || 0;
+            balance -= amount; // Credit
+            rows.push({
+                date: payDate,
+                description: `دفعة غير موزعة ${pay.paymentId}`,
+                paymentNumber: pay.paymentId,
+                value: 0,
+                toPay: 0,
+                paid: amount,
+                balance,
+                notes: pay.paymentTypeDescription || 'غير موزعة',
+            });
+        });
+
+        return rows;
+    }, [data]);
+
+
     const processedData = useMemo(() => {
         if (!data) {
             return {
@@ -162,6 +256,22 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
         take: page.take,
     };
 
+    const renderExcelButton = () => {
+        if (ledgerItems.length === 0) return null;
+
+        return (
+            <PartyFinancialHistoryExcel
+                party={{
+                    partyId,
+                    partyName: displayName,
+                }}
+                ledgerItems={ledgerItems}
+                getTranslatedLabel={getTranslatedLabel}
+                isFetching={isLoading}
+            />
+        );
+    };
+
     return (
         <Grid
             container
@@ -173,7 +283,8 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
             <Typography variant="h4" gutterBottom>
                 {getTranslatedLabel(`${localizationKey}.title`, 'Financial History for')} {displayName}
             </Typography>
-
+            {renderExcelButton()}
+            
             {/* Financial Summary */}
             <Paper elevation={2} sx={{ p: 3, mb: 3 }} className="financial-summary-card">
                

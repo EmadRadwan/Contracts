@@ -51,10 +51,10 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
         { skip: !invoiceId }
     );
 
-    const { data: diagramData, refetch } = useGetGlAccountDiagramQuery(
+   /* const { data: diagramData, refetch } = useGetGlAccountDiagramQuery(
         selectedAcctgTransId,
         { skip: !selectedAcctgTransId }
-    );
+    );*/
 
     useEffect(() => {
         if (acctTransEntryDataInvoice) {
@@ -67,13 +67,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
             setPaymentTransEntries(handleDatesArray(acctTransEntryDataPaymentApplication));
         }
     }, [acctTransEntryDataPaymentApplication]);
-
-    // ───────────────────── Helpers ─────────────────────────────
-    const handleShowDiagram = (acctgTransId: string) => {
-        setSelectedAcctgTransId(acctgTransId);
-        setShowDiagramModal(true);
-        refetch();
-    };
+    
 
     /** Row colouring: credits white, debits light‑green */
     const rowRender = (
@@ -144,7 +138,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                         <Grid container>
                             <Grid item xs={12}>
                                 <KendoGrid
-                                    style={{ width: 850 }}
+                                    style={{  height: "450px", width: 850 }}
                                     data={orderBy(acctTransEntries, sort)}
                                     sortable
                                     sort={sort}
@@ -153,12 +147,6 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                                     resizable
                                     rowRender={rowRender}
                                 >
-                                    <GridToolbar>
-                                        <Typography sx={{ p: 2 }} variant="h6">
-                                            Invoice Transactions
-                                        </Typography>
-                                    </GridToolbar>
-                                    {/* ───── Columns ───── */}
                                     <Column
                                         field="acctgTransId"
                                         title="Acctg Trans"
@@ -168,7 +156,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                                     <Column field="origAmount" title="Orig Amount" width={100} />
                                     <Column field="debitCreditFlag" title="Debit/Credit" width={90} />
                                     <Column field="glAccountId" title="GL Account" width={100} />
-                                    <Column field="glAccountTypeDescription" title="Account Name" width={220} />
+                                    <Column field="glAccountTypeDescription" title="Account Name" width={300} />
                                     <Column field="productName" title="Product" width={200} />
                                     <Column field="isPosted" title="Posted?" width={80} />
                                     <Column field="glFiscalTypeId" title="Fiscal Type" width={100} />
@@ -187,23 +175,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                                     />
                                     <Column field="glAccountClassDescription" title="Account Class" width={140} />
                                     <Column field="origCurrencyUomId" title="Currency" width={90} />
-                                    <Column
-                                        title="Diagram"
-                                        width={100}
-                                        cell={(props) => (
-                                            <td>
-                                                <Button
-                                                    variant="contained"
-                                                    size="small"
-                                                    onClick={() =>
-                                                        handleShowDiagram(props.dataItem.acctgTransId)
-                                                    }
-                                                >
-                                                    View
-                                                </Button>
-                                            </td>
-                                        )}
-                                    />
+                                    
                                 </KendoGrid>
                             </Grid>
                         </Grid>
@@ -212,7 +184,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                         <Grid container>
                             <Grid item xs={12}>
                                 <KendoGrid
-                                    style={{ width: 850 }}
+                                    style={{ height: "450px", width: 850 }}
                                     data={orderBy(paymentTransEntries, sort)}
                                     sortable
                                     sort={sort}
@@ -221,11 +193,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                                     resizable
                                     rowRender={rowRender}
                                 >
-                                    <GridToolbar>
-                                        <Typography sx={{ p: 2 }} variant="h6">
-                                            Payment Application Transactions
-                                        </Typography>
-                                    </GridToolbar>
+                                    
                                     {/* ───── Columns ───── */}
                                     <Column
                                         field="acctgTransId"
@@ -236,7 +204,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                                     <Column field="origAmount" title="Orig Amount" width={100} />
                                     <Column field="debitCreditFlag" title="Debit/Credit" width={90} />
                                     <Column field="glAccountId" title="GL Account" width={100} />
-                                    <Column field="glAccountTypeDescription" title="Account Name" width={220} />
+                                    <Column field="glAccountTypeDescription" title="Account Name" width={300} />
                                     <Column field="productName" title="Product" width={200} />
                                     <Column field="isPosted" title="Posted?" width={80} />
                                     <Column field="glFiscalTypeId" title="Fiscal Type" width={100} />
@@ -263,22 +231,6 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
             </Box>
 
             {/* ───────── Diagram Modal ───────── */}
-            {showDiagramModal && (
-                <ModalContainer
-                    show={showDiagramModal}
-                    onClose={() => setShowDiagramModal(false)}
-                    width={600}
-                >
-                    <Typography variant="h6" sx={{ mb: 2 }}>
-                        Accounting Transaction Flow
-                    </Typography>
-                    {diagramData ? (
-                        <MermaidChart chart={diagramData.diagram} />
-                    ) : (
-                        <Typography>Loading…</Typography>
-                    )}
-                </ModalContainer>
-            )}
         </Fragment>
     );
 }

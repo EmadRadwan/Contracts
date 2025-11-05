@@ -23,17 +23,17 @@ interface Props {
     mode: "view" | "items";
 }
 
-export default function InvoiceDisplayForm({ invoiceId: propInvoiceId, mode}: Props) {
+export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Props) {
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
 
     // Purpose: Ensures invoiceId is always available, even if not passed as a prop
     // Improvement: Clarifies data source and prevents undefined invoiceId
-    const { invoiceId: contextInvoiceId } = useOutletContext<{ invoiceId: string }>();
+    const {invoiceId: contextInvoiceId} = useOutletContext<{ invoiceId: string }>();
     // Use propInvoiceId if provided, otherwise fall back to contextInvoiceId
     const effectiveInvoiceId = propInvoiceId || contextInvoiceId;
 
-    
+
     const selectedInvoice = useAppSelector((state) => state.accountingSharedUi.selectedInvoice);
     const {invoice, setInvoice} = useInvoice(effectiveInvoiceId);
     const {getTranslatedLabel} = useTranslationHelper();
@@ -71,7 +71,7 @@ export default function InvoiceDisplayForm({ invoiceId: propInvoiceId, mode}: Pr
             canSendPerEmail: hasInvoiceId,
         };
     }, [invoiceSource]);
-    
+
     console.log('permissions:', permissions);
 
     const handleChangeInvoiceStatus = useCallback(
@@ -346,7 +346,7 @@ export default function InvoiceDisplayForm({ invoiceId: propInvoiceId, mode}: Pr
                                             disabled={isTotalLoading || !!totalError}
                                         />
                                     )}
-                                    {getAvailableStatusTransitions().toWriteoff && (
+                                    {/*{getAvailableStatusTransitions().toWriteoff && (
                                         <MenuItem
                                             text={getTranslatedLabel(
                                                 `${localizationKey}.actions.writeoff`,
@@ -363,7 +363,7 @@ export default function InvoiceDisplayForm({ invoiceId: propInvoiceId, mode}: Pr
                                             )}
                                             data="cancel"
                                         />
-                                    )}
+                                    )}*/}
                                 </MenuItem>
                             </Menu>
                         </Grid>
@@ -482,13 +482,13 @@ export default function InvoiceDisplayForm({ invoiceId: propInvoiceId, mode}: Pr
                                 </Button>
                             )}
                         </Grid>
-                        
+
                         <Grid item xs={2}>
                             <Button variant="contained" color="error" onClick={handleBackClick}>
                                 {getTranslatedLabel(`${localizationKey}.back`, "Back")}
                             </Button>
                         </Grid>
-                        
+
                     </Grid>
 
                     {isChangingStatus && (

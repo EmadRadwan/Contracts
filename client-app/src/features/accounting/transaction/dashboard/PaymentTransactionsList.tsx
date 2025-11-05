@@ -111,15 +111,15 @@ export default function PaymentTransactionsList({ onClose, paymentId }: Props) {
     return (
         <Fragment>
             <Grid container padding={2} columnSpacing={1}>
-                <Grid item xs={4}>
+                {/*<Grid item xs={4}>
                     <Typography sx={{ p: 2 }} variant="h6">
                         {getTranslatedLabel(`${localizationKey}.title`, "Payment Transactions")}
                     </Typography>
-                </Grid>
+                </Grid>*/}
                 <Grid container>
                     <div className="div-container">
                         <KendoGrid
-                            style={{ height: "300px", width: "850px" }}
+                            style={{ height: "450px", width: "850px" }}
                             data={orderBy(acctTransEntries || [], sort).slice(page.skip, page.take + page.skip)}
                             sortable={true}
                             sort={sort}
@@ -173,7 +173,7 @@ export default function PaymentTransactionsList({ onClose, paymentId }: Props) {
                             <Column
                                 field="glAccountTypeDescription"
                                 title={getTranslatedLabel(`${localizationKey}.columns.glAccountTypeDescription`, "Account Name")}
-                                width={220}
+                                width={300}
                                 footerCell={() => null}
                             />
                             <Column
@@ -230,11 +230,11 @@ export default function PaymentTransactionsList({ onClose, paymentId }: Props) {
                     </div>
                 </Grid>
             </Grid>
-            <Grid item xs={2}>
+            {/*<Grid item xs={2}>
                 <Button onClick={onClose} color="error" variant="contained">
                     {getTranslatedLabel(`${localizationKey}.close`, "Close")}
                 </Button>
-            </Grid>
+            </Grid>*/}
         </Fragment>
     );
 }
