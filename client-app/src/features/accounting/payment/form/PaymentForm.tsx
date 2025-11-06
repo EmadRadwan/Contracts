@@ -59,7 +59,7 @@ const PAYMENT_TYPE_FILTERS = {
         "TAX_PAYMENT",
         "SALES_TAX_PAYMENT",
         "PAYROLL_TAX_PAYMENT",
-        "INCOME_TAX_PAYMENT",
+        "INCOME_TAX_PAYMENT" as const,
         "VENDOR_PAYMENT",
         "VENDOR_PREPAY",
         "PAY_CHECK",
@@ -73,6 +73,20 @@ const PAYMENT_TYPE_FILTERS = {
         "PERMANENT_CUSTODY",
         "TEMP_ADVANCE",
         "VENDOR_INVOICE_PAYMENT",
+        // REFACTOR: Added newly introduced disbursement types from the provided list
+        // Purpose: Expand the outgoing filter to include all valid disbursement-based payment types
+        // Improves: Completeness — ensures users can select any active system payment type
+        // Context: These IDs were confirmed to have PARENT_TYPE_ID = "DISBURSEMENT"
+        "CHECK_REPLACEMENT",
+        "DEBTORS_ADVANCE",
+        "DUE_INSTALLMENT",
+        "EMPLOYEE_ADVANCE",
+        "EQUIPMENT_EXPENSES",
+        "LABOR_WAGES",
+        "LAND_PURCHASE",
+        "MATERIAL_PURCHASE",
+        "MISC_EXPENSES",
+        "PARTIAL_PAYMENT",
     ],
 };
 
