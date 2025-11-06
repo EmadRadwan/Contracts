@@ -1,47 +1,101 @@
-"party": {
-"financial": {
-"history": {
-"title": "السجل المالي للطرف",
-"financialSummary": "الملخص المالي",
-"totalSalesInvoices": "إجمالي فواتير المبيعات",
-"totalPurchaseInvoices": "إجمالي فواتير الشراء",
-"totalPaymentsIn": "إجمالي المدفوعات الواردة",
-"totalPaymentsOut": "إجمالي المدفوعات الصادرة",
-"totalInvoicesNotApplied": "إجمالي الفواتير غير المطبقة",
-"totalPaymentsNotApplied": "إجمالي المدفوعات غير المطبقة",
-"totalToBePaid": "المبلغ المستحق للدفع",
-"totalToBeReceived": "المبلغ المستحق للاستلام",
-"noPartyId": "لا يوجد معرف طرف",
-"error": "خطأ في تحميل البيانات",
-"noData": "لا توجد بيانات مالية متاحة",
-"tabs": {
-"invoicesPayments": "الفواتير والمدفوعات",
-"unappliedInvoices": "الفواتير غير المطبقة",
-"unappliedPayments": "المدفوعات غير المطبقة",
-"billingAccounts": "حسابات الأجل",
-"returns": "الإرجاعات"
-},
-"grid": {
-"invoiceId": "رقم الفاتورة",
-"type": "النوع",
-"date": "التاريخ",
-"total": "الإجمالي",
-"applied": "المطبق",
-"toApply": "المطلوب تطبيقه",
-"paymentId": "رقم الدفعة",
-"payDate": "تاريخ الدفع",
-"payAmount": "مبلغ الدفع",
-"amount": "المبلغ",
-"unapplied": "غير مطبق",
-"accountId": "رقم الحساب",
-"limit": "الحد",
-"balance": "الرصيد",
-"description": "الوصف",
-"returnId": "رقم الإرجاع",
-"status": "الحالة",
-"from": "من",
-"to": "إلى"
-}
-}
-}
-}
+[
+  {
+    "PAYMENT_TYPE_ID": "CHECK_REPLACEMENT",
+    "ORGANIZATION_PARTY_ID": "Company",
+    "GL_ACCOUNT_TYPE_ID": "ACCPAYABLE_UNAPPLIED",
+    "LAST_UPDATED_STAMP": "2025-11-06 00:00:00",
+    "LAST_UPDATED_TX_STAMP": "2025-11-06 00:00:00",
+    "CREATED_STAMP": "2025-11-06 00:00:00",
+    "CREATED_TX_STAMP": "2025-11-06 00:00:00"
+  },
+  {
+    "PAYMENT_TYPE_ID": "DEBTORS_ADVANCE",
+    "ORGANIZATION_PARTY_ID": "Company",
+    "GL_ACCOUNT_TYPE_ID": "PREPAID_EXPENSES",
+    "LAST_UPDATED_STAMP": "2025-11-06 00:00:00",
+    "LAST_UPDATED_TX_STAMP": "2025-11-06 00:00:00",
+    "CREATED_STAMP": "2025-11-06 00:00:00",
+    "CREATED_TX_STAMP": "2025-11-06 00:00:00"
+  },
+  {
+    "PAYMENT_TYPE_ID": "DUE_INSTALLMENT",
+    "ORGANIZATION_PARTY_ID": "Company",
+    "GL_ACCOUNT_TYPE_ID": "ACCPAYABLE_UNAPPLIED",
+    "LAST_UPDATED_STAMP": "2025-11-06 00:00:00",
+    "LAST_UPDATED_TX_STAMP": "2025-11-06 00:00:00",
+    "CREATED_STAMP": "2025-11-06 00:00:00",
+    "CREATED_TX_STAMP": "2025-11-06 00:00:00"
+  },
+  {
+    "PAYMENT_TYPE_ID": "EMPLOYEE_ADVANCE",
+    "ORGANIZATION_PARTY_ID": "Company",
+    "GL_ACCOUNT_TYPE_ID": "PREPAID_EXPENSES",
+    "LAST_UPDATED_STAMP": "2025-11-06 00:00:00",
+    "LAST_UPDATED_TX_STAMP": "2025-11-06 00:00:00",
+    "CREATED_STAMP": "2025-11-06 00:00:00",
+    "CREATED_TX_STAMP": "2025-11-06 00:00:00"
+  },
+  {
+    "PAYMENT_TYPE_ID": "EQUIPMENT_EXPENSES",
+    "ORGANIZATION_PARTY_ID": "Company",
+    "GL_ACCOUNT_TYPE_ID": "OPERATING_EXPENSE",
+    "LAST_UPDATED_STAMP": "2025-11-06 00:00:00",
+    "LAST_UPDATED_TX_STAMP": "2025-11-06 00:00:00",
+    "CREATED_STAMP": "2025-11-06 00:00:00",
+    "CREATED_TX_STAMP": "2025-11-06 00:00:00"
+  },
+  {
+    "PAYMENT_TYPE_ID": "LABOR_WAGES",
+    "ORGANIZATION_PARTY_ID": "Company",
+    "GL_ACCOUNT_TYPE_ID": "OPERATING_EXPENSE",
+    "LAST_UPDATED_STAMP": "2025-11-06 00:00:00",
+    "LAST_UPDATED_TX_STAMP": "2025-11-06 00:00:00",
+    "CREATED_STAMP": "2025-11-06 00:00:00",
+    "CREATED_TX_STAMP": "2025-11-06 00:00:00"
+  },
+  {
+    "PAYMENT_TYPE_ID": "LAND_PURCHASE",
+    "ORGANIZATION_PARTY_ID": "Company",
+    "GL_ACCOUNT_TYPE_ID": "PREPAID_EXPENSES",
+    "LAST_UPDATED_STAMP": "2025-11-06 00:00:00",
+    "LAST_UPDATED_TX_STAMP": "2025-11-06 00:00:00",
+    "CREATED_STAMP": "2025-11-06 00:00:00",
+    "CREATED_TX_STAMP": "2025-11-06 00:00:00"
+  },
+  {
+    "PAYMENT_TYPE_ID": "MATERIAL_PURCHASE",
+    "ORGANIZATION_PARTY_ID": "Company",
+    "GL_ACCOUNT_TYPE_ID": "ACCPAYABLE_UNAPPLIED",
+    "LAST_UPDATED_STAMP": "2025-11-06 00:00:00",
+    "LAST_UPDATED_TX_STAMP": "2025-11-06 00:00:00",
+    "CREATED_STAMP": "2025-11-06 00:00:00",
+    "CREATED_TX_STAMP": "2025-11-06 00:00:00"
+  },
+  {
+    "PAYMENT_TYPE_ID": "MISC_EXPENSES",
+    "ORGANIZATION_PARTY_ID": "Company",
+    "GL_ACCOUNT_TYPE_ID": "OPERATING_EXPENSE",
+    "LAST_UPDATED_STAMP": "2025-11-06 00:00:00",
+    "LAST_UPDATED_TX_STAMP": "2025-11-06 00:00:00",
+    "CREATED_STAMP": "2025-11-06 00:00:00",
+    "CREATED_TX_STAMP": "2025-11-06 00:00:00"
+  },
+  {
+    "PAYMENT_TYPE_ID": "PARTIAL_PAYMENT",
+    "ORGANIZATION_PARTY_ID": "Company",
+    "GL_ACCOUNT_TYPE_ID": "ACCPAYABLE_UNAPPLIED",
+    "LAST_UPDATED_STAMP": "2025-11-06 00:00:00",
+    "LAST_UPDATED_TX_STAMP": "2025-11-06 00:00:00",
+    "CREATED_STAMP": "2025-11-06 00:00:00",
+    "CREATED_TX_STAMP": "2025-11-06 00:00:00"
+  },
+  {
+    "PAYMENT_TYPE_ID": "TAX_PAYMENT",
+    "ORGANIZATION_PARTY_ID": "Company",
+    "GL_ACCOUNT_TYPE_ID": "TAX_ACCOUNT",
+    "LAST_UPDATED_STAMP": "2022-05-27 12:24:01",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57",
+    "CREATED_STAMP": "2022-05-27 12:24:01",
+    "CREATED_TX_STAMP": "2022-05-27 12:23:57"
+  }
+]
