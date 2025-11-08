@@ -200,8 +200,8 @@ const EditInvoiceItem: React.FC<Props> = ({ invoiceItem, editMode, onClose, invo
                         </Grid>
                         <Grid item xs={12}>
                             <Field
-                                id="glAccountId"
-                                name="glAccountId"
+                                id="overrideGlAccountId"
+                                name="overrideGlAccountId"
                                 label="Override GL Account Id"
                                 data={glAccounts || []}
                                 component={FormDropDownTreeGlAccount2}

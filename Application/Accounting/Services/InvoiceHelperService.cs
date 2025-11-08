@@ -209,6 +209,7 @@ public class InvoiceHelperService : IInvoiceHelperService
             InvoiceId = parameters.InvoiceId,
             InvoiceItemSeqId = parameters.InvoiceItemSeqId,
             InvoiceItemTypeId = parameters.InvoiceItemTypeId,
+            OverrideGlAccountId = parameters.OverrideGlAccountId,
             Description = parameters.Description,
             Amount = parameters.Amount,
             ProductId = parameters.ProductId,
