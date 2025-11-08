@@ -6,6 +6,7 @@ public class TransactionEntryDto
     public string AcctgTransEntrySeqId { get; set; }
     public DateTime TransactionDate { get; set; }
     public string AcctgTransTypeId { get; set; }
+    public string AcctgTransTypeDescription { get; set; }
     public string GlFiscalTypeId { get; set; }
     public string InvoiceId { get; set; }
     public string PaymentId { get; set; }

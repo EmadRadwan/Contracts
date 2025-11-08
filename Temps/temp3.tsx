@@ -1,72 +1,40 @@
-// REFACTOR: Added all new disbursement payment types to outgoing filter
-// Purpose: Include newly created payment types (from JSON records) in the UI filter
-// Improves: Completeness — users can now select all valid outgoing payment types
-// Context: These IDs were added via new PaymentType + PaymentTypeGlAccount records
-//         All have PARENT_TYPE_ID = "DISBURSEMENT" and are expense-related
-
-const PAYMENT_TYPE_FILTERS = {
-    incoming: [
-        "CUSTOMER_PAYMENT",
-        "CUSTOMER_DEPOSIT",
-        "INTEREST_RECEIPT",
-        "GC_DEPOSIT",
-        "RECEIPT_ADVANCE_PAYMENT",
-        "RECEIPT_CHECK_REPLACEMENT",
-        "RECEIPT_DUE_INSTALLMENT",
-        "RECEIPT_MAINTENANCE_AMOUNT",
-        "RECEIPT_PARTIAL_PAYMENT",
-        "RECEIPT_RETURNED_CHECK",
-    ],
-    outgoing: [
-        "TAX_PAYMENT",
-        "SALES_TAX_PAYMENT",
-        "PAYROLL_TAX_PAYMENT",
-        "INCOME_TAX_PAYMENT" as const,
-        "VENDOR_PAYMENT",
-        "VENDOR_PREPAY",
-        "PAY_CHECK",
-        "PAYROL_PAYMENT",
-        "CUSTOMER_REFUND",
-        "GC_WITHDRAWAL",
-        "COMMISSION_PAYMENT",
-
-        // Existing disbursement types
-        "ADVANCE_TO_VENDOR_CONTRACTOR",
-        "CONTRACTOR_INSTALLMENT",
-        "PERMANENT_CUSTODY",
-        "TEMP_ADVANCE",
-        "VENDOR_INVOICE_PAYMENT",
-        "CHECK_REPLACEMENT",
-        "DEBTORS_ADVANCE",
-        "DUE_INSTALLMENT",
-        "EMPLOYEE_ADVANCE",
-        "EQUIPMENT_EXPENSES",
-        "LABOR_WAGES",
-        "LAND_PURCHASE",
-        "MATERIAL_PURCHASE",
-        "MISC_EXPENSES",
-        "PARTIAL_PAYMENT",
-
-        // === NEW PAYMENT TYPES ADDED BELOW ===
-        // REFACTOR: Integrated new expense-based disbursement types
-        // Purpose: Enable selection in NewPaymentOut form
-        // Improves: UX consistency and data integrity
-        // Context: All map to OPERATING_EXPENSE or OTHER_EXPENSE in GL
-        "ADVERTISING_EXPENSES",
-        "VEHICLE_FUEL",
-        "ALLOWANCES_BONUSES",
-        "TRANSPORTATION",
-        "MAINTENANCE_REPAIR",
-        "VEHICLE_OIL_CHANGE",
-        "CLEANING_SUPPLIES",
-        "BUFFET_HOSPITALITY",
-        "HOSPITALITY_PR",
-        "GOV_LICENSE_FEES",
-        "PHOTOCOPIER_SUPPLIES",
-        "BANK_FEES",
-        "FINANCING_EXPENSES",
-        "LOAN_INTEREST",
-        "COMMUNICATIONS_INTERNET",
-        "OFFICE_SUPPLIES",
-    ],
+var query = from ate in _context.AcctgTransEntries
+join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
+// REFACTOR: Added left join with AcctgTransTypes to include transaction type description
+// Improves: Provides human-readable transaction type name alongside AcctgTransTypeId
+// Context: AcctgTransTypeId is a foreign key; description enhances reporting clarity
+join att in _context.AcctgTransTypes on act.AcctgTransTypeId equals att.AcctgTransTypeId into transTypes
+from att in transTypes.DefaultIfEmpty()
+join p in _context.Parties on ate.PartyId equals p.PartyId into parties
+from p in parties.DefaultIfEmpty()
+join prod in _context.Products on ate.ProductId equals prod.ProductId into products
+from prod in products.DefaultIfEmpty()
+where ate.OrganizationPartyId == request.OrganizationPartyId
+&& ate.GlAccountId == request.GlAccountId
+&& act.IsPosted == "Y"
+&& act.GlFiscalTypeId == "ACTUAL"
+select new TransactionEntryDto
+{
+    AcctgTransId = ate.AcctgTransId,
+        AcctgTransEntrySeqId = ate.AcctgTransEntrySeqId,
+        TransactionDate = (DateTime)act.TransactionDate,
+    // REFACTOR: Use actual description from AcctgTransTypes if available, fallback to ID or "Unknown"
+    // Improves: Eliminates need for separate lookup; ensures consistent naming
+    AcctgTransTypeId = act.AcctgTransTypeId ?? "Unknown",
+    AcctgTransTypeDescription = att != null ? att.Description : (act.AcctgTransTypeId ?? "Unknown"),
+    GlFiscalTypeId = act.GlFiscalTypeId,
+    InvoiceId = act.InvoiceId,
+    PaymentId = act.PaymentId,
+    WorkEffortId = act.WorkEffortId,
+    ShipmentId = act.ShipmentId,
+    PartyId = ate.PartyId,
+    PartyName = p != null ? p.Description : null,
+    ProductId = ate.ProductId,
+    ProductName = prod != null ? prod.ProductName : null,
+    IsPosted = act.IsPosted,
+    PostedDate = act.PostedDate,
+    DebitCreditFlag = ate.DebitCreditFlag,
+    Amount = (decimal)ate.Amount,
+    Description = ate.Description,
+    CurrencyUomId = ate.CurrencyUomId
 };

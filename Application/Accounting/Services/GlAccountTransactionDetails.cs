@@ -52,6 +52,8 @@ public class GetGlAccountTransactionDetails
                 // 3. Build query for transactions
                 var query = from ate in _context.AcctgTransEntries
                     join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
+                    join att in _context.AcctgTransTypes on act.AcctgTransTypeId equals att.AcctgTransTypeId into transTypes
+                    from att in transTypes.DefaultIfEmpty()
                     join p in _context.Parties on ate.PartyId equals p.PartyId into parties
                     from p in parties.DefaultIfEmpty()
                     join prod in _context.Products on ate.ProductId equals prod.ProductId into products
@@ -66,6 +68,7 @@ public class GetGlAccountTransactionDetails
                         AcctgTransEntrySeqId = ate.AcctgTransEntrySeqId,
                         TransactionDate = (DateTime)act.TransactionDate,
                         AcctgTransTypeId = act.AcctgTransTypeId ?? "Unknown",
+                        AcctgTransTypeDescription = att != null ? att.Description : (act.AcctgTransTypeId ?? "Unknown"),
                         GlFiscalTypeId = act.GlFiscalTypeId,
                         InvoiceId = act.InvoiceId,
                         PaymentId = act.PaymentId,
@@ -164,7 +167,7 @@ public class GetGlAccountTransactionDetails
                     EndingBalance = endingBalance,
                     GlAccountId = request.GlAccountId,
                     AccountCode = glAccount.AccountCode,
-                    AccountName = glAccount.AccountName,
+                    AccountName = glAccount.AccountNameArabic,
                     Transactions = transactions
                 });
             }

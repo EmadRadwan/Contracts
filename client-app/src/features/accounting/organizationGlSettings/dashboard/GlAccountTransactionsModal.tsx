@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {
     Grid as KendoGrid,
     GridColumn as Column,
@@ -13,6 +13,7 @@ import {formatCurrency, handleDatesArray} from '../../../../app/util/utils';
 import { useTranslationHelper } from '../../../../app/hooks/useTranslationHelper';
 import LoadingComponent from '../../../../app/layout/LoadingComponent';
 import {useFetchGlAccountTransactionDetailsQuery} from "../../../../app/store/apis/accounting/accountingReportsApi";
+import {GlAccountTransactionsExcel} from "../report/GlAccountTransactionsExcel";
 
 interface Props {
     onClose: () => void;
@@ -63,6 +64,27 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
         { totalDebit: 0, totalCredit: 0 }
     ) ?? { totalDebit: 0, totalCredit: 0 };
 
+    const excelRows = useMemo(() => {
+        if (!data?.transactions) return [];
+        return data.transactions.map(t => ({
+            acctgTransId: t.acctgTransId ?? '',
+            acctgTransEntrySeqId: t.acctgTransEntrySeqId ?? '',
+            transactionDate: t.transactionDate ?? '',
+            acctgTransTypeId: t.acctgTransTypeId ?? '',
+            glFiscalTypeId: t.glFiscalTypeId ?? '',
+            invoiceId: t.invoiceId,
+            paymentId: t.paymentId,
+            workEffortId: t.workEffortId,
+            partyName: t.partyName,
+            productName: t.productName,
+            isPosted: t.isPosted ?? false,
+            postedDate: t.postedDate,
+            debitCreditFlag: t.debitCreditFlag ?? 'C',
+            amount: t.amount ?? 0,
+            description: t.description,
+        }));
+    }, [data?.transactions]);
+
     // Row Coloring
     const rowRender = (trElement: React.ReactElement<HTMLTableRowElement>, props: GridRowProps) => {
         const isDebit = props.dataItem.debitCreditFlag === 'D';
@@ -99,9 +121,6 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                 <Typography variant="body1">
                                     {getTranslatedLabel(`${localizationKey}.accountName`, 'Description: ')} {data.accountName}
                                 </Typography>
-                               {/* <Typography variant="body1">
-                                    {getTranslatedLabel(`${localizationKey}.glAccountClassId`, 'GL Account Class ID: ')} {data.glAccountClassId}
-                                </Typography>*/}
                                 <Typography variant="body1">
                                     {getTranslatedLabel(`${localizationKey}.openingBalance`, 'Opening Balance: ')} {formatCurrency(data.openingBalance)}
                                 </Typography>
@@ -142,6 +161,20 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                     <Typography variant="h6">
                                         {getTranslatedLabel(`${localizationKey}.transactions`, 'Transactions')}
                                     </Typography>
+
+                                    <GlAccountTransactionsExcel
+                                        accountCode={data?.accountCode ?? ''}
+                                        accountName={data?.accountName ?? ''}
+                                        openingBalance={data?.openingBalance ?? 0}
+                                        postedDebits={data?.postedDebits ?? 0}
+                                        postedCredits={data?.postedCredits ?? 0}
+                                        endingBalance={data?.endingBalance ?? 0}
+                                        rows={excelRows}
+                                        totalDebit={totalDebit}
+                                        totalCredit={totalCredit}
+                                        getTranslatedLabel={getTranslatedLabel}
+                                        isFetching={isFetching}
+                                    />
                                 </GridToolbar>
                                 <Column
                                     field="acctgTransId"
@@ -152,24 +185,35 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                 <Column
                                     field="acctgTransEntrySeqId"
                                     title={getTranslatedLabel(`${localizationKey}.transEntrySeqId`, 'Entry ID')}
-                                    width={150}
+                                    width={100}
                                 />
                                 <Column
                                     field="transactionDate"
                                     title={getTranslatedLabel(`${localizationKey}.transDate`, 'Transaction Date')}
                                     width={150}
-                                    format="{0:dd/MM/yyyy HH:mm:ss}"
+                                    format="{0:dd/MM/yyyy}"
                                 />
                                 <Column
-                                    field="acctgTransTypeId"
+                                    field="acctgTransTypeDescription"
                                     title={getTranslatedLabel(`${localizationKey}.transType`, 'Acctg Trans Type')}
-                                    width={130}
+                                    width={150}
                                 />
                                 <Column
+                                    field="debitCreditFlag"
+                                    title={getTranslatedLabel(`${localizationKey}.debitCredit`, 'Debit/Credit')}
+                                    width={100}
+                                />
+                                <Column
+                                    field="amount"
+                                    title={getTranslatedLabel(`${localizationKey}.amount`, 'Amount')}
+                                    width={120}
+                                    format="{0:c2}"
+                                />
+                                {/*<Column
                                     field="glFiscalTypeId"
                                     title={getTranslatedLabel(`${localizationKey}.fiscalType`, 'Fiscal GL Type')}
                                     width={100}
-                                />
+                                />*/}
                                 <Column
                                     field="invoiceId"
                                     title={getTranslatedLabel(`${localizationKey}.invoiceId`, 'Invoice ID')}
@@ -204,19 +248,9 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                     field="postedDate"
                                     title={getTranslatedLabel(`${localizationKey}.postedDate`, 'Posted Date')}
                                     width={150}
-                                    format="{0:dd/MM/yyyy HH:mm:ss}"
+                                    format="{0:dd/MM/yyyy}"
                                 />
-                                <Column
-                                    field="debitCreditFlag"
-                                    title={getTranslatedLabel(`${localizationKey}.debitCredit`, 'Debit/Credit')}
-                                    width={100}
-                                />
-                                <Column
-                                    field="amount"
-                                    title={getTranslatedLabel(`${localizationKey}.amount`, 'Amount')}
-                                    width={120}
-                                    format="{0:c2}"
-                                />
+                               
                                 <Column
                                     field="description"
                                     title={getTranslatedLabel(`${localizationKey}.description`, 'Description')}
@@ -224,11 +258,11 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                 />
                             </KendoGrid>
                         </Grid>
-                        <Grid item xs={12} sx={{ mt: 2, textAlign: 'right' }}>
+                        {/*<Grid item xs={12} sx={{ mt: 2, textAlign: 'right' }}>
                             <Button variant="contained" onClick={onClose}>
                                 {getTranslatedLabel('general.close', 'Close')}
                             </Button>
-                        </Grid>
+                        </Grid>*/}
                     </Grid>
                 )}
             </Box>

@@ -18,13 +18,14 @@ import {
   GridToolbar,
   GRID_COL_INDEX_ATTRIBUTE,
 } from "@progress/kendo-react-grid";
-import { useState } from "react";
+import {useMemo, useState} from "react";
 import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
 import { formatCurrency } from "../../../../app/util/utils";
 import ModalContainer from "../../../../app/common/modals/ModalContainer";
 import GlAccountTransactionsModal from "./GlAccountTransactionsModal";
+import {TrialBalanceExcel} from "../report/TrialBalanceExcel";
 
 const TrialBalance = () => {
   const { getTranslatedLabel } = useTranslationHelper();
@@ -64,6 +65,17 @@ const TrialBalance = () => {
       }
     );
 
+  const excelRows = useMemo(() => {
+    if (!data?.accountBalances) return [];
+    return data.accountBalances.map(ab => ({
+      accountCode: ab.accountCode ?? '',
+      accountName: ab.accountName ?? '',
+      openingBalance: ab.openingBalance ?? 0,
+      postedDebits: ab.postedDebits ?? 0,
+      postedCredits: ab.postedCredits ?? 0,
+      endingBalance: ab.endingBalance ?? 0,
+    }));
+  }, [data?.accountBalances]);
 
   const AccountCodeCell = (props: any) => {
     const navigationAttributes = useTableKeyboardNavigation(props.id);
@@ -140,6 +152,17 @@ const TrialBalance = () => {
                     <Typography variant="body1">
                       {getTranslatedLabel(`${localizationKey}.credits`, "Credits total: ")} {formatCurrency(data.postedCreditsTotal)}
                     </Typography>
+
+                    <TrialBalanceExcel
+                        companyName={selectedAccountingCompanyName ?? ''}
+                        rows={excelRows}
+                        totals={{
+                          postedDebitsTotal: data.postedDebitsTotal ?? 0,
+                          postedCreditsTotal: data.postedCreditsTotal ?? 0,
+                        }}
+                        getTranslatedLabel={getTranslatedLabel}
+                        isFetching={isFetching}
+                    />
                   </GridToolbar>
                   <Column field="accountCode" title={getTranslatedLabel(`${localizationKey}.accountCode`, "Account Code")} cell={AccountCodeCell} />
                   <Column field="accountName" title={getTranslatedLabel(`${localizationKey}.accountName`, "Account Name")} />

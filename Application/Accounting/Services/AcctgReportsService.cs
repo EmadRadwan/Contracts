@@ -176,7 +176,7 @@ public class AcctgReportsService : IAcctgReportsService
                         {
                             GlAccountId = organizationGlAccount.GlAccountId,
                             AccountCode = organizationGlAccount.GlAccount.AccountCode,
-                            AccountName = organizationGlAccount.GlAccount.AccountName,
+                            AccountName = organizationGlAccount.GlAccount.AccountNameArabic,
                             OpeningBalance = accountBalance.OpeningBalance,
                             PostedDebits = accountBalance.PostedDebits,
                             PostedCredits = accountBalance.PostedCredits,

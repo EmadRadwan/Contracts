@@ -56,11 +56,11 @@ export default function EditMultiAcctgTrans() {
         headerDescription: selectedAcctgTrans?.description || "",
     });
     
-    useEffect(() => {
+/*    useEffect(() => {
         if (!companyId) {
             router.navigate("/orgGl");
         }
-    }, [companyId]);
+    }, [companyId]);*/
 
     useEffect(() => {
         if (selectedAcctgTrans && transEntriesData) {
