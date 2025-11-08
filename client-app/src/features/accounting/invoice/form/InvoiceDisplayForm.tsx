@@ -1,5 +1,10 @@
 import React, {useCallback, useEffect, useMemo, useState} from "react";
-import {useAppDispatch, useAppSelector, useChangeInvoiceStatusMutation,} from "../../../../app/store/configureStore";
+import {
+    useAppDispatch,
+    useAppSelector,
+    useChangeInvoiceStatusMutation,
+    useFetchInvoiceAcctTransEntriesQuery,
+} from "../../../../app/store/configureStore";
 import Grid from "@mui/material/Grid";
 import {Paper, Typography} from "@mui/material";
 import {Menu, MenuItem, MenuSelectEvent} from "@progress/kendo-react-layout";
@@ -60,6 +65,20 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
         };
     }, [dispatch, selectedInvoice, setInvoice]);
 
+    const {
+        refetch: refetchInvoiceEntries,
+    } = useFetchInvoiceAcctTransEntriesQuery(
+        { invoiceId: effectiveInvoiceId, acctgTransTypeId: invoiceType || "SALES_INVOICE" },
+        { skip: !effectiveInvoiceId || !invoiceType }
+    );
+
+    const {
+        refetch: refetchPaymentAppEntries,
+    } = useFetchInvoiceAcctTransEntriesQuery(
+        { invoiceId: effectiveInvoiceId, acctgTransTypeId: "PAYMENT_APPL" },
+        { skip: !effectiveInvoiceId }
+    );
+    
     const permissions = useMemo(() => {
         const hasInvoiceId = !!invoiceSource?.invoiceId;
         const status = invoiceSource?.statusId;
@@ -140,6 +159,8 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                         `Status successfully changed to ${result.statusDescription}`
                     )
                 );
+                refetchInvoiceEntries();
+                refetchPaymentAppEntries();
             } catch (e) {
                 toast.error(getTranslatedLabel(`${localizationKey}.error`, "Something went wrong"));
                 console.error(e);

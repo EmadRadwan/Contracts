@@ -1,4 +1,8 @@
-// ... (previous imports remain unchanged)
+// REFACTOR: Added all new disbursement payment types to outgoing filter
+// Purpose: Include newly created payment types (from JSON records) in the UI filter
+// Improves: Completeness — users can now select all valid outgoing payment types
+// Context: These IDs were added via new PaymentType + PaymentTypeGlAccount records
+//         All have PARENT_TYPE_ID = "DISBURSEMENT" and are expense-related
 
 const PAYMENT_TYPE_FILTERS = {
     incoming: [
@@ -6,7 +10,6 @@ const PAYMENT_TYPE_FILTERS = {
         "CUSTOMER_DEPOSIT",
         "INTEREST_RECEIPT",
         "GC_DEPOSIT",
-        // New incoming types that exist in the system
         "RECEIPT_ADVANCE_PAYMENT",
         "RECEIPT_CHECK_REPLACEMENT",
         "RECEIPT_DUE_INSTALLMENT",
@@ -26,16 +29,13 @@ const PAYMENT_TYPE_FILTERS = {
         "CUSTOMER_REFUND",
         "GC_WITHDRAWAL",
         "COMMISSION_PAYMENT",
-        // New outgoing types that exist in the system
+
+        // Existing disbursement types
         "ADVANCE_TO_VENDOR_CONTRACTOR",
         "CONTRACTOR_INSTALLMENT",
         "PERMANENT_CUSTODY",
         "TEMP_ADVANCE",
         "VENDOR_INVOICE_PAYMENT",
-        // REFACTOR: Added newly introduced disbursement types from the provided list
-        // Purpose: Expand the outgoing filter to include all valid disbursement-based payment types
-        // Improves: Completeness — ensures users can select any active system payment type
-        // Context: These IDs were confirmed to have PARENT_TYPE_ID = "DISBURSEMENT"
         "CHECK_REPLACEMENT",
         "DEBTORS_ADVANCE",
         "DUE_INSTALLMENT",
@@ -46,7 +46,27 @@ const PAYMENT_TYPE_FILTERS = {
         "MATERIAL_PURCHASE",
         "MISC_EXPENSES",
         "PARTIAL_PAYMENT",
+
+        // === NEW PAYMENT TYPES ADDED BELOW ===
+        // REFACTOR: Integrated new expense-based disbursement types
+        // Purpose: Enable selection in NewPaymentOut form
+        // Improves: UX consistency and data integrity
+        // Context: All map to OPERATING_EXPENSE or OTHER_EXPENSE in GL
+        "ADVERTISING_EXPENSES",
+        "VEHICLE_FUEL",
+        "ALLOWANCES_BONUSES",
+        "TRANSPORTATION",
+        "MAINTENANCE_REPAIR",
+        "VEHICLE_OIL_CHANGE",
+        "CLEANING_SUPPLIES",
+        "BUFFET_HOSPITALITY",
+        "HOSPITALITY_PR",
+        "GOV_LICENSE_FEES",
+        "PHOTOCOPIER_SUPPLIES",
+        "BANK_FEES",
+        "FINANCING_EXPENSES",
+        "LOAN_INTEREST",
+        "COMMUNICATIONS_INTERNET",
+        "OFFICE_SUPPLIES",
     ],
 };
-
-// ... (rest of the component remains unchanged)

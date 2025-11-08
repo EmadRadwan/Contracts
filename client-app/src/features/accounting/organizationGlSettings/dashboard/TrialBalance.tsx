@@ -122,6 +122,7 @@ const TrialBalance = () => {
                     page.take + page.skip
                   )}
                   sortable={true}
+                  resizable={true}
                   sort={sort}
                   onSortChange={(e: GridSortChangeEvent) => {
                     setSort(e.sort);

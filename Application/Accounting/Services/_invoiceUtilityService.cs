@@ -195,7 +195,6 @@ public class InvoiceUtilityService : IInvoiceUtilityService
                 try
                 {
                     await _invoiceService.Value.CheckInvoicePaymentApplications(invoiceId);
-                    //await _paymentHelperService.Value.CapturePaymentsByInvoice(invoiceId);
                 }
                 catch (Exception ex)
                 {
@@ -218,7 +217,7 @@ public class InvoiceUtilityService : IInvoiceUtilityService
             }
 
             // ECA: Create matching payment application for INVOICE_APPROVED
-            if (statusId == "INVOICE_APPROVED" && oldStatusId != "INVOICE_APPROVED")
+            /*if (statusId == "INVOICE_APPROVED" && oldStatusId != "INVOICE_APPROVED")
             {
                 try
                 {
@@ -229,6 +228,7 @@ public class InvoiceUtilityService : IInvoiceUtilityService
                     _logger.LogError(ex, $"Failed to create matching payment application for invoice {invoiceId}");
                 }
             }
+            */
 
 
             /// ECA: Create matching payment application for INVOICE_READY from INVOICE_IN_PROCESS

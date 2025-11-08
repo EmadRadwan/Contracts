@@ -50,11 +50,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
         { invoiceId, acctgTransTypeId: "PAYMENT_APPL" },
         { skip: !invoiceId }
     );
-
-   /* const { data: diagramData, refetch } = useGetGlAccountDiagramQuery(
-        selectedAcctgTransId,
-        { skip: !selectedAcctgTransId }
-    );*/
+    
 
     useEffect(() => {
         if (acctTransEntryDataInvoice) {

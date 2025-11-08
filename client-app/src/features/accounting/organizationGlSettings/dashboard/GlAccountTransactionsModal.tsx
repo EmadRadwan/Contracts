@@ -99,9 +99,9 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                 <Typography variant="body1">
                                     {getTranslatedLabel(`${localizationKey}.accountName`, 'Description: ')} {data.accountName}
                                 </Typography>
-                                <Typography variant="body1">
+                               {/* <Typography variant="body1">
                                     {getTranslatedLabel(`${localizationKey}.glAccountClassId`, 'GL Account Class ID: ')} {data.glAccountClassId}
-                                </Typography>
+                                </Typography>*/}
                                 <Typography variant="body1">
                                     {getTranslatedLabel(`${localizationKey}.openingBalance`, 'Opening Balance: ')} {formatCurrency(data.openingBalance)}
                                 </Typography>
