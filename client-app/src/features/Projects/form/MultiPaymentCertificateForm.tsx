@@ -3,22 +3,16 @@ import {Field, Form, FormElement, FormRenderProps} from "@progress/kendo-react-f
 import {Box, Button, Collapse, Grid, IconButton, Menu, MenuItem, Paper, Typography} from "@mui/material";
 import {Ribbon, RibbonContainer} from "react-ribbons";
 import useMultiPaymentCertificate from "../hook/useMultiPaymentCertificate";
-import {v4 as uuidv4} from "uuid";
 import {FormInitialValues, MultiPaymentCertificate} from "../../../app/models/project/MultiPaymentCertificate";
-import {useAppSelector, useFetchPaymentMethodsQuery} from "../../../app/store/configureStore";
+import {useAppSelector} from "../../../app/store/configureStore";
 import MultiPaymentItemsList from "../dashboard/MultiPaymentItemsList";
 import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
 import AccountingMenu from "../../accounting/invoice/menu/AccountingMenu";
 import FormDatePicker from "../../../app/common/form/FormDatePicker";
-import LoadingComponent from "../../../app/layout/LoadingComponent";
 import {requiredValidator} from "../../../app/common/form/Validators";
-import {MemoizedFormDropDownList} from "../../../app/common/form/MemoizedFormDropDownList";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import FormInput from "../../../app/common/form/FormInput";
-import {useFetchAdvancePaymentGlAccountsQuery} from "../../../app/store/apis/accounting/globalGlSettingsApi";
-import {FormComboBoxVirtualPartyWithEmployees} from "../../../app/common/form/FormComboBoxVirtualPartyWithEmployee";
-import {FormComboBoxVirtualSupplierMultiColumn} from "../../../app/common/form/FormComboBoxVirtualSupplierMultiColumn";
 import {
     FormComboBoxVirtualPartyEmployeeAdvancedPayment
 } from "../../../app/common/form/FormComboBoxVirtualPartyEmployeeAdvancedPayment";

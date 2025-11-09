@@ -180,6 +180,7 @@ namespace Application.Projects
                             PartyId = partyId,
                             //InvoiceId = invoiceId, // REFACTOR: Add InvoiceId to debit entry
                             // This associates the debit entry with the created invoice
+                            OrganizationPartyId = request.CompanyId,
                             Amount = item.TotalAmount ?? 0,
                             CurrencyUomId = "EGP",
                             OrigAmount = item.TotalAmount ?? 0,

@@ -21,14 +21,20 @@ const accountingReportsApi = createApi({
 
     endpoints(builder) {
         return {
-            fetchTrialBalanceReport: builder.query<any,
-                { customTimePeriodId: string; organizationPartyId: string }>({
-                query: ({customTimePeriodId, organizationPartyId}) => {
+            fetchTrialBalanceReport: builder.query<
+                any,
+                { customTimePeriodId: string; organizationPartyId: string }
+                >({
+                query: ({ customTimePeriodId, organizationPartyId }) => {
                     return {
                         url: `/trialBalance/${organizationPartyId}/${customTimePeriodId}/getTrialBalanceReport`,
                         method: "GET",
                     };
                 },
+                // REFACTOR: Disable caching for this query to ensure fresh data on every call
+                // Why: Prevents stale data and forces network request each time
+                // Context: Use when report must reflect real-time backend state
+                keepUnusedDataFor: 0,
             }),
             fetchTransactionTotalsReport: builder.query<any,
                 {
