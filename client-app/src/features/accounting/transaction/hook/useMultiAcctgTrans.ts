@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { useAppDispatch } from "../../../../app/store/configureStore";
-import { useCreateMultiAcctgTransWithEntriesMutation } from "../../../../app/store/apis";
+import {useCreateMultiAcctgTransWithEntriesMutation, usePostAcctgTransMutation} from "../../../../app/store/apis";
 
 // REFACTOR: Update interface to match backend Command structure
 export interface CreateMultiAcctgTransWithEntriesParams {
@@ -33,6 +33,8 @@ export interface CreateMultiAcctgTransResponse {
 const useMultiAcctgTrans = () => {
     const dispatch = useAppDispatch();
     const [createMultiAcctgTransWithEntries] = useCreateMultiAcctgTransWithEntriesMutation();
+    const [postAcctgTransTrigger] = usePostAcctgTransMutation(); // REFACTOR: Post mutation
+
     const [isLoading, setIsLoading] = useState(false);
 
     // REFACTOR: Ensure transactionId is returned from API call
@@ -50,7 +52,32 @@ const useMultiAcctgTrans = () => {
         }
     }
 
-    return { isLoading, saveMultiAcctgTransWithEntries };
+    async function postTransaction(acctgTransId: string): Promise<string[] | void> {
+        if (!acctgTransId) {
+            toast.error("No transaction ID provided for posting");
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const messages = await postAcctgTransTrigger({
+                acctgTransId,
+                verifyOnly: false,
+            }).unwrap();
+
+            return messages;
+        } catch (error: any) {
+            console.error(error);
+            toast.error("Failed to post Accounting Transaction");
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+
+    return { isLoading, saveMultiAcctgTransWithEntries, postTransaction };
 };
+
 
 export default useMultiAcctgTrans;

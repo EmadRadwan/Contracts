@@ -947,8 +947,8 @@
         },
         "trans": {
           "multi": {
-            "title": "إنشاء معاملة محاسبية لـ",
-            "editTitle": "تعديل معاملة محاسبية لـ",
+            "title": "إنشاء معاملة محاسبية",
+            "editTitle": " معاملة محاسبية",
             "transactionDate": "تاريخ المعاملة *",
             "headerDescription": "ملاحظات",
             "debitGlAccount": "حساب المدين",

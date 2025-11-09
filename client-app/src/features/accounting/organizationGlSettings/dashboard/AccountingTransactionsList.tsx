@@ -62,14 +62,7 @@ export default function AccountingTransactionsList() {
   const companyName = useSelector(
     (state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName
   );
-
   
-
- /* useEffect(() => {
-    if (!companyName) {
-      router.navigate("/orgGl");
-    }
-  }, [companyName]);*/
 
   const { getTranslatedLabel } = useTranslationHelper();
   const location = useLocation();

@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { Grid, Paper, Typography, Button, Skeleton, TextField } from "@mui/material";
-import { Form, FormElement, Field } from "@progress/kendo-react-form";
+import React, {useState, useCallback, useMemo, useEffect} from "react";
+import {Grid, Paper, Typography, Button, Skeleton, TextField, Chip} from "@mui/material";
+import {Form, FormElement, Field} from "@progress/kendo-react-form";
 import {
     Grid as KendoGrid,
     GridColumn as Column,
@@ -9,18 +9,17 @@ import {
     GridRowProps,
     GridCellProps,
 } from "@progress/kendo-react-grid";
-import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
-import { RootState, useAppSelector } from "../../../../app/store/configureStore";
-import { useFetchGlAccountOrganizationHierarchyLovQuery } from "../../../../app/store/apis";
-import { requiredValidator } from "../../../../app/common/form/Validators";
+import {orderBy, SortDescriptor, State} from "@progress/kendo-data-query";
+import {RootState, useAppSelector} from "../../../../app/store/configureStore";
+import {useFetchGlAccountOrganizationHierarchyLovQuery} from "../../../../app/store/apis";
+import {requiredValidator} from "../../../../app/common/form/Validators";
 import FormNumericTextBox from "../../../../app/common/form/FormNumericTextBox";
 import FormDatePicker from "../../../../app/common/form/FormDatePicker";
-import { FormDropDownTreeGlAccount2 } from "../../../../app/common/form/FormDropDownTreeGlAccount2";
+import {FormDropDownTreeGlAccount2} from "../../../../app/common/form/FormDropDownTreeGlAccount2";
 import FormInput from "../../../../app/common/form/FormInput";
-import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
-import { toast } from "react-toastify";
+import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
+import {toast} from "react-toastify";
 import useMultiAcctgTrans from "../hook/useMultiAcctgTrans";
-import { router } from "../../../../app/router/Routes";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 
@@ -41,19 +40,23 @@ interface FormValues {
 }
 
 export default function MultiAcctgTransEntryForm() {
-    const { getTranslatedLabel } = useTranslationHelper();
+    const {getTranslatedLabel} = useTranslationHelper();
     const localizationKey = "accounting.orgGL.accounting.trans.multi";
-    const { user } = useAppSelector((state) => state.account);
+    const {user} = useAppSelector((state) => state.account);
     const companyId = user?.organizationPartyId || "";
     const companyName = useAppSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
-    const { data: glAccounts, isLoading: isLoadingGlAccounts } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
+    const {
+        data: glAccounts,
+        isLoading: isLoadingGlAccounts
+    } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
         skip: !companyId,
     });
     const [transEntries, setTransEntries] = useState<TransEntry[]>([]);
     const [formResetCounter, setFormResetCounter] = useState(0);
-    const [sort, setSort] = useState<SortDescriptor[]>([{ field: "id", dir: "asc" }]);
-    const [page, setPage] = useState<State>({ skip: 0, take: 10 });
-    const { isLoading, saveMultiAcctgTransWithEntries } = useMultiAcctgTrans();
+    const [sort, setSort] = useState<SortDescriptor[]>([{field: "id", dir: "asc"}]);
+    const [page, setPage] = useState<State>({skip: 0, take: 10});
+    const {isLoading, saveMultiAcctgTransWithEntries, postTransaction} = useMultiAcctgTrans();
+    const [justPosted, setJustPosted] = useState(false);
 
     // REFACTOR: Manage header-level fields outside the form to persist across resets
     const [headerValues, setHeaderValues] = useState({
@@ -61,11 +64,13 @@ export default function MultiAcctgTransEntryForm() {
         headerDescription: "",
     });
 
+
+
     // REFACTOR: Add state for transactionId to display after save
     const [transactionId, setTransactionId] = useState<string | null>(null);
     const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
     let formRenderProps: any;
-    
+
 
     // REFACTOR: Define initialFormValues for entry-level fields only
     const initialFormValues: FormValues = useMemo(
@@ -82,7 +87,7 @@ export default function MultiAcctgTransEntryForm() {
     const handleAddOrUpdateEntry = useCallback(
         async (data: any) => {
             if (!data.isValid) return;
-            const { debitGlAccountId, creditGlAccountId, amount, description } = data.values;
+            const {debitGlAccountId, creditGlAccountId, amount, description} = data.values;
             if (selectedEntryId) {
                 // Update existing entry
                 setTransEntries((prev) =>
@@ -103,10 +108,22 @@ export default function MultiAcctgTransEntryForm() {
                 // Add new entries
                 const newEntries: TransEntry[] = [
                     ...(debitGlAccountId
-                        ? [{ id: `D-${Date.now()}`, debitGlAccountId, amount, description, debitCreditFlag: "D" as const }]
+                        ? [{
+                            id: `D-${Date.now()}`,
+                            debitGlAccountId,
+                            amount,
+                            description,
+                            debitCreditFlag: "D" as const
+                        }]
                         : []),
                     ...(creditGlAccountId
-                        ? [{ id: `C-${Date.now() + 1}`, creditGlAccountId, amount, description, debitCreditFlag: "C" as const }]
+                        ? [{
+                            id: `C-${Date.now() + 1}`,
+                            creditGlAccountId,
+                            amount,
+                            description,
+                            debitCreditFlag: "C" as const
+                        }]
                         : []),
                 ];
                 setTransEntries((prev) => [...prev, ...newEntries]);
@@ -115,6 +132,10 @@ export default function MultiAcctgTransEntryForm() {
         },
         [selectedEntryId]
     );
+
+    useEffect(() => {
+        setJustPosted(false);
+    }, [transactionId]);
 
     // REFACTOR: Handle editing an entry by populating the form with its data
     // Purpose: Allow users to click a GL Account cell to edit the corresponding entry
@@ -127,10 +148,10 @@ export default function MultiAcctgTransEntryForm() {
                 // Update form values with selected entry data
                 const form = document.getElementById("multiAcctgTransEntryForm") as HTMLFormElement;
                 if (form && formRenderProps) {
-                    formRenderProps.onChange("debitGlAccountId", { value: entry.debitGlAccountId });
-                    formRenderProps.onChange("creditGlAccountId", { value: entry.creditGlAccountId });
-                    formRenderProps.onChange("amount", { value: entry.amount });
-                    formRenderProps.onChange("description", { value: entry.description });
+                    formRenderProps.onChange("debitGlAccountId", {value: entry.debitGlAccountId});
+                    formRenderProps.onChange("creditGlAccountId", {value: entry.creditGlAccountId});
+                    formRenderProps.onChange("amount", {value: entry.amount});
+                    formRenderProps.onChange("description", {value: entry.description});
                 }
             }
         },
@@ -182,8 +203,9 @@ export default function MultiAcctgTransEntryForm() {
     const handleNewTransaction = useCallback(() => {
         setTransEntries([]);
         setFormResetCounter((prev) => prev + 1);
-        setHeaderValues({ transactionDate: new Date(), headerDescription: "" });
+        setHeaderValues({transactionDate: new Date(), headerDescription: ""});
         setTransactionId(null);
+        setJustPosted(false);
     }, []);
 
     // REFACTOR: Handle page change for grid pagination
@@ -200,19 +222,19 @@ export default function MultiAcctgTransEntryForm() {
     const rowRender = useCallback(
         (trElement: React.ReactElement<HTMLTableRowElement>, props: GridRowProps) => {
             const isDebit = props.dataItem.debitCreditFlag === "D";
-            const style = { backgroundColor: isDebit ? "rgba(55, 180, 0, 0.32)" : "#ffffff" };
-            return React.cloneElement(trElement, { style }, trElement.props.children);
+            const style = {backgroundColor: isDebit ? "rgba(55, 180, 0, 0.32)" : "#ffffff"};
+            return React.cloneElement(trElement, {style}, trElement.props.children);
         },
         []
     );
 
     // REFACTOR: Custom cell for GL Account ID
     const GlAccountCell = useCallback(
-        ({ dataItem }: GridCellProps) => {
+        ({dataItem}: GridCellProps) => {
             const glAccountId = dataItem.debitGlAccountId || dataItem.creditGlAccountId;
             const glAccount = glAccounts?.find((acc) => acc.glAccountId === glAccountId);
             return (
-                <td style={{ cursor: "pointer", color: "#1976d2" }} onClick={() => handleEditEntry(dataItem.id)}>
+                <td style={{cursor: "pointer", color: "#1976d2"}} onClick={() => handleEditEntry(dataItem.id)}>
                     {glAccount?.text || glAccountId || "-"}
                 </td>
             );
@@ -221,9 +243,10 @@ export default function MultiAcctgTransEntryForm() {
     );
     // REFACTOR: Custom cell for remove action
     const RemoveCell = useCallback(
-        ({ dataItem }: GridCellProps) => (
+        ({dataItem}: GridCellProps) => (
             <td>
-                <Button variant="text" color="error" onClick={() => handleRemoveEntry(dataItem.id)} disabled={isLoading}>
+                <Button variant="text" color="error" onClick={() => handleRemoveEntry(dataItem.id)}
+                        disabled={isLoading}>
                     {getTranslatedLabel("general.remove", "Remove")}
                 </Button>
             </td>
@@ -241,47 +264,74 @@ export default function MultiAcctgTransEntryForm() {
         [transEntries]
     );
 
+    const handlePostTransaction = useCallback(async () => {
+        if (!transactionId) return;
 
+        try {
+            const messages = await postTransaction(transactionId);
 
+            // Success: empty array
+            if (Array.isArray(messages) && messages.length === 0) {
+                toast.success("Accounting Transaction Posted Successfully");
+                setJustPosted(true);
+            }
+            // Warnings / Errors
+            else if (Array.isArray(messages)) {
+                messages.forEach((msg: string) => {
+                    if (msg.includes("Error Journal")) toast.warn(msg);
+                    else toast.error(msg);
+                });
+            }
+        } catch {
+            // error already toasted inside hook
+        }
+    }, [transactionId, postTransaction]);
+    
     return (
         <>
-            <AccountingMenu selectedMenuItem={"orgGl"} />
-            <Paper elevation={5} sx={{ p: 2, borderRadius: 2 }}>
-                <Typography variant="h5" sx={{ mb: 2 }}>
-                    {getTranslatedLabel(`${localizationKey}.title`, "Create Accounting Transaction for")} {companyName}
+            <AccountingMenu selectedMenuItem={"orgGl"}/>
+            <Paper elevation={5} sx={{p: 2, borderRadius: 2}}>
+                <Typography variant="h5" sx={{mb: 2}}>
+                    {getTranslatedLabel(`${localizationKey}.title`, "Create Accounting Transaction")}
+                    {transactionId && (
+                        <span style={{marginLeft: 8, color: "#1976d2", fontWeight: 600}}>
+                            #{transactionId}
+                        </span>
+                    )}
+                    {justPosted && (
+                        <Chip
+                            label={getTranslatedLabel("general.posted", "Posted")}
+                            color="success"
+                            size="small"
+                            sx={{ ml: 2 }}
+                        />
+                    )}
                 </Typography>
                 {/* REFACTOR: Move header-level fields outside the Form to prevent resetting, add transactionId */}
-                    <Grid container spacing={2} sx={{ mb: 2 }}>
-                        <Grid item xs={3}>
-                            <FormDatePicker
-                                id="transactionDate"
-                                label={getTranslatedLabel(`${localizationKey}.transactionDate`, "Transaction Date *")}
-                                value={headerValues.transactionDate}
-                                onChange={(e) => setHeaderValues((prev) => ({ ...prev, transactionDate: e.value || new Date() }))}
-                                validator={requiredValidator}
-                            />
-                        </Grid>
-                        <Grid item xs={3}>
-                            <FormInput
-                                id="headerDescription"
-                                label={getTranslatedLabel(`${localizationKey}.headerDescription`, "Header Description")}
-                                value={headerValues.headerDescription}
-                                onChange={(e) => setHeaderValues((prev) => ({ ...prev, headerDescription: e.value }))}
-                                autoComplete="off"
-                            />
-                        </Grid>
-                        {/* REFACTOR: Add read-only field for transactionId */}
-                        {transactionId && (
-                            <Grid item xs={3}>
-                                <TextField
-                                    fullWidth
-                                    label={getTranslatedLabel(`${localizationKey}.transactionId`, "Transaction ID")}
-                                    value={transactionId}
-                                    disabled
-                                />
-                            </Grid>
-                        )}
+                <Grid container spacing={2} sx={{mb: 2}}>
+                    <Grid item xs={3}>
+                        <FormDatePicker
+                            id="transactionDate"
+                            label={getTranslatedLabel(`${localizationKey}.transactionDate`, "Transaction Date *")}
+                            value={headerValues.transactionDate}
+                            onChange={(e) => setHeaderValues((prev) => ({
+                                ...prev,
+                                transactionDate: e.value || new Date()
+                            }))}
+                            validator={requiredValidator}
+                        />
                     </Grid>
+                    <Grid item xs={3}>
+                        <FormInput
+                            id="headerDescription"
+                            label={getTranslatedLabel(`${localizationKey}.headerDescription`, "Header Description")}
+                            value={headerValues.headerDescription}
+                            onChange={(e) => setHeaderValues((prev) => ({...prev, headerDescription: e.value}))}
+                            autoComplete="off"
+                        />
+                    </Grid>
+
+                </Grid>
                 <Form
                     initialValues={initialFormValues}
                     key={formResetCounter}
@@ -296,7 +346,8 @@ export default function MultiAcctgTransEntryForm() {
                                         <Grid container spacing={2} alignItems="flex-end">
                                             <Grid item xs={3}>
                                                 {isLoadingGlAccounts ? (
-                                                    <Skeleton variant="rounded" height={40} sx={{ width: "100%", borderRadius: "4px" }} />
+                                                    <Skeleton variant="rounded" height={40}
+                                                              sx={{width: "100%", borderRadius: "4px"}}/>
                                                 ) : (
                                                     <Field
                                                         id="debitGlAccountId"
@@ -313,7 +364,8 @@ export default function MultiAcctgTransEntryForm() {
                                             </Grid>
                                             <Grid item xs={3}>
                                                 {isLoadingGlAccounts ? (
-                                                    <Skeleton variant="rounded" height={40} sx={{ width: "100%", borderRadius: "4px" }} />
+                                                    <Skeleton variant="rounded" height={40}
+                                                              sx={{width: "100%", borderRadius: "4px"}}/>
                                                 ) : (
                                                     <Field
                                                         id="creditGlAccountId"
@@ -391,9 +443,23 @@ export default function MultiAcctgTransEntryForm() {
                                                     {getTranslatedLabel("general.newTransaction", "New Transaction")}
                                                 </Button>
                                             </Grid>
+
+                                            {transactionId && (
+                                                <Grid item xs={3} container justifyContent="flex-end">
+                                                    <Button
+                                                        variant="contained"
+                                                        color="info"
+                                                        onClick={handlePostTransaction}
+                                                        disabled={isLoading || justPosted}
+                                                    >
+                                                        {getTranslatedLabel("general.postTransaction", "Post Transaction")}
+                                                    </Button>
+                                                </Grid>
+                                            )}
+                                            
                                             <Grid item xs={12}>
                                                 <KendoGrid
-                                                    style={{ height: "40vh" }}
+                                                    style={{height: "40vh"}}
                                                     data={orderBy(transEntries, sort).slice(page.skip, page.take + page.skip)}
                                                     sortable
                                                     sort={sort}
@@ -421,7 +487,11 @@ export default function MultiAcctgTransEntryForm() {
                                                     <Column width={320}
                                                             title={""}
                                                             footerCell={() => (
-                                                                <td style={{ textAlign: "left", fontWeight: "bold", color: "#1565C0" }}>
+                                                                <td style={{
+                                                                    textAlign: "left",
+                                                                    fontWeight: "bold",
+                                                                    color: "#1565C0"
+                                                                }}>
                                                                     {getTranslatedLabel(`${localizationKey}.totalDebit`, "Total Debit")}:{" "}
                                                                     {totalDebit.toFixed(2)} |{" "}
                                                                     {getTranslatedLabel(`${localizationKey}.totalCredit`, "Total Credit")}:{" "}
@@ -439,8 +509,8 @@ export default function MultiAcctgTransEntryForm() {
                                                         title={getTranslatedLabel(`${localizationKey}.debitCredit`, "Debit/Credit")}
                                                         width={130}
                                                     />
-                                                    <Column title={""} width={100} cell={RemoveCell} />
-                                                    
+                                                    <Column title={""} width={100} cell={RemoveCell}/>
+
                                                 </KendoGrid>
                                             </Grid>
                                         </Grid>

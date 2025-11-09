@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { Grid, Paper, Typography, Button, Skeleton } from "@mui/material";
+import {Grid, Paper, Typography, Button, Skeleton, Chip} from "@mui/material";
 import { Form, FormElement, Field } from "@progress/kendo-react-form";
 import { Grid as KendoGrid, GridColumn as Column, GridSortChangeEvent, GridPageChangeEvent, GridRowProps, GridCellProps, GridToolbar } from "@progress/kendo-react-grid";
 import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
@@ -17,6 +17,7 @@ import { router } from "../../../../app/router/Routes";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import { AcctgTransEntry } from "../../../../app/models/accounting/acctgTransEntry";
 import { useLocation } from "react-router-dom";
+import useMultiAcctgTrans from "../hook/useMultiAcctgTrans";
 
 interface TransEntry {
     id: string;
@@ -48,19 +49,20 @@ export default function EditMultiAcctgTrans() {
     const [formResetCounter, setFormResetCounter] = useState(0);
     const [sort, setSort] = useState<SortDescriptor[]>([{ field: "id", dir: "asc" }]);
     const [page, setPage] = useState<State>({ skip: 0, take: 10 });
-    const { isLoading, handleUpdateMultiAcctgTransWithEntries } = useEditMultiAcctgTrans();
+    const { isLoading: isUpdating, handleUpdateMultiAcctgTransWithEntries } = useEditMultiAcctgTrans();
+    const { isLoading: isPosting, postTransaction } = useMultiAcctgTrans();
+    const [justPosted, setJustPosted] = useState(false);
+    
     const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
 
     const [headerValues, setHeaderValues] = useState({
         transactionDate: selectedAcctgTrans?.transactionDate ? new Date(selectedAcctgTrans.transactionDate) : new Date(),
         headerDescription: selectedAcctgTrans?.description || "",
     });
-    
-/*    useEffect(() => {
-        if (!companyId) {
-            router.navigate("/orgGl");
-        }
-    }, [companyId]);*/
+
+    useEffect(() => {
+        setJustPosted(false);
+    }, [selectedAcctgTrans?.acctgTransId]);
 
     useEffect(() => {
         if (selectedAcctgTrans && transEntriesData) {
@@ -232,22 +234,7 @@ export default function EditMultiAcctgTrans() {
         [transEntriesData, handleEditEntry]
     );
 
-    const UpdateCell = useCallback(
-        ({ dataItem }: GridCellProps) => (
-            <td>
-                <Button
-                    variant="text"
-                    color="primary"
-                    onClick={() => handleEditEntry(dataItem.id)}
-                    disabled={isLoading || selectedAcctgTrans?.isPosted === "Y"}
-                >
-                    {getTranslatedLabel("general.update", "Update")}
-                </Button>
-            </td>
-        ),
-        [handleEditEntry, getTranslatedLabel, isLoading, selectedAcctgTrans]
-    );
-
+    
     const RemoveCell = useCallback(
         ({ dataItem }: GridCellProps) => (
             <td>
@@ -255,13 +242,19 @@ export default function EditMultiAcctgTrans() {
                     variant="text"
                     color="error"
                     onClick={() => handleRemoveEntry(dataItem.id)}
-                    disabled={isLoading || selectedAcctgTrans?.isPosted === "Y"}
+                    disabled={isUpdating || isPosting || selectedAcctgTrans?.isPosted === "Y"}
                 >
                     {getTranslatedLabel("general.remove", "Remove")}
                 </Button>
             </td>
         ),
-        [handleRemoveEntry, getTranslatedLabel, isLoading, selectedAcctgTrans]
+        [
+            handleRemoveEntry,
+            getTranslatedLabel,
+            isUpdating,
+            isPosting,
+            selectedAcctgTrans,
+        ]
     );
 
     const totalDebit = useMemo(
@@ -275,13 +268,58 @@ export default function EditMultiAcctgTrans() {
 
     let formRenderProps: any; // Store form render props for updating form values
 
+    const handlePostTransaction = useCallback(async () => {
+        if (!selectedAcctgTrans?.acctgTransId) {
+            toast.error("No transaction ID available");
+            return;
+        }
 
+        try {
+            const messages = await postTransaction(selectedAcctgTrans.acctgTransId);
+
+            // Success: empty array
+            if (Array.isArray(messages) && messages.length === 0) {
+                toast.success("Accounting Transaction Posted Successfully");
+                setJustPosted(true); // <-- Hide button + show chip
+            }
+            // Warnings / Errors
+            else if (Array.isArray(messages)) {
+                messages.forEach((message: string) => {
+                    if (message.includes("Error Journal")) {
+                        toast.warn(message);
+                    } else {
+                        toast.error(message);
+                    }
+                });
+            }
+        } catch (err) {
+            // Already handled in hook
+        }
+    }, [selectedAcctgTrans?.acctgTransId, postTransaction]);
+
+    const isLoading = isUpdating || isPosting;
+
+    console.log('selectedAcctgTrans:', selectedAcctgTrans);
     return (
         <>
             <AccountingMenu selectedMenuItem={"orgGl"} />
             <Paper elevation={5} sx={{ p: 2, borderRadius: 2 }}>
                 <Typography variant="h5" sx={{ mb: 2 }}>
-                    {getTranslatedLabel(`${localizationKey}.editTitle`, "Edit Accounting Transaction for")} {companyName}
+                    {getTranslatedLabel(`${localizationKey}.editTitle`, "Edit Accounting Transaction")}
+                    {selectedAcctgTrans?.acctgTransId && (
+                        <span style={{ marginLeft: 8, color: "#1976d2", fontWeight: 600 }}>
+              #{selectedAcctgTrans.acctgTransId}
+            </span>
+                    )}
+                    {/* REFACTOR: Show posted status */}
+                    {(selectedAcctgTrans?.isPosted === "Y" || justPosted) && (
+                        <Chip
+                            label={getTranslatedLabel("general.posted", "Posted")}
+                            color="success"
+                            size="small"
+                            sx={{ ml: 2 }}
+                        />
+                    )}
                 </Typography>
                 <Grid container spacing={2} sx={{ mb: 2 }}>
                     <Grid item xs={3}>
@@ -304,6 +342,21 @@ export default function EditMultiAcctgTrans() {
                             disabled={selectedAcctgTrans?.isPosted === "Y"}
                         />
                     </Grid>
+
+                    {selectedAcctgTrans?.acctgTransId &&
+                        selectedAcctgTrans?.isPosted !== "Y" &&
+                        !justPosted && (
+                            <Grid item xs={3} container justifyContent="flex-end">
+                                <Button
+                                    variant="contained"
+                                    color="info"
+                                    onClick={handlePostTransaction}
+                                    disabled={isLoading}
+                                >
+                                    {getTranslatedLabel("general.postTransaction", "Post Transaction")}
+                                </Button>
+                            </Grid>
+                        )}
                 </Grid>
                 <Form
                     initialValues={initialFormValues}
@@ -459,7 +512,14 @@ export default function EditMultiAcctgTrans() {
                                         </Grid>
                                     </Grid>
                                 </Grid>
-                                {isLoadingEntries && <Skeleton variant="rectangular" width="100%" height="60vh" sx={{ borderRadius: 2 }} />}
+                                {(isLoadingEntries || isLoading) && (
+                                    <Skeleton
+                                        variant="rectangular"
+                                        width="100%"
+                                        height="60vh"
+                                        sx={{ borderRadius: 2, mt: 2 }}
+                                    />
+                                )}
                             </FormElement>
                         );
                     }}

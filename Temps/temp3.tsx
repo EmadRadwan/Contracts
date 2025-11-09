@@ -1,40 +1,501 @@
-var query = from ate in _context.AcctgTransEntries
-join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
-// REFACTOR: Added left join with AcctgTransTypes to include transaction type description
-// Improves: Provides human-readable transaction type name alongside AcctgTransTypeId
-// Context: AcctgTransTypeId is a foreign key; description enhances reporting clarity
-join att in _context.AcctgTransTypes on act.AcctgTransTypeId equals att.AcctgTransTypeId into transTypes
-from att in transTypes.DefaultIfEmpty()
-join p in _context.Parties on ate.PartyId equals p.PartyId into parties
-from p in parties.DefaultIfEmpty()
-join prod in _context.Products on ate.ProductId equals prod.ProductId into products
-from prod in products.DefaultIfEmpty()
-where ate.OrganizationPartyId == request.OrganizationPartyId
-&& ate.GlAccountId == request.GlAccountId
-&& act.IsPosted == "Y"
-&& act.GlFiscalTypeId == "ACTUAL"
-select new TransactionEntryDto
-{
-    AcctgTransId = ate.AcctgTransId,
-        AcctgTransEntrySeqId = ate.AcctgTransEntrySeqId,
-        TransactionDate = (DateTime)act.TransactionDate,
-    // REFACTOR: Use actual description from AcctgTransTypes if available, fallback to ID or "Unknown"
-    // Improves: Eliminates need for separate lookup; ensures consistent naming
-    AcctgTransTypeId = act.AcctgTransTypeId ?? "Unknown",
-    AcctgTransTypeDescription = att != null ? att.Description : (act.AcctgTransTypeId ?? "Unknown"),
-    GlFiscalTypeId = act.GlFiscalTypeId,
-    InvoiceId = act.InvoiceId,
-    PaymentId = act.PaymentId,
-    WorkEffortId = act.WorkEffortId,
-    ShipmentId = act.ShipmentId,
-    PartyId = ate.PartyId,
-    PartyName = p != null ? p.Description : null,
-    ProductId = ate.ProductId,
-    ProductName = prod != null ? prod.ProductName : null,
-    IsPosted = act.IsPosted,
-    PostedDate = act.PostedDate,
-    DebitCreditFlag = ate.DebitCreditFlag,
-    Amount = (decimal)ate.Amount,
-    Description = ate.Description,
-    CurrencyUomId = ate.CurrencyUomId
-};
+import React, { useState, useCallback, useMemo, useEffect } from "react";
+import { Grid, Paper, Typography, Button, Skeleton, Chip } from "@mui/material";
+import { Form, FormElement, Field } from "@progress/kendo-react-form";
+import {
+    Grid as KendoGrid,
+    GridColumn as Column,
+    GridSortChangeEvent,
+    GridPageChangeEvent,
+    GridRowProps,
+    GridCellProps,
+} from "@progress/kendo-react-grid";
+import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
+import { RootState, useAppSelector } from "../../../../app/store/configureStore";
+import { useFetchGlAccountOrganizationHierarchyLovQuery } from "../../../../app/store/apis";
+import { requiredValidator } from "../../../../app/common/form/Validators";
+import FormNumericTextBox from "../../../../app/common/form/FormNumericTextBox";
+import FormDatePicker from "../../../../app/common/form/FormDatePicker";
+import { FormDropDownTreeGlAccount2 } from "../../../../app/common/form/FormDropDownTreeGlAccount2";
+import FormInput from "../../../../app/common/form/FormInput";
+import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
+import { toast } from "react-toastify";
+import useMultiAcctgTrans from "../hook/useMultiAcctgTrans";
+import AccountingMenu from "../../invoice/menu/AccountingMenu";
+import LoadingComponent from "../../../../app/layout/LoadingComponent";
+
+interface TransEntry {
+    id: string;
+    debitGlAccountId?: string;
+    creditGlAccountId?: string;
+    amount: number;
+    description?: string;
+    debitCreditFlag: "D" | "C";
+}
+
+interface FormValues {
+    debitGlAccountId?: string;
+    creditGlAccountId?: string;
+    amount: number | null;
+    description?: string;
+}
+
+export default function MultiAcctgTransEntryForm() {
+    const { getTranslatedLabel } = useTranslationHelper();
+    const localizationKey = "accounting.orgGL.accounting.trans.multi";
+    const { user } = useAppSelector((state) => state.account);
+    const companyId = user?.organizationPartyId || "";
+    const companyName = useAppSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
+    const { data: glAccounts, isLoading: isLoadingGlAccounts } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
+        skip: !companyId,
+    });
+
+    const [transEntries, setTransEntries] = useState<TransEntry[]>([]);
+    const [formResetCounter, setFormResetCounter] = useState(0);
+    const [sort, setSort] = useState<SortDescriptor[]>([{ field: "id", dir: "asc" }]);
+    const [page, setPage] = useState<State>({ skip: 0, take: 10 });
+    const { isLoading, saveMultiAcctgTransWithEntries, postTransaction } = useMultiAcctgTrans();
+
+    // REFACTOR: Manage header-level fields outside the form to persist across resets
+    const [headerValues, setHeaderValues] = useState({
+        transactionDate: new Date(),
+        headerDescription: "",
+    });
+
+    // REFACTOR: Add state for transactionId to display after save
+    const [transactionId, setTransactionId] = useState<string | null>(null);
+
+    // REFACTOR: Track if we just posted the transaction in this session
+    // Purpose: Hide Post button instantly after successful post (API returns [])
+    // Improvement: Immediate UI feedback without page reload
+    const [justPosted, setJustPosted] = useState(false);
+
+    const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
+
+    let formRenderProps: any;
+
+    // REFACTOR: Reset justPosted when a new transaction is created
+    useEffect(() => {
+        setJustPosted(false);
+    }, [transactionId]);
+
+    // REFACTOR: Define initialFormValues for entry-level fields only
+    const initialFormValues: FormValues = useMemo(
+        () => ({
+            debitGlAccountId: undefined,
+            creditGlAccountId: undefined,
+            amount: null,
+            description: "",
+        }),
+        []
+    );
+
+    // REFACTOR: Handle adding entries, resetting only entry-level fields
+    const handleAddOrUpdateEntry = useCallback(
+        async (data: any) => {
+            if (!data.isValid) return;
+            const { debitGlAccountId, creditGlAccountId, amount, description } = data.values;
+
+            if (selectedEntryId) {
+                // Update existing entry
+                setTransEntries((prev) =>
+                    prev.map((entry) =>
+                        entry.id === selectedEntryId
+                            ? {
+                                ...entry,
+                                debitGlAccountId: debitGlAccountId || entry.debitGlAccountId,
+                                creditGlAccountId: creditGlAccountId || entry.creditGlAccountId,
+                                amount: amount || entry.amount,
+                                description: description || entry.description,
+                            }
+                            : entry
+                    )
+                );
+                setSelectedEntryId(null); // Clear edit mode
+            } else {
+                // Add new entries
+                const newEntries: TransEntry[] = [
+                    ...(debitGlAccountId
+                        ? [{ id: `D-${Date.now()}`, debitGlAccountId, amount, description, debitCreditFlag: "D" as const }]
+                        : []),
+                    ...(creditGlAccountId
+                        ? [{ id: `C-${Date.now() + 1}`, creditGlAccountId, amount, description, debitCreditFlag: "C" as const }]
+                        : []),
+                ];
+                setTransEntries((prev) => [...prev, ...newEntries]);
+            }
+            setFormResetCounter((prev) => prev + 1); // Reset entry-level fields
+        },
+        [selectedEntryId]
+    );
+
+    // REFACTOR: Handle editing an entry by populating the form with its data
+    const handleEditEntry = useCallback(
+        (entryId: string) => {
+            const entry = transEntries.find((e) => e.id === entryId);
+            if (entry) {
+                setSelectedEntryId(entryId);
+                const form = document.getElementById("multiAcctgTransEntryForm") as HTMLFormElement;
+                if (form && formRenderProps) {
+                    formRenderProps.onChange("debitGlAccountId", { value: entry.debitGlAccountId });
+                    formRenderProps.onChange("creditGlAccountId", { value: entry.creditGlAccountId });
+                    formRenderProps.onChange("amount", { value: entry.amount });
+                    formRenderProps.onChange("description", { value: entry.description });
+                }
+            }
+        },
+        [transEntries]
+    );
+
+    // REFACTOR: Handle removing entries from the local grid
+    const handleRemoveEntry = useCallback((entryId: string) => {
+        setTransEntries((prev) => prev.filter((entry) => entry.id !== entryId));
+    }, []);
+
+    // REFACTOR: Handle saving transaction, using headerValues and storing transactionId
+    const handleSaveTransaction = useCallback(async () => {
+        if (transEntries.length === 0) {
+            toast.error(getTranslatedLabel("general.error", "No entries to save"));
+            return;
+        }
+        try {
+            const result = await saveMultiAcctgTransWithEntries({
+                CreateMultiAcctgTransParams: {
+                    AcctgTransTypeId: "_NA_",
+                    TransactionDate: headerValues.transactionDate,
+                    OrganizationPartyId: companyId,
+                    HeaderDescription: headerValues.headerDescription,
+                    Description: transEntries[0]?.description || "",
+                    IsPosted: "N",
+                    GlFiscalTypeId: "ACTUAL",
+                },
+                Entries: transEntries.map((entry) => ({
+                    debitGlAccountId: entry.debitGlAccountId,
+                    creditGlAccountId: entry.creditGlAccountCreditId,
+                    amount: entry.amount,
+                    description: entry.description,
+                    debitCreditFlag: entry.debitCreditFlag,
+                })),
+            });
+            setTransactionId(result.acctgTransId);
+            toast.success(getTranslatedLabel("general.success", "Transaction saved successfully"));
+        } catch (error) {
+            toast.error(getTranslatedLabel("general.error", "Failed to save transaction"));
+        }
+    }, [transEntries, companyId, saveMultiAcctgTransWithEntries, getTranslatedLabel, headerValues]);
+
+    // REFACTOR: Add handler for New Transaction button to clear all data
+    const handleNewTransaction = useCallback(() => {
+        setTransEntries([]);
+        setFormResetCounter((prev) => prev + 1);
+        setHeaderValues({ transactionDate: new Date(), headerDescription: "" });
+        setTransactionId(null);
+        setJustPosted(false); // Reset posting state
+    }, []);
+
+    // REFACTOR: Handle page change for grid pagination
+    const pageChange = useCallback((event: GridPageChangeEvent) => {
+        setPage(event.page);
+    }, []);
+
+    // REFACTOR: Handle sort change for grid
+    const handleSortChange = useCallback((event: GridSortChangeEvent) => {
+        setSort(event.sort);
+    }, []);
+
+    // REFACTOR: Render row with conditional styling
+    const rowRender = useCallback(
+        (trElement: React.ReactElement<HTMLTableRowElement>, props: GridRowProps) => {
+            const isDebit = props.dataItem.debitCreditFlag === "D";
+            const style = { backgroundColor: isDebit ? "rgba(55, 180, 0, 0.32)" : "#ffffff" };
+            return React.cloneElement(trElement, { style }, trElement.props.children);
+        },
+        []
+    );
+
+    // REFACTOR: Custom cell for GL Account ID
+    const GlAccountCell = useCallback(
+        ({ dataItem }: GridCellProps) => {
+            const glAccountId = dataItem.debitGlAccountId || dataItem.creditGlAccountId;
+            const glAccount = glAccounts?.find((acc) => acc.glAccountId === glAccountId);
+            return (
+                <td style={{ cursor: "pointer", color: "#1976d2" }} onClick={() => handleEditEntry(dataItem.id)}>
+                    {glAccount?.text || glAccountId || "-"}
+                </td>
+            );
+        },
+        [glAccounts, handleEditEntry]
+    );
+
+    // REFACTOR: Custom cell for remove action
+    const RemoveCell = useCallback(
+        ({ dataItem }: GridCellProps) => (
+            <td>
+                <Button variant="text" color="error" onClick={() => handleRemoveEntry(dataItem.id)} disabled={isLoading}>
+                    {getTranslatedLabel("general.remove", "Remove")}
+                </Button>
+            </td>
+        ),
+        [handleRemoveEntry, getTranslatedLabel, isLoading]
+    );
+
+    // REFACTOR: Calculate totals for footer
+    const totalDebit = useMemo(
+        () => transEntries.filter((e) => e.debitCreditFlag === "D").reduce((sum, e) => sum + (e.amount || 0), 0),
+        [transEntries]
+    );
+    const totalCredit = useMemo(
+        () => transEntries.filter((e) => e.debitCreditFlag === "C").reduce((sum, e) => sum + (e.amount || 0), 0),
+        [transEntries]
+    );
+
+    // REFACTOR: Use messages returned from postTransaction to decide success
+    const handlePostTransaction = useCallback(async () => {
+        if (!transactionId) return;
+
+        try {
+            const messages = await postTransaction(transactionId);
+
+            // Success: empty array
+            if (Array.isArray(messages) && messages.length === 0) {
+                toast.success("Accounting Transaction Posted Successfully");
+                setJustPosted(true);
+            }
+            // Warnings / Errors
+            else if (Array.isArray(messages)) {
+                messages.forEach((msg: string) => {
+                    if (msg.includes("Error Journal")) toast.warn(msg);
+                    else toast.error(msg);
+                });
+            }
+        } catch {
+            // error already toasted inside hook
+        }
+    }, [transactionId, postTransaction]);
+
+    return (
+        <>
+            <AccountingMenu selectedMenuItem={"orgGl"} />
+            <Paper elevation={5} sx={{ p: 2, borderRadius: 2 }}>
+                <Typography variant="h5" sx={{ mb: 2 }}>
+                    {getTranslatedLabel(`${localizationKey}.title`, "Create Accounting Transaction")}
+                    {transactionId && (
+                        <span style={{ marginLeft: 8, color: "#1976d2", fontWeight: 600 }}>
+              #{transactionId}
+            </span>
+                    )}
+                    {/* REFACTOR: Show Posted chip as soon as posting succeeds */}
+                    {justPosted && (
+                        <Chip
+                            label={getTranslatedLabel("general.posted", "Posted")}
+                            color="success"
+                            size="small"
+                            sx={{ ml: 2 }}
+                        />
+                    )}
+                </Typography>
+
+                {/* Header Fields */}
+                <Grid container spacing={2} sx={{ mb: 2 }}>
+                    <Grid item xs={3}>
+                        <FormDatePicker
+                            id="transactionDate"
+                            label={getTranslatedLabel(`${localizationKey}.transactionDate`, "Transaction Date *")}
+                            value={headerValues.transactionDate}
+                            onChange={(e) => setHeaderValues((prev) => ({ ...prev, transactionDate: e.value || new Date() }))}
+                            validator={requiredValidator}
+                        />
+                    </Grid>
+                    <Grid item xs={3}>
+                        <FormInput
+                            id="headerDescription"
+                            label={getTranslatedLabel(`${localizationKey}.headerDescription`, "Header Description")}
+                            value={headerValues.headerDescription}
+                            onChange={(e) => setHeaderValues((prev) => ({ ...prev, headerDescription: e.value }))}
+                            autoComplete="off"
+                        />
+                    </Grid>
+                </Grid>
+
+                <Form
+                    initialValues={initialFormValues}
+                    key={formResetCounter}
+                    onSubmitClick={handleAddOrUpdateEntry}
+                    render={(props) => {
+                        formRenderProps = props;
+                        return (
+                            <FormElement id="multiAcctgTransEntryForm">
+                                <Grid container spacing={2} direction="column">
+                                    {/* Entry Input Row */}
+                                    <Grid item xs={12}>
+                                        <Grid container spacing={2} alignItems="flex-end">
+                                            <Grid item xs={3}>
+                                                {isLoadingGlAccounts ? (
+                                                    <Skeleton variant="rounded" height={40} sx={{ width: "100%", borderRadius: "4px" }} />
+                                                ) : (
+                                                    <Field
+                                                        id="debitGlAccountId"
+                                                        name="debitGlAccountId"
+                                                        label={getTranslatedLabel(`${localizationKey}.debitGlAccount`, "Debit GL Account")}
+                                                        data={glAccounts || []}
+                                                        component={FormDropDownTreeGlAccount2}
+                                                        dataItemKey="glAccountId"
+                                                        textField="text"
+                                                        selectField="selected"
+                                                        expandField="expanded"
+                                                    />
+                                                )}
+                                            </Grid>
+                                            <Grid item xs={3}>
+                                                {isLoadingGlAccounts ? (
+                                                    <Skeleton variant="rounded" height={40} sx={{ width: "100%", borderRadius: "4px" }} />
+                                                ) : (
+                                                    <Field
+                                                        id="creditGlAccountId"
+                                                        name="creditGlAccountId"
+                                                        label={getTranslatedLabel(`${localizationKey}.creditGlAccount`, "Credit GL Account")}
+                                                        data={glAccounts || []}
+                                                        component={FormDropDownTreeGlAccount2}
+                                                        dataItemKey="glAccountId"
+                                                        textCell="text"
+                                                        selectField="selected"
+                                                        expandField="expanded"
+                                                    />
+                                                )}
+                                            </Grid>
+                                            <Grid item xs={2}>
+                                                <Field
+                                                    id="amount"
+                                                    name="amount"
+                                                    label={getTranslatedLabel(`${localizationKey}.amount`, "Amount *")}
+                                                    format="n2"
+                                                    min={0}
+                                                    component={FormNumericTextBox}
+                                                    validator={requiredValidator}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={3}>
+                                                <Field
+                                                    id="description"
+                                                    name="description"
+                                                    label={getTranslatedLabel(`${localizationKey}.description`, "Description")}
+                                                    component={FormInput}
+                                                    autoComplete="off"
+                                                />
+                                            </Grid>
+                                            <Grid item xs={1}>
+                                                <Button
+                                                    variant="contained"
+                                                    color="success"
+                                                    type="submit"
+                                                    disabled={
+                                                        !formRenderProps.allowSubmit ||
+                                                        (!formRenderProps.valueGetter("debitGlAccountId") && !formRenderProps.valueGetter("creditGlAccountId")) ||
+                                                        isLoading
+                                                    }
+                                                >
+                                                    {selectedEntryId ? getTranslatedLabel("general.update", "Update Entry") : getTranslatedLabel("general.add", "Add Entry")}
+                                                </Button>
+                                            </Grid>
+                                        </Grid>
+                                    </Grid>
+
+                                    {/* Action Buttons + Grid */}
+                                    <Grid item xs={12}>
+                                        <Grid container spacing={2} alignItems="center">
+                                            <Grid item xs={2}>
+                                                <Button
+                                                    variant="contained"
+                                                    color="primary"
+                                                    onClick={handleSaveTransaction}
+                                                    disabled={transEntries.length === 0 || totalDebit !== totalCredit || isLoading}
+                                                >
+                                                    {getTranslatedLabel("general.save", "Save Transaction")}
+                                                </Button>
+                                            </Grid>
+                                            <Grid item xs={2}>
+                                                <Button variant="contained" color="secondary" onClick={handleNewTransaction} disabled={isLoading}>
+                                                    {getTranslatedLabel("general.newTransaction", "New Transaction")}
+                                                </Button>
+                                            </Grid>
+
+                                            {/* REFACTOR: Hide Post button when just posted */}
+                                            {transactionId && (
+                                                <Grid item xs={3} container justifyContent="flex-end">
+                                                    <Button
+                                                        variant="contained"
+                                                        color="info"
+                                                        onClick={handlePostTransaction}
+                                                        disabled={isLoading || justPosted}
+                                                    >
+                                                        {getTranslatedLabel("general.postTransaction", "Post Transaction")}
+                                                    </Button>
+                                                </Grid>
+                                            )}
+
+                                            <Grid item xs={12}>
+                                                <KendoGrid
+                                                    style={{ height: "40vh" }}
+                                                    data={orderBy(transEntries, sort).slice(page.skip, page.take + page.skip)}
+                                                    sortable
+                                                    sort={sort}
+                                                    onSortChange={handleSortChange}
+                                                    skip={page.skip}
+                                                    take={page.take}
+                                                    total={transEntries.length}
+                                                    pageable
+                                                    onPageChange={pageChange}
+                                                    rowRender={rowRender}
+                                                    resizable={true}
+                                                >
+                                                    <Column
+                                                        field="glAccountId"
+                                                        title={getTranslatedLabel(`${localizationKey}.glAccount`, "GL Account")}
+                                                        width={300}
+                                                        cell={GlAccountCell}
+                                                    />
+                                                    <Column
+                                                        field="amount"
+                                                        title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")}
+                                                        width={100}
+                                                        format="{0:n2}"
+                                                    />
+                                                    <Column
+                                                        width={320}
+                                                        title={""}
+                                                        footerCell={() => (
+                                                            <td style={{ textAlign: "left", fontWeight: "bold", color: "#1565C0" }}>
+                                                                {getTranslatedLabel(`${localizationKey}.totalDebit`, "Total Debit")}: {totalDebit.toFixed(2)} |{" "}
+                                                                {getTranslatedLabel(`${localizationKey}.totalCredit`, "Total Credit")}: {totalCredit.toFixed(2)}
+                                                            </td>
+                                                        )}
+                                                    />
+                                                    <Column
+                                                        field="description"
+                                                        title={getTranslatedLabel(`${localizationKey}.description`, "Description")}
+                                                        width={400}
+                                                    />
+                                                    <Column
+                                                        field="debitCreditFlag"
+                                                        title={getTranslatedLabel(`${localizationKey}.debitCredit`, "Debit/Credit")}
+                                                        width={130}
+                                                    />
+                                                    <Column title={""} width={100} cell={RemoveCell} />
+                                                </KendoGrid>
+                                            </Grid>
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
+
+                                {isLoading && (
+                                    <LoadingComponent
+                                        message={getTranslatedLabel("accounting.orgGL.accounting.summary.loading", "Loading Accounting Transactions...")}
+                                    />
+                                )}
+                            </FormElement>
+                        );
+                    }}
+                />
+            </Paper>
+        </>
+    );
+}

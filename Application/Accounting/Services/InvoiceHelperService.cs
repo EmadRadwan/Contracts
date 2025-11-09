@@ -1282,7 +1282,7 @@ public class InvoiceHelperService : IInvoiceHelperService
                         BillingAccountId = billingAccountId,
                         AmountApplied = notApplied
                     };
-                    await _paymentApplicationService.CreatePaymentApplication(paymentApplicationParam);
+                    //await _paymentApplicationService.CreatePaymentApplication(paymentApplicationParam);
                 }
             }
 
