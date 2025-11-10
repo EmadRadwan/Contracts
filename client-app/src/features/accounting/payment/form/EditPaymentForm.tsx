@@ -13,9 +13,13 @@ import {Payment} from "../../../../app/models/accounting/payment";
 import FormInput from "../../../../app/common/form/FormInput";
 import FormDatePicker from "../../../../app/common/form/FormDatePicker";
 import React, {useCallback, useEffect, useMemo, useState} from "react";
-import {RootState, useAppSelector} from "../../../../app/store/configureStore";
-import {useFetchGlAccountOrganizationHierarchyLovQuery} from "../../../../app/store/apis";
+import {RootState, useAppSelector, useFetchPaymentAcctTransEntriesQuery} from "../../../../app/store/configureStore";
+import {
+    useFetchGlAccountOrganizationHierarchyLovQuery,
+    useFetchPaymentApplicationsForPaymentQuery
+} from "../../../../app/store/apis";
 import {FormDropDownTreeGlAccount2} from "../../../../app/common/form/FormDropDownTreeGlAccount2";
+import {PaymentExcel} from "../report/PaymentExcel";
 
 interface EditPaymentFormProps {
     onValidityChange?: (valid: boolean) => void;
@@ -53,6 +57,53 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
     });
 
 
+    const {
+        data: paymentApplications = [],
+        isLoading: isAppsLoading,
+        isFetching: isAppsFetching,
+    } = useFetchPaymentApplicationsForPaymentQuery(payment?.paymentId ?? "", {
+        skip: !payment?.paymentId,
+    });
+
+    const {
+        data: acctTransEntryData = [],
+        isLoading: isTransLoading,
+        isFetching: isTransFetching,
+    } = useFetchPaymentAcctTransEntriesQuery(payment?.paymentId ?? "", {
+        skip: !payment?.paymentId,
+    });
+
+    const excelApplications = useMemo(
+        () =>
+            paymentApplications.map((app: any) => ({
+                invoiceId: app.invoiceId,
+                toPaymentId: app.toPaymentId,
+                billingAccountId: app.billingAccountId,
+                taxAuthGeoId: app.taxAuthGeoId,
+                amountApplied: app.amountApplied ?? 0,
+            })),
+        [paymentApplications]
+    );
+
+    const excelTransactions = useMemo(
+        () =>
+            acctTransEntryData.map((t: any) => ({
+                acctgTransId: t.acctgTransId,
+                acctgTransEntrySeqId: t.acctgTransEntrySeqId,
+                glAccountId: t.glAccountId,
+                glAccountName: t.glAccountTypeDescription || t.glAccountName || "",
+                debitCreditFlag: t.debitCreditFlag,
+                origAmount: t.origAmount ?? 0,
+                currency: t.origCurrencyUomId || "",
+                transactionDate: t.transactionDate,
+            })),
+        [acctTransEntryData]
+    );
+
+    const isExcelFetching = isAppsFetching || isTransFetching;
+
+    
+    
     const statusDesc = useMemo(() => ({
         'PMNT_NOT_PAID': 'Not Paid',
         'PMNT_RECEIVED': 'Received',
@@ -80,6 +131,33 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
             )?.description ?? payment.paymentTypeId
         );
     }, [filteredPaymentTypes, payment?.paymentTypeId]);
+
+    const paymentRow = useMemo(() => {
+        if (!payment) return null;
+
+        const isCash = payment.paymentMethodId === "CASH";
+        return {
+            paymentId: payment.paymentId ?? "",
+            paymentType: paymentTypeDesc,
+            fromParty: paymentType === 1 ? payment.partyIdFromName ?? "" : payment.partyIdToName ?? "",
+            toParty: paymentType === 1 ? payment.partyIdToName ?? "" : payment.partyIdFromName ?? "",
+            amount: payment.amount ?? 0,
+            currency: payment.currencyUomId ?? "",
+            effectiveDate: payment.effectiveDate ?? "",
+            status: statusDesc,
+            paymentMethod:
+                paymentMethods?.find((m) => m.paymentMethodId === payment.paymentMethodId)
+                    ?.description ?? "",
+            chequeNumber: isCash ? "" : payment.chequeNumber,
+            chequeDate: isCash ? undefined : payment.chequeDate,
+        };
+    }, [
+        payment,
+        paymentTypeDesc,
+        paymentType,
+        statusDesc,
+        paymentMethods,
+    ]);
 
     // Initialize form with payment values
     const initialValues = useMemo(() => {
@@ -376,6 +454,18 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                             )}
                                         </Button>
                                     </Grid>
+                                    {paymentRow && (
+                                        <Grid item xs={2}>
+                                            <PaymentExcel
+                                                companyName={companyName ?? "N/A"}
+                                                payment={paymentRow}
+                                                applications={excelApplications}
+                                                transactions={excelTransactions}
+                                                getTranslatedLabel={getTranslatedLabel}
+                                                isFetching={isExcelFetching}
+                                            />
+                                        </Grid>
+                                    )}
                                     <Grid item xs={1}>
                                         <Button
                                             sx={{ mt: 2 }}

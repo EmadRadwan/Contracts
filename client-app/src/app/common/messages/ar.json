@@ -919,6 +919,7 @@
           "trial": "ميزان المراجعة",
           "income": "قائمة الدخل",
           "balanceSheet": "الميزانية العمومية",
+          "initialBalance": "إنشاء قيد افتتاحى",
           "menu": {
             "summary": "الملخص",
             "txns": "القيود المحاسبية",
@@ -961,6 +962,17 @@
             "totalDebit": "إجمالي المدين",
             "totalCredit": "إجمالي الدائن"
           }
+        },
+        "initialBalance": {
+          "title": "إدخال الرصيد الافتتاحي",
+          "transactionDate": "تاريخ المعاملة *",
+          "headerDescription": "ملاحظات ",
+          "glAccount": "حساب دفتر الأستاذ *",
+          "amount": "المبلغ *",
+          "type": "النوع",
+          "debit": "مدين",
+          "credit": "دائن",
+          "description": "الوصف"
         }
       },
       "reports": {

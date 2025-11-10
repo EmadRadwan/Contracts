@@ -8,6 +8,10 @@ import {
     UpdateMultiAcctgTransResponse,
     UpdateMultiAcctgTransWithEntriesParams
 } from "../../../../features/accounting/transaction/hook/useEditMultiAcctgTrans";
+import {
+    CreateInitialBalanceTransParams,
+    CreateInitialBalanceTransResponse
+} from "../../../../features/accounting/transaction/hook/useInitialBalanceTrans";
 
 interface ListResponse<T> {
     data: T[];
@@ -217,6 +221,17 @@ const acctTransApi = createApi({
                 }),
                 invalidatesTags: ['ITransactions'], // REFACTOR: Invalidate ITransactions tag to refresh transaction list
             }),
+            createInitialBalanceTrans: builder.mutation<
+                CreateInitialBalanceTransResponse,
+                CreateInitialBalanceTransParams
+                >({
+                query: (params) => ({
+                    url: "/transactions/createInitialBalanceTrans",
+                    method: "POST",
+                    body: params,
+                }),
+                invalidatesTags: ["GlAccounts", "Transactions"],
+            }),
         };
     },
 });
@@ -231,6 +246,7 @@ export const {
     useFetchAcctTransEntriesQuery,
     useFetchGeneralAcctTransEntriesQuery,
     usePostAcctgTransMutation, 
-    useCreateMultiAcctgTransWithEntriesMutation, useUpdateMultiAcctgTransWithEntriesMutation
+    useCreateMultiAcctgTransWithEntriesMutation,
+    useUpdateMultiAcctgTransWithEntriesMutation, useCreateInitialBalanceTransMutation
 } = acctTransApi;
 export {acctTransApi};

@@ -89,6 +89,14 @@ const OrgAccountingSummary = () => {
             {getTranslatedLabel(`${localizationKey}.balanceSheet`, "Balance Sheet")}
           </Button>
         </Grid>
+        <Grid item xs={12} sx={{ paddingBottom: 1, marginInlineStart: 2 }}>
+          <Button
+              themeColor={"success"}
+              onClick={() => router.navigate("/glInitialBalance")}
+          >
+            {getTranslatedLabel(`${localizationKey}.initialBalance`, "Set Initial Balance")}
+          </Button>
+        </Grid>
       </Paper>
     </>
   );

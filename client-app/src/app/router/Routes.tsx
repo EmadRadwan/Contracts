@@ -126,6 +126,7 @@ import ProjectCertificatesList from "../../features/Projects/dashboard/ProjectCe
 import MultiAcctgTransEntryForm from "../../features/accounting/transaction/form/MultiAcctgTransEntryForm";
 import EditMultiAcctgTrans from "../../features/accounting/transaction/form/EditMultiAcctgTrans";
 import MultiPaymentCertificatesList from "../../features/Projects/dashboard/MultiPaymentCertificatesList";
+import InitialBalanceTransForm from "../../features/accounting/transaction/form/InitialBalanceTransForm";
 
 // Wrapper component to extract partyId from URL
 const PartyFinancialHistoryWrapper = () => {
@@ -306,6 +307,10 @@ export const routes: RouteObject[] = [
                         {path: "/financialAccounts/depositWithdraw", element: <FinancialAccountDepositWithdrawal />}
                     ]},
                     { path: "party/:partyId/financial-history", element: <PartyFinancialHistoryWrapper /> },
+                    {
+                        path: "glInitialBalance",
+                        element: <InitialBalanceTransForm />
+                    },
                 ],
             },
             {path: "not-found", element: <NotFound/>},

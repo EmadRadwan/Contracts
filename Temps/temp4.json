@@ -1,47 +1,17 @@
-[
-  {
-    "PAYMENT_TYPE_ID": "CONTRACTOR_INSTALLMENT",
-    "ORGANIZATION_PARTY_ID": "Company",
-    "GL_ACCOUNT_TYPE_ID": "ACCPAYABLE_UNAPPLIED",
-    "LAST_UPDATED_STAMP": "2025-10-29 12:00:00.000",
-    "LAST_UPDATED_TX_STAMP": "2025-10-29 12:00:00.000",
-    "CREATED_STAMP": "2025-10-29 12:00:00.000",
-    "CREATED_TX_STAMP": "2025-10-29 12:00:00.000"
-  },
-  {
-    "PAYMENT_TYPE_ID": "VENDOR_INVOICE_PAYMENT",
-    "ORGANIZATION_PARTY_ID": "Company",
-    "GL_ACCOUNT_TYPE_ID": "ACCPAYABLE_UNAPPLIED",
-    "LAST_UPDATED_STAMP": "2025-10-29 12:00:00.000",
-    "LAST_UPDATED_TX_STAMP": "2025-10-29 12:00:00.000",
-    "CREATED_STAMP": "2025-10-29 12:00:00.000",
-    "CREATED_TX_STAMP": "2025-10-29 12:00:00.000"
-  },
-  {
-    "PAYMENT_TYPE_ID": "PERMANENT_CUSTODY",
-    "ORGANIZATION_PARTY_ID": "Company",
-    "GL_ACCOUNT_TYPE_ID": "PREPAID_EXPENSES",
-    "LAST_UPDATED_STAMP": "2025-10-29 12:00:00.000",
-    "LAST_UPDATED_TX_STAMP": "2025-10-29 12:00:00.000",
-    "CREATED_STAMP": "2025-10-29 12:00:00.000",
-    "CREATED_TX_STAMP": "2025-10-29 12:00:00.000"
-  },
-  {
-    "PAYMENT_TYPE_ID": "ADVANCE_TO_VENDOR_CONTRACTOR",
-    "ORGANIZATION_PARTY_ID": "Company",
-    "GL_ACCOUNT_TYPE_ID": "PREPAID_EXPENSES",
-    "LAST_UPDATED_STAMP": "2025-10-29 12:00:00.000",
-    "LAST_UPDATED_TX_STAMP": "2025-10-29 12:00:00.000",
-    "CREATED_STAMP": "2025-10-29 12:00:00.000",
-    "CREATED_TX_STAMP": "2025-10-29 12:00:00.000"
-  },
-  {
-    "PAYMENT_TYPE_ID": "TEMP_ADVANCE",
-    "ORGANIZATION_PARTY_ID": "Company",
-    "GL_ACCOUNT_TYPE_ID": "PREPAID_EXPENSES",
-    "LAST_UPDATED_STAMP": "2025-10-29 12:00:00.000",
-    "LAST_UPDATED_TX_STAMP": "2025-10-29 12:00:00.000",
-    "CREATED_STAMP": "2025-10-29 12:00:00.000",
-    "CREATED_TX_STAMP": "2025-10-29 12:00:00.000"
-  }
-]
+"accounting": {
+"orgGL": {
+"accounting": {
+"initialBalance": {
+"title": "إدخال الرصيد الافتتاحي",
+"transactionDate": "تاريخ المعاملة *",
+"headerDescription": "ملاحظات الرأس",
+"glAccount": "حساب دفتر الأستاذ *",
+"amount": "المبلغ *",
+"type": "النوع",
+"debit": "مدين",
+"credit": "دائن",
+"description": "الوصف"
+}
+}
+}
+}
