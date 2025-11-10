@@ -168,12 +168,12 @@ public class AcctgReportsService : IAcctgReportsService
                 //    using our equivalent of the 'computeGlAccountBalanceForTimePeriod' service.
                 foreach (var organizationGlAccount in organizationGlAccounts)
                 {
-                    /*if (organizationGlAccount.GlAccountId != "124432")
+                    /*if (organizationGlAccount.GlAccountId != "111700")
                     {
                         Console.WriteLine($"Skipping GlAccountId: {organizationGlAccount.GlAccountId}");
                         continue;
                     }*/
-                    
+
                     var accountBalance = await ComputeGlAccountBalanceForTimePeriod(
                         organizationGlAccount.OrganizationPartyId,
                         customTimePeriod.CustomTimePeriodId,
@@ -181,7 +181,9 @@ public class AcctgReportsService : IAcctgReportsService
                     );
 
                     // Only accumulate if there are real posted debits or credits.
-                    if (accountBalance.PostedDebits != 0 || accountBalance.PostedCredits != 0)
+                    if (accountBalance.EndingBalance != 0 || 
+                        accountBalance.PostedDebits != 0 || 
+                        accountBalance.PostedCredits != 0)
                     {
                         var balance = new AccountBalance
                         {
@@ -288,99 +290,78 @@ public class AcctgReportsService : IAcctgReportsService
             // COMPUTE DEBITS AND CREDITS
             // --------------------------
 
-            // totalDebitsToOpeningDate: Sum of all debit entries for this GL account 
-            // that happened before the start (FromDate) of our CustomTimePeriod.
-            decimal totalDebitsToOpeningDate = (decimal)await (from ate in _context.AcctgTransEntries
-                join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
-                where ate.OrganizationPartyId == organizationPartyId
-                      && ate.GlAccountId == glAccountId
-                      && act.IsPosted == "Y" // Only posted (finalized) transactions
-                      && ate.DebitCreditFlag == "D" // Debits only
-                      && act.GlFiscalTypeId == "ACTUAL" // Real (not budget) transactions
-                      && act.TransactionDate < customTimePeriod.FromDate
-                select ate.Amount).SumAsync();
+            DateTime fromDate = customTimePeriod.FromDate ?? throw new InvalidOperationException("FromDate is null");
+            DateTime thruDate = customTimePeriod.ThruDate ?? throw new InvalidOperationException("ThruDate is null");
 
-            // totalDebitsToEndingDate: Sum of all debit entries for this GL account 
-            // that happened before the ThruDate of the CustomTimePeriod (i.e., up to the end).
-            decimal totalDebitsToEndingDate = (decimal)await (from ate in _context.AcctgTransEntries
+            var openingCutoff = fromDate.Date.AddTicks(-1); // e.g., 2025-09-30
+            var periodStart = fromDate.Date; // e.g., 2025-10-01
+            var periodEnd = thruDate.Date;
+
+            // REFACTOR: Include opening balance up to openingCutoff
+            // Purpose: Capture 2025-09-30 entry when period starts 2025-10-01
+            decimal totalDebitsToOpeningDate = await (
+                from ate in _context.AcctgTransEntries
                 join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
                 where ate.OrganizationPartyId == organizationPartyId
                       && ate.GlAccountId == glAccountId
                       && act.IsPosted == "Y"
                       && ate.DebitCreditFlag == "D"
                       && act.GlFiscalTypeId == "ACTUAL"
-                      && act.TransactionDate < customTimePeriod.ThruDate
-                select ate.Amount).SumAsync();
+                      && act.TransactionDate <= openingCutoff
+                select (decimal?)ate.Amount).SumAsync() ?? 0m;
 
-            // totalCreditsToOpeningDate: Sum of all credit entries for this GL account
-            // that happened before the start (FromDate) of our CustomTimePeriod.
-            decimal totalCreditsToOpeningDate = (decimal)await (from ate in _context.AcctgTransEntries
+            decimal totalCreditsToOpeningDate = await (
+                from ate in _context.AcctgTransEntries
                 join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
                 where ate.OrganizationPartyId == organizationPartyId
                       && ate.GlAccountId == glAccountId
                       && act.IsPosted == "Y"
                       && ate.DebitCreditFlag == "C"
                       && act.GlFiscalTypeId == "ACTUAL"
-                      && act.TransactionDate < customTimePeriod.FromDate
-                select ate.Amount).SumAsync();
+                      && act.TransactionDate <= openingCutoff
+                select (decimal?)ate.Amount).SumAsync() ?? 0m;
 
-            // totalCreditsToEndingDate: Sum of all credit entries for this GL account
-            // that happened before the ThruDate of our CustomTimePeriod (up to the end).
-            decimal totalCreditsToEndingDate = (decimal)await (from ate in _context.AcctgTransEntries
+            // REFACTOR: Include full period: >= start && <= end
+            // Purpose: Include transactions on the last day of the period
+            decimal totalDebitsInPeriod = await (
+                from ate in _context.AcctgTransEntries
+                join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
+                where ate.OrganizationPartyId == organizationPartyId
+                      && ate.GlAccountId == glAccountId
+                      && act.IsPosted == "Y"
+                      && ate.DebitCreditFlag == "D"
+                      && act.GlFiscalTypeId == "ACTUAL"
+                      && act.TransactionDate >= periodStart
+                      && act.TransactionDate <= periodEnd
+                select (decimal?)ate.Amount).SumAsync() ?? 0m;
+
+            decimal totalCreditsInPeriod = await (
+                from ate in _context.AcctgTransEntries
                 join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
                 where ate.OrganizationPartyId == organizationPartyId
                       && ate.GlAccountId == glAccountId
                       && act.IsPosted == "Y"
                       && ate.DebitCreditFlag == "C"
                       && act.GlFiscalTypeId == "ACTUAL"
-                      && act.TransactionDate < customTimePeriod.ThruDate
-                select ate.Amount).SumAsync();
+                      && act.TransactionDate >= periodStart
+                      && act.TransactionDate <= periodEnd
+                select (decimal?)ate.Amount).SumAsync() ?? 0m;
 
-            // ------------------------------------
-            // CALCULATE THE PERIOD'S DEBITS/CREDITS
-            // ------------------------------------
-
-            // The difference between the debits at the end of the period and the debits at the start 
-            // gives us the net debits posted during the CustomTimePeriod.
-            decimal totalDebitsInTimePeriod = totalDebitsToEndingDate - totalDebitsToOpeningDate;
-            // Same logic for credits in the time period.
-            decimal totalCreditsInTimePeriod = totalCreditsToEndingDate - totalCreditsToOpeningDate;
-
-            // --------------------------------
-            // DETERMINE IF THIS IS A DEBIT ACCT
-            // --------------------------------
-            // From an accounting standpoint:
-            //   - Debit accounts have positive balances when debits exceed credits (e.g., Assets, Expenses).
-            //   - Credit accounts have positive balances when credits exceed debits (e.g., Liabilities, Income).
             bool isDebit = await _acctgMiscService.IsDebitAccount(glAccount.GlAccountId);
 
-            // ---------------------------------------------
-            // COMPUTE THE OPENING BALANCE AND ENDING BALANCE
-            // ---------------------------------------------
-            decimal openingBalance;
-            decimal endingBalance;
+            decimal openingBalance = isDebit
+                ? totalDebitsToOpeningDate - totalCreditsToOpeningDate
+                : totalCreditsToOpeningDate - totalDebitsToOpeningDate;
 
-            if (isDebit)
-            {
-                // For debit-based accounts, the balance is Debits - Credits.
-                openingBalance = totalDebitsToOpeningDate - totalCreditsToOpeningDate;
-                endingBalance = totalDebitsToEndingDate - totalCreditsToEndingDate;
-            }
-            else
-            {
-                // For credit-based accounts, the balance is Credits - Debits.
-                openingBalance = totalCreditsToOpeningDate - totalDebitsToOpeningDate;
-                endingBalance = totalCreditsToEndingDate - totalDebitsToEndingDate;
-            }
+            decimal endingBalance = isDebit
+                ? (totalDebitsToOpeningDate + totalDebitsInPeriod) - (totalCreditsToOpeningDate + totalCreditsInPeriod)
+                : (totalCreditsToOpeningDate + totalCreditsInPeriod) - (totalDebitsToOpeningDate + totalDebitsInPeriod);
 
-            // ---------------------------------------------
-            // RETURN THE RESULTS AS A STRONGLY-TYPED OBJECT
-            // ---------------------------------------------
             return new GlAccountBalanceResult
             {
                 OpeningBalance = openingBalance,
-                PostedDebits = totalDebitsInTimePeriod,
-                PostedCredits = totalCreditsInTimePeriod,
+                PostedDebits = totalDebitsInPeriod,
+                PostedCredits = totalCreditsInPeriod,
                 EndingBalance = endingBalance
             };
         }
@@ -1672,7 +1653,7 @@ public class AcctgReportsService : IAcctgReportsService
             {
                 query = query.Where(x => x.ProductId == productId);
             }
-            
+
             var sql = query.ToQueryString();
             Console.WriteLine(sql);
 
