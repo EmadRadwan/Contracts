@@ -41,7 +41,8 @@ public class ListCertificateItems
             var validator = new QueryValidator();
             var validationResult = await validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
-                return Result<List<CertificateItemDto>>.Failure(string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
+                return Result<List<CertificateItemDto>>.Failure(
+                    string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
 
             var language = request.Language?.ToLower() == "en" ? "en" : request.Language?.ToLower() ?? "en";
 
@@ -87,49 +88,82 @@ public class ListCertificateItems
                     )
                     .SelectMany(
                         x => x.Facilities.DefaultIfEmpty(),
-                        (x, fac) => new CertificateItemDto
-                        {
-                            WorkEffortId = x.WorkEffort.WorkEffortId,
-                            WorkEffortParentId = x.WorkEffort.WorkEffortParentId,
-                            ProductId = x.WorkEffort.ProductId,
-                            ProductIdObject = x.Product != null ? new ProductLovDto
-                            {
-                                ProductId = x.Product.ProductId,
-                                ProductName = x.Product.ProductName
-                            } : null,
-                            UomId = x.WorkEffort.QuantityUomId,
-                            QuantityUomObject = x.Uom != null ? new UomLovDto
-                            {
-                                UomId = x.Uom.UomId,
-                                Description = x.Uom.Description
-                            } : null,
-                            Description = x.WorkEffort.Description,
-                            ProductName = x.Product != null ? x.Product.ProductName : null,
-                            UomName = x.Uom != null ? (language == "ar" ? x.Uom.DescriptionArabic : x.Uom.Description) : null,
-                            Quantity = (decimal)x.WorkEffort.Quantity,
-                            UnitPrice = (decimal)(x.WorkEffort.Rate ?? 0m),
-                            MaterialPrice = x.WorkEffort.MaterialPrice ?? 0m,
-                            LaborPrice = x.WorkEffort.LaborPrice ?? 0m,
-                            TotalAmount = x.Parent.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
-                                ? (x.WorkEffort.Quantity ?? 0m) * ((x.WorkEffort.MaterialPrice ?? 0m) + (x.WorkEffort.LaborPrice ?? 0m))
-                                : (x.WorkEffort.TotalAmount ?? ((x.WorkEffort.Quantity ?? 0m) * (x.WorkEffort.Rate ?? 0m)) + (x.WorkEffort.TransportationExpenses ?? 0m) + (x.WorkEffort.Gratuities ?? 0m) - (x.WorkEffort.Discount ?? 0m)),
-                            Net = x.Parent.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
-                                ? (x.WorkEffort.Quantity ?? 0m) * ((x.WorkEffort.Rate ?? 0m)) - (x.WorkEffort.Insurance ?? 0m) - (x.WorkEffort.AdditionalInsurance ?? 0m) - (x.WorkEffort.Discount ?? 0m) - (x.WorkEffort.Deductions ?? 0m)
-                                : (x.WorkEffort.TotalAmount ?? ((x.WorkEffort.Quantity ?? 0m) * (x.WorkEffort.Rate ?? 0m)) + (x.WorkEffort.TransportationExpenses ?? 0m) + (x.WorkEffort.Gratuities ?? 0m) - (x.WorkEffort.Discount ?? 0m)),
-                            Discount = x.WorkEffort.Discount ?? 0m,
-                            Insurance = x.WorkEffort.Insurance ?? 0m,
-                            AdditionalInsurance = x.WorkEffort.AdditionalInsurance ?? 0m,
-                            CompletionPercentage = x.WorkEffort.CompletionPercentage,
-                            Notes = x.WorkEffort.Notes,
-                            ProcurementDate = x.WorkEffort.ProcurementDate ?? x.WorkEffort.CreatedDate,
-                            IsDeleted = false,
-                            AchievementPercentage = x.WorkEffort.AchievementPercent,
-                            TransportationExpenses = x.WorkEffort.TransportationExpenses ?? 0m,
-                            Gratuities = x.WorkEffort.Gratuities ?? 0m,
-                            Deductions = x.WorkEffort.Deductions ?? 0m,
-                            DeductionDescription = x.WorkEffort.DeductionDescription
-                        }
+                        (x, fac) => new { x.WorkEffort, x.Parent, x.Product, x.Uom }
                     )
+                    // REFACTOR: All calculations in single expression
+                    // Purpose: EF Core can translate to SQL; no statement body
+                    .Select(x => new CertificateItemDto
+                    {
+                        WorkEffortId = x.WorkEffort.WorkEffortId,
+                        WorkEffortParentId = x.WorkEffort.WorkEffortParentId,
+                        ProductId = x.WorkEffort.ProductId,
+                        ProductIdObject = x.Product != null
+                            ? new ProductLovDto { ProductId = x.Product.ProductId, ProductName = x.Product.ProductName }
+                            : null,
+                        UomId = x.WorkEffort.QuantityUomId,
+                        QuantityUomObject = x.Uom != null
+                            ? new UomLovDto { UomId = x.Uom.UomId, Description = x.Uom.Description }
+                            : null,
+                        Description = x.WorkEffort.Description,
+                        ProductName = x.Product.ProductName,
+                        UomName = x.Uom != null
+                            ? (language == "ar" ? x.Uom.DescriptionArabic : x.Uom.Description)
+                            : null,
+                        Quantity = x.WorkEffort.Quantity ?? 0m,
+                        UnitPrice = (decimal)(x.WorkEffort.Rate ?? 0m),
+                        MaterialPrice = x.WorkEffort.MaterialPrice ?? 0m,
+                        LaborPrice = x.WorkEffort.LaborPrice ?? 0m,
+
+                        // REFACTOR: TotalAmount = quantity × (material + labor) for Workmanship
+                        // Fallback: legacy supply calculation
+                        TotalAmount = (x.Parent.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE")
+                            ? (x.WorkEffort.Quantity ?? 0m) * ((x.WorkEffort.MaterialPrice ?? 0m) + (x.WorkEffort.LaborPrice ?? 0m))
+                            : (x.WorkEffort.TotalAmount ?? 
+                               ((x.WorkEffort.Quantity ?? 0m) * (x.WorkEffort.Rate ?? 0m)) +
+                               (x.WorkEffort.TransportationExpenses ?? 0m) +
+                               (x.WorkEffort.Gratuities ?? 0m) -
+                               (x.WorkEffort.Discount ?? 0m)),
+
+                        // REFACTOR: Deserved = total × achievement% – deductions
+                        // Purpose: Calculated on-the-fly; matches UI
+                        Deserved = (x.Parent.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE")
+                            ? Math.Max(0m,
+                                ((x.WorkEffort.Quantity ?? 0m) *
+                                 ((x.WorkEffort.MaterialPrice ?? 0m) + (x.WorkEffort.LaborPrice ?? 0m)) *
+                                 ((decimal)(x.WorkEffort.AchievementPercent ?? 0) / 100m)) -
+                                (x.WorkEffort.Deductions ?? 0m))
+                            : 0m,
+
+                        // REFACTOR: Net = deserved – insurance – additionalInsurance
+                        // Purpose: Final payable amount; matches UI "Net" column
+                        Net = (x.Parent.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE")
+                            ? Math.Max(0m,
+                                (Math.Max(0m,
+                                    ((x.WorkEffort.Quantity ?? 0m) *
+                                     ((x.WorkEffort.MaterialPrice ?? 0m) + (x.WorkEffort.LaborPrice ?? 0m)) *
+                                     ((decimal)(x.WorkEffort.AchievementPercent ?? 0) / 100m)) -
+                                    (x.WorkEffort.Deductions ?? 0m))) -
+                                (x.WorkEffort.Insurance ?? 0m) -
+                                (x.WorkEffort.AdditionalInsurance ?? 0m))
+                            : (x.WorkEffort.TotalAmount ?? 
+                               ((x.WorkEffort.Quantity ?? 0m) * (x.WorkEffort.Rate ?? 0m)) +
+                               (x.WorkEffort.TransportationExpenses ?? 0m) +
+                               (x.WorkEffort.Gratuities ?? 0m) -
+                               (x.WorkEffort.Discount ?? 0m)),
+
+                        Discount = x.WorkEffort.Discount ?? 0m,
+                        Insurance = x.WorkEffort.Insurance ?? 0m,
+                        AdditionalInsurance = x.WorkEffort.AdditionalInsurance ?? 0m,
+                        CompletionPercentage = x.WorkEffort.CompletionPercentage,
+                        Notes = x.WorkEffort.Notes,
+                        ProcurementDate = x.WorkEffort.ProcurementDate ?? x.WorkEffort.CreatedDate,
+                        IsDeleted = false,
+                        AchievementPercentage = x.WorkEffort.AchievementPercent,
+                        TransportationExpenses = x.WorkEffort.TransportationExpenses ?? 0m,
+                        Gratuities = x.WorkEffort.Gratuities ?? 0m,
+                        Deductions = x.WorkEffort.Deductions ?? 0m,
+                        DeductionDescription = x.WorkEffort.DeductionDescription
+                    })
                     .ToListAsync(cancellationToken);
 
                 return Result<List<CertificateItemDto>>.Success(certificateItems);

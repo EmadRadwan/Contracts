@@ -18,6 +18,13 @@ interface Props {
     formEditMode: number; // 0: view, 1: create, 2: CREATED, 3: APPROVED, 4: COMPLETED
 }
 
+const parseAchievementPercentage = (value: string | number | null | undefined): number => {
+    if (value == null) return 0;
+    const str = String(value).trim();
+    const num = parseFloat(str.replace(/%/g, ""));
+    return isNaN(num) ? 0 : num;
+};
+
 export default function CertificateItemForm({
                                                 certificateItem,
                                                 editMode,
@@ -46,29 +53,23 @@ export default function CertificateItemForm({
             let discount = 0;
 
             if (currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE") {
-                deserved = Math.max(0, Math.round((total - Number(valueGetter("deductions") || 0)) * 1000) / 1000);
+                const achievementPercentage = parseAchievementPercentage(valueGetter("achievementPercentage"));
+                const baseForDeserved = total * (achievementPercentage / 100);
+                const deductions = Number(valueGetter("deductions") || 0);
+                deserved = Math.max(0, Math.round((baseForDeserved - deductions) * 1000) / 1000);
+
+                // Insurance & Additional Insurance are calculated on **total**, not deserved
                 const insuranceInput = Number(valueGetter("insurance") || 0);
-                insurance = insuranceMode === "value" ? insuranceInput : (insuranceInput / 100) * deserved;
+                insurance = insuranceMode === "value"
+                    ? insuranceInput
+                    : (insuranceInput / 100) * total;
                 insurance = Math.round(insurance * 1000) / 1000;
+
                 const additionalInsuranceInput = Number(valueGetter("additionalInsurance") || 0);
-                additionalInsurance =
-                    additionalInsuranceMode === "value" ? additionalInsuranceInput : (additionalInsuranceInput / 100) * deserved;
+                additionalInsurance = additionalInsuranceMode === "value"
+                    ? additionalInsuranceInput
+                    : (additionalInsuranceInput / 100) * total;
                 additionalInsurance = Math.round(additionalInsurance * 1000) / 1000;
-                
-              /*  // console.log('calculateTotals debug:', {
-                    quantity,
-                    price,
-                    total,
-                    deductions: Number(valueGetter("deductions") || 0),
-                    deserved,
-                    insuranceInput,
-                    insuranceMode,
-                    insurance,
-                    additionalInsuranceInput,
-                    additionalInsuranceMode,
-                    additionalInsurance,
-                    net: Math.max(0, Math.round((deserved - insurance - additionalInsurance) * 1000) / 1000),
-                });*/
             } else if (currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE") {
                 const discountInput = Number(valueGetter("discount") || 0);
                 discount = discountMode === "value" ? discountInput : (discountInput / 100) * total;

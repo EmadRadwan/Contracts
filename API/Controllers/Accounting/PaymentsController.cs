@@ -148,4 +148,20 @@ public class PaymentsController : BaseApiController
 
         return Ok(result.Value);
     }
+    
+    [HttpGet("daily")]
+    public async Task<ActionResult<PaymentsDailyResponse>> GetDailyPayments(
+        [FromQuery] string paymentType,
+        CancellationToken ct = default)
+    {
+        var query = new ListPaymentsDaily.Query
+        {
+            PaymentType = paymentType,
+            // Language can be pulled from header/culture if needed
+            Language = "en" 
+        };
+
+        var result = await Mediator.Send(query, ct);
+        return Ok(result);
+    }
 }

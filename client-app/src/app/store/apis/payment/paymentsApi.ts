@@ -220,6 +220,17 @@ const paymentsApi = createApi({
                     // 'NotAppliedPayments' retained if needed elsewhere; add providesTags to relevant query if not already
                 ],
             }),
+            fetchDailyPayments: builder.query<
+                { data: PaymentRecordDto[]; total: number },
+                { paymentType: 'incoming' | 'outgoing' }
+                >({
+                query: ({ paymentType }) => ({
+                    url: `/payments/daily`,
+                    method: 'GET',
+                    params: { paymentType },
+                }),
+                providesTags: ['DailyPayments'],
+            }),
         };
     },
 });
@@ -241,6 +252,7 @@ export const {
     useSetPaymentStatusToReceivedMutation,
     useFetchPaymentApplicationsForPaymentQuery,
     useCalculatePaymentTotalsMutation,
-    useRemovePaymentApplicationMutation, useCreatePaymentApplicationMutation,
+    useRemovePaymentApplicationMutation,
+    useCreatePaymentApplicationMutation, useFetchDailyPaymentsQuery,
 } = paymentsApi;
 export {paymentsApi};

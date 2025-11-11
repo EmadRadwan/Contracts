@@ -57,7 +57,7 @@ const utils = {
         d ? new Date(d).toLocaleDateString('en-GB') : 'N/A',
 };
 
-export const PaymentExcel: React.FC<PaymentExcelProps> = ({
+export const PaymentExcelTechnical: React.FC<PaymentExcelProps> = ({
                                                               companyName,
                                                               payment,
                                                               applications,
@@ -253,11 +253,11 @@ export const PaymentExcel: React.FC<PaymentExcelProps> = ({
 
     return (
         <Button
-            variant="outlined"
-            color="primary"
+            variant="contained"     // REFACTOR: Match form's primary action buttons (contained)
+            color="success"         // REFACTOR: Use success color to indicate "export/download" action
             disabled={isFetching}
             onClick={handleDownload}
-            sx={{ mr: 1 }}
+            sx={{ mt: 2, mr: 1 }}   // REFACTOR: Match margin from Update/Cancel buttons
         >
             {getTranslatedLabel('accounting.payments.report.excel', 'Export Payment Report')}
         </Button>

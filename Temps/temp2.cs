@@ -1,33 +1,66 @@
-foreach (var organizationGlAccount in organizationGlAccounts)
+.Select(x => new CertificateItemDto
 {
-    // Remove debug skip if not needed
-    // if (organizationGlAccount.GlAccountId != "111700") continue;
+    WorkEffortId = x.WorkEffort.WorkEffortId,
+    WorkEffortParentId = x.WorkEffort.WorkEffortParentId,
+    ProductId = x.WorkEffort.ProductId,
+    ProductIdObject = x.Product != null
+        ? new ProductLovDto { ProductId = x.Product.ProductId, ProductName = x.Product.ProductName }
+        : null,
+    UomId = x.WorkEffort.QuantityUomId,
+    QuantityUomObject = x.Uom != null
+        ? new UomLovDto { UomId = x.Uom.UomId, Description = x.Uom.Description }
+        : null,
+    Description = x.WorkEffort.Description,
+    ProductName = x.Product?.ProductName,
+    UomName = x.Uom != null
+        ? (language == "ar" ? x.Uom.DescriptionArabic : x.Uom.Description)
+        : null,
+    Quantity = x.WorkEffort.Quantity ?? 0m,
+    UnitPrice = (decimal)(x.WorkEffort.Rate ?? 0m),
+    MaterialPrice = x.WorkEffort.MaterialPrice ?? 0m,
+    LaborPrice = x.WorkEffort.LaborPrice ?? 0m,
 
-    var accountBalance = await ComputeGlAccountBalanceForTimePeriod(
-        organizationGlAccount.OrganizationPartyId,
-        customTimePeriod.CustomTimePeriodId,
-        organizationGlAccount.GlAccountId
-    );
+    // REFACTOR: All calculations inline – EF Core compatible
+    // Purpose: Compute on-the-fly, no stored values
+    TotalAmount = (x.Parent.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE")
+        ? (x.WorkEffort.Quantity ?? 0m) * ((x.WorkEffort.MaterialPrice ?? 0m) + (x.WorkEffort.LaborPrice ?? 0m))
+        : (x.WorkEffort.TotalAmount ?? 
+           ((x.WorkEffort.Quantity ?? 0m) * (x.WorkEffort.Rate ?? 0m)) +
+           (x.WorkEffort.TransportationExpenses ?? 0m) +
+           (x.WorkEffort.Gratuities ?? 0m) -
+           (x.WorkEffort.Discount ?? 0m)),
 
-    // REFACTOR: Include account if ending balance exists or there was activity
-    // Purpose: Prevent omission of accounts with opening balance only
-    if (accountBalance.EndingBalance != 0 || 
-        accountBalance.PostedDebits != 0 || 
-        accountBalance.PostedCredits != 0)
-    {
-        var balance = new AccountBalance
-        {
-            GlAccountId = organizationGlAccount.GlAccountId,
-            AccountCode = organizationGlAccount.GlAccount.AccountCode,
-            AccountName = organizationGlAccount.GlAccount.AccountNameArabic,
-            OpeningBalance = accountBalance.OpeningBalance,
-            PostedDebits = accountBalance.PostedDebits,
-            PostedCredits = accountBalance.PostedCredits,
-            EndingBalance = accountBalance.EndingBalance
-        };
+    Deserved = (x.Parent.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE")
+        ? Math.Max(0m,
+            ((x.WorkEffort.Quantity ?? 0m) * ((x.WorkEffort.MaterialPrice ?? 0m) + (x.WorkEffort.LaborPrice ?? 0m)) *
+             ((decimal)(x.WorkEffort.AchievementPercent ?? 0) / 100m)) -
+            (x.WorkEffort.Deductions ?? 0m))
+        : 0m,
 
-        postedDebitsTotal += accountBalance.PostedDebits;
-        postedCreditsTotal += accountBalance.PostedCredits;
-        accountBalances.Add(balance);
-    }
-}
+    Net = (x.Parent.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE")
+        ? Math.Max(0m,
+            (Math.Max(0m,
+                ((x.WorkEffort.Quantity ?? 0m) * ((x.WorkEffort.MaterialPrice ?? 0m) + (x.WorkEffort.LaborPrice ?? 0m)) *
+                 ((decimal)(x.WorkEffort.AchievementPercent ?? 0) / 100m)) -
+                (x.WorkEffort.Deductions ?? 0m))) -
+            (x.WorkEffort.Insurance ?? 0m) -
+            (x.WorkEffort.AdditionalInsurance ?? 0m))
+        : (x.WorkEffort.TotalAmount ?? 
+           ((x.WorkEffort.Quantity ?? 0m) * (x.WorkEffort.Rate ?? 0m)) +
+           (x.WorkEffort.TransportationExpenses ?? 0m) +
+           (x.WorkEffort.Gratuities ?? 0m) -
+           (x.WorkEffort.Discount ?? 0m)),
+
+    Discount = x.WorkEffort.Discount ?? 0m,
+    Insurance = x.WorkEffort.Insurance ?? 0m,
+    AdditionalInsurance = x.WorkEffort.AdditionalInsurance ?? 0m,
+    CompletionPercentage = x.WorkEffort.CompletionPercentage,
+    Notes = x.WorkEffort.Notes,
+    ProcurementDate = x.WorkEffort.ProcurementDate ?? x.WorkEffort.CreatedDate,
+    IsDeleted = false,
+    AchievementPercentage = x.WorkEffort.AchievementPercent,
+    TransportationExpenses = x.WorkEffort.TransportationExpenses ?? 0m,
+    Gratuities = x.WorkEffort.Gratuities ?? 0m,
+    Deductions = x.WorkEffort.Deductions ?? 0m,
+    DeductionDescription = x.WorkEffort.DeductionDescription
+})

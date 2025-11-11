@@ -66,17 +66,37 @@ export const FormDropDownTreeGlAccount2 = (fieldRenderProps: FieldRenderProps & 
 
   const onFilterChange = (event: any) => setFilter(event.filter);
 
+  // *** ENHANCED: Prevent selection of parent nodes and ensure dropdown stays open by managing click behavior ***
+  const onChangeHandler = React.useCallback(
+      (event) => {
+        const selectedItem = event.value;
+        const isLeaf = !selectedItem.items || selectedItem.items.length === 0;
 
+        if (isLeaf) {
+          setLevel(event.level || []); // Ensure level is always an array
+          onChange({ value: selectedItem && selectedItem[dataItemKey] });
+          // Dropdown will close by default after valid selection
+        }
+        // For parent nodes, skip form value update; dropdown stays open via custom click handling
+      },
+      [onChange, dataItemKey]
+  );
 
-    const onChangeHandler = React.useCallback(
-        (event) => {
-            const selectedItem = event.value;
-            setLevel(event.level || []);
-            onChange({ value: selectedItem?.[dataItemKey] ?? null });
-        },
-        [onChange, dataItemKey]
-    );
+  // *** ENHANCED: Custom click handler to expand parent nodes and prevent dropdown collapse ***
+  const onItemClick = React.useCallback(
+      (event) => {
+        const { item } = event;
+        const isLeaf = !item.items || item.items.length === 0;
 
+        if (!isLeaf) {
+          // For parent nodes, toggle expansion and prevent default to avoid dropdown collapse
+          setExpanded(expandedState(item, dataItemKey, expanded));
+          event.preventDefault(); // Block default selection and collapse behavior
+        }
+        // For leaf nodes, default behavior (selection and collapse) is handled by onChange
+      },
+      [expanded, dataItemKey]
+  );
 
   function searchTree(element: any, matchingGlAccountId: any): any {
     if (!matchingGlAccountId) return null;
@@ -155,7 +175,7 @@ export const FormDropDownTreeGlAccount2 = (fieldRenderProps: FieldRenderProps & 
             disabled={disabled}
             data={treeData}
             onExpandChange={onExpandChange}
-            //onItemClick={onItemClick} // Custom handler to manage parent node clicks
+            onItemClick={onItemClick} // Custom handler to manage parent node clicks
             filterable={true}
             onFilterChange={onFilterChange}
             filter={filter.value}

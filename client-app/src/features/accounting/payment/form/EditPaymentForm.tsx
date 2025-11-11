@@ -19,7 +19,8 @@ import {
     useFetchPaymentApplicationsForPaymentQuery
 } from "../../../../app/store/apis";
 import {FormDropDownTreeGlAccount2} from "../../../../app/common/form/FormDropDownTreeGlAccount2";
-import {PaymentExcel} from "../report/PaymentExcel";
+import {PaymentExcelTechnical} from "../report/PaymentExcelTechnical";
+import {PaymentExcelParty} from "../report/PaymentExcelParty";
 
 interface EditPaymentFormProps {
     onValidityChange?: (valid: boolean) => void;
@@ -456,7 +457,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                     </Grid>
                                     {paymentRow && (
                                         <Grid item xs={2}>
-                                            <PaymentExcel
+                                            <PaymentExcelTechnical
                                                 companyName={companyName ?? "N/A"}
                                                 payment={paymentRow}
                                                 applications={excelApplications}
@@ -465,6 +466,17 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                 isFetching={isExcelFetching}
                                             />
                                         </Grid>
+                                    )}
+
+                                    {paymentRow && (
+                                            <Grid item xs={2}>
+                                                <PaymentExcelParty
+                                                    companyName={companyName ?? "N/A"}
+                                                    payment={paymentRow}
+                                                    getTranslatedLabel={getTranslatedLabel}
+                                                    isFetching={isExcelFetching}
+                                                />
+                                            </Grid>
                                     )}
                                     <Grid item xs={1}>
                                         <Button

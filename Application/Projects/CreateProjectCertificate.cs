@@ -293,7 +293,7 @@ namespace Application.Projects
                                 UomId = item.UomId,
                                 FacilityId = certificate.FacilityId,
                                 ItemDescription = item.Description,
-                                OrderItemTypeId = "PRODUCT_ORDER_ITEM",
+                                OrderItemTypeId = "PROJECT_CERTIFICATE_ITEM",
                                 StatusId = "ITEM_CREATED",
                                 CreatedStamp = stamp,
                                 LastUpdatedStamp = stamp

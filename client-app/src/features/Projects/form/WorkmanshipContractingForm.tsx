@@ -57,8 +57,6 @@ const WorkmanshipContractingForm = ({
     const { valueGetter, onChange } = formRenderProps;
     const { total, net, deserved } = calculateTotals(valueGetter);
 
-    // Purpose: Prevent unnecessary re-renders by only depending on changed values
-    // Context: Ensures total, deserved, and net fields update only when necessary
     useEffect(() => {
         onChange("total", { value: total });
         onChange("deserved", { value: deserved });
@@ -164,6 +162,19 @@ const WorkmanshipContractingForm = ({
                             format="n2"
                             value={total}
                             disabled
+                        />
+                    </Grid>
+                    <Grid item xs={2}>
+                        <Field
+                            id="achievementPercentage"
+                            name="achievementPercentage"
+                            label={getTranslatedLabel("projects.certificate.items.list.achievementPercentage", "Achievement % *")}
+                            component={FormNumericTextBox}
+                            format="n0"
+                            min={1}
+                            max={100}
+                            validator={achievementPercentageValidator}
+                            disabled={formEditMode > 3}
                         />
                     </Grid>
                     <Grid item  xs={2}>
@@ -285,19 +296,6 @@ const WorkmanshipContractingForm = ({
                             format="n2"
                             value={net}
                             disabled
-                        />
-                    </Grid>
-                    <Grid item xs={2}>
-                        <Field
-                            id="achievementPercentage"
-                            name="achievementPercentage"
-                            label={getTranslatedLabel("projects.certificate.items.list.achievementPercentage", "Achievement Percentage *")}
-                            component={FormNumericTextBox}
-                            format="n0"
-                            min={1}
-                            max={100}
-                            validator={achievementPercentageValidator}
-                            disabled={formEditMode > 3}
                         />
                     </Grid>
                     <Grid item xs={12}>

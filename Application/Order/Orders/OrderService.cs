@@ -548,7 +548,7 @@ public class OrderService : BaseService, IOrderService
             ItemDescription = orderItem.ProductName,
             Quantity = orderItem.Quantity,
             UnitPrice = orderItem.UnitPrice,
-            OrderItemTypeId = "PRODUCT_ORDER_ITEM",
+            OrderItemTypeId = orderItem.OrderItemTypeId ?? "PRODUCT_ORDER_ITEM",
             StatusId = "ITEM_CREATED",
             CreatedStamp = stamp,
             LastUpdatedStamp = stamp

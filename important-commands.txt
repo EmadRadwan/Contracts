@@ -124,7 +124,7 @@ var affectedRecords5 = _context.ChangeTracker
     ----------------------------------------------------------------  
     
    var affectedRecords4 = _context.ChangeTracker
-       .Entries<OrderItem>() 
+       .Entries<Invoice>() 
        .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted)
        .Select(e => new
        {
@@ -255,18 +255,7 @@ New way to return meaningful
  change payment status
  ////////
  
- Troubleshoot Remote MYSQL access:
- nc -zv 129.146.22.240 3306
- 
- 
- ///Seed tables development: 
- Products
- ProductAssocs
- SupplierProducts
- WorkEfforts
- WorkEffortAssocs
- WorkEffortGoodStandard
- WorkEffortCostCalcs
+Summarize this entire conversation as a concise JSON or bullet-point outline, including key code snippets
  
  
  

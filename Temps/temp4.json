@@ -1,17 +1,34 @@
-"accounting": {
-"orgGL": {
-"accounting": {
-"initialBalance": {
-"title": "إدخال الرصيد الافتتاحي",
-"transactionDate": "تاريخ المعاملة *",
-"headerDescription": "ملاحظات الرأس",
-"glAccount": "حساب دفتر الأستاذ *",
-"amount": "المبلغ *",
-"type": "النوع",
-"debit": "مدين",
-"credit": "دائن",
-"description": "الوصف"
+{
+  "INVOICE_ITEM_MAP_KEY": "PROJECT_CERTIFICATE_ITEM",
+  "INVOICE_TYPE_ID": "PURCHASE_INVOICE",
+  "INVOICE_ITEM_TYPE_ID": "PINV_CERTIFICATE_ITEM",
+  "LAST_UPDATED_STAMP": "2022-05-27 12:24:00.040",
+  "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57.277",
+  "CREATED_STAMP": "2022-05-27 12:24:00.040",
+  "CREATED_TX_STAMP": "2022-05-27 12:23:57.277"
 }
+
+
+{
+  "INVOICE_ITEM_TYPE_ID": "PINV_CERTIFICATE_ITEM",
+  "PARENT_TYPE_ID": "PINV_PROD_ITEM",
+  "HAS_TABLE": "N",
+  "DESCRIPTION": "Invoice CERTIFICATE Item(Purchase)",
+  "DESCRIPTION_ARABIC": "بند مستخلص (شراء)",
+  "DEFAULT_GL_ACCOUNT_ID": "124420",
+  "LAST_UPDATED_STAMP": "2022-05-27 12:24:31.093",
+  "LAST_UPDATED_TX_STAMP": "2022-05-27 12:24:28.340",
+  "CREATED_STAMP": "2022-05-27 12:23:59.483",
+  "CREATED_TX_STAMP": "2022-05-27 12:23:57.277"
 }
-}
+
+{
+  "ORDER_ITEM_TYPE_ID": "PROJECT_CERTIFICATE_ITEM",
+  "PARENT_TYPE_ID": null,
+  "HAS_TABLE": "N",
+  "DESCRIPTION": "Project certificate Item",
+  "LAST_UPDATED_STAMP": "2024-07-24 11:54:22.967000000",
+  "LAST_UPDATED_TX_STAMP": "2024-07-24 11:54:22.868000000",
+  "CREATED_STAMP": "2024-07-24 11:54:22.967000000",
+  "CREATED_TX_STAMP": "2024-07-24 11:54:22.868000000"
 }

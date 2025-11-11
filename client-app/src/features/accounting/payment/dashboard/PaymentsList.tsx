@@ -1,4 +1,5 @@
 import {
+  RootState,
   useAppDispatch,
   useAppSelector,
   useFetchPaymentsQuery,
@@ -22,6 +23,9 @@ import {resetForm, setFormEditMode, setPaymentType} from "../slice/paymentsUiSli
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
 import {useLocation, useNavigate} from "react-router";
 import {setSelectedPayment} from "../../slice/accountingSharedUiSlice";
+import {useSelector} from "react-redux";
+import {PaymentsDailyExcel} from "../report/PaymentsDailyExcel";
+import {useFetchDailyPaymentsQuery} from "../../../../app/store/apis";
 
 interface PaymentsListProps {
   paymentType: 'incoming' | 'outgoing';
@@ -33,6 +37,7 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
   const location = useLocation()
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const companyName = useSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
 
   const [payments, setPayments] = React.useState<DataResult>({
     data: [],
@@ -71,7 +76,10 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
     ...dataState,
     paymentType
   });
-  
+
+  const { data: dailyData, isFetching: isDailyFetching } = useFetchDailyPaymentsQuery({ paymentType });
+
+
   const [show, setShow] = useState(false);
 
 
@@ -180,6 +188,14 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
                         `New ${paymentType === 'incoming' ? 'Incoming' : 'Outgoing'} Payment` // Fallback
                     )}
                   </Button>
+
+                  <PaymentsDailyExcel
+                      paymentsData={dailyData || { data: [], total: 0 }}
+                      companyName={companyName}
+                      paymentType={paymentType}
+                      getTranslatedLabel={getTranslatedLabel}
+                      isFetching={isDailyFetching}
+                  />
                 </GridToolbar>
                 <Column
                   field="paymentId"

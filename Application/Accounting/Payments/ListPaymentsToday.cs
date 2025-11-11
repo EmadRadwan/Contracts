@@ -1,0 +1,137 @@
+using AutoMapper;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Persistence;
+
+namespace Application.Accounting.Payments;
+
+public class ListPaymentsDaily
+{
+    public class Query : IRequest<PaymentsDailyResponse>
+    {
+        public string? PaymentType { get; set; }
+        public string Language { get; set; } = "en";
+    }
+
+    public class Handler : IRequestHandler<Query, PaymentsDailyResponse>
+    {
+        private readonly DataContext _context;
+        private readonly IMapper _mapper;
+
+        public Handler(DataContext context, IMapper mapper)
+        {
+            _context = context;
+            _mapper = mapper;
+        }
+
+        public async Task<PaymentsDailyResponse> Handle(Query request, CancellationToken ct)
+        {
+            // REFACTOR: Server-side date filtering using local EET time (Egypt)
+            // Purpose: Match frontend "today" in Egypt time (EET = UTC+2)
+            // Improvement: Uses TimeZoneInfo to avoid UTC/local mismatch
+            var egyptZone = TimeZoneInfo.FindSystemTimeZoneById("Egypt Standard Time");
+            var nowInEgypt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, egyptZone);
+            var startOfDay = new DateTime(nowInEgypt.Year, nowInEgypt.Month, nowInEgypt.Day, 0, 0, 0);
+            var startOfTomorrow = startOfDay.AddDays(1);
+
+            // Convert to UTC for DB comparison
+            var startUtc = TimeZoneInfo.ConvertTimeToUtc(startOfDay, egyptZone);
+            var endUtc = TimeZoneInfo.ConvertTimeToUtc(startOfTomorrow, egyptZone);
+
+            var isOutgoing = request.PaymentType == "outgoing";
+
+            // REFACTOR: Removed unnecessary joins with CreditCards, OrderPaymentPreferences, OrderHeaders, WorkEfforts
+            // Purpose: Eliminate unused data retrieval and improve query performance
+            // Improvement: DTO fields like CreditCardNumber, CertificateNumber were never populated; 
+            //            removing left joins avoids unnecessary table scans and memory usage
+            var query = from pyt in _context.Payments
+                join ptt in _context.PaymentTypes on pyt.PaymentTypeId equals ptt.PaymentTypeId
+                join sts in _context.StatusItems on pyt.StatusId equals sts.StatusId
+                join ptyFrom in _context.Parties on pyt.PartyIdFrom equals ptyFrom.PartyId
+                join ptyTo in _context.Parties on pyt.PartyIdTo equals ptyTo.PartyId
+                join pmt in _context.PaymentMethodTypes on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId
+                where pyt.EffectiveDate >= startUtc
+                      && pyt.EffectiveDate < endUtc
+                      && (isOutgoing ? ptt.ParentTypeId == "DISBURSEMENT" : ptt.ParentTypeId != "DISBURSEMENT")
+                select new PaymentRecordDto
+                {
+                    PaymentId = pyt.PaymentId,
+                    PaymentTypeId = pyt.PaymentTypeId,
+                    PaymentTypeDescription = request.Language == "ar" ? ptt.DescriptionArabic : ptt.Description,
+                    PaymentMethodId = pyt.PaymentMethodId,
+                    PaymentMethodTypeId = pyt.PaymentMethodTypeId,
+                    PaymentMethodTypeDescription = request.Language == "ar" ? pmt.DescriptionArabic : pmt.Description,
+                    PartyIdFrom = pyt.PartyIdFrom,
+                    PartyIdFromName = ptyFrom.Description,
+                    PartyIdTo = pyt.PartyIdTo,
+                    PartyIdToName = ptyTo.Description,
+                    StatusId = pyt.StatusId,
+                    StatusDescription = request.Language == "ar" ? sts.DescriptionArabic : sts.Description,
+                    StatusDescriptionEnglish = sts.Description,
+                    EffectiveDate = (DateTime)pyt.EffectiveDate,
+                    Comments = pyt.Comments,
+                    PaymentRefNum = pyt.PaymentRefNum,
+                    PaymentPreferenceId = pyt.PaymentPreferenceId,
+                    ActualCurrencyAmount = (decimal)pyt.ActualCurrencyAmount,
+                    OverrideGlAccountId = pyt.OverrideGlAccountId,
+                    OrganizationPartyId = ptt.ParentTypeId == "DISBURSEMENT" ? pyt.PartyIdFrom : pyt.PartyIdTo,
+                    Amount = pyt.Amount,
+                    CurrencyUomId = pyt.CurrencyUomId,
+                    FinAccountTransId = pyt.FinAccountTransId,
+                    IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
+                    // Removed: OrderId, CertificateNumber, CreditCardNumber, CreditCardExpiryDate
+                    // These were null anyway due to removed joins
+                    ChequeNumber = pyt.ChequeNumber,
+                    ChequeDate = pyt.ChequeDate
+                };
+
+            var data = await query.ToListAsync(ct);
+            var total = data.Count;
+
+            return new PaymentsDailyResponse
+            {
+                Data = data,
+                Total = total
+            };
+        }
+    }
+}
+
+// REFACTOR: Removed unused properties from DTO to match actual data returned
+// Purpose: Prevent confusion and reduce object size
+// Improvement: CreditCardNumber, CreditCardExpiryDate, OrderId, CertificateNumber are never set
+public class PaymentRecordDto
+{
+    public string PaymentId { get; set; } = null!;
+    public string PaymentTypeId { get; set; } = null!;
+    public string PaymentTypeDescription { get; set; } = null!;
+    public string? PaymentMethodId { get; set; }
+    public string PaymentMethodTypeId { get; set; } = null!;
+    public string PaymentMethodTypeDescription { get; set; } = null!;
+    public string PartyIdFrom { get; set; } = null!;
+    public string PartyIdFromName { get; set; } = null!;
+    public string PartyIdTo { get; set; } = null!;
+    public string PartyIdToName { get; set; } = null!;
+    public string StatusId { get; set; } = null!;
+    public string StatusDescription { get; set; } = null!;
+    public string StatusDescriptionEnglish { get; set; } = null!;
+    public DateTime EffectiveDate { get; set; }
+    public string? Comments { get; set; }
+    public string? PaymentRefNum { get; set; }
+    public string? PaymentPreferenceId { get; set; }
+    public decimal ActualCurrencyAmount { get; set; }
+    public string? OverrideGlAccountId { get; set; }
+    public string OrganizationPartyId { get; set; } = null!;
+    public decimal Amount { get; set; }
+    public string CurrencyUomId { get; set; } = null!;
+    public string? FinAccountTransId { get; set; }
+    public bool IsDisbursement { get; set; }
+    public string? ChequeNumber { get; set; }
+    public DateTime? ChequeDate { get; set; }
+}
+
+public class PaymentsDailyResponse
+{
+    public List<PaymentRecordDto> Data { get; set; } = new();
+    public int Total { get; set; }
+}
