@@ -70,7 +70,7 @@ export default function CertificateItemsListGrouped({
     }, [apiItems, isFetching, isLoading, dispatch]);
 
     /* --------------------------- Paging / Sorting -------------------------- */
-    // REFACTOR: Let kendo-data-query handle paging + sorting on the *already-enriched* data
+    // Let kendo-data-query handle paging + sorting on the *already-enriched* data
     // Purpose: Remove manual grouping/subtotal logic – selector does it once
     const processedData = useMemo(() => {
         const sorted = orderBy(uiItems, sort);
@@ -105,6 +105,8 @@ export default function CertificateItemsListGrouped({
                 procurementDate: src.procurementDate ? new Date(src.procurementDate) : new Date(),
                 additionalInsurance: src.additionalInsurance ?? 0,
                 deductionDescription: src.deductionDescription ?? "",
+                insuranceMode: src.insuranceMode ?? "value",
+                additionalInsuranceMode: src.additionalInsuranceMode ?? "value",
             };
 
             setCertificateItem(item);

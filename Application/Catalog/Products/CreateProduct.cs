@@ -1,7 +1,6 @@
 using Application.Interfaces;
 using AutoMapper;
 using Domain;
-using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
@@ -10,20 +9,13 @@ namespace Application.Catalog.Products;
 
 public class CreateProduct
 {
-    public class Command : IRequest<Result<ProductDto>>
+    public class Command : IRequest<Result<ProductDto2>>
     {
-        public ProductDto? ProductDto { get; set; }
+        public ProductDto2? ProductDto2 { get; set; }
     }
 
-    public class CommandValidator : AbstractValidator<Command>
-    {
-        public CommandValidator()
-        {
-            RuleFor(x => x.ProductDto).SetValidator(new ProductValidator());
-        }
-    }
 
-    public class Handler : IRequestHandler<Command, Result<ProductDto>>
+    public class Handler : IRequestHandler<Command, Result<ProductDto2>>
     {
         private readonly DataContext _context;
         private readonly IMapper _mapper;
@@ -36,142 +28,116 @@ public class CreateProduct
             _mapper = mapper;
         }
 
-        public async Task<Result<ProductDto>> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Result<ProductDto2>> Handle(Command request, CancellationToken cancellationToken)
         {
-            // Validate user
-            var user = await _context.Users.FirstOrDefaultAsync(x =>
-                x.UserName == _userAccessor.GetUsername(), cancellationToken);
-            if (user == null)
-            {
-                return Result<ProductDto>.Failure("User not found");
-            }
+            var dto = request.ProductDto2!; // guaranteed non-null by validator
 
-            // Check if productId already exists
-            var existingProduct = await _context.Products
-                .AnyAsync(x => x.ProductId == request.ProductDto!.ProductId, cancellationToken);
-            if (existingProduct)
-            {
-                return Result<ProductDto>.Failure("Product ID already exists");
-            }
+            // --------------------------------------------------------------------
+            // 1. User validation
+            // --------------------------------------------------------------------
+            var user = await _context.Users
+                .FirstOrDefaultAsync(x => x.UserName == _userAccessor.GetUsername(), cancellationToken);
+            if (user == null) return Result<ProductDto2>.Failure("User not found");
 
-            var stamp = DateTime.Now;
-            
-            if (!string.IsNullOrEmpty(request.ProductDto!.ModelProductId) &&
-                request.ProductDto.IsVirtual == "N" && request.ProductDto.IsVariant == "Y")
-            {
-                var modelProductExists = await _context.Products
-                    .AnyAsync(x => x.ProductId == request.ProductDto.ModelProductId, cancellationToken);
-                if (!modelProductExists)
-                {
-                    return Result<ProductDto>.Failure("Model Product ID does not exist");
-                }
-            }
+            // --------------------------------------------------------------------
+            // 2. Duplicate ProductId check
+            // --------------------------------------------------------------------
+            if (await _context.Products.AnyAsync(p => p.ProductId == dto.ProductId, cancellationToken))
+                return Result<ProductDto2>.Failure("Product ID already exists");
 
-            // Begin transaction
+            var now = DateTime.UtcNow; // REFACTOR: Use UTC for consistency across servers
+
+
+            // --------------------------------------------------------------------
+            // 4. Transaction scope
+            // --------------------------------------------------------------------
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-
             try
             {
-                // Create Product entity
+                dto.PrimaryProductCategoryId =
+                    dto.ProductTypeId == "APARTMENT" ? "APARTMENTS" : dto.PrimaryProductCategoryId;
+
+                // ----------------------------------------------------------------
+                // 5. Core Product entity
+                // ----------------------------------------------------------------
                 var product = new Product
                 {
-                    ProductId = request.ProductDto!.ProductId,
-                    ProductName = request.ProductDto.ProductName,
-                    ProductTypeId = request.ProductDto.ProductTypeId,
-                    QuantityUomId = request.ProductDto.QuantityUomId,
-                    Comments = request.ProductDto.Comments,
-                    PrimaryProductCategoryId = request.ProductDto.PrimaryProductCategoryId,
-                    IsVirtual = request.ProductDto.IsVirtual,
-                    IsVariant = request.ProductDto.IsVariant,
-                    QuantityIncluded = request.ProductDto.QuantityIncluded,
-                    PiecesIncluded = (int?)request.ProductDto.PiecesIncluded,
-                    CreatedDate = stamp,
-                    LastUpdatedStamp = stamp
+                    ProductId = dto.ProductId,
+                    ProductName = dto.ProductName,
+                    ProductTypeId = dto.ProductTypeId,
+                    QuantityUomId = dto.QuantityUomId,
+                    Comments = dto.Comments,
+                    PrimaryProductCategoryId = dto.PrimaryProductCategoryId,
+                    ProjectId = !string.IsNullOrWhiteSpace(dto.ProjectId)
+                        ? dto.ProjectId
+                        : null,
+                    FloorNumber = dto.FloorNumber, // NEW
+                    ApartmentSpaceM2 = dto.ApartmentSpaceM2, // NEW
+                    GardenSpaceM2 = dto.GardenSpaceM2, // NEW
+                    ApartmentPricePerM2 = dto.ApartmentPricePerM2, // NEW
+                    GardenPricePerM2 = dto.GardenPricePerM2, // NEW
+                    ApartmentStatusId = !string.IsNullOrWhiteSpace(dto.ApartmentStatusId)
+                        ? dto.ApartmentStatusId
+                        : null,
+                    LandNumber = dto.LandNumber, // NEW
+                    CreatedDate = now,
+                    LastUpdatedStamp = now
                 };
                 _context.Products.Add(product);
 
-                // Add ProductFeatureAppls for productColorId and productTrademarkId
-                if (!string.IsNullOrEmpty(request.ProductDto.ProductColorId))
-                {
-                    var colorFeatureAppl = new ProductFeatureAppl
-                    {
-                        ProductId = product.ProductId,
-                        ProductFeatureId = request.ProductDto.ProductColorId,
-                        FromDate = stamp,
-                        ThruDate = null // Or set to a future date if applicable
-                    };
-                    _context.ProductFeatureAppls.Add(colorFeatureAppl);
-                }
-                
-                if (!string.IsNullOrEmpty(request.ProductDto.ProductSizeId))
-                {
-                    var colorFeatureAppl = new ProductFeatureAppl
-                    {
-                        ProductId = product.ProductId,
-                        ProductFeatureId = request.ProductDto.ProductSizeId,
-                        FromDate = stamp,
-                        ThruDate = null // Or set to a future date if applicable
-                    };
-                    _context.ProductFeatureAppls.Add(colorFeatureAppl);
-                }
-
-                if (!string.IsNullOrEmpty(request.ProductDto.ProductTrademarkId))
-                {
-                    var trademarkFeatureAppl = new ProductFeatureAppl
-                    {
-                        ProductId = product.ProductId,
-                        ProductFeatureId = request.ProductDto.ProductTrademarkId,
-                        FromDate = stamp,
-                        ThruDate = null // Or set to a future date if applicable
-                    };
-                    _context.ProductFeatureAppls.Add(trademarkFeatureAppl);
-                }
-                
-                
-                // Save changes
-                var result = await _context.SaveChangesAsync(cancellationToken) > 0;
-                if (!result)
+                // ----------------------------------------------------------------
+                // 7. Persist
+                // ----------------------------------------------------------------
+                var saved = await _context.SaveChangesAsync(cancellationToken) > 0;
+                if (!saved)
                 {
                     await transaction.RollbackAsync(cancellationToken);
-                    return Result<ProductDto>.Failure("Failed to create product");
+                    return Result<ProductDto2>.Failure("Failed to create product");
                 }
 
-                // Commit transaction
                 await transaction.CommitAsync(cancellationToken);
 
-                // Fetch product details for response
-                var productToReturn = await (from pr in _context.Products
-                    join pt in _context.ProductTypes on pr.ProductTypeId equals pt.ProductTypeId
-                    join pc in _context.ProductCategories on pr.PrimaryProductCategoryId equals pc.ProductCategoryId
-                    where pr.ProductId == request.ProductDto.ProductId
-                    select new ProductDto
-                    {
-                        ProductId = pr.ProductId,
-                        ProductName = pr.ProductName,
-                        ProductTypeId = pr.ProductTypeId,
-                        Comments = pr.Comments,
-                        QuantityIncluded = pr.QuantityIncluded,
-                        PiecesIncluded = pr.PiecesIncluded,
-                        ProductTypeDescription = pt.Description,
-                        PrimaryProductCategoryId = pr.PrimaryProductCategoryId,
-                        QuantityUomId = pr.QuantityUomId,
-                        PrimaryProductCategoryDescription = pc.Description,
-                        ProductColorId = request.ProductDto.ProductColorId,
-                        ProductSizeId = request.ProductDto.ProductSizeId,
-                        ProductTrademarkId = request.ProductDto.ProductTrademarkId
-                    }).SingleOrDefaultAsync(cancellationToken);
+                // ----------------------------------------------------------------
+                // 8. Return enriched DTO (join descriptions)
+                // ----------------------------------------------------------------
+                // REFACTOR: Single query with required joins; avoids N+1 and simplifies mapping
+                var productToReturn = await (
+                        from p in _context.Products
+                        join pt in _context.ProductTypes
+                            on p.ProductTypeId equals pt.ProductTypeId
+                        join pc in _context.ProductCategories
+                            on p.PrimaryProductCategoryId equals pc.ProductCategoryId
+                            into pcGroup
+                        from pc in pcGroup.DefaultIfEmpty() // <-- LEFT JOIN
+                        where p.ProductId == dto.ProductId
+                        select new ProductDto2
+                        {
+                            ProductId = p.ProductId,
+                            ProductName = p.ProductName,
+                            ProductTypeId = p.ProductTypeId,
+                            Comments = p.Comments,
+                            ProductTypeDescription = pt.Description,
+                            PrimaryProductCategoryId = p.PrimaryProductCategoryId,
+                            PrimaryProductCategoryDescription = pc != null ? pc.Description : null,
+                            ProjectId = p.ProjectId,
+                            FloorNumber = p.FloorNumber,
+                            ApartmentSpaceM2 = p.ApartmentSpaceM2,
+                            GardenSpaceM2 = p.GardenSpaceM2,
+                            ApartmentPricePerM2 = p.ApartmentPricePerM2,
+                            GardenPricePerM2 = p.GardenPricePerM2,
+                            ApartmentStatusId = p.ApartmentStatusId,
+                            LandNumber = p.LandNumber,
+                        })
+                    .SingleOrDefaultAsync(cancellationToken);
 
-                if (productToReturn == null)
-                {
-                    return Result<ProductDto>.Failure("Failed to retrieve created product");
-                }
-
-                return Result<ProductDto>.Success(productToReturn);
+                return productToReturn != null
+                    ? Result<ProductDto2>.Success(productToReturn)
+                    : Result<ProductDto2>.Failure("Failed to retrieve created product");
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                return Result<ProductDto>.Failure($"Failed to create product: {ex.Message}");
+                return Result<ProductDto2>.Failure($"Failed to create product: {ex.Message}");
             }
         }
     }

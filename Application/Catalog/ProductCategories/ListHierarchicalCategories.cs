@@ -77,7 +77,7 @@ public class ListHierarchicalCategories
             }
 
             // Start building the DTO list from the top-level categories
-            var topLevelCategories = new[] { "FINISHED_GOODS" };
+            var topLevelCategories = new[] { "RAW_MATERIAL" };
             var rootDtos = new List<ProductCategoryParentChildDto>();
 
             foreach (var topCategory in topLevelCategories) BuildDtoList(topCategory, null);

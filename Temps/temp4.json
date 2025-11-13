@@ -1,34 +1,30 @@
 {
-  "INVOICE_ITEM_MAP_KEY": "PROJECT_CERTIFICATE_ITEM",
-  "INVOICE_TYPE_ID": "PURCHASE_INVOICE",
-  "INVOICE_ITEM_TYPE_ID": "PINV_CERTIFICATE_ITEM",
-  "LAST_UPDATED_STAMP": "2022-05-27 12:24:00.040",
-  "LAST_UPDATED_TX_STAMP": "2022-05-27 12:23:57.277",
-  "CREATED_STAMP": "2022-05-27 12:24:00.040",
-  "CREATED_TX_STAMP": "2022-05-27 12:23:57.277"
-}
+  "form": {
+    "title": "العرض",
+    "new": "عرض جديد",
+    "id": "رقم العرض",
+    "name": "اسم العرض",
+    "description": "وصف العرض",
+    "amount": "مبلغ الخصم",
+    "from": "من تاريخ",
+    "to": "إلى تاريخ",
+    "product": "المنتج",
+    "value": "قيمة الشرط",
+    "action": "عملية العرض",
+    "quantity": "الكمية",
+    "input": "وصف المدخلات",
+    "condition": "شرط العرض",
 
-
-{
-  "INVOICE_ITEM_TYPE_ID": "PINV_CERTIFICATE_ITEM",
-  "PARENT_TYPE_ID": "PINV_PROD_ITEM",
-  "HAS_TABLE": "N",
-  "DESCRIPTION": "Invoice CERTIFICATE Item(Purchase)",
-  "DESCRIPTION_ARABIC": "بند مستخلص (شراء)",
-  "DEFAULT_GL_ACCOUNT_ID": "124420",
-  "LAST_UPDATED_STAMP": "2022-05-27 12:24:31.093",
-  "LAST_UPDATED_TX_STAMP": "2022-05-27 12:24:28.340",
-  "CREATED_STAMP": "2022-05-27 12:23:59.483",
-  "CREATED_TX_STAMP": "2022-05-27 12:23:57.277"
-}
-
-{
-  "ORDER_ITEM_TYPE_ID": "PROJECT_CERTIFICATE_ITEM",
-  "PARENT_TYPE_ID": null,
-  "HAS_TABLE": "N",
-  "DESCRIPTION": "Project certificate Item",
-  "LAST_UPDATED_STAMP": "2024-07-24 11:54:22.967000000",
-  "LAST_UPDATED_TX_STAMP": "2024-07-24 11:54:22.868000000",
-  "CREATED_STAMP": "2024-07-24 11:54:22.967000000",
-  "CREATED_TX_STAMP": "2024-07-24 11:54:22.868000000"
+    /* REFACTOR: Added Arabic translations for Apartment-specific fields */
+    /* Purpose: Support new product type "Apartment" in ProductForm */
+    /* Why: Ensures UI consistency and internationalization for all fields */
+    "project": "المشروع",
+    "floorNumber": "رقم الطابق",
+    "apartmentSpaceM2": "مساحة الشقة (م²)",
+    "gardenSpaceM2": "مساحة الحديقة (م²)",
+    "apartmentPricePerM2": "سعر الشقة لكل متر مربع",
+    "gardenPricePerM2": "سعر الحديقة لكل متر مربع",
+    "apartmentStatus": "حالة الشقة",
+    "landNumber": "رقم الأرض"
+  }
 }

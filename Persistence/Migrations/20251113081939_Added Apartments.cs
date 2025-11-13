@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdatedPayment : Migration
+    public partial class AddedApartments : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -23363,234 +23363,6 @@ namespace Persistence.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "PRODUCT",
-                columns: table => new
-                {
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRIMARY_PRODUCT_CATEGORY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FACILITY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    INTRODUCTION_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    RELEASE_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    SUPPORT_DISCONTINUATION_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    SALES_DISCONTINUATION_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    SALES_DISC_WHEN_NOT_AVAIL = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    INTERNAL_NAME = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    BRAND_NAME = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    COMMENTS = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_NAME = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_NAME_ARABIC = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_NAME_TURKISH = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LONG_DESCRIPTION = table.Column<string>(type: "text", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRICE_DETAIL_TEXT = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SMALL_IMAGE_URL = table.Column<string>(type: "varchar(2000)", unicode: false, maxLength: 2000, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    MEDIUM_IMAGE_URL = table.Column<string>(type: "varchar(2000)", unicode: false, maxLength: 2000, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LARGE_IMAGE_URL = table.Column<string>(type: "varchar(2000)", unicode: false, maxLength: 2000, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    DETAIL_IMAGE_URL = table.Column<string>(type: "varchar(2000)", unicode: false, maxLength: 2000, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ORIGINAL_IMAGE_URL = table.Column<string>(type: "varchar(2000)", unicode: false, maxLength: 2000, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    DETAIL_SCREEN = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    INVENTORY_MESSAGE = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    INVENTORY_ITEM_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    REQUIRE_INVENTORY = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    QUANTITY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    QUANTITY_INCLUDED = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    PIECES_INCLUDED = table.Column<int>(type: "int", nullable: true),
-                    ServiceLifeDays = table.Column<int>(type: "int", nullable: true),
-                    ServiceLifeMileage = table.Column<int>(type: "int", nullable: true),
-                    REQUIRE_AMOUNT = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FIXED_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    AMOUNT_UOM_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    WEIGHT_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SHIPPING_WEIGHT = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    PRODUCT_WEIGHT = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    HEIGHT_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_HEIGHT = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    SHIPPING_HEIGHT = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    WIDTH_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_WIDTH = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    SHIPPING_WIDTH = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    DEPTH_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_DEPTH = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    SHIPPING_DEPTH = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    DIAMETER_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_DIAMETER = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    PRODUCT_RATING = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    RATING_TYPE_ENUM = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    RETURNABLE = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    TAXABLE = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CHARGE_SHIPPING = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    AUTO_CREATE_KEYWORDS = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    INCLUDE_IN_PROMOTIONS = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    IS_VIRTUAL = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    IS_VARIANT = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    VIRTUAL_VARIANT_METHOD_ENUM = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ORIGIN_GEO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    REQUIREMENT_METHOD_ENUM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    BILL_OF_MATERIAL_LEVEL = table.Column<int>(type: "int", nullable: true),
-                    RESERV_MAX_PERSONS = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    RESERV2ND_P_P_PERC = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    RESERV_NTH_P_P_PERC = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    CONFIG_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CREATED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_BY_USER_LOGIN = table.Column<string>(type: "varchar(250)", unicode: false, maxLength: 250, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_MODIFIED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_MODIFIED_BY_USER_LOGIN = table.Column<string>(type: "varchar(250)", unicode: false, maxLength: 250, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    IN_SHIPPING_BOX = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    DEFAULT_SHIPMENT_BOX_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LOT_ID_FILLED_IN = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ORDER_DECIMAL_QUANTITY = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT", x => x.PRODUCT_ID);
-                    table.ForeignKey(
-                        name: "PROD_AMOUNT_UOMT",
-                        column: x => x.AMOUNT_UOM_TYPE_ID,
-                        principalTable: "UOM_TYPE",
-                        principalColumn: "UOM_TYPE_ID");
-                    table.ForeignKey(
-                        name: "PROD_CB_USERLOGIN",
-                        column: x => x.CREATED_BY_USER_LOGIN,
-                        principalTable: "USER_LOGIN",
-                        principalColumn: "USER_LOGIN_ID");
-                    table.ForeignKey(
-                        name: "PROD_DEPTH_UOM",
-                        column: x => x.DEPTH_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "PROD_DIAMTR_UOM",
-                        column: x => x.DIAMETER_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "PROD_FACILITY",
-                        column: x => x.FACILITY_ID,
-                        principalTable: "FACILITY",
-                        principalColumn: "FACILITY_ID");
-                    table.ForeignKey(
-                        name: "PROD_HEIGHT_UOM",
-                        column: x => x.HEIGHT_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "PROD_INV_ITEM_TYPE",
-                        column: x => x.INVENTORY_ITEM_TYPE_ID,
-                        principalTable: "INVENTORY_ITEM_TYPE",
-                        principalColumn: "INVENTORY_ITEM_TYPE_ID");
-                    table.ForeignKey(
-                        name: "PROD_LMB_USERLOGIN",
-                        column: x => x.LAST_MODIFIED_BY_USER_LOGIN,
-                        principalTable: "USER_LOGIN",
-                        principalColumn: "USER_LOGIN_ID");
-                    table.ForeignKey(
-                        name: "PROD_ORG_GEO",
-                        column: x => x.ORIGIN_GEO_ID,
-                        principalTable: "GEO",
-                        principalColumn: "GEO_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRIMARY_CAT",
-                        column: x => x.PRIMARY_PRODUCT_CATEGORY_ID,
-                        principalTable: "PRODUCT_CATEGORY",
-                        principalColumn: "PRODUCT_CATEGORY_ID");
-                    table.ForeignKey(
-                        name: "PROD_QUANT_UOM",
-                        column: x => x.QUANTITY_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "PROD_RATE_ENUM",
-                        column: x => x.RATING_TYPE_ENUM,
-                        principalTable: "ENUMERATION",
-                        principalColumn: "ENUM_ID");
-                    table.ForeignKey(
-                        name: "PROD_RQMT_ENUM",
-                        column: x => x.REQUIREMENT_METHOD_ENUM_ID,
-                        principalTable: "ENUMERATION",
-                        principalColumn: "ENUM_ID");
-                    table.ForeignKey(
-                        name: "PROD_SHBX_TYPE",
-                        column: x => x.DEFAULT_SHIPMENT_BOX_TYPE_ID,
-                        principalTable: "SHIPMENT_BOX_TYPE",
-                        principalColumn: "SHIPMENT_BOX_TYPE_ID");
-                    table.ForeignKey(
-                        name: "PROD_TYPE",
-                        column: x => x.PRODUCT_TYPE_ID,
-                        principalTable: "PRODUCT_TYPE",
-                        principalColumn: "PRODUCT_TYPE_ID");
-                    table.ForeignKey(
-                        name: "PROD_VVMETHOD_ENUM",
-                        column: x => x.VIRTUAL_VARIANT_METHOD_ENUM,
-                        principalTable: "ENUMERATION",
-                        principalColumn: "ENUM_ID");
-                    table.ForeignKey(
-                        name: "PROD_WEIGHT_UOM",
-                        column: x => x.WEIGHT_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "PROD_WIDTH_UOM",
-                        column: x => x.WIDTH_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
                 name: "PRODUCT_FEATURE_PRICE",
                 columns: table => new
                 {
@@ -25259,1712 +25031,6 @@ namespace Persistence.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "PARTY_NEED",
-                columns: table => new
-                {
-                    PARTY_NEED_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PARTY_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    NEED_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    COMMUNICATION_EVENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_CATEGORY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    VISIT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    DATETIME_RECORDED = table.Column<DateTime>(type: "datetime", nullable: true),
-                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PARTY_NEED", x => new { x.PARTY_NEED_ID, x.PARTY_ID, x.ROLE_TYPE_ID });
-                    table.ForeignKey(
-                        name: "PARTY_NEED_CMEV",
-                        column: x => x.COMMUNICATION_EVENT_ID,
-                        principalTable: "COMMUNICATION_EVENT",
-                        principalColumn: "COMMUNICATION_EVENT_ID");
-                    table.ForeignKey(
-                        name: "PARTY_NEED_NDTP",
-                        column: x => x.NEED_TYPE_ID,
-                        principalTable: "NEED_TYPE",
-                        principalColumn: "NEED_TYPE_ID");
-                    table.ForeignKey(
-                        name: "PARTY_NEED_PCAT",
-                        column: x => x.PRODUCT_CATEGORY_ID,
-                        principalTable: "PRODUCT_CATEGORY",
-                        principalColumn: "PRODUCT_CATEGORY_ID");
-                    table.ForeignKey(
-                        name: "PARTY_NEED_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "PARTY_NEED_PTTP",
-                        column: x => x.PARTY_TYPE_ID,
-                        principalTable: "PARTY_TYPE",
-                        principalColumn: "PARTY_TYPE_ID");
-                    table.ForeignKey(
-                        name: "PARTY_NEED_PTY",
-                        column: x => x.PARTY_ID,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                    table.ForeignKey(
-                        name: "PARTY_NEED_RTYP",
-                        column: x => x.ROLE_TYPE_ID,
-                        principalTable: "ROLE_TYPE",
-                        principalColumn: "ROLE_TYPE_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_ATTRIBUTE",
-                columns: table => new
-                {
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ATTR_NAME = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ATTR_VALUE = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ATTR_TYPE = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ATTR_DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_ATTRIBUTE", x => new { x.PRODUCT_ID, x.ATTR_NAME });
-                    table.ForeignKey(
-                        name: "PROD_ATTR",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_AVERAGE_COST",
-                columns: table => new
-                {
-                    PRODUCT_AVERAGE_COST_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ORGANIZATION_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FACILITY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    AVERAGE_COST = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_AVERAGE_COST", x => new { x.PRODUCT_AVERAGE_COST_TYPE_ID, x.ORGANIZATION_PARTY_ID, x.PRODUCT_ID, x.FACILITY_ID, x.FROM_DATE });
-                    table.ForeignKey(
-                        name: "AVG_COST_FACI",
-                        column: x => x.FACILITY_ID,
-                        principalTable: "FACILITY",
-                        principalColumn: "FACILITY_ID");
-                    table.ForeignKey(
-                        name: "AVG_COST_PARTY",
-                        column: x => x.ORGANIZATION_PARTY_ID,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                    table.ForeignKey(
-                        name: "AVG_COST_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "AVG_COST_TYPE",
-                        column: x => x.PRODUCT_AVERAGE_COST_TYPE_ID,
-                        principalTable: "PRODUCT_AVERAGE_COST_TYPE",
-                        principalColumn: "PRODUCT_AVERAGE_COST_TYPE_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_CALCULATED_INFO",
-                columns: table => new
-                {
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    TOTAL_QUANTITY_ORDERED = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    TOTAL_TIMES_VIEWED = table.Column<int>(type: "int", nullable: true),
-                    AVERAGE_CUSTOMER_RATING = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_CALCULATED_INFO", x => x.PRODUCT_ID);
-                    table.ForeignKey(
-                        name: "PRODCI_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_CATEGORY_MEMBER",
-                columns: table => new
-                {
-                    PRODUCT_CATEGORY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    COMMENTS = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: true),
-                    QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_CATEGORY_MEMBER", x => new { x.PRODUCT_CATEGORY_ID, x.PRODUCT_ID, x.FROM_DATE });
-                    table.ForeignKey(
-                        name: "PROD_CMBR_CATEGORY",
-                        column: x => x.PRODUCT_CATEGORY_ID,
-                        principalTable: "PRODUCT_CATEGORY",
-                        principalColumn: "PRODUCT_CATEGORY_ID");
-                    table.ForeignKey(
-                        name: "PROD_CMBR_PRODUCT",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_CONFIG",
-                columns: table => new
-                {
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CONFIG_ITEM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: false),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
-                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LONG_DESCRIPTION = table.Column<string>(type: "text", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CONFIG_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    DEFAULT_CONFIG_OPTION_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    IS_MANDATORY = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_CONFIG", x => new { x.PRODUCT_ID, x.CONFIG_ITEM_ID, x.SEQUENCE_NUM, x.FROM_DATE });
-                    table.ForeignKey(
-                        name: "PROD_CONF_ITEM",
-                        column: x => x.CONFIG_ITEM_ID,
-                        principalTable: "PRODUCT_CONFIG_ITEM",
-                        principalColumn: "CONFIG_ITEM_ID");
-                    table.ForeignKey(
-                        name: "PROD_CONF_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_CONFIG_PRODUCT",
-                columns: table => new
-                {
-                    CONFIG_ITEM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CONFIG_OPTION_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_CONFIG_PRODUCT", x => new { x.CONFIG_ITEM_ID, x.CONFIG_OPTION_ID, x.PRODUCT_ID });
-                    table.ForeignKey(
-                        name: "PROD_CONFP_ITEM",
-                        column: x => x.CONFIG_ITEM_ID,
-                        principalTable: "PRODUCT_CONFIG_ITEM",
-                        principalColumn: "CONFIG_ITEM_ID");
-                    table.ForeignKey(
-                        name: "PROD_CONFP_OPTN",
-                        columns: x => new { x.CONFIG_ITEM_ID, x.CONFIG_OPTION_ID },
-                        principalTable: "PRODUCT_CONFIG_OPTION",
-                        principalColumns: new[] { "CONFIG_ITEM_ID", "CONFIG_OPTION_ID" });
-                    table.ForeignKey(
-                        name: "PROD_CONFP_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_CONFIG_STATS",
-                columns: table => new
-                {
-                    CONFIG_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    NUM_OF_CONFS = table.Column<int>(type: "int", nullable: true),
-                    CONFIG_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_CONFIG_STATS", x => new { x.CONFIG_ID, x.PRODUCT_ID });
-                    table.ForeignKey(
-                        name: "PROD_CONFS_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_CONTENT",
-                columns: table => new
-                {
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CONTENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_CONTENT_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    PURCHASE_FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    PURCHASE_THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    USE_COUNT_LIMIT = table.Column<int>(type: "int", nullable: true),
-                    USE_TIME = table.Column<int>(type: "int", nullable: true),
-                    USE_TIME_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    USE_ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_CONTENT", x => new { x.PRODUCT_ID, x.CONTENT_ID, x.PRODUCT_CONTENT_TYPE_ID, x.FROM_DATE });
-                    table.ForeignKey(
-                        name: "PROD_CNT_CNT",
-                        column: x => x.CONTENT_ID,
-                        principalTable: "CONTENT",
-                        principalColumn: "CONTENT_ID");
-                    table.ForeignKey(
-                        name: "PROD_CNT_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "PROD_CNT_TYPE",
-                        column: x => x.PRODUCT_CONTENT_TYPE_ID,
-                        principalTable: "PRODUCT_CONTENT_TYPE",
-                        principalColumn: "PRODUCT_CONTENT_TYPE_ID");
-                    table.ForeignKey(
-                        name: "PROD_CNT_URT",
-                        column: x => x.USE_ROLE_TYPE_ID,
-                        principalTable: "ROLE_TYPE",
-                        principalColumn: "ROLE_TYPE_ID");
-                    table.ForeignKey(
-                        name: "PROD_CNT_UTU",
-                        column: x => x.USE_TIME_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_COST_COMPONENT_CALC",
-                columns: table => new
-                {
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    COST_COMPONENT_TYPE_ID = table.Column<string>(type: "varchar(50)", unicode: false, maxLength: 50, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
-                    COST_COMPONENT_CALC_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: true),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_COST_COMPONENT_CALC", x => new { x.PRODUCT_ID, x.COST_COMPONENT_TYPE_ID, x.FROM_DATE });
-                    table.ForeignKey(
-                        name: "PR_COS_CCC",
-                        column: x => x.COST_COMPONENT_CALC_ID,
-                        principalTable: "COST_COMPONENT_CALC",
-                        principalColumn: "COST_COMPONENT_CALC_ID");
-                    table.ForeignKey(
-                        name: "PR_COS_CCT",
-                        column: x => x.COST_COMPONENT_TYPE_ID,
-                        principalTable: "COST_COMPONENT_TYPE",
-                        principalColumn: "COST_COMPONENT_TYPE_ID");
-                    table.ForeignKey(
-                        name: "PR_COS_COMPCALC",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_FACILITY",
-                columns: table => new
-                {
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FACILITY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    MINIMUM_STOCK = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    REORDER_QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    DAYS_TO_SHIP = table.Column<int>(type: "int", nullable: true),
-                    REPLENISH_METHOD_ENUM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_INVENTORY_COUNT = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    REQUIREMENT_METHOD_ENUM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_FACILITY", x => new { x.PRODUCT_ID, x.FACILITY_ID });
-                    table.ForeignKey(
-                        name: "PROD_FAC_FAC",
-                        column: x => x.FACILITY_ID,
-                        principalTable: "FACILITY",
-                        principalColumn: "FACILITY_ID");
-                    table.ForeignKey(
-                        name: "PROD_FAC_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "PROD_FAC_REP",
-                        column: x => x.REPLENISH_METHOD_ENUM_ID,
-                        principalTable: "ENUMERATION",
-                        principalColumn: "ENUM_ID");
-                    table.ForeignKey(
-                        name: "PROD_FAC_REQ",
-                        column: x => x.REQUIREMENT_METHOD_ENUM_ID,
-                        principalTable: "ENUMERATION",
-                        principalColumn: "ENUM_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_FACILITY_ASSOC",
-                columns: table => new
-                {
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FACILITY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FACILITY_ID_TO = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FACILITY_ASSOC_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: true),
-                    TRANSIT_TIME = table.Column<int>(type: "int", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_FACILITY_ASSOC", x => new { x.PRODUCT_ID, x.FACILITY_ID, x.FACILITY_ID_TO, x.FACILITY_ASSOC_TYPE_ID, x.FROM_DATE });
-                    table.ForeignKey(
-                        name: "PRFACASSOC_FAC",
-                        column: x => x.FACILITY_ID,
-                        principalTable: "FACILITY",
-                        principalColumn: "FACILITY_ID");
-                    table.ForeignKey(
-                        name: "PRFACASSOC_FACTO",
-                        column: x => x.FACILITY_ID_TO,
-                        principalTable: "FACILITY",
-                        principalColumn: "FACILITY_ID");
-                    table.ForeignKey(
-                        name: "PRFACASSOC_PRO",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "PRFACASSOC_TYPE",
-                        column: x => x.FACILITY_ASSOC_TYPE_ID,
-                        principalTable: "FACILITY_ASSOC_TYPE",
-                        principalColumn: "FACILITY_ASSOC_TYPE_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_FACILITY_LOCATION",
-                columns: table => new
-                {
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FACILITY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LOCATION_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    MINIMUM_STOCK = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    MOVE_QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_FACILITY_LOCATION", x => new { x.PRODUCT_ID, x.FACILITY_ID, x.LOCATION_SEQ_ID });
-                    table.ForeignKey(
-                        name: "PROD_FCL_FCL",
-                        columns: x => new { x.FACILITY_ID, x.LOCATION_SEQ_ID },
-                        principalTable: "FACILITY_LOCATION",
-                        principalColumns: new[] { "FACILITY_ID", "LOCATION_SEQ_ID" });
-                    table.ForeignKey(
-                        name: "PROD_FCL_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_FEATURE_APPL",
-                columns: table => new
-                {
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_FEATURE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
-                    PRODUCT_FEATURE_APPL_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: true),
-                    AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    RECURRING_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_FEATURE_APPL", x => new { x.PRODUCT_ID, x.PRODUCT_FEATURE_ID, x.FROM_DATE });
-                    table.ForeignKey(
-                        name: "PROD_FAPPL_FEATURE",
-                        column: x => x.PRODUCT_FEATURE_ID,
-                        principalTable: "PRODUCT_FEATURE",
-                        principalColumn: "PRODUCT_FEATURE_ID");
-                    table.ForeignKey(
-                        name: "PROD_FAPPL_PRODUCT",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "PROD_FAPPL_TYPE",
-                        column: x => x.PRODUCT_FEATURE_APPL_TYPE_ID,
-                        principalTable: "PRODUCT_FEATURE_APPL_TYPE",
-                        principalColumn: "PRODUCT_FEATURE_APPL_TYPE_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_GEO",
-                columns: table => new
-                {
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    GEO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_GEO_ENUM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_GEO", x => new { x.PRODUCT_ID, x.GEO_ID });
-                    table.ForeignKey(
-                        name: "PRDGEO_ENUM",
-                        column: x => x.PRODUCT_GEO_ENUM_ID,
-                        principalTable: "ENUMERATION",
-                        principalColumn: "ENUM_ID");
-                    table.ForeignKey(
-                        name: "PRDGEO_GEO",
-                        column: x => x.GEO_ID,
-                        principalTable: "GEO",
-                        principalColumn: "GEO_ID");
-                    table.ForeignKey(
-                        name: "PRDGEO_PRODUCT",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_GL_ACCOUNT",
-                columns: table => new
-                {
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ORGANIZATION_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    GL_ACCOUNT_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    GL_ACCOUNT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_GL_ACCOUNT", x => new { x.PRODUCT_ID, x.ORGANIZATION_PARTY_ID, x.GL_ACCOUNT_TYPE_ID });
-                    table.ForeignKey(
-                        name: "PROD_GLACT_GLACT",
-                        column: x => x.GL_ACCOUNT_ID,
-                        principalTable: "GL_ACCOUNT",
-                        principalColumn: "GL_ACCOUNT_ID");
-                    table.ForeignKey(
-                        name: "PROD_GLACT_PARTY",
-                        column: x => x.ORGANIZATION_PARTY_ID,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                    table.ForeignKey(
-                        name: "PROD_GLACT_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "PROD_GLACT_TYPE",
-                        column: x => x.GL_ACCOUNT_TYPE_ID,
-                        principalTable: "GL_ACCOUNT_TYPE",
-                        principalColumn: "GL_ACCOUNT_TYPE_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_GROUP_ORDER",
-                columns: table => new
-                {
-                    GROUP_ORDER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    REQ_ORDER_QTY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    SOLD_ORDER_QTY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    JOB_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_GROUP_ORDER", x => x.GROUP_ORDER_ID);
-                    table.ForeignKey(
-                        name: "GROUP_ORDER_JOB",
-                        column: x => x.JOB_ID,
-                        principalTable: "JOB_SANDBOX",
-                        principalColumn: "JOB_ID");
-                    table.ForeignKey(
-                        name: "GROUP_ORDER_STATUS",
-                        column: x => x.STATUS_ID,
-                        principalTable: "STATUS_ITEM",
-                        principalColumn: "STATUS_ID");
-                    table.ForeignKey(
-                        name: "PROD_GROUP_ORDER",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_KEYWORD_NEW",
-                columns: table => new
-                {
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    KEYWORD = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    KEYWORD_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    RELEVANCY_WEIGHT = table.Column<int>(type: "int", nullable: true),
-                    STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_KEYWORD_NEW", x => new { x.PRODUCT_ID, x.KEYWORD, x.KEYWORD_TYPE_ID });
-                    table.ForeignKey(
-                        name: "PROD_KWD_PROD_NEW",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "PROD_KWD_STTS",
-                        column: x => x.STATUS_ID,
-                        principalTable: "STATUS_ITEM",
-                        principalColumn: "STATUS_ID");
-                    table.ForeignKey(
-                        name: "PROD_KWD_TYPE",
-                        column: x => x.KEYWORD_TYPE_ID,
-                        principalTable: "ENUMERATION",
-                        principalColumn: "ENUM_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_MANUFACTURING_RULE",
-                columns: table => new
-                {
-                    RULE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID_FOR = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID_IN = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    RULE_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    PRODUCT_ID_IN_SUBST = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_FEATURE = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    RULE_OPERATOR = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    QUANTITY = table.Column<double>(type: "double", nullable: true),
-                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_MANUFACTURING_RULE", x => x.RULE_ID);
-                    table.ForeignKey(
-                        name: "PRODUCT_FEAT",
-                        column: x => x.PRODUCT_FEATURE,
-                        principalTable: "PRODUCT_FEATURE",
-                        principalColumn: "PRODUCT_FEATURE_ID");
-                    table.ForeignKey(
-                        name: "PRODUCT_FOR",
-                        column: x => x.PRODUCT_ID_FOR,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "PRODUCT_IN",
-                        column: x => x.PRODUCT_ID_IN,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "PRODUCT_PARENT",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "PRODUCT_SUBST",
-                        column: x => x.PRODUCT_ID_IN_SUBST,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_METER",
-                columns: table => new
-                {
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_METER_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    METER_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    METER_NAME = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_METER", x => new { x.PRODUCT_ID, x.PRODUCT_METER_TYPE_ID });
-                    table.ForeignKey(
-                        name: "PRODMTR_MTRTYP",
-                        column: x => x.PRODUCT_METER_TYPE_ID,
-                        principalTable: "PRODUCT_METER_TYPE",
-                        principalColumn: "PRODUCT_METER_TYPE_ID");
-                    table.ForeignKey(
-                        name: "PRODMTR_MTRUOM",
-                        column: x => x.METER_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "PRODMTR_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_ORDER_ITEM",
-                columns: table => new
-                {
-                    ORDER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ORDER_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ENGAGEMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ENGAGEMENT_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_ORDER_ITEM", x => new { x.ORDER_ID, x.ORDER_ITEM_SEQ_ID, x.ENGAGEMENT_ID, x.ENGAGEMENT_ITEM_SEQ_ID });
-                    table.ForeignKey(
-                        name: "PROD_OITEM_ENOHDR",
-                        column: x => x.ENGAGEMENT_ID,
-                        principalTable: "ORDER_HEADER",
-                        principalColumn: "ORDER_ID");
-                    table.ForeignKey(
-                        name: "PROD_OITEM_ENOITM",
-                        columns: x => new { x.ENGAGEMENT_ID, x.ENGAGEMENT_ITEM_SEQ_ID },
-                        principalTable: "ORDER_ITEM",
-                        principalColumns: new[] { "ORDER_ID", "ORDER_ITEM_SEQ_ID" });
-                    table.ForeignKey(
-                        name: "PROD_OITEM_OHDR",
-                        column: x => x.ORDER_ID,
-                        principalTable: "ORDER_HEADER",
-                        principalColumn: "ORDER_ID");
-                    table.ForeignKey(
-                        name: "PROD_OITEM_OITEM",
-                        columns: x => new { x.ORDER_ID, x.ORDER_ITEM_SEQ_ID },
-                        principalTable: "ORDER_ITEM",
-                        principalColumns: new[] { "ORDER_ID", "ORDER_ITEM_SEQ_ID" });
-                    table.ForeignKey(
-                        name: "PROD_OITEM_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_PAYMENT_METHOD_TYPE",
-                columns: table => new
-                {
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PAYMENT_METHOD_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_PRICE_PURPOSE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_PAYMENT_METHOD_TYPE", x => new { x.PRODUCT_ID, x.PAYMENT_METHOD_TYPE_ID, x.PRODUCT_PRICE_PURPOSE_ID, x.FROM_DATE });
-                    table.ForeignKey(
-                        name: "PROD_PMT_PMT",
-                        column: x => x.PAYMENT_METHOD_TYPE_ID,
-                        principalTable: "PAYMENT_METHOD_TYPE",
-                        principalColumn: "PAYMENT_METHOD_TYPE_ID");
-                    table.ForeignKey(
-                        name: "PROD_PMT_PPRP",
-                        column: x => x.PRODUCT_PRICE_PURPOSE_ID,
-                        principalTable: "PRODUCT_PRICE_PURPOSE",
-                        principalColumn: "PRODUCT_PRICE_PURPOSE_ID");
-                    table.ForeignKey(
-                        name: "PROD_PMT_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_PRICE",
-                columns: table => new
-                {
-                    PRODUCT_PRICE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_PRICE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_PRICE_PURPOSE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CURRENCY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_STORE_GROUP_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    PRICE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    TERM_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CUSTOM_PRICE_CALC_SERVICE = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRICE_WITHOUT_TAX = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    PRICE_WITH_TAX = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    TAX_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    TAX_PERCENTAGE = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    TAX_AUTH_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    TAX_AUTH_GEO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    TAX_IN_PRICE = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CREATED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_BY_USER_LOGIN = table.Column<string>(type: "varchar(250)", unicode: false, maxLength: 250, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_MODIFIED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_MODIFIED_BY_USER_LOGIN = table.Column<string>(type: "varchar(250)", unicode: false, maxLength: 250, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_PRICE", x => x.PRODUCT_PRICE_ID);
-                    table.ForeignKey(
-                        name: "PROD_PRC_TAXGEO",
-                        column: x => x.TAX_AUTH_GEO_ID,
-                        principalTable: "GEO",
-                        principalColumn: "GEO_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRC_TAXPTY",
-                        column: x => x.TAX_AUTH_PARTY_ID,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRICE_CBUL",
-                        column: x => x.CREATED_BY_USER_LOGIN,
-                        principalTable: "USER_LOGIN",
-                        principalColumn: "USER_LOGIN_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRICE_CMET",
-                        column: x => x.CUSTOM_PRICE_CALC_SERVICE,
-                        principalTable: "CUSTOM_METHOD",
-                        principalColumn: "CUSTOM_METHOD_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRICE_CUOM",
-                        column: x => x.CURRENCY_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRICE_LMBUL",
-                        column: x => x.LAST_MODIFIED_BY_USER_LOGIN,
-                        principalTable: "USER_LOGIN",
-                        principalColumn: "USER_LOGIN_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRICE_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRICE_PSTG",
-                        column: x => x.PRODUCT_STORE_GROUP_ID,
-                        principalTable: "PRODUCT_STORE_GROUP",
-                        principalColumn: "PRODUCT_STORE_GROUP_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRICE_PURP",
-                        column: x => x.PRODUCT_PRICE_PURPOSE_ID,
-                        principalTable: "PRODUCT_PRICE_PURPOSE",
-                        principalColumn: "PRODUCT_PRICE_PURPOSE_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRICE_TUOM",
-                        column: x => x.TERM_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRICE_TYPE",
-                        column: x => x.PRODUCT_PRICE_TYPE_ID,
-                        principalTable: "PRODUCT_PRICE_TYPE",
-                        principalColumn: "PRODUCT_PRICE_TYPE_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_QUALITY_STANDARD",
-                columns: table => new
-                {
-                    PRODUCT_QUALITY_STANDARD_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    STANDARD_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    MIN_VALUE = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    MAX_VALUE = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    UNIT_OF_MEASURE = table.Column<string>(type: "varchar(50)", unicode: false, maxLength: 50, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CATEGORICAL_VALUE = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    BOOLEAN_VALUE = table.Column<bool>(type: "tinyint(1)", nullable: true),
-                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_QUALITY_STANDARD", x => x.PRODUCT_QUALITY_STANDARD_ID);
-                    table.ForeignKey(
-                        name: "PQS_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "PQS_QUAL_STD",
-                        column: x => x.STANDARD_ID,
-                        principalTable: "QUALITY_STANDARD",
-                        principalColumn: "STANDARD_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_REVIEW",
-                columns: table => new
-                {
-                    PRODUCT_REVIEW_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_STORE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    USER_LOGIN_ID = table.Column<string>(type: "varchar(250)", unicode: false, maxLength: 250, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    POSTED_ANONYMOUS = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    POSTED_DATE_TIME = table.Column<DateTime>(type: "datetime", nullable: true),
-                    PRODUCT_RATING = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    PRODUCT_REVIEW = table.Column<string>(type: "text", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_REVIEW", x => x.PRODUCT_REVIEW_ID);
-                    table.ForeignKey(
-                        name: "PROD_REVIEW_PRDSTR",
-                        column: x => x.PRODUCT_STORE_ID,
-                        principalTable: "PRODUCT_STORE",
-                        principalColumn: "PRODUCT_STORE_ID");
-                    table.ForeignKey(
-                        name: "PROD_REVIEW_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "PROD_REVIEW_STTS",
-                        column: x => x.STATUS_ID,
-                        principalTable: "STATUS_ITEM",
-                        principalColumn: "STATUS_ID");
-                    table.ForeignKey(
-                        name: "PROD_REVIEW_ULH",
-                        column: x => x.USER_LOGIN_ID,
-                        principalTable: "USER_LOGIN",
-                        principalColumn: "USER_LOGIN_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_ROLE",
-                columns: table => new
-                {
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: true),
-                    COMMENTS = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_ROLE", x => new { x.PRODUCT_ID, x.PARTY_ID, x.ROLE_TYPE_ID, x.FROM_DATE });
-                    table.ForeignKey(
-                        name: "PROD_RLE_PRODUCT",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "PROD_RLE_PTYRLE",
-                        columns: x => new { x.PARTY_ID, x.ROLE_TYPE_ID },
-                        principalTable: "PARTY_ROLE",
-                        principalColumns: new[] { "PARTY_ID", "ROLE_TYPE_ID" });
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "REORDER_GUIDELINE",
-                columns: table => new
-                {
-                    REORDER_GUIDELINE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FACILITY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    GEO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    REORDER_QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    REORDER_LEVEL = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_REORDER_GUIDELINE", x => x.REORDER_GUIDELINE_ID);
-                    table.ForeignKey(
-                        name: "REORDER_GD_FAC",
-                        column: x => x.FACILITY_ID,
-                        principalTable: "FACILITY",
-                        principalColumn: "FACILITY_ID");
-                    table.ForeignKey(
-                        name: "REORDER_GD_GEO",
-                        column: x => x.GEO_ID,
-                        principalTable: "GEO",
-                        principalColumn: "GEO_ID");
-                    table.ForeignKey(
-                        name: "REORDER_GD_PARTY",
-                        column: x => x.PARTY_ID,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                    table.ForeignKey(
-                        name: "REORDER_GD_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "REQUIREMENT",
-                columns: table => new
-                {
-                    REQUIREMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    REQUIREMENT_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FACILITY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    DELIVERABLE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FIXED_ASSET_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    REQUIREMENT_START_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    REQUIRED_BY_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    ESTIMATED_BUDGET = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    USE_CASE = table.Column<string>(type: "text", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    REASON = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CREATED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_BY_USER_LOGIN = table.Column<string>(type: "varchar(250)", unicode: false, maxLength: 250, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_MODIFIED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_MODIFIED_BY_USER_LOGIN = table.Column<string>(type: "varchar(250)", unicode: false, maxLength: 250, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FACILITY_ID_TO = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_REQUIREMENT", x => x.REQUIREMENT_ID);
-                    table.ForeignKey(
-                        name: "REQ_DELIVERABLE",
-                        column: x => x.DELIVERABLE_ID,
-                        principalTable: "DELIVERABLE",
-                        principalColumn: "DELIVERABLE_ID");
-                    table.ForeignKey(
-                        name: "REQ_FACILITY",
-                        column: x => x.FACILITY_ID,
-                        principalTable: "FACILITY",
-                        principalColumn: "FACILITY_ID");
-                    table.ForeignKey(
-                        name: "REQ_FIXED_ASSET",
-                        column: x => x.FIXED_ASSET_ID,
-                        principalTable: "FIXED_ASSET",
-                        principalColumn: "FIXED_ASSET_ID");
-                    table.ForeignKey(
-                        name: "REQ_PRODUCT",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "REQ_STTS",
-                        column: x => x.STATUS_ID,
-                        principalTable: "STATUS_ITEM",
-                        principalColumn: "STATUS_ID");
-                    table.ForeignKey(
-                        name: "REQ_TYPE",
-                        column: x => x.REQUIREMENT_TYPE_ID,
-                        principalTable: "REQUIREMENT_TYPE",
-                        principalColumn: "REQUIREMENT_TYPE_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "SERVICE_SPECIFICATION",
-                columns: table => new
-                {
-                    ServiceSpecificationId = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ProductId = table.Column<string>(type: "varchar(36)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    MakeId = table.Column<string>(type: "varchar(36)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ModelId = table.Column<string>(type: "varchar(36)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    StandardTimeInMinutes = table.Column<int>(type: "int", nullable: false),
-                    FromDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    ThruDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    LastUpdatedStamp = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    CreatedStamp = table.Column<DateTime>(type: "datetime(6)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SERVICE_SPECIFICATION", x => x.ServiceSpecificationId);
-                    table.ForeignKey(
-                        name: "FK_SERVICE_SPECIFICATION_PRODUCT_CATEGORY_MakeId",
-                        column: x => x.MakeId,
-                        principalTable: "PRODUCT_CATEGORY",
-                        principalColumn: "PRODUCT_CATEGORY_ID");
-                    table.ForeignKey(
-                        name: "FK_SERVICE_SPECIFICATION_PRODUCT_CATEGORY_ModelId",
-                        column: x => x.ModelId,
-                        principalTable: "PRODUCT_CATEGORY",
-                        principalColumn: "PRODUCT_CATEGORY_ID");
-                    table.ForeignKey(
-                        name: "FK_SERVICE_SPECIFICATION_PRODUCT_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "SUPPLIER_PRODUCT",
-                columns: table => new
-                {
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    AVAILABLE_FROM_DATE = table.Column<DateTime>(type: "DATETIME(6)", nullable: false),
-                    CURRENCY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    AVAILABLE_THRU_DATE = table.Column<DateTime>(type: "DATETIME(6)", nullable: true),
-                    SUPPLIER_PREF_ORDER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SUPPLIER_RATING_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    STANDARD_LEAD_TIME_DAYS = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    MINIMUM_ORDER_QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    ORDER_QTY_INCREMENTS = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    UNITS_INCLUDED = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    QUANTITY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    AGREEMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    AGREEMENT_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_PRICE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    SHIPPING_PRICE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    SUPPLIER_PRODUCT_NAME = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SUPPLIER_PRODUCT_ID = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CAN_DROP_SHIP = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    COMMENTS = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SUPPLIER_PRODUCT", x => new { x.PRODUCT_ID, x.PARTY_ID, x.CURRENCY_UOM_ID, x.AVAILABLE_FROM_DATE });
-                    table.ForeignKey(
-                        name: "SUPPL_PROD_AGRIT",
-                        columns: x => new { x.AGREEMENT_ID, x.AGREEMENT_ITEM_SEQ_ID },
-                        principalTable: "AGREEMENT_ITEM",
-                        principalColumns: new[] { "AGREEMENT_ID", "AGREEMENT_ITEM_SEQ_ID" });
-                    table.ForeignKey(
-                        name: "SUPPL_PROD_CUOM",
-                        column: x => x.CURRENCY_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "SUPPL_PROD_PARTY",
-                        column: x => x.PARTY_ID,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                    table.ForeignKey(
-                        name: "SUPPL_PROD_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "SUPPL_PROD_QUOM",
-                        column: x => x.QUANTITY_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "SUPPL_PROD_SPORD",
-                        column: x => x.SUPPLIER_PREF_ORDER_ID,
-                        principalTable: "SUPPLIER_PREF_ORDER",
-                        principalColumn: "SUPPLIER_PREF_ORDER_ID");
-                    table.ForeignKey(
-                        name: "SUPPL_PROD_SRTPE",
-                        column: x => x.SUPPLIER_RATING_TYPE_ID,
-                        principalTable: "SUPPLIER_RATING_TYPE",
-                        principalColumn: "SUPPLIER_RATING_TYPE_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "VENDOR_PRODUCT",
-                columns: table => new
-                {
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    VENDOR_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_STORE_GROUP_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_VENDOR_PRODUCT", x => new { x.PRODUCT_ID, x.VENDOR_PARTY_ID, x.PRODUCT_STORE_GROUP_ID });
-                    table.ForeignKey(
-                        name: "VENDPROD_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "VENDPROD_PSGRP",
-                        column: x => x.PRODUCT_STORE_GROUP_ID,
-                        principalTable: "PRODUCT_STORE_GROUP",
-                        principalColumn: "PRODUCT_STORE_GROUP_ID");
-                    table.ForeignKey(
-                        name: "VENDPROD_VPTY",
-                        column: x => x.VENDOR_PARTY_ID,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "WORK_EFFORT",
-                columns: table => new
-                {
-                    WORK_EFFORT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    WORK_EFFORT_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CURRENT_STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_STATUS_UPDATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    WORK_EFFORT_PURPOSE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    WORK_EFFORT_PARENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRIORITY = table.Column<int>(type: "int", nullable: true),
-                    WORK_EFFORT_NAME = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    DESCRIPTION = table.Column<string>(type: "varchar(4000)", unicode: false, maxLength: 4000, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    DEDUCTION_DESCRIPTION = table.Column<string>(type: "varchar(2000)", unicode: false, maxLength: 2000, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ESTIMATED_START_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    ESTIMATED_COMPLETION_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    ACTUAL_START_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    ACTUAL_COMPLETION_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    ProcurementDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    ESTIMATED_MILLI_SECONDS = table.Column<double>(type: "double", nullable: true),
-                    ESTIMATED_SETUP_MILLIS = table.Column<double>(type: "double", nullable: true),
-                    ESTIMATE_CALC_METHOD = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ACTUAL_MILLI_SECONDS = table.Column<double>(type: "double", nullable: true),
-                    ACTUAL_SETUP_MILLIS = table.Column<double>(type: "double", nullable: true),
-                    FIXED_ASSET_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    NOTE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    QUANTITY_TO_PRODUCE = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    QUANTITY_PRODUCED = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    QUANTITY_REJECTED = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    RESERV_PERSONS = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    RESERV2ND_P_P_PERC = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    RESERV_NTH_P_P_PERC = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    REVISION_NUMBER = table.Column<int>(type: "int", nullable: true),
-                    CREATED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_BY_USER_LOGIN = table.Column<string>(type: "varchar(250)", unicode: false, maxLength: 250, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_MODIFIED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_MODIFIED_BY_USER_LOGIN = table.Column<string>(type: "varchar(250)", unicode: false, maxLength: 250, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    PROJECT_NUM = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CERTIFICATE_NUMBER = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PROJECT_NAME = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SUB_PROJECT_NAME = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    COST_TYPE = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    TOTAL_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    DISCOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    TransportationExpenses = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
-                    Gratuities = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
-                    PROJECT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SUB_PROJECT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FACILITY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PARTY_ID_SUPPLIER = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PARTY_ID_CONTRACTOR = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PartyIdEmployee = table.Column<string>(type: "varchar(36)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    RELATED_ORDER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CERTIFICATE_CATEGORY = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SUPPLIER_OR_CONTRACTOR_TYPE = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LINE_NUMBER = table.Column<int>(type: "int", nullable: true),
-                    QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    RATE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    COMPLETION_PERCENTAGE = table.Column<decimal>(type: "decimal(5,2)", nullable: true),
-                    DUE_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    PAID_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    DEDUCTIONS = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    INSURANCE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    MATERIAL_PRICE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    LABOR_PRICE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    ADDITIONAL_INSURANCE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    REMAINING_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    AchievementPercent = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
-                    NOTES = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SERVICE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    QuantityUomId = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PaymentMethodId = table.Column<string>(type: "varchar(36)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CHEQUE_NUMBER = table.Column<string>(type: "varchar(50)", unicode: false, maxLength: 50, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CHEQUE_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    GlAccountId = table.Column<string>(type: "varchar(36)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    AccommodationMapId = table.Column<string>(type: "varchar(36)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    AccommodationSpotId = table.Column<string>(type: "varchar(36)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    MoneyUomUomId = table.Column<string>(type: "varchar(36)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    RecurrenceInfoId = table.Column<string>(type: "varchar(36)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    RuntimeDataId = table.Column<string>(type: "varchar(36)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ScopeEnumEnumId = table.Column<string>(type: "varchar(36)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    TempExprId = table.Column<string>(type: "varchar(36)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_WORK_EFFORT", x => x.WORK_EFFORT_ID);
-                    table.ForeignKey(
-                        name: "FK_WORK_EFFORT_ACCOMMODATION_MAP_AccommodationMapId",
-                        column: x => x.AccommodationMapId,
-                        principalTable: "ACCOMMODATION_MAP",
-                        principalColumn: "ACCOMMODATION_MAP_ID");
-                    table.ForeignKey(
-                        name: "FK_WORK_EFFORT_ACCOMMODATION_SPOT_AccommodationSpotId",
-                        column: x => x.AccommodationSpotId,
-                        principalTable: "ACCOMMODATION_SPOT",
-                        principalColumn: "ACCOMMODATION_SPOT_ID");
-                    table.ForeignKey(
-                        name: "FK_WORK_EFFORT_ENUMERATION_ScopeEnumEnumId",
-                        column: x => x.ScopeEnumEnumId,
-                        principalTable: "ENUMERATION",
-                        principalColumn: "ENUM_ID");
-                    table.ForeignKey(
-                        name: "FK_WORK_EFFORT_GL_ACCOUNT_GlAccountId",
-                        column: x => x.GlAccountId,
-                        principalTable: "GL_ACCOUNT",
-                        principalColumn: "GL_ACCOUNT_ID");
-                    table.ForeignKey(
-                        name: "FK_WORK_EFFORT_PARTY_PartyIdEmployee",
-                        column: x => x.PartyIdEmployee,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                    table.ForeignKey(
-                        name: "FK_WORK_EFFORT_PAYMENT_METHOD_PaymentMethodId",
-                        column: x => x.PaymentMethodId,
-                        principalTable: "PAYMENT_METHOD",
-                        principalColumn: "PAYMENT_METHOD_ID");
-                    table.ForeignKey(
-                        name: "FK_WORK_EFFORT_RECURRENCE_INFO_RecurrenceInfoId",
-                        column: x => x.RecurrenceInfoId,
-                        principalTable: "RECURRENCE_INFO",
-                        principalColumn: "RECURRENCE_INFO_ID");
-                    table.ForeignKey(
-                        name: "FK_WORK_EFFORT_RUNTIME_DATA_RuntimeDataId",
-                        column: x => x.RuntimeDataId,
-                        principalTable: "RUNTIME_DATA",
-                        principalColumn: "RUNTIME_DATA_ID");
-                    table.ForeignKey(
-                        name: "FK_WORK_EFFORT_TEMPORAL_EXPRESSION_TempExprId",
-                        column: x => x.TempExprId,
-                        principalTable: "TEMPORAL_EXPRESSION",
-                        principalColumn: "TEMP_EXPR_ID");
-                    table.ForeignKey(
-                        name: "FK_WORK_EFFORT_UOM_MoneyUomUomId",
-                        column: x => x.MoneyUomUomId,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "WK_EFFRT_CONTRACTOR",
-                        column: x => x.PARTY_ID_CONTRACTOR,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                    table.ForeignKey(
-                        name: "WK_EFFRT_CURSTTS",
-                        column: x => x.CURRENT_STATUS_ID,
-                        principalTable: "STATUS_ITEM",
-                        principalColumn: "STATUS_ID");
-                    table.ForeignKey(
-                        name: "WK_EFFRT_CUS_MET",
-                        column: x => x.ESTIMATE_CALC_METHOD,
-                        principalTable: "CUSTOM_METHOD",
-                        principalColumn: "CUSTOM_METHOD_ID");
-                    table.ForeignKey(
-                        name: "WK_EFFRT_FACILITY",
-                        column: x => x.FACILITY_ID,
-                        principalTable: "FACILITY",
-                        principalColumn: "FACILITY_ID");
-                    table.ForeignKey(
-                        name: "WK_EFFRT_FXDASST",
-                        column: x => x.FIXED_ASSET_ID,
-                        principalTable: "FIXED_ASSET",
-                        principalColumn: "FIXED_ASSET_ID");
-                    table.ForeignKey(
-                        name: "WK_EFFRT_NOTE",
-                        column: x => x.NOTE_ID,
-                        principalTable: "NOTE_DATA",
-                        principalColumn: "NOTE_ID");
-                    table.ForeignKey(
-                        name: "WK_EFFRT_PARENT",
-                        column: x => x.WORK_EFFORT_PARENT_ID,
-                        principalTable: "WORK_EFFORT",
-                        principalColumn: "WORK_EFFORT_ID");
-                    table.ForeignKey(
-                        name: "WK_EFFRT_PRODUCT",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "WK_EFFRT_PROJECT",
-                        column: x => x.PROJECT_ID,
-                        principalTable: "WORK_EFFORT",
-                        principalColumn: "WORK_EFFORT_ID");
-                    table.ForeignKey(
-                        name: "WK_EFFRT_PRPTYP",
-                        column: x => x.WORK_EFFORT_PURPOSE_TYPE_ID,
-                        principalTable: "WORK_EFFORT_PURPOSE_TYPE",
-                        principalColumn: "WORK_EFFORT_PURPOSE_TYPE_ID");
-                    table.ForeignKey(
-                        name: "WK_EFFRT_RELATED_ORDER",
-                        column: x => x.RELATED_ORDER_ID,
-                        principalTable: "ORDER_HEADER",
-                        principalColumn: "ORDER_ID");
-                    table.ForeignKey(
-                        name: "WK_EFFRT_SERVICE",
-                        column: x => x.SERVICE_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "WK_EFFRT_SUBPROJECT",
-                        column: x => x.SUB_PROJECT_ID,
-                        principalTable: "WORK_EFFORT",
-                        principalColumn: "WORK_EFFORT_ID");
-                    table.ForeignKey(
-                        name: "WK_EFFRT_SUPPLIER",
-                        column: x => x.PARTY_ID_SUPPLIER,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                    table.ForeignKey(
-                        name: "WK_EFFRT_TYPE",
-                        column: x => x.WORK_EFFORT_TYPE_ID,
-                        principalTable: "WORK_EFFORT_TYPE",
-                        principalColumn: "WORK_EFFORT_TYPE_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
                 name: "PRODUCT_PROMO_CATEGORY",
                 columns: table => new
                 {
@@ -27097,48 +25163,6 @@ namespace Persistence.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "PRODUCT_PROMO_PRODUCT",
-                columns: table => new
-                {
-                    PRODUCT_PROMO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_PROMO_RULE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_PROMO_ACTION_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_PROMO_COND_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_PROMO_APPL_ENUM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_PROMO_PRODUCT", x => new { x.PRODUCT_PROMO_ID, x.PRODUCT_PROMO_RULE_ID, x.PRODUCT_PROMO_ACTION_SEQ_ID, x.PRODUCT_PROMO_COND_SEQ_ID, x.PRODUCT_ID });
-                    table.ForeignKey(
-                        name: "PROD_PRPRD_ENUM",
-                        column: x => x.PRODUCT_PROMO_APPL_ENUM_ID,
-                        principalTable: "ENUMERATION",
-                        principalColumn: "ENUM_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRPRD_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRPRD_PROMO",
-                        column: x => x.PRODUCT_PROMO_ID,
-                        principalTable: "PRODUCT_PROMO",
-                        principalColumn: "PRODUCT_PROMO_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
                 name: "PRODUCT_PROMO_RULE",
                 columns: table => new
                 {
@@ -27195,53 +25219,6 @@ namespace Persistence.Migrations
                         column: x => x.PRODUCT_PROMO_ID,
                         principalTable: "PRODUCT_PROMO",
                         principalColumn: "PRODUCT_PROMO_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "SALES_FORECAST_DETAIL",
-                columns: table => new
-                {
-                    SALES_FORECAST_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SALES_FORECAST_DETAIL_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    QUANTITY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_CATEGORY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SALES_FORECAST_DETAIL", x => new { x.SALES_FORECAST_ID, x.SALES_FORECAST_DETAIL_ID });
-                    table.ForeignKey(
-                        name: "SALES4CDTL_PCTGRY",
-                        column: x => x.PRODUCT_CATEGORY_ID,
-                        principalTable: "PRODUCT_CATEGORY",
-                        principalColumn: "PRODUCT_CATEGORY_ID");
-                    table.ForeignKey(
-                        name: "SALES4CDTL_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "SALES4CDTL_QTY_UOM",
-                        column: x => x.QUANTITY_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "SALES4CDTL_SALES4C",
-                        column: x => x.SALES_FORECAST_ID,
-                        principalTable: "SALES_FORECAST",
-                        principalColumn: "SALES_FORECAST_ID");
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -28527,6 +26504,2926 @@ namespace Persistence.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "PROD_PROMO_CODE_CONTACT_MECH",
+                columns: table => new
+                {
+                    PRODUCT_PROMO_CODE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CONTACT_MECH_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PROD_PROMO_CODE_CONTACT_MEC", x => new { x.PRODUCT_PROMO_CODE_ID, x.CONTACT_MECH_ID });
+                    table.ForeignKey(
+                        name: "PROD_PRCDE_CM",
+                        column: x => x.CONTACT_MECH_ID,
+                        principalTable: "CONTACT_MECH",
+                        principalColumn: "CONTACT_MECH_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRCDE_PCD",
+                        column: x => x.PRODUCT_PROMO_CODE_ID,
+                        principalTable: "PRODUCT_PROMO_CODE",
+                        principalColumn: "PRODUCT_PROMO_CODE_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_PROMO_CODE_EMAIL",
+                columns: table => new
+                {
+                    PRODUCT_PROMO_CODE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    EMAIL_ADDRESS = table.Column<string>(type: "varchar(320)", unicode: false, maxLength: 320, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_PROMO_CODE_EMAIL", x => new { x.PRODUCT_PROMO_CODE_ID, x.EMAIL_ADDRESS });
+                    table.ForeignKey(
+                        name: "PROD_PRCDE_OPCD",
+                        column: x => x.PRODUCT_PROMO_CODE_ID,
+                        principalTable: "PRODUCT_PROMO_CODE",
+                        principalColumn: "PRODUCT_PROMO_CODE_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_PROMO_CODE_PARTY",
+                columns: table => new
+                {
+                    PRODUCT_PROMO_CODE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_PROMO_CODE_PARTY", x => new { x.PRODUCT_PROMO_CODE_ID, x.PARTY_ID });
+                    table.ForeignKey(
+                        name: "PROD_PRCDP_PCD",
+                        column: x => x.PRODUCT_PROMO_CODE_ID,
+                        principalTable: "PRODUCT_PROMO_CODE",
+                        principalColumn: "PRODUCT_PROMO_CODE_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRCDP_PRTY",
+                        column: x => x.PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_PROMO_USE",
+                columns: table => new
+                {
+                    ORDER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PROMO_SEQUENCE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_PROMO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_PROMO_CODE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    TOTAL_DISCOUNT_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    QUANTITY_LEFT_IN_ACTIONS = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_PROMO_USE", x => new { x.ORDER_ID, x.PROMO_SEQUENCE_ID });
+                    table.ForeignKey(
+                        name: "PROD_PRUSE_CODE",
+                        column: x => x.PRODUCT_PROMO_CODE_ID,
+                        principalTable: "PRODUCT_PROMO_CODE",
+                        principalColumn: "PRODUCT_PROMO_CODE_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRUSE_ORDR",
+                        column: x => x.ORDER_ID,
+                        principalTable: "ORDER_HEADER",
+                        principalColumn: "ORDER_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRUSE_PROMO",
+                        column: x => x.PRODUCT_PROMO_ID,
+                        principalTable: "PRODUCT_PROMO",
+                        principalColumn: "PRODUCT_PROMO_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRUSE_PTY",
+                        column: x => x.PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "SHOPPING_LIST",
+                columns: table => new
+                {
+                    SHOPPING_LIST_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SHOPPING_LIST_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PARENT_SHOPPING_LIST_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_STORE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    VISITOR_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LIST_NAME = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    IS_PUBLIC = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    IS_ACTIVE = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CURRENCY_UOM = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SHIPMENT_METHOD_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CARRIER_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CARRIER_ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CONTACT_MECH_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PAYMENT_METHOD_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RECURRENCE_INFO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_ORDERED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_ADMIN_MODIFIED = table.Column<DateTime>(type: "datetime", nullable: true),
+                    PRODUCT_PROMO_CODE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SHOPPING_LIST", x => x.SHOPPING_LIST_ID);
+                    table.ForeignKey(
+                        name: "SHLIST_CMECH",
+                        column: x => x.CONTACT_MECH_ID,
+                        principalTable: "CONTACT_MECH",
+                        principalColumn: "CONTACT_MECH_ID");
+                    table.ForeignKey(
+                        name: "SHLIST_CSSM",
+                        columns: x => new { x.SHIPMENT_METHOD_TYPE_ID, x.CARRIER_PARTY_ID, x.CARRIER_ROLE_TYPE_ID },
+                        principalTable: "CARRIER_SHIPMENT_METHOD",
+                        principalColumns: new[] { "SHIPMENT_METHOD_TYPE_ID", "PARTY_ID", "ROLE_TYPE_ID" });
+                    table.ForeignKey(
+                        name: "SHLIST_PARENT",
+                        column: x => x.PARENT_SHOPPING_LIST_ID,
+                        principalTable: "SHOPPING_LIST",
+                        principalColumn: "SHOPPING_LIST_ID");
+                    table.ForeignKey(
+                        name: "SHLIST_PRDS",
+                        column: x => x.PRODUCT_STORE_ID,
+                        principalTable: "PRODUCT_STORE",
+                        principalColumn: "PRODUCT_STORE_ID");
+                    table.ForeignKey(
+                        name: "SHLIST_PRMCD",
+                        column: x => x.PRODUCT_PROMO_CODE_ID,
+                        principalTable: "PRODUCT_PROMO_CODE",
+                        principalColumn: "PRODUCT_PROMO_CODE_ID");
+                    table.ForeignKey(
+                        name: "SHLIST_PTY",
+                        column: x => x.PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "SHLIST_PYMETH",
+                        column: x => x.PAYMENT_METHOD_ID,
+                        principalTable: "PAYMENT_METHOD",
+                        principalColumn: "PAYMENT_METHOD_ID");
+                    table.ForeignKey(
+                        name: "SHLIST_RECINFO",
+                        column: x => x.RECURRENCE_INFO_ID,
+                        principalTable: "RECURRENCE_INFO",
+                        principalColumn: "RECURRENCE_INFO_ID");
+                    table.ForeignKey(
+                        name: "SHLIST_TYPE",
+                        column: x => x.SHOPPING_LIST_TYPE_ID,
+                        principalTable: "SHOPPING_LIST_TYPE",
+                        principalColumn: "SHOPPING_LIST_TYPE_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_PROMO_ACTION",
+                columns: table => new
+                {
+                    PRODUCT_PROMO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_PROMO_RULE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_PROMO_ACTION_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_PROMO_ACTION_ENUM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CUSTOM_METHOD_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ORDER_ADJUSTMENT_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SERVICE_NAME = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    AMOUNT = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    USE_CART_QUANTITY = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_PROMO_ACTION", x => new { x.PRODUCT_PROMO_ID, x.PRODUCT_PROMO_RULE_ID, x.PRODUCT_PROMO_ACTION_SEQ_ID });
+                    table.ForeignKey(
+                        name: "PROD_PRACT_CMET",
+                        column: x => x.CUSTOM_METHOD_ID,
+                        principalTable: "CUSTOM_METHOD",
+                        principalColumn: "CUSTOM_METHOD_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRACT_ENUM",
+                        column: x => x.PRODUCT_PROMO_ACTION_ENUM_ID,
+                        principalTable: "ENUMERATION",
+                        principalColumn: "ENUM_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRACT_OATYPE",
+                        column: x => x.ORDER_ADJUSTMENT_TYPE_ID,
+                        principalTable: "ORDER_ADJUSTMENT_TYPE",
+                        principalColumn: "ORDER_ADJUSTMENT_TYPE_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRACT_PR",
+                        column: x => x.PRODUCT_PROMO_ID,
+                        principalTable: "PRODUCT_PROMO",
+                        principalColumn: "PRODUCT_PROMO_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRACT_RL",
+                        columns: x => new { x.PRODUCT_PROMO_ID, x.PRODUCT_PROMO_RULE_ID },
+                        principalTable: "PRODUCT_PROMO_RULE",
+                        principalColumns: new[] { "PRODUCT_PROMO_ID", "PRODUCT_PROMO_RULE_ID" });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_PROMO_COND",
+                columns: table => new
+                {
+                    PRODUCT_PROMO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_PROMO_RULE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_PROMO_COND_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CUSTOM_METHOD_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    INPUT_PARAM_ENUM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    OPERATOR_ENUM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    COND_VALUE = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    OTHER_VALUE = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_PROMO_COND", x => new { x.PRODUCT_PROMO_ID, x.PRODUCT_PROMO_RULE_ID, x.PRODUCT_PROMO_COND_SEQ_ID });
+                    table.ForeignKey(
+                        name: "PROD_PRCOND_CMETH",
+                        column: x => x.CUSTOM_METHOD_ID,
+                        principalTable: "CUSTOM_METHOD",
+                        principalColumn: "CUSTOM_METHOD_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRCOND_INENUM",
+                        column: x => x.INPUT_PARAM_ENUM_ID,
+                        principalTable: "ENUMERATION",
+                        principalColumn: "ENUM_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRCOND_OPENUM",
+                        column: x => x.OPERATOR_ENUM_ID,
+                        principalTable: "ENUMERATION",
+                        principalColumn: "ENUM_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRCOND_PROMO",
+                        column: x => x.PRODUCT_PROMO_ID,
+                        principalTable: "PRODUCT_PROMO",
+                        principalColumn: "PRODUCT_PROMO_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRCOND_RULE",
+                        columns: x => new { x.PRODUCT_PROMO_ID, x.PRODUCT_PROMO_RULE_ID },
+                        principalTable: "PRODUCT_PROMO_RULE",
+                        principalColumns: new[] { "PRODUCT_PROMO_ID", "PRODUCT_PROMO_RULE_ID" });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PERF_REVIEW_ITEM",
+                columns: table => new
+                {
+                    EMPLOYEE_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    EMPLOYEE_ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PERF_REVIEW_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PERF_REVIEW_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PERF_REVIEW_ITEM_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PERF_RATING_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    COMMENTS = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PERF_REVIEW_ITEM", x => new { x.EMPLOYEE_PARTY_ID, x.EMPLOYEE_ROLE_TYPE_ID, x.PERF_REVIEW_ID, x.PERF_REVIEW_ITEM_SEQ_ID });
+                    table.ForeignKey(
+                        name: "PERF_RVITM_EPTRL",
+                        columns: x => new { x.EMPLOYEE_PARTY_ID, x.EMPLOYEE_ROLE_TYPE_ID },
+                        principalTable: "PARTY_ROLE",
+                        principalColumns: new[] { "PARTY_ID", "ROLE_TYPE_ID" });
+                    table.ForeignKey(
+                        name: "PERF_RVITM_EPTY",
+                        column: x => x.EMPLOYEE_PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "PERF_RVITM_PFRV",
+                        columns: x => new { x.EMPLOYEE_PARTY_ID, x.EMPLOYEE_ROLE_TYPE_ID, x.PERF_REVIEW_ID },
+                        principalTable: "PERF_REVIEW",
+                        principalColumns: new[] { "EMPLOYEE_PARTY_ID", "EMPLOYEE_ROLE_TYPE_ID", "PERF_REVIEW_ID" });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "QUOTE_TERM_ATTRIBUTE",
+                columns: table => new
+                {
+                    TERM_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    QUOTE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    QUOTE_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ATTR_NAME = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ATTR_VALUE = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ATTR_DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_QUOTE_TERM_ATTRIBUTE", x => new { x.TERM_TYPE_ID, x.QUOTE_ID, x.QUOTE_ITEM_SEQ_ID, x.ATTR_NAME });
+                    table.ForeignKey(
+                        name: "QUOTE_TERM_ATTR",
+                        columns: x => new { x.TERM_TYPE_ID, x.QUOTE_ID, x.QUOTE_ITEM_SEQ_ID },
+                        principalTable: "QUOTE_TERM",
+                        principalColumns: new[] { "TERM_TYPE_ID", "QUOTE_ID", "QUOTE_ITEM_SEQ_ID" });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PARTY_NEED",
+                columns: table => new
+                {
+                    PARTY_NEED_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PARTY_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    NEED_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    COMMUNICATION_EVENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_CATEGORY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    VISIT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DATETIME_RECORDED = table.Column<DateTime>(type: "datetime", nullable: true),
+                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PARTY_NEED", x => new { x.PARTY_NEED_ID, x.PARTY_ID, x.ROLE_TYPE_ID });
+                    table.ForeignKey(
+                        name: "PARTY_NEED_CMEV",
+                        column: x => x.COMMUNICATION_EVENT_ID,
+                        principalTable: "COMMUNICATION_EVENT",
+                        principalColumn: "COMMUNICATION_EVENT_ID");
+                    table.ForeignKey(
+                        name: "PARTY_NEED_NDTP",
+                        column: x => x.NEED_TYPE_ID,
+                        principalTable: "NEED_TYPE",
+                        principalColumn: "NEED_TYPE_ID");
+                    table.ForeignKey(
+                        name: "PARTY_NEED_PCAT",
+                        column: x => x.PRODUCT_CATEGORY_ID,
+                        principalTable: "PRODUCT_CATEGORY",
+                        principalColumn: "PRODUCT_CATEGORY_ID");
+                    table.ForeignKey(
+                        name: "PARTY_NEED_PTTP",
+                        column: x => x.PARTY_TYPE_ID,
+                        principalTable: "PARTY_TYPE",
+                        principalColumn: "PARTY_TYPE_ID");
+                    table.ForeignKey(
+                        name: "PARTY_NEED_PTY",
+                        column: x => x.PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "PARTY_NEED_RTYP",
+                        column: x => x.ROLE_TYPE_ID,
+                        principalTable: "ROLE_TYPE",
+                        principalColumn: "ROLE_TYPE_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PERSON_TRAINING",
+                columns: table => new
+                {
+                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    TRAINING_CLASS_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
+                    TRAINING_REQUEST_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    WORK_EFFORT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    APPROVER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    APPROVAL_STATUS = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    REASON = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PERSON_TRAINING", x => new { x.PARTY_ID, x.TRAINING_CLASS_TYPE_ID, x.FROM_DATE });
+                    table.ForeignKey(
+                        name: "PERS_TRNG_APPR",
+                        column: x => x.APPROVER_ID,
+                        principalTable: "PERSON",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "PERS_TRNG_PRTY",
+                        column: x => x.PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "PERS_TRNG_TCTP",
+                        column: x => x.TRAINING_CLASS_TYPE_ID,
+                        principalTable: "TRAINING_CLASS_TYPE",
+                        principalColumn: "TRAINING_CLASS_TYPE_ID");
+                    table.ForeignKey(
+                        name: "PERS_TRNG_TRNRQ",
+                        column: x => x.TRAINING_REQUEST_ID,
+                        principalTable: "TRAINING_REQUEST",
+                        principalColumn: "TRAINING_REQUEST_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT",
+                columns: table => new
+                {
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRIMARY_PRODUCT_CATEGORY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FACILITY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    INTRODUCTION_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    RELEASE_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    SUPPORT_DISCONTINUATION_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    SALES_DISCONTINUATION_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    SALES_DISC_WHEN_NOT_AVAIL = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    INTERNAL_NAME = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    BRAND_NAME = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    COMMENTS = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_NAME = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_NAME_ARABIC = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_NAME_TURKISH = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LONG_DESCRIPTION = table.Column<string>(type: "text", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRICE_DETAIL_TEXT = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SMALL_IMAGE_URL = table.Column<string>(type: "varchar(2000)", unicode: false, maxLength: 2000, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    MEDIUM_IMAGE_URL = table.Column<string>(type: "varchar(2000)", unicode: false, maxLength: 2000, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LARGE_IMAGE_URL = table.Column<string>(type: "varchar(2000)", unicode: false, maxLength: 2000, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DETAIL_IMAGE_URL = table.Column<string>(type: "varchar(2000)", unicode: false, maxLength: 2000, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ORIGINAL_IMAGE_URL = table.Column<string>(type: "varchar(2000)", unicode: false, maxLength: 2000, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DETAIL_SCREEN = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    INVENTORY_MESSAGE = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    INVENTORY_ITEM_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    REQUIRE_INVENTORY = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    QUANTITY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    QUANTITY_INCLUDED = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    PIECES_INCLUDED = table.Column<int>(type: "int", nullable: true),
+                    ServiceLifeDays = table.Column<int>(type: "int", nullable: true),
+                    ServiceLifeMileage = table.Column<int>(type: "int", nullable: true),
+                    REQUIRE_AMOUNT = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FIXED_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    AMOUNT_UOM_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    WEIGHT_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SHIPPING_WEIGHT = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    PRODUCT_WEIGHT = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    HEIGHT_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_HEIGHT = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    SHIPPING_HEIGHT = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    WIDTH_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_WIDTH = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    SHIPPING_WIDTH = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    DEPTH_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_DEPTH = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    SHIPPING_DEPTH = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    DIAMETER_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_DIAMETER = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    PRODUCT_RATING = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    RATING_TYPE_ENUM = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RETURNABLE = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    TAXABLE = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CHARGE_SHIPPING = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AUTO_CREATE_KEYWORDS = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    INCLUDE_IN_PROMOTIONS = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    IS_VIRTUAL = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    IS_VARIANT = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    VIRTUAL_VARIANT_METHOD_ENUM = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ORIGIN_GEO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    REQUIREMENT_METHOD_ENUM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    BILL_OF_MATERIAL_LEVEL = table.Column<int>(type: "int", nullable: true),
+                    RESERV_MAX_PERSONS = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    RESERV2ND_P_P_PERC = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    RESERV_NTH_P_P_PERC = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    CONFIG_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CREATED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_BY_USER_LOGIN = table.Column<string>(type: "varchar(250)", unicode: false, maxLength: 250, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_MODIFIED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_MODIFIED_BY_USER_LOGIN = table.Column<string>(type: "varchar(250)", unicode: false, maxLength: 250, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    IN_SHIPPING_BOX = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DEFAULT_SHIPMENT_BOX_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LOT_ID_FILLED_IN = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ORDER_DECIMAL_QUANTITY = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PROJECT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FLOOR_NUMBER = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    APARTMENT_SPACE_M2 = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    GARDEN_SPACE_M2 = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    GARDEN_PRICE_PER_M2 = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    APARTMENT_PRICE_PER_M2 = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    APARTMENT_STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAND_NUMBER = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT", x => x.PRODUCT_ID);
+                    table.ForeignKey(
+                        name: "FK_PRODUCT_STATUS_ITEM_APARTMENT_STATUS_ID",
+                        column: x => x.APARTMENT_STATUS_ID,
+                        principalTable: "STATUS_ITEM",
+                        principalColumn: "STATUS_ID");
+                    table.ForeignKey(
+                        name: "PROD_AMOUNT_UOMT",
+                        column: x => x.AMOUNT_UOM_TYPE_ID,
+                        principalTable: "UOM_TYPE",
+                        principalColumn: "UOM_TYPE_ID");
+                    table.ForeignKey(
+                        name: "PROD_CB_USERLOGIN",
+                        column: x => x.CREATED_BY_USER_LOGIN,
+                        principalTable: "USER_LOGIN",
+                        principalColumn: "USER_LOGIN_ID");
+                    table.ForeignKey(
+                        name: "PROD_DEPTH_UOM",
+                        column: x => x.DEPTH_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "PROD_DIAMTR_UOM",
+                        column: x => x.DIAMETER_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "PROD_FACILITY",
+                        column: x => x.FACILITY_ID,
+                        principalTable: "FACILITY",
+                        principalColumn: "FACILITY_ID");
+                    table.ForeignKey(
+                        name: "PROD_HEIGHT_UOM",
+                        column: x => x.HEIGHT_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "PROD_INV_ITEM_TYPE",
+                        column: x => x.INVENTORY_ITEM_TYPE_ID,
+                        principalTable: "INVENTORY_ITEM_TYPE",
+                        principalColumn: "INVENTORY_ITEM_TYPE_ID");
+                    table.ForeignKey(
+                        name: "PROD_LMB_USERLOGIN",
+                        column: x => x.LAST_MODIFIED_BY_USER_LOGIN,
+                        principalTable: "USER_LOGIN",
+                        principalColumn: "USER_LOGIN_ID");
+                    table.ForeignKey(
+                        name: "PROD_ORG_GEO",
+                        column: x => x.ORIGIN_GEO_ID,
+                        principalTable: "GEO",
+                        principalColumn: "GEO_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRIMARY_CAT",
+                        column: x => x.PRIMARY_PRODUCT_CATEGORY_ID,
+                        principalTable: "PRODUCT_CATEGORY",
+                        principalColumn: "PRODUCT_CATEGORY_ID");
+                    table.ForeignKey(
+                        name: "PROD_QUANT_UOM",
+                        column: x => x.QUANTITY_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "PROD_RATE_ENUM",
+                        column: x => x.RATING_TYPE_ENUM,
+                        principalTable: "ENUMERATION",
+                        principalColumn: "ENUM_ID");
+                    table.ForeignKey(
+                        name: "PROD_RQMT_ENUM",
+                        column: x => x.REQUIREMENT_METHOD_ENUM_ID,
+                        principalTable: "ENUMERATION",
+                        principalColumn: "ENUM_ID");
+                    table.ForeignKey(
+                        name: "PROD_SHBX_TYPE",
+                        column: x => x.DEFAULT_SHIPMENT_BOX_TYPE_ID,
+                        principalTable: "SHIPMENT_BOX_TYPE",
+                        principalColumn: "SHIPMENT_BOX_TYPE_ID");
+                    table.ForeignKey(
+                        name: "PROD_TYPE",
+                        column: x => x.PRODUCT_TYPE_ID,
+                        principalTable: "PRODUCT_TYPE",
+                        principalColumn: "PRODUCT_TYPE_ID");
+                    table.ForeignKey(
+                        name: "PROD_VVMETHOD_ENUM",
+                        column: x => x.VIRTUAL_VARIANT_METHOD_ENUM,
+                        principalTable: "ENUMERATION",
+                        principalColumn: "ENUM_ID");
+                    table.ForeignKey(
+                        name: "PROD_WEIGHT_UOM",
+                        column: x => x.WEIGHT_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "PROD_WIDTH_UOM",
+                        column: x => x.WIDTH_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_ATTRIBUTE",
+                columns: table => new
+                {
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ATTR_NAME = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ATTR_VALUE = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ATTR_TYPE = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ATTR_DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_ATTRIBUTE", x => new { x.PRODUCT_ID, x.ATTR_NAME });
+                    table.ForeignKey(
+                        name: "PROD_ATTR",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_AVERAGE_COST",
+                columns: table => new
+                {
+                    PRODUCT_AVERAGE_COST_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ORGANIZATION_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FACILITY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    AVERAGE_COST = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_AVERAGE_COST", x => new { x.PRODUCT_AVERAGE_COST_TYPE_ID, x.ORGANIZATION_PARTY_ID, x.PRODUCT_ID, x.FACILITY_ID, x.FROM_DATE });
+                    table.ForeignKey(
+                        name: "AVG_COST_FACI",
+                        column: x => x.FACILITY_ID,
+                        principalTable: "FACILITY",
+                        principalColumn: "FACILITY_ID");
+                    table.ForeignKey(
+                        name: "AVG_COST_PARTY",
+                        column: x => x.ORGANIZATION_PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "AVG_COST_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "AVG_COST_TYPE",
+                        column: x => x.PRODUCT_AVERAGE_COST_TYPE_ID,
+                        principalTable: "PRODUCT_AVERAGE_COST_TYPE",
+                        principalColumn: "PRODUCT_AVERAGE_COST_TYPE_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_CALCULATED_INFO",
+                columns: table => new
+                {
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    TOTAL_QUANTITY_ORDERED = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    TOTAL_TIMES_VIEWED = table.Column<int>(type: "int", nullable: true),
+                    AVERAGE_CUSTOMER_RATING = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_CALCULATED_INFO", x => x.PRODUCT_ID);
+                    table.ForeignKey(
+                        name: "PRODCI_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_CATEGORY_MEMBER",
+                columns: table => new
+                {
+                    PRODUCT_CATEGORY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    COMMENTS = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: true),
+                    QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_CATEGORY_MEMBER", x => new { x.PRODUCT_CATEGORY_ID, x.PRODUCT_ID, x.FROM_DATE });
+                    table.ForeignKey(
+                        name: "PROD_CMBR_CATEGORY",
+                        column: x => x.PRODUCT_CATEGORY_ID,
+                        principalTable: "PRODUCT_CATEGORY",
+                        principalColumn: "PRODUCT_CATEGORY_ID");
+                    table.ForeignKey(
+                        name: "PROD_CMBR_PRODUCT",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_CONFIG",
+                columns: table => new
+                {
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CONFIG_ITEM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: false),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
+                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LONG_DESCRIPTION = table.Column<string>(type: "text", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CONFIG_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DEFAULT_CONFIG_OPTION_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    IS_MANDATORY = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_CONFIG", x => new { x.PRODUCT_ID, x.CONFIG_ITEM_ID, x.SEQUENCE_NUM, x.FROM_DATE });
+                    table.ForeignKey(
+                        name: "PROD_CONF_ITEM",
+                        column: x => x.CONFIG_ITEM_ID,
+                        principalTable: "PRODUCT_CONFIG_ITEM",
+                        principalColumn: "CONFIG_ITEM_ID");
+                    table.ForeignKey(
+                        name: "PROD_CONF_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_CONFIG_PRODUCT",
+                columns: table => new
+                {
+                    CONFIG_ITEM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CONFIG_OPTION_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_CONFIG_PRODUCT", x => new { x.CONFIG_ITEM_ID, x.CONFIG_OPTION_ID, x.PRODUCT_ID });
+                    table.ForeignKey(
+                        name: "PROD_CONFP_ITEM",
+                        column: x => x.CONFIG_ITEM_ID,
+                        principalTable: "PRODUCT_CONFIG_ITEM",
+                        principalColumn: "CONFIG_ITEM_ID");
+                    table.ForeignKey(
+                        name: "PROD_CONFP_OPTN",
+                        columns: x => new { x.CONFIG_ITEM_ID, x.CONFIG_OPTION_ID },
+                        principalTable: "PRODUCT_CONFIG_OPTION",
+                        principalColumns: new[] { "CONFIG_ITEM_ID", "CONFIG_OPTION_ID" });
+                    table.ForeignKey(
+                        name: "PROD_CONFP_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_CONFIG_STATS",
+                columns: table => new
+                {
+                    CONFIG_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    NUM_OF_CONFS = table.Column<int>(type: "int", nullable: true),
+                    CONFIG_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_CONFIG_STATS", x => new { x.CONFIG_ID, x.PRODUCT_ID });
+                    table.ForeignKey(
+                        name: "PROD_CONFS_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_CONTENT",
+                columns: table => new
+                {
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CONTENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_CONTENT_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    PURCHASE_FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    PURCHASE_THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    USE_COUNT_LIMIT = table.Column<int>(type: "int", nullable: true),
+                    USE_TIME = table.Column<int>(type: "int", nullable: true),
+                    USE_TIME_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    USE_ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_CONTENT", x => new { x.PRODUCT_ID, x.CONTENT_ID, x.PRODUCT_CONTENT_TYPE_ID, x.FROM_DATE });
+                    table.ForeignKey(
+                        name: "PROD_CNT_CNT",
+                        column: x => x.CONTENT_ID,
+                        principalTable: "CONTENT",
+                        principalColumn: "CONTENT_ID");
+                    table.ForeignKey(
+                        name: "PROD_CNT_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "PROD_CNT_TYPE",
+                        column: x => x.PRODUCT_CONTENT_TYPE_ID,
+                        principalTable: "PRODUCT_CONTENT_TYPE",
+                        principalColumn: "PRODUCT_CONTENT_TYPE_ID");
+                    table.ForeignKey(
+                        name: "PROD_CNT_URT",
+                        column: x => x.USE_ROLE_TYPE_ID,
+                        principalTable: "ROLE_TYPE",
+                        principalColumn: "ROLE_TYPE_ID");
+                    table.ForeignKey(
+                        name: "PROD_CNT_UTU",
+                        column: x => x.USE_TIME_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_COST_COMPONENT_CALC",
+                columns: table => new
+                {
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    COST_COMPONENT_TYPE_ID = table.Column<string>(type: "varchar(50)", unicode: false, maxLength: 50, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
+                    COST_COMPONENT_CALC_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: true),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_COST_COMPONENT_CALC", x => new { x.PRODUCT_ID, x.COST_COMPONENT_TYPE_ID, x.FROM_DATE });
+                    table.ForeignKey(
+                        name: "PR_COS_CCC",
+                        column: x => x.COST_COMPONENT_CALC_ID,
+                        principalTable: "COST_COMPONENT_CALC",
+                        principalColumn: "COST_COMPONENT_CALC_ID");
+                    table.ForeignKey(
+                        name: "PR_COS_CCT",
+                        column: x => x.COST_COMPONENT_TYPE_ID,
+                        principalTable: "COST_COMPONENT_TYPE",
+                        principalColumn: "COST_COMPONENT_TYPE_ID");
+                    table.ForeignKey(
+                        name: "PR_COS_COMPCALC",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_FACILITY",
+                columns: table => new
+                {
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FACILITY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    MINIMUM_STOCK = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    REORDER_QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    DAYS_TO_SHIP = table.Column<int>(type: "int", nullable: true),
+                    REPLENISH_METHOD_ENUM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_INVENTORY_COUNT = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    REQUIREMENT_METHOD_ENUM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_FACILITY", x => new { x.PRODUCT_ID, x.FACILITY_ID });
+                    table.ForeignKey(
+                        name: "PROD_FAC_FAC",
+                        column: x => x.FACILITY_ID,
+                        principalTable: "FACILITY",
+                        principalColumn: "FACILITY_ID");
+                    table.ForeignKey(
+                        name: "PROD_FAC_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "PROD_FAC_REP",
+                        column: x => x.REPLENISH_METHOD_ENUM_ID,
+                        principalTable: "ENUMERATION",
+                        principalColumn: "ENUM_ID");
+                    table.ForeignKey(
+                        name: "PROD_FAC_REQ",
+                        column: x => x.REQUIREMENT_METHOD_ENUM_ID,
+                        principalTable: "ENUMERATION",
+                        principalColumn: "ENUM_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_FACILITY_ASSOC",
+                columns: table => new
+                {
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FACILITY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FACILITY_ID_TO = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FACILITY_ASSOC_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: true),
+                    TRANSIT_TIME = table.Column<int>(type: "int", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_FACILITY_ASSOC", x => new { x.PRODUCT_ID, x.FACILITY_ID, x.FACILITY_ID_TO, x.FACILITY_ASSOC_TYPE_ID, x.FROM_DATE });
+                    table.ForeignKey(
+                        name: "PRFACASSOC_FAC",
+                        column: x => x.FACILITY_ID,
+                        principalTable: "FACILITY",
+                        principalColumn: "FACILITY_ID");
+                    table.ForeignKey(
+                        name: "PRFACASSOC_FACTO",
+                        column: x => x.FACILITY_ID_TO,
+                        principalTable: "FACILITY",
+                        principalColumn: "FACILITY_ID");
+                    table.ForeignKey(
+                        name: "PRFACASSOC_PRO",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "PRFACASSOC_TYPE",
+                        column: x => x.FACILITY_ASSOC_TYPE_ID,
+                        principalTable: "FACILITY_ASSOC_TYPE",
+                        principalColumn: "FACILITY_ASSOC_TYPE_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_FACILITY_LOCATION",
+                columns: table => new
+                {
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FACILITY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LOCATION_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    MINIMUM_STOCK = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    MOVE_QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_FACILITY_LOCATION", x => new { x.PRODUCT_ID, x.FACILITY_ID, x.LOCATION_SEQ_ID });
+                    table.ForeignKey(
+                        name: "PROD_FCL_FCL",
+                        columns: x => new { x.FACILITY_ID, x.LOCATION_SEQ_ID },
+                        principalTable: "FACILITY_LOCATION",
+                        principalColumns: new[] { "FACILITY_ID", "LOCATION_SEQ_ID" });
+                    table.ForeignKey(
+                        name: "PROD_FCL_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_FEATURE_APPL",
+                columns: table => new
+                {
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_FEATURE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
+                    PRODUCT_FEATURE_APPL_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: true),
+                    AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    RECURRING_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_FEATURE_APPL", x => new { x.PRODUCT_ID, x.PRODUCT_FEATURE_ID, x.FROM_DATE });
+                    table.ForeignKey(
+                        name: "PROD_FAPPL_FEATURE",
+                        column: x => x.PRODUCT_FEATURE_ID,
+                        principalTable: "PRODUCT_FEATURE",
+                        principalColumn: "PRODUCT_FEATURE_ID");
+                    table.ForeignKey(
+                        name: "PROD_FAPPL_PRODUCT",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "PROD_FAPPL_TYPE",
+                        column: x => x.PRODUCT_FEATURE_APPL_TYPE_ID,
+                        principalTable: "PRODUCT_FEATURE_APPL_TYPE",
+                        principalColumn: "PRODUCT_FEATURE_APPL_TYPE_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_GEO",
+                columns: table => new
+                {
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    GEO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_GEO_ENUM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_GEO", x => new { x.PRODUCT_ID, x.GEO_ID });
+                    table.ForeignKey(
+                        name: "PRDGEO_ENUM",
+                        column: x => x.PRODUCT_GEO_ENUM_ID,
+                        principalTable: "ENUMERATION",
+                        principalColumn: "ENUM_ID");
+                    table.ForeignKey(
+                        name: "PRDGEO_GEO",
+                        column: x => x.GEO_ID,
+                        principalTable: "GEO",
+                        principalColumn: "GEO_ID");
+                    table.ForeignKey(
+                        name: "PRDGEO_PRODUCT",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_GL_ACCOUNT",
+                columns: table => new
+                {
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ORGANIZATION_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    GL_ACCOUNT_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    GL_ACCOUNT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_GL_ACCOUNT", x => new { x.PRODUCT_ID, x.ORGANIZATION_PARTY_ID, x.GL_ACCOUNT_TYPE_ID });
+                    table.ForeignKey(
+                        name: "PROD_GLACT_GLACT",
+                        column: x => x.GL_ACCOUNT_ID,
+                        principalTable: "GL_ACCOUNT",
+                        principalColumn: "GL_ACCOUNT_ID");
+                    table.ForeignKey(
+                        name: "PROD_GLACT_PARTY",
+                        column: x => x.ORGANIZATION_PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "PROD_GLACT_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "PROD_GLACT_TYPE",
+                        column: x => x.GL_ACCOUNT_TYPE_ID,
+                        principalTable: "GL_ACCOUNT_TYPE",
+                        principalColumn: "GL_ACCOUNT_TYPE_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_GROUP_ORDER",
+                columns: table => new
+                {
+                    GROUP_ORDER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    REQ_ORDER_QTY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    SOLD_ORDER_QTY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    JOB_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_GROUP_ORDER", x => x.GROUP_ORDER_ID);
+                    table.ForeignKey(
+                        name: "GROUP_ORDER_JOB",
+                        column: x => x.JOB_ID,
+                        principalTable: "JOB_SANDBOX",
+                        principalColumn: "JOB_ID");
+                    table.ForeignKey(
+                        name: "GROUP_ORDER_STATUS",
+                        column: x => x.STATUS_ID,
+                        principalTable: "STATUS_ITEM",
+                        principalColumn: "STATUS_ID");
+                    table.ForeignKey(
+                        name: "PROD_GROUP_ORDER",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_KEYWORD_NEW",
+                columns: table => new
+                {
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    KEYWORD = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    KEYWORD_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RELEVANCY_WEIGHT = table.Column<int>(type: "int", nullable: true),
+                    STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_KEYWORD_NEW", x => new { x.PRODUCT_ID, x.KEYWORD, x.KEYWORD_TYPE_ID });
+                    table.ForeignKey(
+                        name: "PROD_KWD_PROD_NEW",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "PROD_KWD_STTS",
+                        column: x => x.STATUS_ID,
+                        principalTable: "STATUS_ITEM",
+                        principalColumn: "STATUS_ID");
+                    table.ForeignKey(
+                        name: "PROD_KWD_TYPE",
+                        column: x => x.KEYWORD_TYPE_ID,
+                        principalTable: "ENUMERATION",
+                        principalColumn: "ENUM_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_MANUFACTURING_RULE",
+                columns: table => new
+                {
+                    RULE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID_FOR = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID_IN = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RULE_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    PRODUCT_ID_IN_SUBST = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_FEATURE = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RULE_OPERATOR = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    QUANTITY = table.Column<double>(type: "double", nullable: true),
+                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_MANUFACTURING_RULE", x => x.RULE_ID);
+                    table.ForeignKey(
+                        name: "PRODUCT_FEAT",
+                        column: x => x.PRODUCT_FEATURE,
+                        principalTable: "PRODUCT_FEATURE",
+                        principalColumn: "PRODUCT_FEATURE_ID");
+                    table.ForeignKey(
+                        name: "PRODUCT_FOR",
+                        column: x => x.PRODUCT_ID_FOR,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "PRODUCT_IN",
+                        column: x => x.PRODUCT_ID_IN,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "PRODUCT_PARENT",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "PRODUCT_SUBST",
+                        column: x => x.PRODUCT_ID_IN_SUBST,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_METER",
+                columns: table => new
+                {
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_METER_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    METER_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    METER_NAME = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_METER", x => new { x.PRODUCT_ID, x.PRODUCT_METER_TYPE_ID });
+                    table.ForeignKey(
+                        name: "PRODMTR_MTRTYP",
+                        column: x => x.PRODUCT_METER_TYPE_ID,
+                        principalTable: "PRODUCT_METER_TYPE",
+                        principalColumn: "PRODUCT_METER_TYPE_ID");
+                    table.ForeignKey(
+                        name: "PRODMTR_MTRUOM",
+                        column: x => x.METER_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "PRODMTR_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_ORDER_ITEM",
+                columns: table => new
+                {
+                    ORDER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ORDER_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ENGAGEMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ENGAGEMENT_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_ORDER_ITEM", x => new { x.ORDER_ID, x.ORDER_ITEM_SEQ_ID, x.ENGAGEMENT_ID, x.ENGAGEMENT_ITEM_SEQ_ID });
+                    table.ForeignKey(
+                        name: "PROD_OITEM_ENOHDR",
+                        column: x => x.ENGAGEMENT_ID,
+                        principalTable: "ORDER_HEADER",
+                        principalColumn: "ORDER_ID");
+                    table.ForeignKey(
+                        name: "PROD_OITEM_ENOITM",
+                        columns: x => new { x.ENGAGEMENT_ID, x.ENGAGEMENT_ITEM_SEQ_ID },
+                        principalTable: "ORDER_ITEM",
+                        principalColumns: new[] { "ORDER_ID", "ORDER_ITEM_SEQ_ID" });
+                    table.ForeignKey(
+                        name: "PROD_OITEM_OHDR",
+                        column: x => x.ORDER_ID,
+                        principalTable: "ORDER_HEADER",
+                        principalColumn: "ORDER_ID");
+                    table.ForeignKey(
+                        name: "PROD_OITEM_OITEM",
+                        columns: x => new { x.ORDER_ID, x.ORDER_ITEM_SEQ_ID },
+                        principalTable: "ORDER_ITEM",
+                        principalColumns: new[] { "ORDER_ID", "ORDER_ITEM_SEQ_ID" });
+                    table.ForeignKey(
+                        name: "PROD_OITEM_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_PAYMENT_METHOD_TYPE",
+                columns: table => new
+                {
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PAYMENT_METHOD_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_PRICE_PURPOSE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_PAYMENT_METHOD_TYPE", x => new { x.PRODUCT_ID, x.PAYMENT_METHOD_TYPE_ID, x.PRODUCT_PRICE_PURPOSE_ID, x.FROM_DATE });
+                    table.ForeignKey(
+                        name: "PROD_PMT_PMT",
+                        column: x => x.PAYMENT_METHOD_TYPE_ID,
+                        principalTable: "PAYMENT_METHOD_TYPE",
+                        principalColumn: "PAYMENT_METHOD_TYPE_ID");
+                    table.ForeignKey(
+                        name: "PROD_PMT_PPRP",
+                        column: x => x.PRODUCT_PRICE_PURPOSE_ID,
+                        principalTable: "PRODUCT_PRICE_PURPOSE",
+                        principalColumn: "PRODUCT_PRICE_PURPOSE_ID");
+                    table.ForeignKey(
+                        name: "PROD_PMT_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_PRICE",
+                columns: table => new
+                {
+                    PRODUCT_PRICE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_PRICE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_PRICE_PURPOSE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CURRENCY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_STORE_GROUP_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    PRICE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    TERM_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CUSTOM_PRICE_CALC_SERVICE = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRICE_WITHOUT_TAX = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    PRICE_WITH_TAX = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    TAX_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    TAX_PERCENTAGE = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    TAX_AUTH_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    TAX_AUTH_GEO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    TAX_IN_PRICE = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CREATED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_BY_USER_LOGIN = table.Column<string>(type: "varchar(250)", unicode: false, maxLength: 250, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_MODIFIED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_MODIFIED_BY_USER_LOGIN = table.Column<string>(type: "varchar(250)", unicode: false, maxLength: 250, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_PRICE", x => x.PRODUCT_PRICE_ID);
+                    table.ForeignKey(
+                        name: "PROD_PRC_TAXGEO",
+                        column: x => x.TAX_AUTH_GEO_ID,
+                        principalTable: "GEO",
+                        principalColumn: "GEO_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRC_TAXPTY",
+                        column: x => x.TAX_AUTH_PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRICE_CBUL",
+                        column: x => x.CREATED_BY_USER_LOGIN,
+                        principalTable: "USER_LOGIN",
+                        principalColumn: "USER_LOGIN_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRICE_CMET",
+                        column: x => x.CUSTOM_PRICE_CALC_SERVICE,
+                        principalTable: "CUSTOM_METHOD",
+                        principalColumn: "CUSTOM_METHOD_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRICE_CUOM",
+                        column: x => x.CURRENCY_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRICE_LMBUL",
+                        column: x => x.LAST_MODIFIED_BY_USER_LOGIN,
+                        principalTable: "USER_LOGIN",
+                        principalColumn: "USER_LOGIN_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRICE_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRICE_PSTG",
+                        column: x => x.PRODUCT_STORE_GROUP_ID,
+                        principalTable: "PRODUCT_STORE_GROUP",
+                        principalColumn: "PRODUCT_STORE_GROUP_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRICE_PURP",
+                        column: x => x.PRODUCT_PRICE_PURPOSE_ID,
+                        principalTable: "PRODUCT_PRICE_PURPOSE",
+                        principalColumn: "PRODUCT_PRICE_PURPOSE_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRICE_TUOM",
+                        column: x => x.TERM_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRICE_TYPE",
+                        column: x => x.PRODUCT_PRICE_TYPE_ID,
+                        principalTable: "PRODUCT_PRICE_TYPE",
+                        principalColumn: "PRODUCT_PRICE_TYPE_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_PROMO_PRODUCT",
+                columns: table => new
+                {
+                    PRODUCT_PROMO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_PROMO_RULE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_PROMO_ACTION_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_PROMO_COND_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_PROMO_APPL_ENUM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_PROMO_PRODUCT", x => new { x.PRODUCT_PROMO_ID, x.PRODUCT_PROMO_RULE_ID, x.PRODUCT_PROMO_ACTION_SEQ_ID, x.PRODUCT_PROMO_COND_SEQ_ID, x.PRODUCT_ID });
+                    table.ForeignKey(
+                        name: "PROD_PRPRD_ENUM",
+                        column: x => x.PRODUCT_PROMO_APPL_ENUM_ID,
+                        principalTable: "ENUMERATION",
+                        principalColumn: "ENUM_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRPRD_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "PROD_PRPRD_PROMO",
+                        column: x => x.PRODUCT_PROMO_ID,
+                        principalTable: "PRODUCT_PROMO",
+                        principalColumn: "PRODUCT_PROMO_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_QUALITY_STANDARD",
+                columns: table => new
+                {
+                    PRODUCT_QUALITY_STANDARD_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    STANDARD_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    MIN_VALUE = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    MAX_VALUE = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    UNIT_OF_MEASURE = table.Column<string>(type: "varchar(50)", unicode: false, maxLength: 50, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CATEGORICAL_VALUE = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    BOOLEAN_VALUE = table.Column<bool>(type: "tinyint(1)", nullable: true),
+                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_QUALITY_STANDARD", x => x.PRODUCT_QUALITY_STANDARD_ID);
+                    table.ForeignKey(
+                        name: "PQS_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "PQS_QUAL_STD",
+                        column: x => x.STANDARD_ID,
+                        principalTable: "QUALITY_STANDARD",
+                        principalColumn: "STANDARD_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_REVIEW",
+                columns: table => new
+                {
+                    PRODUCT_REVIEW_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_STORE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    USER_LOGIN_ID = table.Column<string>(type: "varchar(250)", unicode: false, maxLength: 250, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    POSTED_ANONYMOUS = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    POSTED_DATE_TIME = table.Column<DateTime>(type: "datetime", nullable: true),
+                    PRODUCT_RATING = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    PRODUCT_REVIEW = table.Column<string>(type: "text", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_REVIEW", x => x.PRODUCT_REVIEW_ID);
+                    table.ForeignKey(
+                        name: "PROD_REVIEW_PRDSTR",
+                        column: x => x.PRODUCT_STORE_ID,
+                        principalTable: "PRODUCT_STORE",
+                        principalColumn: "PRODUCT_STORE_ID");
+                    table.ForeignKey(
+                        name: "PROD_REVIEW_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "PROD_REVIEW_STTS",
+                        column: x => x.STATUS_ID,
+                        principalTable: "STATUS_ITEM",
+                        principalColumn: "STATUS_ID");
+                    table.ForeignKey(
+                        name: "PROD_REVIEW_ULH",
+                        column: x => x.USER_LOGIN_ID,
+                        principalTable: "USER_LOGIN",
+                        principalColumn: "USER_LOGIN_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_ROLE",
+                columns: table => new
+                {
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: true),
+                    COMMENTS = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_ROLE", x => new { x.PRODUCT_ID, x.PARTY_ID, x.ROLE_TYPE_ID, x.FROM_DATE });
+                    table.ForeignKey(
+                        name: "PROD_RLE_PRODUCT",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "PROD_RLE_PTYRLE",
+                        columns: x => new { x.PARTY_ID, x.ROLE_TYPE_ID },
+                        principalTable: "PARTY_ROLE",
+                        principalColumns: new[] { "PARTY_ID", "ROLE_TYPE_ID" });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PRODUCT_SUBSCRIPTION_RESOURCE",
+                columns: table => new
+                {
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SUBSCRIPTION_RESOURCE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    PURCHASE_FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    PURCHASE_THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    MAX_LIFE_TIME = table.Column<int>(type: "int", nullable: true),
+                    MAX_LIFE_TIME_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AVAILABLE_TIME = table.Column<int>(type: "int", nullable: true),
+                    AVAILABLE_TIME_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    USE_COUNT_LIMIT = table.Column<int>(type: "int", nullable: true),
+                    USE_TIME = table.Column<int>(type: "int", nullable: true),
+                    USE_TIME_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    USE_ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AUTOMATIC_EXTEND = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CANCL_AUTM_EXT_TIME = table.Column<int>(type: "int", nullable: true),
+                    CANCL_AUTM_EXT_TIME_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    GRACE_PERIOD_ON_EXPIRY = table.Column<int>(type: "int", nullable: true),
+                    GRACE_PERIOD_ON_EXPIRY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PRODUCT_SUBSCRIPTION_RESOUR", x => new { x.PRODUCT_ID, x.SUBSCRIPTION_RESOURCE_ID, x.FROM_DATE });
+                    table.ForeignKey(
+                        name: "PROD_SBRS_ATU",
+                        column: x => x.AVAILABLE_TIME_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "PROD_SBRS_CTU",
+                        column: x => x.CANCL_AUTM_EXT_TIME_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "PROD_SBRS_GTU",
+                        column: x => x.GRACE_PERIOD_ON_EXPIRY_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "PROD_SBRS_MTU",
+                        column: x => x.MAX_LIFE_TIME_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "PROD_SBRS_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "PROD_SBRS_SBRS",
+                        column: x => x.SUBSCRIPTION_RESOURCE_ID,
+                        principalTable: "SUBSCRIPTION_RESOURCE",
+                        principalColumn: "SUBSCRIPTION_RESOURCE_ID");
+                    table.ForeignKey(
+                        name: "PROD_SBRS_URT",
+                        column: x => x.USE_ROLE_TYPE_ID,
+                        principalTable: "ROLE_TYPE",
+                        principalColumn: "ROLE_TYPE_ID");
+                    table.ForeignKey(
+                        name: "PROD_SBRS_UTU",
+                        column: x => x.USE_TIME_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "REORDER_GUIDELINE",
+                columns: table => new
+                {
+                    REORDER_GUIDELINE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FACILITY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    GEO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    REORDER_QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    REORDER_LEVEL = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_REORDER_GUIDELINE", x => x.REORDER_GUIDELINE_ID);
+                    table.ForeignKey(
+                        name: "REORDER_GD_FAC",
+                        column: x => x.FACILITY_ID,
+                        principalTable: "FACILITY",
+                        principalColumn: "FACILITY_ID");
+                    table.ForeignKey(
+                        name: "REORDER_GD_GEO",
+                        column: x => x.GEO_ID,
+                        principalTable: "GEO",
+                        principalColumn: "GEO_ID");
+                    table.ForeignKey(
+                        name: "REORDER_GD_PARTY",
+                        column: x => x.PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "REORDER_GD_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "REQUIREMENT",
+                columns: table => new
+                {
+                    REQUIREMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    REQUIREMENT_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FACILITY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DELIVERABLE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FIXED_ASSET_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    REQUIREMENT_START_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    REQUIRED_BY_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    ESTIMATED_BUDGET = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    USE_CASE = table.Column<string>(type: "text", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    REASON = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CREATED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_BY_USER_LOGIN = table.Column<string>(type: "varchar(250)", unicode: false, maxLength: 250, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_MODIFIED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_MODIFIED_BY_USER_LOGIN = table.Column<string>(type: "varchar(250)", unicode: false, maxLength: 250, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FACILITY_ID_TO = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_REQUIREMENT", x => x.REQUIREMENT_ID);
+                    table.ForeignKey(
+                        name: "REQ_DELIVERABLE",
+                        column: x => x.DELIVERABLE_ID,
+                        principalTable: "DELIVERABLE",
+                        principalColumn: "DELIVERABLE_ID");
+                    table.ForeignKey(
+                        name: "REQ_FACILITY",
+                        column: x => x.FACILITY_ID,
+                        principalTable: "FACILITY",
+                        principalColumn: "FACILITY_ID");
+                    table.ForeignKey(
+                        name: "REQ_FIXED_ASSET",
+                        column: x => x.FIXED_ASSET_ID,
+                        principalTable: "FIXED_ASSET",
+                        principalColumn: "FIXED_ASSET_ID");
+                    table.ForeignKey(
+                        name: "REQ_PRODUCT",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "REQ_STTS",
+                        column: x => x.STATUS_ID,
+                        principalTable: "STATUS_ITEM",
+                        principalColumn: "STATUS_ID");
+                    table.ForeignKey(
+                        name: "REQ_TYPE",
+                        column: x => x.REQUIREMENT_TYPE_ID,
+                        principalTable: "REQUIREMENT_TYPE",
+                        principalColumn: "REQUIREMENT_TYPE_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "RETURN_ITEM",
+                columns: table => new
+                {
+                    RETURN_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RETURN_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RETURN_REASON_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RETURN_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RETURN_ITEM_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ORDER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ORDER_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    EXPECTED_ITEM_STATUS = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RETURN_QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    RECEIVED_QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    RETURN_PRICE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    RETURN_ITEM_RESPONSE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RETURN_ITEM", x => new { x.RETURN_ID, x.RETURN_ITEM_SEQ_ID });
+                    table.ForeignKey(
+                        name: "RTN_ITEM_ITSTT",
+                        column: x => x.EXPECTED_ITEM_STATUS,
+                        principalTable: "STATUS_ITEM",
+                        principalColumn: "STATUS_ID");
+                    table.ForeignKey(
+                        name: "RTN_ITEM_ODR",
+                        column: x => x.ORDER_ID,
+                        principalTable: "ORDER_HEADER",
+                        principalColumn: "ORDER_ID");
+                    table.ForeignKey(
+                        name: "RTN_ITEM_ODRIT",
+                        columns: x => new { x.ORDER_ID, x.ORDER_ITEM_SEQ_ID },
+                        principalTable: "ORDER_ITEM",
+                        principalColumns: new[] { "ORDER_ID", "ORDER_ITEM_SEQ_ID" });
+                    table.ForeignKey(
+                        name: "RTN_ITEM_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "RTN_ITEM_REASON",
+                        column: x => x.RETURN_REASON_ID,
+                        principalTable: "RETURN_REASON",
+                        principalColumn: "RETURN_REASON_ID");
+                    table.ForeignKey(
+                        name: "RTN_ITEM_RESP",
+                        column: x => x.RETURN_ITEM_RESPONSE_ID,
+                        principalTable: "RETURN_ITEM_RESPONSE",
+                        principalColumn: "RETURN_ITEM_RESPONSE_ID");
+                    table.ForeignKey(
+                        name: "RTN_ITEM_RTN",
+                        column: x => x.RETURN_ID,
+                        principalTable: "RETURN_HEADER",
+                        principalColumn: "RETURN_ID");
+                    table.ForeignKey(
+                        name: "RTN_ITEM_STTSIT",
+                        column: x => x.STATUS_ID,
+                        principalTable: "STATUS_ITEM",
+                        principalColumn: "STATUS_ID");
+                    table.ForeignKey(
+                        name: "RTN_ITEM_TYPE",
+                        column: x => x.RETURN_ITEM_TYPE_ID,
+                        principalTable: "RETURN_ITEM_TYPE",
+                        principalColumn: "RETURN_ITEM_TYPE_ID");
+                    table.ForeignKey(
+                        name: "RTN_TYPE",
+                        column: x => x.RETURN_TYPE_ID,
+                        principalTable: "RETURN_TYPE",
+                        principalColumn: "RETURN_TYPE_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "SALES_FORECAST_DETAIL",
+                columns: table => new
+                {
+                    SALES_FORECAST_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SALES_FORECAST_DETAIL_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    QUANTITY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_CATEGORY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SALES_FORECAST_DETAIL", x => new { x.SALES_FORECAST_ID, x.SALES_FORECAST_DETAIL_ID });
+                    table.ForeignKey(
+                        name: "SALES4CDTL_PCTGRY",
+                        column: x => x.PRODUCT_CATEGORY_ID,
+                        principalTable: "PRODUCT_CATEGORY",
+                        principalColumn: "PRODUCT_CATEGORY_ID");
+                    table.ForeignKey(
+                        name: "SALES4CDTL_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "SALES4CDTL_QTY_UOM",
+                        column: x => x.QUANTITY_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "SALES4CDTL_SALES4C",
+                        column: x => x.SALES_FORECAST_ID,
+                        principalTable: "SALES_FORECAST",
+                        principalColumn: "SALES_FORECAST_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "SALES_REQUEST",
+                columns: table => new
+                {
+                    SALES_REQUEST_ID = table.Column<string>(type: "varchar(20)", unicode: false, maxLength: 20, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(20)", unicode: false, maxLength: 20, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    APARTMENT_PRICE_PER_M2 = table.Column<decimal>(type: "numeric(18,4)", nullable: true),
+                    GARDEN_PRICE_PER_M2 = table.Column<decimal>(type: "numeric(18,4)", nullable: true),
+                    CUSTOMER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SALE_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    DISCOUNT = table.Column<decimal>(type: "numeric(18,4)", nullable: true),
+                    TOTAL_PRICE = table.Column<decimal>(type: "numeric(18,4)", nullable: true),
+                    COMMENTS = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ADVANCE_PAYMENT = table.Column<decimal>(type: "numeric(18,4)", nullable: true),
+                    NUMBER_OF_INSTALLMENTS = table.Column<int>(type: "int", nullable: true),
+                    DATE_OF_FIRST_INSTALLMENT = table.Column<DateTime>(type: "datetime", nullable: true),
+                    DURATION_BETWEEN_INSTALLMENTS = table.Column<int>(type: "int", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SALES_REQUEST", x => x.SALES_REQUEST_ID);
+                    table.ForeignKey(
+                        name: "FK_SALES_REQ_CUSTOMER",
+                        column: x => x.CUSTOMER_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "FK_SALES_REQ_PRODUCT",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "SERVICE_SPECIFICATION",
+                columns: table => new
+                {
+                    ServiceSpecificationId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ProductId = table.Column<string>(type: "varchar(36)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    MakeId = table.Column<string>(type: "varchar(36)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ModelId = table.Column<string>(type: "varchar(36)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    StandardTimeInMinutes = table.Column<int>(type: "int", nullable: false),
+                    FromDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    ThruDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    LastUpdatedStamp = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedStamp = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SERVICE_SPECIFICATION", x => x.ServiceSpecificationId);
+                    table.ForeignKey(
+                        name: "FK_SERVICE_SPECIFICATION_PRODUCT_CATEGORY_MakeId",
+                        column: x => x.MakeId,
+                        principalTable: "PRODUCT_CATEGORY",
+                        principalColumn: "PRODUCT_CATEGORY_ID");
+                    table.ForeignKey(
+                        name: "FK_SERVICE_SPECIFICATION_PRODUCT_CATEGORY_ModelId",
+                        column: x => x.ModelId,
+                        principalTable: "PRODUCT_CATEGORY",
+                        principalColumn: "PRODUCT_CATEGORY_ID");
+                    table.ForeignKey(
+                        name: "FK_SERVICE_SPECIFICATION_PRODUCT_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "SHOPPING_LIST_ITEM",
+                columns: table => new
+                {
+                    SHOPPING_LIST_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SHOPPING_LIST_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    MODIFIED_PRICE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    RESERV_START = table.Column<DateTime>(type: "datetime", nullable: true),
+                    RESERV_LENGTH = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    RESERV_PERSONS = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    QUANTITY_PURCHASED = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    CONFIG_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SHOPPING_LIST_ITEM", x => new { x.SHOPPING_LIST_ID, x.SHOPPING_LIST_ITEM_SEQ_ID });
+                    table.ForeignKey(
+                        name: "SHLIST_ITEM_LIST",
+                        column: x => x.SHOPPING_LIST_ID,
+                        principalTable: "SHOPPING_LIST",
+                        principalColumn: "SHOPPING_LIST_ID");
+                    table.ForeignKey(
+                        name: "SHLIST_ITEM_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "SUBSCRIPTION",
+                columns: table => new
+                {
+                    SUBSCRIPTION_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SUBSCRIPTION_RESOURCE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    COMMUNICATION_EVENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CONTACT_MECH_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ORIGINATED_FROM_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ORIGINATED_FROM_ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PARTY_NEED_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    NEED_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ORDER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ORDER_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_CATEGORY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    INVENTORY_ITEM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SUBSCRIPTION_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    EXTERNAL_SUBSCRIPTION_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    PURCHASE_FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    PURCHASE_THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    MAX_LIFE_TIME = table.Column<int>(type: "int", nullable: true),
+                    MAX_LIFE_TIME_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AVAILABLE_TIME = table.Column<int>(type: "int", nullable: true),
+                    AVAILABLE_TIME_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    USE_COUNT_LIMIT = table.Column<int>(type: "int", nullable: true),
+                    USE_TIME = table.Column<int>(type: "int", nullable: true),
+                    USE_TIME_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AUTOMATIC_EXTEND = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CANCL_AUTM_EXT_TIME = table.Column<int>(type: "int", nullable: true),
+                    CANCL_AUTM_EXT_TIME_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    GRACE_PERIOD_ON_EXPIRY = table.Column<int>(type: "int", nullable: true),
+                    GRACE_PERIOD_ON_EXPIRY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    EXPIRATION_COMPLETED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SUBSCRIPTION", x => x.SUBSCRIPTION_ID);
+                    table.ForeignKey(
+                        name: "SUBSC_ATU",
+                        column: x => x.AVAILABLE_TIME_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "SUBSC_CONT_MECH",
+                        column: x => x.CONTACT_MECH_ID,
+                        principalTable: "CONTACT_MECH",
+                        principalColumn: "CONTACT_MECH_ID");
+                    table.ForeignKey(
+                        name: "SUBSC_CTU",
+                        column: x => x.CANCL_AUTM_EXT_TIME_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "SUBSC_GTU",
+                        column: x => x.GRACE_PERIOD_ON_EXPIRY_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "SUBSC_INV_ITM",
+                        column: x => x.INVENTORY_ITEM_ID,
+                        principalTable: "INVENTORY_ITEM",
+                        principalColumn: "INVENTORY_ITEM_ID");
+                    table.ForeignKey(
+                        name: "SUBSC_MTU",
+                        column: x => x.MAX_LIFE_TIME_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "SUBSC_NEED_TYPE",
+                        column: x => x.NEED_TYPE_ID,
+                        principalTable: "NEED_TYPE",
+                        principalColumn: "NEED_TYPE_ID");
+                    table.ForeignKey(
+                        name: "SUBSC_OPARTY",
+                        column: x => x.ORIGINATED_FROM_PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "SUBSC_ORDERITM",
+                        columns: x => new { x.ORDER_ID, x.ORDER_ITEM_SEQ_ID },
+                        principalTable: "ORDER_ITEM",
+                        principalColumns: new[] { "ORDER_ID", "ORDER_ITEM_SEQ_ID" });
+                    table.ForeignKey(
+                        name: "SUBSC_OROLE_TYPE",
+                        column: x => x.ORIGINATED_FROM_ROLE_TYPE_ID,
+                        principalTable: "ROLE_TYPE",
+                        principalColumn: "ROLE_TYPE_ID");
+                    table.ForeignKey(
+                        name: "SUBSC_PARTY",
+                        column: x => x.PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "SUBSC_PRODUCT",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "SUBSC_PROD_CAT",
+                        column: x => x.PRODUCT_CATEGORY_ID,
+                        principalTable: "PRODUCT_CATEGORY",
+                        principalColumn: "PRODUCT_CATEGORY_ID");
+                    table.ForeignKey(
+                        name: "SUBSC_ROLE_TYPE",
+                        column: x => x.ROLE_TYPE_ID,
+                        principalTable: "ROLE_TYPE",
+                        principalColumn: "ROLE_TYPE_ID");
+                    table.ForeignKey(
+                        name: "SUBSC_SRESRC",
+                        column: x => x.SUBSCRIPTION_RESOURCE_ID,
+                        principalTable: "SUBSCRIPTION_RESOURCE",
+                        principalColumn: "SUBSCRIPTION_RESOURCE_ID");
+                    table.ForeignKey(
+                        name: "SUBSC_TO_TYPE",
+                        column: x => x.SUBSCRIPTION_TYPE_ID,
+                        principalTable: "SUBSCRIPTION_TYPE",
+                        principalColumn: "SUBSCRIPTION_TYPE_ID");
+                    table.ForeignKey(
+                        name: "SUBSC_UTU",
+                        column: x => x.USE_TIME_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "SUPPLIER_PRODUCT",
+                columns: table => new
+                {
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AVAILABLE_FROM_DATE = table.Column<DateTime>(type: "DATETIME(6)", nullable: false),
+                    CURRENCY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AVAILABLE_THRU_DATE = table.Column<DateTime>(type: "DATETIME(6)", nullable: true),
+                    SUPPLIER_PREF_ORDER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SUPPLIER_RATING_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    STANDARD_LEAD_TIME_DAYS = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    MINIMUM_ORDER_QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    ORDER_QTY_INCREMENTS = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    UNITS_INCLUDED = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    QUANTITY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AGREEMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AGREEMENT_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_PRICE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    SHIPPING_PRICE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    SUPPLIER_PRODUCT_NAME = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SUPPLIER_PRODUCT_ID = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CAN_DROP_SHIP = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    COMMENTS = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SUPPLIER_PRODUCT", x => new { x.PRODUCT_ID, x.PARTY_ID, x.CURRENCY_UOM_ID, x.AVAILABLE_FROM_DATE });
+                    table.ForeignKey(
+                        name: "SUPPL_PROD_AGRIT",
+                        columns: x => new { x.AGREEMENT_ID, x.AGREEMENT_ITEM_SEQ_ID },
+                        principalTable: "AGREEMENT_ITEM",
+                        principalColumns: new[] { "AGREEMENT_ID", "AGREEMENT_ITEM_SEQ_ID" });
+                    table.ForeignKey(
+                        name: "SUPPL_PROD_CUOM",
+                        column: x => x.CURRENCY_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "SUPPL_PROD_PARTY",
+                        column: x => x.PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "SUPPL_PROD_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "SUPPL_PROD_QUOM",
+                        column: x => x.QUANTITY_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "SUPPL_PROD_SPORD",
+                        column: x => x.SUPPLIER_PREF_ORDER_ID,
+                        principalTable: "SUPPLIER_PREF_ORDER",
+                        principalColumn: "SUPPLIER_PREF_ORDER_ID");
+                    table.ForeignKey(
+                        name: "SUPPL_PROD_SRTPE",
+                        column: x => x.SUPPLIER_RATING_TYPE_ID,
+                        principalTable: "SUPPLIER_RATING_TYPE",
+                        principalColumn: "SUPPLIER_RATING_TYPE_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "VENDOR_PRODUCT",
+                columns: table => new
+                {
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    VENDOR_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_STORE_GROUP_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_VENDOR_PRODUCT", x => new { x.PRODUCT_ID, x.VENDOR_PARTY_ID, x.PRODUCT_STORE_GROUP_ID });
+                    table.ForeignKey(
+                        name: "VENDPROD_PROD",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "VENDPROD_PSGRP",
+                        column: x => x.PRODUCT_STORE_GROUP_ID,
+                        principalTable: "PRODUCT_STORE_GROUP",
+                        principalColumn: "PRODUCT_STORE_GROUP_ID");
+                    table.ForeignKey(
+                        name: "VENDPROD_VPTY",
+                        column: x => x.VENDOR_PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "WORK_EFFORT",
+                columns: table => new
+                {
+                    WORK_EFFORT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    WORK_EFFORT_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CURRENT_STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_STATUS_UPDATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    WORK_EFFORT_PURPOSE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    WORK_EFFORT_PARENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRIORITY = table.Column<int>(type: "int", nullable: true),
+                    WORK_EFFORT_NAME = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DESCRIPTION = table.Column<string>(type: "varchar(4000)", unicode: false, maxLength: 4000, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DEDUCTION_DESCRIPTION = table.Column<string>(type: "varchar(2000)", unicode: false, maxLength: 2000, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ESTIMATED_START_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    ESTIMATED_COMPLETION_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    ACTUAL_START_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    ACTUAL_COMPLETION_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    ProcurementDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    ESTIMATED_MILLI_SECONDS = table.Column<double>(type: "double", nullable: true),
+                    ESTIMATED_SETUP_MILLIS = table.Column<double>(type: "double", nullable: true),
+                    ESTIMATE_CALC_METHOD = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ACTUAL_MILLI_SECONDS = table.Column<double>(type: "double", nullable: true),
+                    ACTUAL_SETUP_MILLIS = table.Column<double>(type: "double", nullable: true),
+                    FIXED_ASSET_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    NOTE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    QUANTITY_TO_PRODUCE = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    QUANTITY_PRODUCED = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    QUANTITY_REJECTED = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    RESERV_PERSONS = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    RESERV2ND_P_P_PERC = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    RESERV_NTH_P_P_PERC = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    REVISION_NUMBER = table.Column<int>(type: "int", nullable: true),
+                    CREATED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_BY_USER_LOGIN = table.Column<string>(type: "varchar(250)", unicode: false, maxLength: 250, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_MODIFIED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_MODIFIED_BY_USER_LOGIN = table.Column<string>(type: "varchar(250)", unicode: false, maxLength: 250, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    PROJECT_NUM = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CERTIFICATE_NUMBER = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PROJECT_NAME = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SUB_PROJECT_NAME = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    COST_TYPE = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    TOTAL_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    DISCOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    TransportationExpenses = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
+                    Gratuities = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
+                    PROJECT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SUB_PROJECT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FACILITY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PARTY_ID_SUPPLIER = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PARTY_ID_CONTRACTOR = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PartyIdEmployee = table.Column<string>(type: "varchar(36)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RELATED_ORDER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CERTIFICATE_CATEGORY = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SUPPLIER_OR_CONTRACTOR_TYPE = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LINE_NUMBER = table.Column<int>(type: "int", nullable: true),
+                    QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
+                    RATE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    COMPLETION_PERCENTAGE = table.Column<decimal>(type: "decimal(5,2)", nullable: true),
+                    DUE_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    PAID_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    DEDUCTIONS = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    INSURANCE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    MATERIAL_PRICE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    LABOR_PRICE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    ADDITIONAL_INSURANCE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    REMAINING_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    AchievementPercent = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
+                    NOTES = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SERVICE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    QuantityUomId = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PaymentMethodId = table.Column<string>(type: "varchar(36)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CHEQUE_NUMBER = table.Column<string>(type: "varchar(50)", unicode: false, maxLength: 50, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CHEQUE_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    GlAccountId = table.Column<string>(type: "varchar(36)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AccommodationMapId = table.Column<string>(type: "varchar(36)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AccommodationSpotId = table.Column<string>(type: "varchar(36)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    MoneyUomUomId = table.Column<string>(type: "varchar(36)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RecurrenceInfoId = table.Column<string>(type: "varchar(36)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RuntimeDataId = table.Column<string>(type: "varchar(36)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ScopeEnumEnumId = table.Column<string>(type: "varchar(36)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    TempExprId = table.Column<string>(type: "varchar(36)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WORK_EFFORT", x => x.WORK_EFFORT_ID);
+                    table.ForeignKey(
+                        name: "FK_WORK_EFFORT_ACCOMMODATION_MAP_AccommodationMapId",
+                        column: x => x.AccommodationMapId,
+                        principalTable: "ACCOMMODATION_MAP",
+                        principalColumn: "ACCOMMODATION_MAP_ID");
+                    table.ForeignKey(
+                        name: "FK_WORK_EFFORT_ACCOMMODATION_SPOT_AccommodationSpotId",
+                        column: x => x.AccommodationSpotId,
+                        principalTable: "ACCOMMODATION_SPOT",
+                        principalColumn: "ACCOMMODATION_SPOT_ID");
+                    table.ForeignKey(
+                        name: "FK_WORK_EFFORT_ENUMERATION_ScopeEnumEnumId",
+                        column: x => x.ScopeEnumEnumId,
+                        principalTable: "ENUMERATION",
+                        principalColumn: "ENUM_ID");
+                    table.ForeignKey(
+                        name: "FK_WORK_EFFORT_GL_ACCOUNT_GlAccountId",
+                        column: x => x.GlAccountId,
+                        principalTable: "GL_ACCOUNT",
+                        principalColumn: "GL_ACCOUNT_ID");
+                    table.ForeignKey(
+                        name: "FK_WORK_EFFORT_PARTY_PartyIdEmployee",
+                        column: x => x.PartyIdEmployee,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "FK_WORK_EFFORT_PAYMENT_METHOD_PaymentMethodId",
+                        column: x => x.PaymentMethodId,
+                        principalTable: "PAYMENT_METHOD",
+                        principalColumn: "PAYMENT_METHOD_ID");
+                    table.ForeignKey(
+                        name: "FK_WORK_EFFORT_RECURRENCE_INFO_RecurrenceInfoId",
+                        column: x => x.RecurrenceInfoId,
+                        principalTable: "RECURRENCE_INFO",
+                        principalColumn: "RECURRENCE_INFO_ID");
+                    table.ForeignKey(
+                        name: "FK_WORK_EFFORT_RUNTIME_DATA_RuntimeDataId",
+                        column: x => x.RuntimeDataId,
+                        principalTable: "RUNTIME_DATA",
+                        principalColumn: "RUNTIME_DATA_ID");
+                    table.ForeignKey(
+                        name: "FK_WORK_EFFORT_TEMPORAL_EXPRESSION_TempExprId",
+                        column: x => x.TempExprId,
+                        principalTable: "TEMPORAL_EXPRESSION",
+                        principalColumn: "TEMP_EXPR_ID");
+                    table.ForeignKey(
+                        name: "FK_WORK_EFFORT_UOM_MoneyUomUomId",
+                        column: x => x.MoneyUomUomId,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "WK_EFFRT_CONTRACTOR",
+                        column: x => x.PARTY_ID_CONTRACTOR,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "WK_EFFRT_CURSTTS",
+                        column: x => x.CURRENT_STATUS_ID,
+                        principalTable: "STATUS_ITEM",
+                        principalColumn: "STATUS_ID");
+                    table.ForeignKey(
+                        name: "WK_EFFRT_CUS_MET",
+                        column: x => x.ESTIMATE_CALC_METHOD,
+                        principalTable: "CUSTOM_METHOD",
+                        principalColumn: "CUSTOM_METHOD_ID");
+                    table.ForeignKey(
+                        name: "WK_EFFRT_FACILITY",
+                        column: x => x.FACILITY_ID,
+                        principalTable: "FACILITY",
+                        principalColumn: "FACILITY_ID");
+                    table.ForeignKey(
+                        name: "WK_EFFRT_FXDASST",
+                        column: x => x.FIXED_ASSET_ID,
+                        principalTable: "FIXED_ASSET",
+                        principalColumn: "FIXED_ASSET_ID");
+                    table.ForeignKey(
+                        name: "WK_EFFRT_NOTE",
+                        column: x => x.NOTE_ID,
+                        principalTable: "NOTE_DATA",
+                        principalColumn: "NOTE_ID");
+                    table.ForeignKey(
+                        name: "WK_EFFRT_PARENT",
+                        column: x => x.WORK_EFFORT_PARENT_ID,
+                        principalTable: "WORK_EFFORT",
+                        principalColumn: "WORK_EFFORT_ID");
+                    table.ForeignKey(
+                        name: "WK_EFFRT_PRODUCT",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "WK_EFFRT_PROJECT",
+                        column: x => x.PROJECT_ID,
+                        principalTable: "WORK_EFFORT",
+                        principalColumn: "WORK_EFFORT_ID");
+                    table.ForeignKey(
+                        name: "WK_EFFRT_PRPTYP",
+                        column: x => x.WORK_EFFORT_PURPOSE_TYPE_ID,
+                        principalTable: "WORK_EFFORT_PURPOSE_TYPE",
+                        principalColumn: "WORK_EFFORT_PURPOSE_TYPE_ID");
+                    table.ForeignKey(
+                        name: "WK_EFFRT_RELATED_ORDER",
+                        column: x => x.RELATED_ORDER_ID,
+                        principalTable: "ORDER_HEADER",
+                        principalColumn: "ORDER_ID");
+                    table.ForeignKey(
+                        name: "WK_EFFRT_SERVICE",
+                        column: x => x.SERVICE_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "WK_EFFRT_SUBPROJECT",
+                        column: x => x.SUB_PROJECT_ID,
+                        principalTable: "WORK_EFFORT",
+                        principalColumn: "WORK_EFFORT_ID");
+                    table.ForeignKey(
+                        name: "WK_EFFRT_SUPPLIER",
+                        column: x => x.PARTY_ID_SUPPLIER,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "WK_EFFRT_TYPE",
+                        column: x => x.WORK_EFFORT_TYPE_ID,
+                        principalTable: "WORK_EFFORT_TYPE",
+                        principalColumn: "WORK_EFFORT_TYPE_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "PRODUCT_FEATURE_APPL_ATTR",
                 columns: table => new
                 {
@@ -28732,24 +29629,14 @@ namespace Persistence.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "PERSON_TRAINING",
+                name: "SHOPPING_LIST_ITEM_SURVEY",
                 columns: table => new
                 {
-                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                    SHOPPING_LIST_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    TRAINING_CLASS_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                    SHOPPING_LIST_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
-                    TRAINING_REQUEST_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    WORK_EFFORT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    APPROVER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    APPROVAL_STATUS = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    REASON = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                    SURVEY_RESPONSE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
                     LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
@@ -28758,32 +29645,108 @@ namespace Persistence.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PERSON_TRAINING", x => new { x.PARTY_ID, x.TRAINING_CLASS_TYPE_ID, x.FROM_DATE });
+                    table.PrimaryKey("PK_SHOPPING_LIST_ITEM_SURVEY", x => new { x.SHOPPING_LIST_ID, x.SHOPPING_LIST_ITEM_SEQ_ID, x.SURVEY_RESPONSE_ID });
                     table.ForeignKey(
-                        name: "PERS_TRNG_APPR",
-                        column: x => x.APPROVER_ID,
-                        principalTable: "PERSON",
-                        principalColumn: "PARTY_ID");
+                        name: "SHLIST_ITSUR_ITEM",
+                        columns: x => new { x.SHOPPING_LIST_ID, x.SHOPPING_LIST_ITEM_SEQ_ID },
+                        principalTable: "SHOPPING_LIST_ITEM",
+                        principalColumns: new[] { "SHOPPING_LIST_ID", "SHOPPING_LIST_ITEM_SEQ_ID" });
                     table.ForeignKey(
-                        name: "PERS_TRNG_PRTY",
-                        column: x => x.PARTY_ID,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
+                        name: "SHLIST_ITSUR_LIST",
+                        column: x => x.SHOPPING_LIST_ID,
+                        principalTable: "SHOPPING_LIST",
+                        principalColumn: "SHOPPING_LIST_ID");
                     table.ForeignKey(
-                        name: "PERS_TRNG_TCTP",
-                        column: x => x.TRAINING_CLASS_TYPE_ID,
-                        principalTable: "TRAINING_CLASS_TYPE",
-                        principalColumn: "TRAINING_CLASS_TYPE_ID");
+                        name: "SHLIST_ITSUR_RESP",
+                        column: x => x.SURVEY_RESPONSE_ID,
+                        principalTable: "SURVEY_RESPONSE",
+                        principalColumn: "SURVEY_RESPONSE_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "SUBSCRIPTION_ATTRIBUTE",
+                columns: table => new
+                {
+                    SUBSCRIPTION_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ATTR_NAME = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ATTR_VALUE = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ATTR_DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SUBSCRIPTION_ATTRIBUTE", x => new { x.SUBSCRIPTION_ID, x.ATTR_NAME });
                     table.ForeignKey(
-                        name: "PERS_TRNG_TRNRQ",
-                        column: x => x.TRAINING_REQUEST_ID,
-                        principalTable: "TRAINING_REQUEST",
-                        principalColumn: "TRAINING_REQUEST_ID");
+                        name: "SUBSC_ATTR",
+                        column: x => x.SUBSCRIPTION_ID,
+                        principalTable: "SUBSCRIPTION",
+                        principalColumn: "SUBSCRIPTION_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "SUBSCRIPTION_COMM_EVENT",
+                columns: table => new
+                {
+                    SUBSCRIPTION_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    COMMUNICATION_EVENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SUBSCRIPTION_COMM_EVENT", x => new { x.SUBSCRIPTION_ID, x.COMMUNICATION_EVENT_ID });
                     table.ForeignKey(
-                        name: "PERS_TRNG_WREF",
-                        column: x => x.WORK_EFFORT_ID,
-                        principalTable: "WORK_EFFORT",
-                        principalColumn: "WORK_EFFORT_ID");
+                        name: "SUBSC_COM_EVENT",
+                        column: x => x.COMMUNICATION_EVENT_ID,
+                        principalTable: "COMMUNICATION_EVENT",
+                        principalColumn: "COMMUNICATION_EVENT_ID");
+                    table.ForeignKey(
+                        name: "SUBSC_SUBSC",
+                        column: x => x.SUBSCRIPTION_ID,
+                        principalTable: "SUBSCRIPTION",
+                        principalColumn: "SUBSCRIPTION_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "SUBSCRIPTION_FULFILLMENT_PIECE",
+                columns: table => new
+                {
+                    SUBSCRIPTION_ACTIVITY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SUBSCRIPTION_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SUBSCRIPTION_FULFILLMENT_PI", x => new { x.SUBSCRIPTION_ACTIVITY_ID, x.SUBSCRIPTION_ID });
+                    table.ForeignKey(
+                        name: "SUBSC_FP",
+                        column: x => x.SUBSCRIPTION_ID,
+                        principalTable: "SUBSCRIPTION",
+                        principalColumn: "SUBSCRIPTION_ID");
+                    table.ForeignKey(
+                        name: "SUBSC_FP_ACT",
+                        column: x => x.SUBSCRIPTION_ACTIVITY_ID,
+                        principalTable: "SUBSCRIPTION_ACTIVITY",
+                        principalColumn: "SUBSCRIPTION_ACTIVITY_ID");
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -29268,6 +30231,35 @@ namespace Persistence.Migrations
                         column: x => x.SHIPMENT_TYPE_ID,
                         principalTable: "SHIPMENT_TYPE",
                         principalColumn: "SHIPMENT_TYPE_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "SHOPPING_LIST_WORK_EFFORT",
+                columns: table => new
+                {
+                    SHOPPING_LIST_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    WORK_EFFORT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SHOPPING_LIST_WORK_EFFORT", x => new { x.SHOPPING_LIST_ID, x.WORK_EFFORT_ID });
+                    table.ForeignKey(
+                        name: "SHLISTWE_SHLST",
+                        column: x => x.SHOPPING_LIST_ID,
+                        principalTable: "SHOPPING_LIST",
+                        principalColumn: "SHOPPING_LIST_ID");
+                    table.ForeignKey(
+                        name: "SHLISTWE_WEFF",
+                        column: x => x.WORK_EFFORT_ID,
+                        principalTable: "WORK_EFFORT",
+                        principalColumn: "WORK_EFFORT_ID");
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -30261,761 +31253,6 @@ namespace Persistence.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "PROD_PROMO_CODE_CONTACT_MECH",
-                columns: table => new
-                {
-                    PRODUCT_PROMO_CODE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CONTACT_MECH_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PROD_PROMO_CODE_CONTACT_MEC", x => new { x.PRODUCT_PROMO_CODE_ID, x.CONTACT_MECH_ID });
-                    table.ForeignKey(
-                        name: "PROD_PRCDE_CM",
-                        column: x => x.CONTACT_MECH_ID,
-                        principalTable: "CONTACT_MECH",
-                        principalColumn: "CONTACT_MECH_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRCDE_PCD",
-                        column: x => x.PRODUCT_PROMO_CODE_ID,
-                        principalTable: "PRODUCT_PROMO_CODE",
-                        principalColumn: "PRODUCT_PROMO_CODE_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_PROMO_CODE_EMAIL",
-                columns: table => new
-                {
-                    PRODUCT_PROMO_CODE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    EMAIL_ADDRESS = table.Column<string>(type: "varchar(320)", unicode: false, maxLength: 320, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_PROMO_CODE_EMAIL", x => new { x.PRODUCT_PROMO_CODE_ID, x.EMAIL_ADDRESS });
-                    table.ForeignKey(
-                        name: "PROD_PRCDE_OPCD",
-                        column: x => x.PRODUCT_PROMO_CODE_ID,
-                        principalTable: "PRODUCT_PROMO_CODE",
-                        principalColumn: "PRODUCT_PROMO_CODE_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_PROMO_CODE_PARTY",
-                columns: table => new
-                {
-                    PRODUCT_PROMO_CODE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_PROMO_CODE_PARTY", x => new { x.PRODUCT_PROMO_CODE_ID, x.PARTY_ID });
-                    table.ForeignKey(
-                        name: "PROD_PRCDP_PCD",
-                        column: x => x.PRODUCT_PROMO_CODE_ID,
-                        principalTable: "PRODUCT_PROMO_CODE",
-                        principalColumn: "PRODUCT_PROMO_CODE_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRCDP_PRTY",
-                        column: x => x.PARTY_ID,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_PROMO_USE",
-                columns: table => new
-                {
-                    ORDER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PROMO_SEQUENCE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_PROMO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_PROMO_CODE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    TOTAL_DISCOUNT_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    QUANTITY_LEFT_IN_ACTIONS = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_PROMO_USE", x => new { x.ORDER_ID, x.PROMO_SEQUENCE_ID });
-                    table.ForeignKey(
-                        name: "PROD_PRUSE_CODE",
-                        column: x => x.PRODUCT_PROMO_CODE_ID,
-                        principalTable: "PRODUCT_PROMO_CODE",
-                        principalColumn: "PRODUCT_PROMO_CODE_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRUSE_ORDR",
-                        column: x => x.ORDER_ID,
-                        principalTable: "ORDER_HEADER",
-                        principalColumn: "ORDER_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRUSE_PROMO",
-                        column: x => x.PRODUCT_PROMO_ID,
-                        principalTable: "PRODUCT_PROMO",
-                        principalColumn: "PRODUCT_PROMO_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRUSE_PTY",
-                        column: x => x.PARTY_ID,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "SHOPPING_LIST",
-                columns: table => new
-                {
-                    SHOPPING_LIST_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SHOPPING_LIST_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PARENT_SHOPPING_LIST_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_STORE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    VISITOR_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LIST_NAME = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    IS_PUBLIC = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    IS_ACTIVE = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CURRENCY_UOM = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SHIPMENT_METHOD_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CARRIER_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CARRIER_ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CONTACT_MECH_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PAYMENT_METHOD_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    RECURRENCE_INFO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_ORDERED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_ADMIN_MODIFIED = table.Column<DateTime>(type: "datetime", nullable: true),
-                    PRODUCT_PROMO_CODE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SHOPPING_LIST", x => x.SHOPPING_LIST_ID);
-                    table.ForeignKey(
-                        name: "SHLIST_CMECH",
-                        column: x => x.CONTACT_MECH_ID,
-                        principalTable: "CONTACT_MECH",
-                        principalColumn: "CONTACT_MECH_ID");
-                    table.ForeignKey(
-                        name: "SHLIST_CSSM",
-                        columns: x => new { x.SHIPMENT_METHOD_TYPE_ID, x.CARRIER_PARTY_ID, x.CARRIER_ROLE_TYPE_ID },
-                        principalTable: "CARRIER_SHIPMENT_METHOD",
-                        principalColumns: new[] { "SHIPMENT_METHOD_TYPE_ID", "PARTY_ID", "ROLE_TYPE_ID" });
-                    table.ForeignKey(
-                        name: "SHLIST_PARENT",
-                        column: x => x.PARENT_SHOPPING_LIST_ID,
-                        principalTable: "SHOPPING_LIST",
-                        principalColumn: "SHOPPING_LIST_ID");
-                    table.ForeignKey(
-                        name: "SHLIST_PRDS",
-                        column: x => x.PRODUCT_STORE_ID,
-                        principalTable: "PRODUCT_STORE",
-                        principalColumn: "PRODUCT_STORE_ID");
-                    table.ForeignKey(
-                        name: "SHLIST_PRMCD",
-                        column: x => x.PRODUCT_PROMO_CODE_ID,
-                        principalTable: "PRODUCT_PROMO_CODE",
-                        principalColumn: "PRODUCT_PROMO_CODE_ID");
-                    table.ForeignKey(
-                        name: "SHLIST_PTY",
-                        column: x => x.PARTY_ID,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                    table.ForeignKey(
-                        name: "SHLIST_PYMETH",
-                        column: x => x.PAYMENT_METHOD_ID,
-                        principalTable: "PAYMENT_METHOD",
-                        principalColumn: "PAYMENT_METHOD_ID");
-                    table.ForeignKey(
-                        name: "SHLIST_RECINFO",
-                        column: x => x.RECURRENCE_INFO_ID,
-                        principalTable: "RECURRENCE_INFO",
-                        principalColumn: "RECURRENCE_INFO_ID");
-                    table.ForeignKey(
-                        name: "SHLIST_TYPE",
-                        column: x => x.SHOPPING_LIST_TYPE_ID,
-                        principalTable: "SHOPPING_LIST_TYPE",
-                        principalColumn: "SHOPPING_LIST_TYPE_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_PROMO_ACTION",
-                columns: table => new
-                {
-                    PRODUCT_PROMO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_PROMO_RULE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_PROMO_ACTION_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_PROMO_ACTION_ENUM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CUSTOM_METHOD_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ORDER_ADJUSTMENT_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SERVICE_NAME = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    AMOUNT = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    USE_CART_QUANTITY = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_PROMO_ACTION", x => new { x.PRODUCT_PROMO_ID, x.PRODUCT_PROMO_RULE_ID, x.PRODUCT_PROMO_ACTION_SEQ_ID });
-                    table.ForeignKey(
-                        name: "PROD_PRACT_CMET",
-                        column: x => x.CUSTOM_METHOD_ID,
-                        principalTable: "CUSTOM_METHOD",
-                        principalColumn: "CUSTOM_METHOD_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRACT_ENUM",
-                        column: x => x.PRODUCT_PROMO_ACTION_ENUM_ID,
-                        principalTable: "ENUMERATION",
-                        principalColumn: "ENUM_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRACT_OATYPE",
-                        column: x => x.ORDER_ADJUSTMENT_TYPE_ID,
-                        principalTable: "ORDER_ADJUSTMENT_TYPE",
-                        principalColumn: "ORDER_ADJUSTMENT_TYPE_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRACT_PR",
-                        column: x => x.PRODUCT_PROMO_ID,
-                        principalTable: "PRODUCT_PROMO",
-                        principalColumn: "PRODUCT_PROMO_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRACT_RL",
-                        columns: x => new { x.PRODUCT_PROMO_ID, x.PRODUCT_PROMO_RULE_ID },
-                        principalTable: "PRODUCT_PROMO_RULE",
-                        principalColumns: new[] { "PRODUCT_PROMO_ID", "PRODUCT_PROMO_RULE_ID" });
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_PROMO_COND",
-                columns: table => new
-                {
-                    PRODUCT_PROMO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_PROMO_RULE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_PROMO_COND_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CUSTOM_METHOD_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    INPUT_PARAM_ENUM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    OPERATOR_ENUM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    COND_VALUE = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    OTHER_VALUE = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_PROMO_COND", x => new { x.PRODUCT_PROMO_ID, x.PRODUCT_PROMO_RULE_ID, x.PRODUCT_PROMO_COND_SEQ_ID });
-                    table.ForeignKey(
-                        name: "PROD_PRCOND_CMETH",
-                        column: x => x.CUSTOM_METHOD_ID,
-                        principalTable: "CUSTOM_METHOD",
-                        principalColumn: "CUSTOM_METHOD_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRCOND_INENUM",
-                        column: x => x.INPUT_PARAM_ENUM_ID,
-                        principalTable: "ENUMERATION",
-                        principalColumn: "ENUM_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRCOND_OPENUM",
-                        column: x => x.OPERATOR_ENUM_ID,
-                        principalTable: "ENUMERATION",
-                        principalColumn: "ENUM_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRCOND_PROMO",
-                        column: x => x.PRODUCT_PROMO_ID,
-                        principalTable: "PRODUCT_PROMO",
-                        principalColumn: "PRODUCT_PROMO_ID");
-                    table.ForeignKey(
-                        name: "PROD_PRCOND_RULE",
-                        columns: x => new { x.PRODUCT_PROMO_ID, x.PRODUCT_PROMO_RULE_ID },
-                        principalTable: "PRODUCT_PROMO_RULE",
-                        principalColumns: new[] { "PRODUCT_PROMO_ID", "PRODUCT_PROMO_RULE_ID" });
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PERF_REVIEW_ITEM",
-                columns: table => new
-                {
-                    EMPLOYEE_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    EMPLOYEE_ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PERF_REVIEW_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PERF_REVIEW_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PERF_REVIEW_ITEM_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PERF_RATING_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    COMMENTS = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PERF_REVIEW_ITEM", x => new { x.EMPLOYEE_PARTY_ID, x.EMPLOYEE_ROLE_TYPE_ID, x.PERF_REVIEW_ID, x.PERF_REVIEW_ITEM_SEQ_ID });
-                    table.ForeignKey(
-                        name: "PERF_RVITM_EPTRL",
-                        columns: x => new { x.EMPLOYEE_PARTY_ID, x.EMPLOYEE_ROLE_TYPE_ID },
-                        principalTable: "PARTY_ROLE",
-                        principalColumns: new[] { "PARTY_ID", "ROLE_TYPE_ID" });
-                    table.ForeignKey(
-                        name: "PERF_RVITM_EPTY",
-                        column: x => x.EMPLOYEE_PARTY_ID,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                    table.ForeignKey(
-                        name: "PERF_RVITM_PFRV",
-                        columns: x => new { x.EMPLOYEE_PARTY_ID, x.EMPLOYEE_ROLE_TYPE_ID, x.PERF_REVIEW_ID },
-                        principalTable: "PERF_REVIEW",
-                        principalColumns: new[] { "EMPLOYEE_PARTY_ID", "EMPLOYEE_ROLE_TYPE_ID", "PERF_REVIEW_ID" });
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "RETURN_ITEM",
-                columns: table => new
-                {
-                    RETURN_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    RETURN_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    RETURN_REASON_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    RETURN_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    RETURN_ITEM_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ORDER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ORDER_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    EXPECTED_ITEM_STATUS = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    RETURN_QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    RECEIVED_QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    RETURN_PRICE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    RETURN_ITEM_RESPONSE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_RETURN_ITEM", x => new { x.RETURN_ID, x.RETURN_ITEM_SEQ_ID });
-                    table.ForeignKey(
-                        name: "RTN_ITEM_ITSTT",
-                        column: x => x.EXPECTED_ITEM_STATUS,
-                        principalTable: "STATUS_ITEM",
-                        principalColumn: "STATUS_ID");
-                    table.ForeignKey(
-                        name: "RTN_ITEM_ODR",
-                        column: x => x.ORDER_ID,
-                        principalTable: "ORDER_HEADER",
-                        principalColumn: "ORDER_ID");
-                    table.ForeignKey(
-                        name: "RTN_ITEM_ODRIT",
-                        columns: x => new { x.ORDER_ID, x.ORDER_ITEM_SEQ_ID },
-                        principalTable: "ORDER_ITEM",
-                        principalColumns: new[] { "ORDER_ID", "ORDER_ITEM_SEQ_ID" });
-                    table.ForeignKey(
-                        name: "RTN_ITEM_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "RTN_ITEM_REASON",
-                        column: x => x.RETURN_REASON_ID,
-                        principalTable: "RETURN_REASON",
-                        principalColumn: "RETURN_REASON_ID");
-                    table.ForeignKey(
-                        name: "RTN_ITEM_RESP",
-                        column: x => x.RETURN_ITEM_RESPONSE_ID,
-                        principalTable: "RETURN_ITEM_RESPONSE",
-                        principalColumn: "RETURN_ITEM_RESPONSE_ID");
-                    table.ForeignKey(
-                        name: "RTN_ITEM_RTN",
-                        column: x => x.RETURN_ID,
-                        principalTable: "RETURN_HEADER",
-                        principalColumn: "RETURN_ID");
-                    table.ForeignKey(
-                        name: "RTN_ITEM_STTSIT",
-                        column: x => x.STATUS_ID,
-                        principalTable: "STATUS_ITEM",
-                        principalColumn: "STATUS_ID");
-                    table.ForeignKey(
-                        name: "RTN_ITEM_TYPE",
-                        column: x => x.RETURN_ITEM_TYPE_ID,
-                        principalTable: "RETURN_ITEM_TYPE",
-                        principalColumn: "RETURN_ITEM_TYPE_ID");
-                    table.ForeignKey(
-                        name: "RTN_TYPE",
-                        column: x => x.RETURN_TYPE_ID,
-                        principalTable: "RETURN_TYPE",
-                        principalColumn: "RETURN_TYPE_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "QUOTE_TERM_ATTRIBUTE",
-                columns: table => new
-                {
-                    TERM_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    QUOTE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    QUOTE_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ATTR_NAME = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ATTR_VALUE = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ATTR_DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_QUOTE_TERM_ATTRIBUTE", x => new { x.TERM_TYPE_ID, x.QUOTE_ID, x.QUOTE_ITEM_SEQ_ID, x.ATTR_NAME });
-                    table.ForeignKey(
-                        name: "QUOTE_TERM_ATTR",
-                        columns: x => new { x.TERM_TYPE_ID, x.QUOTE_ID, x.QUOTE_ITEM_SEQ_ID },
-                        principalTable: "QUOTE_TERM",
-                        principalColumns: new[] { "TERM_TYPE_ID", "QUOTE_ID", "QUOTE_ITEM_SEQ_ID" });
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PRODUCT_SUBSCRIPTION_RESOURCE",
-                columns: table => new
-                {
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SUBSCRIPTION_RESOURCE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    PURCHASE_FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    PURCHASE_THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    MAX_LIFE_TIME = table.Column<int>(type: "int", nullable: true),
-                    MAX_LIFE_TIME_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    AVAILABLE_TIME = table.Column<int>(type: "int", nullable: true),
-                    AVAILABLE_TIME_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    USE_COUNT_LIMIT = table.Column<int>(type: "int", nullable: true),
-                    USE_TIME = table.Column<int>(type: "int", nullable: true),
-                    USE_TIME_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    USE_ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    AUTOMATIC_EXTEND = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CANCL_AUTM_EXT_TIME = table.Column<int>(type: "int", nullable: true),
-                    CANCL_AUTM_EXT_TIME_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    GRACE_PERIOD_ON_EXPIRY = table.Column<int>(type: "int", nullable: true),
-                    GRACE_PERIOD_ON_EXPIRY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PRODUCT_SUBSCRIPTION_RESOUR", x => new { x.PRODUCT_ID, x.SUBSCRIPTION_RESOURCE_ID, x.FROM_DATE });
-                    table.ForeignKey(
-                        name: "PROD_SBRS_ATU",
-                        column: x => x.AVAILABLE_TIME_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "PROD_SBRS_CTU",
-                        column: x => x.CANCL_AUTM_EXT_TIME_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "PROD_SBRS_GTU",
-                        column: x => x.GRACE_PERIOD_ON_EXPIRY_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "PROD_SBRS_MTU",
-                        column: x => x.MAX_LIFE_TIME_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "PROD_SBRS_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "PROD_SBRS_SBRS",
-                        column: x => x.SUBSCRIPTION_RESOURCE_ID,
-                        principalTable: "SUBSCRIPTION_RESOURCE",
-                        principalColumn: "SUBSCRIPTION_RESOURCE_ID");
-                    table.ForeignKey(
-                        name: "PROD_SBRS_URT",
-                        column: x => x.USE_ROLE_TYPE_ID,
-                        principalTable: "ROLE_TYPE",
-                        principalColumn: "ROLE_TYPE_ID");
-                    table.ForeignKey(
-                        name: "PROD_SBRS_UTU",
-                        column: x => x.USE_TIME_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "SUBSCRIPTION",
-                columns: table => new
-                {
-                    SUBSCRIPTION_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SUBSCRIPTION_RESOURCE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    COMMUNICATION_EVENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CONTACT_MECH_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ORIGINATED_FROM_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ORIGINATED_FROM_ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PARTY_NEED_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    NEED_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ORDER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ORDER_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_CATEGORY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    INVENTORY_ITEM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SUBSCRIPTION_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    EXTERNAL_SUBSCRIPTION_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    PURCHASE_FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    PURCHASE_THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    MAX_LIFE_TIME = table.Column<int>(type: "int", nullable: true),
-                    MAX_LIFE_TIME_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    AVAILABLE_TIME = table.Column<int>(type: "int", nullable: true),
-                    AVAILABLE_TIME_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    USE_COUNT_LIMIT = table.Column<int>(type: "int", nullable: true),
-                    USE_TIME = table.Column<int>(type: "int", nullable: true),
-                    USE_TIME_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    AUTOMATIC_EXTEND = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CANCL_AUTM_EXT_TIME = table.Column<int>(type: "int", nullable: true),
-                    CANCL_AUTM_EXT_TIME_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    GRACE_PERIOD_ON_EXPIRY = table.Column<int>(type: "int", nullable: true),
-                    GRACE_PERIOD_ON_EXPIRY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    EXPIRATION_COMPLETED_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SUBSCRIPTION", x => x.SUBSCRIPTION_ID);
-                    table.ForeignKey(
-                        name: "SUBSC_ATU",
-                        column: x => x.AVAILABLE_TIME_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "SUBSC_CONT_MECH",
-                        column: x => x.CONTACT_MECH_ID,
-                        principalTable: "CONTACT_MECH",
-                        principalColumn: "CONTACT_MECH_ID");
-                    table.ForeignKey(
-                        name: "SUBSC_CTU",
-                        column: x => x.CANCL_AUTM_EXT_TIME_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "SUBSC_GTU",
-                        column: x => x.GRACE_PERIOD_ON_EXPIRY_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "SUBSC_INV_ITM",
-                        column: x => x.INVENTORY_ITEM_ID,
-                        principalTable: "INVENTORY_ITEM",
-                        principalColumn: "INVENTORY_ITEM_ID");
-                    table.ForeignKey(
-                        name: "SUBSC_MTU",
-                        column: x => x.MAX_LIFE_TIME_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "SUBSC_NEED_TYPE",
-                        column: x => x.NEED_TYPE_ID,
-                        principalTable: "NEED_TYPE",
-                        principalColumn: "NEED_TYPE_ID");
-                    table.ForeignKey(
-                        name: "SUBSC_OPARTY",
-                        column: x => x.ORIGINATED_FROM_PARTY_ID,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                    table.ForeignKey(
-                        name: "SUBSC_ORDERITM",
-                        columns: x => new { x.ORDER_ID, x.ORDER_ITEM_SEQ_ID },
-                        principalTable: "ORDER_ITEM",
-                        principalColumns: new[] { "ORDER_ID", "ORDER_ITEM_SEQ_ID" });
-                    table.ForeignKey(
-                        name: "SUBSC_OROLE_TYPE",
-                        column: x => x.ORIGINATED_FROM_ROLE_TYPE_ID,
-                        principalTable: "ROLE_TYPE",
-                        principalColumn: "ROLE_TYPE_ID");
-                    table.ForeignKey(
-                        name: "SUBSC_PARTY",
-                        column: x => x.PARTY_ID,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                    table.ForeignKey(
-                        name: "SUBSC_PRODUCT",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                    table.ForeignKey(
-                        name: "SUBSC_PROD_CAT",
-                        column: x => x.PRODUCT_CATEGORY_ID,
-                        principalTable: "PRODUCT_CATEGORY",
-                        principalColumn: "PRODUCT_CATEGORY_ID");
-                    table.ForeignKey(
-                        name: "SUBSC_ROLE_TYPE",
-                        column: x => x.ROLE_TYPE_ID,
-                        principalTable: "ROLE_TYPE",
-                        principalColumn: "ROLE_TYPE_ID");
-                    table.ForeignKey(
-                        name: "SUBSC_SRESRC",
-                        column: x => x.SUBSCRIPTION_RESOURCE_ID,
-                        principalTable: "SUBSCRIPTION_RESOURCE",
-                        principalColumn: "SUBSCRIPTION_RESOURCE_ID");
-                    table.ForeignKey(
-                        name: "SUBSC_TO_TYPE",
-                        column: x => x.SUBSCRIPTION_TYPE_ID,
-                        principalTable: "SUBSCRIPTION_TYPE",
-                        principalColumn: "SUBSCRIPTION_TYPE_ID");
-                    table.ForeignKey(
-                        name: "SUBSC_UTU",
-                        column: x => x.USE_TIME_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
                 name: "SHIPMENT_ATTRIBUTE",
                 columns: table => new
                 {
@@ -31375,160 +31612,6 @@ namespace Persistence.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "SHOPPING_LIST_ITEM",
-                columns: table => new
-                {
-                    SHOPPING_LIST_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SHOPPING_LIST_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PRODUCT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    QUANTITY = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    MODIFIED_PRICE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    RESERV_START = table.Column<DateTime>(type: "datetime", nullable: true),
-                    RESERV_LENGTH = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    RESERV_PERSONS = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    QUANTITY_PURCHASED = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
-                    CONFIG_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SHOPPING_LIST_ITEM", x => new { x.SHOPPING_LIST_ID, x.SHOPPING_LIST_ITEM_SEQ_ID });
-                    table.ForeignKey(
-                        name: "SHLIST_ITEM_LIST",
-                        column: x => x.SHOPPING_LIST_ID,
-                        principalTable: "SHOPPING_LIST",
-                        principalColumn: "SHOPPING_LIST_ID");
-                    table.ForeignKey(
-                        name: "SHLIST_ITEM_PROD",
-                        column: x => x.PRODUCT_ID,
-                        principalTable: "PRODUCT",
-                        principalColumn: "PRODUCT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "SHOPPING_LIST_WORK_EFFORT",
-                columns: table => new
-                {
-                    SHOPPING_LIST_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    WORK_EFFORT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SHOPPING_LIST_WORK_EFFORT", x => new { x.SHOPPING_LIST_ID, x.WORK_EFFORT_ID });
-                    table.ForeignKey(
-                        name: "SHLISTWE_SHLST",
-                        column: x => x.SHOPPING_LIST_ID,
-                        principalTable: "SHOPPING_LIST",
-                        principalColumn: "SHOPPING_LIST_ID");
-                    table.ForeignKey(
-                        name: "SHLISTWE_WEFF",
-                        column: x => x.WORK_EFFORT_ID,
-                        principalTable: "WORK_EFFORT",
-                        principalColumn: "WORK_EFFORT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "SUBSCRIPTION_ATTRIBUTE",
-                columns: table => new
-                {
-                    SUBSCRIPTION_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ATTR_NAME = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ATTR_VALUE = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ATTR_DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SUBSCRIPTION_ATTRIBUTE", x => new { x.SUBSCRIPTION_ID, x.ATTR_NAME });
-                    table.ForeignKey(
-                        name: "SUBSC_ATTR",
-                        column: x => x.SUBSCRIPTION_ID,
-                        principalTable: "SUBSCRIPTION",
-                        principalColumn: "SUBSCRIPTION_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "SUBSCRIPTION_COMM_EVENT",
-                columns: table => new
-                {
-                    SUBSCRIPTION_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    COMMUNICATION_EVENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SUBSCRIPTION_COMM_EVENT", x => new { x.SUBSCRIPTION_ID, x.COMMUNICATION_EVENT_ID });
-                    table.ForeignKey(
-                        name: "SUBSC_COM_EVENT",
-                        column: x => x.COMMUNICATION_EVENT_ID,
-                        principalTable: "COMMUNICATION_EVENT",
-                        principalColumn: "COMMUNICATION_EVENT_ID");
-                    table.ForeignKey(
-                        name: "SUBSC_SUBSC",
-                        column: x => x.SUBSCRIPTION_ID,
-                        principalTable: "SUBSCRIPTION",
-                        principalColumn: "SUBSCRIPTION_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "SUBSCRIPTION_FULFILLMENT_PIECE",
-                columns: table => new
-                {
-                    SUBSCRIPTION_ACTIVITY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SUBSCRIPTION_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SUBSCRIPTION_FULFILLMENT_PI", x => new { x.SUBSCRIPTION_ACTIVITY_ID, x.SUBSCRIPTION_ID });
-                    table.ForeignKey(
-                        name: "SUBSC_FP",
-                        column: x => x.SUBSCRIPTION_ID,
-                        principalTable: "SUBSCRIPTION",
-                        principalColumn: "SUBSCRIPTION_ID");
-                    table.ForeignKey(
-                        name: "SUBSC_FP_ACT",
-                        column: x => x.SUBSCRIPTION_ACTIVITY_ID,
-                        principalTable: "SUBSCRIPTION_ACTIVITY",
-                        principalColumn: "SUBSCRIPTION_ACTIVITY_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
                 name: "RETURN_ITEM_SHIPMENT",
                 columns: table => new
                 {
@@ -31846,42 +31929,6 @@ namespace Persistence.Migrations
                         columns: x => new { x.SHIPMENT_ID, x.SHIPMENT_PACKAGE_SEQ_ID },
                         principalTable: "SHIPMENT_PACKAGE",
                         principalColumns: new[] { "SHIPMENT_ID", "SHIPMENT_PACKAGE_SEQ_ID" });
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "SHOPPING_LIST_ITEM_SURVEY",
-                columns: table => new
-                {
-                    SHOPPING_LIST_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SHOPPING_LIST_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SURVEY_RESPONSE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SHOPPING_LIST_ITEM_SURVEY", x => new { x.SHOPPING_LIST_ID, x.SHOPPING_LIST_ITEM_SEQ_ID, x.SURVEY_RESPONSE_ID });
-                    table.ForeignKey(
-                        name: "SHLIST_ITSUR_ITEM",
-                        columns: x => new { x.SHOPPING_LIST_ID, x.SHOPPING_LIST_ITEM_SEQ_ID },
-                        principalTable: "SHOPPING_LIST_ITEM",
-                        principalColumns: new[] { "SHOPPING_LIST_ID", "SHOPPING_LIST_ITEM_SEQ_ID" });
-                    table.ForeignKey(
-                        name: "SHLIST_ITSUR_LIST",
-                        column: x => x.SHOPPING_LIST_ID,
-                        principalTable: "SHOPPING_LIST",
-                        principalColumn: "SHOPPING_LIST_ID");
-                    table.ForeignKey(
-                        name: "SHLIST_ITSUR_RESP",
-                        column: x => x.SURVEY_RESPONSE_ID,
-                        principalTable: "SURVEY_RESPONSE",
-                        principalColumn: "SURVEY_RESPONSE_ID");
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -42607,6 +42654,16 @@ namespace Persistence.Migrations
                 column: "PRODUCT_PROMO_CODE_ID");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PRODUCT_APARTMENT_STATUS_ID",
+                table: "PRODUCT",
+                column: "APARTMENT_STATUS_ID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PRODUCT_PROJECT_ID",
+                table: "PRODUCT",
+                column: "PROJECT_ID");
+
+            migrationBuilder.CreateIndex(
                 name: "PROD_AMOUNT_UOMT",
                 table: "PRODUCT",
                 column: "AMOUNT_UOM_TYPE_ID");
@@ -46560,6 +46617,31 @@ namespace Persistence.Migrations
                 name: "SOPPWEFF_WEFF",
                 table: "SALES_OPPORTUNITY_WORK_EFFORT",
                 column: "WORK_EFFORT_ID");
+
+            migrationBuilder.CreateIndex(
+                name: "SALES_REQ_CUST_IDX",
+                table: "SALES_REQUEST",
+                column: "CUSTOMER_ID");
+
+            migrationBuilder.CreateIndex(
+                name: "SALES_REQ_PROD_IDX",
+                table: "SALES_REQUEST",
+                column: "PRODUCT_ID");
+
+            migrationBuilder.CreateIndex(
+                name: "SALES_REQ_SALE_DT_IDX",
+                table: "SALES_REQUEST",
+                column: "SALE_DATE");
+
+            migrationBuilder.CreateIndex(
+                name: "SALES_REQ_TXCRTS",
+                table: "SALES_REQUEST",
+                column: "CREATED_STAMP");
+
+            migrationBuilder.CreateIndex(
+                name: "SALES_REQ_TXSTMP",
+                table: "SALES_REQUEST",
+                column: "LAST_UPDATED_STAMP");
 
             migrationBuilder.CreateIndex(
                 name: "SCRT_GRP_TXCRTS",
@@ -52386,6 +52468,27 @@ namespace Persistence.Migrations
                 column: "LAST_MODIFIED_BY_USER_LOGIN",
                 principalTable: "USER_LOGIN",
                 principalColumn: "USER_LOGIN_ID");
+
+            migrationBuilder.AddForeignKey(
+                name: "PARTY_NEED_PROD",
+                table: "PARTY_NEED",
+                column: "PRODUCT_ID",
+                principalTable: "PRODUCT",
+                principalColumn: "PRODUCT_ID");
+
+            migrationBuilder.AddForeignKey(
+                name: "PERS_TRNG_WREF",
+                table: "PERSON_TRAINING",
+                column: "WORK_EFFORT_ID",
+                principalTable: "WORK_EFFORT",
+                principalColumn: "WORK_EFFORT_ID");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_PRODUCT_WORK_EFFORT_PROJECT_ID",
+                table: "PRODUCT",
+                column: "PROJECT_ID",
+                principalTable: "WORK_EFFORT",
+                principalColumn: "WORK_EFFORT_ID");
         }
 
         /// <inheritdoc />
@@ -52424,8 +52527,60 @@ namespace Persistence.Migrations
                 table: "PAYMENT");
 
             migrationBuilder.DropForeignKey(
+                name: "ORDER_HDR_STTS",
+                table: "ORDER_HEADER");
+
+            migrationBuilder.DropForeignKey(
+                name: "ORDER_HDR_SYST",
+                table: "ORDER_HEADER");
+
+            migrationBuilder.DropForeignKey(
                 name: "PARTY_STATUSITM",
                 table: "PARTY");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_PRODUCT_STATUS_ITEM_APARTMENT_STATUS_ID",
+                table: "PRODUCT");
+
+            migrationBuilder.DropForeignKey(
+                name: "PROD_STR_DIAPSTS",
+                table: "PRODUCT_STORE");
+
+            migrationBuilder.DropForeignKey(
+                name: "PROD_STR_HAPSTS",
+                table: "PRODUCT_STORE");
+
+            migrationBuilder.DropForeignKey(
+                name: "PROD_STR_HCNSTS",
+                table: "PRODUCT_STORE");
+
+            migrationBuilder.DropForeignKey(
+                name: "PROD_STR_HDCSTS",
+                table: "PRODUCT_STORE");
+
+            migrationBuilder.DropForeignKey(
+                name: "PROD_STR_IAPSTS",
+                table: "PRODUCT_STORE");
+
+            migrationBuilder.DropForeignKey(
+                name: "PROD_STR_ICNSTS",
+                table: "PRODUCT_STORE");
+
+            migrationBuilder.DropForeignKey(
+                name: "PROD_STR_IDCSTS",
+                table: "PRODUCT_STORE");
+
+            migrationBuilder.DropForeignKey(
+                name: "WK_EFFRT_CURSTTS",
+                table: "WORK_EFFORT");
+
+            migrationBuilder.DropForeignKey(
+                name: "CARR_SHMETH_PARTY",
+                table: "CARRIER_SHIPMENT_METHOD");
+
+            migrationBuilder.DropForeignKey(
+                name: "FACILITY_OWNER",
+                table: "FACILITY");
 
             migrationBuilder.DropForeignKey(
                 name: "FINACCT_ORGPTY",
@@ -52436,12 +52591,56 @@ namespace Persistence.Migrations
                 table: "FIN_ACCOUNT");
 
             migrationBuilder.DropForeignKey(
+                name: "NOTE_DATA_PTY",
+                table: "NOTE_DATA");
+
+            migrationBuilder.DropForeignKey(
+                name: "PARTY_RLE_PARTY",
+                table: "PARTY_ROLE");
+
+            migrationBuilder.DropForeignKey(
                 name: "PAYMETH_PARTY",
                 table: "PAYMENT_METHOD");
 
             migrationBuilder.DropForeignKey(
+                name: "PROD_PRMO_OPA",
+                table: "PRODUCT_PROMO");
+
+            migrationBuilder.DropForeignKey(
+                name: "PROD_STR_PAYTOPTY",
+                table: "PRODUCT_STORE");
+
+            migrationBuilder.DropForeignKey(
+                name: "SHLIST_PTY",
+                table: "SHOPPING_LIST");
+
+            migrationBuilder.DropForeignKey(
+                name: "TAXAUTH_TAPARTY",
+                table: "TAX_AUTHORITY");
+
+            migrationBuilder.DropForeignKey(
                 name: "USER_PARTY",
                 table: "USER_LOGIN");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_WORK_EFFORT_PARTY_PartyIdEmployee",
+                table: "WORK_EFFORT");
+
+            migrationBuilder.DropForeignKey(
+                name: "WK_EFFRT_CONTRACTOR",
+                table: "WORK_EFFORT");
+
+            migrationBuilder.DropForeignKey(
+                name: "WK_EFFRT_SUPPLIER",
+                table: "WORK_EFFORT");
+
+            migrationBuilder.DropForeignKey(
+                name: "PARTY_RLE_ROLE",
+                table: "PARTY_ROLE");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_PRODUCT_WORK_EFFORT_PROJECT_ID",
+                table: "PRODUCT");
 
             migrationBuilder.DropForeignKey(
                 name: "FINACCT_CURUOM",
@@ -53665,6 +53864,9 @@ namespace Persistence.Migrations
                 name: "SALES_OPPORTUNITY_WORK_EFFORT");
 
             migrationBuilder.DropTable(
+                name: "SALES_REQUEST");
+
+            migrationBuilder.DropTable(
                 name: "SECURITY_GROUP_PERMISSION");
 
             migrationBuilder.DropTable(
@@ -54850,9 +55052,6 @@ namespace Persistence.Migrations
                 name: "SKILL_TYPE");
 
             migrationBuilder.DropTable(
-                name: "WORK_EFFORT");
-
-            migrationBuilder.DropTable(
                 name: "MARKETING_CAMPAIGN");
 
             migrationBuilder.DropTable(
@@ -54880,6 +55079,33 @@ namespace Persistence.Migrations
                 name: "QUOTE_TYPE");
 
             migrationBuilder.DropTable(
+                name: "PRODUCT_PRICE_PURPOSE");
+
+            migrationBuilder.DropTable(
+                name: "CUST_REQUEST_CATEGORY");
+
+            migrationBuilder.DropTable(
+                name: "CUST_REQUEST_TYPE");
+
+            migrationBuilder.DropTable(
+                name: "STATUS_ITEM");
+
+            migrationBuilder.DropTable(
+                name: "STATUS_TYPE");
+
+            migrationBuilder.DropTable(
+                name: "PARTY");
+
+            migrationBuilder.DropTable(
+                name: "PARTY_TYPE");
+
+            migrationBuilder.DropTable(
+                name: "ROLE_TYPE");
+
+            migrationBuilder.DropTable(
+                name: "WORK_EFFORT");
+
+            migrationBuilder.DropTable(
                 name: "ACCOMMODATION_MAP");
 
             migrationBuilder.DropTable(
@@ -54904,16 +55130,10 @@ namespace Persistence.Migrations
                 name: "WORK_EFFORT_PURPOSE_TYPE");
 
             migrationBuilder.DropTable(
-                name: "WORK_EFFORT_TYPE");
-
-            migrationBuilder.DropTable(
                 name: "ORDER_HEADER");
 
             migrationBuilder.DropTable(
-                name: "PRODUCT_PRICE_PURPOSE");
-
-            migrationBuilder.DropTable(
-                name: "CUST_REQUEST_CATEGORY");
+                name: "WORK_EFFORT_TYPE");
 
             migrationBuilder.DropTable(
                 name: "CUSTOM_METHOD_TYPE");
@@ -54938,9 +55158,6 @@ namespace Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "WEB_SITE");
-
-            migrationBuilder.DropTable(
-                name: "CUST_REQUEST_TYPE");
 
             migrationBuilder.DropTable(
                 name: "PRODUCT_CATEGORY_TYPE");
@@ -54991,7 +55208,7 @@ namespace Persistence.Migrations
                 name: "TAX_AUTHORITY");
 
             migrationBuilder.DropTable(
-                name: "ROLE_TYPE");
+                name: "USER_LOGIN");
 
             migrationBuilder.DropTable(
                 name: "CONTACT_MECH_TYPE");
@@ -55015,28 +55232,13 @@ namespace Persistence.Migrations
                 name: "GEO");
 
             migrationBuilder.DropTable(
+                name: "DATA_SOURCE");
+
+            migrationBuilder.DropTable(
                 name: "FACILITY_GROUP_TYPE");
 
             migrationBuilder.DropTable(
                 name: "GEO_TYPE");
-
-            migrationBuilder.DropTable(
-                name: "STATUS_ITEM");
-
-            migrationBuilder.DropTable(
-                name: "STATUS_TYPE");
-
-            migrationBuilder.DropTable(
-                name: "PARTY");
-
-            migrationBuilder.DropTable(
-                name: "USER_LOGIN");
-
-            migrationBuilder.DropTable(
-                name: "DATA_SOURCE");
-
-            migrationBuilder.DropTable(
-                name: "PARTY_TYPE");
 
             migrationBuilder.DropTable(
                 name: "DATA_SOURCE_TYPE");

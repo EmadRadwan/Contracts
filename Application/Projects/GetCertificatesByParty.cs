@@ -9,207 +9,198 @@ public class GetCertificatesByParty
     public class Query : IRequest<Result<List<ProjectCertificateSummaryDto>>>
     {
         public string? ContractorId { get; set; }
-        public string? SupplierId { get; set; }
-        public string Language { get; set; }
+        public string? SupplierId   { get; set; }
+        public string  Language     { get; set; } = "en";
     }
 
     public class ProjectCertificateSummaryDto
     {
-        public string WorkEffortId { get; set; }
-        public string CertificateNumber { get; set; }
-        public string ProjectId { get; set; }
-        public string ProjectName { get; set; }
-        public string PartyIdSupplier { get; set; }
-        public string PartyNameSupplier { get; set; }
-        public string PartyIdContractor { get; set; }
-        public string PartyNameContractor { get; set; }
-        public string Description { get; set; }
-        public DateTime? EstimatedStartDate { get; set; }
-        public DateTime? EstimatedCompletionDate { get; set; }
-        public string StatusDescription { get; set; }
-        public string StatusDescriptionArabic { get; set; }
-        public string CurrentStatusId { get; set; }
-        public string CertificateCategory { get; set; }
-        public string CertificateCategoryDescription { get; set; }
-        public string FacilityId { get; set; }
-        public string FacilityName { get; set; }
-        public decimal Total { get; set; }
+        public string   WorkEffortId               { get; set; } = default!;
+        public string   CertificateNumber          { get; set; } = default!;
+        public string   ProjectId                  { get; set; } = default!;
+        public string   ProjectName                { get; set; } = default!;
+        public string?  PartyIdSupplier            { get; set; }
+        public string?  PartyNameSupplier          { get; set; }
+        public string?  PartyIdContractor          { get; set; }
+        public string?  PartyNameContractor        { get; set; }
+        public string?  Description                { get; set; }
+        public DateTime? EstimatedStartDate        { get; set; }
+        public DateTime? EstimatedCompletionDate   { get; set; }
+        public string   StatusDescription          { get; set; } = default!;
+        public string   StatusDescriptionArabic    { get; set; } = default!;
+        public string   CurrentStatusId            { get; set; } = default!;
+        public string   CertificateCategory        { get; set; } = default!;
+        public string   CertificateCategoryDescription { get; set; } = default!;
+        public string?  FacilityId                 { get; set; }
+        public string?  FacilityName               { get; set; }
+        public decimal  Total                      { get; set; }
     }
 
     public class Handler : IRequestHandler<Query, Result<List<ProjectCertificateSummaryDto>>>
     {
         private readonly DataContext _context;
 
-        public Handler(DataContext context)
+        public Handler(DataContext context) => _context = context;
+
+        public async Task<Result<List<ProjectCertificateSummaryDto>>> Handle(
+            Query request,
+            CancellationToken ct)
         {
-            _context = context;
-        }
-
-        public async Task<Result<List<ProjectCertificateSummaryDto>>> Handle(Query request, CancellationToken cancellationToken)
-        {
-            try
-            {
-                // Validate input: ensure at least one ID is provided
-                if (string.IsNullOrEmpty(request.ContractorId) && string.IsNullOrEmpty(request.SupplierId))
-                    return Result<List<ProjectCertificateSummaryDto>>.Failure(
-                        "Either ContractorId or SupplierId must be provided.");
-
-                // REFACTOR: Log input parameters for debugging
-                // Purpose: Capture input values to verify query parameters
-                // Improvement: Helps confirm ContractorId and SupplierId values
-                Console.WriteLine($"Input: ContractorId={request.ContractorId}, SupplierId={request.SupplierId}, Language={request.Language}");
-
-                // REFACTOR: Simplified base query without CertificateType filter
-                // Purpose: Remove CertificateType condition to include all PROJECT_CERTIFICATE records
-                // Improvement: Ensures all records for the contractor are returned regardless of category
-                var query = _context.WorkEfforts
-                    .AsNoTracking()
-                    .Where(we => we.WorkEffortTypeId == "PROJECT_CERTIFICATE");
-
-                // REFACTOR: Flexible party filter for ContractorId or SupplierId
-                // Purpose: Include records matching either ContractorId or SupplierId
-                // Improvement: Prevents exclusion of records based on party type
-                query = query.Where(we => 
-                    (request.ContractorId != null && we.PartyIdContractor == request.ContractorId) ||
-                    (request.SupplierId != null && we.PartyIdSupplier == request.SupplierId));
-
-                // REFACTOR: Log filtered WorkEffort IDs before joins
-                // Purpose: Verify which records pass the initial filters
-                // Improvement: Identifies if records are filtered out early
-                var filteredIds = await query.Select(we => we.WorkEffortId).ToListAsync(cancellationToken);
-                Console.WriteLine($"Filtered WorkEffort IDs: {string.Join(", ", filteredIds)}");
-
-                // REFACTOR: Simplified joins with explicit null handling
-                // Purpose: Ensure LEFT JOINs don't filter out records
-                // Improvement: Reduces risk of missing records due to join failures
-                var joinedQuery = from we in query
-                                 join si in _context.StatusItems on we.CurrentStatusId equals si.StatusId into statusGroup
-                                 from si in statusGroup.DefaultIfEmpty()
-                                 join proj in _context.WorkEfforts on we.ProjectId equals proj.WorkEffortId into projectGroup
-                                 from proj in projectGroup.DefaultIfEmpty()
-                                 join supplier in _context.Parties on we.PartyIdSupplier equals supplier.PartyId into supplierGroup
-                                 from supplier in supplierGroup.DefaultIfEmpty()
-                                 join contractor in _context.Parties on we.PartyIdContractor equals contractor.PartyId into contractorGroup
-                                 from contractor in contractorGroup.DefaultIfEmpty()
-                                 join fac in _context.Facilities on we.FacilityId equals fac.FacilityId into facGroup
-                                 from fac in facGroup.DefaultIfEmpty()
-                                 select new { we, si, proj, supplier, contractor, fac };
-
-                // REFACTOR: Log joined WorkEffort IDs
-                // Purpose: Confirm which records survive the joins
-                // Improvement: Identifies if joins are filtering out records
-                var joinedIds = await joinedQuery.Select(x => x.we.WorkEffortId).ToListAsync(cancellationToken);
-                Console.WriteLine($"Joined WorkEffort IDs: {string.Join(", ", joinedIds)}");
-
-                // REFACTOR: Simplified certificate items join with null handling
-                // Purpose: Ensure CERTIFICATE_ITEM join doesn't exclude records
-                // Improvement: Uses DefaultIfEmpty to include certificates without items
-                var certificates = await joinedQuery
-                    .GroupJoin(
-                        _context.WorkEfforts.AsNoTracking().Where(we => we.WorkEffortTypeId == "CERTIFICATE_ITEM"),
-                        cert => cert.we.WorkEffortId,
-                        item => item.WorkEffortParentId,
-                        (cert, items) => new { cert, items }
-                    )
-                    .SelectMany(
-                        x => x.items.DefaultIfEmpty(),
-                        (cert, item) => new
-                        {
-                            cert.cert.we,
-                            cert.cert.si,
-                            cert.cert.proj,
-                            cert.cert.supplier,
-                            cert.cert.contractor,
-                            cert.cert.fac,
-                            CertificateItem = item
-                        }
-                    )
-                    .GroupBy(x => new
-                    {
-                        x.we.WorkEffortId,
-                        x.we.CertificateNumber,
-                        x.we.CertificateCategory,
-                        x.we.ProjectId,
-                        ProjectName = x.proj != null ? x.proj.ProjectName : x.we.ProjectName,
-                        x.we.Description,
-                        x.we.EstimatedStartDate,
-                        x.we.EstimatedCompletionDate,
-                        x.we.CurrentStatusId,
-                        StatusDescription = request.Language == "ar" ? x.si != null ? x.si.DescriptionArabic : "غير معروف" : x.si != null ? x.si.Description : "Unknown",
-                        StatusDescriptionArabic = x.si != null ? x.si.DescriptionArabic : "غير معروف",
-                        x.we.PartyIdSupplier,
-                        SupplierDescription = x.supplier != null ? x.supplier.Description : null,
-                        x.we.PartyIdContractor,
-                        ContractorDescription = x.contractor != null ? x.contractor.Description : null,
-                        x.we.FacilityId,
-                        FacilityName = x.fac != null ? x.fac.FacilityName : null
-                    })
-                    .Select(g => new ProjectCertificateSummaryDto
-                    {
-                        WorkEffortId = g.Key.WorkEffortId,
-                        CertificateNumber = g.Key.CertificateNumber,
-                        CertificateCategory = g.Key.CertificateCategory,
-                        CertificateCategoryDescription = GetCertificateCategoryDescription(g.Key.CertificateCategory),
-                        ProjectId = g.Key.ProjectId,
-                        ProjectName = g.Key.ProjectName ?? "",
-                        Description = g.Key.Description ?? "",
-                        EstimatedStartDate = g.Key.EstimatedStartDate,
-                        EstimatedCompletionDate = g.Key.EstimatedCompletionDate,
-                        StatusDescription = g.Key.StatusDescription,
-                        StatusDescriptionArabic = g.Key.StatusDescriptionArabic,
-                        CurrentStatusId = g.Key.CurrentStatusId,
-                        PartyIdSupplier = g.Key.PartyIdSupplier,
-                        PartyNameSupplier = g.Key.SupplierDescription,
-                        PartyIdContractor = g.Key.PartyIdContractor,
-                        PartyNameContractor = g.Key.ContractorDescription,
-                        FacilityId = g.Key.FacilityId,
-                        FacilityName = g.Key.FacilityName,
-                        // REFACTOR: Simplified total calculation with null-safe defaults
-                        // Purpose: Ensure Total is calculated even if no CertificateItem exists
-                        // Improvement: Prevents null reference issues and ensures SQL compatibility
-                        Total = Math.Round((decimal)(g.Key.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
-                            ? g.Sum(x => x.CertificateItem != null 
-                                ? (x.CertificateItem.Quantity ?? 0m) * ((x.CertificateItem.MaterialPrice ?? 0m) + (x.CertificateItem.LaborPrice ?? 0m)) 
-                                  - (x.CertificateItem.Deductions ?? 0m) 
-                                  - (x.CertificateItem.Insurance ?? 0m) 
-                                  - (x.CertificateItem.AdditionalInsurance ?? 0m) 
-                                : 0m)
-                            : g.Sum(x => x.CertificateItem != null 
-                                ? (x.CertificateItem.Quantity ?? 0m) * (x.CertificateItem.Rate ?? 0m) 
-                                  + (x.CertificateItem.TransportationExpenses ?? 0m) 
-                                  + (x.CertificateItem.Gratuities ?? 0m) 
-                                  - (x.CertificateItem.Discount ?? 0m) 
-                                : 0m)), 2)
-                    })
-                    .ToListAsync(cancellationToken);
-
-                // REFACTOR: Log final result count and IDs
-                // Purpose: Confirm how many records are returned and their IDs
-                // Improvement: Helps diagnose if all expected records are included
-                Console.WriteLine($"Returned Certificates Count: {certificates.Count}");
-                Console.WriteLine($"Returned WorkEffort IDs: {string.Join(", ", certificates.Select(c => c.WorkEffortId))}");
-
-                return Result<List<ProjectCertificateSummaryDto>>.Success(certificates);
-            }
-            catch (Exception ex)
-            {
-                // REFACTOR: Include stack trace in error message
-                // Purpose: Provide more context for debugging
-                // Improvement: Helps identify the exact point of failure
+            // REFACTOR: Early validation – at least one party must be supplied
+            // Purpose: Guarantees the query is meaningful and avoids a full table scan
+            if (string.IsNullOrWhiteSpace(request.ContractorId) &&
+                string.IsNullOrWhiteSpace(request.SupplierId))
                 return Result<List<ProjectCertificateSummaryDto>>.Failure(
-                    $"Failed to retrieve certificates: {ex.Message}\nStack Trace: {ex.StackTrace}");
-            }
+                    "Either ContractorId or SupplierId must be provided.");
+
+            // REFACTOR: Normalise language once (defaults to English)
+            // Purpose: Avoid repeated ternary checks later
+            var lang = request.Language?.ToLowerInvariant() == "ar" ? "ar" : "en";
+
+            // REFACTOR: Base query – only PROJECT_CERTIFICATE records, no extra filters
+            // Purpose: Keep the set small and let EF translate everything to SQL
+            var baseQuery = _context.WorkEfforts
+                .AsNoTracking()
+                .Where(we => we.WorkEffortTypeId == "PROJECT_CERTIFICATE");
+
+            // REFACTOR: Party filter – OR logic for ContractorId / SupplierId
+            // Purpose: Allows the same handler to be used for either party type
+            var partyFiltered = baseQuery.Where(we =>
+                (request.ContractorId != null && we.PartyIdContractor == request.ContractorId) ||
+                (request.SupplierId   != null && we.PartyIdSupplier   == request.SupplierId));
+
+            // REFACTOR: All LEFT JOINs in one expression using GroupJoin + SelectMany
+            // Purpose: Guarantees every certificate is returned even when related rows are missing
+            var joined = partyFiltered
+                .GroupJoin(_context.StatusItems,
+                    we => we.CurrentStatusId,
+                    si => si.StatusId,
+                    (we, siGroup) => new { we, siGroup })
+                .SelectMany(x => x.siGroup.DefaultIfEmpty(),
+                    (x, si) => new { x.we, si })
+
+                .GroupJoin(_context.WorkEfforts,
+                    x => x.we.ProjectId,
+                    proj => proj.WorkEffortId,
+                    (x, projGroup) => new { x.we, x.si, projGroup })
+                .SelectMany(x => x.projGroup.DefaultIfEmpty(),
+                    (x, proj) => new { x.we, x.si, proj })
+
+                .GroupJoin(_context.Parties,
+                    x => x.we.PartyIdSupplier,
+                    p => p.PartyId,
+                    (x, supGroup) => new { x.we, x.si, x.proj, supGroup })
+                .SelectMany(x => x.supGroup.DefaultIfEmpty(),
+                    (x, sup) => new { x.we, x.si, x.proj, sup })
+
+                .GroupJoin(_context.Parties,
+                    x => x.we.PartyIdContractor,
+                    p => p.PartyId,
+                    (x, conGroup) => new { x.we, x.si, x.proj, x.sup, conGroup })
+                .SelectMany(x => x.conGroup.DefaultIfEmpty(),
+                    (x, con) => new { x.we, x.si, x.proj, x.sup, con })
+
+                .GroupJoin(_context.Facilities,
+                    x => x.we.FacilityId,
+                    f => f.FacilityId,
+                    (x, facGroup) => new { x.we, x.si, x.proj, x.sup, x.con, facGroup })
+                .SelectMany(x => x.facGroup.DefaultIfEmpty(),
+                    (x, fac) => new { x.we, x.si, x.proj, x.sup, x.con, fac });
+
+            // REFACTOR: LEFT JOIN to CERTIFICATE_ITEM rows (may be empty)
+            // Purpose: Enables per-certificate total calculation without losing certificates
+            var withItems = joined
+                .GroupJoin(
+                    _context.WorkEfforts
+                        .AsNoTracking()
+                        .Where(i => i.WorkEffortTypeId == "CERTIFICATE_ITEM"),
+                    cert => cert.we.WorkEffortId,
+                    item => item.WorkEffortParentId,
+                    (cert, items) => new { cert, items })
+                .SelectMany(
+                    x => x.items.DefaultIfEmpty(),
+                    (x, item) => new { x.cert.we, x.cert.si, x.cert.proj, x.cert.sup, x.cert.con, x.cert.fac, item });
+
+            // REFACTOR: Group by certificate key and compute the **exact same** totals as ListCertificateItems
+            // Purpose: Guarantees UI consistency – Total = Net for WORKMANSHIP, otherwise legacy supply formula
+            var result = await withItems
+                .GroupBy(g => new
+                {
+                    g.we.WorkEffortId,
+                    g.we.CertificateNumber,
+                    g.we.CertificateCategory,
+                    g.we.ProjectId,
+                    ProjectName = g.proj != null ? g.proj.ProjectName : g.we.ProjectName,
+                    g.we.Description,
+                    g.we.EstimatedStartDate,
+                    g.we.EstimatedCompletionDate,
+                    g.we.CurrentStatusId,
+                    StatusDescription = lang == "ar"
+                        ? g.si.DescriptionArabic ?? "غير معروف"
+                        : g.si.Description ?? "Unknown",
+                    StatusDescriptionArabic = g.si.DescriptionArabic ?? "غير معروف",
+                    g.we.PartyIdSupplier,
+                    SupplierName = g.sup.Description,
+                    g.we.PartyIdContractor,
+                    ContractorName = g.con.Description,
+                    g.we.FacilityId,
+                    FacilityName = g.fac.FacilityName
+                })
+                .Select(g => new ProjectCertificateSummaryDto
+                {
+                    WorkEffortId               = g.Key.WorkEffortId,
+                    CertificateNumber          = g.Key.CertificateNumber ?? string.Empty,
+                    CertificateCategory        = g.Key.CertificateCategory ?? string.Empty,
+                    CertificateCategoryDescription = GetCertificateCategoryDescription(g.Key.CertificateCategory),
+                    ProjectId                  = g.Key.ProjectId ?? string.Empty,
+                    ProjectName                = g.Key.ProjectName ?? string.Empty,
+                    Description                = g.Key.Description ?? string.Empty,
+                    EstimatedStartDate         = g.Key.EstimatedStartDate,
+                    EstimatedCompletionDate    = g.Key.EstimatedCompletionDate,
+                    StatusDescription          = g.Key.StatusDescription,
+                    StatusDescriptionArabic    = g.Key.StatusDescriptionArabic,
+                    CurrentStatusId            = g.Key.CurrentStatusId ?? string.Empty,
+                    PartyIdSupplier            = g.Key.PartyIdSupplier,
+                    PartyNameSupplier          = g.Key.SupplierName,
+                    PartyIdContractor          = g.Key.PartyIdContractor,
+                    PartyNameContractor        = g.Key.ContractorName,
+                    FacilityId                 = g.Key.FacilityId,
+                    FacilityName               = g.Key.FacilityName,
+
+                    // REFACTOR: Total = Net amount (matches UI "Net" column)
+                    // Purpose: Use the same business rules as ListCertificateItems
+                    //   WORKMANSHIP:  Qty * (Mat + Lab) * Ach% – Deductions – Ins – AddIns
+                    //   LEGACY:       Qty * Rate + Trans + Grat – Discount
+                    Total = Math.Round(
+                        g.Key.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                            ? g.Sum(i => i.item == null ? 0m :
+                                  Math.Max(0m,
+                                      ((i.item.Quantity ?? 0m) *
+                                       ((i.item.MaterialPrice ?? 0m) + (i.item.LaborPrice ?? 0m)) *
+                                       ((decimal)(i.item.AchievementPercent ?? 0) / 100m)) -
+                                      (i.item.Deductions ?? 0m) -
+                                      (i.item.Insurance ?? 0m) -
+                                      (i.item.AdditionalInsurance ?? 0m)))
+                            : g.Sum(i => i.item == null ? 0m :
+                                  ((i.item.Quantity ?? 0m) * (i.item.Rate ?? 0m)) +
+                                  (i.item.TransportationExpenses ?? 0m) +
+                                  (i.item.Gratuities ?? 0m) -
+                                  (i.item.Discount ?? 0m)),
+                        2)
+                })
+                .ToListAsync(ct);
+
+            return Result<List<ProjectCertificateSummaryDto>>.Success(result);
         }
 
-        private static string? GetCertificateCategoryDescription(string? category)
+        // REFACTOR: Helper moved to static method (pure function, easy to unit-test)
+        // Purpose: Keep projection clean and reusable
+        private static string GetCertificateCategoryDescription(string? category) => category switch
         {
-            return category switch
-            {
-                "SUPPLY_PROCUREMENT_CERTIFICATE" => "Supply Procurement Certificate",
-                "WORKMANSHIP_CONTRACTING_CERTIFICATE" => "Workmanship Contracting Certificate",
-                "COMPANY_SUPPLY_SALE_CERTIFICATE" => "Company Supply Sale Certificate",
-                _ => "Unknown Certificate"
-            };
-        }
+            "SUPPLY_PROCUREMENT_CERTIFICATE"      => "Supply Procurement Certificate",
+            "WORKMANSHIP_CONTRACTING_CERTIFICATE" => "Workmanship Contracting Certificate",
+            "COMPANY_SUPPLY_SALE_CERTIFICATE"     => "Company Supply Sale Certificate",
+            _                                     => "Unknown Certificate"
+        };
     }
 }

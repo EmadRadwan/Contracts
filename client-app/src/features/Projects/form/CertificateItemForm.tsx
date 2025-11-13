@@ -1,5 +1,5 @@
 import { Form, FormRenderProps } from "@progress/kendo-react-form";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import { useAppSelector, useFetchFacilitiesQuery } from "../../../app/store/configureStore";
 import { CertificateItem } from "../../../app/models/project/certificateItem";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
@@ -19,9 +19,9 @@ interface Props {
 }
 
 const parseAchievementPercentage = (value: string | number | null | undefined): number => {
-    if (value == null) return 0;
-    const str = String(value).trim();
-    const num = parseFloat(str.replace(/%/g, ""));
+    if (value == null || value === "") return 0;
+    const str = String(value).trim().replace(/%/g, "");
+    const num = parseFloat(str);
     return isNaN(num) ? 0 : num;
 };
 
@@ -33,13 +33,16 @@ export default function CertificateItemForm({
                                             }: Props) {
     const { currentCertificateType } = useAppSelector((state) => state.certificateUi);
     const [discountMode, setDiscountMode] = useState<"value" | "percentage">("value");
-    const [insuranceMode, setInsuranceMode] = useState<"value" | "percentage">("value");
-    const [additionalInsuranceMode, setAdditionalInsuranceMode] = useState<"value" | "percentage">("value");
-    const [calculatedInsurance, setCalculatedInsurance] = useState<number>(0);
     const { getTranslatedLabel } = useTranslationHelper();
 
+
+
     const calculateTotals = useCallback(
-        (valueGetter: FormRenderProps["valueGetter"]) => {
+        (
+            valueGetter: FormRenderProps["valueGetter"],
+            insuranceModeParam?: "value" | "percentage",
+            additionalInsuranceModeParam?: "value" | "percentage"
+        ) => {
             const quantity = Number(valueGetter("quantity") || 0);
             const price =
                 currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
@@ -52,24 +55,27 @@ export default function CertificateItemForm({
             let additionalInsurance = 0;
             let discount = 0;
 
+            // REFACTOR: Use passed-in modes first, fall back to form state
+            // Why: Guarantees live mode is used even during rapid UI changes
+            const insuranceMode = insuranceModeParam ?? (valueGetter("insuranceMode") as "value" | "percentage") ?? "value";
+            const additionalInsuranceMode = additionalInsuranceModeParam ?? (valueGetter("additionalInsuranceMode") as "value" | "percentage") ?? "value";
+
             if (currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE") {
                 const achievementPercentage = parseAchievementPercentage(valueGetter("achievementPercentage"));
                 const baseForDeserved = total * (achievementPercentage / 100);
                 const deductions = Number(valueGetter("deductions") || 0);
                 deserved = Math.max(0, Math.round((baseForDeserved - deductions) * 1000) / 1000);
 
-                // Insurance & Additional Insurance are calculated on **total**, not deserved
                 const insuranceInput = Number(valueGetter("insurance") || 0);
-                insurance = insuranceMode === "value"
-                    ? insuranceInput
-                    : (insuranceInput / 100) * total;
+                insurance = insuranceMode === "value" ? insuranceInput : (insuranceInput / 100) * deserved;
                 insurance = Math.round(insurance * 1000) / 1000;
 
                 const additionalInsuranceInput = Number(valueGetter("additionalInsurance") || 0);
-                additionalInsurance = additionalInsuranceMode === "value"
-                    ? additionalInsuranceInput
-                    : (additionalInsuranceInput / 100) * total;
+                additionalInsurance = additionalInsuranceMode === "value" ? additionalInsuranceInput : (additionalInsuranceInput / 100) * deserved;
                 additionalInsurance = Math.round(additionalInsurance * 1000) / 1000;
+
+                const net = Math.max(0, Math.round((deserved - insurance - additionalInsurance) * 1000) / 1000);
+                finalTotal = net;
             } else if (currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE") {
                 const discountInput = Number(valueGetter("discount") || 0);
                 discount = discountMode === "value" ? discountInput : (discountInput / 100) * total;
@@ -84,9 +90,8 @@ export default function CertificateItemForm({
 
             const net =
                 currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
-                    ? Math.max(0, Math.round((deserved - insurance - additionalInsurance) * 1000) / 1000)
+                    ? finalTotal
                     : finalTotal;
-            finalTotal = net;
 
             return {
                 total,
@@ -100,10 +105,11 @@ export default function CertificateItemForm({
                 gratuities: Number(valueGetter("gratuities") || 0),
             };
         },
-        [currentCertificateType, discountMode, insuranceMode, additionalInsuranceMode]
+        [currentCertificateType, discountMode]
     );
 
-    
+
+
     const deserializedInitValue = useMemo((): Partial<CertificateItem> => {
         const baseDefaultValues: Partial<CertificateItem> = {
             productId: "",
@@ -125,11 +131,13 @@ export default function CertificateItemForm({
             net: 0,
             procurementDate: new Date(),
             isDeleted: false,
-            achievementPercentage: 0,
             transportationExpenses: 0,
             gratuities: 0,
             workEffortId: "",
             workEffortParentId: "",
+            achievementPercentage: 0,
+            insuranceMode: "value",
+            additionalInsuranceMode: "value",
         };
 
         const typeSpecificDefaults: Partial<CertificateItem> = {
@@ -149,14 +157,6 @@ export default function CertificateItemForm({
                     : {}),
         };
 
-        // Use persisted additionalInsuranceMode, default to "value" if not set
-        const additionalInsuranceModeDefault = certificateItem?.additionalInsuranceMode || "value";
-        setAdditionalInsuranceMode(additionalInsuranceModeDefault);
-
-        // Similarly for insuranceMode
-        const insuranceModeDefault = certificateItem?.insuranceMode || "value";
-        setInsuranceMode(insuranceModeDefault);
-
         return {
             ...baseDefaultValues,
             ...typeSpecificDefaults,
@@ -164,9 +164,16 @@ export default function CertificateItemForm({
             procurementDate: certificateItem?.procurementDate ? new Date(certificateItem.procurementDate) : new Date(),
             materialPrice: certificateItem?.materialPrice || 0,
             laborPrice: certificateItem?.laborPrice || 0,
+            // REFACTOR: Preserve mode from DB or default
+            insuranceMode: certificateItem?.insuranceMode ?? "value",
+            additionalInsuranceMode: certificateItem?.additionalInsuranceMode ?? "value",
+            // REFACTOR: Parse string percentages safely
+            achievementPercentage: certificateItem?.achievementPercentage != null
+                ? parseAchievementPercentage(certificateItem.achievementPercentage)
+                : 0,
         };
     }, [certificateItem, currentCertificateType]);
-    
+
     const MyForm = useRef<Form>(null);
     const [formKey, setFormKey] = useState<number>(1);
     const [initValue, setInitValue] = useState<Partial<CertificateItem>>(deserializedInitValue);
@@ -177,12 +184,9 @@ export default function CertificateItemForm({
         setFormKey,
         setInitValue,
         discountMode,
-        insuranceMode,
         calculateTotals,
     });
 
-    // Purpose: Improve performance for WorkmanshipContractingForm
-    // Context: Not used in ContractorPurchaseForm or CompanySupplyForm but kept for consistency
     const achievementPercentageValidator = useMemo(
         () => (value: number | undefined): string | undefined => {
             if (value === undefined || value === null) return "Achievement Percentage is required";
@@ -192,22 +196,23 @@ export default function CertificateItemForm({
         []
     );
 
-    const handleInsuranceModeChange = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>, onChange: FormRenderProps["onChange"]) => {
-            setInsuranceMode(event.target.value as "value" | "percentage");
-            onChange("insurance", { value: 0 });
-            setCalculatedInsurance(0);
-        },
-        []
-    );
+    const handleInsuranceModeChange = (
+        e: React.ChangeEvent<HTMLInputElement>,
+        onChange: FormRenderProps["onChange"]
+    ) => {
+        const newMode = e.target.value as "value" | "percentage";
+        onChange("insuranceMode", { value: newMode });
+        onChange("insurance", { value: 0 });
+    };
 
-    const handleAdditionalInsuranceModeChange = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>, onChange: FormRenderProps["onChange"]) => {
-            setAdditionalInsuranceMode(event.target.value as "value" | "percentage");
-            onChange("additionalInsurance", { value: 0 });
-        },
-        []
-    );
+    const handleAdditionalInsuranceModeChange = (
+        e: React.ChangeEvent<HTMLInputElement>,
+        onChange: FormRenderProps["onChange"]
+    ) => {
+        const newMode = e.target.value as "value" | "percentage";
+        onChange("additionalInsuranceMode", { value: newMode });
+        onChange("additionalInsurance", { value: 0 });
+    };
 
     const handleDiscountModeChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>, onChange: FormRenderProps["onChange"]) => {
@@ -216,12 +221,7 @@ export default function CertificateItemForm({
         },
         []
     );
-/*
-    // console.log('initValue', initValue)
-    // console.log("certificateItem in CertificateItemForm:", certificateItem);
-    // console.log("initValue in CertificateItemForm:", initValue);
-    // console.log('deserializedInitValue', deserializedInitValue);
-*/
+
 
     return (
         <Form
@@ -260,24 +260,30 @@ export default function CertificateItemForm({
                     laborPrice: Number(values.laborPrice) || 0,
                     totalAmount: Number(values.totalAmount) || 0,
                     discount: Number(values.discount) || 0,
-                    insurance: Number(values.insurance) || 0,
-                    additionalInsurance: Number(values.additionalInsurance) || 0,
-                    deductions: Number(values.deductions) || 0,
                     deserved: Number(values.deserved) || 0,
                     net: Number(values.net) || 0,
                     procurementDate: values.procurementDate instanceof Date ? values.procurementDate.toISOString() : new Date().toISOString(),
                     isDeleted: false,
-                    achievementPercentage: Number(values.achievementPercentage) || 0,
                     transportationExpenses: Number(values.transportationExpenses) || 0,
                     gratuities: Number(values.gratuities) || 0,
                     workEffortId: values.workEffortId || "",
                     workEffortParentId: values.workEffortParentId || "",
+                    insuranceMode: values.insuranceMode as "value" | "percentage",
+                    additionalInsuranceMode: values.additionalInsuranceMode as "value" | "percentage",
+
+                    // ---- safe numeric conversion (never NaN) -------------------------
+                    achievementPercentage: Number(values.achievementPercentage) || 0,
+                    insurance: Number(values.insurance) || 0,
+                    additionalInsurance: Number(values.additionalInsurance) || 0,
+                    deductions: Number(values.deductions) || 0,
                 };
                 //// console.log('onSubmit serializedValues:', serializedValues);
                 handleSubmitData(serializedValues, (name: string) => values[name] || "");
+                setFormKey(prev => prev + 1);
                 onClose();
             }}
             render={(formRenderProps) => {
+                
                 if (currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE") {
                     return (
                         <SupplyProcurementForm
@@ -309,8 +315,6 @@ export default function CertificateItemForm({
                             formRenderProps={formRenderProps}
                             editMode={editMode}
                             formEditMode={formEditMode}
-                            insuranceMode={insuranceMode}
-                            additionalInsuranceMode={additionalInsuranceMode}
                             handleInsuranceModeChange={handleInsuranceModeChange}
                             handleAdditionalInsuranceModeChange={handleAdditionalInsuranceModeChange}
                             calculateTotals={calculateTotals}

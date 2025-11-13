@@ -13,6 +13,7 @@ interface PaymentsDailyExcelProps {
     paymentType: 'incoming' | 'outgoing';
     getTranslatedLabel: (key: string, defaultValue: string) => string;
     isFetching?: boolean;
+    onExportClick?: () => void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -32,6 +33,7 @@ export const PaymentsDailyExcel: React.FC<PaymentsDailyExcelProps> = ({
                                                                           paymentType,
                                                                           getTranslatedLabel,
                                                                           isFetching = false,
+                                                                          onExportClick,
                                                                       }) => {
     const localizationKey = "accounting.payments.list";
     const generateExcel = useCallback(async () => {
@@ -192,6 +194,12 @@ export const PaymentsDailyExcel: React.FC<PaymentsDailyExcelProps> = ({
     }, [paymentsData, companyName, paymentType, getTranslatedLabel, isFetching]);
 
     const handleDownload = useCallback(async () => {
+        if (onExportClick) {
+            onExportClick();                 // <-- triggers RTK-Query
+        }
+
+        await new Promise(r => setTimeout(r, 50));
+        
         const buf = await generateExcel();
         if (buf) {
             const today = new Date().toISOString().split('T')[0];
@@ -200,13 +208,13 @@ export const PaymentsDailyExcel: React.FC<PaymentsDailyExcelProps> = ({
             });
             saveAs(blob, `${paymentType}_Daily_Payments_${today}.xlsx`);
         }
-    }, [generateExcel, paymentType]);
+    }, [generateExcel, paymentType, onExportClick]);
 
     return (
         <Button
             variant="contained"
             color="secondary"
-            disabled={isFetching || !paymentsData.data.length}
+            disabled={isFetching}
             onClick={handleDownload}
             sx={{ ml: 1 }}
         >

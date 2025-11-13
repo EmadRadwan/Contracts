@@ -179,6 +179,13 @@
         "piecesIncluded": "عدد القطع فى الباكدج *",
         "processing": "جاري حفظ الصنف...",
         "new": "صنف جديد",
+        "floorNumber": "رقم الطابق",
+        "apartmentSpaceM2": "مساحة الشقة (م²)",
+        "gardenSpaceM2": "مساحة الحديقة (م²)",
+        "apartmentPricePerM2": "سعر الشقة لكل متر مربع",
+        "gardenPricePerM2": "سعر الحديقة لكل متر مربع",
+        "apartmentStatus": "حالة الشقة",
+        "landNumber": "رقم الأرض",
         "menu": {
           "associations": "المنتجات المتصلة",
           "prices": "الأسعار",
@@ -217,7 +224,8 @@
         "action": "عملية العرض",
         "quantity": "الكمية",
         "input": "وصف المدخلات",
-        "condition": "شرط العرض"
+        "condition": "شرط العرض",
+        "project": "المشروع"
       }
     },
     "stores": {

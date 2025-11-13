@@ -1,66 +1,138 @@
-.Select(x => new CertificateItemDto
+using Application.Interfaces;
+using Application.Projects;
+using MediatR;
+using Microsoft.AspNetCore.OData.Query;
+using Microsoft.EntityFrameworkCore;
+using Persistence;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Application.Projects
 {
-    WorkEffortId = x.WorkEffort.WorkEffortId,
-    WorkEffortParentId = x.WorkEffort.WorkEffortParentId,
-    ProductId = x.WorkEffort.ProductId,
-    ProductIdObject = x.Product != null
-        ? new ProductLovDto { ProductId = x.Product.ProductId, ProductName = x.Product.ProductName }
-        : null,
-    UomId = x.WorkEffort.QuantityUomId,
-    QuantityUomObject = x.Uom != null
-        ? new UomLovDto { UomId = x.Uom.UomId, Description = x.Uom.Description }
-        : null,
-    Description = x.WorkEffort.Description,
-    ProductName = x.Product?.ProductName,
-    UomName = x.Uom != null
-        ? (language == "ar" ? x.Uom.DescriptionArabic : x.Uom.Description)
-        : null,
-    Quantity = x.WorkEffort.Quantity ?? 0m,
-    UnitPrice = (decimal)(x.WorkEffort.Rate ?? 0m),
-    MaterialPrice = x.WorkEffort.MaterialPrice ?? 0m,
-    LaborPrice = x.WorkEffort.LaborPrice ?? 0m,
+    public class ListProjectCertificates
+    {
+        public class Query : IRequest<IQueryable<ProjectCertificateRecord>>
+        {
+            public ODataQueryOptions<ProjectCertificateRecord> Options { get; set; }
+            public string Language { get; set; }
+        }
 
-    // REFACTOR: All calculations inline – EF Core compatible
-    // Purpose: Compute on-the-fly, no stored values
-    TotalAmount = (x.Parent.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE")
-        ? (x.WorkEffort.Quantity ?? 0m) * ((x.WorkEffort.MaterialPrice ?? 0m) + (x.WorkEffort.LaborPrice ?? 0m))
-        : (x.WorkEffort.TotalAmount ?? 
-           ((x.WorkEffort.Quantity ?? 0m) * (x.WorkEffort.Rate ?? 0m)) +
-           (x.WorkEffort.TransportationExpenses ?? 0m) +
-           (x.WorkEffort.Gratuities ?? 0m) -
-           (x.WorkEffort.Discount ?? 0m)),
+        public class Handler : IRequestHandler<Query, IQueryable<ProjectCertificateRecord>>
+        {
+            private readonly DataContext _context;
 
-    Deserved = (x.Parent.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE")
-        ? Math.Max(0m,
-            ((x.WorkEffort.Quantity ?? 0m) * ((x.WorkEffort.MaterialPrice ?? 0m) + (x.WorkEffort.LaborPrice ?? 0m)) *
-             ((decimal)(x.WorkEffort.AchievementPercent ?? 0) / 100m)) -
-            (x.WorkEffort.Deductions ?? 0m))
-        : 0m,
+            public Handler(DataContext context) => _context = context;
 
-    Net = (x.Parent.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE")
-        ? Math.Max(0m,
-            (Math.Max(0m,
-                ((x.WorkEffort.Quantity ?? 0m) * ((x.WorkEffort.MaterialPrice ?? 0m) + (x.WorkEffort.LaborPrice ?? 0m)) *
-                 ((decimal)(x.WorkEffort.AchievementPercent ?? 0) / 100m)) -
-                (x.WorkEffort.Deductions ?? 0m))) -
-            (x.WorkEffort.Insurance ?? 0m) -
-            (x.WorkEffort.AdditionalInsurance ?? 0m))
-        : (x.WorkEffort.TotalAmount ?? 
-           ((x.WorkEffort.Quantity ?? 0m) * (x.WorkEffort.Rate ?? 0m)) +
-           (x.WorkEffort.TransportationExpenses ?? 0m) +
-           (x.WorkEffort.Gratuities ?? 0m) -
-           (x.WorkEffort.Discount ?? 0m)),
+            // REFACTOR: Category description mapping (unchanged)
+            private static string? GetCertificateCategoryDescription(string? category) =>
+                category switch
+                {
+                    "SUPPLY_PROCUREMENT_CERTIFICATE" => "Supply Procurement Certificate",
+                    "WORKMANSHIP_CONTRACTING_CERTIFICATE" => "Workmanship Contracting Certificate",
+                    "COMPANY_SUPPLY_SALE_CERTIFICATE" => "Company Supply Sale Certificate",
+                    _ => "Unknown Certificate"
+                };
 
-    Discount = x.WorkEffort.Discount ?? 0m,
-    Insurance = x.WorkEffort.Insurance ?? 0m,
-    AdditionalInsurance = x.WorkEffort.AdditionalInsurance ?? 0m,
-    CompletionPercentage = x.WorkEffort.CompletionPercentage,
-    Notes = x.WorkEffort.Notes,
-    ProcurementDate = x.WorkEffort.ProcurementDate ?? x.WorkEffort.CreatedDate,
-    IsDeleted = false,
-    AchievementPercentage = x.WorkEffort.AchievementPercent,
-    TransportationExpenses = x.WorkEffort.TransportationExpenses ?? 0m,
-    Gratuities = x.WorkEffort.Gratuities ?? 0m,
-    Deductions = x.WorkEffort.Deductions ?? 0m,
-    DeductionDescription = x.WorkEffort.DeductionDescription
-})
+            public async Task<IQueryable<ProjectCertificateRecord>> Handle(Query request, CancellationToken cancellationToken)
+            {
+                var language = request.Language;
+
+                // REFACTOR: Simplified TotalAmount inline — no InsuranceMode/AdditionalInsuranceMode in DB
+                // Purpose: Align with frontend logic using only available DB fields
+                // Context: (qty × (mat + lab) × ach%) − deductions − discount − insurance − additionalInsurance
+                var itemsTotalSubquery =
+                    from item in _context.WorkEfforts.AsNoTracking()
+                    where item.WorkEffortTypeId == "CERTIFICATE_ITEM"
+                    join parent in _context.WorkEfforts.AsNoTracking()
+                        on item.WorkEffortParentId equals parent.WorkEffortId
+                    where parent.WorkEffortTypeId == "PROJECT_CERTIFICATE"
+                    let isWorkmanship = parent.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                    let baseAmount = (item.Quantity ?? 0m) * ((item.MaterialPrice ?? 0m) + (item.LaborPrice ?? 0m))
+                    let achievedAmount = baseAmount * ((item.AchievementPercent ?? 100m) / 100m)
+                    let afterDeductions = achievedAmount - (item.Deductions ?? 0m) - (item.Discount ?? 0m)
+                    let netAfterInsurance = afterDeductions - (item.Insurance ?? 0m)
+                    let finalItemTotal = netAfterInsurance - (item.AdditionalInsurance ?? 0m)
+                    let otherTotal = item.TotalAmount ??
+                                     ((item.Quantity ?? 0m) * (item.Rate ?? 0m)) +
+                                     (item.TransportationExpenses ?? 0m) +
+                                     (item.Gratuities ?? 0m) -
+                                     (item.Discount ?? 0m)
+                    select new
+                    {
+                        WorkEffortParentId = item.WorkEffortParentId,
+                        ItemTotal = isWorkmanship ? finalItemTotal : otherTotal
+                    } into grouped
+                    group grouped by grouped.WorkEffortParentId into g
+                    select new
+                    {
+                        WorkEffortParentId = g.Key,
+                        TotalAmount = g.Sum(x => x.ItemTotal)
+                    };
+
+                var query =
+                    from we in _context.WorkEfforts.AsNoTracking()
+                    join si in _context.StatusItems on we.CurrentStatusId equals si.StatusId into statusGroup
+                    from si in statusGroup.DefaultIfEmpty()
+                    join proj in _context.WorkEfforts on we.ProjectId equals proj.WorkEffortId into projectGroup
+                    from proj in projectGroup.DefaultIfEmpty()
+                    join supplier in _context.Parties on we.PartyIdSupplier equals supplier.PartyId into supplierGroup
+                    from supplier in supplierGroup.DefaultIfEmpty()
+                    join contractor in _context.Parties on we.PartyIdContractor equals contractor.PartyId into contractorGroup
+                    from contractor in contractorGroup.DefaultIfEmpty()
+                    join fac in _context.Facilities on we.FacilityId equals fac.FacilityId into facGroup
+                    from fac in facGroup.DefaultIfEmpty()
+                    join total in itemsTotalSubquery on we.WorkEffortId equals total.WorkEffortParentId into totalGroup
+                    from total in totalGroup.DefaultIfEmpty()
+                    where we.WorkEffortTypeId == "PROJECT_CERTIFICATE"
+                    select new ProjectCertificateRecord
+                    {
+                        WorkEffortId = we.WorkEffortId,
+                        CertificateNumber = we.CertificateNumber,
+                        CertificateCategory = we.CertificateCategory,
+                        CertificateCategoryDescription = null,
+                        ProjectId = we.ProjectId,
+                        ProjectName = proj != null ? proj.ProjectName : we.ProjectName,
+                        Description = we.Description,
+                        EstimatedStartDate = we.EstimatedStartDate,
+                        EstimatedCompletionDate = we.EstimatedCompletionDate,
+                        StatusDescription = language == "ar" ? si.DescriptionArabic : si.Description,
+                        CurrentStatusId = we.CurrentStatusId,
+                        PartyIdSupplier = supplier != null ? supplier.PartyId : null,
+                        PartyNameSupplier = supplier != null ? supplier.Description : null,
+                        PartyIdContractor = contractor != null ? contractor.PartyId : null,
+                        PartyNameContractor = contractor != null ? contractor.Description : null,
+                        RelatedOrderId = we.RelatedOrderId,
+                        FacilityId = we.FacilityId,
+                        FacilityName = fac != null ? fac.FacilityName : null,
+                        TotalAmount = total != null ? total.TotalAmount : 0m
+                    };
+
+                var result = query.Select(record => new ProjectCertificateRecord
+                {
+                    WorkEffortId = record.WorkEffortId,
+                    CertificateNumber = record.CertificateNumber,
+                    CertificateCategory = record.CertificateCategory,
+                    CertificateCategoryDescription = GetCertificateCategoryDescription(record.CertificateCategory),
+                    ProjectId = record.ProjectId,
+                    ProjectName = record.ProjectName,
+                    Description = record.Description,
+                    EstimatedStartDate = record.EstimatedStartDate,
+                    EstimatedCompletionDate = record.EstimatedCompletionDate,
+                    StatusDescription = record.StatusDescription,
+                    CurrentStatusId = record.CurrentStatusId,
+                    PartyIdSupplier = record.PartyIdSupplier,
+                    PartyNameSupplier = record.PartyNameSupplier,
+                    PartyIdContractor = record.PartyIdContractor,
+                    PartyNameContractor = record.PartyNameContractor,
+                    RelatedOrderId = record.RelatedOrderId,
+                    FacilityId = record.FacilityId,
+                    FacilityName = record.FacilityName,
+                    TotalAmount = record.TotalAmount
+                });
+
+                return result;
+            }
+        }
+    }
+}

@@ -67,24 +67,26 @@ const productsApi = createApi({
                 },
             }),
             addProduct: builder.mutation({
-                query: (product) => {
-                    return {
-                        url: "/products/createProduct",
-                        method: "POST",
-                        body: {...product},
-                    };
-                },
-                invalidatesTags: ["Products"]
+                // REFACTOR: Wrap the flat object in the shape expected by the server
+                // Purpose: Match CreateProduct.Command { productDto2: ProductDto2 }
+                // Why: Prevents request.ProductDto2 === null and eliminates the “product field is required” error
+                query: (product) => ({
+                    url: "/products/createProduct",
+                    method: "POST",
+                    body: { productDto2: product },   // ← THIS IS THE ONLY CHANGE
+                }),
+                invalidatesTags: ["Products"],
             }),
             updateProduct: builder.mutation({
-                query: (product) => {
-                    return {
-                        url: "/products/updateProduct",
-                        method: "PUT",
-                        body: {...product},
-                    };
-                },
-                invalidatesTags: ["Products"]
+                // REFACTOR: Align payload with CreateProduct.Command
+                // Purpose: Server expects { productDto2: ProductDto2 } – not a flat object
+                // Why: Prevents “product field is required” validation error
+                query: (product) => ({
+                    url: "/products/updateProduct",
+                    method: "PUT",
+                    body: { productDto2: product },   // ← SAME WRAPPER
+                }),
+                invalidatesTags: ["Products"],
             }),
             fetchProductStoreFacilities: builder.query<any[], undefined>({
                 query: () => {

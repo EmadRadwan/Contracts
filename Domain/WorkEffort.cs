@@ -176,6 +176,7 @@ public class WorkEffort
     public WorkEffortPurposeType? WorkEffortPurposeType { get; set; }
     public WorkEffortType? WorkEffortType { get; set; }
     public WorkEffortIcalDatum WorkEffortIcalDatum { get; set; } = null!;
+    public virtual ICollection<Product> Apartments { get; set; } = new HashSet<Product>();
     public ICollection<AcctgTran> AcctgTrans { get; set; }
     public ICollection<AgreementWorkEffortApplic> AgreementWorkEffortApplics { get; set; }
     public ICollection<CommunicationEventWorkEff> CommunicationEventWorkEffs { get; set; }

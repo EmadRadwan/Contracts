@@ -33436,6 +33436,20 @@ namespace Persistence.Migrations
                         .HasColumnType("varchar(36)")
                         .HasColumnName("AMOUNT_UOM_TYPE_ID");
 
+                    b.Property<decimal?>("ApartmentPricePerM2")
+                        .HasColumnType("decimal(18, 6)")
+                        .HasColumnName("APARTMENT_PRICE_PER_M2");
+
+                    b.Property<decimal?>("ApartmentSpaceM2")
+                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnName("APARTMENT_SPACE_M2");
+
+                    b.Property<string>("ApartmentStatusId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("APARTMENT_STATUS_ID");
+
                     b.Property<string>("AutoCreateKeywords")
                         .HasMaxLength(1)
                         .IsUnicode(false)
@@ -33536,6 +33550,20 @@ namespace Persistence.Migrations
                         .HasColumnType("decimal(18,3)")
                         .HasColumnName("FIXED_AMOUNT");
 
+                    b.Property<string>("FloorNumber")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("FLOOR_NUMBER");
+
+                    b.Property<decimal?>("GardenPricePerM2")
+                        .HasColumnType("decimal(18, 6)")
+                        .HasColumnName("GARDEN_PRICE_PER_M2");
+
+                    b.Property<decimal?>("GardenSpaceM2")
+                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnName("GARDEN_SPACE_M2");
+
                     b.Property<string>("HeightUomId")
                         .HasMaxLength(36)
                         .IsUnicode(false)
@@ -33591,6 +33619,12 @@ namespace Persistence.Migrations
                         .HasColumnType("char(1)")
                         .HasColumnName("IS_VIRTUAL")
                         .IsFixedLength();
+
+                    b.Property<string>("LandNumber")
+                        .HasMaxLength(60)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(60)")
+                        .HasColumnName("LAND_NUMBER");
 
                     b.Property<string>("LargeImageUrl")
                         .HasMaxLength(2000)
@@ -33714,6 +33748,12 @@ namespace Persistence.Migrations
                     b.Property<decimal?>("ProductWidth")
                         .HasColumnType("decimal(18, 6)")
                         .HasColumnName("PRODUCT_WIDTH");
+
+                    b.Property<string>("ProjectId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("PROJECT_ID");
 
                     b.Property<decimal?>("QuantityIncluded")
                         .HasColumnType("decimal(18, 6)")
@@ -33843,6 +33883,10 @@ namespace Persistence.Migrations
                         .HasColumnName("WIDTH_UOM_ID");
 
                     b.HasKey("ProductId");
+
+                    b.HasIndex("ApartmentStatusId");
+
+                    b.HasIndex("ProjectId");
 
                     b.HasIndex(new[] { "CreatedTxStamp" }, "PRODUCT_TXCRTS");
 
@@ -45869,6 +45913,91 @@ namespace Persistence.Migrations
                     b.HasIndex(new[] { "WorkEffortId" }, "SOPPWEFF_WEFF");
 
                     b.ToTable("SALES_OPPORTUNITY_WORK_EFFORT", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.SalesRequest", b =>
+                {
+                    b.Property<string>("SalesRequestId")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("SALES_REQUEST_ID");
+
+                    b.Property<decimal?>("AdvancePayment")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("ADVANCE_PAYMENT");
+
+                    b.Property<decimal?>("ApartmentPricePerM2")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("APARTMENT_PRICE_PER_M2");
+
+                    b.Property<string>("Comments")
+                        .HasColumnType("longtext")
+                        .HasColumnName("COMMENTS");
+
+                    b.Property<DateTime?>("CreatedStamp")
+                        .HasColumnType("datetime")
+                        .HasColumnName("CREATED_STAMP");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("CUSTOMER_ID");
+
+                    b.Property<DateTime?>("DateOfFirstInstallment")
+                        .HasColumnType("datetime")
+                        .HasColumnName("DATE_OF_FIRST_INSTALLMENT");
+
+                    b.Property<decimal?>("Discount")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("DISCOUNT");
+
+                    b.Property<int?>("DurationBetweenInstallments")
+                        .HasColumnType("int")
+                        .HasColumnName("DURATION_BETWEEN_INSTALLMENTS");
+
+                    b.Property<decimal?>("GardenPricePerM2")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("GARDEN_PRICE_PER_M2");
+
+                    b.Property<DateTime?>("LastUpdatedStamp")
+                        .HasColumnType("datetime")
+                        .HasColumnName("LAST_UPDATED_STAMP");
+
+                    b.Property<int?>("NumberOfInstallments")
+                        .HasColumnType("int")
+                        .HasColumnName("NUMBER_OF_INSTALLMENTS");
+
+                    b.Property<string>("ProductId")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("PRODUCT_ID");
+
+                    b.Property<DateTime?>("SaleDate")
+                        .HasColumnType("datetime")
+                        .HasColumnName("SALE_DATE");
+
+                    b.Property<decimal?>("TotalPrice")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("TOTAL_PRICE");
+
+                    b.HasKey("SalesRequestId");
+
+                    b.HasIndex(new[] { "CustomerId" }, "SALES_REQ_CUST_IDX");
+
+                    b.HasIndex(new[] { "ProductId" }, "SALES_REQ_PROD_IDX");
+
+                    b.HasIndex(new[] { "SaleDate" }, "SALES_REQ_SALE_DT_IDX");
+
+                    b.HasIndex(new[] { "CreatedStamp" }, "SALES_REQ_TXCRTS");
+
+                    b.HasIndex(new[] { "LastUpdatedStamp" }, "SALES_REQ_TXSTMP");
+
+                    b.ToTable("SALES_REQUEST", (string)null);
                 });
 
             modelBuilder.Entity("Domain.SecurityGroup", b =>
@@ -70492,6 +70621,11 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("PROD_AMOUNT_UOMT");
 
+                    b.HasOne("Domain.StatusItem", "ApartmentStatus")
+                        .WithMany()
+                        .HasForeignKey("ApartmentStatusId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("Domain.UserLogin", "CreatedByUserLoginNavigation")
                         .WithMany("ProductCreatedByUserLoginNavigations")
                         .HasForeignKey("CreatedByUserLogin")
@@ -70558,6 +70692,11 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("PROD_TYPE");
 
+                    b.HasOne("Domain.WorkEffort", "Project")
+                        .WithMany("Apartments")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("Domain.Uom", "QuantityUom")
                         .WithMany("ProductQuantityUoms")
                         .HasForeignKey("QuantityUomId")
@@ -70596,6 +70735,8 @@ namespace Persistence.Migrations
 
                     b.Navigation("AmountUomType");
 
+                    b.Navigation("ApartmentStatus");
+
                     b.Navigation("CreatedByUserLoginNavigation");
 
                     b.Navigation("DefaultShipmentBoxType");
@@ -70617,6 +70758,8 @@ namespace Persistence.Migrations
                     b.Navigation("PrimaryProductCategory");
 
                     b.Navigation("ProductType");
+
+                    b.Navigation("Project");
 
                     b.Navigation("QuantityUom");
 
@@ -74725,6 +74868,27 @@ namespace Persistence.Migrations
                     b.Navigation("SalesOpportunity");
 
                     b.Navigation("WorkEffort");
+                });
+
+            modelBuilder.Entity("Domain.SalesRequest", b =>
+                {
+                    b.HasOne("Domain.Party", "Customer")
+                        .WithMany("SalesRequests")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired()
+                        .HasConstraintName("FK_SALES_REQ_CUSTOMER");
+
+                    b.HasOne("Domain.Product", "Product")
+                        .WithMany("SalesRequests")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired()
+                        .HasConstraintName("FK_SALES_REQ_PRODUCT");
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Domain.SecurityGroupPermission", b =>
@@ -81015,6 +81179,8 @@ namespace Persistence.Migrations
 
                     b.Navigation("SalesOpportunityRoles");
 
+                    b.Navigation("SalesRequests");
+
                     b.Navigation("ShipmentCostEstimates");
 
                     b.Navigation("ShipmentPartyIdFromNavigations");
@@ -81659,6 +81825,8 @@ namespace Persistence.Migrations
                     b.Navigation("ReturnItems");
 
                     b.Navigation("SalesForecastDetails");
+
+                    b.Navigation("SalesRequests");
 
                     b.Navigation("ServiceSpecifications");
 
@@ -83508,6 +83676,8 @@ namespace Persistence.Migrations
                     b.Navigation("AcctgTrans");
 
                     b.Navigation("AgreementWorkEffortApplics");
+
+                    b.Navigation("Apartments");
 
                     b.Navigation("CommunicationEventWorkEffs");
 

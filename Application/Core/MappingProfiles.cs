@@ -36,7 +36,7 @@ public class MappingProfiles : Profile
         CreateMap<ProductCategory, ProductCategoryDto>();
         CreateMap<Product, Product>();
         CreateMap<Product, ProductDto>();
-        CreateMap<Product, ProductRecord>()
+        /*CreateMap<Product, ProductRecord>()
             .ForMember(d => d.ProductTypeDescription, o => o.MapFrom(s => s.ProductType!.Description))
             .ForMember(d => d.PrimaryProductCategoryDescription,
                 o => o.MapFrom(s => s.PrimaryProductCategory!.Description))
@@ -46,6 +46,7 @@ public class MappingProfiles : Profile
             //.ForMember(dest => dest.OrderItemsExist, opt => opt.MapFrom(src => src.OrderItems.Any()))
             //.ForMember(dest => dest.ProductAssocProductsExist, opt => opt.MapFrom(src => src.ProductAssocProducts.Any()))
             .ForMember(dest => dest.ProductFacilitiesExist, opt => opt.MapFrom(src => src.ProductFacilities.Any()));
+            */
 
         CreateMap<ProductFacility, ProductFacility>();
         CreateMap<Facility, Facility>();

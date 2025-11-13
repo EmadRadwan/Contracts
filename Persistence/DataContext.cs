@@ -893,7 +893,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
         public DbSet<CorrectiveAction> CorrectiveActions { get; set; } = null!;
         
         public DbSet<TransactionTypeAccountRule> TransactionTypeAccountRules { get; set; }
-
+        public DbSet<SalesRequest> SalesRequests { get; set; }
 
         
 
@@ -28305,18 +28305,140 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasConstraintName("PARTY_STATUSITM");
                     
                     entity.HasMany(d => d.WorkEffortsAsSupplier)
-        .WithOne(p => p.SupplierParty)
-        .HasForeignKey(p => p.PartyIdSupplier)
-        .OnDelete(DeleteBehavior.Restrict)
-        .HasConstraintName("WK_EFFRT_SUPPLIER");
+                        .WithOne(p => p.SupplierParty)
+                        .HasForeignKey(p => p.PartyIdSupplier)
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("WK_EFFRT_SUPPLIER");
+                        
+                        
 
-    entity.HasMany(d => d.WorkEffortsAsContractor)
-        .WithOne(p => p.ContractorParty)
-        .HasForeignKey(p => p.PartyIdContractor)
-        .OnDelete(DeleteBehavior.Restrict)
-        .HasConstraintName("WK_EFFRT_CONTRACTOR");
+                    entity.HasMany(d => d.WorkEffortsAsContractor)
+                        .WithOne(p => p.ContractorParty)
+                        .HasForeignKey(p => p.PartyIdContractor)
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("WK_EFFRT_CONTRACTOR");
+                            });
+
+            modelBuilder.Entity<SalesRequest>(entity =>
+            {
+                // --------------------------------------------------------------
+                // Table name (OFBiz convention)
+                // --------------------------------------------------------------
+                entity.ToTable("SALES_REQUEST");
+            
+                // --------------------------------------------------------------
+                // Primary key
+                // --------------------------------------------------------------
+                entity.Property(e => e.SalesRequestId)
+                      .HasMaxLength(20)
+                      .IsUnicode(false)
+                      .HasColumnName("SALES_REQUEST_ID");               // or your sequence
+            
+                // --------------------------------------------------------------
+                // FK – Apartment (Product)
+                // --------------------------------------------------------------
+                entity.Property(e => e.ProductId)
+                      .HasMaxLength(20)
+                      .IsUnicode(false)
+                      .HasColumnName("PRODUCT_ID")
+                      .IsRequired();
+            
+                // --------------------------------------------------------------
+                // FK – Customer (Party)
+                // --------------------------------------------------------------
+                entity.Property(e => e.CustomerId)
+                      .HasMaxLength(36)
+                      .IsUnicode(false)
+                      .HasColumnName("CUSTOMER_ID")
+                      .IsRequired();
+            
+                // --------------------------------------------------------------
+                // Pricing fields (copied from apartment at request time)
+                // --------------------------------------------------------------
+                entity.Property(e => e.ApartmentPricePerM2)
+                      .HasColumnType("numeric(18,4)")
+                      .HasColumnName("APARTMENT_PRICE_PER_M2");
+            
+                entity.Property(e => e.GardenPricePerM2)
+                      .HasColumnType("numeric(18,4)")
+                      .HasColumnName("GARDEN_PRICE_PER_M2");
+            
+                // --------------------------------------------------------------
+                // Business fields
+                // --------------------------------------------------------------
+                entity.Property(e => e.SaleDate)
+                      .HasColumnType("datetime")
+                      .HasColumnName("SALE_DATE");
+            
+                entity.Property(e => e.Discount)
+                      .HasColumnType("numeric(18,4)")
+                      .HasColumnName("DISCOUNT");
+            
+                entity.Property(e => e.TotalPrice)
+                      .HasColumnType("numeric(18,4)")
+                      .HasColumnName("TOTAL_PRICE");
+            
+                entity.Property(e => e.Comments)
+                      .HasColumnName("COMMENTS");
+            
+                entity.Property(e => e.AdvancePayment)
+                      .HasColumnType("numeric(18,4)")
+                      .HasColumnName("ADVANCE_PAYMENT");
+            
+                entity.Property(e => e.NumberOfInstallments)
+                      .HasColumnName("NUMBER_OF_INSTALLMENTS");
+            
+                entity.Property(e => e.DateOfFirstInstallment)
+                      .HasColumnType("datetime")
+                      .HasColumnName("DATE_OF_FIRST_INSTALLMENT");
+            
+                entity.Property(e => e.DurationBetweenInstallments)
+                      .HasColumnName("DURATION_BETWEEN_INSTALLMENTS");
+            
+                // --------------------------------------------------------------
+                // Audit stamps (identical to every other OFBiz entity)
+                // --------------------------------------------------------------
+                entity.Property(e => e.LastUpdatedStamp)
+                      .HasColumnType("datetime")
+                      .HasColumnName("LAST_UPDATED_STAMP");
+            
+            
+                entity.Property(e => e.CreatedStamp)
+                      .HasColumnType("datetime")
+                      .HasColumnName("CREATED_STAMP");
+            
+              entity.HasKey(e => e.SalesRequestId);
+            
+                // --------------------------------------------------------------
+                // Indexes – one per column, exactly like PARTY_…_IDX
+                // --------------------------------------------------------------
+                entity.HasIndex(e => e.ProductId,               "SALES_REQ_PROD_IDX");
+                entity.HasIndex(e => e.CustomerId,              "SALES_REQ_CUST_IDX");
+                entity.HasIndex(e => e.SaleDate,                "SALES_REQ_SALE_DT_IDX");
+                entity.HasIndex(e => e.CreatedStamp,          "SALES_REQ_TXCRTS");
+                entity.HasIndex(e => e.LastUpdatedStamp,      "SALES_REQ_TXSTMP");
+            
+                // --------------------------------------------------------------
+                // Relationships
+                // --------------------------------------------------------------
+            
+                // REFACTOR: FK to Product (apartment) – one-to-many
+                // Why: Enables Include(p => p.SalesRequests) and change tracking
+                entity.HasOne(d => d.Product)
+                      .WithMany(p => p.SalesRequests)               // navigation added in Product
+                      .HasForeignKey(d => d.ProductId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_SALES_REQ_PRODUCT");
+            
+                // REFACTOR: FK to Party (customer) – unidirectional (Party already has SalesRequests)
+                // Why: Keeps referential integrity, matches your Party config
+                entity.HasOne(d => d.Customer)
+                      .WithMany(p => p.SalesRequests)               // reverse navigation you added
+                      .HasForeignKey(d => d.CustomerId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_SALES_REQ_CUSTOMER");
             });
-
+            
             modelBuilder.Entity<PartyAcctgPreference>(entity =>
             {
                 entity.HasKey(e => e.PartyId);
@@ -37029,6 +37151,44 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .IsUnicode(false)
                     .HasColumnName("WIDTH_UOM_ID");
                     
+                    // REFACTOR: Added apartment-specific fields with OFBiz-style column naming, types, and constraints.
+//           All columns are nullable to support non-apartment products. Uses uppercase snake_case column names.
+entity.Property(e => e.ProjectId)
+      .HasMaxLength(36)
+      .IsUnicode(false)
+      .HasColumnName("PROJECT_ID");
+
+entity.Property(e => e.FloorNumber)
+      .HasMaxLength(36)
+      .IsUnicode(false)
+      .HasColumnName("FLOOR_NUMBER");
+
+entity.Property(e => e.ApartmentSpaceM2)
+      .HasColumnType("decimal(18, 2)")
+      .HasColumnName("APARTMENT_SPACE_M2");
+
+entity.Property(e => e.GardenSpaceM2)
+      .HasColumnType("decimal(18, 2)")
+      .HasColumnName("GARDEN_SPACE_M2");
+
+entity.Property(e => e.GardenPricePerM2)
+      .HasColumnType("decimal(18, 6)")
+      .HasColumnName("GARDEN_PRICE_PER_M2");
+
+entity.Property(e => e.ApartmentPricePerM2)
+      .HasColumnType("decimal(18, 6)")
+      .HasColumnName("APARTMENT_PRICE_PER_M2");
+
+entity.Property(e => e.ApartmentStatusId)
+      .HasMaxLength(36)
+      .IsUnicode(false)
+      .HasColumnName("APARTMENT_STATUS_ID");
+
+entity.Property(e => e.LandNumber)
+      .HasMaxLength(60)
+      .IsUnicode(false)
+      .HasColumnName("LAND_NUMBER");
+                    
                 entity.HasOne(d => d.AmountUomType)
                     .WithMany(p => p.Products)
                     .HasForeignKey(d => d.AmountUomTypeId)
@@ -37123,6 +37283,16 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .WithOne(p => p.Product)
                     .HasForeignKey(p => p.ProductId)
                     .HasConstraintName("PROD_WORK_EFFORTS");
+                    
+                     entity.HasOne(p => p.Project)
+                  .WithMany(we => we.Apartments)
+                  .HasForeignKey(p => p.ProjectId)
+                  .OnDelete(DeleteBehavior.SetNull); // Optional: keep apartment if project deleted
+
+                entity.HasOne(p => p.ApartmentStatus)
+                  .WithMany()
+                  .HasForeignKey(p => p.ApartmentStatusId)
+                  .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<ProductAssoc>(entity =>
@@ -61892,6 +62062,9 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
             .WithMany(gl => gl.WorkEfforts)
             .HasForeignKey(we => we.GlAccountId);
 
+            entity.HasMany(we => we.Apartments)
+                  .WithOne(p => p.Project)
+                  .HasForeignKey(p => p.ProjectId);
            
                     
                  entity.Property(e => e.ProjectNum)

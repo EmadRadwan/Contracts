@@ -15,11 +15,13 @@ interface ContractingFormProps {
     formRenderProps: FormRenderProps;
     editMode: number;
     formEditMode: number;
-    insuranceMode: "value" | "percentage";
-    additionalInsuranceMode: "value" | "percentage";
     handleInsuranceModeChange: (event: React.ChangeEvent<HTMLInputElement>, onChange: FormRenderProps["onChange"]) => void;
     handleAdditionalInsuranceModeChange: (event: React.ChangeEvent<HTMLInputElement>, onChange: FormRenderProps["onChange"]) => void;
-    calculateTotals: (valueGetter: FormRenderProps["valueGetter"]) => {
+    calculateTotals: (
+        valueGetter: FormRenderProps["valueGetter"],
+        insuranceMode?: "value" | "percentage",
+        additionalInsuranceMode?: "value" | "percentage"
+    ) => {
         total: number;
         finalTotal: number;
         net: number;
@@ -27,6 +29,8 @@ interface ContractingFormProps {
         insurance: number;
         discount: number;
         additionalInsurance: number;
+        transportationExpenses: number;
+        gratuities: number;
     };
     getTranslatedLabel: (key: string, defaultValue: string) => string;
     onClose: () => void;
@@ -44,24 +48,72 @@ const WorkmanshipContractingForm = ({
                                         formRenderProps,
                                         editMode,
                                         formEditMode,
-                                        insuranceMode,
-                                        additionalInsuranceMode,
                                         handleInsuranceModeChange,
                                         handleAdditionalInsuranceModeChange,
                                         calculateTotals,
                                         getTranslatedLabel,
                                         onClose,
-                                        additionalInsurance,
                                         achievementPercentageValidator,
                                     }: ContractingFormProps) => {
     const { valueGetter, onChange } = formRenderProps;
-    const { total, net, deserved } = calculateTotals(valueGetter);
+
+    const getTotals = () =>
+        calculateTotals(
+            valueGetter,
+            valueGetter("insuranceMode") as "value" | "percentage",
+            valueGetter("additionalInsuranceMode") as "value" | "percentage"
+        );
+
+    const {
+        total,
+        deserved,
+        insurance,
+        additionalInsurance,
+        net,
+    } = getTotals();
+    
+    
+
+    const insuranceMode = (valueGetter("insuranceMode") as "value" | "percentage") ?? "value";
+    const additionalInsuranceMode = (valueGetter("additionalInsuranceMode") as "value" | "percentage") ?? "value";
+
 
     useEffect(() => {
-        onChange("total", { value: total });
-        onChange("deserved", { value: deserved });
-        onChange("net", { value: net });
-    }, [total, deserved, net, onChange]);
+        const totals = getTotals();
+        onChange("total", { value: totals.total });
+        onChange("deserved", { value: totals.deserved });
+        onChange("net", { value: totals.net });
+    }, [
+        valueGetter("quantity"),
+        valueGetter("materialPrice"),
+        valueGetter("laborPrice"),
+        valueGetter("achievementPercentage"),
+        valueGetter("deductions"),
+        valueGetter("insurance"),
+        valueGetter("additionalInsurance"),
+        valueGetter("insuranceMode"),
+        valueGetter("additionalInsuranceMode"),
+        calculateTotals,
+        onChange,
+    ]);
+
+    useEffect(() => {
+        const totals = getTotals();
+        onChange("total", { value: totals.total });
+        onChange("deserved", { value: totals.deserved });
+        onChange("net", { value: totals.net });
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+
+    useEffect(() => {
+        const curAch = valueGetter("achievementPercentage");
+        const hasPrice = Number(valueGetter("materialPrice") || 0) + Number(valueGetter("laborPrice") || 0) > 0;
+        const isNewItem = editMode === 1;
+
+        if ((curAch == null || curAch === "" || isNaN(Number(curAch))) && hasPrice && isNewItem) {
+            onChange("achievementPercentage", { value: 100 });
+        }
+    }, [valueGetter, onChange, editMode]);
 
     const descriptionLengthValidator = (value: string | undefined): string | undefined => {
         if (value && value.length > 3000) {
@@ -80,6 +132,9 @@ const WorkmanshipContractingForm = ({
     return (
         <FormElement>
             <fieldset className="k-form-fieldset">
+                <Field name="insuranceMode" component={() => null} />
+                <Field name="additionalInsuranceMode" component={() => null} />
+                    
                 <Grid container spacing={1}>
                     <Grid item xs={6}>
                         <Field
@@ -177,27 +232,6 @@ const WorkmanshipContractingForm = ({
                             disabled={formEditMode > 3}
                         />
                     </Grid>
-                    <Grid item  xs={2}>
-                        <Field
-                            id="deductions"
-                            name="deductions"
-                            label={getTranslatedLabel("projects.certificate.items.list.deductions", "Deductions")}
-                            component={FormNumericTextBox}
-                            format="n2"
-                            min={0}
-                            disabled={formEditMode > 3}
-                        />
-                    </Grid>
-                    <Grid item xs={12}>
-                        <Field
-                            id="deductionDescription"
-                            name="deductionDescription"
-                            label={getTranslatedLabel("projects.certificate.items.list.deductionDescription", "Deduction Description")}
-                            component={FormInput}
-                            disabled={formEditMode > 3}
-                            validator={deductionDescriptionLengthValidator}
-                        />
-                    </Grid>
                     <Grid item xs={2}>
                         <Field
                             id="deserved"
@@ -287,16 +321,48 @@ const WorkmanshipContractingForm = ({
                             </Grid>
                         </Grid>
                     </Grid>
-                    <Grid item xs={2}>
-                        <Field
-                            id="net"
-                            name="net"
-                            label={getTranslatedLabel("projects.certificate.items.list.net", "Net")}
-                            component={FormNumericTextBox}
-                            format="n2"
-                            value={net}
-                            disabled
-                        />
+                    
+                    <Grid item xs={12}>
+                        <Grid container spacing={1}>
+                            <Grid item xs={2}>
+                                <Field
+                                    id="deductions"
+                                    name="deductions"
+                                    label={getTranslatedLabel(
+                                        "projects.certificate.items.list.deductions",
+                                        "Deductions"
+                                    )}
+                                    component={FormNumericTextBox}
+                                    format="n2"
+                                    min={0}
+                                    disabled={formEditMode > 3}
+                                />
+                            </Grid>
+                            <Grid item xs={8}>
+                                <Field
+                                    id="deductionDescription"
+                                    name="deductionDescription"
+                                    label={getTranslatedLabel(
+                                        "projects.certificate.items.list.deductionDescription",
+                                        "Deduction Description"
+                                    )}
+                                    component={FormInput}
+                                    disabled={formEditMode > 3}
+                                    validator={deductionDescriptionLengthValidator}
+                                />
+                            </Grid>
+                            <Grid item xs={2}>
+                                <Field
+                                    id="net"
+                                    name="net"
+                                    label={getTranslatedLabel("projects.certificate.items.list.net", "Net")}
+                                    component={FormNumericTextBox}
+                                    format="n2"
+                                    value={net}
+                                    disabled
+                                />
+                            </Grid>
+                        </Grid>
                     </Grid>
                     <Grid item xs={12}>
                         <FormButtons

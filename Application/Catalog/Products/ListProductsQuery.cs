@@ -1,4 +1,3 @@
-
 using MediatR;
 using Microsoft.AspNetCore.OData.Query;
 using Persistence;
@@ -27,27 +26,12 @@ public class ListProductsQuery
             var language = request.Language;
 
             var query = from product in _context.Products
-                join uom in _context.Uoms on product.QuantityUomId equals uom.UomId into uoms
-                from uom in uoms.DefaultIfEmpty()
-                join colorAppl in _context.ProductFeatureAppls
-                    on new { product.ProductId, FeatureType = "COLOR" } equals
-                    new
-                    {
-                        colorAppl.ProductId, FeatureType = colorAppl.ProductFeature.ProductFeatureTypeId
-                    } into colorAppls
-                from colorAppl in colorAppls.DefaultIfEmpty()
-                join trademarkAppl in _context.ProductFeatureAppls
-                    on new { product.ProductId, FeatureType = "TRADEMARK_NAME" } equals
-                    new
-                    {
-                        trademarkAppl.ProductId, FeatureType = trademarkAppl.ProductFeature.ProductFeatureTypeId
-                    } into trademarkAppls
-                from trademarkAppl in trademarkAppls.DefaultIfEmpty()
-                join sizeAppl in _context.ProductFeatureAppls
-                    on new { product.ProductId, FeatureType = "SIZE" } equals
-                    new { sizeAppl.ProductId, FeatureType = sizeAppl.ProductFeature.ProductFeatureTypeId }
-                    into sizeAppls
-                from sizeAppl in sizeAppls.DefaultIfEmpty()
+                join pt in _context.ProductTypes on product.ProductTypeId equals pt.ProductTypeId
+                join pc in _context.ProductCategories on product.PrimaryProductCategoryId equals pc.ProductCategoryId
+                    into pcGroup
+                from pc in pcGroup.DefaultIfEmpty() // LEFT JOIN for category
+                join proj in _context.WorkEfforts on product.ProjectId equals proj.WorkEffortId into projGroup
+                from proj in projGroup.DefaultIfEmpty() // LEFT JOIN for project
                 select new ProductRecord
                 {
                     ProductId = product.ProductId,
@@ -56,48 +40,26 @@ public class ListProductsQuery
                     Comments = product.Comments,
                     PrimaryProductCategoryId = product.PrimaryProductCategoryId,
                     Description = product.Description,
-                    IntroductionDate = product.IntroductionDate,
                     OriginalImageUrl = product.OriginalImageUrl,
-                    QuantityUomId = product.QuantityUomId,
-                    IsVirtual = product.IsVirtual,
-                    IsVariant = product.IsVariant,
-                    QuantityIncluded = product.QuantityIncluded,
-                    PiecesIncluded = product.PiecesIncluded,
-                    QuantityUomDescription = language == "ar" ? uom.DescriptionArabic : uom.Description,
+
+                    // Localized descriptions
                     ProductTypeDescription = language == "ar"
-                        ? product.ProductType.DescriptionArabic
-                        : product.ProductType.Description,
-                    PrimaryProductCategoryDescription = language == "ar"
-                        ? product.PrimaryProductCategory.DescriptionArabic
-                        : product.PrimaryProductCategory.Description,
-                    ProductColorId =
-                        colorAppl != null && (colorAppl.ThruDate == null || colorAppl.ThruDate > DateTime.Now)
-                            ? colorAppl.ProductFeatureId
-                            : null,
-                    ProductColorDescription = colorAppl != null &&
-                                              (colorAppl.ThruDate == null || colorAppl.ThruDate > DateTime.Now)
-                        ? (language == "ar"
-                            ? colorAppl.ProductFeature.DescriptionArabic
-                            : colorAppl.ProductFeature.Description)
+                        ? pt.DescriptionArabic
+                        : pt.Description,
+                    PrimaryProductCategoryDescription = pc != null
+                        ? (language == "ar" ? pc.DescriptionArabic : pc.Description)
                         : null,
-                    ProductTrademarkId =
-                        trademarkAppl != null &&
-                        (trademarkAppl.ThruDate == null || trademarkAppl.ThruDate > DateTime.Now)
-                            ? trademarkAppl.ProductFeatureId
-                            : null,
-                    ProductTrademarkDescription = trademarkAppl != null &&
-                                                  (trademarkAppl.ThruDate == null ||
-                                                   trademarkAppl.ThruDate > DateTime.Now)
-                        ? (language == "ar"
-                            ? trademarkAppl.ProductFeature.DescriptionArabic
-                            : trademarkAppl.ProductFeature.Description)
-                        : null,
-                    ProductSizeId = sizeAppl != null && (sizeAppl.ThruDate == null || sizeAppl.ThruDate > DateTime.Now)
-                        ? sizeAppl.ProductFeatureId
-                        : null,
-                    ProductSizeDescription = sizeAppl != null && (sizeAppl.ThruDate == null || sizeAppl.ThruDate > DateTime.Now)
-                        ? (language == "ar" ? sizeAppl.ProductFeature.DescriptionArabic : sizeAppl.ProductFeature.Description)
-                        : null
+
+                    // New apartment-specific fields
+                    ProjectId = product.ProjectId,
+                    ProjectName = proj != null ? proj.ProjectName : null,
+                    FloorNumber = product.FloorNumber,
+                    ApartmentSpaceM2 = product.ApartmentSpaceM2,
+                    GardenSpaceM2 = product.GardenSpaceM2,
+                    ApartmentPricePerM2 = product.ApartmentPricePerM2,
+                    GardenPricePerM2 = product.GardenPricePerM2,
+                    ApartmentStatusId = product.ApartmentStatusId,
+                    LandNumber = product.LandNumber
                 };
 
             return query.AsQueryable();

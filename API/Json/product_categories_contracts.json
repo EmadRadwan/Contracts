@@ -338,5 +338,15 @@
     "LAST_UPDATED_TX_STAMP": null,
     "CREATED_STAMP": "2025-09-17 21:43:00",
     "CREATED_TX_STAMP": null
+  },
+  {
+    "product_category_id": "APARTMENTS",
+    "primary_parent_category_id": null,
+    "product_category_type_id": null,
+    "description": "Apartments",
+    "DESCRIPTION_ARABIC": "شقق سكنية",
+    "long_description": "Residential apartment units available for sale or rent within a building or complex",
+    "created_stamp": "2025-11-12 10:20:00.000",
+    "last_updated_stamp": "2025-11-12 10:20:00.000"
   }
 ]

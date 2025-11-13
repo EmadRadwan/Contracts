@@ -9,13 +9,15 @@ import { FormRenderProps } from "@progress/kendo-react-form";
 
 interface UseCertificateItemProps {
     certificateItem?: CertificateItem;
-    editMode: number; // 1: add, 2: edit
+    editMode: number;
     setFormKey: (key: number) => void;
     setInitValue: (value: CertificateItem | undefined) => void;
     discountMode: "value" | "percentage";
-    insuranceMode: "value" | "percentage";
-    additionalInsuranceMode: "value" | "percentage";
-    calculateTotals: (valueGetter: FormRenderProps["valueGetter"]) => {
+    calculateTotals: (
+        valueGetter: FormRenderProps["valueGetter"],
+        insuranceMode?: "value" | "percentage",
+        additionalInsuranceMode?: "value" | "percentage"
+    ) => {
         total: number;
         finalTotal: number;
         net: number;
@@ -27,6 +29,13 @@ interface UseCertificateItemProps {
         additionalInsurance: number;
     };
 }
+
+const parseAchievementPercentage = (value: string | number | null | undefined): number => {
+    if (value == null || value === "") return 0;
+    const str = String(value).trim().replace(/%/g, "");
+    const num = parseFloat(str);
+    return isNaN(num) ? 0 : num;
+};
 
 export default function useCertificateItem({
                                                certificateItem,
@@ -54,9 +63,15 @@ export default function useCertificateItem({
         (data: CertificateItem, valueGetter: FormRenderProps["valueGetter"]): CertificateItem => {
             const itemSeqId = certificateItemsFromUi?.length ? certificateItemsFromUi.length + 1 : 1;
             const serializedProcurementDate = data.procurementDate instanceof Date ? data.procurementDate.toISOString() : data.procurementDate;
-            const { total, finalTotal, net, deserved, insurance, discount, transportationExpenses, gratuities, additionalInsurance } = calculateTotals(valueGetter);
             const isContractingType = currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE";
 
+            const { total, finalTotal, net, deserved, insurance, discount, transportationExpenses, gratuities, additionalInsurance } =
+                calculateTotals(
+                    valueGetter,
+                    data.insuranceMode as "value" | "percentage",
+                    data.additionalInsuranceMode as "value" | "percentage"
+                );
+            
             const commonFields: CertificateItem = {
               productId:
                 typeof data.productId === "object"
@@ -95,9 +110,9 @@ export default function useCertificateItem({
               completionPercentage: data.completionPercentage,
               notes: data.notes,
               procurementDate: serializedProcurementDate,
-              isDeleted: false,
-              achievementPercentage: data.achievementPercentage || 0,
-              transportationExpenses: +transportationExpenses.toFixed(3),
+              isDeleted: false, 
+                achievementPercentage: parseAchievementPercentage(data.achievementPercentage),
+                transportationExpenses: +transportationExpenses.toFixed(3),
               gratuities: +gratuities.toFixed(3),
               insuranceMode,
               additionalInsuranceMode,

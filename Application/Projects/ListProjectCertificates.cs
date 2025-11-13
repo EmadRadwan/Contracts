@@ -27,9 +27,6 @@ namespace Application.Projects
                 _context = context;
             }
 
-            // REFACTOR: Moved CertificateCategoryDescription mapping to a separate method
-            // Purpose: Avoids using switch expression in LINQ query to prevent CS8514 error
-            // Context: EF Core cannot translate switch expressions; mapping is done in memory
             private static string? GetCertificateCategoryDescription(string? category)
             {
                 return category switch
@@ -41,63 +38,83 @@ namespace Application.Projects
                 };
             }
 
-            public async Task<IQueryable<ProjectCertificateRecord>> Handle(Query request, CancellationToken cancellationToken)
+            public async Task<IQueryable<ProjectCertificateRecord>> Handle(Query request,
+                CancellationToken cancellationToken)
             {
                 var language = request.Language;
-                
-                var itemsTotalSubquery = from item in _context.WorkEfforts.AsNoTracking()
+
+                // REFACTOR: Simplified TotalAmount inline — no InsuranceMode/AdditionalInsuranceMode in DB
+                // Purpose: Align with frontend logic using only available DB fields
+                // Context: (qty × (mat + lab) × ach%) − deductions − discount − insurance − additionalInsurance
+                var itemsTotalSubquery =
+                    from item in _context.WorkEfforts.AsNoTracking()
                     where item.WorkEffortTypeId == "CERTIFICATE_ITEM"
                     join parent in _context.WorkEfforts.AsNoTracking()
                         on item.WorkEffortParentId equals parent.WorkEffortId
                     where parent.WorkEffortTypeId == "PROJECT_CERTIFICATE"
-                    group new { item, parent } by item.WorkEffortParentId into itemGroup
+                    let isWorkmanship = parent.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                    let baseAmount = (item.Quantity ?? 0m) * ((item.MaterialPrice ?? 0m) + (item.LaborPrice ?? 0m))
+                    let achievedAmount = baseAmount * ((item.AchievementPercent ?? 100m) / 100m)
+                    let afterDeductions = achievedAmount - (item.Deductions ?? 0m) - (item.Discount ?? 0m)
+                    let netAfterInsurance = afterDeductions - (item.Insurance ?? 0m)
+                    let finalItemTotal = netAfterInsurance - (item.AdditionalInsurance ?? 0m)
+                    let otherTotal = item.TotalAmount ??
+                                     ((item.Quantity ?? 0m) * (item.Rate ?? 0m)) +
+                                     (item.TransportationExpenses ?? 0m) +
+                                     (item.Gratuities ?? 0m) -
+                                     (item.Discount ?? 0m)
                     select new
                     {
-                        WorkEffortParentId = itemGroup.Key,
-                        TotalAmount = itemGroup.Sum(i =>
-                            i.parent.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
-                                ? ((i.item.Quantity ?? 0m) * ((i.item.MaterialPrice ?? 0m) + (i.item.LaborPrice ?? 0m))) -
-                                  (i.item.Discount ?? 0m) - (i.item.Insurance ?? 0m) - (i.item.AdditionalInsurance ?? 0m) - (i.item.Deductions ?? 0m)
-                                : (i.item.TotalAmount ?? ((i.item.Quantity ?? 0m) * (i.item.Rate ?? 0m)) +
-                                    (i.item.TransportationExpenses ?? 0m) + (i.item.Gratuities ?? 0m) - (i.item.Discount ?? 0m)))
+                        WorkEffortParentId = item.WorkEffortParentId,
+                        ItemTotal = isWorkmanship ? finalItemTotal : otherTotal
+                    }
+                    into grouped
+                    group grouped by grouped.WorkEffortParentId
+                    into g
+                    select new
+                    {
+                        WorkEffortParentId = g.Key,
+                        TotalAmount = g.Sum(x => x.ItemTotal)
                     };
 
-                var query = from we in _context.WorkEfforts.AsNoTracking()
-                            join si in _context.StatusItems on we.CurrentStatusId equals si.StatusId into statusGroup
-                            from si in statusGroup.DefaultIfEmpty()
-                            join proj in _context.WorkEfforts on we.ProjectId equals proj.WorkEffortId into projectGroup
-                            from proj in projectGroup.DefaultIfEmpty()
-                            join supplier in _context.Parties on we.PartyIdSupplier equals supplier.PartyId into supplierGroup
-                            from supplier in supplierGroup.DefaultIfEmpty()
-                            join contractor in _context.Parties on we.PartyIdContractor equals contractor.PartyId into contractorGroup
-                            from contractor in contractorGroup.DefaultIfEmpty()
-                            join fac in _context.Facilities on we.FacilityId equals fac.FacilityId into facGroup
-                            from fac in facGroup.DefaultIfEmpty()
-                            join total in itemsTotalSubquery on we.WorkEffortId equals total.WorkEffortParentId into totalGroup
-                            from total in totalGroup.DefaultIfEmpty()
-                            where we.WorkEffortTypeId == "PROJECT_CERTIFICATE"
-                            select new ProjectCertificateRecord
-                            {
-                                WorkEffortId = we.WorkEffortId,
-                                CertificateNumber = we.CertificateNumber,
-                                CertificateCategory = we.CertificateCategory,
-                                CertificateCategoryDescription = null, // Set to null initially; mapped in memory below
-                                ProjectId = we.ProjectId,
-                                ProjectName = proj != null ? proj.ProjectName : we.ProjectName,
-                                Description = we.Description,
-                                EstimatedStartDate = we.EstimatedStartDate,
-                                EstimatedCompletionDate = we.EstimatedCompletionDate,
-                                StatusDescription = language == "ar" ? si.DescriptionArabic : si.Description,
-                                CurrentStatusId = we.CurrentStatusId,
-                                PartyIdSupplier = supplier != null ? supplier.PartyId : null,
-                                PartyNameSupplier = supplier != null ? supplier.Description : null,
-                                PartyIdContractor = contractor != null ? contractor.PartyId : null,
-                                PartyNameContractor = contractor != null ? contractor.Description : null,
-                                RelatedOrderId = we.RelatedOrderId,
-                                FacilityId = we.FacilityId,
-                                FacilityName = fac != null ? fac.FacilityName : null,
-                                TotalAmount = total != null ? total.TotalAmount : 0m
-                            };
+                var query =
+                    from we in _context.WorkEfforts.AsNoTracking()
+                    join si in _context.StatusItems on we.CurrentStatusId equals si.StatusId into statusGroup
+                    from si in statusGroup.DefaultIfEmpty()
+                    join proj in _context.WorkEfforts on we.ProjectId equals proj.WorkEffortId into projectGroup
+                    from proj in projectGroup.DefaultIfEmpty()
+                    join supplier in _context.Parties on we.PartyIdSupplier equals supplier.PartyId into supplierGroup
+                    from supplier in supplierGroup.DefaultIfEmpty()
+                    join contractor in _context.Parties on we.PartyIdContractor equals contractor.PartyId into
+                        contractorGroup
+                    from contractor in contractorGroup.DefaultIfEmpty()
+                    join fac in _context.Facilities on we.FacilityId equals fac.FacilityId into facGroup
+                    from fac in facGroup.DefaultIfEmpty()
+                    join total in itemsTotalSubquery on we.WorkEffortId equals total.WorkEffortParentId into totalGroup
+                    from total in totalGroup.DefaultIfEmpty()
+                    where we.WorkEffortTypeId == "PROJECT_CERTIFICATE"
+                    select new ProjectCertificateRecord
+                    {
+                        WorkEffortId = we.WorkEffortId,
+                        CertificateNumber = we.CertificateNumber,
+                        CertificateCategory = we.CertificateCategory,
+                        CertificateCategoryDescription = null,
+                        ProjectId = we.ProjectId,
+                        ProjectName = proj != null ? proj.ProjectName : we.ProjectName,
+                        Description = we.Description,
+                        EstimatedStartDate = we.EstimatedStartDate,
+                        EstimatedCompletionDate = we.EstimatedCompletionDate,
+                        StatusDescription = language == "ar" ? si.DescriptionArabic : si.Description,
+                        CurrentStatusId = we.CurrentStatusId,
+                        PartyIdSupplier = supplier != null ? supplier.PartyId : null,
+                        PartyNameSupplier = supplier != null ? supplier.Description : null,
+                        PartyIdContractor = contractor != null ? contractor.PartyId : null,
+                        PartyNameContractor = contractor != null ? contractor.Description : null,
+                        RelatedOrderId = we.RelatedOrderId,
+                        FacilityId = we.FacilityId,
+                        FacilityName = fac != null ? fac.FacilityName : null,
+                        TotalAmount = total != null ? total.TotalAmount : 0m
+                    };
 
                 var result = query.Select(record => new ProjectCertificateRecord
                 {
@@ -121,7 +138,7 @@ namespace Application.Projects
                     FacilityName = record.FacilityName,
                     TotalAmount = record.TotalAmount
                 });
-                
+
                 return result;
             }
         }

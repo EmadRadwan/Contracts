@@ -26,6 +26,8 @@ import {setSelectedPayment} from "../../slice/accountingSharedUiSlice";
 import {useSelector} from "react-redux";
 import {PaymentsDailyExcel} from "../report/PaymentsDailyExcel";
 import {useFetchDailyPaymentsQuery} from "../../../../app/store/apis";
+import { skipToken } from '@reduxjs/toolkit/query/react';   // <-- add this import
+
 
 interface PaymentsListProps {
   paymentType: 'incoming' | 'outgoing';
@@ -38,6 +40,7 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const companyName = useSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
+  const [dailyQueryArg, setDailyQueryArg] = React.useState<typeof skipToken | { paymentType: 'incoming' | 'outgoing' }>(skipToken);
 
   const [payments, setPayments] = React.useState<DataResult>({
     data: [],
@@ -77,9 +80,17 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
     paymentType
   });
 
-  const { data: dailyData, isFetching: isDailyFetching } = useFetchDailyPaymentsQuery({ paymentType });
+  const {
+    data: dailyData,
+    isFetching: isDailyFetching,
+  } = useFetchDailyPaymentsQuery(dailyQueryArg);
 
+  const triggerDailyFetch = React.useCallback(() => {
+    setDailyQueryArg({ paymentType });          // <-- start the request
+    // optionally reset after download (see PaymentsDailyExcel)
+  }, [paymentType]);
 
+  
   const [show, setShow] = useState(false);
 
 
@@ -195,6 +206,7 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
                       paymentType={paymentType}
                       getTranslatedLabel={getTranslatedLabel}
                       isFetching={isDailyFetching}
+                      onExportClick={triggerDailyFetch}
                   />
                 </GridToolbar>
                 <Column

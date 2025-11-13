@@ -1,7 +1,5 @@
 using Application.Accounting.Services.Models;
 using Application.Accounting.Transactions;
-
-
 using Application.Shipments.Transactions;
 using Microsoft.AspNetCore.Mvc;
 
@@ -28,53 +26,58 @@ public class TransactionsController : BaseApiController
     public async Task<IActionResult> GetPaymentTransactions(string paymentId)
     {
         var language = GetLanguage();
-        return HandleResult(await Mediator.Send(new GetPaymentTransactionEntries.Query 
-        { 
-            PaymentId = paymentId, 
-            Language = language 
+        return HandleResult(await Mediator.Send(new GetPaymentTransactionEntries.Query
+        {
+            PaymentId = paymentId,
+            Language = language
         }));
     }
 
     [HttpGet("{acctgTransId}/getGeneralTransactions")]
     public async Task<IActionResult> GetGeneralTransactions(string acctgTransId)
     {
+        var language = GetLanguage();
         return HandleResult(await Mediator.Send(new GetGeneralTransactionEntries.Query
-            { AcctgTransId = acctgTransId }));
+        {
+            AcctgTransId = acctgTransId,
+            Language = language
+        }));
     }
 
     [HttpPost("quickCreateAcctgTrans", Name = "QuickCreateAcctgTrans")]
-    public async Task<IActionResult> QuickCreateAcctgTrans(CreateQuickAcctgTransAndEntriesParams CreateQuickAcctgTransAndEntriesParams)
+    public async Task<IActionResult> QuickCreateAcctgTrans(
+        CreateQuickAcctgTransAndEntriesParams CreateQuickAcctgTransAndEntriesParams)
     {
         return HandleResult(await Mediator.Send(new QuickCreateAcctgTrans.Command
             { CreateQuickAcctgTransAndEntriesParams = CreateQuickAcctgTransAndEntriesParams }));
     }
-    
+
     [HttpPost("createAcctgTrans", Name = "CreateAcctgTrans")]
     public async Task<IActionResult> CreateAcctgTrans(CreateAcctgTransParams createAcctgTransParams)
     {
-        var command = new CreateAcctgTrans.Command 
-        { 
-            CreateAcctgTransParams = createAcctgTransParams 
+        var command = new CreateAcctgTrans.Command
+        {
+            CreateAcctgTransParams = createAcctgTransParams
         };
 
         var result = await Mediator.Send(command);
 
         return HandleResult(result);
     }
-    
+
     [HttpPost("createAcctgTransEntry", Name = "CreateAcctgTransEntry")]
     public async Task<IActionResult> CreateAcctgTransEntry(AcctgTransEntry acctgTransEntry)
     {
-        var command = new CreateAcctgTransEntry.Command 
-        { 
-            AcctgTransEntry = acctgTransEntry 
+        var command = new CreateAcctgTransEntry.Command
+        {
+            AcctgTransEntry = acctgTransEntry
         };
 
         var result = await Mediator.Send(command);
 
         return HandleResult(result);
     }
-    
+
     [HttpPut("updateAcctgTrans", Name = "UpdateAcctgTrans")]
     public async Task<IActionResult> UpdateAcctgTrans(AcctgTran acctgTransParams)
     {
@@ -87,7 +90,7 @@ public class TransactionsController : BaseApiController
 
         return HandleResult(result);
     }
-    
+
     /// <summary>
     /// Completes the AcctgTransEntries for the given AcctgTrans record.
     /// </summary>
@@ -111,22 +114,23 @@ public class TransactionsController : BaseApiController
 
         return Ok(result.Value);
     }
-    
+
     [HttpPut("updateAcctgTransEntry", Name = "UpdateAcctgTransEntry")]
     public async Task<IActionResult> UpdateAcctgTransEntry(AcctgTransEntry acctgTransEntry)
     {
-        var command = new UpdateAcctgTransEntry.Command 
-        { 
-            AcctgTransEntry = acctgTransEntry 
+        var command = new UpdateAcctgTransEntry.Command
+        {
+            AcctgTransEntry = acctgTransEntry
         };
 
         var result = await Mediator.Send(command);
 
         return HandleResult(result);
     }
-    
+
     [HttpDelete("deleteAcctgTransEntry", Name = "DeleteAcctgTransEntry")]
-    public async Task<IActionResult> DeleteAcctgTransEntry([FromQuery] string acctgTransId, [FromQuery] string acctgTransEntrySeqId)
+    public async Task<IActionResult> DeleteAcctgTransEntry([FromQuery] string acctgTransId,
+        [FromQuery] string acctgTransEntrySeqId)
     {
         var command = new DeleteAcctgTransEntry.Command
         {
@@ -138,20 +142,20 @@ public class TransactionsController : BaseApiController
 
         return HandleResult(result);
     }
-    
+
     [HttpPost("postAcctgTrans", Name = "PostAcctgTrans")]
     public async Task<IActionResult> PostAcctgTrans([FromBody] PostAcctgTrans.Command command)
     {
         var result = await Mediator.Send(command);
         return HandleResult(result);
     }
-    
+
     [HttpPost("createMultiAcctgTransWithEntries")]
     public async Task<IActionResult> CreateMultiAcctgTransWithEntries(CreateMultiAcctgTransWithEntries.Command command)
     {
         return HandleResult(await Mediator.Send(command));
     }
-    
+
     [HttpPut("updateMultiAcctgTransWithEntries")]
     public async Task<IActionResult> UpdateMultiAcctgTransWithEntries(UpdateMultiAcctgTransWithEntries.Command command)
     {
@@ -160,7 +164,7 @@ public class TransactionsController : BaseApiController
         // Improvement: Maintains separation of concerns
         return HandleResult(await Mediator.Send(command));
     }
-    
+
     [HttpPost("createInitialBalanceTrans")]
     public async Task<IActionResult> CreateInitialBalanceTrans([FromBody] CreateInitialBalanceTrans.Command command)
     {

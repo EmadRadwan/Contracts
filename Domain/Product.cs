@@ -145,10 +145,24 @@ public class Product
     public string? DefaultShipmentBoxTypeId { get; set; }
     public string? LotIdFilledIn { get; set; }
     public string? OrderDecimalQuantity { get; set; }
+    
+    public string? ProjectId { get; set; }
+    public string? FloorNumber { get; set; }
+    public decimal? ApartmentSpaceM2 { get; set; }
+    public decimal? GardenSpaceM2 { get; set; }
+    public decimal? GardenPricePerM2 { get; set; }
+    public decimal? ApartmentPricePerM2 { get; set; }
+    public string? ApartmentStatusId { get; set; }
+    public string? LandNumber { get; set; }
+
+
     public DateTime? LastUpdatedStamp { get; set; }
     public DateTime? LastUpdatedTxStamp { get; set; }
     public DateTime? CreatedStamp { get; set; }
     public DateTime? CreatedTxStamp { get; set; }
+
+    public virtual WorkEffort? Project { get; set; }
+    public virtual StatusItem? ApartmentStatus { get; set; }
 
     public UomType? AmountUomType { get; set; }
     public UserLogin? CreatedByUserLoginNavigation { get; set; }
@@ -233,4 +247,5 @@ public class Product
     public virtual ICollection<ServiceSpecification> ServiceSpecifications { get; set; }
     public ICollection<WorkEffort> WorkEfforts { get; set; }
     public ICollection<WorkEffort> WorkEffortsAsService { get; set; } = new HashSet<WorkEffort>();
+    public virtual ICollection<SalesRequest> SalesRequests { get; set; } = new HashSet<SalesRequest>();
 }

@@ -4,13 +4,14 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 
-namespace Application.Shipments.Transactions;
+namespace Application.Accounting.Transactions;
 
 public class GetGeneralTransactionEntries
 {
     public class Query : IRequest<Result<List<AcctgTransEntryDto>>>
     {
         public string AcctgTransId { get; set; }
+        public string Language { get; set; }
     }
 
     public class Handler : IRequestHandler<Query, Result<List<AcctgTransEntryDto>>>
@@ -28,6 +29,8 @@ public class GetGeneralTransactionEntries
         {
             try
             {
+                var language = request.Language?.ToLower() ?? "en";
+
                 var invoiceTransactionEntries = await _context.AcctgTransEntries
                     .Join(_context.AcctgTrans,
                         acctgTransEntry => acctgTransEntry.AcctgTransId,
@@ -53,7 +56,11 @@ public class GetGeneralTransactionEntries
                         TheirProductId = c.joinedData.AcctgTransEntry.TheirProductId,
                         InventoryItemId = c.joinedData.AcctgTransEntry.InventoryItemId,
                         GlAccountTypeId = c.joinedData.AcctgTransEntry.GlAccountTypeId,
-                        GlAccountTypeDescription = c.joinedData.AcctgTransEntry.GlAccount.AccountName,
+                        GlAccountTypeDescription = c.joinedData.AcctgTransEntry.GlAccount != null 
+                            ? (language == "en" 
+                                ? c.joinedData.AcctgTransEntry.GlAccount.AccountName 
+                                : c.joinedData.AcctgTransEntry.GlAccount.AccountNameArabic ?? c.joinedData.AcctgTransEntry.GlAccount.AccountName) 
+                            : "N/A",
                         GlAccountClassDescription = c.joinedData.AcctgTransEntry.GlAccount.GlAccountClass.Description,
                         GlAccountId = c.joinedData.AcctgTransEntry.GlAccountId,
                         OrganizationPartyId = c.joinedData.AcctgTransEntry.OrganizationPartyId,

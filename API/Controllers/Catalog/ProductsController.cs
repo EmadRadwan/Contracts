@@ -167,16 +167,17 @@ public class ProductsController : BaseApiController
     }
 
 
-    [HttpPut("updateProduct", Name = "UpdateProduct")]
-    public async Task<IActionResult> UpdateProduct(ProductDto product)
+    [HttpPut("updateProduct")]
+    public async Task<IActionResult> UpdateProduct([FromBody] UpdateProduct.Command command)
     {
-        return HandleResult(await Mediator.Send(new UpdateProduct.Command { ProductDto = product }));
+        // REFACTOR: No change needed – Mediator already receives the wrapped command
+        return HandleResult(await Mediator.Send(command));
     }
 
     [HttpPost("createProduct", Name = "CreateProduct")]
-    public async Task<IActionResult> CreateProduct(ProductDto product)
+    public async Task<IActionResult> CreateProduct([FromBody] CreateProduct.Command command)
     {
-        return HandleResult(await Mediator.Send(new CreateProduct.Command { ProductDto = product }));
+        return HandleResult(await Mediator.Send(command));
     }
 
     [HttpGet("{productId}/calculateProductCosts")]

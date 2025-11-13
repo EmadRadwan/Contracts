@@ -1,6 +1,6 @@
 namespace Application.Catalog.Products;
 
-public class ProductDto
+public class ProductDto2
 {
     // Core identifiers
     public string? ProductId { get; set; }

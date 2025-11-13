@@ -1,13 +1,7 @@
-
-سلفة موظفين
-سلفة ذمم مدينة
-مصاريف متنوعة
-عهدة مستديمة
-شراء اراضى
-قسط مستحق
-استبدال شيك
-دفعة جزءية
-
-شراء مواد
-اجور عمالة
-مصاريف معدات
+ProductCategory record for Flats
+ProductType record for Flats
+Clean existing ProductForm for contract items
+Create ProductForm for Flats items
+Adjust product menu
+Backend handlers for Product needs refactoring
+Kendo grid component for Product needs refactoring

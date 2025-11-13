@@ -16,7 +16,7 @@ import {
     RootState,
     useAppDispatch,
     useAppSelector,
-    useFetchAcctTransEntriesQuery,
+    useFetchAcctTransEntriesQuery, useFetchAcctTransQuery,
 } from "../../../../app/store/configureStore";
 import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
 import {useLocation} from "react-router-dom";
@@ -26,13 +26,14 @@ import SetupAccountingMenu from "../menu/SetupAccountingMenu";
 import AccountingSummaryMenu from "../menu/AccountingSummaryMenu";
 import {useSelector} from "react-redux";
 import {router} from "../../../../app/router/Routes";
+import {useNavigate} from "react-router";
 
 
 export default function AccountingTransactionEntriesList() {
 
     const [accountingTransEntries, setAccountingTransEntries] = React.useState<DataResult>({data: [], total: 0});
     const [dataState, setDataState] = React.useState<State>({take: 6, skip: 0});
-    const { user } = useAppSelector((state) => state.account);
+    const {user} = useAppSelector((state) => state.account);
     const companyId = user?.organizationPartyId || "";
 
     const dataStateChange = (e: GridDataStateChangeEvent) => {
@@ -41,9 +42,17 @@ export default function AccountingTransactionEntriesList() {
 
     const dispatch = useAppDispatch();
     const companyName = useSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
+    const navigate = useNavigate();               // <-- add this hook
 
-   
 
+
+
+    const handleSelectAcctTrans = useCallback((acctgTransId: string) => {
+        navigate(`/editAcctgTrans/${acctgTransId}`, {
+            state: { acctgTransId }, // optional: for immediate use without URL parsing
+        });
+    }, [navigate]);
+    
     const location = useLocation()
 
     useEffect(() => {
@@ -73,11 +82,11 @@ export default function AccountingTransactionEntriesList() {
     const [show, setShow] = useState(false);
 
 
-    const queryArgs = { ...dataState, companyId };
+    const queryArgs = {...dataState, companyId};
     console.log("Query args sent to useFetchAcctTransEntriesQuery:", queryArgs);
-    const { data, error, isFetching } = companyId
+    const {data, error, isFetching} = companyId
         ? useFetchAcctTransEntriesQuery(queryArgs)
-        : { data: null, error: new Error("CompanyId is missing"), isFetching: false };
+        : {data: null, error: new Error("CompanyId is missing"), isFetching: false};
 
     useEffect(() => {
             if (data) {
@@ -87,15 +96,7 @@ export default function AccountingTransactionEntriesList() {
         }
         , [data]);
 
-
-    function handleSelectAcctTrans(acctTransId: string) {
-        // select the acctTrans from data array based on acctTransId
-        const selectedAcctTrans: AcctgTrans | undefined = data?.data.find((acctTrans: any) => acctTrans.acctTransId === acctTransId);
-
-
-        // set component selected acctTrans
-        setAcctTrans(selectedAcctTrans);
-    }
+    
 
 
     const AcctTransDescriptionCell = (props: any) => {
@@ -114,15 +115,10 @@ export default function AccountingTransactionEntriesList() {
                     [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex
                 }}
                 {...navigationAttributes}
-            ><Button
-                onClick={() => {
-                    handleSelectAcctTrans(
-                        props.dataItem.acctgTransId,
-                    )
-                }}
             >
-                {props.dataItem.acctgTransId}
-            </Button>
+                <Button onClick={() => handleSelectAcctTrans(props.dataItem.acctgTransId)}>
+                    {props.dataItem.acctgTransId}
+                </Button>
 
             </td>
         )
@@ -131,8 +127,8 @@ export default function AccountingTransactionEntriesList() {
     const rowRender = useCallback(
         (trElement: React.ReactElement<HTMLTableRowElement>, props: GridRowProps) => {
             const isDebit = props.dataItem.debitCreditFlag === "D";
-            const style = { backgroundColor: isDebit ? "rgba(55, 180, 0, 0.32)" : "#ffffff" };
-            return React.cloneElement(trElement, { style }, trElement.props.children);
+            const style = {backgroundColor: isDebit ? "rgba(55, 180, 0, 0.32)" : "#ffffff"};
+            return React.cloneElement(trElement, {style}, trElement.props.children);
         },
         []
     );
@@ -181,12 +177,12 @@ export default function AccountingTransactionEntriesList() {
                                 width={100}
                                 format="{0:n}"
                             />
-                            
+
                             <Column field="acctgTransEntrySeqId" title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txnEntries.acctgTransEntrySeqId",
                                 "SEQ Id"
                             )} width={70}/>
-                            
+
                             <Column field="debitCreditFlag" title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txnEntries.acctgTransEntrySeqId",
                                 "SEQ Id"
@@ -197,47 +193,47 @@ export default function AccountingTransactionEntriesList() {
                                 "Transaction Date"
                             )} width={130}
                                     format="{0: dd/MM/yyyy}"/>
-                            
+
                             <Column field="glAccountId" title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txnEntries.glAccountId",
                                 "Gl Account Id"
                             )} width={100}/>
-                            
+
                             <Column field="glAccountName" title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txnEntries.glAccountName",
                                 "Gl Account Id"
                             )} width={250}/>
-                            
+
                             <Column field="description" title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txns.description",
                                 "Description"
                             )} width={230}/>
-                            
+
                             <Column field="invoiceId" title={getTranslatedLabel(
                                 "accounting.invoices.list.invoiceId",
                                 "Invoice Id"
                             )} width={100}/>
-                            
+
                             <Column field="paymentId" title={getTranslatedLabel(
                                 "accounting.payments.list.paymentId",
                                 "Payment Id"
                             )} width={100}/>
-                            
+
                             <Column field="workEffortId" title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txnEntries.workEffortId",
                                 "WorkEffort Id"
                             )} width={100}/>
-                            
+
                             <Column field="shipmentId" title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txns.shipmentId",
                                 "Shipment Id"
                             )} width={100}/>
-                            
+
                             <Column field="isPosted" title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txns.isPosted",
                                 "Is Posted"
                             )} width={100}/>
-                            
+
                             <Column field="postedDate" title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txns.postedDate",
                                 "Posted Date"
@@ -248,7 +244,7 @@ export default function AccountingTransactionEntriesList() {
                                 "accounting.orgGL.accounting.summary.txns.acctgTransType",
                                 "Acctg Trans Type"
                             )} width={150}/>
-                            
+
                         </KendoGrid>
                         {isFetching && <LoadingComponent message={getTranslatedLabel(
                             "accounting.orgGL.accounting.summary.loading",

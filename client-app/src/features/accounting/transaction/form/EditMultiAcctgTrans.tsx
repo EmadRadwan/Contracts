@@ -16,7 +16,7 @@ import useEditMultiAcctgTrans from "../hook/useEditMultiAcctgTrans";
 import { router } from "../../../../app/router/Routes";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import { AcctgTransEntry } from "../../../../app/models/accounting/acctgTransEntry";
-import { useLocation } from "react-router-dom";
+import {useLocation, useParams} from "react-router-dom";
 import useMultiAcctgTrans from "../hook/useMultiAcctgTrans";
 
 interface TransEntry {
@@ -42,9 +42,20 @@ export default function EditMultiAcctgTrans() {
     const companyId = useAppSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyId);
     const companyName = useAppSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
     const location = useLocation();
+    const { acctgTransId: idFromUrl } = useParams<{ acctgTransId: string }>();
+
+    const acctgTransId =
+        location.state?.selectedAcctgTrans?.acctgTransId ||
+        location.state?.acctgTransId ||
+        idFromUrl;
+
     const selectedAcctgTrans = location.state?.selectedAcctgTrans;
+
     const { data: glAccounts, isLoading: isLoadingGlAccounts } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, { skip: !companyId });
-    const { data: transEntriesData, isLoading: isLoadingEntries } = useFetchGeneralAcctTransEntriesQuery(selectedAcctgTrans?.acctgTransId, { skip: !selectedAcctgTrans?.acctgTransId });
+
+    const { data: transEntriesData, isLoading: isLoadingEntries } = useFetchGeneralAcctTransEntriesQuery(acctgTransId, {
+        skip: !acctgTransId,
+    });
     const [transEntries, setTransEntries] = useState<TransEntry[]>([]);
     const [formResetCounter, setFormResetCounter] = useState(0);
     const [sort, setSort] = useState<SortDescriptor[]>([{ field: "id", dir: "asc" }]);
@@ -300,6 +311,7 @@ export default function EditMultiAcctgTrans() {
     const isLoading = isUpdating || isPosting;
 
     console.log('selectedAcctgTrans:', selectedAcctgTrans);
+    console.log('acctgTransId:', acctgTransId);
     return (
         <>
             <AccountingMenu selectedMenuItem={"orgGl"} />

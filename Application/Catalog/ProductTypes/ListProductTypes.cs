@@ -22,7 +22,7 @@ public class ListProductTypes
 
         public async Task<Result<List<ProductTypeDto>>> Handle(Query request, CancellationToken cancellationToken)
         {
-            var allowedTypes = new List<string> { "FINISHED_GOOD", "RAW_MATERIAL", "WIP" };
+            var allowedTypes = new List<string> { "APARTMENT", "RAW_MATERIAL", "SERVICE" };
             var language = request.Language;
             var productTypes = _context.ProductTypes
                 .Where(x => allowedTypes.Contains(x.ProductTypeId))
