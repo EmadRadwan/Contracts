@@ -18,14 +18,12 @@ public class CreateProduct
     public class Handler : IRequestHandler<Command, Result<ProductDto2>>
     {
         private readonly DataContext _context;
-        private readonly IMapper _mapper;
         private readonly IUserAccessor _userAccessor;
 
-        public Handler(DataContext context, IUserAccessor userAccessor, IMapper mapper)
+        public Handler(DataContext context, IUserAccessor userAccessor)
         {
             _userAccessor = userAccessor;
             _context = context;
-            _mapper = mapper;
         }
 
         public async Task<Result<ProductDto2>> Handle(Command request, CancellationToken cancellationToken)

@@ -26,7 +26,7 @@ public class SalesRequest
     // -----------------------------------------------------------------
     // 3. FK to Party (customer)
     // -----------------------------------------------------------------
-    public string CustomerId { get; set; } = null!;
+    public string FromPartyId { get; set; } = null!;
 
     // -----------------------------------------------------------------
     // 4-11. Business fields

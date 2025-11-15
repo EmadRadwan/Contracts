@@ -205,6 +205,10 @@ const Products = {
         axios
             .get<ProductLov>(`/products/getSimpleProductsLov`, {params})
             .then(responseBody),
+    getSimpleApartmentsLov: (params: URLSearchParams): Promise<any> =>
+        axios
+            .get<any>("/products/getSimpleApartmentsLov", { params })
+            .then((res: AxiosResponse<any>) => res.data),
     getRawMaterialProductsLov: (params: URLSearchParams) =>
         axios.get(`/products/getRawMaterialProductsLov`, { params }).then(responseBody),
     getServiceProductsLov: (params: URLSearchParams) =>

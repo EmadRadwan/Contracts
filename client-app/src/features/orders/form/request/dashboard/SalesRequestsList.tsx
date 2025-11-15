@@ -1,9 +1,16 @@
 import React, { useState } from "react";
-import { Grid as KendoGrid, GRID_COL_INDEX_ATTRIBUTE, GridColumn as Column, GridDataStateChangeEvent, GridToolbar, } from "@progress/kendo-react-grid";
+import {
+    Grid as KendoGrid,
+    GRID_COL_INDEX_ATTRIBUTE,
+    GridColumn as Column,
+    GridDataStateChangeEvent,
+    GridToolbar,
+} from "@progress/kendo-react-grid";
 import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
 import { Grid, Paper } from "@mui/material";
+
 import Button from "@mui/material/Button";
-import {DataResult, State} from "@kendo-data-query";
+import {DataResult, State} from "@progress/kendo-data-query";
 import {useTranslationHelper} from "../../../../../app/hooks/useTranslationHelper";
 import {useFetchSalesRequestsQuery} from "../../../../../app/store/apis/salesRequestApi";
 import {SalesRequest} from "../../../../../app/models/order/SalesRequest";
@@ -13,17 +20,21 @@ import SalesRequestMenu from "../menu/SalesRequestMenu";
 import {handleDatesArray} from "../../../../../app/util/utils";
 
 function SalesRequestsList() {
-    // ----------------------------------------------------------------- 
-    // State: editMode + selected full object 
-    // ----------------------------------------------------------------- 
-    const [editMode, setEditMode] = useState(0); // 0=list, 1=create, 2=edit 
+    // -----------------------------------------------------------------
+    // State: editMode + selected full object
+    // -----------------------------------------------------------------
+    const [editMode, setEditMode] = useState(0); // 0=list, 1=create, 2=edit
     const [selectedSR, setSelectedSR] = useState<SalesRequest | undefined>(undefined);
-    const [sRequests, setSRequests] = React.useState<DataResult>({ data: [], total: 0, });
+    const [sRequests, setSRequests] = React.useState<DataResult>({
+        data: [],
+        total: 0,
+    });
+
     const { getTranslatedLabel } = useTranslationHelper();
 
-    // ----------------------------------------------------------------- 
-    // Grid data 
-    // ----------------------------------------------------------------- 
+    // -----------------------------------------------------------------
+    // Grid data
+    // -----------------------------------------------------------------
     const [dataState, setDataState] = useState<State>({ take: 9, skip: 0 });
     const { data, isFetching } = useFetchSalesRequestsQuery(dataState);
 
@@ -33,14 +44,14 @@ function SalesRequestsList() {
             setSRequests({ data: adjustedData, total: data.total });
         }
     }, [data]);
-
+    
     const dataStateChange = (e: GridDataStateChangeEvent) => {
         setDataState(e.dataState);
     };
 
-    // ----------------------------------------------------------------- 
-    // Unified handlers – only two 
-    // ----------------------------------------------------------------- 
+    // -----------------------------------------------------------------
+    // Unified handlers – only two
+    // -----------------------------------------------------------------
     const startEdit = (sr?: SalesRequest) => {
         setSelectedSR(sr);
         setEditMode(sr ? 2 : 1);
@@ -52,29 +63,30 @@ function SalesRequestsList() {
     };
 
     const handleSalesRequestCreated = async (createdRequest: SalesRequest) => {
-        // 1. Keep the form open 
-        // 2. Switch to edit mode 
+        // 1. Keep the form open
+        // 2. Switch to edit mode
         setEditMode(2);
+
         setSelectedSR(createdRequest);
     };
 
-    // ----------------------------------------------------------------- 
-    // Form rendering 
-    // ----------------------------------------------------------------- 
+    // -----------------------------------------------------------------
+    // Form rendering
+    // -----------------------------------------------------------------
     if (editMode) {
         return (
             <SalesRequestForm
                 salesRequest={editMode === 1 ? undefined : selectedSR}
                 editMode={editMode}
                 cancelEdit={cancelEdit}
-                onSalesRequestCreated={handleSalesRequestCreated} // now receives full object 
+                onSalesRequestCreated={handleSalesRequestCreated}  // now receives full object
             />
         );
     }
 
-    // ----------------------------------------------------------------- 
-    // Grid list 
-    // ----------------------------------------------------------------- 
+    // -----------------------------------------------------------------
+    // Grid list
+    // -----------------------------------------------------------------
     const RequestIdCell = (props: any) => {
         const navigationAttributes = useTableKeyboardNavigation(props.id);
         return (
@@ -125,6 +137,7 @@ function SalesRequestsList() {
                                         </Grid>
                                     </Grid>
                                 </GridToolbar>
+
                                 <Column
                                     field="salesRequestId"
                                     title={getTranslatedLabel("salesRequest.list.id", "Request ID")}
@@ -167,6 +180,7 @@ function SalesRequestsList() {
                                     title={getTranslatedLabel("salesRequest.list.comments", "Comments")}
                                 />
                             </KendoGrid>
+
                             {isFetching && <LoadingComponent message={getTranslatedLabel("general.loading", "Loading Sales Requests...")} />}
                         </div>
                     </Grid>

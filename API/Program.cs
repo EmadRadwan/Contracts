@@ -196,6 +196,7 @@ static IEdmModel GetEdmModel()
 {
     var modelBuilder = new ODataConventionModelBuilder();
     modelBuilder.EntitySet<OrderRecord>("OrderRecords");
+    modelBuilder.EntitySet<SalesRequest>("SalesRequests");
     modelBuilder.EntitySet<PartyRecord>("PartyRecords");
     modelBuilder.EntitySet<QuoteRecord>("QuoteRecords");
     modelBuilder.EntitySet<ReturnRecord>("ReturnRecords");

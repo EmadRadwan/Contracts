@@ -127,6 +127,7 @@ import MultiAcctgTransEntryForm from "../../features/accounting/transaction/form
 import EditMultiAcctgTrans from "../../features/accounting/transaction/form/EditMultiAcctgTrans";
 import MultiPaymentCertificatesList from "../../features/Projects/dashboard/MultiPaymentCertificatesList";
 import InitialBalanceTransForm from "../../features/accounting/transaction/form/InitialBalanceTransForm";
+import SalesRequestsList from "../../features/orders/form/request/dashboard/SalesRequestsList";
 
 // Wrapper component to extract partyId from URL
 const PartyFinancialHistoryWrapper = () => {
@@ -295,6 +296,7 @@ export const routes: RouteObject[] = [
                     {path: "packing", element: <PackingList />},
                     {path: "managePicklists", element: <ManagePicklists />},
                     {path: "issueRawMaterials", element: <WorkEffortsWithReservationsList />},
+                    { path: "sales-requests", element: <SalesRequestsList /> },
                     {path: "billingAccounts", element: <BillingAccountsLayout />, children: [
                         {path: "/billingAccounts", element: <BillingAccountsList/>},
                         {path: "/billingAccounts/invoices", element: <BillingAccountInvoicesList />},

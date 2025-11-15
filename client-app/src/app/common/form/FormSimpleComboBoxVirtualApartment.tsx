@@ -11,13 +11,22 @@ import { Notification, NotificationGroup } from "@progress/kendo-react-notificat
 import agent from "../../api/agent";
 import { useAppSelector } from "../../store/configureStore";
 
-interface ProductItem {
-    ProductId: string;
-    ProductName: string;
-    ProductType: string;
+interface ApartmentItem {
+    apartmentId: string;
+    apartmentName: string;
+    apartmentType: string;
+    projectName: string;
+    floorNumber: string;
+    apartmentSpaceM2: number;
+    gardenSpaceM2: number | null;
+    gardenPricePerM2: number | null;
+    apartmentPricePerM2: number;
+    apartmentStatusId: string;
+    apartmentStatusDescription: string;
 }
 
-export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderProps) => {
+
+export const FormSimpleComboBoxVirtualApartment = (fieldRenderProps: FieldRenderProps) => {
     const {
         validationMessage,
         touched,
@@ -32,40 +41,59 @@ export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderPr
         value,
         onChange,
     } = fieldRenderProps;
+
     const editorRef = React.useRef<any>(null);
     const [focused, setFocused] = React.useState(false);
     const { currentCertificateType } = useAppSelector((state) => state.certificateUi);
-    const keyField = "ProductId";
-    const textField = "ProductName"; 
-    const emptyItem: ProductItem = { ProductId: "0", ProductName: "loading ...", ProductType: "" };
+
+    const keyField = "apartmentId";
+    const textField = "apartmentName";
+
+
+    const emptyItem: ApartmentItem = {
+        apartmentId: "0",
+        apartmentName: "loading ...",
+        apartmentType: "",
+        projectName: "",
+        floorNumber: "",
+        apartmentSpaceM2: 0,
+        gardenSpaceM2: null,
+        gardenPricePerM2: null,
+        apartmentPricePerM2: 0,
+        apartmentStatusId: "",
+        apartmentStatusDescription: ""
+    };
+
+
     const pageSize = 10;
 
     const columns = [
-        { field: "ProductId", header: "Product ID", width: "200px" },
-        { field: "ProductName", header: "Product Name", width: "250px" },
+        { field: "apartmentId", header: "ID", width: "100px" },
+        { field: "projectName", header: "Project", width: "180px" },
+        { field: "apartmentName", header: "Apartment", width: "200px" },
+        { field: "floorNumber", header: "Floor", width: "110px" }
     ];
 
-    const loadingData: ProductItem[] = [];
+
+    // REFACTOR: Loading placeholder – reuse the same pattern as the product version
+    const loadingData: ApartmentItem[] = [];
     while (loadingData.length < pageSize) {
         loadingData.push({ ...emptyItem });
     }
 
-    const dataCaching = React.useRef<ProductItem[]>([]);
+    const dataCaching = React.useRef<ApartmentItem[]>([]);
     const requestStarted = React.useRef(false);
     const pendingRequest = React.useRef<NodeJS.Timeout | null>(null);
-    const [data, setData] = React.useState<ProductItem[]>([]);
+    const [data, setData] = React.useState<ApartmentItem[]>([]);
     const [total, setTotal] = React.useState(0);
     const [filter, setFilter] = React.useState("");
     const skipRef = React.useRef(0);
 
-    const position = {
-        bottomRight: { bottom: 0, right: 0, alignItems: "flex-end" },
-    };
+    const position = { bottomRight: { bottom: 0, right: 0, alignItems: "flex-end" } };
 
-    const resetCache = () => {
-        dataCaching.current.length = 0;
-    };
+    const resetCache = () => { dataCaching.current.length = 0; };
 
+    // REFACTOR: API call renamed to `getSimpleApartmentsLov`
     const requestData = React.useCallback(
         (skip: number, filter: string) => {
             if (requestStarted.current) {
@@ -74,22 +102,31 @@ export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderPr
                 return;
             }
             requestStarted.current = true;
+
             const params = new URLSearchParams();
             params.append("skip", skip.toString());
             params.append("pageSize", pageSize.toString());
             if (filter) params.append("searchTerm", filter);
             if (currentCertificateType) params.append("certificateType", currentCertificateType);
 
-            agent.Products.getSimpleProductsLov(params)
+            agent.Products.getSimpleApartmentsLov(params)
                 .then((json) => {
                     if (json) {
-                        const total = json.productCount;
-                        const items: ProductItem[] = [];
-                        json.products.forEach((element: any, index: number) => {
-                            const item: ProductItem = {
-                                ProductId: element.productId,
-                                ProductName: element.productName,
-                                ProductType: element.productType,
+                        const total = json.apartmentCount;
+                        const items: ApartmentItem[] = [];
+                        json.apartments.forEach((element: any, index: number) => {
+                            const item: ApartmentItem = {
+                                apartmentId: element.apartmentId,
+                                apartmentName: element.apartmentName,
+                                apartmentType: element.apartmentType,
+                                projectName: element.projectName ?? "",
+                                floorNumber: element.floorNumber ?? "",
+                                apartmentSpaceM2: element.apartmentSpaceM2,
+                                gardenSpaceM2: element.gardenSpaceM2,
+                                gardenPricePerM2: element.gardenPricePerM2,
+                                apartmentPricePerM2: element.apartmentPricePerM2,
+                                apartmentStatusId: element.apartmentStatusId,
+                                apartmentStatusDescription: element.apartmentStatusDescription,
                             };
                             items.push(item);
                             dataCaching.current[index + skip] = item;
@@ -101,9 +138,7 @@ export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderPr
                     }
                     requestStarted.current = false;
                 })
-                .catch(() => {
-                    requestStarted.current = false;
-                });
+                .catch(() => { requestStarted.current = false; });
         },
         [currentCertificateType]
     );
@@ -131,15 +166,13 @@ export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderPr
 
     const shouldRequestData = React.useCallback((skip: number) => {
         for (let i = 0; i < pageSize; i++) {
-            if (!dataCaching.current[skip + i]) {
-                return true;
-            }
+            if (!dataCaching.current[skip + i]) return true;
         }
         return false;
     }, []);
 
     const getCachedData = React.useCallback((skip: number) => {
-        const data: ProductItem[] = [];
+        const data: ApartmentItem[] = [];
         for (let i = 0; i < pageSize; i++) {
             data.push(dataCaching.current[i + skip] || { ...emptyItem });
         }
@@ -149,9 +182,7 @@ export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderPr
     const pageChange = React.useCallback(
         (event: ComboBoxPageChangeEvent) => {
             const newSkip = event.page.skip;
-            if (shouldRequestData(newSkip)) {
-                requestData(newSkip, filter);
-            }
+            if (shouldRequestData(newSkip)) requestData(newSkip, filter);
             const data = getCachedData(newSkip);
             setData(data);
             skipRef.current = newSkip;
@@ -170,15 +201,8 @@ export const FormSimpleComboBoxVirtualProduct = (fieldRenderProps: FieldRenderPr
     const errorId = showValidationMessage ? `${id}_error` : "";
     const labelId = label ? `${id}_label` : "";
 
-    const handleOnFocus = React.useCallback(() => {
-        onFocus();
-        setFocused(true);
-    }, [onFocus]);
-
-    const handleOnBlur = React.useCallback(() => {
-        onBlur();
-        setFocused(false);
-    }, [onBlur]);
+    const handleOnFocus = React.useCallback(() => { onFocus(); setFocused(true); }, [onFocus]);
+    const handleOnBlur  = React.useCallback(() => { onBlur();  setFocused(false); }, [onBlur]);
 
     return (
         <FieldWrapper style={wrapperStyle}>

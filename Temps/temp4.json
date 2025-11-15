@@ -1,30 +1,12 @@
-{
-  "form": {
-    "title": "العرض",
-    "new": "عرض جديد",
-    "id": "رقم العرض",
-    "name": "اسم العرض",
-    "description": "وصف العرض",
-    "amount": "مبلغ الخصم",
-    "from": "من تاريخ",
-    "to": "إلى تاريخ",
-    "product": "المنتج",
-    "value": "قيمة الشرط",
-    "action": "عملية العرض",
-    "quantity": "الكمية",
-    "input": "وصف المدخلات",
-    "condition": "شرط العرض",
-
-    /* REFACTOR: Added Arabic translations for Apartment-specific fields */
-    /* Purpose: Support new product type "Apartment" in ProductForm */
-    /* Why: Ensures UI consistency and internationalization for all fields */
-    "project": "المشروع",
-    "floorNumber": "رقم الطابق",
-    "apartmentSpaceM2": "مساحة الشقة (م²)",
-    "gardenSpaceM2": "مساحة الحديقة (م²)",
-    "apartmentPricePerM2": "سعر الشقة لكل متر مربع",
-    "gardenPricePerM2": "سعر الحديقة لكل متر مربع",
-    "apartmentStatus": "حالة الشقة",
-    "landNumber": "رقم الأرض"
-  }
+"salesRequest": {
+"list": {
+"create": "إنشاء طلب مبيعات",
+"id": "رقم الطلب",
+"apartment": "الشقة",
+"customer": "العميل",
+"saleDate": "تاريخ البيع",
+"total": "الإجمالي",
+"advance": "المقدم",
+"comments": "التعليقات"
+}
 }

@@ -35,7 +35,8 @@
       "accounting": "المحاسبة",
       "manufacturing": "التصنيع",
       "projects": "المشاريع",
-      "login": "تسجيل الدخول"
+      "login": "تسجيل الدخول",
+      "sales": "المبيعات"
     },
     "statuses": {
       "new": "جديد",
@@ -45,6 +46,50 @@
     },
     "ms": "جزء من الثانية",
     "mins": "دقيقة"
+  },
+  "salesRequest": {
+    "form": {
+      "new": "طلب مبيعات جديد",
+      "saleDate": "تاريخ البيع *",
+      "from": "من *",
+      "project": "المشروع",
+      "apartmentM2": "مساحة الشقة (م²)",
+      "gardenM2": "مساحة الحديقة (م²)",
+      "status": "الحالة",
+      "apartmentPriceM2": "سعر الشقة/م² *",
+      "gardenPriceM2": "سعر الحديقة/م²",
+      "discount": "الخصم",
+      "totalPrice": "الإجمالي",
+      "advance": "المقدم",
+      "installments": "الأقساط",
+      "firstInstallmentDate": "تاريخ القسط الأول",
+      "duration": "الأيام بين الأقساط",
+      "comments": "التعليقات",
+      "submit": "حفظ",
+      "cancel": "إلغاء",
+      "clear": "إخلاء",
+      "processing": "جاري المعالجة...",
+      "createSuccess": "تم إنشاء طلب المبيعات",
+      "updateSuccess": "تم تحديث طلب المبيعات",
+      "error": "فشل معالجة طلب المبيعات",
+      "validation": {
+        "fullPayment": "دفع كامل – يجب أن تكون حقول الأقساط فارغة.",
+        "missingInstallments": "الحقول التالية مطلوبة عندما يكون المقدم أقل من الإجمالي:"
+      }
+    },
+    "list": {
+      "create": "إنشاء طلب مبيعات",
+      "id": "رقم الطلب",
+      "apartment": "الشقة",
+      "customer": "العميل",
+      "saleDate": "تاريخ البيع",
+      "total": "الإجمالي",
+      "advance": "المقدم",
+      "comments": "التعليقات"
+    },
+    "menu": {
+      "salesRequests": "طلبات المبيعات"
+    }
   },
   "party": {
     "parties": {

@@ -28346,10 +28346,10 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 // --------------------------------------------------------------
                 // FK – Customer (Party)
                 // --------------------------------------------------------------
-                entity.Property(e => e.CustomerId)
+                entity.Property(e => e.FromPartyId)
                       .HasMaxLength(36)
                       .IsUnicode(false)
-                      .HasColumnName("CUSTOMER_ID")
+                      .HasColumnName("FROM_PARTY_ID")
                       .IsRequired();
             
                 // --------------------------------------------------------------
@@ -28413,7 +28413,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 // Indexes – one per column, exactly like PARTY_…_IDX
                 // --------------------------------------------------------------
                 entity.HasIndex(e => e.ProductId,               "SALES_REQ_PROD_IDX");
-                entity.HasIndex(e => e.CustomerId,              "SALES_REQ_CUST_IDX");
+                entity.HasIndex(e => e.FromPartyId,              "SALES_REQ_CUST_IDX");
                 entity.HasIndex(e => e.SaleDate,                "SALES_REQ_SALE_DT_IDX");
                 entity.HasIndex(e => e.CreatedStamp,          "SALES_REQ_TXCRTS");
                 entity.HasIndex(e => e.LastUpdatedStamp,      "SALES_REQ_TXSTMP");
@@ -28434,7 +28434,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 // Why: Keeps referential integrity, matches your Party config
                 entity.HasOne(d => d.Customer)
                       .WithMany(p => p.SalesRequests)               // reverse navigation you added
-                      .HasForeignKey(d => d.CustomerId)
+                      .HasForeignKey(d => d.FromPartyId)
                       .OnDelete(DeleteBehavior.Restrict)
                       .HasConstraintName("FK_SALES_REQ_CUSTOMER");
             });

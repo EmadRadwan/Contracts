@@ -439,18 +439,7 @@ public class SeedContracts
             await context.SaveChangesAsync();
         }
 
-       
-
-        // facility locations
-        /*if (!context.FacilityLocations.Any())
-        {
-            var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/facility_locations.json");
-            var jsonData = File.ReadAllText(path);
-
-            var facilityLocations = JsonConvert.DeserializeObject<List<FacilityLocation>>(jsonData);
-            await context.FacilityLocations.AddRangeAsync(facilityLocations);
-            await context.SaveChangesAsync();
-        }*/
+        
 
         // Sequence Value Item
         if (!context.SequenceValueItems.Any())
@@ -474,16 +463,7 @@ public class SeedContracts
         }
 
 
-        if (!context.Products.Any())
-        {
-            var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/products_contracts.json");
-            var jsonData = File.ReadAllText(path);
-
-            var products = JsonConvert.DeserializeObject<List<Product>>(jsonData);
-            await context.Products.AddRangeAsync(products);
-            await context.SaveChangesAsync();
-        }
-
+       
         /*if (!context.ProductPrices.Any())
         {
             var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/product_prices_medications.json");
@@ -773,6 +753,16 @@ public class SeedContracts
                 CreatedStamp = stamp,
                 LastUpdatedStamp = stamp
             };
+        }
+
+        if (!context.Products.Any())
+        {
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/products_contracts.json");
+            var jsonData = File.ReadAllText(path);
+
+            var products = JsonConvert.DeserializeObject<List<Product>>(jsonData);
+            await context.Products.AddRangeAsync(products);
+            await context.SaveChangesAsync();
         }
 
 

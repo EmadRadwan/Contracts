@@ -199,6 +199,7 @@ function ProductForm({
         await updateProduct(payload).unwrap();
         toast.success(getTranslatedLabel("product.products.form.updateSuccess", "Product updated successfully"));
       } else {
+        console.log("Submitting new product with payload:", payload);
         const newProduct = await createProduct(payload).unwrap();
         setCreatedProduct(newProduct);
         toast.success(getTranslatedLabel("product.products.form.createSuccess", "Product created successfully"));

@@ -11,7 +11,7 @@ namespace API.Controllers.OData;
 
 [ApiController]
 [Route("api/odata/[controller]")]
-public abstract class BaseODataController<T> : ODataController
+public abstract class BaseODataController2<T> : ODataController
 {
     private IMediator? _mediator;
     protected IMediator Mediator => _mediator ??= HttpContext.RequestServices.GetService<IMediator>()!;

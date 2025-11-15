@@ -41,8 +41,6 @@ const productsApi = createApi({
                     const {totalCount} = JSON.parse(
                         meta!.response!.headers.get("count")!,
                     );
-                    console.log("response", response);
-                    console.log("totalCount", totalCount);
                     return {
                         data: response,
                         total: totalCount,
@@ -67,13 +65,10 @@ const productsApi = createApi({
                 },
             }),
             addProduct: builder.mutation({
-                // REFACTOR: Wrap the flat object in the shape expected by the server
-                // Purpose: Match CreateProduct.Command { productDto2: ProductDto2 }
-                // Why: Prevents request.ProductDto2 === null and eliminates the “product field is required” error
                 query: (product) => ({
                     url: "/products/createProduct",
                     method: "POST",
-                    body: { productDto2: product },   // ← THIS IS THE ONLY CHANGE
+                    body: { productDto2: product }, 
                 }),
                 invalidatesTags: ["Products"],
             }),

@@ -2,8 +2,7 @@ import React from "react";
 import {NavLink, useLocation} from "react-router-dom";
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
-import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
-// import BuildOutlinedIcon from '@mui/icons-material/BuildOutlined';
+import ReceiptIcon from '@mui/icons-material/Receipt';
 import ReceiptOutlinedIcon from '@mui/icons-material/ReceiptOutlined';
 import HomeWork from '@mui/icons-material/HomeWork';
 import {AppBar, Box, List, ListItem, ListItemIcon, ListItemText, Toolbar, Typography,} from "@mui/material";
@@ -30,6 +29,12 @@ const midLinks = [
     { title: "party", path: "/parties", key: "party", icon: <GroupOutlinedIcon sx={{ color: "#00BFFF" }} /> },
     { title: "accounting", path: "/invoicesDashboard", key: "accounting", icon: <ReceiptOutlinedIcon sx={{ color: "#9C27B0" }} /> },
     { title: "projects", path: "/projects", key: "projects", icon: <HomeWork sx={{ color: "#03A9F4" }} /> },
+    {
+        title: "sales",
+        path: "/sales-requests",
+        key: "sales",
+        icon: <ReceiptIcon sx={{ color: "#4CAF50" }} />, // Green for sales
+    },
 ];
 
 
