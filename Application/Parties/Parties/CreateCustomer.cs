@@ -1,3 +1,4 @@
+using Application.Core;
 using Application.Interfaces;
 using Domain;
 using FluentValidation;
@@ -9,27 +10,30 @@ namespace Application.Parties.Parties;
 
 public class CreateCustomer
 {
-    public class Command : IRequest<Result<PartyDto>>
+    public class Command : IRequest<Result<PartyDto2>>
     {
-        public PartyDto PartyDto { get; set; }
+        public PartyDto2 PartyDto { get; set; }
     }
 
-    public class CommandValidator : AbstractValidator<Command>
+    /*public class CommandValidator : AbstractValidator<Command>
     {
-    }
+    }*/
 
-    public class Handler : IRequestHandler<Command, Result<PartyDto>>
+    public class Handler : IRequestHandler<Command, Result<PartyDto2>>
     {
         private readonly DataContext _context;
         private readonly IUserAccessor _userAccessor;
+        private readonly IUtilityService _utilityService;
 
-        public Handler(DataContext context, IUserAccessor userAccessor)
+
+        public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService)
         {
             _userAccessor = userAccessor;
             _context = context;
+            _utilityService = utilityService;
         }
 
-        public async Task<Result<PartyDto>> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Result<PartyDto2>> Handle(Command request, CancellationToken cancellationToken)
         {
             var transaction = _context.Database.BeginTransaction();
 
@@ -65,7 +69,7 @@ public class CreateCustomer
             if (roleTypes.Count != roleTypeIds.Length)
             {
                 transaction.Rollback();
-                return Result<PartyDto>.Failure("One or more required customer role types are missing in the database.");
+                return Result<PartyDto2>.Failure("One or more required customer role types are missing in the database.");
             }
 
             var roleTypeCustomer = roleTypes.SingleOrDefault(x => x.RoleTypeId == "CUSTOMER");
@@ -83,7 +87,7 @@ public class CreateCustomer
                 x => x.ContactMechPurposeTypeId == "PRIMARY_EMAIL", cancellationToken);
 
             var stamp = DateTime.Now; // e.g., 2025-07-16 15:53:00 EEST
-            var newPartyId = Guid.NewGuid().ToString();
+            var newPartyId = await _utilityService.GetNextSequence("Party");
 
             var party = new Party
             {
@@ -289,12 +293,12 @@ public class CreateCustomer
             if (!result)
             {
                 transaction.Rollback();
-                return Result<PartyDto>.Failure("Failed to create Customer");
+                return Result<PartyDto2>.Failure("Failed to create Customer");
             }
 
             transaction.Commit();
 
-            var partyToReturn = new PartyDto
+            var partyToReturn = new PartyDto2
             {
                 PartyId = newPartyId,
                 Description = request.PartyDto.FirstName + " ( " + roleTypeCustomer?.RoleTypeId + " )",
@@ -305,7 +309,7 @@ public class CreateCustomer
                     FromPartyName = party.Description
                 }
             };
-            return Result<PartyDto>.Success(partyToReturn);
+            return Result<PartyDto2>.Success(partyToReturn);
         }
     }
 }

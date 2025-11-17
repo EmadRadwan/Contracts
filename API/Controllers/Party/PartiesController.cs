@@ -80,19 +80,19 @@ public class PartiesController : BaseApiController
     }
 
     [HttpPost("createCustomer", Name = "CreateCustomer")]
-    public async Task<IActionResult> CreateCustomer(PartyDto partyDto)
+    public async Task<IActionResult> CreateCustomer(PartyDto2 partyDto)
     {
         return HandleResult(await Mediator.Send(new CreateCustomer.Command { PartyDto = partyDto }));
     }
 
     [HttpPost("createContractor", Name = "CreateContractor")]
-    public async Task<IActionResult> CreateContractor(PartyDto partyDto)
+    public async Task<IActionResult> CreateContractor(PartyDto2 partyDto)
     {
         return HandleResult(await Mediator.Send(new CreateContractor.Command { PartyDto = partyDto }));
     }
 
     [HttpPost("createSupplier", Name = "CreateSupplier")]
-    public async Task<IActionResult> CreateSupplier(PartyDto partyDto)
+    public async Task<IActionResult> CreateSupplier(PartyDto2 partyDto)
     {
         return HandleResult(await Mediator.Send(new CreateSupplier.Command { PartyDto = partyDto }));
     }

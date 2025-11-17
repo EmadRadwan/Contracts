@@ -91,82 +91,61 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
         if (!data) return [];
 
         const rows: LedgerRow[] = [];
-        let balance = 0;
+        let runningBalance = 0;  // ← هيبقى بالمنطق المصري: موجب = لصالحنا
 
-        // Helper to format date as YYYY-MM-DD
         const fmt = (d: string) => new Date(d).toISOString().split('T')[0];
 
-        // 1. Applied Invoices + Payments (from invoicesApplPayments)
+        // 1. Invoices + Applied Payments
         data.invoicesApplPayments?.forEach((inv) => {
-            const invDate = fmt(inv.invoiceDate);
             const invTotal = inv.total || 0;
             const invApplied = inv.amountApplied || 0;
-            const invToApply = inv.amountToApply || 0;
 
-            // Invoice row
-            balance += invTotal;
+            // فاتورة شراء → تزيد الدين علينا → سالب في المنطق المصري → لكن بنعكسها
+            runningBalance -= invTotal;  // ← عكس اللي كان موجود
             rows.push({
-                date: invDate,
+                date: fmt(inv.invoiceDate),
                 description: `فاتورة رقم ${inv.invoiceId}`,
                 invoiceNumber: inv.invoiceId,
                 value: invTotal,
                 toPay: invTotal,
                 paid: 0,
-                balance,
+                balance: runningBalance,   // ← دلوقتي سالب لو فاتورة شراء
                 notes: inv.invoiceTypeId === 'PURCHASE_INVOICE' ? 'شراء' : 'بيع',
             });
 
-            // Payment row (only if applied)
             if (inv.paymentId && invApplied > 0) {
-                const payDate = fmt(inv.paymentEffectiveDate);
-                balance -= invApplied;
+                runningBalance += invApplied;  // ← الدفع يقلل الدين → موجب
                 rows.push({
-                    date: payDate,
+                    date: fmt(inv.paymentEffectiveDate),
                     description: `دفعة رقم ${inv.paymentId}`,
                     paymentNumber: inv.paymentId,
                     value: 0,
                     toPay: 0,
                     paid: invApplied,
-                    balance,
+                    balance: runningBalance,
                     notes: '',
-                });
-            }
-
-            // Unapplied amount on invoice
-            if (invToApply > 0) {
-                rows.push({
-                    date: invDate,
-                    description: `متبقي على الفاتورة ${inv.invoiceId}`,
-                    invoiceNumber: inv.invoiceId,
-                    value: 0,
-                    toPay: invToApply,
-                    paid: 0,
-                    balance,
-                    notes: 'غير مسدد',
                 });
             }
         });
 
-        // 2. Unapplied Payments
+        // 2. Unapplied Payments (مقدمات)
         data.unappliedPayments?.forEach((pay) => {
-            const payDate = fmt(pay.effectiveDate);
             const amount = pay.unappliedAmount || pay.amount || 0;
-            balance -= amount; // Credit
+            runningBalance += amount;  // ← دفعة غير موزعة = مقدم = لصالحنا = موجب
             rows.push({
-                date: payDate,
+                date: fmt(pay.effectiveDate),
                 description: `دفعة غير موزعة ${pay.paymentId}`,
                 paymentNumber: pay.paymentId,
                 value: 0,
                 toPay: 0,
                 paid: amount,
-                balance,
+                balance: runningBalance,
                 notes: pay.paymentTypeDescription || 'غير موزعة',
             });
         });
 
         return rows;
     }, [data]);
-
 
     const processedData = useMemo(() => {
         if (!data) {
@@ -271,6 +250,8 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
             />
         );
     };
+    
+    console.log('ledgerItems:', ledgerItems)
 
     return (
         <Grid

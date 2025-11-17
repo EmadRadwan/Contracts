@@ -1,12 +1,2 @@
-"salesRequest": {
-"list": {
-"create": "إنشاء طلب مبيعات",
-"id": "رقم الطلب",
-"apartment": "الشقة",
-"customer": "العميل",
-"saleDate": "تاريخ البيع",
-"total": "الإجمالي",
-"advance": "المقدم",
-"comments": "التعليقات"
-}
-}
+"totalToBePaid": "رصيد لصالح الطرف (مستحق سداده للطرف)",
+"totalToBeReceived": "رصيد لصالح الشركة (مقدم أو عميل مدين)"

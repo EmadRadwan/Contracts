@@ -10,16 +10,16 @@ namespace Application.Parties.Parties;
 
 public class CreateContractor
 {
-    public class Command : IRequest<Result<PartyDto>>
+    public class Command : IRequest<Result<PartyDto2>>
     {
-        public PartyDto PartyDto { get; set; }
+        public PartyDto2 PartyDto { get; set; }
     }
 
-    public class CommandValidator : AbstractValidator<Command>
+    /*public class CommandValidator : AbstractValidator<Command>
     {
-    }
+    }*/
 
-    public class Handler : IRequestHandler<Command, Result<PartyDto>>
+    public class Handler : IRequestHandler<Command, Result<PartyDto2>>
     {
         private readonly DataContext _context;
         private readonly IUserAccessor _userAccessor;
@@ -32,7 +32,7 @@ public class CreateContractor
             _utilityService = utilityService;
         }
 
-        public async Task<Result<PartyDto>> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Result<PartyDto2>> Handle(Command request, CancellationToken cancellationToken)
         {
             var transaction = _context.Database.BeginTransaction();
 
@@ -77,7 +77,7 @@ public class CreateContractor
                 x => x.ContactMechPurposeTypeId == "PRIMARY_EMAIL");
 
             var stamp = DateTime.Now;
-            var newPartyId = await _utilityService.GetNextSequence("Contractor");
+            var newPartyId = await _utilityService.GetNextSequence("Party");
 
             var party = new Party
             {
@@ -269,18 +269,18 @@ public class CreateContractor
             if (!result)
             {
                 transaction.Rollback();
-                return Result<PartyDto>.Failure("Failed to create Contractor");
+                return Result<PartyDto2>.Failure("Failed to create Contractor");
             }
 
             transaction.Commit();
 
-            var partyToReturn = new PartyDto
+            var partyToReturn = new PartyDto2
             {
                 PartyId = newPartyId,
                 Description = request.PartyDto.FirstName + " ( " + roleTypeContractor?.RoleTypeId + " )",
                 PartyTypeDescription = partyStatus.PartyId
             };
-            return Result<PartyDto>.Success(partyToReturn);
+            return Result<PartyDto2>.Success(partyToReturn);
         }
     }
 }

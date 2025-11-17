@@ -153,7 +153,7 @@ export default function CreateSupplierForm({
                       label={getTranslatedLabel("party.suppliers.form.mobileContactNumber", "Mobile Contact Number")}
                       autoComplete={"off"}
                       component={FormInput}
-                      validator={phoneValidator}
+                      //validator={phoneValidator}
                     />
                   </Grid>
                   <Grid item xs={6}>

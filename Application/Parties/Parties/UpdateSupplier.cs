@@ -14,13 +14,13 @@ public class UpdateSupplier
         public PartyDto PartyDto { get; set; }
     }
 
-    public class CommandValidator : AbstractValidator<Command>
+    /*public class CommandValidator : AbstractValidator<Command>
     {
         public CommandValidator()
         {
             RuleFor(x => x.PartyDto).SetValidator(new PartyValidator());
         }
-    }
+    }*/
 
     public class Handler : IRequestHandler<Command, Result<PartyDto>>
     {

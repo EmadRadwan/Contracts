@@ -232,7 +232,7 @@ public class GetPartyFinancialHistory
                     join pt in _context.PaymentTypes on pmt.PaymentTypeId equals pt.PaymentTypeId
                     where ((pmt.PartyIdTo == request.PartyId && pmt.PartyIdFrom == organizationPartyId) ||
                            (pmt.PartyIdTo == organizationPartyId && pmt.PartyIdFrom == request.PartyId)) &&
-                          pmt.StatusId != "PMNT_NOTPAID" &&
+                          pmt.StatusId != "PMNT_NOT_PAID" &&
                           pmt.StatusId != "PMNT_CANCELLED"
                     select new
                     {
@@ -409,7 +409,7 @@ public class GetPartyFinancialHistory
                     join pt in _context.PaymentTypes on pmt.PaymentTypeId equals pt.PaymentTypeId
                     where ((pmt.PartyIdTo == request.PartyId && pmt.PartyIdFrom == organizationPartyId) ||
                            (pmt.PartyIdTo == organizationPartyId && pmt.PartyIdFrom == request.PartyId)) &&
-                          pmt.StatusId != "PMNT_NOTPAID" &&
+                          pmt.StatusId != "PMNT_NOT_PAID" &&
                           pmt.StatusId != "PMNT_CANCELLED"
                     select new { pmt.PaymentId, pt.ParentTypeId };
 
@@ -454,11 +454,16 @@ public class GetPartyFinancialHistory
                                          - financialSummary.TotalPaymentsIn
                                          + financialSummary.TotalPaymentsOut;
 
-                if (transferAmount < 0)
-                    financialSummary.TotalToBeReceived = -transferAmount;
-                else
-                    financialSummary.TotalToBePaid = transferAmount;
-
+                if (transferAmount > 0)
+                {
+                    // Positive = لصالح الشركة (مقدم عند مورد، أو عميل مدين لنا)
+                    financialSummary.TotalToBeReceived = transferAmount;  // ← نستخدم TotalToBeReceived للإيجابي
+                }
+                else if (transferAmount < 0)
+                {
+                    // Negative = علينا للطرف
+                    financialSummary.TotalToBePaid = -transferAmount;     // ← نستخدم TotalToBePaid للسالب (مضبوط بالموجب)
+                }
 
                 // 9. Return result
                 // Business Purpose: Compile all retrieved data into a single response object for the client.

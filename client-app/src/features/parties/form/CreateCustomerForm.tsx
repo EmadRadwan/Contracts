@@ -124,7 +124,7 @@ export default function CreateCustomerForm({ party, cancelEdit, editMode }: Prop
                     label={getTranslatedLabel("party.customers.form.mobileContactNumber", "Mobile Contact Number *")}
                     autoComplete={'off'}
                     component={FormInput}
-                    validator={phoneValidator}
+                    //validator={phoneValidator}
                   />
                 </Grid>
                 <Grid item xs={6}>
