@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class AddedApartments : Migration
+    public partial class AddedApartments2 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -27178,7 +27178,7 @@ namespace Persistence.Migrations
                     APARTMENT_PRICE_PER_M2 = table.Column<decimal>(type: "decimal(18,6)", nullable: true),
                     APARTMENT_STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAND_NUMBER = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: true)
+                    APARTMENT_NUMBER = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
                     LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
@@ -28785,15 +28785,23 @@ namespace Persistence.Migrations
                     COMMENTS = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ADVANCE_PAYMENT = table.Column<decimal>(type: "numeric(18,4)", nullable: true),
+                    MAINTENANCE_DEPOSIT = table.Column<decimal>(type: "numeric(18,4)", nullable: true),
                     NUMBER_OF_INSTALLMENTS = table.Column<int>(type: "int", nullable: true),
                     DATE_OF_FIRST_INSTALLMENT = table.Column<DateTime>(type: "datetime", nullable: true),
-                    DURATION_BETWEEN_INSTALLMENTS = table.Column<int>(type: "int", nullable: true),
+                    MONTHS_BETWEEN_INSTALLMENTS = table.Column<int>(type: "int", nullable: true),
+                    STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
                     CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SALES_REQUEST", x => x.SALES_REQUEST_ID);
+                    table.ForeignKey(
+                        name: "FK_SALES_REQUEST_STATUS_ITEM_STATUS_ID",
+                        column: x => x.STATUS_ID,
+                        principalTable: "STATUS_ITEM",
+                        principalColumn: "STATUS_ID");
                     table.ForeignKey(
                         name: "FK_SALES_REQ_CUSTOMER",
                         column: x => x.FROM_PARTY_ID,
@@ -46617,6 +46625,11 @@ namespace Persistence.Migrations
                 name: "SOPPWEFF_WEFF",
                 table: "SALES_OPPORTUNITY_WORK_EFFORT",
                 column: "WORK_EFFORT_ID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SALES_REQUEST_STATUS_ID",
+                table: "SALES_REQUEST",
+                column: "STATUS_ID");
 
             migrationBuilder.CreateIndex(
                 name: "SALES_REQ_CUST_IDX",

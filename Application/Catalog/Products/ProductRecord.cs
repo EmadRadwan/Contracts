@@ -22,5 +22,5 @@ public class ProductRecord
     public decimal? ApartmentPricePerM2 { get; set; }
     public decimal? GardenPricePerM2 { get; set; }
     public string? ApartmentStatusId { get; set; }
-    public string? LandNumber { get; set; }
+    public string? ApartmentNumber { get; set; }
 }

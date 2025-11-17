@@ -21,6 +21,7 @@ using Application.Manufacturing;
 using Application.Order.Orders;
 using Application.Order.Orders.Returns;
 using Application.Order.Quotes;
+using Application.Order.SalesRequests;
 using Application.Parties.Parties;
 using Application.Projects;
 using Microsoft.AspNetCore.OData;
@@ -177,11 +178,19 @@ using (var scope = app.Services.CreateScope())
     try
 
     {
+        Console.WriteLine("⏳ Getting DataContext...");
         var context = services.GetRequiredService<DataContext>();
         var userManager = services.GetRequiredService<UserManager<AppUserLogin>>();
         var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
+        Console.WriteLine("⏳ Applying migrations...");
+
         await context.Database.MigrateAsync();
+        Console.WriteLine("✅ Migration done.");
+        Console.WriteLine("⏳ Seeding...");
+
         await SeedContracts.SeedData(context, userManager, roleManager);
+        Console.WriteLine("✅ Seeding done.");
+
     }
     catch (Exception ex)
     {
@@ -196,7 +205,7 @@ static IEdmModel GetEdmModel()
 {
     var modelBuilder = new ODataConventionModelBuilder();
     modelBuilder.EntitySet<OrderRecord>("OrderRecords");
-    modelBuilder.EntitySet<SalesRequest>("SalesRequests");
+    modelBuilder.EntitySet<SalesRequestRecord>("SalesRequestRecords");
     modelBuilder.EntitySet<PartyRecord>("PartyRecords");
     modelBuilder.EntitySet<QuoteRecord>("QuoteRecords");
     modelBuilder.EntitySet<ReturnRecord>("ReturnRecords");

@@ -74,7 +74,7 @@ public class UpdateProduct
                     nameof(Product.ApartmentPricePerM2),
                     nameof(Product.GardenPricePerM2),
                     nameof(Product.ApartmentStatusId),
-                    nameof(Product.LandNumber)
+                    nameof(Product.ApartmentNumber)
                 };
 
                 var productType = typeof(Product);
@@ -121,7 +121,7 @@ public class UpdateProduct
                     product.ApartmentPricePerM2 = dto.ApartmentPricePerM2;
                     product.GardenPricePerM2 = dto.GardenPricePerM2;
                     product.ApartmentStatusId = !string.IsNullOrWhiteSpace(dto.ApartmentStatusId) ? dto.ApartmentStatusId : null;
-                    product.LandNumber = dto.LandNumber;
+                    product.ApartmentNumber = dto.ApartmentNumber;
                 }
 
                 product.LastUpdatedStamp = now;
@@ -168,7 +168,7 @@ public class UpdateProduct
                             ApartmentPricePerM2 = p.ApartmentPricePerM2,
                             GardenPricePerM2 = p.GardenPricePerM2,
                             ApartmentStatusId = p.ApartmentStatusId,
-                            LandNumber = p.LandNumber,
+                            ApartmentNumber = p.ApartmentNumber,
                         })
                     .SingleOrDefaultAsync(cancellationToken);
 

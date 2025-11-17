@@ -14,9 +14,10 @@ public class SalesRequestDto
     public decimal? TotalPrice { get; set; }
 
     public decimal? AdvancePayment { get; set; }
+    public decimal? MaintenanceDeposit { get; set; }
     public int? NumberOfInstallments { get; set; }
     public DateTime? DateOfFirstInstallment { get; set; }
-    public int? DurationBetweenInstallments { get; set; }
+    public int? MonthsBetweenInstallments { get; set; }
 
     public string? Comments { get; set; }
 

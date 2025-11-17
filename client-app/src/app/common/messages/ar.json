@@ -51,7 +51,7 @@
     "form": {
       "new": "طلب مبيعات جديد",
       "saleDate": "تاريخ البيع *",
-      "from": "من *",
+      "from": "العميل *",
       "project": "المشروع",
       "apartmentM2": "مساحة الشقة (م²)",
       "gardenM2": "مساحة الحديقة (م²)",
@@ -63,7 +63,7 @@
       "advance": "المقدم",
       "installments": "الأقساط",
       "firstInstallmentDate": "تاريخ القسط الأول",
-      "duration": "الأيام بين الأقساط",
+      "duration": "الشهور بين الأقساط",
       "comments": "التعليقات",
       "submit": "حفظ",
       "cancel": "إلغاء",

@@ -1,6 +1,3 @@
-using Application.Core;
-using Application.Interfaces;
-using Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
@@ -23,17 +20,14 @@ public class UpdateSalesRequest
     public class Handler : IRequestHandler<Command, Result<CreateSalesRequest.SalesRequestResponseDto>>
     {
         private readonly DataContext _context;
-        private readonly IUtilityService _utilityService;
-        private readonly IUserAccessor _userAccessor;
 
-        public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService)
+        public Handler(DataContext context)
         {
             _context = context;
-            _userAccessor = userAccessor;
-            _utilityService = utilityService;
         }
 
-        public async Task<Result<CreateSalesRequest.SalesRequestResponseDto>> Handle(Command request, CancellationToken ct)
+        public async Task<Result<CreateSalesRequest.SalesRequestResponseDto>> Handle(Command request,
+            CancellationToken ct)
         {
             var dto = request.SalesRequestDto!;
 
@@ -55,19 +49,20 @@ public class UpdateSalesRequest
                 // -----------------------------------------------------------------
                 // 3. Update scalar fields
                 // -----------------------------------------------------------------
-                sr.ProductId                = dto.ProductId!;
-                sr.SaleDate                 = dto.SaleDate!.Value;
-                sr.FromPartyId              = dto.FromPartyId!;
-                sr.ApartmentPricePerM2      = dto.ApartmentPricePerM2;
-                sr.GardenPricePerM2         = dto.GardenPricePerM2;
-                sr.Discount                 = dto.Discount;
-                sr.TotalPrice               = dto.TotalPrice;
-                sr.AdvancePayment           = dto.AdvancePayment;
-                sr.NumberOfInstallments     = dto.NumberOfInstallments;
-                sr.DateOfFirstInstallment   = dto.DateOfFirstInstallment;
-                sr.DurationBetweenInstallments = dto.DurationBetweenInstallments;
-                sr.Comments                 = dto.Comments;
-                sr.LastUpdatedStamp         = DateTime.UtcNow;   // REFACTOR: keep audit trail
+                sr.ProductId = dto.ProductId!;
+                sr.SaleDate = dto.SaleDate!.Value;
+                sr.FromPartyId = dto.FromPartyId!;
+                sr.ApartmentPricePerM2 = dto.ApartmentPricePerM2;
+                sr.GardenPricePerM2 = dto.GardenPricePerM2;
+                sr.Discount = dto.Discount;
+                sr.TotalPrice = dto.TotalPrice;
+                sr.AdvancePayment = dto.AdvancePayment;
+                sr.NumberOfInstallments = dto.NumberOfInstallments;
+                sr.DateOfFirstInstallment = dto.DateOfFirstInstallment;
+                sr.MonthsBetweenInstallments = dto.MonthsBetweenInstallments;
+                sr.MaintenanceDeposit = dto.MaintenanceDeposit;
+                sr.Comments = dto.Comments;
+                sr.LastUpdatedStamp = DateTime.UtcNow; // REFACTOR: keep audit trail
 
                 var saved = await _context.SaveChangesAsync(ct) > 0;
                 if (!saved)
@@ -102,6 +97,11 @@ public class UpdateSalesRequest
                                     ApartmentStatusDescription = string.Empty
                                 };
 
+                var statusDesc = await _context.StatusItems
+                    .Where(s => s.StatusId == sr.StatusId) // use the current status (unchanged)
+                    .Select(s => s.Description ?? s.StatusId)
+                    .FirstOrDefaultAsync(ct) ?? sr.StatusId;
+
                 // -----------------------------------------------------------------
                 // 5. Build flat response DTO (identical to Create)
                 // -----------------------------------------------------------------
@@ -109,31 +109,35 @@ public class UpdateSalesRequest
                 {
                     SalesRequestId = sr.SalesRequestId,
 
-                    FromPartyId   = fromParty?.PartyId ?? dto.FromPartyId!,
+                    FromPartyId = fromParty?.PartyId ?? dto.FromPartyId!,
                     FromPartyName = fromParty?.Description ?? string.Empty,
                     FromPartyPhone = fromParty?.Phone ?? string.Empty,
 
-                    ApartmentId               = apartment.ApartmentId,
-                    ApartmentName             = apartment.ApartmentName,
-                    ApartmentType             = apartment.ApartmentType,
-                    ProjectName               = apartment.ProjectName,
-                    FloorNumber               = apartment.FloorNumber,
-                    ApartmentSpaceM2          = apartment.ApartmentSpaceM2,
-                    GardenSpaceM2             = apartment.GardenSpaceM2,
-                    GardenPricePerM2          = apartment.GardenPricePerM2 ?? dto.GardenPricePerM2,
-                    ApartmentPricePerM2       = apartment.ApartmentPricePerM2,
-                    ApartmentStatusId         = apartment.ApartmentStatusId,
-                    ApartmentStatusDescription= apartment.ApartmentStatusDescription,
+                    ApartmentId = apartment.ApartmentId,
+                    ApartmentName = apartment.ApartmentName,
+                    ApartmentType = apartment.ApartmentType,
+                    ProjectName = apartment.ProjectName,
+                    FloorNumber = apartment.FloorNumber,
+                    ApartmentSpaceM2 = apartment.ApartmentSpaceM2,
+                    GardenSpaceM2 = apartment.GardenSpaceM2,
+                    GardenPricePerM2 = apartment.GardenPricePerM2 ?? dto.GardenPricePerM2,
+                    ApartmentPricePerM2 = apartment.ApartmentPricePerM2,
+                    ApartmentStatusId = apartment.ApartmentStatusId,
+                    ApartmentStatusDescription = apartment.ApartmentStatusDescription,
 
-                    TotalPrice                = (decimal)dto.TotalPrice,
-                    Discount                  = dto.Discount,
-                    AdvancePayment            = (decimal)dto.AdvancePayment,
-                    NumberOfInstallments      = (int)dto.NumberOfInstallments,
-                    DateOfFirstInstallment    = dto.DateOfFirstInstallment,
-                    DurationBetweenInstallments = (int)dto.DurationBetweenInstallments,
+                    TotalPrice = (decimal)dto.TotalPrice,
+                    Discount = dto.Discount,
+                    AdvancePayment = (decimal)dto.AdvancePayment,
+                    NumberOfInstallments = (int)dto.NumberOfInstallments,
+                    DateOfFirstInstallment = dto.DateOfFirstInstallment,
+                    MonthsBetweenInstallments = (int)dto.MonthsBetweenInstallments,
+                    MaintenanceDeposit = dto.MaintenanceDeposit,
 
-                    SaleDate                  = dto.SaleDate!.Value,
-                    Comments                  = dto.Comments,
+
+                    SaleDate = dto.SaleDate!.Value,
+                    Comments = dto.Comments,
+                    StatusId = sr.StatusId,
+                    StatusDescription = statusDesc,
                 };
 
                 return Result<CreateSalesRequest.SalesRequestResponseDto>.Success(response);
@@ -141,7 +145,8 @@ public class UpdateSalesRequest
             catch (Exception ex)
             {
                 await transaction.RollbackAsync(ct);
-                return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure($"Failed to update sales request: {ex.Message}");
+                return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure(
+                    $"Failed to update sales request: {ex.Message}");
             }
         }
     }

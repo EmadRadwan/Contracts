@@ -29,6 +29,7 @@ function SalesRequestsList() {
         data: [],
         total: 0,
     });
+    const [viewMode, setViewMode] = useState<"list" | "form">("list"); // NEW
 
     const { getTranslatedLabel } = useTranslationHelper();
 
@@ -55,11 +56,13 @@ function SalesRequestsList() {
     const startEdit = (sr?: SalesRequest) => {
         setSelectedSR(sr);
         setEditMode(sr ? 2 : 1);
+        setViewMode("form");
     };
 
     const cancelEdit = () => {
         setSelectedSR(undefined);
         setEditMode(0);
+        setViewMode("list");
     };
 
     const handleSalesRequestCreated = async (createdRequest: SalesRequest) => {
@@ -68,21 +71,33 @@ function SalesRequestsList() {
         setEditMode(2);
 
         setSelectedSR(createdRequest);
+        setViewMode("form");
     };
 
     // -----------------------------------------------------------------
     // Form rendering
     // -----------------------------------------------------------------
-    if (editMode) {
+    if (viewMode === "form" && editMode !== 0) {
         return (
             <SalesRequestForm
                 salesRequest={editMode === 1 ? undefined : selectedSR}
                 editMode={editMode}
                 cancelEdit={cancelEdit}
-                onSalesRequestCreated={handleSalesRequestCreated}  // now receives full object
+                onSalesRequestCreated={handleSalesRequestCreated}
             />
         );
     }
+
+    const handleMenuSelect = (key: string) => {
+        if (key === "salesRequest.menu.salesRequests") {
+            // REFACTOR: Menu click → force grid-only view, exit any edit mode
+            // Purpose: Unmounts the form instantly when the user clicks the menu item
+            // Context: Works even when the route does not change
+            setViewMode("list");
+            setEditMode(0);
+            setSelectedSR(undefined);
+        }
+    };
 
     // -----------------------------------------------------------------
     // Grid list
@@ -109,7 +124,10 @@ function SalesRequestsList() {
 
     return (
         <>
-            <SalesRequestMenu selectedMenuItem="/sales-requests" />
+            <SalesRequestMenu
+                selectedMenuItem="/sales-requests"
+                on_kmMenuSelect={handleMenuSelect}
+            />
             <Paper elevation={5} className="div-container-withBorderCurved">
                 <Grid container columnSpacing={1} alignItems="center">
                     <Grid item xs={12}>

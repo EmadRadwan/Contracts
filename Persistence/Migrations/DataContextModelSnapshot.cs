@@ -33436,6 +33436,12 @@ namespace Persistence.Migrations
                         .HasColumnType("varchar(36)")
                         .HasColumnName("AMOUNT_UOM_TYPE_ID");
 
+                    b.Property<string>("ApartmentNumber")
+                        .HasMaxLength(60)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(60)")
+                        .HasColumnName("APARTMENT_NUMBER");
+
                     b.Property<decimal?>("ApartmentPricePerM2")
                         .HasColumnType("decimal(18, 6)")
                         .HasColumnName("APARTMENT_PRICE_PER_M2");
@@ -33619,12 +33625,6 @@ namespace Persistence.Migrations
                         .HasColumnType("char(1)")
                         .HasColumnName("IS_VIRTUAL")
                         .IsFixedLength();
-
-                    b.Property<string>("LandNumber")
-                        .HasMaxLength(60)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(60)")
-                        .HasColumnName("LAND_NUMBER");
 
                     b.Property<string>("LargeImageUrl")
                         .HasMaxLength(2000)
@@ -45947,10 +45947,6 @@ namespace Persistence.Migrations
                         .HasColumnType("numeric(18,4)")
                         .HasColumnName("DISCOUNT");
 
-                    b.Property<int?>("DurationBetweenInstallments")
-                        .HasColumnType("int")
-                        .HasColumnName("DURATION_BETWEEN_INSTALLMENTS");
-
                     b.Property<string>("FromPartyId")
                         .IsRequired()
                         .HasMaxLength(36)
@@ -45965,6 +45961,14 @@ namespace Persistence.Migrations
                     b.Property<DateTime?>("LastUpdatedStamp")
                         .HasColumnType("datetime")
                         .HasColumnName("LAST_UPDATED_STAMP");
+
+                    b.Property<decimal?>("MaintenanceDeposit")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("MAINTENANCE_DEPOSIT");
+
+                    b.Property<int?>("MonthsBetweenInstallments")
+                        .HasColumnType("int")
+                        .HasColumnName("MONTHS_BETWEEN_INSTALLMENTS");
 
                     b.Property<int?>("NumberOfInstallments")
                         .HasColumnType("int")
@@ -45981,11 +45985,19 @@ namespace Persistence.Migrations
                         .HasColumnType("datetime")
                         .HasColumnName("SALE_DATE");
 
+                    b.Property<string>("StatusId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("STATUS_ID");
+
                     b.Property<decimal?>("TotalPrice")
                         .HasColumnType("numeric(18,4)")
                         .HasColumnName("TOTAL_PRICE");
 
                     b.HasKey("SalesRequestId");
+
+                    b.HasIndex("StatusId");
 
                     b.HasIndex(new[] { "FromPartyId" }, "SALES_REQ_CUST_IDX");
 
@@ -74886,9 +74898,16 @@ namespace Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_SALES_REQ_PRODUCT");
 
+                    b.HasOne("Domain.StatusItem", "Status")
+                        .WithMany("SalesRequests")
+                        .HasForeignKey("StatusId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.Navigation("Customer");
 
                     b.Navigation("Product");
+
+                    b.Navigation("Status");
                 });
 
             modelBuilder.Entity("Domain.SecurityGroupPermission", b =>
@@ -82912,6 +82931,8 @@ namespace Persistence.Migrations
                     b.Navigation("ReturnItemStatuses");
 
                     b.Navigation("ReturnStatuses");
+
+                    b.Navigation("SalesRequests");
 
                     b.Navigation("ShipmentRouteSegments");
 

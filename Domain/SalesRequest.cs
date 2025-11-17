@@ -36,9 +36,11 @@ public class SalesRequest
     public decimal?  TotalPrice                   { get; set; }
     public string?   Comments                     { get; set; }
     public decimal?  AdvancePayment               { get; set; }
+    public decimal?  MaintenanceDeposit               { get; set; }
     public int?      NumberOfInstallments         { get; set; }
     public DateTime? DateOfFirstInstallment       { get; set; }
-    public int?      DurationBetweenInstallments  { get; set; } 
+    public int?      MonthsBetweenInstallments  { get; set; } 
+    public string? StatusId { get; set; }
 
     // -----------------------------------------------------------------
     // Audit stamps (same pattern as Product)
@@ -49,6 +51,7 @@ public class SalesRequest
     // -----------------------------------------------------------------
     // Navigation properties
     // -----------------------------------------------------------------
+    public virtual StatusItem? Status { get; set; }
     public virtual Product   Product   { get; set; } = null!;
     public virtual Party     Customer  { get; set; } = null!;
 }

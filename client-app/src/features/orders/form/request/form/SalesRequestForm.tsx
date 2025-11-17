@@ -21,6 +21,7 @@ import {FormSimpleComboBoxVirtualApartment} from "../../../../../app/common/form
 import SalesRequestMenu from "../menu/SalesRequestMenu";
 import {toNumber} from "lodash";
 import {KeyValue} from "@progress/kendo-react-form";
+import PaymentPlanModal from "../dashboard/PaymentPlanModal";
 
 let renderCount = 0;
 
@@ -32,7 +33,6 @@ interface Props {
     salesRequest?: SalesRequest;
     editMode: number; // 1 = create, 2 = edit
     cancelEdit: () => void;
-    /** Now receives full created SalesRequest */
     onSalesRequestCreated?: (createdRequest: SalesRequest) => void;
 }
 
@@ -48,11 +48,15 @@ function SalesRequestForm({
     const [updateSR, {isLoading: isUpdating}] = useUpdateSalesRequestMutation();
     const [showNewCustomer, setShowNewCustomer] = useState(false);
     const {getTranslatedLabel} = useTranslationHelper();
+    const [showPaymentPlan, setShowPaymentPlan] = useState(false);
 
-    const dispatch = useAppDispatch();               
+    const dispatch = useAppDispatch();
     const formRef = useRef<FormRenderProps | null>(null);
     const [buttonFlag, setButtonFlag] = useState(false);
     const [selectedApartment, setSelectedApartment] = useState<SalesRequest | null>(null);
+    const [userEditedAdvance, setUserEditedAdvance] = useState(false);
+    const [userEditedMaintenance, setUserEditedMaintenance] = useState(false);
+    const [userEditedDiscount, setUserEditedDiscount] = useState(false);
 
     // -----------------------------------------------------------------
     // Internal ref for party input (no longer passed from parent)
@@ -64,7 +68,7 @@ function SalesRequestForm({
         const d = new Date(iso);
         return isNaN(d.getTime()) ? null : d;   // safety – malformed strings → null
     };
-    
+
     // -----------------------------------------------------------------
     // Initial values
     // -----------------------------------------------------------------
@@ -106,11 +110,6 @@ function SalesRequestForm({
         // -----------------------------------------------------------------
         // 3. Final initial-values object
         // -----------------------------------------------------------------
-        // REFACTOR: Build field-by-field instead of spreading raw payload.
-        // Why: 
-        //   • Guarantees correct types (Date vs string, object vs id)
-        //   • Supplies the *full* objects the Kendo combos need
-        //   • Protects against future backend property changes
         return {
             // ----- identifiers -------------------------------------------------
             salesRequestId: sr.salesRequestId ?? null,
@@ -137,11 +136,12 @@ function SalesRequestForm({
             gardenPricePerM2: sr.gardenPricePerM2 ?? null,
             discount: sr.discount ?? null,
             totalPrice: sr.totalPrice ?? null,
+            maintenanceDeposit: sr.maintenanceDeposit ?? null,
 
             // ----- payment plan ------------------------------------------------
             advancePayment: sr.advancePayment ?? null,
             numberOfInstallments: sr.numberOfInstallments ?? null,
-            durationBetweenInstallments: sr.durationBetweenInstallments ?? null,
+            monthsBetweenInstallments: sr.monthsBetweenInstallments ?? null,
 
             // ----- dates – convert to real Date objects ------------------------
             saleDate: isoToDate(sr.saleDate),
@@ -151,31 +151,7 @@ function SalesRequestForm({
             comments: sr.comments ?? null,
         };
     }, [editMode, salesRequest]);
-    
-    
-    // -----------------------------------------------------------------
-    // Reset – clear form + combo selections
-    // -----------------------------------------------------------------
-    const handleResetForm = (formRenderProps: FormRenderProps) => {
-        setButtonFlag(false);
 
-        // 1. Reset the whole form (clears every field)
-        formRenderProps.onFormReset();
-
-        // 2. Explicitly null-out the combo fields (Kendo Form state)
-        formRenderProps.onChange("productId",   { value: null });
-        formRenderProps.onChange("fromPartyId", { value: null });
-
-        // 3. Clear any *display-name* fields you keep separately
-        formRenderProps.onChange("productIdName",   { value: "" });
-        formRenderProps.onChange("fromPartyIdName", { value: "" });
-
-        // 4. Reset any local UI state you manage yourself
-        setSelectedApartment(null);
-
-        // 5. (Optional) Force the combos to re-render with empty value
-        //    – most Kendo combos respect `value={null}` when the prop changes.
-    };
 
     // -----------------------------------------------------------------
 // Helper – turn combo-box objects into simple strings
@@ -186,7 +162,6 @@ function SalesRequestForm({
         // ---- productId ------------------------------------------------
         // Kendo ComboBox returns the whole selected apartment object
         if (copy.productId && typeof copy.productId === "object") {
-            // REFACTOR: Extract only the key that the server needs
             // Why: Backend only wants the apartment ID (string)
             copy.productId = copy.productId.apartmentId ?? copy.productId.ProductId;
         }
@@ -194,7 +169,6 @@ function SalesRequestForm({
         // ---- fromPartyId ---------------------------------------------
         // Party combo returns { fromPartyId: "19", fromPartyName: "…" }
         if (copy.fromPartyId && typeof copy.fromPartyId === "object") {
-            // REFACTOR: Keep only the ID
             copy.fromPartyId = copy.fromPartyId.fromPartyId ?? copy.fromPartyId.partyId;
         }
 
@@ -218,7 +192,8 @@ function SalesRequestForm({
                     "totalPrice",
                     "advancePayment",
                     "numberOfInstallments",
-                    "durationBetweenInstallments",
+                    "monthsBetweenInstallments",
+                    "maintenanceDeposit",
                 ] as const;
                 numericFields.forEach(field => {
                     if (copy[field] === "" || copy[field] == null) copy[field] = null;
@@ -227,11 +202,10 @@ function SalesRequestForm({
             };
 
             // 2. Flatten combo-box objects → plain strings
-            // REFACTOR: Run *after* numeric normalisation so we don’t touch the objects
             const flattened = flattenComboValues(normalize(data));
 
             // 3. Wrap for the server (same pattern as CreateProduct)
-            const payload = { salesRequestDto: { ...flattened } };
+            const payload = {salesRequestDto: {...flattened}};
 
             if (editMode === 2) {
                 await updateSR(payload).unwrap();
@@ -276,36 +250,130 @@ function SalesRequestForm({
         [dispatch]
     );
 
+    const calculateBaseTotal = useCallback((
+        aptM2: number | null,
+        aptPrice: number | null,
+        gardenM2: number | null,
+        gardenPrice: number | null
+    ): number | null => {
+        if (aptM2 == null || aptPrice == null || gardenM2 == null || gardenPrice == null) return null;
+        return aptM2 * aptPrice + gardenM2 * gardenPrice;
+    }, []);
+
+    const calculateFinalTotal = useCallback((
+        baseTotal: number | null,
+        discount: number | null
+    ): number | null => {
+        if (baseTotal == null) return null;
+        return discount != null ? Math.max(0, baseTotal - discount) : baseTotal;
+    }, []);
+
+    const autoSetDerivedFields = useCallback((
+        formRenderProps: FormRenderProps,
+        finalTotal: number | null
+    ) => {
+        if (finalTotal !== null) {
+            if (!userEditedAdvance) {
+                formRenderProps.onChange("advancePayment", {value: finalTotal * 0.20});
+            }
+            if (!userEditedMaintenance) {
+                formRenderProps.onChange("maintenanceDeposit", {value: finalTotal * 0.07});
+            }
+        } else {
+            if (!userEditedAdvance) formRenderProps.onChange("advancePayment", {value: null});
+            if (!userEditedMaintenance) formRenderProps.onChange("maintenanceDeposit", {value: null});
+        }
+    }, [userEditedAdvance, userEditedMaintenance]);
+
     const handleProductChange = useCallback(
         (formRenderProps: FormRenderProps, e: any) => {
             const apartment = e.value as SalesRequest | null;
-
-            // Update local state for display
             setSelectedApartment(apartment);
 
-            // REFACTOR: Update price fields using Kendo's onChange (native form sync)
-            formRenderProps.onChange("apartmentPricePerM2", {
-                value: apartment?.apartmentPricePerM2 ?? null,
-            });
-            formRenderProps.onChange("gardenPricePerM2", {
-                value: apartment?.gardenPricePerM2 ?? null,
-            });
+            // Reset edit flags on new selection
+            setUserEditedAdvance(false);
+            setUserEditedDiscount(false);
+            setUserEditedMaintenance(false);
 
-            const aptM2 = toNumber(apartment?.apartmentSpaceM2);
-            const aptPrice = toNumber(apartment?.apartmentPricePerM2);
-            const gardenM2 = toNumber(apartment?.gardenSpaceM2);
-            const gardenPrice = toNumber(apartment?.gardenPricePerM2);
+            formRenderProps.onChange("apartmentPricePerM2", {value: apartment?.apartmentPricePerM2 ?? null});
+            formRenderProps.onChange("gardenPricePerM2", {value: apartment?.gardenPricePerM2 ?? null});
+            formRenderProps.onChange("discount", {value: null});
 
-            if (aptM2 !== null && aptPrice !== null && gardenM2 !== null && gardenPrice !== null) {
-                const total = aptM2 * aptPrice + gardenM2 * gardenPrice;
-                formRenderProps.onChange("totalPrice", {value: total});
-            } else {
-                // REFACTOR: Clear totalPrice when source data is incomplete
-                formRenderProps.onChange("totalPrice", {value: null});
-            }
+            const baseTotal = calculateBaseTotal(
+                toNumber(apartment?.apartmentSpaceM2),
+                toNumber(apartment?.apartmentPricePerM2),
+                toNumber(apartment?.gardenSpaceM2),
+                toNumber(apartment?.gardenPricePerM2)
+            );
+
+            const finalTotal = calculateFinalTotal(baseTotal, null);
+            formRenderProps.onChange("totalPrice", {value: finalTotal});
+            autoSetDerivedFields(formRenderProps, finalTotal);
         },
-        []
+        [calculateBaseTotal, calculateFinalTotal, autoSetDerivedFields]
     );
+
+    const handlePricePerM2Change = useCallback((
+        formRenderProps: FormRenderProps,
+        fieldName: "apartmentPricePerM2" | "gardenPricePerM2",
+        value: number | null
+    ) => {
+        formRenderProps.onChange(fieldName, {value});
+
+        const aptM2 = toNumber(selectedApartment?.apartmentSpaceM2);
+        const aptPrice = fieldName === "apartmentPricePerM2" ? value : toNumber(formRenderProps.valueGetter("apartmentPricePerM2"));
+        const gardenM2 = toNumber(selectedApartment?.gardenSpaceM2);
+        const gardenPrice = fieldName === "gardenPricePerM2" ? value : toNumber(formRenderProps.valueGetter("gardenPricePerM2"));
+        const discount = userEditedDiscount ? toNumber(formRenderProps.valueGetter("discount")) : null;
+
+        const baseTotal = calculateBaseTotal(aptM2, aptPrice, gardenM2, gardenPrice);
+        const finalTotal = calculateFinalTotal(baseTotal, discount);
+
+        formRenderProps.onChange("totalPrice", {value: finalTotal});
+        autoSetDerivedFields(formRenderProps, finalTotal);
+    }, [selectedApartment, calculateBaseTotal, calculateFinalTotal, userEditedDiscount, autoSetDerivedFields]);
+
+    const handleDiscountChange = useCallback((
+        formRenderProps: FormRenderProps,
+        value: number | null
+    ) => {
+        setUserEditedDiscount(true);
+        formRenderProps.onChange("discount", {value});
+
+        const baseTotal = calculateBaseTotal(
+            toNumber(selectedApartment?.apartmentSpaceM2),
+            toNumber(formRenderProps.valueGetter("apartmentPricePerM2")),
+            toNumber(selectedApartment?.gardenSpaceM2),
+            toNumber(formRenderProps.valueGetter("gardenPricePerM2"))
+        );
+
+        const finalTotal = calculateFinalTotal(baseTotal, value);
+        formRenderProps.onChange("totalPrice", {value: finalTotal});
+        autoSetDerivedFields(formRenderProps, finalTotal);
+    }, [selectedApartment, calculateBaseTotal, calculateFinalTotal, autoSetDerivedFields]);
+
+    const handleAdvanceChange = useCallback((
+        formRenderProps: FormRenderProps,
+        value: number | null
+    ) => {
+        setUserEditedAdvance(true);
+        formRenderProps.onChange("advancePayment", {value});
+
+        const currentTotal = toNumber(formRenderProps.valueGetter("totalPrice"));
+        const baseTotal = calculateBaseTotal(
+            toNumber(selectedApartment?.apartmentSpaceM2),
+            toNumber(formRenderProps.valueGetter("apartmentPricePerM2")),
+            toNumber(selectedApartment?.gardenSpaceM2),
+            toNumber(formRenderProps.valueGetter("gardenPricePerM2"))
+        );
+        const discount = userEditedDiscount ? toNumber(formRenderProps.valueGetter("discount")) : 0;
+
+        if (value != null && baseTotal != null && value > currentTotal) {
+            // User wants higher advance → scale total up (preserving discount)
+            const newFinalTotal = value;
+            formRenderProps.onChange("totalPrice", {value: newFinalTotal});
+        }
+    }, [selectedApartment, calculateBaseTotal, userEditedDiscount]);
 
     const salesRequestValidator = (values: any): KeyValue<string> | undefined => {
         const t = getTranslatedLabel;                     // shortcut (defined later in render)
@@ -314,7 +382,7 @@ function SalesRequestForm({
         const tot = Number(values.totalPrice ?? 0);
         const installments = values.numberOfInstallments;
         const firstInstDate = values.dateOfFirstInstallment;
-        const duration = values.durationBetweenInstallments;
+        const duration = values.monthsBetweenInstallments;
 
         // ---- CASE A: full payment (advance === total) -----------------
         if (adv === tot && tot > 0) {
@@ -354,10 +422,30 @@ function SalesRequestForm({
         return;
     };
 
+    let apartmentForModal: { productName: string } | undefined = undefined;
+
+    // This will be set inside the Form render callback
+    if (formRef.current) {
+        const productIdObj = formRef.current.valueGetter("productId");
+        if (productIdObj && typeof productIdObj === "object") {
+            apartmentForModal = {
+                productName:
+                    productIdObj.apartmentName ??
+                    productIdObj.productName ??
+                    "Unknown Unit",
+            };
+        }
+    }
 
     return (
         <>
-            <SalesRequestMenu selectedMenuItem="/sales-requests"/>
+            <SalesRequestMenu
+                onMenuSelect={(key) => {
+                    if (key === "salesRequest.menu.salesRequests") {
+                        cancelEdit(); // ← Forces back to list view
+                    }
+                }}
+            />
             <Paper elevation={5} className="div-container-withBorderCurved">
                 <Grid container spacing={2}>
                     <Grid item xs={6}>
@@ -382,11 +470,50 @@ function SalesRequestForm({
                     key={editMode}
                     initialValues={formInitialValues}
                     onSubmit={handleSubmitData}
-                    validator={salesRequestValidator}              
+                    validator={salesRequestValidator}
                     render={(formRenderProps: FormRenderProps) => {
                         formRef.current = formRenderProps;
-                        const {visited, errors} = formRenderProps;
+                        const {visited, errors, valueGetter} = formRenderProps;
 
+                        const apt = valueGetter("productId");
+                        const party = valueGetter("fromPartyId");
+
+                        const currentFormValues: SalesRequest = {
+                            salesRequestId: valueGetter("salesRequestId"),
+                            fromPartyId: party?.fromPartyId ?? party?.partyId ?? null,
+                            fromPartyName: party?.fromPartyName ?? "",
+                            apartmentId: apt?.apartmentId ?? apt?.ProductId ?? null,
+                            apartmentName: apt?.apartmentName ?? apt?.productName ?? "",
+                            projectName: apt?.projectName ?? null,
+                            apartmentSpaceM2: apt?.apartmentSpaceM2 ?? null,
+                            gardenSpaceM2: apt?.gardenSpaceM2 ?? null,
+                            apartmentPricePerM2: apt?.apartmentPricePerM2 ?? null,
+                            gardenPricePerM2: apt?.gardenPricePerM2 ?? null,
+                            apartmentStatusDescription: apt?.apartmentStatusDescription ?? "",
+                            // pricing
+                            apartmentPricePerM2: valueGetter("apartmentPricePerM2"),
+                            gardenPricePerM2: valueGetter("gardenPricePerM2"),
+                            discount: valueGetter("discount"),
+                            totalPrice: valueGetter("totalPrice"),
+                            maintenanceDeposit: valueGetter("maintenanceDeposit"),
+                            // payment plan
+                            advancePayment: valueGetter("advancePayment"),
+                            numberOfInstallments: valueGetter("numberOfInstallments"),
+                            monthsBetweenInstallments: valueGetter("monthsBetweenInstallments"),
+                            dateOfFirstInstallment: valueGetter("dateOfFirstInstallment"),
+                            // dates
+                            saleDate: valueGetter("saleDate"),
+                            // free text
+                            comments: valueGetter("comments"),
+                        };
+
+                        // -----------------------------------------------------------------
+                        // 2. Apartment for the legacy prop
+                        // -----------------------------------------------------------------
+                        const apartmentForModal = currentFormValues.apartmentId
+                            ? {productName: currentFormValues.apartmentName ?? "Unknown Unit"}
+                            : undefined;
+                        
                         return (
                             <FormElement>
                                 <fieldset className="k-form-fieldset">
@@ -415,7 +542,7 @@ function SalesRequestForm({
                                             <Field
                                                 id="fromPartyId"
                                                 name="fromPartyId"
-                                                label={getTranslatedLabel("accounting.payments.form.from", "From *")}
+                                                label={getTranslatedLabel("salesRequest.form.from", "From *")}
                                                 component={FormComboBoxVirtualParty}
                                                 autoComplete="off"
                                                 validator={requiredValidator}
@@ -436,32 +563,45 @@ function SalesRequestForm({
                                     </Grid>
 
                                     <Grid container spacing={1} mt={0.5}>
-                                        <Grid item xs={3}>
-                                            <Typography variant="caption" color="textSecondary">
-                                                {getTranslatedLabel("salesRequest.form.project", "Project")}
-                                            </Typography>
-                                            <Typography>{selectedApartment?.projectName ?? "-"}</Typography>
-                                        </Grid>
-                                        <Grid item xs={2}>
-                                            <Typography variant="caption" color="textSecondary">
-                                                {getTranslatedLabel("salesRequest.form.apartmentM2", "Apt m²")}
-                                            </Typography>
-                                            <Typography>{selectedApartment?.apartmentSpaceM2 ?? "-"}</Typography>
-                                        </Grid>
-                                        <Grid item xs={2}>
-                                            <Typography variant="caption" color="textSecondary">
-                                                {getTranslatedLabel("salesRequest.form.gardenM2", "Garden m²")}
-                                            </Typography>
-                                            <Typography>{selectedApartment?.gardenSpaceM2 ?? "-"}</Typography>
-                                        </Grid>
-                                        <Grid item xs={3}>
-                                            <Typography variant="caption" color="textSecondary">
-                                                {getTranslatedLabel("salesRequest.form.status", "Status")}
-                                            </Typography>
-                                            <Typography>{selectedApartment?.apartmentStatusDescription ?? "-"}</Typography>
-                                        </Grid>
-                                        <Grid item xs={2}/>
+                                        {/* Helper to safely read a nested field */}
+                                        {(() => {
+                                            const apt = formRenderProps.valueGetter("productId"); // full apartment object or null
+                                            return (
+                                                <>
+                                                    <Grid item xs={3}>
+                                                        <Typography variant="caption" color="textSecondary">
+                                                            {getTranslatedLabel("salesRequest.form.project", "Project")}
+                                                        </Typography>
+                                                        <Typography>{apt?.projectName ?? "-"}</Typography>
+                                                    </Grid>
+
+                                                    <Grid item xs={2}>
+                                                        <Typography variant="caption" color="textSecondary">
+                                                            {getTranslatedLabel("salesRequest.form.apartmentM2", "Apt m²")}
+                                                        </Typography>
+                                                        <Typography>{apt?.apartmentSpaceM2 ?? "-"}</Typography>
+                                                    </Grid>
+
+                                                    <Grid item xs={2}>
+                                                        <Typography variant="caption" color="textSecondary">
+                                                            {getTranslatedLabel("salesRequest.form.gardenM2", "Garden m²")}
+                                                        </Typography>
+                                                        <Typography>{apt?.gardenSpaceM2 ?? "-"}</Typography>
+                                                    </Grid>
+
+                                                    <Grid item xs={3}>
+                                                        <Typography variant="caption" color="textSecondary">
+                                                            {getTranslatedLabel("salesRequest.form.status", "Status")}
+                                                        </Typography>
+                                                        <Typography>{apt?.apartmentStatusDescription ?? "-"}</Typography>
+                                                    </Grid>
+
+                                                    <Grid item xs={2}/> {/* spacer */}
+                                                </>
+                                            );
+                                        })()}
                                     </Grid>
+
 
                                     <Grid container spacing={1}>
                                         <Grid item xs={3}>
@@ -473,6 +613,9 @@ function SalesRequestForm({
                                                 min={0}
                                                 component={FormNumericTextBox}
                                                 validator={requiredValidator}
+                                                onChange={(e: any) => {
+                                                    handlePricePerM2Change(formRenderProps, "apartmentPricePerM2", e.value);
+                                                }}
                                             />
                                         </Grid>
                                         <Grid item xs={3}>
@@ -483,6 +626,9 @@ function SalesRequestForm({
                                                 format="n2"
                                                 min={0}
                                                 component={FormNumericTextBox}
+                                                onChange={(e: any) => {
+                                                    handlePricePerM2Change(formRenderProps, "gardenPricePerM2", e.value);
+                                                }}
                                             />
                                         </Grid>
                                         <Grid item xs={3}>
@@ -493,6 +639,9 @@ function SalesRequestForm({
                                                 format="n2"
                                                 min={0}
                                                 component={FormNumericTextBox}
+                                                onChange={(e: any) => {
+                                                    handleDiscountChange(formRenderProps, e.value);
+                                                }}
                                             />
                                         </Grid>
                                         <Grid item xs={3}>
@@ -504,6 +653,7 @@ function SalesRequestForm({
                                                 min={0}
                                                 validator={requiredValidator}
                                                 component={FormNumericTextBox}
+                                                disabled={true}
                                             />
                                         </Grid>
                                     </Grid>
@@ -518,6 +668,9 @@ function SalesRequestForm({
                                                 min={0}
                                                 validator={requiredValidator}
                                                 component={FormNumericTextBox}
+                                                onChange={(e: any) => {
+                                                    handleAdvanceChange(formRenderProps, e.value);
+                                                }}
                                             />
                                         </Grid>
                                         <Grid item xs={3}>
@@ -529,7 +682,7 @@ function SalesRequestForm({
                                                 component={FormNumericTextBox}
                                             />
                                         </Grid>
-                                        <Grid item xs={3}>
+                                        <Grid item xs={2}>
                                             <Field
                                                 id="dateOfFirstInstallment"
                                                 name="dateOfFirstInstallment"
@@ -537,13 +690,27 @@ function SalesRequestForm({
                                                 component={FormDatePicker}
                                             />
                                         </Grid>
-                                        <Grid item xs={3}>
+                                        <Grid item xs={2}>
                                             <Field
-                                                id="durationBetweenInstallments"
-                                                name="durationBetweenInstallments"
-                                                label={getTranslatedLabel("salesRequest.form.duration", "Days")}
+                                                id="monthsBetweenInstallments"
+                                                name="monthsBetweenInstallments"
+                                                label={getTranslatedLabel("salesRequest.form.duration", "Months")}
                                                 min={0}
                                                 component={FormNumericTextBox}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={2}>
+                                            <Field
+                                                id="maintenanceDeposit"
+                                                name="maintenanceDeposit"
+                                                label={getTranslatedLabel("salesRequest.form.maintenanceDeposit", "Maintenance Deposit")}
+                                                format="n2"
+                                                min={0}
+                                                component={FormNumericTextBox}
+                                                onChange={(e: any) => {
+                                                    formRenderProps.onChange("maintenanceDeposit", {value: e.value});
+                                                    if (e.value !== null) setUserEditedMaintenance(true);
+                                                }}
                                             />
                                         </Grid>
                                     </Grid>
@@ -589,17 +756,17 @@ function SalesRequestForm({
                                                     {getTranslatedLabel("general.cancel", "Cancel")}
                                                 </Button>
                                             </Grid>
-                                            <Grid item>
-                                                <Button
-                                                    size="small"
-                                                    onClick={() => handleResetForm(formRenderProps)}
-                                                    color="primary"
-                                                    variant="contained"
-                                                    disabled={isCreating || isUpdating}
-                                                >
-                                                    {getTranslatedLabel("salesRequest.form.clear", "Clear")}
-                                                </Button>
-                                            </Grid>
+                                            {editMode === 2 && (
+                                                <Grid item>
+                                                    <Button
+                                                        variant="outlined"
+                                                        color="primary"
+                                                        onClick={() => setShowPaymentPlan(true)}
+                                                    >
+                                                        {getTranslatedLabel("salesRequest.form.viewPaymentPlan", "View Payment Plan")}
+                                                    </Button>
+                                                </Grid>
+                                            )}
                                         </Grid>
                                     </div>
 
@@ -607,6 +774,20 @@ function SalesRequestForm({
                                         <LoadingComponent
                                             message={getTranslatedLabel("salesRequest.form.processing", "Processing...")}
                                         />
+                                    )}
+
+                                    {showPaymentPlan && editMode === 2 && (
+                                        <ModalContainer
+                                            show={showPaymentPlan}
+                                            onClose={() => setShowPaymentPlan(false)}
+                                            width={850}
+                                        >
+                                            <PaymentPlanModal
+                                                onClose={() => setShowPaymentPlan(false)}
+                                                salesRequest={currentFormValues}   // ← always fresh
+                                                apartment={apartmentForModal}
+                                            />
+                                        </ModalContainer>
                                     )}
                                 </fieldset>
                             </FormElement>
@@ -625,11 +806,11 @@ function SalesRequestForm({
                     >
                         <CreateCustomerModalForm
                             onClose={() => setShowNewCustomer(false)}
-                            // REFACTOR: Pass the same callback used in PaymentForm
                             onUpdateCustomerDropDown={updateCustomerDropDown}
                         />
                     </ModalContainer>
                 )}
+                
             </Paper>
         </>
     );

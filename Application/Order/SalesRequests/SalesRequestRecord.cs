@@ -21,12 +21,17 @@ public class SalesRequestRecord
     public decimal? AdvancePayment { get; set; }
     public int? NumberOfInstallments { get; set; }
     public DateTime? DateOfFirstInstallment { get; set; }
-    public int? DurationBetweenInstallments { get; set; }
+    public int? MonthsBetweenInstallments { get; set; }
     public string ProjectName { get; set; } = string.Empty;
     public string FloorNumber { get; set; } = string.Empty;
     public decimal ApartmentSpaceM2 { get; set; }
     public decimal? GardenSpaceM2 { get; set; }
     public string ApartmentStatusDescription { get; set; } = string.Empty;
+    
+    public decimal? MaintenanceDeposit { get; set; }
+    public string StatusId { get; set; } = string.Empty;
+    public string StatusDescription { get; set; } = string.Empty;
+
 
     // Audit
     public DateTime? CreatedStamp { get; set; }

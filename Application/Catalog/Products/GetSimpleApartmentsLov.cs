@@ -84,7 +84,7 @@ public class GetSimpleApartmentsLov
                 // 3. Base query (unchanged filtering)
                 // -----------------------------------------------------------------
                 var baseQuery = _context.Products
-                    .Where(p => p.ProductTypeId == apartmentType);
+                    .Where(p => p.ProductTypeId == apartmentType && p.ApartmentStatusId == "APARTMENT_AVAILABLE");
 
                 if (!string.IsNullOrWhiteSpace(request.Params.SearchTerm))
                 {

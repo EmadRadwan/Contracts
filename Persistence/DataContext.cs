@@ -28351,6 +28351,12 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                       .IsUnicode(false)
                       .HasColumnName("FROM_PARTY_ID")
                       .IsRequired();
+                      
+                entity.Property(e => e.StatusId)
+                  .HasMaxLength(36)
+                  .IsUnicode(false)
+                  .HasColumnName("STATUS_ID");
+
             
                 // --------------------------------------------------------------
                 // Pricing fields (copied from apartment at request time)
@@ -28384,16 +28390,22 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 entity.Property(e => e.AdvancePayment)
                       .HasColumnType("numeric(18,4)")
                       .HasColumnName("ADVANCE_PAYMENT");
+                      
+            entity.Property(e => e.MaintenanceDeposit)
+                      .HasColumnType("numeric(18,4)")
+                      .HasColumnName("MAINTENANCE_DEPOSIT");
             
                 entity.Property(e => e.NumberOfInstallments)
                       .HasColumnName("NUMBER_OF_INSTALLMENTS");
+                      
+            entity.Property(e => e.MonthsBetweenInstallments)
+                      .HasColumnName("MONTHS_BETWEEN_INSTALLMENTS");
             
                 entity.Property(e => e.DateOfFirstInstallment)
                       .HasColumnType("datetime")
                       .HasColumnName("DATE_OF_FIRST_INSTALLMENT");
             
-                entity.Property(e => e.DurationBetweenInstallments)
-                      .HasColumnName("DURATION_BETWEEN_INSTALLMENTS");
+           
             
                 // --------------------------------------------------------------
                 // Audit stamps (identical to every other OFBiz entity)
@@ -28437,6 +28449,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                       .HasForeignKey(d => d.FromPartyId)
                       .OnDelete(DeleteBehavior.Restrict)
                       .HasConstraintName("FK_SALES_REQ_CUSTOMER");
+                      
+                      entity.HasOne(sr => sr.Status)
+                        .WithMany(si => si.SalesRequests)
+                        .HasForeignKey(sr => sr.StatusId)
+                        .OnDelete(DeleteBehavior.Restrict);
             });
             
             modelBuilder.Entity<PartyAcctgPreference>(entity =>
@@ -37184,10 +37201,10 @@ entity.Property(e => e.ApartmentStatusId)
       .IsUnicode(false)
       .HasColumnName("APARTMENT_STATUS_ID");
 
-entity.Property(e => e.LandNumber)
+entity.Property(e => e.ApartmentNumber)
       .HasMaxLength(60)
       .IsUnicode(false)
-      .HasColumnName("LAND_NUMBER");
+      .HasColumnName("APARTMENT_NUMBER");
                     
                 entity.HasOne(d => d.AmountUomType)
                     .WithMany(p => p.Products)
@@ -54333,6 +54350,11 @@ entity.Property(e => e.LandNumber)
                     .WithMany(p => p.StatusItems)
                     .HasForeignKey(d => d.StatusTypeId)
                     .HasConstraintName("STATUS_TO_TYPE");
+                    
+                entity.HasMany(s => s.SalesRequests)
+                    .WithOne(sr => sr.Status)
+                    .HasForeignKey(sr => sr.StatusId);
+
             });
 
             modelBuilder.Entity<StatusType>(entity =>

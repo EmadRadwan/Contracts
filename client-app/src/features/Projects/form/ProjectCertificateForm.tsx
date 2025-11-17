@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {RootState, useAppDispatch, useAppSelector, useFetchFacilitiesQuery} from "../../../app/store/configureStore";
+import {useAppDispatch, useAppSelector, useFetchFacilitiesQuery} from "../../../app/store/configureStore";
 import {Field, Form, FormElement, FormRenderProps} from "@progress/kendo-react-form";
 import {Box, Button, Collapse, Grid, IconButton, Paper, Typography} from "@mui/material";
 import LoadingButton from "@mui/lab/LoadingButton";

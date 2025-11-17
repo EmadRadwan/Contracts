@@ -77,7 +77,7 @@ public class CreateProduct
                     ApartmentStatusId = !string.IsNullOrWhiteSpace(dto.ApartmentStatusId)
                         ? dto.ApartmentStatusId
                         : null,
-                    LandNumber = dto.LandNumber, // NEW
+                    ApartmentNumber = dto.ApartmentNumber,
                     CreatedDate = now,
                     LastUpdatedStamp = now
                 };
@@ -124,7 +124,7 @@ public class CreateProduct
                             ApartmentPricePerM2 = p.ApartmentPricePerM2,
                             GardenPricePerM2 = p.GardenPricePerM2,
                             ApartmentStatusId = p.ApartmentStatusId,
-                            LandNumber = p.LandNumber,
+                            ApartmentNumber = p.ApartmentNumber,
                         })
                     .SingleOrDefaultAsync(cancellationToken);
 

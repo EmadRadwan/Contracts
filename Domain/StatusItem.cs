@@ -193,4 +193,5 @@ public class StatusItem
     public ICollection<WorkEffortReview> WorkEffortReviews { get; set; }
     public ICollection<WorkEffortStatus> WorkEffortStatuses { get; set; }
     public ICollection<WorkEffort> WorkEfforts { get; set; }
+    public ICollection<SalesRequest> SalesRequests { get; set; }
 }

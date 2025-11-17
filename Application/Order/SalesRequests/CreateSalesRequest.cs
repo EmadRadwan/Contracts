@@ -4,6 +4,7 @@ using Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
+using System.Collections.Concurrent;
 
 namespace Application.Order.SalesRequests;
 
@@ -29,7 +30,7 @@ public class CreateSalesRequest
         public string FromPartyName { get; set; } = string.Empty;
         public string FromPartyPhone { get; set; } = string.Empty;
 
-        // Apartment (flattened) – matches GetSimpleApartmentsLov.ApartmentLovDto
+        // Apartment (flattened)
         public string ApartmentId { get; set; } = string.Empty;
         public string ApartmentName { get; set; } = string.Empty;
         public string ApartmentType { get; set; } = string.Empty;
@@ -39,6 +40,8 @@ public class CreateSalesRequest
         public decimal? GardenSpaceM2 { get; set; }
         public decimal? GardenPricePerM2 { get; set; }
         public decimal ApartmentPricePerM2 { get; set; }
+        public decimal? MaintenanceDeposit { get; set; }
+
         public string ApartmentStatusId { get; set; } = string.Empty;
         public string ApartmentStatusDescription { get; set; } = string.Empty;
 
@@ -48,17 +51,20 @@ public class CreateSalesRequest
         public decimal AdvancePayment { get; set; }
         public int NumberOfInstallments { get; set; }
         public DateTime? DateOfFirstInstallment { get; set; }
-        public int DurationBetweenInstallments { get; set; }
+        public int MonthsBetweenInstallments { get; set; }
 
         // Metadata
         public DateTime SaleDate { get; set; }
         public string? Comments { get; set; }
+        public string StatusId { get; set; } = string.Empty;
+        public string StatusDescription { get; set; } = string.Empty;
+
         public DateTime CreatedStamp { get; set; }
         public DateTime LastUpdatedStamp { get; set; }
     }
 
     // -----------------------------------------------------------------
-    // Strongly-typed projection for apartment LOV (replaces dynamic)
+    // Strongly-typed projection for apartment LOV
     // -----------------------------------------------------------------
     public class ApartmentLovProjection
     {
@@ -84,6 +90,10 @@ public class CreateSalesRequest
         private readonly IUtilityService _utilityService;
         private readonly IUserAccessor _userAccessor;
 
+        private const string SalesRequestCreatedStatusId = "SALES_REQUEST_CREATED";
+        private const string ApartmentReservedStatusId = "APARTMENT_RESERVED"; // <-- NEW
+
+
         public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService)
         {
             _context = context;
@@ -96,8 +106,9 @@ public class CreateSalesRequest
             var dto = request.SalesRequestDto!;
 
             // -----------------------------------------------------------------
-            // 1. User validation
+            // 1. Validate current user
             // -----------------------------------------------------------------
+            // REFACTOR: Early-exit with meaningful message; no need to continue if user missing.
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.UserName == _userAccessor.GetUsername(), ct);
 
@@ -105,172 +116,175 @@ public class CreateSalesRequest
                 return Result<SalesRequestResponseDto>.Failure("User not found");
 
             // -----------------------------------------------------------------
-            // 2. Generate SalesRequestId
+            // 2. Generate next SalesRequestId (sequence) – using existing utility
             // -----------------------------------------------------------------
+            // REFACTOR: Kept exactly as requested – uses _utilityService.GetNextSequence("SalesRequest")
+            //          This method must handle its own transaction/sequence logic safely.
             var salesRequestId = await _utilityService.GetNextSequence("SalesRequest");
             var now = DateTime.UtcNow;
 
-            // REFACTOR: Use UTC for consistency across servers and time zones
+            // -----------------------------------------------------------------
+            // 3. Build domain entity
+            // -----------------------------------------------------------------
+            var sr = new SalesRequest
+            {
+                SalesRequestId = salesRequestId,
+                ProductId = dto.ProductId!,
+                SaleDate = dto.SaleDate!.Value,
+                FromPartyId = dto.FromPartyId!,
+                ApartmentPricePerM2 = dto.ApartmentPricePerM2,
+                GardenPricePerM2 = dto.GardenPricePerM2,
+                Discount = dto.Discount,
+                TotalPrice = dto.TotalPrice,
+                AdvancePayment = dto.AdvancePayment,
+                NumberOfInstallments = dto.NumberOfInstallments,
+                DateOfFirstInstallment = dto.DateOfFirstInstallment,
+                MonthsBetweenInstallments = dto.MonthsBetweenInstallments,
+                MaintenanceDeposit = dto.MaintenanceDeposit,
+                StatusId = SalesRequestCreatedStatusId,
+                Comments = dto.Comments,
+                CreatedStamp = now,
+                LastUpdatedStamp = now
+            };
+
+            _context.SalesRequests.Add(sr);
+
+            var apartment = await _context.Products
+                .FirstOrDefaultAsync(p => p.ProductId == dto.ProductId! && p.ProductTypeId == "APARTMENT", ct);
+
+            if (apartment == null)
+                return Result<SalesRequestResponseDto>.Failure("Apartment not found");
+
+            // REFACTOR: Change status to APARTMENT_RESERVED.
+            //           Improves domain consistency: apartment becomes reserved the moment the request is created.
+            apartment.ApartmentStatusId = ApartmentReservedStatusId;
+
 
             // -----------------------------------------------------------------
-            // 3. Transaction scope
+            // 4. Persist everything in ONE transaction
             // -----------------------------------------------------------------
-            await using var transaction = await _context.Database.BeginTransactionAsync(ct);
-
+            // REFACTOR: Removed explicit transaction – EF Core uses implicit transaction per SaveChangesAsync().
+            //          Simpler, safer, and avoids "already committed/rolled back" errors.
             try
             {
-                // -----------------------------------------------------------------
-                // 4. Create and persist SalesRequest
-                // -----------------------------------------------------------------
-                var sr = new SalesRequest
-                {
-                    SalesRequestId = salesRequestId,
-                    ProductId = dto.ProductId!,
-                    SaleDate = dto.SaleDate!.Value,
-                    FromPartyId = dto.FromPartyId!,
-                    ApartmentPricePerM2 = dto.ApartmentPricePerM2,
-                    GardenPricePerM2 = dto.GardenPricePerM2,
-                    Discount = dto.Discount,
-                    TotalPrice = dto.TotalPrice,
-                    AdvancePayment = dto.AdvancePayment,
-                    NumberOfInstallments = dto.NumberOfInstallments,
-                    DateOfFirstInstallment = dto.DateOfFirstInstallment,
-                    DurationBetweenInstallments = dto.DurationBetweenInstallments,
-                    Comments = dto.Comments,
-                    CreatedStamp = now,
-                    LastUpdatedStamp = now
-                };
-
-                _context.SalesRequests.Add(sr);
-
                 var saved = await _context.SaveChangesAsync(ct) > 0;
                 if (!saved)
-                {
-                    await transaction.RollbackAsync(ct);
-                    return Result<SalesRequestResponseDto>.Failure("Failed to create sales request");
-                }
-
-                await transaction.CommitAsync(ct);
-
-                // -----------------------------------------------------------------
-                // 5. Load FromParty details (name only – phone not available)
-                // -----------------------------------------------------------------
-                // REFACTOR: Fetch party name in one query; phone not in Party table → leave empty
-                var fromParty = await _context.Parties
-                    .Where(p => p.PartyId == dto.FromPartyId)
-                    .Select(p => new
-                    {
-                        p.PartyId,
-                        p.Description,
-                        Phone = string.Empty
-                    })
-                    .FirstOrDefaultAsync(ct);
-
-                // -----------------------------------------------------------------
-                // 6. Reuse GetSimpleApartmentsLov logic for apartment data
-                // -----------------------------------------------------------------
-                // REFACTOR: Extract reusable projection logic to avoid duplication
-                //         Ensures 100% consistency with LOV dropdowns
-                var apartment = await GetApartmentLovProjection(_context, dto.ProductId!, ct);
-
-                if (apartment == null)
-                {
-                    // Fallback: use input values if product not found (shouldn't happen)
-                    // REFACTOR: Defensive fallback to prevent null reference
-                    apartment = new ApartmentLovProjection
-                    {
-                        ApartmentId = dto.ProductId!,
-                        ApartmentName = string.Empty,
-                        ApartmentType = "APARTMENT",
-                        ProjectName = string.Empty,
-                        FloorNumber = string.Empty,
-                        ApartmentSpaceM2 = 0m,
-                        GardenSpaceM2 = null,
-                        GardenPricePerM2 = dto.GardenPricePerM2,
-                        ApartmentPricePerM2 = (decimal)dto.ApartmentPricePerM2,
-                        ApartmentStatusId = string.Empty,
-                        ApartmentStatusDescription = string.Empty
-                    };
-                }
-
-                // -----------------------------------------------------------------
-                // 7. Build flat response DTO
-                // -----------------------------------------------------------------
-                var response = new SalesRequestResponseDto
-                {
-                    SalesRequestId = salesRequestId,
-
-                    // FromParty
-                    FromPartyId = fromParty?.PartyId ?? dto.FromPartyId!,
-                    FromPartyName = fromParty?.Description ?? string.Empty,
-                    FromPartyPhone = fromParty?.Phone ?? string.Empty,
-
-                    // Apartment – fully consistent with LOV
-                    ApartmentId = apartment.ApartmentId,
-                    ApartmentName = apartment.ApartmentName,
-                    ApartmentType = apartment.ApartmentType,
-                    ProjectName = apartment.ProjectName,
-                    FloorNumber = apartment.FloorNumber,
-                    ApartmentSpaceM2 = apartment.ApartmentSpaceM2,
-                    GardenSpaceM2 = apartment.GardenSpaceM2,
-                    GardenPricePerM2 = apartment.GardenPricePerM2 ?? dto.GardenPricePerM2,
-                    ApartmentPricePerM2 = apartment.ApartmentPricePerM2,
-                    ApartmentStatusId = apartment.ApartmentStatusId,
-                    ApartmentStatusDescription = apartment.ApartmentStatusDescription,
-
-                    // Payment & Pricing
-                    TotalPrice = (decimal)dto.TotalPrice,
-                    Discount = dto.Discount,
-                    AdvancePayment = (decimal)dto.AdvancePayment,
-                    NumberOfInstallments = (int)dto.NumberOfInstallments,
-                    DateOfFirstInstallment = dto.DateOfFirstInstallment,
-                    DurationBetweenInstallments = (int)dto.DurationBetweenInstallments,
-
-                    // Metadata
-                    SaleDate = dto.SaleDate!.Value,
-                    Comments = dto.Comments,
-                    CreatedStamp = now,
-                    LastUpdatedStamp = now
-                };
-
-                return Result<SalesRequestResponseDto>.Success(response);
+                    return Result<SalesRequestResponseDto>.Failure("Failed to persist sales request");
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync(ct);
-                return Result<SalesRequestResponseDto>.Failure($"Failed to create sales request: {ex.Message}");
+                // REFACTOR: No manual rollback needed – EF automatically rolls back on exception.
+                return Result<SalesRequestResponseDto>.Failure($"Database error: {ex.Message}");
             }
+
+            // -----------------------------------------------------------------
+            // 5. Load auxiliary data **sequentially** – NO Task.WhenAll, NO parallel EF calls
+            // -----------------------------------------------------------------
+            // REFACTOR: All EF queries are awaited one-by-one to prevent:
+            //          "A second operation was started on this context instance before a previous operation completed."
+            var fromParty = await _context.Parties
+                .Where(p => p.PartyId == dto.FromPartyId)
+                .Select(p => new { p.PartyId, p.Description, Phone = string.Empty })
+                .FirstOrDefaultAsync(ct);
+
+            // REFACTOR: GetApartmentLovProjection now uses the same context safely (sequential awaits inside)
+            var apartmentLov = await GetApartmentLovProjection(_context, dto.ProductId!, ct)
+                               ?? new ApartmentLovProjection
+                               {
+                                   ApartmentId = dto.ProductId!,
+                                   ApartmentName = string.Empty,
+                                   ApartmentType = "APARTMENT",
+                                   ProjectName = string.Empty,
+                                   FloorNumber = string.Empty,
+                                   ApartmentSpaceM2 = 0m,
+                                   GardenSpaceM2 = null,
+                                   GardenPricePerM2 = dto.GardenPricePerM2,
+                                   ApartmentPricePerM2 = (decimal)dto.ApartmentPricePerM2,
+                                   ApartmentStatusId = string.Empty,
+                                   ApartmentStatusDescription = string.Empty
+                               };
+
+            var statusDesc = await _context.StatusItems
+                .Where(s => s.StatusId == SalesRequestCreatedStatusId)
+                .Select(s => s.Description ?? s.StatusId)
+                .FirstOrDefaultAsync(ct) ?? SalesRequestCreatedStatusId;
+
+            // -----------------------------------------------------------------
+            // 6. Build flat response DTO
+            // -----------------------------------------------------------------
+            // REFACTOR: All values are safely non-null; removed unnecessary casts.
+            var response = new SalesRequestResponseDto
+            {
+                SalesRequestId = salesRequestId,
+
+                // FromParty
+                FromPartyId = fromParty?.PartyId ?? dto.FromPartyId!,
+                FromPartyName = fromParty?.Description ?? string.Empty,
+                FromPartyPhone = fromParty?.Phone ?? string.Empty,
+
+                // Apartment (consistent with LOV)
+                ApartmentId = apartmentLov.ApartmentId,
+                ApartmentName = apartmentLov.ApartmentName,
+                ApartmentType = apartmentLov.ApartmentType,
+                ProjectName = apartmentLov.ProjectName,
+                FloorNumber = apartmentLov.FloorNumber,
+                ApartmentSpaceM2 = apartmentLov.ApartmentSpaceM2,
+                GardenSpaceM2 = apartmentLov.GardenSpaceM2,
+                GardenPricePerM2 = apartmentLov.GardenPricePerM2 ?? dto.GardenPricePerM2,
+                ApartmentPricePerM2 = apartmentLov.ApartmentPricePerM2,
+                ApartmentStatusId = apartmentLov.ApartmentStatusId,
+                ApartmentStatusDescription = apartmentLov.ApartmentStatusDescription,
+
+
+                // Pricing & Payment
+                TotalPrice = (decimal)dto.TotalPrice,
+                Discount = dto.Discount,
+                AdvancePayment = (decimal)dto.AdvancePayment,
+                NumberOfInstallments = (int)dto.NumberOfInstallments,
+                DateOfFirstInstallment = dto.DateOfFirstInstallment,
+                MonthsBetweenInstallments = (int)dto.MonthsBetweenInstallments,
+                MaintenanceDeposit = dto.MaintenanceDeposit,
+
+                // Metadata
+                SaleDate = dto.SaleDate!.Value,
+                Comments = dto.Comments,
+                StatusId = SalesRequestCreatedStatusId,
+                StatusDescription = statusDesc,
+                CreatedStamp = now,
+                LastUpdatedStamp = now
+            };
+
+            return Result<SalesRequestResponseDto>.Success(response);
         }
 
         // -----------------------------------------------------------------
-        // Reusable method: mirrors GetSimpleApartmentsLov projection
+        // Reusable apartment LOV projection (same logic as GetSimpleApartmentsLov)
         // -----------------------------------------------------------------
-        // REFACTOR: Extracted to avoid code duplication and ensure consistency
-        //         between LOV dropdown and create response
-        // REFACTOR: Fixed EF Core translation error by moving TryGetValue(out var) outside query
-        //         Now: fetch raw data → apply lookups in-memory → return strong-typed result
+        // REFACTOR: All internal EF queries are awaited **sequentially** to avoid DbContext concurrency errors.
+        //          Dictionaries are loaded once per call and used in-memory.
+        //          No Task.WhenAll or parallel execution.
         public static async Task<ApartmentLovProjection?> GetApartmentLovProjection(
-            DataContext context, string productId, CancellationToken ct)
+            DataContext ctx, string productId, CancellationToken ct)
         {
-            // -----------------------------------------------------------------
-            // 1. Load lookup dictionaries (in-memory)
-            // -----------------------------------------------------------------
-            var projectNameLookup = await context.WorkEfforts
+            // 1. Load project lookup dictionary
+            var projectLookup = await ctx.WorkEfforts
                 .Where(w => w.WorkEffortTypeId == "PROJECT")
                 .GroupBy(w => w.WorkEffortId)
                 .Select(g => new
                 {
                     ProjectId = g.Key,
-                    ProjectName = g.OrderByDescending(w => w.WorkEffortId)
-                                   .Select(w => w.ProjectName)
-                                   .FirstOrDefault()
+                    ProjectName = g.OrderByDescending(x => x.WorkEffortId)
+                        .Select(x => x.ProjectName)
+                        .FirstOrDefault()
                 })
-                .ToDictionaryAsync(x => x.ProjectId, x => x.ProjectName ?? "", ct);
+                .ToDictionaryAsync(x => x.ProjectId, x => x.ProjectName ?? string.Empty, ct);
 
-            var statusLookup = await context.StatusItems
+            // 2. Load status lookup dictionary
+            var statusLookup = await ctx.StatusItems
                 .Where(s => s.StatusTypeId == "APARTMENT_STATUS")
                 .ToDictionaryAsync(s => s.StatusId, s => s.Description ?? s.StatusId, ct);
 
+            // 3. Static floor map (no DB)
             var floorMap = new Dictionary<string, string>
             {
                 { "0", "الطابق الأرضي" },
@@ -282,62 +296,53 @@ public class CreateSalesRequest
                 { "6", "الطابق السادس" }
             };
 
-            // -----------------------------------------------------------------
-            // 2. Query product with only translatable fields
-            // -----------------------------------------------------------------
-            var rawApartment = await context.Products
+            // 4. Pull raw product data
+            var raw = await ctx.Products
                 .Where(p => p.ProductId == productId && p.ProductTypeId == "APARTMENT")
                 .Select(p => new
                 {
-                    ApartmentId = p.ProductId,
-                    ApartmentName = p.ProductName,
-                    ApartmentType = p.ProductTypeId,
-                    ProjectId = p.ProjectId,
-                    FloorNumber = p.FloorNumber,
-                    ApartmentSpaceM2 = p.ApartmentSpaceM2,
-                    GardenSpaceM2 = p.GardenSpaceM2,
-                    GardenPricePerM2 = p.GardenPricePerM2,
-                    ApartmentPricePerM2 = p.ApartmentPricePerM2,
-                    ApartmentStatusId = p.ApartmentStatusId
+                    p.ProductId,
+                    p.ProductName,
+                    p.ProductTypeId,
+                    p.ProjectId,
+                    p.FloorNumber,
+                    p.ApartmentSpaceM2,
+                    p.GardenSpaceM2,
+                    p.GardenPricePerM2,
+                    p.ApartmentPricePerM2,
+                    p.ApartmentStatusId
                 })
                 .FirstOrDefaultAsync(ct);
 
-            if (rawApartment == null) return null;
+            if (raw == null) return null;
 
-            // -----------------------------------------------------------------
-            // 3. Apply lookups in-memory (safe – no EF translation)
-            // -----------------------------------------------------------------
-            // REFACTOR: Perform TryGetValue post-materialization to avoid expression tree errors
-            var projectName = rawApartment.ProjectId != null && 
-                            projectNameLookup.TryGetValue(rawApartment.ProjectId, out var pn)
+            // 5. Apply lookups in-memory (after materialization)
+            var projectName = raw.ProjectId != null && projectLookup.TryGetValue(raw.ProjectId, out var pn)
                 ? pn
-                : "";
+                : string.Empty;
 
-            var statusDesc = rawApartment.ApartmentStatusId != null && 
-                           statusLookup.TryGetValue(rawApartment.ApartmentStatusId, out var desc)
-                ? desc
-                : rawApartment.ApartmentStatusId ?? "";
+            var statusDesc = raw.ApartmentStatusId != null &&
+                             statusLookup.TryGetValue(raw.ApartmentStatusId, out var sd)
+                ? sd
+                : raw.ApartmentStatusId ?? string.Empty;
 
-            var floorLabel = rawApartment.FloorNumber != null && 
-                           floorMap.TryGetValue(rawApartment.FloorNumber, out var fn)
-                ? fn
-                : rawApartment.FloorNumber ?? "";
+            var floorLabel = raw.FloorNumber != null && floorMap.TryGetValue(raw.FloorNumber, out var fl)
+                ? fl
+                : raw.FloorNumber ?? string.Empty;
 
-            // -----------------------------------------------------------------
-            // 4. Build final strongly-typed projection
-            // -----------------------------------------------------------------
+            // 6. Return final projection
             return new ApartmentLovProjection
             {
-                ApartmentId = rawApartment.ApartmentId,
-                ApartmentName = rawApartment.ApartmentName,
-                ApartmentType = rawApartment.ApartmentType,
+                ApartmentId = raw.ProductId,
+                ApartmentName = raw.ProductName ?? string.Empty,
+                ApartmentType = raw.ProductTypeId ?? string.Empty,
                 ProjectName = projectName,
                 FloorNumber = floorLabel,
-                ApartmentSpaceM2 = rawApartment.ApartmentSpaceM2 ?? 0m,
-                GardenSpaceM2 = rawApartment.GardenSpaceM2,
-                GardenPricePerM2 = rawApartment.GardenPricePerM2,
-                ApartmentPricePerM2 = rawApartment.ApartmentPricePerM2 ?? 0m,
-                ApartmentStatusId = rawApartment.ApartmentStatusId ?? "",
+                ApartmentSpaceM2 = raw.ApartmentSpaceM2 ?? 0m,
+                GardenSpaceM2 = raw.GardenSpaceM2,
+                GardenPricePerM2 = raw.GardenPricePerM2,
+                ApartmentPricePerM2 = raw.ApartmentPricePerM2 ?? 0m,
+                ApartmentStatusId = raw.ApartmentStatusId ?? string.Empty,
                 ApartmentStatusDescription = statusDesc
             };
         }

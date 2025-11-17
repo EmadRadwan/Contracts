@@ -21,7 +21,7 @@ class RawSalesRequest
     public decimal? AdvancePayment { get; set; }
     public int? NumberOfInstallments { get; set; }
     public DateTime? DateOfFirstInstallment { get; set; }
-    public int? DurationBetweenInstallments { get; set; }
+    public int? MonthsBetweenInstallments { get; set; }
     public DateTime? SaleDate { get; set; }
     public string? Comments { get; set; }
     public DateTime? CreatedStamp { get; set; }
@@ -38,6 +38,9 @@ class RawSalesRequest
     public string? DescriptionArabic { get; set; }
 
     public string? PartyDescription { get; set; }
+    public string? StatusId { get; set; }                     // SalesRequest.StatusId
+    public decimal? MaintenanceDeposit { get; set; }          // SalesRequest.MaintenanceDeposit
+    public string? FromPartyPhone { get; set; }
 }
 
 public class ListSalesRequestsQuery
@@ -62,7 +65,7 @@ public class ListSalesRequestsQuery
             // -------------------------------------------------------------
             // 1. Load lookup dictionaries once (in-memory)
             // -------------------------------------------------------------
-            // REFACTOR: Load once per request → O(1) per row, avoids N+1
+            // Load once per request → O(1) per row, avoids N+1
             var projectNameLookup = await _context.WorkEfforts
                 .Where(w => w.WorkEffortTypeId == "PROJECT")
                 .GroupBy(w => w.WorkEffortId)
@@ -79,6 +82,11 @@ public class ListSalesRequestsQuery
                 .Where(s => s.StatusTypeId == "APARTMENT_STATUS")
                 .ToDictionaryAsync(s => s.StatusId, s => s.Description ?? s.StatusId, ct);
 
+            var salesRequestStatusLookup = await _context.StatusItems
+                .Where(s => s.StatusTypeId == "SALES_REQUEST_STATUS")   // adjust type if different
+                .ToDictionaryAsync(s => s.StatusId, s => s.Description ?? s.StatusId, ct);
+
+            
             var floorMap = new Dictionary<string, string>
             {
                 { "0", "الطابق الأرضي" },
@@ -93,7 +101,7 @@ public class ListSalesRequestsQuery
             // -------------------------------------------------------------
             // 2. DB query – only raw columns (EF-translatable)
             // -------------------------------------------------------------
-            // REFACTOR: Left join for Party (phone not in table)
+            //  Left join for Party (phone not in table)
             var dbQuery = from sr in _context.SalesRequests
                           join p in _context.Products on sr.ProductId equals p.ProductId
                           join pt in _context.ProductTypes on p.ProductTypeId equals pt.ProductTypeId
@@ -111,7 +119,7 @@ public class ListSalesRequestsQuery
                               AdvancePayment = sr.AdvancePayment,
                               NumberOfInstallments = sr.NumberOfInstallments,
                               DateOfFirstInstallment = sr.DateOfFirstInstallment,
-                              DurationBetweenInstallments = sr.DurationBetweenInstallments,
+                              MonthsBetweenInstallments = sr.MonthsBetweenInstallments,
                               SaleDate = sr.SaleDate,
                               Comments = sr.Comments,
                               CreatedStamp = sr.CreatedStamp,
@@ -127,13 +135,15 @@ public class ListSalesRequestsQuery
                               Description = pt.Description,
                               DescriptionArabic = pt.DescriptionArabic,
 
-                              PartyDescription = c != null ? c.Description : null
+                              PartyDescription = c != null ? c.Description : null,
+                              StatusId = sr.StatusId,                               // NEW
+                              MaintenanceDeposit = sr.MaintenanceDeposit  
                           };
 
             // -------------------------------------------------------------
             // 3. Materialize to List<RawSalesRequest>
             // -------------------------------------------------------------
-            // REFACTOR: Materialize early to allow TryGetValue in-memory
+            // Materialize early to allow TryGetValue in-memory
             var materialized = await dbQuery.ToListAsync(ct);
 
             // -------------------------------------------------------------
@@ -161,7 +171,7 @@ public class ListSalesRequestsQuery
                     AdvancePayment = x.AdvancePayment,
                     NumberOfInstallments = x.NumberOfInstallments,
                     DateOfFirstInstallment = x.DateOfFirstInstallment,
-                    DurationBetweenInstallments = x.DurationBetweenInstallments,
+                    MonthsBetweenInstallments = x.MonthsBetweenInstallments,
 
                     ProjectName = x.ProjectId != null && projectNameLookup.TryGetValue(x.ProjectId, out var pn)
                         ? pn
@@ -177,6 +187,12 @@ public class ListSalesRequestsQuery
                     ApartmentStatusDescription = x.ApartmentStatusId != null && statusLookup.TryGetValue(x.ApartmentStatusId, out var sd)
                         ? sd
                         : x.ApartmentStatusId ?? string.Empty,
+                    
+                    MaintenanceDeposit = x.MaintenanceDeposit,
+                    StatusId = x.StatusId ?? string.Empty,
+                    StatusDescription = x.StatusId != null && salesRequestStatusLookup.TryGetValue(x.StatusId, out var srd)
+                        ? srd
+                        : x.StatusId ?? string.Empty,
 
                     SaleDate = x.SaleDate,
                     Comments = x.Comments,
