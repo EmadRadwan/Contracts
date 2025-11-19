@@ -8,6 +8,8 @@ export interface SalesRequest {
     discount?: number | null;
     totalPrice?: number | null;
     comments?: string | null;
+    statusId?: string | null;
+    statusDescription?: string | null;
     advancePayment?: number | null;
     numberOfInstallments?: number | null;
     dateOfFirstInstallment?: string | null;

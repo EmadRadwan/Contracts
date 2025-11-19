@@ -16,12 +16,13 @@ import {FormComboBoxVirtualParty} from "../../../../../app/common/form/FormCombo
 import {useTranslationHelper} from "../../../../../app/hooks/useTranslationHelper";
 import ModalContainer from "../../../../../app/common/modals/ModalContainer";
 import CreateCustomerModalForm from "../../../../parties/form/CreateCustomerModalForm";
-import {useAppDispatch} from "../../../../../app/store/configureStore";
+import {useAppDispatch, useAppSelector} from "../../../../../app/store/configureStore";
 import {FormSimpleComboBoxVirtualApartment} from "../../../../../app/common/form/FormSimpleComboBoxVirtualApartment";
 import SalesRequestMenu from "../menu/SalesRequestMenu";
 import {toNumber} from "lodash";
 import {KeyValue} from "@progress/kendo-react-form";
 import PaymentPlanModal from "../dashboard/PaymentPlanModal";
+import {RibbonContainer, Ribbon} from "react-ribbons";
 
 let renderCount = 0;
 
@@ -57,7 +58,7 @@ function SalesRequestForm({
     const [userEditedAdvance, setUserEditedAdvance] = useState(false);
     const [userEditedMaintenance, setUserEditedMaintenance] = useState(false);
     const [userEditedDiscount, setUserEditedDiscount] = useState(false);
-
+    const {language} = useAppSelector((state) => state.localization);
     // -----------------------------------------------------------------
     // Internal ref for party input (no longer passed from parent)
     // -----------------------------------------------------------------
@@ -149,8 +150,12 @@ function SalesRequestForm({
 
             // ----- free text ---------------------------------------------------
             comments: sr.comments ?? null,
+            statusId: sr.statusId ?? null,
+            statusDescription: sr.statusDescription ?? null,
         };
     }, [editMode, salesRequest]);
+
+    console.log('formInitialValues', formInitialValues);
 
 
     // -----------------------------------------------------------------
@@ -447,22 +452,6 @@ function SalesRequestForm({
                 }}
             />
             <Paper elevation={5} className="div-container-withBorderCurved">
-                <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                        <Box display="flex" justifyContent="space-between">
-                            <Typography
-                                color={salesRequest?.salesRequestId ? "black" : "green"}
-                                sx={{p: 2}}
-                                variant="h4"
-                            >
-                                {salesRequest?.salesRequestId
-                                    ? salesRequest.salesRequestId
-                                    : getTranslatedLabel("salesRequest.form.new", "New Sales Request")}
-                            </Typography>
-                        </Box>
-                    </Grid>
-                </Grid>
-
                 {/* --------------------------------------------------------------- */}
                 {/*  Form – attach ref so updateCustomerDropDown can reach it        */}
                 {/* --------------------------------------------------------------- */}
@@ -513,284 +502,332 @@ function SalesRequestForm({
                         const apartmentForModal = currentFormValues.apartmentId
                             ? {productName: currentFormValues.apartmentName ?? "Unknown Unit"}
                             : undefined;
-                        
+
+                        const statusId = formRenderProps.valueGetter("statusId") as string | undefined;
+                        const statusDescription = formRenderProps.valueGetter("statusDescription") as string | undefined;
+
+                        const ribbonLabel = statusDescription ?? {
+                            SALES_REQUEST_CREATED: "Created",
+                            SALES_REQUEST_APPROVED: "Approved",
+                            SALES_REQUEST_REJECTED: "Rejected",
+                            SALES_REQUEST_CONVERTED: "Converted",
+                        }[statusId ?? ""] ?? "Unknown";
+
+                        const ribbonBg = {
+                            SALES_REQUEST_CREATED: "#1976d2",
+                            SALES_REQUEST_APPROVED: "#4caf50",
+                            SALES_REQUEST_REJECTED: "#d32f2f",
+                            SALES_REQUEST_CONVERTED: "#ff9800",
+                        }[statusId ?? ""] ?? "#757575";
+
                         return (
-                            <FormElement>
-                                <fieldset className="k-form-fieldset">
-                                    <Grid container spacing={1} alignItems="flex-end">
-                                        <Grid item xs={4}>
-                                            <Field
-                                                id="productId"
-                                                name="productId"
-                                                label={getTranslatedLabel("projects.certificate.items.list.product", "Product *")}
-                                                component={FormSimpleComboBoxVirtualApartment}
-                                                autoComplete="off"
-                                                validator={requiredValidator}
-                                                onChange={(e) => handleProductChange(formRenderProps, e)}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={3}>
-                                            <Field
-                                                id="saleDate"
-                                                name="saleDate"
-                                                label={getTranslatedLabel("salesRequest.form.saleDate", "Sale Date *")}
-                                                component={FormDatePicker}
-                                                validator={requiredValidator}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={2.5}>
-                                            <Field
-                                                id="fromPartyId"
-                                                name="fromPartyId"
-                                                label={getTranslatedLabel("salesRequest.form.from", "From *")}
-                                                component={FormComboBoxVirtualParty}
-                                                autoComplete="off"
-                                                validator={requiredValidator}
-                                                inputRef={partyInputRef}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={0.5}>
-                                            <Button
-                                                size="small"
-                                                color="secondary"
-                                                onClick={() => setShowNewCustomer(true)}
-                                                variant="outlined"
-                                                sx={{height: "100%", minWidth: 32, p: 0}}
-                                            >
-                                                +
-                                            </Button>
-                                        </Grid>
+                            <>
+                                <Grid container spacing={2} alignItems="center" position="relative">
+                                    <Grid item xs={11}>
+                                        <Box display="flex" justifyContent="space-between" sx={{p: 2}}>
+                                            <Typography color={salesRequest?.salesRequestId ? "black" : "green"}
+                                                        variant="h4">
+                                                {salesRequest?.salesRequestId
+                                                    ? salesRequest.salesRequestId
+                                                    : getTranslatedLabel("salesRequest.form.new", "New Sales Request")}
+                                            </Typography>
+                                        </Box>
                                     </Grid>
 
-                                    <Grid container spacing={1} mt={0.5}>
-                                        {/* Helper to safely read a nested field */}
-                                        {(() => {
-                                            const apt = formRenderProps.valueGetter("productId"); // full apartment object or null
-                                            return (
-                                                <>
-                                                    <Grid item xs={3}>
-                                                        <Typography variant="caption" color="textSecondary">
-                                                            {getTranslatedLabel("salesRequest.form.project", "Project")}
-                                                        </Typography>
-                                                        <Typography>{apt?.projectName ?? "-"}</Typography>
-                                                    </Grid>
-
-                                                    <Grid item xs={2}>
-                                                        <Typography variant="caption" color="textSecondary">
-                                                            {getTranslatedLabel("salesRequest.form.apartmentM2", "Apt m²")}
-                                                        </Typography>
-                                                        <Typography>{apt?.apartmentSpaceM2 ?? "-"}</Typography>
-                                                    </Grid>
-
-                                                    <Grid item xs={2}>
-                                                        <Typography variant="caption" color="textSecondary">
-                                                            {getTranslatedLabel("salesRequest.form.gardenM2", "Garden m²")}
-                                                        </Typography>
-                                                        <Typography>{apt?.gardenSpaceM2 ?? "-"}</Typography>
-                                                    </Grid>
-
-                                                    <Grid item xs={3}>
-                                                        <Typography variant="caption" color="textSecondary">
-                                                            {getTranslatedLabel("salesRequest.form.status", "Status")}
-                                                        </Typography>
-                                                        <Typography>{apt?.apartmentStatusDescription ?? "-"}</Typography>
-                                                    </Grid>
-
-                                                    <Grid item xs={2}/> {/* spacer */}
-                                                </>
-                                            );
-                                        })()}
-                                    </Grid>
-
-
-                                    <Grid container spacing={1}>
-                                        <Grid item xs={3}>
-                                            <Field
-                                                id="apartmentPricePerM2"
-                                                name="apartmentPricePerM2"
-                                                label={getTranslatedLabel("salesRequest.form.apartmentPriceM2", "Apt/m² *")}
-                                                format="n2"
-                                                min={0}
-                                                component={FormNumericTextBox}
-                                                validator={requiredValidator}
-                                                onChange={(e: any) => {
-                                                    handlePricePerM2Change(formRenderProps, "apartmentPricePerM2", e.value);
-                                                }}
-                                            />
+                                    {editMode === 2 && (
+                                        <Grid item xs={1}>
+                                            <RibbonContainer>
+                                                <Ribbon
+                                                    side={language === "ar" ? "left" : "right"}
+                                                    type="corner"
+                                                    size="large"
+                                                    backgroundColor={ribbonBg}
+                                                    color="#ffffff"
+                                                    fontFamily="sans-serif"
+                                                >
+                                                    {ribbonLabel}
+                                                </Ribbon>
+                                            </RibbonContainer>
                                         </Grid>
-                                        <Grid item xs={3}>
-                                            <Field
-                                                id="gardenPricePerM2"
-                                                name="gardenPricePerM2"
-                                                label={getTranslatedLabel("salesRequest.form.gardenPriceM2", "Garden/m²")}
-                                                format="n2"
-                                                min={0}
-                                                component={FormNumericTextBox}
-                                                onChange={(e: any) => {
-                                                    handlePricePerM2Change(formRenderProps, "gardenPricePerM2", e.value);
-                                                }}
-                                            />
+                                    )}
+                                </Grid>
+                                <FormElement>
+                                    <fieldset className="k-form-fieldset">
+                                        <Grid container spacing={1} alignItems="flex-end">
+                                            <Grid item xs={4}>
+                                                <Field
+                                                    id="productId"
+                                                    name="productId"
+                                                    label={getTranslatedLabel("projects.certificate.items.list.product", "Product *")}
+                                                    component={FormSimpleComboBoxVirtualApartment}
+                                                    autoComplete="off"
+                                                    validator={requiredValidator}
+                                                    onChange={(e) => handleProductChange(formRenderProps, e)}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={3}>
+                                                <Field
+                                                    id="saleDate"
+                                                    name="saleDate"
+                                                    label={getTranslatedLabel("salesRequest.form.saleDate", "Sale Date *")}
+                                                    component={FormDatePicker}
+                                                    validator={requiredValidator}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={2.5}>
+                                                <Field
+                                                    id="fromPartyId"
+                                                    name="fromPartyId"
+                                                    label={getTranslatedLabel("salesRequest.form.from", "From *")}
+                                                    component={FormComboBoxVirtualParty}
+                                                    autoComplete="off"
+                                                    validator={requiredValidator}
+                                                    inputRef={partyInputRef}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={0.5}>
+                                                <Button
+                                                    size="small"
+                                                    color="secondary"
+                                                    onClick={() => setShowNewCustomer(true)}
+                                                    variant="outlined"
+                                                    sx={{height: "100%", minWidth: 32, p: 0}}
+                                                >
+                                                    +
+                                                </Button>
+                                            </Grid>
                                         </Grid>
-                                        <Grid item xs={3}>
-                                            <Field
-                                                id="discount"
-                                                name="discount"
-                                                label={getTranslatedLabel("salesRequest.form.discount", "Discount")}
-                                                format="n2"
-                                                min={0}
-                                                component={FormNumericTextBox}
-                                                onChange={(e: any) => {
-                                                    handleDiscountChange(formRenderProps, e.value);
-                                                }}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={3}>
-                                            <Field
-                                                id="totalPrice"
-                                                name="totalPrice"
-                                                label={getTranslatedLabel("salesRequest.form.totalPrice", "Total")}
-                                                format="n2"
-                                                min={0}
-                                                validator={requiredValidator}
-                                                component={FormNumericTextBox}
-                                                disabled={true}
-                                            />
-                                        </Grid>
-                                    </Grid>
 
-                                    <Grid container spacing={1}>
-                                        <Grid item xs={3}>
-                                            <Field
-                                                id="advancePayment"
-                                                name="advancePayment"
-                                                label={getTranslatedLabel("salesRequest.form.advance", "Advance")}
-                                                format="n2"
-                                                min={0}
-                                                validator={requiredValidator}
-                                                component={FormNumericTextBox}
-                                                onChange={(e: any) => {
-                                                    handleAdvanceChange(formRenderProps, e.value);
-                                                }}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={3}>
-                                            <Field
-                                                id="numberOfInstallments"
-                                                name="numberOfInstallments"
-                                                label={getTranslatedLabel("salesRequest.form.installments", "Installments")}
-                                                min={0}
-                                                component={FormNumericTextBox}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={2}>
-                                            <Field
-                                                id="dateOfFirstInstallment"
-                                                name="dateOfFirstInstallment"
-                                                label={getTranslatedLabel("salesRequest.form.firstInstallmentDate", "First")}
-                                                component={FormDatePicker}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={2}>
-                                            <Field
-                                                id="monthsBetweenInstallments"
-                                                name="monthsBetweenInstallments"
-                                                label={getTranslatedLabel("salesRequest.form.duration", "Months")}
-                                                min={0}
-                                                component={FormNumericTextBox}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={2}>
-                                            <Field
-                                                id="maintenanceDeposit"
-                                                name="maintenanceDeposit"
-                                                label={getTranslatedLabel("salesRequest.form.maintenanceDeposit", "Maintenance Deposit")}
-                                                format="n2"
-                                                min={0}
-                                                component={FormNumericTextBox}
-                                                onChange={(e: any) => {
-                                                    formRenderProps.onChange("maintenanceDeposit", {value: e.value});
-                                                    if (e.value !== null) setUserEditedMaintenance(true);
-                                                }}
-                                            />
-                                        </Grid>
-                                    </Grid>
+                                        <Grid container spacing={1} mt={0.5}>
+                                            {/* Helper to safely read a nested field */}
+                                            {(() => {
+                                                const apt = formRenderProps.valueGetter("productId"); // full apartment object or null
+                                                return (
+                                                    <>
+                                                        <Grid item xs={3}>
+                                                            <Typography variant="caption" color="textSecondary">
+                                                                {getTranslatedLabel("salesRequest.form.project", "Project")}
+                                                            </Typography>
+                                                            <Typography>{apt?.projectName ?? "-"}</Typography>
+                                                        </Grid>
 
-                                    <Grid item xs={12} mt={0.5}>
-                                        <Field
-                                            id="comments"
-                                            name="comments"
-                                            label={getTranslatedLabel("salesRequest.form.comments", "Comments")}
-                                            autoComplete="off"
-                                            rows={2}
-                                            component={FormTextArea}
-                                        />
-                                    </Grid>
+                                                        <Grid item xs={2}>
+                                                            <Typography variant="caption" color="textSecondary">
+                                                                {getTranslatedLabel("salesRequest.form.apartmentM2", "Apt m²")}
+                                                            </Typography>
+                                                            <Typography>{apt?.apartmentSpaceM2 ?? "-"}</Typography>
+                                                        </Grid>
 
-                                    <div className="k-form-buttons" style={{marginTop: 8}}>
+                                                        <Grid item xs={2}>
+                                                            <Typography variant="caption" color="textSecondary">
+                                                                {getTranslatedLabel("salesRequest.form.gardenM2", "Garden m²")}
+                                                            </Typography>
+                                                            <Typography>{apt?.gardenSpaceM2 ?? "-"}</Typography>
+                                                        </Grid>
+
+                                                        <Grid item xs={3}>
+                                                            <Typography variant="caption" color="textSecondary">
+                                                                {getTranslatedLabel("salesRequest.form.status", "Status")}
+                                                            </Typography>
+                                                            <Typography>{apt?.apartmentStatusDescription ?? "-"}</Typography>
+                                                        </Grid>
+
+                                                        <Grid item xs={2}/> {/* spacer */}
+                                                    </>
+                                                );
+                                            })()}
+                                        </Grid>
+
+
                                         <Grid container spacing={1}>
-                                            {visited && errors?.VALIDATION_SUMMARY && (
-                                                <Grid item xs={12}>
-                                                    <div className="k-messagebox k-messagebox-error">
-                                                        {errors.VALIDATION_SUMMARY}
-                                                    </div>
-                                                </Grid>
-                                            )}
-                                            <Grid item>
-                                                <Button
-                                                    size="small"
-                                                    variant="contained"
-                                                    type="submit"
-                                                    color="success"
-                                                    disabled={buttonFlag || isCreating || isUpdating}
-                                                >
-                                                    {getTranslatedLabel("general.submit", "Submit")}
-                                                </Button>
+                                            <Grid item xs={3}>
+                                                <Field
+                                                    id="apartmentPricePerM2"
+                                                    name="apartmentPricePerM2"
+                                                    label={getTranslatedLabel("salesRequest.form.apartmentPriceM2", "Apt/m² *")}
+                                                    format="n2"
+                                                    min={0}
+                                                    component={FormNumericTextBox}
+                                                    validator={requiredValidator}
+                                                    onChange={(e: any) => {
+                                                        handlePricePerM2Change(formRenderProps, "apartmentPricePerM2", e.value);
+                                                    }}
+                                                />
                                             </Grid>
-                                            <Grid item>
-                                                <Button
-                                                    size="small"
-                                                    onClick={cancelEdit}
-                                                    color="error"
-                                                    variant="contained"
-                                                >
-                                                    {getTranslatedLabel("general.cancel", "Cancel")}
-                                                </Button>
+                                            <Grid item xs={3}>
+                                                <Field
+                                                    id="gardenPricePerM2"
+                                                    name="gardenPricePerM2"
+                                                    label={getTranslatedLabel("salesRequest.form.gardenPriceM2", "Garden/m²")}
+                                                    format="n2"
+                                                    min={0}
+                                                    component={FormNumericTextBox}
+                                                    onChange={(e: any) => {
+                                                        handlePricePerM2Change(formRenderProps, "gardenPricePerM2", e.value);
+                                                    }}
+                                                />
                                             </Grid>
-                                            {editMode === 2 && (
+                                            <Grid item xs={3}>
+                                                <Field
+                                                    id="discount"
+                                                    name="discount"
+                                                    label={getTranslatedLabel("salesRequest.form.discount", "Discount")}
+                                                    format="n2"
+                                                    min={0}
+                                                    component={FormNumericTextBox}
+                                                    onChange={(e: any) => {
+                                                        handleDiscountChange(formRenderProps, e.value);
+                                                    }}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={3}>
+                                                <Field
+                                                    id="totalPrice"
+                                                    name="totalPrice"
+                                                    label={getTranslatedLabel("salesRequest.form.totalPrice", "Total")}
+                                                    format="n2"
+                                                    min={0}
+                                                    validator={requiredValidator}
+                                                    component={FormNumericTextBox}
+                                                    disabled={true}
+                                                />
+                                            </Grid>
+                                        </Grid>
+
+                                        <Grid container spacing={1}>
+                                            <Grid item xs={3}>
+                                                <Field
+                                                    id="advancePayment"
+                                                    name="advancePayment"
+                                                    label={getTranslatedLabel("salesRequest.form.advance", "Advance")}
+                                                    format="n2"
+                                                    min={0}
+                                                    validator={requiredValidator}
+                                                    component={FormNumericTextBox}
+                                                    onChange={(e: any) => {
+                                                        handleAdvanceChange(formRenderProps, e.value);
+                                                    }}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={3}>
+                                                <Field
+                                                    id="numberOfInstallments"
+                                                    name="numberOfInstallments"
+                                                    label={getTranslatedLabel("salesRequest.form.installments", "Installments")}
+                                                    min={0}
+                                                    component={FormNumericTextBox}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={2}>
+                                                <Field
+                                                    id="dateOfFirstInstallment"
+                                                    name="dateOfFirstInstallment"
+                                                    label={getTranslatedLabel("salesRequest.form.firstInstallmentDate", "First")}
+                                                    component={FormDatePicker}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={2}>
+                                                <Field
+                                                    id="monthsBetweenInstallments"
+                                                    name="monthsBetweenInstallments"
+                                                    label={getTranslatedLabel("salesRequest.form.duration", "Months")}
+                                                    min={0}
+                                                    component={FormNumericTextBox}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={2}>
+                                                <Field
+                                                    id="maintenanceDeposit"
+                                                    name="maintenanceDeposit"
+                                                    label={getTranslatedLabel("salesRequest.form.maintenanceDeposit", "Maintenance Deposit")}
+                                                    format="n2"
+                                                    min={0}
+                                                    component={FormNumericTextBox}
+                                                    onChange={(e: any) => {
+                                                        formRenderProps.onChange("maintenanceDeposit", {value: e.value});
+                                                        if (e.value !== null) setUserEditedMaintenance(true);
+                                                    }}
+                                                />
+                                            </Grid>
+                                        </Grid>
+
+                                        <Grid item xs={12} mt={0.5}>
+                                            <Field
+                                                id="comments"
+                                                name="comments"
+                                                label={getTranslatedLabel("salesRequest.form.comments", "Comments")}
+                                                autoComplete="off"
+                                                rows={2}
+                                                component={FormTextArea}
+                                            />
+                                        </Grid>
+
+                                        <div className="k-form-buttons" style={{marginTop: 8}}>
+                                            <Grid container spacing={1}>
+                                                {visited && errors?.VALIDATION_SUMMARY && (
+                                                    <Grid item xs={12}>
+                                                        <div className="k-messagebox k-messagebox-error">
+                                                            {errors.VALIDATION_SUMMARY}
+                                                        </div>
+                                                    </Grid>
+                                                )}
                                                 <Grid item>
                                                     <Button
-                                                        variant="outlined"
-                                                        color="primary"
-                                                        onClick={() => setShowPaymentPlan(true)}
+                                                        size="small"
+                                                        variant="contained"
+                                                        type="submit"
+                                                        color="success"
+                                                        disabled={buttonFlag || isCreating || isUpdating}
                                                     >
-                                                        {getTranslatedLabel("salesRequest.form.viewPaymentPlan", "View Payment Plan")}
+                                                        {getTranslatedLabel("general.submit", "Submit")}
                                                     </Button>
                                                 </Grid>
-                                            )}
-                                        </Grid>
-                                    </div>
+                                                <Grid item>
+                                                    <Button
+                                                        size="small"
+                                                        onClick={cancelEdit}
+                                                        color="error"
+                                                        variant="contained"
+                                                    >
+                                                        {getTranslatedLabel("general.cancel", "Cancel")}
+                                                    </Button>
+                                                </Grid>
+                                                {editMode === 2 && (
+                                                    <Grid item>
+                                                        <Button
+                                                            variant="outlined"
+                                                            color="primary"
+                                                            onClick={() => setShowPaymentPlan(true)}
+                                                        >
+                                                            {getTranslatedLabel("salesRequest.form.viewPaymentPlan", "View Payment Plan")}
+                                                        </Button>
+                                                    </Grid>
+                                                )}
+                                            </Grid>
+                                        </div>
 
-                                    {(buttonFlag || isCreating || isUpdating) && (
-                                        <LoadingComponent
-                                            message={getTranslatedLabel("salesRequest.form.processing", "Processing...")}
-                                        />
-                                    )}
-
-                                    {showPaymentPlan && editMode === 2 && (
-                                        <ModalContainer
-                                            show={showPaymentPlan}
-                                            onClose={() => setShowPaymentPlan(false)}
-                                            width={850}
-                                        >
-                                            <PaymentPlanModal
-                                                onClose={() => setShowPaymentPlan(false)}
-                                                salesRequest={currentFormValues}   // ← always fresh
-                                                apartment={apartmentForModal}
+                                        {(buttonFlag || isCreating || isUpdating) && (
+                                            <LoadingComponent
+                                                message={getTranslatedLabel("salesRequest.form.processing", "Processing...")}
                                             />
-                                        </ModalContainer>
-                                    )}
-                                </fieldset>
-                            </FormElement>
+                                        )}
+
+                                        {showPaymentPlan && editMode === 2 && (
+                                            <ModalContainer
+                                                show={showPaymentPlan}
+                                                onClose={() => setShowPaymentPlan(false)}
+                                                width={850}
+                                            >
+                                                <PaymentPlanModal
+                                                    onClose={() => setShowPaymentPlan(false)}
+                                                    salesRequest={currentFormValues}   // ← always fresh
+                                                    apartment={apartmentForModal}
+                                                />
+                                            </ModalContainer>
+                                        )}
+                                    </fieldset>
+                                </FormElement>
+                            </>
                         );
                     }}
                 />
@@ -810,7 +847,7 @@ function SalesRequestForm({
                         />
                     </ModalContainer>
                 )}
-                
+
             </Paper>
         </>
     );

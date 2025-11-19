@@ -276,5 +276,4 @@ Summarize this entire conversation as a concise JSON or bullet-point outline, in
  
  ////////
  
- i need your help extending this Approve handler. first of all, this handler is part of an ofbiz clone. the handler is simply creating a multi payment certificate and its items. i know its weird to save this in the workeffort table but this was due to the fact that ofbiz doesnt support the concept of - header and line item payment - . any way, in the header, we have the payment method that's common to all items. this payment method is coming from PaymentMethods table. also you have dropdown that links to a GlAccountId - with the name GlAccountIdAdvancedPayment - and this is on the header of the payment. What i need is - in the approve handler - after the approve process is to create a single payment for all the line items of the payment items. the parties involved here is the "Company"
-
+ the statusId and statusDescrition props are returned from the kendo grid query and from the form create response result. i want both props to be included in the form component data somehow - not as form controls - after creation and after a sales request is populated from the kendo grid controller as i plan to use both props later

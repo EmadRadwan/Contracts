@@ -286,6 +286,8 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
             toCancelled: invoiceSource.statusId === "INVOICE_READY",
         };
     };
+    
+    console.log('iTotal:', iTotal)
 
     return (
         <>

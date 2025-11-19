@@ -4,9 +4,9 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { Button } from '@mui/material';
 
-// REFACTOR: Final version – 100% Egyptian accounting standard (Metal Tech style)
-// Purpose: Fully corrected balance sign, no Math.abs() confusion, red/green colors
-// Context: Fixes the exact issue you reported: supplier advance must show negative balance
+// REFACTOR: FINAL VERSION – 100% Party Perspective (Vendor/Customer/Contractor View)
+// Purpose: Official statement that can be sent directly to the party
+// Fix: All signs, final balance, and explanation are now from the PARTY's point of view
 
 interface LedgerRow {
     date: string | number;
@@ -14,9 +14,9 @@ interface LedgerRow {
     invoiceNumber?: string;
     paymentNumber?: string;
     value: number;
-    toPay: number;
-    paid: number;
-    balance: number;
+    toPay: number;     // مدين عندنا = دائن عنده
+    paid: number;      // دائن عندنا = مدين عنده
+    balance: number;   // رصيدنا معاه → سيتم عكسه
     notes?: string;
 }
 
@@ -57,14 +57,14 @@ export const PartyFinancialHistoryExcel: React.FC<PartyFinancialHistoryExcelProp
     const generateExcel = useCallback(async () => {
         const workbook = new ExcelJS.Workbook();
         workbook.created = new Date();
-        workbook.creator = 'System';
+        workbook.creator = 'Golden Land System';
 
         if (!ledgerItems || ledgerItems.length === 0 || isFetching) {
             console.warn('Cannot generate Excel: No ledger items');
             return null;
         }
 
-        // Logo (same as certificate)
+        // Load logo (optional)
         let logoImageId: number | null = null;
         try {
             const response = await fetch('/goldenlandlogo.jpg');
@@ -74,129 +74,137 @@ export const PartyFinancialHistoryExcel: React.FC<PartyFinancialHistoryExcelProp
                 logoImageId = workbook.addImage({ buffer: arrayBuffer, extension: 'jpeg' });
             }
         } catch (e) {
-            console.warn('Logo not loaded');
+            console.warn('Logo not loaded – continuing without it');
         }
 
-        const worksheet = workbook.addWorksheet(party.partyName || 'كشف حساب', {
-            pageSetup: { paperSize: 9, orientation: 'landscape' },
-            views: [{ rightToLeft: true }],
-        });
+        const worksheet = workbook.addWorksheet(
+            party.partyName?.length > 30 ? party.partyName.substring(0, 28) + '...' : party.partyName || 'كشف حساب',
+            {
+                pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true },
+                views: [{ rightToLeft: true }],
+            }
+        );
 
-        // Logo placement
+        // Logo
         if (logoImageId !== null) {
             worksheet.addImage(logoImageId, {
                 tl: { col: 0, row: 0 },
-                ext: { width: 100, height: 100 },
+                ext: { width: 110, height: 110 },
                 editAs: 'absolute',
             });
-            worksheet.getRow(1).height = 75;
-            worksheet.addRow([]);
-            worksheet.addRow([]);
-            worksheet.addRow([]);
+            worksheet.getRow(1).height = 82;
+            worksheet.addRow([]); // 2
+            worksheet.addRow([]); // 3
+            worksheet.addRow([]); // 4
         }
 
-        // Header – Party name
+        // Title
+        const titleRowNum = logoImageId ? 4 : 1;
         worksheet.addRow([
             getTranslatedLabel('party.financial.history.excel.title', 'كشف حساب') +
             ': ' +
             sharedUtils.rtlEmbed(sharedUtils.safeString(party.partyName)),
         ]);
-        worksheet.mergeCells(`A${logoImageId ? 4 : 1}:K${logoImageId ? 4 : 1}`);
-        const titleRow = worksheet.getRow(logoImageId ? 4 : 1);
-        titleRow.font = { name: 'Amiri', size: 14, bold: true };
-        titleRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        worksheet.mergeCells(`A${titleRowNum}:K${titleRowNum}`);
+        const titleRow = worksheet.getRow(titleRowNum);
+        titleRow.font = { name: 'Amiri', size: 16, bold: true };
+        titleRow.alignment = { horizontal: 'center', vertical: 'middle' };
         worksheet.addRow([]);
         worksheet.addRow([]);
 
-        // Table headers (Egyptian standard)
+        // Headers – from PARTY's perspective
         const headers = [
-            getTranslatedLabel('party.financial.history.excel.date', 'التاريخ'),
-            getTranslatedLabel('party.financial.history.excel.description', 'الوصف'),
-            getTranslatedLabel('party.financial.history.excel.invoiceNumber', 'رقم الفاتورة'),
-            getTranslatedLabel('party.financial.history.excel.paymentNumber', 'رقم الدفعة'),
-            getTranslatedLabel('party.financial.history.excel.value', 'إجمالي الفاتورة'),
-            getTranslatedLabel('party.financial.history.excel.toPay', 'مدين'),
-            getTranslatedLabel('party.financial.history.excel.paid', 'دائن'),
-            getTranslatedLabel('party.financial.history.excel.balance', 'الرصيد'),
-            getTranslatedLabel('party.financial.history.excel.notes', 'ملاحظات'),
+            'التاريخ',
+            'الوصف',
+            'رقم الفاتورة',
+            'رقم الدفعة',
+            'إجمالي الفاتورة',
+            'مدين',  // ← مدين عند الطرف (دائن عندنا)
+            'دائن',  // ← دائن عند الطرف (مدين عندنا)
+            'الرصيد',
+            'ملاحظات',
         ];
 
         worksheet.addRow(headers);
         const headerRow = worksheet.lastRow!;
-        headerRow.font = { name: 'Amiri', size: 10, bold: true };
-        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F0F0F0' } };
+        headerRow.font = { name: 'Amiri', size: 11, bold: true };
+        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9EAD3' } };
         headerRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
         headerRow.eachCell(cell => {
-            cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+            cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'double' }, right: { style: 'thin' } };
         });
 
         // Column settings
         worksheet.columns = [
-            { width: 12 }, { width: 40 }, { width: 15 }, { width: 15 },
-            { width: 14 }, { width: 12 }, { width: 12 }, { width: 14 }, { width: 22 },
+            { width: 12 }, { width: 42 }, { width: 16 }, { width: 16 },
+            { width: 15 }, { width: 13 }, { width: 13 }, { width: 15 }, { width: 25 },
         ];
-        [5, 6, 7, 8].forEach(i => worksheet.getColumn(i).numFmt = '#,##0.00');
+        [5, 6, 7, 8].forEach(col => worksheet.getColumn(col).numFmt = '#,##0.00');
 
-        // Data rows
+        // Data rows – REVERSED signs for PARTY view
         ledgerItems.forEach(item => {
             const row = worksheet.addRow([
                 item.date,
                 sharedUtils.rtlEmbed(sharedUtils.safeString(item.description)),
-                sharedUtils.safeString(item.invoiceNumber),
-                sharedUtils.safeString(item.paymentNumber),
-                item.value,
-                item.toPay,
-                item.paid,
-                item.balance,
-                sharedUtils.rtlEmbed(sharedUtils.safeString(item.notes)),
+                sharedUtils.safeString(item.invoiceNumber || 'N/A'),
+                sharedUtils.safeString(item.paymentNumber || 'N/A'),
+                item.value || 0,
+                item.paid,        // دائن عندنا → مدين عنده
+                item.toPay,       // مدين عندنا → دائن عنده
+                -item.balance,    // نعكس الرصيد التراكمي
+                sharedUtils.rtlEmbed(sharedUtils.safeString(item.notes || '')),
             ]);
-            row.font = { name: 'Amiri', size: 9 };
-            row.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
+
+            row.font = { name: 'Amiri', size: 10 };
+            row.alignment = { horizontal: 'right', vertical: 'middle' };
             row.eachCell(cell => {
                 cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
             });
         });
 
-        // Final balance (with correct sign and color)
-        const finalBalance = ledgerItems[ledgerItems.length - 1]?.balance || 0;
+        // Final balance – from PARTY's perspective
+        const finalBalanceOurSide = ledgerItems[ledgerItems.length - 1]?.balance || 0;
+        const finalBalancePartySide = -finalBalanceOurSide; // ← هذا رصيد الطرف معانا
 
-        const finalRow = worksheet.addRow(['', 'الرصيد النهائي', '', '', '', '', '', finalBalance, '']);
-        finalRow.font = { name: 'Amiri', size: 11, bold: true };
+        const finalRow = worksheet.addRow(['', 'الرصيد النهائي', '', '', '', '', '', finalBalancePartySide, '']);
+        finalRow.font = { name: 'Amiri', size: 12, bold: true };
         finalRow.getCell(8).numFmt = '#,##0.00';
 
-        const balanceCell = finalRow.getCell(8);
-        if (finalBalance > 0) {
-            balanceCell.font = { ...balanceCell.font, color: { argb: 'FF006400' } }; // Green – party owes us
-        } else if (finalBalance < 0) {
-            balanceCell.font = { ...balanceCell.font, color: { argb: 'FF8B0000' } }; // Red – we owe party
+        if (finalBalancePartySide > 0) {
+            finalRow.getCell(8).font = { ...finalRow.getCell(8).font, color: { argb: 'FF006400' } }; // Green = لصالحه
+        } else if (finalBalancePartySide < 0) {
+            finalRow.getCell(8).font = { ...finalRow.getCell(8).font, color: { argb: 'FF8B0000' } }; // Red = عليه لنا
         }
 
-        // Clarity row – NO Math.abs() – keep the real sign!
+        // Clarity line – 100% from PARTY's view
         const clarityText =
-            finalBalance > 0
-                ? '→ لصالح الشركة (الطرف مدين لنا)'
-                : finalBalance < 0
-                    ? '→ لصالح الطرف (نحن مدينون للطرف)'
-                    : '→ لا يوجد رصيد';
+            finalBalancePartySide > 0
+                ? '← لصالحك (لك رصيد دائن عندنا)'
+                : finalBalancePartySide < 0
+                    ? '← عليك لنا (أنت مدين لنا)'
+                    : '← لا يوجد رصيد';
 
-        const clarityRow = worksheet.addRow(['', clarityText, '', '', '', '', '', finalBalance, '']);
-        clarityRow.font = { name: 'Amiri', size: 12, bold: true, color: { argb: 'FF000080' } };
+        const clarityRow = worksheet.addRow(['', clarityText, '', '', '', '', '', Math.abs(finalBalancePartySide), '']);
+        clarityRow.font = { name: 'Amiri', size: 13, bold: true, color: { argb: 'FF000080' } };
         clarityRow.getCell(8).font = {
             name: 'Amiri',
-            size: 12,
+            size: 13,
             bold: true,
-            color: finalBalance < 0 ? { argb: 'FF8B0000' } : { argb: 'FF006400' },
+            color: finalBalancePartySide > 0 ? { argb: 'FF006400' } : { argb: 'FF8B0000' },
         };
         clarityRow.getCell(8).numFmt = '#,##0.00';
+        clarityRow.getCell(8).alignment = { horizontal: 'right' };
 
-        // Footer – print date & user
+        // Official note
+        worksheet.addRow(['', 'هذا كشف حساب رسمي يوضح مركزك المالي معنا حتى تاريخ اليوم', '', '', '', '', '', '', '']);
+        worksheet.lastRow!.font = { name: 'Amiri', size: 10, italic: true, color: { argb: 'FF666666' } };
+
+        // Footer
         worksheet.addRow([]);
         const footerRow = worksheet.addRow([
             `تاريخ الطباعة: ${new Date().toLocaleDateString('ar-EG')}`,
-            `الوقت: ${new Date().toLocaleTimeString('ar-EG')}`,
-            '', '', '', '', '',
-           
-            '',
+            `الوقت: ${new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`,
+            '', '', '', '', '', '', '',
         ]);
         footerRow.font = { name: 'Amiri', size: 9, color: { argb: 'FF666666' } };
 
@@ -210,12 +218,13 @@ export const PartyFinancialHistoryExcel: React.FC<PartyFinancialHistoryExcelProp
                 type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             });
             const today = new Date().toISOString().slice(0, 10);
-            const filename = `كشف_حساب_${party.partyName || party.partyId}_${today}.xlsx`;
+            const safeName = (party.partyName || party.partyId).replace(/[/\\?%*:|"<>]/g, '_');
+            const filename = `كشف_حساب_${safeName}_${today}.xlsx`;
             saveAs(blob, filename);
         }
     }, [generateExcel, party]);
 
-    const disabled = isSubmitting || isAddLoading || isUpdateLoading || isFetching;
+    const disabled = isSubmitting || isAddLoading || isUpdateLoading || isFetching || ledgerItems.length === 0;
 
     return (
         <div>
@@ -226,7 +235,7 @@ export const PartyFinancialHistoryExcel: React.FC<PartyFinancialHistoryExcelProp
                 onClick={handleDownload}
                 style={{ marginRight: 10 }}
             >
-                {getTranslatedLabel('party.financial.history.excel.button', 'كشف الحساب Excel')}
+                كشف الحساب Excel (من وجهة نظر الطرف)
             </Button>
         </div>
     );

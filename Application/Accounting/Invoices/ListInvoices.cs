@@ -33,106 +33,84 @@ namespace Application.Accounting.Invoices
 
             public async Task<IQueryable<InvoiceRecord>> Handle(Query request, CancellationToken cancellationToken)
             {
-// REFACTOR: Complete rewrite to avoid non-translatable patterns:
-//          - Removed g.First() by using grouping with proper key selection
-//          - Moved Total calculation into the main query using left join + group
-//          - Used Distinct() on OrderId per Invoice to prevent duplication safely
-//          - All parts now fully translatable by EF Core + OData
+                var language = request.Language ?? "en"; // fallback
 
-                var baseQuery = from inv in _context.Invoices
+                // 1. Pre-calculate invoice totals separately (no cartesian risk)
+                var invoiceTotals = _context.InvoiceItems
+                    .Where(ii => ii.InvoiceId != null)
+                    .GroupBy(ii => ii.InvoiceId)
+                    .Select(g => new
+                    {
+                        InvoiceId = g.Key,
+                        Total = g.Sum(ii => ii.Quantity * ii.Amount)
+                    });
+
+                // 2. Main query – get one row per invoice with certificate info
+                var query = from inv in _context.Invoices
                     join invt in _context.InvoiceTypes on inv.InvoiceTypeId equals invt.InvoiceTypeId
                     join fromParty in _context.Parties on inv.PartyIdFrom equals fromParty.PartyId
                     join toParty in _context.Parties on inv.PartyId equals toParty.PartyId
                     join sts in _context.StatusItems on inv.StatusId equals sts.StatusId
-                    join bil in _context.BillingAccounts on inv.BillingAccountId equals bil.BillingAccountId into
-                        billingGj
-                    from bil in billingGj.DefaultIfEmpty()
+                    join bil in _context.BillingAccounts on inv.BillingAccountId equals bil.BillingAccountId into bilGj
+                    from bil in bilGj.DefaultIfEmpty()
 
-                    // REFACTOR: Get distinct OrderId per Invoice (at most one certificate per order)
-                    join oib in _context.OrderItemBillings on inv.InvoiceId equals oib.InvoiceId into oibGj
-                    from oib in oibGj.DefaultIfEmpty()
-                    let OrderId = oib != null ? oib.OrderId : null
+                    // Get OrderId + CertificateNumber (at most one per invoice)
+                    // REFACTOR: Use FirstOrDefault instead of join explosion
+                    let orderInfo = _context.OrderItemBillings
+                        .Where(oib => oib.InvoiceId == inv.InvoiceId)
+                        .Select(oib => new { oib.OrderId })
+                        .FirstOrDefault()
+                    let certificate = orderInfo != null
+                        ? _context.WorkEfforts
+                            .Where(we =>
+                                we.RelatedOrderId == orderInfo.OrderId && we.WorkEffortTypeId == "PROJECT_CERTIFICATE")
+                            .Select(we => we.CertificateNumber)
+                            .FirstOrDefault()
+                        : null
 
-                    // REFACTOR: Join to WorkEffort only once per OrderId (not per OrderItemBilling row)
-                    join we in _context.WorkEfforts
-                        on new { OrderId, Type = "PROJECT_CERTIFICATE" }
-                        equals new { OrderId = we.RelatedOrderId, Type = we.WorkEffortTypeId } into weGj
-                    from we in weGj.DefaultIfEmpty()
-
-                    // REFACTOR: Calculate Total using group join + sum (fully translatable)
-                    join item in _context.InvoiceItems on inv.InvoiceId equals item.InvoiceId into itemsGj
-                    from item in itemsGj.DefaultIfEmpty()
-                    select new
-                    {
-                        inv, invt, fromParty, toParty, sts, bil, OrderId,
-                        CertificateNumber = we != null ? we.CertificateNumber : (string)null, item
-                    }
-                    into temp
-                    group temp by new
-                    {
-                        temp.inv.InvoiceId,
-                        temp.inv.InvoiceTypeId,
-                        InvoiceTypeDescriptionEn = temp.invt.Description,
-                        InvoiceTypeDescriptionAr = temp.invt.DescriptionArabic,
-                        temp.inv.InvoiceDate,
-                        temp.inv.StatusId,
-                        StatusDescriptionEn = temp.sts.Description,
-                        StatusDescriptionAr = temp.sts.DescriptionArabic,
-                        temp.inv.Description,
-                        temp.inv.DueDate,
-                        temp.inv.PaidDate,
-                        temp.inv.PartyId,
-                        ToPartyName = temp.toParty.Description,
-                        temp.inv.PartyIdFrom,
-                        FromPartyName = temp.fromParty.Description,
-                        temp.inv.BillingAccountId,
-                        BillingAccountName = temp.bil != null ? temp.bil.Description : (string)null,
-                        temp.OrderId,
-                        temp.CertificateNumber
-                    }
-                    into g
+                    // Join pre-calculated total
+                    join tot in invoiceTotals on inv.InvoiceId equals tot.InvoiceId into totGj
+                    from tot in totGj.DefaultIfEmpty()
                     select new InvoiceRecord
                     {
-                        InvoiceId = g.Key.InvoiceId,
-                        InvoiceTypeDescription = request.Language == "ar"
-                            ? g.Key.InvoiceTypeDescriptionAr
-                            : g.Key.InvoiceTypeDescriptionEn,
-                        InvoiceDate = g.Key.InvoiceDate,
-                        StatusId = g.Key.StatusId,
-                        InvoiceTypeId = g.Key.InvoiceTypeId,
-                        StatusDescription = request.Language == "ar"
-                            ? g.Key.StatusDescriptionAr
-                            : g.Key.StatusDescriptionEn,
-                        Description = g.Key.Description,
-                        DueDate = g.Key.DueDate,
-                        PaidDate = g.Key.PaidDate,
+                        InvoiceId = inv.InvoiceId,
+                        InvoiceTypeId = inv.InvoiceTypeId,
+                        InvoiceTypeDescription = language == "ar" ? invt.DescriptionArabic : invt.Description,
 
-                        PartyId = new InvoicePartyDto
-                        {
-                            FromPartyId = g.Key.PartyId,
-                            FromPartyName = g.Key.ToPartyName
-                        },
-                        ToPartyName = g.Key.ToPartyName,
+                        InvoiceDate = inv.InvoiceDate,
+                        DueDate = inv.DueDate,
+                        PaidDate = inv.PaidDate,
+
+                        StatusId = inv.StatusId,
+                        StatusDescription = language == "ar" ? sts.DescriptionArabic : sts.Description,
+
+                        Description = inv.Description,
 
                         PartyIdFrom = new InvoicePartyDto
                         {
-                            FromPartyId = g.Key.PartyIdFrom,
-                            FromPartyName = g.Key.FromPartyName
+                            FromPartyId = inv.PartyIdFrom,
+                            FromPartyName = fromParty.Description
                         },
-                        FromPartyName = g.Key.FromPartyName,
+                        FromPartyName = fromParty.Description,
 
-                        BillingAccountId = g.Key.BillingAccountId,
-                        BillingAccountName = g.Key.BillingAccountName,
+                        PartyId = new InvoicePartyDto
+                        {
+                            FromPartyId = inv.PartyId,
+                            FromPartyName = toParty.Description
+                        },
+                        ToPartyName = toParty.Description,
 
-                        // REFACTOR: Sum is now inside the group → fully translatable
-                        Total = g.Sum(x => (decimal?)(x.item != null ? x.item.Quantity * x.item.Amount : 0)) ?? 0,
+                        BillingAccountId = inv.BillingAccountId,
+                        BillingAccountName = bil != null ? bil.Description : null,
 
-                        OutstandingAmount = 0,
-                        OrderId = g.Key.OrderId,
-                        CertificateNumber = g.Key.CertificateNumber
+                        Total = tot != null ? tot.Total : 0m,
+                        OutstandingAmount = 0m, // calculate separately if needed
+
+                        OrderId = orderInfo != null ? orderInfo.OrderId : null,
+                        CertificateNumber = certificate
                     };
 
-                return await Task.FromResult(baseQuery);
+                return await Task.FromResult(query);
             }
         }
     }

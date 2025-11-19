@@ -7,8 +7,6 @@ namespace Application.Accounting.Invoices;
 
 public class CalculateInvoiceTotal
 {
-    // REFACTOR: Removed incorrect IRequest<List<InvoiceTotalsDto>> implementation
-    // Ensures Query matches the handler's return type to resolve MediatR registration error
     public class Query : IRequest<InvoiceTotalsDto>
     {
         public string InvoiceId { get; set; }

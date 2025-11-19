@@ -1,63 +1,115 @@
-// REFACTOR: Changed the join logic to get the certificate number from the parent PROJECT_CERTIFICATE 
-//           only once per order, avoiding duplication when multiple OrderItemBillings exist.
-//           Now we group OrderItemBillings by InvoiceId and OrderId first, then join to WorkEffort once.
-var invoiceWithOrder = from inv in _context.Invoices
-                       join oib in _context.OrderItemBillings 
-                           on inv.InvoiceId equals oib.InvoiceId into oibGroup
-                       from oib in oibGroup.DefaultIfEmpty()
-                       select new { inv, oib };
+if (certificate.CertificateCategory != "COMPANY_SUPPLY_SALE_CERTIFICATE")
+{
+    var orderItems = new List<OrderItemDto2>();
+    int seq = 1;
 
-var groupedOrders = from x in invoiceWithOrder
-                    group x by new { x.inv.InvoiceId, OrderId = x.oib != null ? x.oib.OrderId : (string)null } into g
-                    select new
-                    {
-                        Invoice = g.First().inv,
-                        OrderId = g.Key.OrderId
-                    };
+    string fromPartyId = certificate.CertificateCategory switch
+    {
+        "SUPPLY_PROCUREMENT_CERTIFICATE" => certificate.PartyIdSupplier 
+            ?? throw new InvalidOperationException("PartyIdSupplier is required for supply/procurement certificates"),
+        "WORKMANSHIP_CONTRACTING_CERTIFICATE" => certificate.PartyIdContractor 
+            ?? throw new InvalidOperationException("PartyIdContractor is required for workmanship/contracting certificates"),
+        _ => throw new InvalidOperationException($"Unsupported certificate category: {certificate.CertificateCategory}")
+    };
 
-var query = from invData in groupedOrders
-            join invt in _context.InvoiceTypes on invData.Invoice.InvoiceTypeId equals invt.InvoiceTypeId
-            join fromParty in _context.Parties on invData.Invoice.PartyIdFrom equals fromParty.PartyId
-            join toParty in _context.Parties on invData.Invoice.PartyId equals toParty.PartyId
-            join sts in _context.StatusItems on invData.Invoice.StatusId equals sts.StatusId
-            join bil in _context.BillingAccounts on invData.Invoice.BillingAccountId equals bil.BillingAccountId into billingGroup
-            from bil in billingGroup.DefaultIfEmpty()
+    foreach (var item in certificate.CertificateItems!)
+    {
+        // Main payable line — always use frontend-calculated net
+        decimal netAmount = item.Net ?? 0;
 
-            // REFACTOR: Join to WorkEffort only once per OrderId to get the certificate number
-            join we in _context.WorkEfforts
-                on new { OrderId = invData.OrderId, WorkEffortTypeId = "PROJECT_CERTIFICATE" }
-                equals new { OrderId = we.RelatedOrderId, we.WorkEffortTypeId } into weGroup
-            from we in weGroup.DefaultIfEmpty()
+        orderItems.Add(new OrderItemDto2
+        {
+            OrderItemSeqId = seq.ToString("D4"),
+            ProductId = item.ProductId,
+            ProductName = item.ProductName,
+            Quantity = item.Quantity,
+            UnitPrice = item.Quantity > 0 ? netAmount / item.Quantity : netAmount,
+            SubTotal = netAmount,
+            UomId = item.UomId,
+            FacilityId = certificate.FacilityId,
+            ItemDescription = item.Description,
+            OrderItemTypeId = "PROJECT_CERTIFICATE_ITEM",
+            StatusId = "ITEM_CREATED",
+            CreatedStamp = stamp,
+            LastUpdatedStamp = stamp
+        });
+        seq++;
 
-            select new InvoiceRecord
+        // Only for WORKMANSHIP: Add visible deduction lines for Insurance & Additional Insurance
+        if (certificate.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE")
+        {
+            if (item.Insurance.GetValueOrDefault() != 0)
             {
-                InvoiceId = invData.Invoice.InvoiceId,
-                InvoiceTypeDescription = request.Language == "ar" ? invt.DescriptionArabic : invt.Description,
-                InvoiceDate = invData.Invoice.InvoiceDate,
-                StatusId = invData.Invoice.StatusId,
-                InvoiceTypeId = invData.Invoice.InvoiceTypeId,
-                StatusDescription = request.Language == "ar" ? sts.DescriptionArabic : sts.Description,
-                Description = invData.Invoice.Description,
-                DueDate = invData.Invoice.DueDate,
-                PaidDate = invData.Invoice.PaidDate,
-                PartyId = new InvoicePartyDto
+                orderItems.Add(new OrderItemDto2
                 {
-                    FromPartyId = invData.Invoice.PartyId,
-                    FromPartyName = toParty.Description
-                },
-                ToPartyName = toParty.Description,
-                PartyIdFrom = new InvoicePartyDto
+                    OrderItemSeqId = seq.ToString("D4"),
+                    ProductId = item.ProductId,
+                    ProductName = $"تأمين - {item.ProductName}",
+                    Quantity = 1,
+                    UnitPrice = -Math.Abs(item.Insurance!.Value),
+                    SubTotal = -Math.Abs(item.Insurance.Value),
+                    UomId = item.UomId,
+                    FacilityId = certificate.FacilityId,
+                    ItemDescription = "تأمين مستحق",
+                    OrderItemTypeId = "INSURANCE_DEDUCTION_ITEM",
+                    StatusId = "ITEM_CREATED",
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp
+                });
+                seq++;
+            }
+
+            if (item.AdditionalInsurance.GetValueOrDefault() != 0)
+            {
+                orderItems.Add(new OrderItemDto2
                 {
-                    FromPartyId = invData.Invoice.PartyIdFrom,
-                    FromPartyName = fromParty.Description
-                },
-                FromPartyName = fromParty.Description,
-                BillingAccountId = invData.Invoice.BillingAccountId,
-                BillingAccountName = bil != null ? bil.Description : null,
-                Total = _context.InvoiceItems
-                    .Where(ii => ii.InvoiceId == invData.Invoice.InvoiceId)
-                    .Sum(ii => ii.Quantity * ii.Amount),
-                OutstandingAmount = 0,
-                OrderId = invData.OrderId,
-                CertificateNumber = we != null ? we.CertificateNumber : null
-            };
+                    OrderItemSeqId = seq.ToString("D4"),
+                    ProductId = item.ProductId,
+                    ProductName = $"تأمين إضافي - {item.ProductName}",
+                    Quantity = 1,
+                    UnitPrice = -Math.Abs(item.AdditionalInsurance!.Value),
+                    SubTotal = -Math.Abs(item.AdditionalInsurance.Value),
+                    UomId = item.UomId,
+                    FacilityId = certificate.FacilityId,
+                    ItemDescription = "تأمين إضافي",
+                    OrderItemTypeId = "ADDITIONAL_INSURANCE_DEDUCTION_ITEM",
+                    StatusId = "ITEM_CREATED",
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp
+                });
+                seq++;
+            }
+        }
+
+        // Optional: Add positive lines for transparency (Transportation, Gratuities, etc.)
+        // Only if you want them visible in PO — otherwise skip (since already in net)
+        // Example:
+        // if (item.TransportationExpenses.GetValueOrDefault() > 0) { ... }
+        // if (item.Gratuities.GetValueOrDefault() > 0) { ... }
+    }
+
+    var grandTotal = orderItems.Sum(i => i.SubTotal);
+
+    var orderDto = new OrderDto
+    {
+        OrderTypeId = "PURCHASE_ORDER",
+        FromPartyId = fromPartyId,
+        CurrencyUomId = await _productStoreService.GetProductStoreDefaultCurrencyId(),
+        OrderDate = stamp,
+        StatusId = "ORDER_CREATED",
+        StatusDescription = "Created",
+        InternalRemarks = $"Auto-generated from Certificate {newProjectCertificateSerial}",
+        GrandTotal = grandTotal,
+        OrderItems = orderItems,
+        OrderAdjustments = new List<OrderAdjustmentDto2>() // Empty — fully removed
+    };
+
+    poResult = await _orderService.CreatePurchaseOrder(orderDto);
+    if (poResult == null)
+    {
+        await transaction.RollbackAsync(cancellationToken);
+        return Result<ProjectCertificateDto>.Failure("Failed to create purchase order");
+    }
+
+    generatedOrderId = poResult.OrderId;
+}
