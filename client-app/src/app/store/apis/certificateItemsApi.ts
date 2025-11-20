@@ -60,24 +60,15 @@ const certificateItemsApi = createApi({
                         method: 'GET',
                     };
                 },
-                keepUnusedDataFor: 1,
+                //keepUnusedDataFor: 300, // 5 minutes
+                //refetchOnMountOrArgChange: true,
                 async onQueryStarted(id, { dispatch, queryFulfilled }) {
-                    // REFACTOR: Clear Redux store before fetching
-                    // Purpose: Ensure no stale items remain in the Redux store before new data is fetched
-                    // Context: Prevents components from rendering old items during fetch
                     dispatch(resetUiCertificateItems());
 
                     try {
                         const { data } = await queryFulfilled;
-                        // REFACTOR: Update Redux store only after successful fetch
-                        // Purpose: Ensure Redux store reflects the latest fetched data
-                        // Context: Avoids partial updates if the fetch fails
                         dispatch(setUiCertificateItemsFromApi(data));
                     } catch (err) {
-                        // REFACTOR: Handle fetch errors by dispatching an error action
-                        // Purpose: Notify the application of fetch failures and prevent stale data
-                        // Context: Allows UI to display an error state and avoids retaining old items
-                        console.error("Error fetching certificate items:", err);
                         dispatch(setCertificateItemsError({ error: err.message || 'Failed to fetch certificate items' }));
                     }
                 },
@@ -89,9 +80,6 @@ const certificateItemsApi = createApi({
                     return response.map((item: any) => ({
                         ...item,
                         id: item.id || `item-${item.workEffortId}-${Date.now()}`,
-                        // REFACTOR: Add fallback id
-                        // Purpose: Ensure every item has an id
-                        // Context: Prevents TypeError in @react-pdf/renderer
                         achievementPercentage:
                             typeof item.achievementPercentage === 'number'
                                 ? `${item.achievementPercentage}%`

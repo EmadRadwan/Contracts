@@ -358,7 +358,7 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                                             data="ready"
                                         />
                                     )}
-                                    {getAvailableStatusTransitions().toPaid && (
+                                    {/*{getAvailableStatusTransitions().toPaid && (
                                         <MenuItem
                                             text={getTranslatedLabel(
                                                 `${localizationKey}.actions.paid`,
@@ -368,7 +368,7 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                                             // REFACTOR: Removed redundant disabled prop, as the toPaid condition in getAvailableStatusTransitions now handles disabling when iTotal > 0, ensuring consistency and reducing conditional logic in the JSX.
                                             disabled={isTotalLoading || !!totalError}
                                         />
-                                    )}
+                                    )}*/}
                                     {/*{getAvailableStatusTransitions().toWriteoff && (
                                         <MenuItem
                                             text={getTranslatedLabel(

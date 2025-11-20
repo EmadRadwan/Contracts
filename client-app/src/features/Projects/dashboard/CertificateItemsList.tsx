@@ -52,7 +52,7 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
     const uiCertificateItems: CertificateItem[] = useAppSelector(displayCertificateItemsSelector);
     const nonDeletedItems = useAppSelector(nonDeletedCertificateItemsSelector);
 
-    //console.log('uiCertificateItems', uiCertificateItems)
+    console.log('certificateItemsData', certificateItemsData)
     const pageChange = (event: GridPageChangeEvent) => {
         setPage(event.page);
     };

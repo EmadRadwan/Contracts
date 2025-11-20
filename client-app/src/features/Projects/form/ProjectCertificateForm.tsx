@@ -131,11 +131,13 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
     const subtotal = useAppSelector(certificateSubTotal);
     const [showCertificatesModal, setShowCertificatesModal] = useState(false);
     const [showPDF, setShowPDF] = useState(false);
-    const { data: items, isFetching, isError, error } = useFetchCertificateItemsQuery(selectedCertificate?.workEffortId || '', {
+    /*const { data: items, isFetching, isError, error } = useFetchCertificateItemsQuery(selectedCertificate?.workEffortId || '', {
         skip: !selectedCertificate?.workEffortId,
-    });
+    });*/
 
     const certificateItems = useAppSelector(displayCertificateItemsSelector);
+    
+    console.log('certificateItems', certificateItems)
 
     const [contractorId, setContractorId] = useState<string | undefined>(
         selectedCertificate?.partyIdContractor?.fromPartyId
@@ -145,19 +147,13 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
     );
     const formRenderPropsRef = useRef<FormRenderProps | null>(null);
 
-    
+    // Ensure certificate items are fetched every time the form opens
     useEffect(() => {
-        console.log('ProjectCertificateForm fetchCertificateItems:', { items, isFetching, isError, error });
-    }, [items, isFetching, isError, error]);
-
-    
-    useEffect(() => {
-        if (selectedCertificate?.workEffortId && currentCertificateType) {
-            dispatch(certificateItemsApi.util.invalidateTags(['CertificateItems']));
+        if (selectedCertificate?.workEffortId) {
             dispatch(certificateItemsApi.endpoints.fetchCertificateItems.initiate(selectedCertificate.workEffortId));
         }
-    }, [selectedCertificate?.workEffortId, currentCertificateType, dispatch]);
-
+    }, [selectedCertificate?.workEffortId, dispatch]);
+    
     
 
     const {
@@ -286,9 +282,6 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                 return false;
             }
             if (isSubmitting) return false;
-            setIsSubmitting(true);
-            // Purpose: Ensure handleCreate receives the correct action type
-            // Context: Matches the expected action for createCertificate or updateCertificate
             const action = editMode === 1 ? "Create Certificate" : "Update Certificate";
             setSelectedMenuItem(action);
             const certificateData = {
@@ -371,11 +364,8 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
 
     useEffect(() => {
         if (selectedCertificate?.workEffortId) {
-            // // console.log("Selected certificate changed, resetting form with workEffortId:", selectedCertificate.workEffortId);
-            // Purpose: Ensure form reflects the latest selectedCertificate data
-            // Context: Prevents stale form data when switching certificates
             formRef.current?.resetForm({values: initialFormValues});
-            formRef2.current = !formRef2.current; // Trigger form re-render
+            formRef2.current = !formRef2.current; 
         }
     }, [selectedCertificate?.workEffortId, initialFormValues]);
 
@@ -398,7 +388,6 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
         }
     };
 
-    // // console.log('initialFormValues', initialFormValues)
     const status = renderSwitchStatus();
 
     const renderCertificateItems = () => {
@@ -420,31 +409,46 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
         );
     };
 
-    const validateItems = (items: any[], type: string) => {
-        const validationResults = items.map((item) => {
-            const errors: string[] = [];
-            //if (!item.productId) errors.push('productId is required');
-            if (!item.quantity || item.quantity <= 0) errors.push('quantity must be greater than 0');
-            if (type === 'SUPPLY_PROCUREMENT_CERTIFICATE' && (!item.unitPrice || item.unitPrice <= 0)) {
-                errors.push('unitPrice must be greater than 0 for supply certificate');
-            }
-            if (type === 'WORKMANSHIP_CONTRACTING_CERTIFICATE') {
-                const hasValidMaterialPrice = item.materialPrice && item.materialPrice > 0;
-                const hasValidLaborPrice = item.laborPrice && item.laborPrice > 0;
-                if (!hasValidMaterialPrice && !hasValidLaborPrice) {
-                    errors.push('At least one of materialPrice or laborPrice must be greater than 0 for workmanship certificate');
-                }
-            }
-            return { itemId: item.id, errors };
-        });
-        const isValid = validationResults.every((result) => result.errors.length === 0);
-        console.log('Items validation:', { type, validationResults });
-        return { isValid, validationResults };
-    };
-
-    const { isValid: areItemsValid, validationResults } = validateItems(certificateItems, currentCertificateType);
-
+    
     const renderCertificateReport = () => {
+
+        if (!selectedCertificate?.certificateNumber) return null;
+
+        // Use the same transformation you had in transformResponse + extra fields
+        const formattedItems = certificateItems.map(item => ({
+            ...item,
+            // Ensure these fields exist for Excel components (safe fallback)
+            code: item.productIdObject?.productId ? `${item.productIdObject.productId}/1` : item.code || 'N/A',
+            productName: item.productName || 'N/A',
+            description: item.description || '',
+            quantity: item.quantity || 0,
+            uomName: item.uomName || item.quantityUomObject?.description || 'N/A',
+            unitPrice: item.unitPrice || 0,
+            materialPrice: item.materialPrice || 0,
+            laborPrice: item.laborPrice || 0,
+            displayTotal: item.totalAmount || item.net || 0,
+            discount: item.discount || 0,
+            deductions: item.deductions || 0,
+            transportationExpenses: item.transportationExpenses || 0,
+            gratuities: item.gratuities || 0,
+            insurance: item.insurance || 0,
+            additionalInsurance: item.additionalInsurance || 0,
+            net: item.net || 0,
+            deserved: item.deserved || 0,
+            deductionDescription: item.deductionDescription || '',
+            achievementPercentage: typeof item.achievementPercentage === 'string'
+                ? parseFloat(item.achievementPercentage.replace('%', '')) || 0
+                : item.achievementPercentage || 0,
+            formattedProcurementDate: item.procurementDate
+                ? new Date(item.procurementDate).toLocaleDateString("en-GB")
+                : 'N/A',
+            // For grouped workmanship
+            productSubtotal: item.productSubtotal || item.net || 0,
+            isLastInGroup: item.isLastInGroup || false,
+            mainItemDescription: item.mainItemDescription || '',
+            discountNote: item.discountNote || '',
+        }));
+
         const commonProps = {
             getTranslatedLabel,
             subtotal,
@@ -452,55 +456,42 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
             isAddCertificateLoading,
             isUpdateCertificateLoading,
             isReceiveLoading,
-            isFetching,
+            // No more isFetching from hook — we can infer from certificateItems length
+            isFetching: certificateItems.length === 0 && selectedCertificate?.workEffortId != null,
         };
 
-        // Check if certificate number exists before rendering any Excel component
-        if (!selectedCertificate?.certificateNumber) {
-            return null;
-        }
-
-        const isValidItems = items && items.length > 0 && validateItems(
-            currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
-                ? workmanshipReportData.items
-                : supplyReportData.items,
-            currentCertificateType
-        ).isValid;
-
+        // Workmanship Certificate
         if (currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE") {
-            if (workmanshipReportData.items?.length > 0 && workmanshipReportData.items[0].materialPrice !== undefined && isValidItems) {
-                return (
-                    <WorkmanshipCertificateExcel
-                        certificate={workmanshipReportData.certificate}
-                        items={workmanshipReportData.items}
-                        {...commonProps}
-                        key={`${selectedCertificate.workEffortId}-workmanship`}
-                    />
-                );
-            }
-        } else if (["SUPPLY_PROCUREMENT_CERTIFICATE", "COMPANY_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)) {
-            if (supplyReportData.items?.length > 0 && supplyReportData.items[0].unitPrice !== undefined && isValidItems) {
-                return (
-                    <SupplyCertificateExcel
-                        certificate={supplyReportData.certificate}
-                        items={supplyReportData.items}
-                        {...commonProps}
-                        key={`${selectedCertificate.workEffortId}-supply`}
-                    />
-                );
-            }
+            if (formattedItems.length === 0) return null;
+
+            return (
+                <WorkmanshipCertificateExcel
+                    certificate={selectedCertificate}
+                    items={formattedItems}
+                    {...commonProps}
+                    key={`${selectedCertificate.workEffortId}-workmanship`}
+                />
+            );
         }
 
-        // Default to WorkmanshipCertificateExcel if conditions are not met but certificate number exists
-        return (
-            <WorkmanshipCertificateExcel
-                certificate={workmanshipReportData.certificate}
-                items={workmanshipReportData.items}
-                {...commonProps}
-            />
-        );
-    };
+        // Supply / Company Sale Certificates
+        if (["SUPPLY_PROCUREMENT_CERTIFICATE", "COMPANY_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType)) {
+            if (formattedItems.length === 0) return null;
 
+            return (
+                <SupplyCertificateExcel
+                    certificate={selectedCertificate}
+                    items={formattedItems}
+                    {...commonProps}
+                    key={`${selectedCertificate.workEffortId}-supply`}
+                />
+            );
+        }
+
+        return null;
+    };
+    
+    
     const handleContractorChange = useCallback(
         (event: any) => {
             const contractor = event.value;
@@ -517,13 +508,10 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
         []
     );
     
-    console.log('contractorId', contractorId)
-    console.log('supplierId', supplierId)
 
     return (
         <>
             <ProjectMenu onMenuSelect={(key) => {
-                // console.log("Menu item selected in form:", key);
                 if (key === "projectCertificates") {
                     cancelEdit(); // Trigger cancelEdit to switch to list view
                 }
@@ -586,8 +574,6 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                         key={formKey}
                         onSubmitClick={handleSubmit}
                         render={(formRenderProps: FormRenderProps) => {
-                            // Purpose: Allows access to valueGetter without triggering re-renders
-                            // Improvement: Avoids infinite loop by not updating state during render
                             formRenderPropsRef.current = formRenderProps;
                             return (
                                 <FormElement>
@@ -699,9 +685,9 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                                         <LoadingButton
                                                             size="large"
                                                             type="submit"
-                                                            loading={isSubmitting || isAddCertificateLoading}
+                                                            loading={isSubmitting || isAddCertificateLoading || isUpdateCertificateLoading}
                                                             variant="contained"
-                                                            onClick={() => formRef.current?.onSubmit()}
+                                                            color="primary"
                                                         >
                                                             {getTranslatedLabel(
                                                                 editMode === 1 ? "projects.certificate.form.create" : "projects.certificate.form.update",

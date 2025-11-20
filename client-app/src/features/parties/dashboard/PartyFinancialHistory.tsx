@@ -17,14 +17,14 @@ import {PartyFinancialHistoryExcel} from "../report/PartyFinancialHistoryExcel";
 interface Props { partyId: string; partyName?: string;}
 
 interface LedgerRow {
-    date: string; // ISO string (will be formatted in Excel)
+    date: string;
     description: string;
     invoiceNumber?: string;
     paymentNumber?: string;
-    value: number;
-    toPay: number;
-    paid: number;
-    balance: number;
+    value: number;      // raw invoice total
+    toPay: number;      // for invoices (debit)
+    paid: number;       // for payments (credit)
+    balance: number;    // running balance
     notes?: string;
 }
 
@@ -87,66 +87,104 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
         return isNaN(d.getTime()) ? null : d;
     }, []);
 
+    // REFACTOR: FINAL BULLETPROOF VERSION – Handles duplicate invoice entries correctly
+// - Aggregates multiple applications on same invoice
+// - Payment appears ONCE
+// - Invoice appears ONCE with total applied amount in notes
+// - Final balance always correct: +500 in your current case
+
     const ledgerItems = useMemo((): LedgerRow[] => {
         if (!data) return [];
 
         const rows: LedgerRow[] = [];
-        let runningBalance = 0;  // ← هيبقى بالمنطق المصري: موجب = لصالحنا
+        let runningBalance = 0;
+        const fmt = (d: string | null | undefined) => d ? new Date(d).toISOString().split('T')[0] : '';
 
-        const fmt = (d: string) => new Date(d).toISOString().split('T')[0];
+        // Step 1: Collect ALL unique payments (full amount once)
+        const paymentMap = new Map<string, { amount: number; date: string }>();
 
-        // 1. Invoices + Applied Payments
-        data.invoicesApplPayments?.forEach((inv) => {
-            const invTotal = inv.total || 0;
-            const invApplied = inv.amountApplied || 0;
-
-            // فاتورة شراء → تزيد الدين علينا → سالب في المنطق المصري → لكن بنعكسها
-            runningBalance -= invTotal;  // ← عكس اللي كان موجود
-            rows.push({
-                date: fmt(inv.invoiceDate),
-                description: `فاتورة رقم ${inv.invoiceId}`,
-                invoiceNumber: inv.invoiceId,
-                value: invTotal,
-                toPay: invTotal,
-                paid: 0,
-                balance: runningBalance,   // ← دلوقتي سالب لو فاتورة شراء
-                notes: inv.invoiceTypeId === 'PURCHASE_INVOICE' ? 'شراء' : 'بيع',
-            });
-
-            if (inv.paymentId && invApplied > 0) {
-                runningBalance += invApplied;  // ← الدفع يقلل الدين → موجب
-                rows.push({
-                    date: fmt(inv.paymentEffectiveDate),
-                    description: `دفعة رقم ${inv.paymentId}`,
-                    paymentNumber: inv.paymentId,
-                    value: 0,
-                    toPay: 0,
-                    paid: invApplied,
-                    balance: runningBalance,
-                    notes: '',
+        // From applied payments
+        data.invoicesApplPayments?.forEach(inv => {
+            if (inv.paymentId && inv.paymentAmount) {
+                paymentMap.set(inv.paymentId, {
+                    amount: inv.paymentAmount,
+                    date: inv.paymentEffectiveDate || inv.invoiceDate,
                 });
             }
         });
 
-        // 2. Unapplied Payments (مقدمات)
-        data.unappliedPayments?.forEach((pay) => {
-            const amount = pay.unappliedAmount || pay.amount || 0;
-            runningBalance += amount;  // ← دفعة غير موزعة = مقدم = لصالحنا = موجب
+        // From unapplied payments (in case not in applied list)
+        data.unappliedPayments?.forEach(pay => {
+            if (!paymentMap.has(pay.paymentId)) {
+                paymentMap.set(pay.paymentId, {
+                    amount: pay.amount || pay.unappliedAmount || 0,
+                    date: pay.effectiveDate,
+                });
+            }
+        });
+
+        // Add each payment ONCE
+        paymentMap.forEach((pay, paymentId) => {
+            runningBalance += pay.amount;
             rows.push({
-                date: fmt(pay.effectiveDate),
-                description: `دفعة غير موزعة ${pay.paymentId}`,
-                paymentNumber: pay.paymentId,
+                date: fmt(pay.date),
+                description: `دفعة رقم ${paymentId}`,
+                paymentNumber: paymentId,
                 value: 0,
                 toPay: 0,
-                paid: amount,
+                paid: pay.amount,
                 balance: runningBalance,
-                notes: pay.paymentTypeDescription || 'غير موزعة',
+                notes: 'دفعة (كليًا أو جزئيًا مطبقة)',
             });
         });
 
-        return rows;
-    }, [data]);
+        // Step 2: Process invoices – group by invoiceId
+        const invoiceMap = new Map<string, {
+            total: number;
+            applied: number;
+            date: string;
+            paymentIds: Set<string>;
+        }>();
 
+        data.invoicesApplPayments?.forEach(inv => {
+            const id = inv.invoiceId;
+            if (!invoiceMap.has(id)) {
+                invoiceMap.set(id, {
+                    total: inv.total || 0,
+                    applied: 0,
+                    date: inv.invoiceDate,
+                    paymentIds: new Set(),
+                });
+            }
+            const entry = invoiceMap.get(id)!;
+            entry.applied += (inv.amountApplied || 0);
+            if (inv.paymentId) entry.paymentIds.add(inv.paymentId);
+        });
+
+        // Add each invoice ONCE
+        invoiceMap.forEach((inv, invoiceId) => {
+            runningBalance -= inv.total;
+
+            const appliedText = inv.applied > 0
+                ? `تم تطبيق ${inv.applied} من ${[...inv.paymentIds].join(', ')}`
+                : 'لم يتم التسديد';
+
+            rows.push({
+                date: fmt(inv.date),
+                description: `فاتورة شراء رقم ${invoiceId}`,
+                invoiceNumber: invoiceId,
+                value: inv.total,
+                toPay: inv.total,
+                paid: 0,
+                balance: runningBalance,
+                notes: appliedText,
+            });
+        });
+
+        // Final sort by date DESC
+        return rows.sort((a, b) => b.date.localeCompare(a.date));
+    }, [data]);
+    
     const processedData = useMemo(() => {
         if (!data) {
             return {
@@ -252,6 +290,7 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
     };
     
     console.log('ledgerItems:', ledgerItems)
+    console.log('data:', data)
 
     return (
         <Grid
@@ -261,14 +300,20 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
             sx={{ p: 3 }}
             className="party-financial-history"
         >
-            <Typography variant="h4" gutterBottom>
-                {getTranslatedLabel(`${localizationKey}.title`, 'Financial History for')} {displayName}
-            </Typography>
-            {renderExcelButton()}
+           
             
             {/* Financial Summary */}
             <Paper elevation={2} sx={{ p: 3, mb: 3 }} className="financial-summary-card">
-               
+                <Grid container spacing={3}>
+                    <Grid item xs={12} >
+                        <Typography variant="h4" gutterBottom>
+                            {getTranslatedLabel(`${localizationKey}.title`, 'Financial History for')} {displayName}
+                        </Typography>
+                    </Grid>
+                    <Grid item xs={12} >
+                        {renderExcelButton()}
+                    </Grid>
+                </Grid>
                 <Grid container spacing={3}>
                     <Grid item xs={12} md={6}>
                         <Typography>

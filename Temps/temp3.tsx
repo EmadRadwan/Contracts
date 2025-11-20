@@ -1,67 +1,27 @@
-<Form
-    key={editMode}
-    initialValues={formInitialValues}
-    onSubmit={handleSubmitData}
-    validator={salesRequestValidator}
-    render={(formRenderProps: FormRenderProps) => {
-        formRef.current = formRenderProps;
+/* ------------------------------------------------------------------
+   FIX: Vertical spacing – page content not glued to header
+   ------------------------------------------------------------------ */
+.party-financial-history {
+    width: 100%;
+    min-height: 100vh;
+    direction: ltr;
+    margin-top: 3rem;          /* ← adjust 2rem–4rem to your taste */
+    padding: 0 1.5rem;         /* keep horizontal padding consistent */
+}
 
-        // Extract status safely here
-        const statusId = formRenderProps.valueGetter("statusId") as string | undefined;
-        const statusDescription = formRenderProps.valueGetter("statusDescription") as string | undefined;
+/* ------------------------------------------------------------------
+   FIX: Space between Excel button and financial summary numbers
+   ------------------------------------------------------------------ */
+.financial-summary-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 5px solid #1976d2;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    padding-bottom: 1rem !important;   /* ensures inner spacing */
+}
 
-        const ribbonLabel = statusDescription ?? {
-            SALES_REQUEST_CREATED: "Created",
-            SALES_REQUEST_APPROVED: "Approved",
-            SALES_REQUEST_REJECTED: "Rejected",
-            SALES_REQUEST_CONVERTED: "Converted",
-        }[statusId ?? ""] ?? "Unknown";
-
-        const ribbonBg = {
-            SALES_REQUEST_CREATED: "#1976d2",
-            SALES_REQUEST_APPROVED: "#4caf50",
-            SALES_REQUEST_REJECTED: "#d32f2f",
-            SALES_REQUEST_CONVERTED: "#ff9800",
-        }[statusId ?? ""] ?? "#757575";
-
-        return (
-            <>
-                {/* Header with ribbon */}
-                <Grid container spacing={2} alignItems="center" position="relative">
-                    <Grid item xs={11}>
-                        <Box display="flex" justifyContent="space-between" sx={{p: 2}}>
-                            <Typography color={salesRequest?.salesRequestId ? "black" : "green"} variant="h4">
-                                {salesRequest?.salesRequestId
-                                    ? salesRequest.salesRequestId
-                                    : getTranslatedLabel("salesRequest.form.new", "New Sales Request")}
-                            </Typography>
-                        </Box>
-                    </Grid>
-
-                    {editMode === 2 && (
-                        <Grid item xs={1}>
-                            <RibbonContainer>
-                                <Ribbon
-                                    side={language === "ar" ? "left" : "right"}
-                                    type="corner"
-                                    size="large"
-                                    backgroundColor={ribbonBg}
-                                    color="#ffffff"
-                                    fontFamily="sans-serif"
-                                >
-                                    {ribbonLabel}
-                                </Ribbon>
-                            </RibbonContainer>
-                        </Grid>
-                    )}
-                </Grid>
-
-                <FormElement>
-                    <fieldset className="k-form-fieldset">
-                        {/* ← ALL YOUR EXISTING FIELDS HERE (unchanged) */}
-                    </fieldset>
-                </FormElement>
-            </>
-        );
-    }}
-/>
+/* Space after the row that contains the Excel button */
+.financial-summary-card > .MuiGrid-container:first-of-type {
+    margin-bottom: 2.5rem !important;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e0e0e0;
+}

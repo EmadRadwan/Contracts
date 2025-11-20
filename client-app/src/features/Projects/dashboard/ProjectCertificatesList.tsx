@@ -140,8 +140,8 @@ export default function ProjectCertificatesList() {
                 console.warn("No certificate found for workEffortId:", workEffortId);
                 return;
             }
-            dispatch(resetUiCertificateItems());
-            dispatch(certificateItemsApi.util.invalidateTags(['CertificateItems']));
+            //dispatch(resetUiCertificateItems());
+            //dispatch(certificateItemsApi.util.invalidateTags(['CertificateItems']));
 
             dispatch(
                 setSelectedCertificate({

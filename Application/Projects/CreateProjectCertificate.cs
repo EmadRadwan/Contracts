@@ -257,8 +257,8 @@ namespace Application.Projects
                     {
                         workEffort.RelatedOrderId = generatedOrderId;
                     }
-
-
+                    
+                    
                     // this ensures UpdateOrApprovePurchaseOrder can query and find the order via FirstOrDefaultAsync, as EF Core queries ignore pending changes.
                     // Improves code by allowing seamless approval in the same transaction without separate scopes or context issues.
                     var createResult = await _context.SaveChangesAsync(cancellationToken);
@@ -331,7 +331,6 @@ namespace Application.Projects
                         };
 
                         await _orderService.UpdateOrApprovePurchaseOrder(approveOrderDto, "APPROVE");
-
 
                         var approveResult = await _context.SaveChangesAsync(cancellationToken);
                         if (approveResult <= 0)
