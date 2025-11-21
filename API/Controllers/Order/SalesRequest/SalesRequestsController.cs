@@ -20,5 +20,13 @@ public class SalesRequestsController : BaseApiController
 
         return HandleResult(await Mediator.Send(command));
     }
+    
+    [HttpPost("{id}/approve")]
+    public async Task<IActionResult> Approve(string id)
+    {
+        // Simple validation – ensures route id is used
+        var command = new ApproveSalesRequest.Command { SalesRequestId = id };
+        return HandleResult(await Mediator.Send(command));
+    }
 
 }

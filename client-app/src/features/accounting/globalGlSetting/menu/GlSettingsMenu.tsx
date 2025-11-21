@@ -4,7 +4,7 @@ import {useLocation, useNavigate, useParams} from "react-router-dom";
 import {useTheme} from "@mui/material/styles";
 
 const links = [
-    //{title: 'Chart Of Accounts', path: '/chartOfAccounts'},
+    {title: 'Chart Of Accounts', path: '/chartOfAccounts'},
     {title: 'Edit Custom Time Periods', path: '/customTimePeriods'},
     //{title: 'Cost', path: '/accountingCosts'},
     {title: 'Payment Method Type', path: '/paymentMethodType'},

@@ -11,9 +11,9 @@ public class ListPayments
 {
     public class Query : IRequest<IQueryable<PaymentRecord>>
     {
-        public ODataQueryOptions<PaymentRecord> Options { get; set; }
-        public string Language { get; set; }
-        public string? PaymentType { get; set; }
+        public ODataQueryOptions<PaymentRecord> Options { get; set; } = null!;
+        public string Language { get; set; } = "en";
+        public string? PaymentType { get; set; } // "incoming" or "outgoing"
     }
 
     public class Handler : IRequestHandler<Query, IQueryable<PaymentRecord>>
@@ -27,70 +27,120 @@ public class ListPayments
 
         public async Task<IQueryable<PaymentRecord>> Handle(Query request, CancellationToken cancellationToken)
         {
-            var language = request.Language;
-            var query = (from pyt in _context.Payments
-                join ptt in _context.PaymentTypes on pyt.PaymentTypeId equals ptt.PaymentTypeId
-                join sts in _context.StatusItems on pyt.StatusId equals sts.StatusId
-                join pty in _context.Parties on pyt.PartyIdFrom equals pty.PartyId
-                join ptyto in _context.Parties on pyt.PartyIdTo equals ptyto.PartyId
-                join pmt in _context.PaymentMethodTypes on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId
-                join cc in _context.CreditCards on pyt.PaymentMethodId equals cc.PaymentMethodId into creditCardJoin
-                from cc in creditCardJoin.DefaultIfEmpty()
-                join opp in _context.OrderPaymentPreferences on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId into orderPaymentJoin
-                from opp in orderPaymentJoin.DefaultIfEmpty()
-                join ord in _context.OrderHeaders on opp.OrderId equals ord.OrderId into orderJoin
-                from ord in orderJoin.DefaultIfEmpty()
-                // REFACTOR: Added left outer join with WorkEfforts to retrieve certificateNumber
-                // This join uses RelatedOrderId to link with OrderId, ensuring optional matching
-                // Left outer join ensures payments without associated WorkEfforts are still included
-                join we in _context.WorkEfforts on ord.OrderId equals we.RelatedOrderId into workEffortJoin
-                from we in workEffortJoin.DefaultIfEmpty()
+            var language = request.Language?.ToLower() ?? "en";
+            var isArabic = language == "ar";
+
+            var query = (
+                from pyt in _context.Payments
+
+                // Required joins (inner – these should always exist)
+                join ptt in _context.PaymentTypes 
+                    on pyt.PaymentTypeId equals ptt.PaymentTypeId
+
+                join sts in _context.StatusItems 
+                    on pyt.StatusId equals sts.StatusId
+
+                join pty in _context.Parties 
+                    on pyt.PartyIdFrom equals pty.PartyId
+
+                // REFACTOR: LEFT JOIN – PaymentMethodTypeId is often NULL
+                join pmt in _context.PaymentMethodTypes
+                    on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into pmtJoin
+                from pmt in pmtJoin.DefaultIfEmpty()
+
+                // REFACTOR: LEFT JOIN – PartyIdTo may be "Company" or missing
+                join ptyto in _context.Parties
+                    on pyt.PartyIdTo equals ptyto.PartyId into ptytoJoin
+                from ptyto in ptytoJoin.DefaultIfEmpty()
+
+                // Optional joins (credit card, order, work effort)
+                join cc in _context.CreditCards
+                    on pyt.PaymentMethodId equals cc.PaymentMethodId into ccJoin
+                from cc in ccJoin.DefaultIfEmpty()
+
+                join opp in _context.OrderPaymentPreferences
+                    on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId into oppJoin
+                from opp in oppJoin.DefaultIfEmpty()
+
+                join ord in _context.OrderHeaders
+                    on opp.OrderId equals ord.OrderId into ordJoin
+                from ord in ordJoin.DefaultIfEmpty()
+
+                join we in _context.WorkEfforts
+                    on ord.OrderId equals we.RelatedOrderId into weJoin
+                from we in weJoin.DefaultIfEmpty()
+
                 select new PaymentRecord
                 {
                     PaymentId = pyt.PaymentId,
                     PaymentTypeId = pyt.PaymentTypeId,
-                    PaymentTypeDescription = language == "ar" ? ptt.DescriptionArabic : ptt.Description,
+                    PaymentTypeDescription = isArabic ? ptt.DescriptionArabic : ptt.Description,
+
                     PaymentMethodId = pyt.PaymentMethodId,
                     PaymentMethodTypeId = pyt.PaymentMethodTypeId,
-                    PaymentMethodTypeDescription = language == "ar" ? pmt.DescriptionArabic : pmt.Description,
+                    PaymentMethodTypeDescription = pmt != null
+                        ? (isArabic ? pmt.DescriptionArabic : pmt.Description)
+                        : null,
+
                     PartyIdFrom = pyt.PartyIdFrom,
-                    PartyIdFromName = pty.Description,
+                    PartyIdFromName = pty.Description ?? string.Empty,
+
                     PartyIdTo = pyt.PartyIdTo,
-                    PartyIdToName = ptyto.Description,
+                    PartyIdToName = ptyto != null 
+                        ? ptyto.Description 
+                        : (pyt.PartyIdTo == "Company" ? "Company" : pyt.PartyIdTo ?? "Unknown"),
+
                     StatusId = pyt.StatusId,
-                    StatusDescription = language == "ar" ? sts.DescriptionArabic : sts.Description,
+                    StatusDescription = isArabic ? sts.DescriptionArabic : sts.Description,
                     StatusDescriptionEnglish = sts.Description,
+
                     EffectiveDate = (DateTime)pyt.EffectiveDate,
                     Comments = pyt.Comments,
                     PaymentRefNum = pyt.PaymentRefNum,
                     PaymentPreferenceId = pyt.PaymentPreferenceId,
-                    ActualCurrencyAmount = pyt.ActualCurrencyAmount,
-                    OverrideGlAccountId = pyt.OverrideGlAccountId,
-                    OrganizationPartyId = ptt.ParentTypeId == "DISBURSEMENT" ? pyt.PartyIdFrom : pyt.PartyIdTo,
+
                     Amount = pyt.Amount,
-                    CurrencyUomId = pyt.CurrencyUomId,
+                    ActualCurrencyAmount = pyt.ActualCurrencyAmount ?? pyt.Amount,
+                    CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
+
                     FinAccountTransId = pyt.FinAccountTransId,
+                    OverrideGlAccountId = pyt.OverrideGlAccountId,
+
                     CreditCardNumber = cc != null ? cc.CardNumber : null,
                     CreditCardExpiryDate = cc != null ? cc.ExpireDate : null,
+
                     FromPartyId = new OrderPartyDto
                     {
                         FromPartyId = pty.PartyId,
                         FromPartyName = pty.Description ?? string.Empty
                     },
+
                     IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
+                    OrganizationPartyId = ptt.ParentTypeId == "DISBURSEMENT" ? pyt.PartyIdFrom : pyt.PartyIdTo,
+
                     OrderId = ord != null ? ord.OrderId : null,
                     CertificateNumber = we != null ? we.CertificateNumber : null,
+
                     ChequeNumber = pyt.ChequeNumber,
                     ChequeDate = pyt.ChequeDate
-                }).AsQueryable();
+                }
+            ).AsQueryable();
 
-            // REFACTOR: Filter query based on PaymentType (incoming or outgoing)
+            // REFACTOR: Filter incoming vs outgoing payments
             if (!string.IsNullOrEmpty(request.PaymentType))
             {
-                bool isDisbursement = request.PaymentType.ToLower() == "outgoing";
-                query = query.Where(p => p.IsDisbursement == isDisbursement);
+                var isOutgoing = request.PaymentType.ToLower() == "outgoing";
+                query = query.Where(p => p.IsDisbursement == isOutgoing);
             }
 
+            // Apply OData $filter, $orderby, $skip, $top etc.
+            if (request.Options.Filter != null)
+                query = request.Options.Filter.ApplyTo(query, new ODataQuerySettings()) as IQueryable<PaymentRecord>;
+
+            if (request.Options.OrderBy != null)
+                query = request.Options.OrderBy.ApplyTo(query, new ODataQuerySettings()) as IQueryable<PaymentRecord>;
+
+            // Note: Skip/Take should be applied by the controller if needed
             return await Task.FromResult(query);
         }
     }

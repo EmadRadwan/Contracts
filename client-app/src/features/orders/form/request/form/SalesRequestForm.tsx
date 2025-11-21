@@ -3,11 +3,15 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import {Field, Form, FormElement, FormRenderProps} from "@progress/kendo-react-form";
 
-import {Box, Paper, Typography} from "@mui/material";
+import {Box, Menu, MenuItem, Paper, Typography} from "@mui/material";
 import {toast} from "react-toastify";
 import {SalesRequest} from "../../../../../app/models/order/SalesRequest";
 import {requiredValidator} from "../../../../../app/common/form/Validators";
-import {useAddSalesRequestMutation, useUpdateSalesRequestMutation} from "../../../../../app/store/apis/salesRequestApi";
+import {
+    useAddSalesRequestMutation,
+    useApproveSalesRequestMutation,
+    useUpdateSalesRequestMutation
+} from "../../../../../app/store/apis/salesRequestApi";
 import FormDatePicker from "../../../../../app/common/form/FormDatePicker";
 import LoadingComponent from "../../../../../app/layout/LoadingComponent";
 import FormNumericTextBox from "../../../../../app/common/form/FormNumericTextBox";
@@ -26,6 +30,81 @@ import {RibbonContainer, Ribbon} from "react-ribbons";
 
 let renderCount = 0;
 
+interface SalesRequestActionsMenuProps {
+    salesRequestId: string | undefined;
+    currentStatusId: string | undefined;
+    disabled: boolean;
+    onSalesRequestUpdated?: (updated: SalesRequest) => void;  // ← ADD THIS
+}
+
+const GROUND_FLOOR_ARABIC = "الطابق الأرضي";
+
+const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = ({
+                                                                             salesRequestId,
+                                                                             currentStatusId,
+                                                                             disabled,
+                                                                             onSalesRequestUpdated,
+                                                                         }) => {
+    const { getTranslatedLabel } = useTranslationHelper();
+    const [approveSR, { isLoading }] = useApproveSalesRequestMutation();
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const open = Boolean(anchorEl);
+
+    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
+    const handleApprove = async () => {
+        if (!salesRequestId) return;
+
+        try {
+            // This returns the full updated object from backend
+            const updatedSalesRequest = await approveSR(salesRequestId).unwrap();
+
+            toast.success(getTranslatedLabel("salesRequest.approved", "Sales Request Approved"));
+
+            // THIS IS THE KEY: Notify parent so ribbon updates instantly
+            onSalesRequestUpdated?.(updatedSalesRequest);
+        } catch (error) {
+            toast.error(getTranslatedLabel("salesRequest.approveError", "Failed to approve sales request"));
+        } finally {
+            handleClose();
+        }
+    };
+
+    const isApproveDisabled = !salesRequestId || currentStatusId === "SALES_REQUEST_APPROVED";
+
+    return (
+        <>
+            <Button
+                variant="contained"
+                color="primary"
+                onClick={handleClick}
+                disabled={disabled || isLoading || !salesRequestId}
+                sx={{ mt: 2, mr: 2 }}
+            >
+                {getTranslatedLabel('salesRequest.actions', 'Actions')}
+            </Button>
+
+            <Menu
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleClose}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <MenuItem onClick={handleApprove} disabled={isApproveDisabled || isLoading}>
+                    {getTranslatedLabel('salesRequest.approve', 'Approve Sales Request')}
+                </MenuItem>
+            </Menu>
+        </>
+    );
+};
+
 /* ------------------------------------------------------------------ */
 /* Props – removed partyInputRef (now internal)                       */
 
@@ -35,13 +114,14 @@ interface Props {
     editMode: number; // 1 = create, 2 = edit
     cancelEdit: () => void;
     onSalesRequestCreated?: (createdRequest: SalesRequest) => void;
+    onSalesRequestUpdated?: (updated: SalesRequest) => void;
 }
 
 function SalesRequestForm({
                               salesRequest,
                               editMode,
                               cancelEdit,
-                              onSalesRequestCreated,
+                              onSalesRequestCreated, onSalesRequestUpdated
                           }: Props) {
     console.log(`SalesRequestForm render #${++renderCount}`);
 
@@ -261,8 +341,16 @@ function SalesRequestForm({
         gardenM2: number | null,
         gardenPrice: number | null
     ): number | null => {
-        if (aptM2 == null || aptPrice == null || gardenM2 == null || gardenPrice == null) return null;
-        return aptM2 * aptPrice + gardenM2 * gardenPrice;
+        if (aptM2 == null || aptPrice == null) return null;
+
+        const apartmentTotal = aptM2 * aptPrice;
+
+        // Only add garden if both gardenM2 and gardenPrice exist and are positive
+        if (gardenM2 != null && gardenPrice != null && gardenM2 > 0 && gardenPrice > 0) {
+            return apartmentTotal + (gardenM2 * gardenPrice);
+        }
+
+        return apartmentTotal;
     }, []);
 
     const calculateFinalTotal = useCallback((
@@ -290,51 +378,69 @@ function SalesRequestForm({
         }
     }, [userEditedAdvance, userEditedMaintenance]);
 
-    const handleProductChange = useCallback(
-        (formRenderProps: FormRenderProps, e: any) => {
-            const apartment = e.value as SalesRequest | null;
-            setSelectedApartment(apartment);
+    const handleProductChange = useCallback((
+        formRenderProps: FormRenderProps,
+        e: any
+    ) => {
+        const apartment = e.value as any;
+        setSelectedApartment(apartment);
 
-            // Reset edit flags on new selection
-            setUserEditedAdvance(false);
-            setUserEditedDiscount(false);
-            setUserEditedMaintenance(false);
+        // Reset flags
+        setUserEditedAdvance(false);
+        setUserEditedDiscount(false);
+        setUserEditedMaintenance(false);
 
-            formRenderProps.onChange("apartmentPricePerM2", {value: apartment?.apartmentPricePerM2 ?? null});
-            formRenderProps.onChange("gardenPricePerM2", {value: apartment?.gardenPricePerM2 ?? null});
-            formRenderProps.onChange("discount", {value: null});
+        // Set prices
+        formRenderProps.onChange("apartmentPricePerM2", {
+            value: apartment?.apartmentPricePerM2 ?? null,
+        });
 
-            const baseTotal = calculateBaseTotal(
-                toNumber(apartment?.apartmentSpaceM2),
-                toNumber(apartment?.apartmentPricePerM2),
-                toNumber(apartment?.gardenSpaceM2),
-                toNumber(apartment?.gardenPricePerM2)
-            );
+        const isGroundFloor = apartment?.floorNumber === GROUND_FLOOR_ARABIC;
+        formRenderProps.onChange("gardenPricePerM2", {
+            value: isGroundFloor ? (apartment?.gardenPricePerM2 ?? null) : null,
+        });
 
-            const finalTotal = calculateFinalTotal(baseTotal, null);
-            formRenderProps.onChange("totalPrice", {value: finalTotal});
-            autoSetDerivedFields(formRenderProps, finalTotal);
-        },
-        [calculateBaseTotal, calculateFinalTotal, autoSetDerivedFields]
-    );
+        formRenderProps.onChange("discount", { value: null });
+
+        // This will now work perfectly for both cases
+        const baseTotal = calculateBaseTotal(
+            toNumber(apartment?.apartmentSpaceM2),
+            toNumber(apartment?.apartmentPricePerM2),
+            isGroundFloor ? toNumber(apartment?.gardenSpaceM2) : null,
+            isGroundFloor ? toNumber(apartment?.gardenPricePerM2) : null
+        );
+
+        const finalTotal = calculateFinalTotal(baseTotal, null);
+        formRenderProps.onChange("totalPrice", { value: finalTotal });
+        autoSetDerivedFields(formRenderProps, finalTotal);
+    }, [calculateBaseTotal, calculateFinalTotal, autoSetDerivedFields]);
 
     const handlePricePerM2Change = useCallback((
         formRenderProps: FormRenderProps,
         fieldName: "apartmentPricePerM2" | "gardenPricePerM2",
         value: number | null
     ) => {
-        formRenderProps.onChange(fieldName, {value});
+        formRenderProps.onChange(fieldName, { value });
 
         const aptM2 = toNumber(selectedApartment?.apartmentSpaceM2);
-        const aptPrice = fieldName === "apartmentPricePerM2" ? value : toNumber(formRenderProps.valueGetter("apartmentPricePerM2"));
-        const gardenM2 = toNumber(selectedApartment?.gardenSpaceM2);
-        const gardenPrice = fieldName === "gardenPricePerM2" ? value : toNumber(formRenderProps.valueGetter("gardenPricePerM2"));
-        const discount = userEditedDiscount ? toNumber(formRenderProps.valueGetter("discount")) : null;
+        const aptPrice = fieldName === "apartmentPricePerM2"
+            ? value
+            : toNumber(formRenderProps.valueGetter("apartmentPricePerM2"));
+
+        const isGroundFloor = selectedApartment?.floorNumber === GROUND_FLOOR_ARABIC;
+        const gardenM2 = isGroundFloor ? toNumber(selectedApartment?.gardenSpaceM2) : 0;
+        const gardenPrice = fieldName === "gardenPricePerM2" && isGroundFloor
+            ? value
+            : toNumber(formRenderProps.valueGetter("gardenPricePerM2"));
+
+        const discount = userEditedDiscount
+            ? toNumber(formRenderProps.valueGetter("discount"))
+            : null;
 
         const baseTotal = calculateBaseTotal(aptM2, aptPrice, gardenM2, gardenPrice);
         const finalTotal = calculateFinalTotal(baseTotal, discount);
 
-        formRenderProps.onChange("totalPrice", {value: finalTotal});
+        formRenderProps.onChange("totalPrice", { value: finalTotal });
         autoSetDerivedFields(formRenderProps, finalTotal);
     }, [selectedApartment, calculateBaseTotal, calculateFinalTotal, userEditedDiscount, autoSetDerivedFields]);
 
@@ -343,17 +449,18 @@ function SalesRequestForm({
         value: number | null
     ) => {
         setUserEditedDiscount(true);
-        formRenderProps.onChange("discount", {value});
+        formRenderProps.onChange("discount", { value });
 
+        const isGroundFloor = selectedApartment?.floorNumber === GROUND_FLOOR_ARABIC;
         const baseTotal = calculateBaseTotal(
             toNumber(selectedApartment?.apartmentSpaceM2),
             toNumber(formRenderProps.valueGetter("apartmentPricePerM2")),
-            toNumber(selectedApartment?.gardenSpaceM2),
-            toNumber(formRenderProps.valueGetter("gardenPricePerM2"))
+            isGroundFloor ? toNumber(selectedApartment?.gardenSpaceM2) : 0,
+            isGroundFloor ? toNumber(formRenderProps.valueGetter("gardenPricePerM2")) : null
         );
 
         const finalTotal = calculateFinalTotal(baseTotal, value);
-        formRenderProps.onChange("totalPrice", {value: finalTotal});
+        formRenderProps.onChange("totalPrice", { value: finalTotal });
         autoSetDerivedFields(formRenderProps, finalTotal);
     }, [selectedApartment, calculateBaseTotal, calculateFinalTotal, autoSetDerivedFields]);
 
@@ -362,24 +469,24 @@ function SalesRequestForm({
         value: number | null
     ) => {
         setUserEditedAdvance(true);
-        formRenderProps.onChange("advancePayment", {value});
+        formRenderProps.onChange("advancePayment", { value });
 
-        const currentTotal = toNumber(formRenderProps.valueGetter("totalPrice"));
+        const isGroundFloor = selectedApartment?.floorNumber === GROUND_FLOOR_ARABIC;
         const baseTotal = calculateBaseTotal(
             toNumber(selectedApartment?.apartmentSpaceM2),
             toNumber(formRenderProps.valueGetter("apartmentPricePerM2")),
-            toNumber(selectedApartment?.gardenSpaceM2),
-            toNumber(formRenderProps.valueGetter("gardenPricePerM2"))
+            isGroundFloor ? toNumber(selectedApartment?.gardenSpaceM2) : 0,
+            isGroundFloor ? toNumber(formRenderProps.valueGetter("gardenPricePerM2")) : null
         );
+
         const discount = userEditedDiscount ? toNumber(formRenderProps.valueGetter("discount")) : 0;
+        const currentTotal = calculateFinalTotal(baseTotal, discount);
 
         if (value != null && baseTotal != null && value > currentTotal) {
-            // User wants higher advance → scale total up (preserving discount)
-            const newFinalTotal = value;
-            formRenderProps.onChange("totalPrice", {value: newFinalTotal});
+            formRenderProps.onChange("totalPrice", { value });
         }
-    }, [selectedApartment, calculateBaseTotal, userEditedDiscount]);
-
+    }, [selectedApartment, calculateBaseTotal, calculateFinalTotal, userEditedDiscount]);
+    
     const salesRequestValidator = (values: any): KeyValue<string> | undefined => {
         const t = getTranslatedLabel;                     // shortcut (defined later in render)
 
@@ -441,6 +548,8 @@ function SalesRequestForm({
             };
         }
     }
+    
+    console.log('Rendering SalesRequestForm with editMode:', editMode);
 
     return (
         <>
@@ -505,19 +614,17 @@ function SalesRequestForm({
 
                         const statusId = formRenderProps.valueGetter("statusId") as string | undefined;
                         const statusDescription = formRenderProps.valueGetter("statusDescription") as string | undefined;
+                        
+                        console.log('Rendering form with statusId:', statusId, 'and statusDescription:', statusDescription);
 
                         const ribbonLabel = statusDescription ?? {
                             SALES_REQUEST_CREATED: "Created",
                             SALES_REQUEST_APPROVED: "Approved",
-                            SALES_REQUEST_REJECTED: "Rejected",
-                            SALES_REQUEST_CONVERTED: "Converted",
                         }[statusId ?? ""] ?? "Unknown";
 
                         const ribbonBg = {
                             SALES_REQUEST_CREATED: "#1976d2",
                             SALES_REQUEST_APPROVED: "#4caf50",
-                            SALES_REQUEST_REJECTED: "#d32f2f",
-                            SALES_REQUEST_CONVERTED: "#ff9800",
                         }[statusId ?? ""] ?? "#757575";
 
                         return (
@@ -531,10 +638,20 @@ function SalesRequestForm({
                                                     ? salesRequest.salesRequestId
                                                     : getTranslatedLabel("salesRequest.form.new", "New Sales Request")}
                                             </Typography>
+
+                                            {editMode === 2 && (
+                                                <SalesRequestActionsMenu
+                                                    salesRequestId={salesRequest?.salesRequestId}
+                                                    currentStatusId={salesRequest?.statusId}
+                                                    disabled={isCreating || isUpdating || buttonFlag}
+                                                    onSalesRequestUpdated={onSalesRequestUpdated}  // ← PASS IT HERE
+                                                />
+                                            )}
+                                            
                                         </Box>
                                     </Grid>
 
-                                    {editMode === 2 && (
+                                    {(editMode === 2 || editMode === 3) && (
                                         <Grid item xs={1}>
                                             <RibbonContainer>
                                                 <Ribbon
@@ -553,7 +670,7 @@ function SalesRequestForm({
                                 </Grid>
                                 <FormElement>
                                     <fieldset className="k-form-fieldset">
-                                        <Grid container spacing={1} alignItems="flex-end">
+                                        <Grid container spacing={1} alignItems="flex-end" className={editMode > 2 ? "grid-disabled" : "grid-normal"}>
                                             <Grid item xs={4}>
                                                 <Field
                                                     id="productId"
@@ -622,7 +739,11 @@ function SalesRequestForm({
                                                             <Typography variant="caption" color="textSecondary">
                                                                 {getTranslatedLabel("salesRequest.form.gardenM2", "Garden m²")}
                                                             </Typography>
-                                                            <Typography>{apt?.gardenSpaceM2 ?? "-"}</Typography>
+                                                            <Typography>
+                                                                {selectedApartment?.floorNumber === GROUND_FLOOR_ARABIC
+                                                                    ? (selectedApartment?.gardenSpaceM2 ?? "-")
+                                                                    : "-"}
+                                                            </Typography>
                                                         </Grid>
 
                                                         <Grid item xs={3}>
@@ -662,6 +783,7 @@ function SalesRequestForm({
                                                     format="n2"
                                                     min={0}
                                                     component={FormNumericTextBox}
+                                                    disabled={!selectedApartment || selectedApartment?.floorNumber !== GROUND_FLOOR_ARABIC}
                                                     onChange={(e: any) => {
                                                         handlePricePerM2Change(formRenderProps, "gardenPricePerM2", e.value);
                                                     }}
@@ -777,7 +899,7 @@ function SalesRequestForm({
                                                         variant="contained"
                                                         type="submit"
                                                         color="success"
-                                                        disabled={buttonFlag || isCreating || isUpdating}
+                                                        disabled={buttonFlag || isCreating || isUpdating || editMode > 2}
                                                     >
                                                         {getTranslatedLabel("general.submit", "Submit")}
                                                     </Button>

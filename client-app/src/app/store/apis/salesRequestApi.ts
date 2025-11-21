@@ -84,6 +84,20 @@ const salesRequestApi = createApi({
                 }),
                 invalidatesTags: ["SalesRequest"],
             }),
+            // In your salesRequestApi.ts
+            approveSalesRequest: builder.mutation<
+                CreateSalesRequest.SalesRequestResponseDto,
+                string
+                >({
+                query: (salesRequestId) => ({
+                    url: `salesRequests/${salesRequestId}/approve`,
+                    method: 'POST',
+                }),
+                invalidatesTags: (result, error, id) => [
+                    { type: 'SalesRequest', id },
+                    { type: 'SalesRequest', id: 'LIST' },
+                ],
+            }),
             // -----------------------------------------------------------------
             // DELETE – optional (not used in current UI but kept for completeness)
             // -----------------------------------------------------------------
@@ -105,7 +119,7 @@ export const {
     useFetchSalesRequestsQuery,
     useAddSalesRequestMutation,
     useUpdateSalesRequestMutation,
-    useDeleteSalesRequestMutation,
+    useDeleteSalesRequestMutation, useApproveSalesRequestMutation,
 } = salesRequestApi;
 
 export { salesRequestApi };

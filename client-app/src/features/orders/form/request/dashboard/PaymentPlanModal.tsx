@@ -24,13 +24,7 @@ function PaymentPlanModal({
     const {getTranslatedLabel} = useTranslationHelper();
     const localizationKey = "sales.request.paymentPlan";
 
-    console.log('salesRequest:', salesRequest);
-    console.log('apartment:', apartment);
 
-    // REFACTOR: Fixed field name mismatch in destructuring
-// Purpose: Use correct property `dateOfFirstInstallment` from salesRequest
-// Improves: Accuracy — prevents false "no plan" due to undefined field
-// Context: Field name in form is `dateOfFirstInstallment`, not `firstInstallmentDate`
     const installments = useMemo(() => {
         const {
             totalPrice = 0,

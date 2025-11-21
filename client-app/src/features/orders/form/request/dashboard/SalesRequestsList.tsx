@@ -54,8 +54,19 @@ function SalesRequestsList() {
     // Unified handlers – only two
     // -----------------------------------------------------------------
     const startEdit = (sr?: SalesRequest) => {
+        if (!sr) {
+            // Create mode
+            setSelectedSR(undefined);
+            setEditMode(1);
+            setViewMode("form");
+            return;
+        }
+
+        // Edit or View mode — decide based on status
+        const isApproved = sr.statusId === "SALES_REQUEST_APPROVED";
+
         setSelectedSR(sr);
-        setEditMode(sr ? 2 : 1);
+        setEditMode(isApproved ? 3 : 2);  // ← THIS IS THE KEY LINE
         setViewMode("form");
     };
 
@@ -80,10 +91,14 @@ function SalesRequestsList() {
     if (viewMode === "form" && editMode !== 0) {
         return (
             <SalesRequestForm
-                salesRequest={editMode === 1 ? undefined : selectedSR}
-                editMode={editMode}
+                salesRequest={editMode === 1 ? undefined : selectedSR}   // create → undefined, edit/view → selectedSR
+                editMode={editMode}                                      // 1 = create, 2 = edit, 3 = approved (read-only)
                 cancelEdit={cancelEdit}
                 onSalesRequestCreated={handleSalesRequestCreated}
+                onSalesRequestUpdated={(updated) => {
+                    setSelectedSR(updated);   // Update the object with fresh data (new status, timestamps, etc.)
+                    setEditMode(3);           // Switch to read-only "Approved" mode
+                }}
             />
         );
     }
