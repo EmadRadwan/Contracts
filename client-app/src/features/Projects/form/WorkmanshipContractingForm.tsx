@@ -57,32 +57,37 @@ const WorkmanshipContractingForm = ({
                                     }: ContractingFormProps) => {
     const { valueGetter, onChange } = formRenderProps;
 
-    const getTotals = () =>
-        calculateTotals(
+    const calculated = React.useMemo(() => {
+        const result = calculateTotals(
             valueGetter,
-            valueGetter("insuranceMode") as "value" | "percentage",
-            valueGetter("additionalInsuranceMode") as "value" | "percentage"
-        );
+            (valueGetter("insuranceMode") as "value" | "percentage") ?? "value",
+        (valueGetter("additionalInsuranceMode") as "value" | "percentage") ?? "value"
+    );
 
-    const {
-        total,
-        deserved,
-        insurance,
-        additionalInsurance,
-        net,
-    } = getTotals();
-    
-    
+        // DEBUG TABLE — DELETE WHEN DONE
+        console.table({
+            qty:               valueGetter("quantity"),
+            matPrice:          valueGetter("materialPrice"),
+            labPrice:          valueGetter("laborPrice"),
+            pricePerUnit:      Number(valueGetter("materialPrice") || 0) + Number(valueGetter("laborPrice") || 0),
+            total:             result.total,
+            achPctRaw:         valueGetter("achievementPercentage"),
+            achPctUsed:        typeof valueGetter("achievementPercentage") === "string"
+                ? parseFloat(String(valueGetter("achievementPercentage")).replace(/[^\\d.-]/g, "")) || 0
+                : Number(valueGetter("achievementPercentage") || 0),
+            deservedBeforeDed: result.total * (Number(valueGetter("achievementPercentage") || 0) / 100),
+            deductions:        valueGetter("deductions"),
+            deserved:          result.deserved,
+            insMode:           valueGetter("insuranceMode"),
+            insuranceInput:    valueGetter("insurance"),
+            insuranceCalc:     result.insurance,
+            addInsMode:        valueGetter("additionalInsuranceMode"),
+            addInsInput:       valueGetter("additionalInsurance"),
+            addInsCalc:        result.additionalInsurance,
+            net:               result.net,
+        });
 
-    const insuranceMode = (valueGetter("insuranceMode") as "value" | "percentage") ?? "value";
-    const additionalInsuranceMode = (valueGetter("additionalInsuranceMode") as "value" | "percentage") ?? "value";
-
-
-    useEffect(() => {
-        const totals = getTotals();
-        onChange("total", { value: totals.total });
-        onChange("deserved", { value: totals.deserved });
-        onChange("net", { value: totals.net });
+        return result;
     }, [
         valueGetter("quantity"),
         valueGetter("materialPrice"),
@@ -94,17 +99,24 @@ const WorkmanshipContractingForm = ({
         valueGetter("insuranceMode"),
         valueGetter("additionalInsuranceMode"),
         calculateTotals,
-        onChange,
     ]);
 
+// Update form fields when calculations change
     useEffect(() => {
-        const totals = getTotals();
-        onChange("total", { value: totals.total });
-        onChange("deserved", { value: totals.deserved });
-        onChange("net", { value: totals.net });
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+        onChange("total",    { value: calculated.total });
+        onChange("deserved", { value: calculated.deserved });
+        onChange("net",      { value: calculated.net });
+    }, [calculated, onChange]);
 
+// Initial calculation on mount
+    useEffect(() => {
+        const init = calculateTotals(valueGetter);
+        onChange("total",    { value: init.total });
+        onChange("deserved", { value: init.deserved });
+        onChange("net",      { value: init.net });
+    }, []);
 
+// Auto-set 100% achievement for new items
     useEffect(() => {
         const curAch = valueGetter("achievementPercentage");
         const hasPrice = Number(valueGetter("materialPrice") || 0) + Number(valueGetter("laborPrice") || 0) > 0;
@@ -114,6 +126,16 @@ const WorkmanshipContractingForm = ({
             onChange("achievementPercentage", { value: 100 });
         }
     }, [valueGetter, onChange, editMode]);
+
+// Extract values for JSX
+    const { total, deserved, net } = calculated;
+
+
+const insuranceMode = (valueGetter("insuranceMode") as "value" | "percentage") ?? "value";
+    const additionalInsuranceMode = (valueGetter("additionalInsuranceMode") as "value" | "percentage") ?? "value";
+
+
+
 
     const descriptionLengthValidator = (value: string | undefined): string | undefined => {
         if (value && value.length > 3000) {

@@ -44,65 +44,132 @@ export default function CertificateItemForm({
             additionalInsuranceModeParam?: "value" | "percentage"
         ) => {
             const quantity = Number(valueGetter("quantity") || 0);
-            const price =
-                currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
-                    ? Number(valueGetter("materialPrice") || 0) + Number(valueGetter("laborPrice") || 0)
-                    : Number(valueGetter("unitPrice") || 0);
-            const total = Math.round(quantity * price * 1000) / 1000;
-            let finalTotal = total;
-            let deserved = 0;
+            const unitPrice = Number(valueGetter("unitPrice") || 0);
+            const materialPrice = Number(valueGetter("materialPrice") || 0);
+            const laborPrice = Number(valueGetter("laborPrice") || 0);
+
+            let total = 0;
+            // quantity × price
+            let deserved = 0;       // This is the TRUE value of work done — never reduced by penalties
             let insurance = 0;
             let additionalInsurance = 0;
+            let net = 0;
             let discount = 0;
+            let transportationExpenses = 0;
+            let gratuities = 0;
 
-            // REFACTOR: Use passed-in modes first, fall back to form state
-            // Why: Guarantees live mode is used even during rapid UI changes
+            // Use passed-in modes first (for live updates when switching radio), fallback to form value
             const insuranceMode = insuranceModeParam ?? (valueGetter("insuranceMode") as "value" | "percentage") ?? "value";
             const additionalInsuranceMode = additionalInsuranceModeParam ?? (valueGetter("additionalInsuranceMode") as "value" | "percentage") ?? "value";
 
+            // ===================================================================
+            // 1. WORKMANSHIP CONTRACTING CERTIFICATE
+            // ===================================================================
             if (currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE") {
-                const achievementPercentage = parseAchievementPercentage(valueGetter("achievementPercentage"));
-                const baseForDeserved = total * (achievementPercentage / 100);
+                const pricePerUnit = materialPrice + laborPrice;
+                total = Math.round(quantity * pricePerUnit * 1000) / 1000;
+
+                const achievementPercentage = Number(valueGetter("achievementPercentage") || 0);
+                const grossAchieved = Math.round(total * (achievementPercentage / 100) * 1000) / 1000;
+
+                // Deserved = value of work actually performed (before any penalties)
+                deserved = grossAchieved;
+
                 const deductions = Number(valueGetter("deductions") || 0);
-                deserved = Math.max(0, Math.round((baseForDeserved - deductions) * 1000) / 1000);
 
+                // Insurance & Additional Insurance are ALWAYS calculated on the GROSS achieved value
                 const insuranceInput = Number(valueGetter("insurance") || 0);
-                insurance = insuranceMode === "value" ? insuranceInput : (insuranceInput / 100) * deserved;
-                insurance = Math.round(insurance * 1000) / 1000;
+                insurance = insuranceMode === "percentage"
+                    ? Math.round((insuranceInput / 100) * grossAchieved * 1000) / 1000
+                    : insuranceInput;
 
-                const additionalInsuranceInput = Number(valueGetter("additionalInsurance") || 0);
-                additionalInsurance = additionalInsuranceMode === "value" ? additionalInsuranceInput : (additionalInsuranceInput / 100) * deserved;
-                additionalInsurance = Math.round(additionalInsurance * 1000) / 1000;
+                const addInsInput = Number(valueGetter("additionalInsurance") || 0);
+                additionalInsurance = additionalInsuranceMode === "percentage"
+                    ? Math.round((addInsInput / 100) * grossAchieved * 1000) / 1000
+                    : addInsInput;
 
-                const net = Math.max(0, Math.round((deserved - insurance - additionalInsurance) * 1000) / 1000);
-                finalTotal = net;
-            } else if (currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE") {
-                const discountInput = Number(valueGetter("discount") || 0);
-                discount = discountMode === "value" ? discountInput : (discountInput / 100) * total;
-                const transportationExpenses = Number(valueGetter("transportationExpenses") || 0);
-                const gratuities = Number(valueGetter("gratuities") || 0);
-                finalTotal = Math.max(0, Math.round((total - discount + transportationExpenses + gratuities) * 1000) / 1000);
-            } else if (currentCertificateType === "COMPANY_SUPPLY_SALE_CERTIFICATE") {
-                const transportationExpenses = Number(valueGetter("transportationExpenses") || 0);
-                const gratuities = Number(valueGetter("gratuities") || 0);
-                finalTotal = Math.max(0, Math.round((total + transportationExpenses + gratuities) * 1000) / 1000);
+                // Net = deserved − deductions − insurance − additional insurance
+                net = Math.max(0, Math.round((deserved - deductions - insurance - additionalInsurance) * 1000) / 1000);
+
+                return {
+                    total,
+                    finalTotal: net,
+                    net,
+                    deserved,
+                    insurance,
+                    discount: 0,
+                    additionalInsurance,
+                    transportationExpenses: 0,
+                    gratuities: 0,
+                };
             }
 
-            const net =
-                currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE"
-                    ? finalTotal
-                    : finalTotal;
+            // ===================================================================
+            // 2. SUPPLY PROCUREMENT CERTIFICATE
+            // ===================================================================
+            if (currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE") {
+                total = Math.round(quantity * unitPrice * 1000) / 1000;
+                deserved = total; // In supply, deserved = total
 
+                const discountInput = Number(valueGetter("discount") || 0);
+                discount = discountMode === "percentage"
+                    ? Math.round((discountInput / 100) * total * 1000) / 1000
+                    : discountInput;
+
+                transportationExpenses = Number(valueGetter("transportationExpenses") || 0);
+                gratuities = Number(valueGetter("gratuities") || 0);
+
+                net = Math.max(0, Math.round((total - discount + transportationExpenses + gratuities) * 1000) / 1000);
+
+                return {
+                    total,
+                    finalTotal: net,
+                    net,
+                    deserved,
+                    insurance: 0,
+                    discount,
+                    additionalInsurance: 0,
+                    transportationExpenses,
+                    gratuities,
+                };
+            }
+
+            // ===================================================================
+            // 3. COMPANY SUPPLY SALE CERTIFICATE
+            // ===================================================================
+            if (currentCertificateType === "COMPANY_SUPPLY_SALE_CERTIFICATE") {
+                total = Math.round(quantity * unitPrice * 1000) / 1000;
+                deserved = total;
+
+                transportationExpenses = Number(valueGetter("transportationExpenses") || 0);
+                gratuities = Number(valueGetter("gratuities") || 0);
+
+                net = Math.max(0, Math.round((total + transportationExpenses + gratuities) * 1000) / 1000);
+
+                return {
+                    total,
+                    finalTotal: net,
+                    net,
+                    deserved,
+                    insurance: 0,
+                    discount: 0,
+                    additionalInsurance: 0,
+                    transportationExpenses,
+                    gratuities,
+                };
+            }
+
+            // Fallback (should never happen)
             return {
-                total,
-                finalTotal,
-                net,
-                deserved,
-                insurance,
-                discount,
-                additionalInsurance,
-                transportationExpenses: Number(valueGetter("transportationExpenses") || 0),
-                gratuities: Number(valueGetter("gratuities") || 0),
+                total: 0,
+                finalTotal: 0,
+                net: 0,
+                deserved: 0,
+                insurance: 0,
+                discount: 0,
+                additionalInsurance: 0,
+                transportationExpenses: 0,
+                gratuities: 0,
             };
         },
         [currentCertificateType, discountMode]

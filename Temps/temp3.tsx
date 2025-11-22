@@ -1,178 +1,137 @@
-import React, { useEffect, useState } from "react";
-import { Grid, Paper } from "@mui/material";
-import GlSettingsMenu from "../../menu/GlSettingsMenu";
-import AccountingMenu from "../../../invoice/menu/AccountingMenu";
-import {
-        Grid as KendoGrid,
-        GridColumn as Column,
-        GridDataStateChangeEvent,
-        GridToolbar,
-} from "@progress/kendo-react-grid";
-import Button from "@mui/material/Button";
-import Box from '@mui/material/Box';
-import TabContext from '@mui/lab/TabContext';
-import TabPanel from '@mui/lab/TabPanel';
-import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
-import { toast } from "react-toastify";
+const calculateTotals = useCallback(
+    (
+        valueGetter: FormRenderProps["valueGetter"],
+        insuranceModeParam?: "value" | "percentage",
+        additionalInsuranceModeParam?: "value" | "percentage"
+    ) => {
+        const quantity = Number(valueGetter("quantity") || 0);
+        const unitPrice = Number(valueGetter("unitPrice") || 0);
+        const materialPrice = Number(valueGetter("materialPrice") || 0);
+        const laborPrice = Number(valueGetter("laborPrice") || 0);
 
-import AccountForm from "../form/AccountForm";
-import LoadingComponent from "../../../../../app/layout/LoadingComponent";
-import { GlAccount } from "../../../../../app/models/accounting/globalGlSettings";
-import { State } from "@progress/kendo-data-query";
-import {
-        useFetchGlobalGlAccountsQuery,
-        useFetchTopLevelGlobalGlAccountsQuery
-} from "../../../../../app/store/apis/accounting/globalGlSettingsApi";
-import { StyledTabs } from "../../../../../app/components/StyledTabs";
-import { StyledTab } from "../../../../../app/components/StyledTab";
-import { useAppSelector } from "../../../../../app/store/configureStore";
+        let total = 0;
+        // quantity × price
+        let deserved = 0;       // This is the TRUE value of work done — never reduced by penalties
+        let insurance = 0;
+        let additionalInsurance = 0;
+        let net = 0;
+        let discount = 0;
+        let transportationExpenses = 0;
+        let gratuities = 0;
 
-const ChartOfAccountsList = () => {
-        const { language } = useAppSelector(state => state.localization);
+        // Use passed-in modes first (for live updates when switching radio), fallback to form value
+        const insuranceMode = insuranceModeParam ?? (valueGetter("insuranceMode") as "value" | "percentage") ?? "value";
+        const additionalInsuranceMode = additionalInsuranceModeParam ?? (valueGetter("additionalInsuranceMode") as "value" | "percentage") ?? "value";
 
-        // -----------------------------------------------------------------
-        // View State: list vs form
-        // -----------------------------------------------------------------
-        const [editMode, setEditMode] = useState<0 | 1 | 2>(0); // 0=list, 1=create, 2=edit
-        const [selectedAccount, setSelectedAccount] = useState<GlAccount | undefined>(undefined);
+        // ===================================================================
+        // 1. WORKMANSHIP CONTRACTING CERTIFICATE
+        // ===================================================================
+        if (currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE") {
+            const pricePerUnit = materialPrice + laborPrice;
+            total = Math.round(quantity * pricePerUnit * 1000) / 1000;
 
-        // -----------------------------------------------------------------
-        // Data
-        // -----------------------------------------------------------------
-        const [dataState, setDataState] = useState<State>({ take: 20, skip: 0 });
-        const { data: flatGlAccounts, isFetching: isFlatFetching } = useFetchGlobalGlAccountsQuery({ ...dataState });
-        const { data: topLevelAccounts, isFetching: isTopFetching } = useFetchTopLevelGlobalGlAccountsQuery(undefined);
+            const achievementPercentage = Number(valueGetter("achievementPercentage") || 0);
+            const grossAchieved = Math.round(total * (achievementPercentage / 100) * 1000) / 1000;
 
-        const [hierarchicalAccounts, setHierarchicalAccounts] = useState<GlAccount[]>([]);
+            // Deserved = value of work actually performed (before any penalties)
+            deserved = grossAchieved;
 
-        useEffect(() => {
-                if (topLevelAccounts) {
-                        setHierarchicalAccounts(topLevelAccounts);
-                }
-        }, [topLevelAccounts]);
+            const deductions = Number(valueGetter("deductions") || 0);
 
-        // -----------------------------------------------------------------
-        // Handlers – same pattern as SalesRequest
-        // -----------------------------------------------------------------
-        const startCreate = () => {
-                setSelectedAccount(undefined);
-                setEditMode(1);
-        };
+            // Insurance & Additional Insurance are ALWAYS calculated on the GROSS achieved value
+            const insuranceInput = Number(valueGetter("insurance") || 0);
+            insurance = insuranceMode === "percentage"
+                ? Math.round((insuranceInput / 100) * grossAchieved * 1000) / 1000
+                : insuranceInput;
 
-        const startEdit = (account: GlAccount) => {
-                setSelectedAccount(account);
-                setEditMode(2);
-        };
+            const addInsInput = Number(valueGetter("additionalInsurance") || 0);
+            additionalInsurance = additionalInsuranceMode === "percentage"
+                ? Math.round((addInsInput / 100) * grossAchieved * 1000) / 1000
+                : addInsInput;
 
-        const cancelEdit = () => {
-                setEditMode(0);
-                setSelectedAccount(undefined);
-        };
+            // Net = deserved − deductions − insurance − additional insurance
+            net = Math.max(0, Math.round((deserved - deductions - insurance - additionalInsurance) * 1000) / 1000);
 
-        const handleAccountCreated = (newAccount: GlAccount) => {
-                toast.success("Account created successfully");
-                setSelectedAccount(newAccount);
-                setEditMode(2); // switch to edit mode
-                // Optional: refetch top-level or flat list if needed
-        };
-
-        const handleAccountUpdated = (updatedAccount: GlAccount) => {
-                toast.success("Account updated successfully");
-                setSelectedAccount(updatedAccount);
-                // No need to change mode — stays in edit
-        };
-
-        // -----------------------------------------------------------------
-        // Custom Cell
-        // -----------------------------------------------------------------
-        const AccountIdCell = (props: any) => {
-                const navigationAttributes = useTableKeyboardNavigation(props.id);
-                return (
-                    <td {...navigationAttributes} style={{ color: "blue", cursor: "pointer" }}>
-                            <Button variant="text" onClick={() => startEdit(props.dataItem)}>
-                                    {props.dataItem.glAccountId}
-                            </Button>
-                    </td>
-                );
-        };
-
-        // -----------------------------------------------------------------
-        // Render Form or List
-        // -----------------------------------------------------------------
-        if (editMode > 0) {
-                return (
-                    <AccountForm
-                        account={editMode === 1 ? undefined : selectedAccount}
-                        editMode={editMode}
-                        cancelEdit={cancelEdit}
-                        onAccountCreated={handleAccountCreated}
-                        onAccountUpdated={handleAccountUpdated}
-                    />
-                );
+            return {
+                total,
+                finalTotal: net,
+                net,
+                deserved,
+                insurance,
+                discount: 0,
+                additionalInsurance,
+                transportationExpenses: 0,
+                gratuities: 0,
+            };
         }
 
-        // -----------------------------------------------------------------
-        // List View
-        // -----------------------------------------------------------------
-        return (
-            <>
-                    <AccountingMenu selectedMenuItem="/globalGL" />
-                    <Paper elevation={5} className="div-container-withBorderCurved">
-                            <GlSettingsMenu selectedMenuItem="chartOfAccounts" />
+        // ===================================================================
+        // 2. SUPPLY PROCUREMENT CERTIFICATE
+        // ===================================================================
+        if (currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE") {
+            total = Math.round(quantity * unitPrice * 1000) / 1000;
+            deserved = total; // In supply, deserved = total
 
-                            <Grid container spacing={2} sx={{ p: 2 }}>
-                                    <Grid item xs={12}>
-                                            <Button
-                                                variant="contained"
-                                                color="success"
-                                                onClick={startCreate}
-                                                sx={{ mb: 2 }}
-                                            >
-                                                    Create New Account
-                                            </Button>
-                                    </Grid>
+            const discountInput = Number(valueGetter("discount") || 0);
+            discount = discountMode === "percentage"
+                ? Math.round((discountInput / 100) * total * 1000) / 1000
+                : discountInput;
 
-                                    <Grid item xs={12}>
-                                            <TabContext value="1">
-                                                    <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                                                            <StyledTabs value="1">
-                                                                    <StyledTab label="Chart of Accounts" value="1" />
-                                                            </StyledTabs>
-                                                    </Box>
+            transportationExpenses = Number(valueGetter("transportationExpenses") || 0);
+            gratuities = Number(valueGetter("gratuities") || 0);
 
-                                                    <TabPanel value="1">
-                                                            <KendoGrid
-                                                                style={{ height: "70vh" }}
-                                                                data={flatGlAccounts?.data ?? []}
-                                                                total={flatGlAccounts?.total ?? 0}
-                                                                {...dataState}
-                                                                onDataStateChange={(e) => setDataState(e.dataState)}
-                                                                sortable
-                                                                filterable
-                                                                pageable
-                                                                resizable
-                                                            >
-                                                                    <GridToolbar>
-                                                                            <strong>Global Chart of Accounts</strong>
-                                                                    </GridToolbar>
+            net = Math.max(0, Math.round((total - discount + transportationExpenses + gratuities) * 1000) / 1000);
 
-                                                                    <Column field="glAccountId" title="Account ID" cell={AccountIdCell} width={140} />
-                                                                    <Column field="accountName" title="Account Name" width={300} />
-                                                                    <Column field="accountNameArabic" title="Name (Arabic)" width={300} />
-                                                                    <Column field="parentGlAccountId" title="Parent ID" width={140} />
-                                                                    <Column field="glAccountTypeId" title="Type" width={180} />
-                                                                    <Column field="glAccountClassId" title="Class" width={180} />
-                                                                    <Column field="glResourceTypeId" title="Resource Type" width={160} />
-                                                            </KendoGrid>
+            return {
+                total,
+                finalTotal: net,
+                net,
+                deserved,
+                insurance: 0,
+                discount,
+                additionalInsurance: 0,
+                transportationExpenses,
+                gratuities,
+            };
+        }
 
-                                                            {(isFlatFetching || isTopFetching) && <LoadingComponent />}
-                                                    </TabPanel>
-                                            </TabContext>
-                                    </Grid>
-                            </Grid>
-                    </Paper>
-            </>
-        );
-};
+        // ===================================================================
+        // 3. COMPANY SUPPLY SALE CERTIFICATE
+        // ===================================================================
+        if (currentCertificateType === "COMPANY_SUPPLY_SALE_CERTIFICATE") {
+            total = Math.round(quantity * unitPrice * 1000) / 1000;
+            deserved = total;
 
-export default ChartOfAccountsList;
+            transportationExpenses = Number(valueGetter("transportationExpenses") || 0);
+            gratuities = Number(valueGetter("gratuities") || 0);
+
+            net = Math.max(0, Math.round((total + transportationExpenses + gratuities) * 1000) / 1000);
+
+            return {
+                total,
+                finalTotal: net,
+                net,
+                deserved,
+                insurance: 0,
+                discount: 0,
+                additionalInsurance: 0,
+                transportationExpenses,
+                gratuities,
+            };
+        }
+
+        // Fallback (should never happen)
+        return {
+            total: 0,
+            finalTotal: 0,
+            net: 0,
+            deserved: 0,
+            insurance: 0,
+            discount: 0,
+            additionalInsurance: 0,
+            transportationExpenses: 0,
+            gratuities: 0,
+        };
+    },
+    [currentCertificateType, discountMode]
+);

@@ -1,10 +1,10 @@
 using Application.Accounting.Payments;
 using Application.Accounting.Services;
+using Application.Accounting.Services.Models;
 using Application.Catalog.ProductStores;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
-using Application.Interfaces; // for IProductStoreService & IPaymentHelperService
 using Domain;
 
 namespace Application.Order.SalesRequests;
@@ -21,18 +21,22 @@ public class ApproveSalesRequest
         private readonly DataContext _context;
         private readonly IProductStoreService _productStoreService;
         private readonly IPaymentHelperService _paymentHelperService;
+        private readonly IAcctgTransService _acctgTransService;
+
 
         public Handler(
             DataContext context,
             IProductStoreService productStoreService,
-            IPaymentHelperService paymentHelperService)
+            IPaymentHelperService paymentHelperService, IAcctgTransService acctgTransService)
         {
             _context = context;
             _productStoreService = productStoreService;
             _paymentHelperService = paymentHelperService;
+            _acctgTransService = acctgTransService;
         }
 
-        public async Task<Result<CreateSalesRequest.SalesRequestResponseDto>> Handle(Command request, CancellationToken ct)
+        public async Task<Result<CreateSalesRequest.SalesRequestResponseDto>> Handle(Command request,
+            CancellationToken ct)
         {
             var salesRequestId = request.SalesRequestId;
 
@@ -48,7 +52,8 @@ public class ApproveSalesRequest
                     return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure("Sales request not found");
 
                 if (sr.StatusId == "SALES_REQUEST_APPROVED")
-                    return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure("Sales request is already approved");
+                    return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure(
+                        "Sales request is already approved");
 
                 // 2. Update status
                 sr.StatusId = "SALES_REQUEST_APPROVED";
@@ -67,21 +72,21 @@ public class ApproveSalesRequest
                 // Always create Advance Payment (even if full payment)
                 paymentsToCreate.Add(new CreatePaymentParam
                 {
-                    PartyIdFrom = sr.FromPartyId!,                 // Customer pays
-                    PartyIdTo = companyPartyId,                    // Company receives
+                    PartyIdFrom = sr.FromPartyId!, // Customer pays
+                    PartyIdTo = companyPartyId, // Company receives
                     Amount = advance,
                     EffectiveDate = sr.SaleDate ?? DateTime.UtcNow.Date,
                     PaymentTypeId = "RECEIPT_ADVANCE_PAYMENT",
-                    StatusId = "PMNT_NOT_PAID",                    // or "PMNT_PAID" if paid on spot?
+                    StatusId = "PMNT_NOT_PAID", // or "PMNT_PAID" if paid on spot?
                     Comments = "Advance payment - Sales Request Approved",
                     PaymentMethodId = null,
                     PaymentMethodTypeId = null
                 });
 
                 // Only generate installments if partial payment
-                if (advance < totalPrice && 
-                    sr.NumberOfInstallments > 0 && 
-                    sr.DateOfFirstInstallment.HasValue && 
+                if (advance < totalPrice &&
+                    sr.NumberOfInstallments > 0 &&
+                    sr.DateOfFirstInstallment.HasValue &&
                     sr.MonthsBetweenInstallments > 0)
                 {
                     var installmentAmount = remaining / sr.NumberOfInstallments;
@@ -114,21 +119,81 @@ public class ApproveSalesRequest
                     if (payment == null)
                     {
                         await transaction.RollbackAsync(ct);
-                        return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure("Failed to create one or more payments");
+                        return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure(
+                            "Failed to create one or more payments");
                     }
                 }
 
-                // 6. Save approval
+                var apartment = await CreateSalesRequest.Handler.GetApartmentLovProjection(_context, sr.ProductId!, ct)
+                                ?? new CreateSalesRequest.ApartmentLovProjection
+                                    { ApartmentId = sr.ProductId!, ApartmentName = "Unknown Apartment" };
+
+                // 6. Create single accounting transaction for the full apartment sale amount
+                // Following your exact OFBiz-style pattern (no balance check, manual seq, etc.)
+
+                // Reuse the same service you already inject/instantiate elsewhere
+                // Assuming you have IAcctgTransService available — if not, add it to ctor
+                var acctgTransParams = new CreateAcctgTransParams
+                {
+                    AcctgTransTypeId = "SALES_INVOICE", // or "APARTMENT_SALE" if you add it later
+                    TransactionDate = sr.SaleDate ?? DateTime.UtcNow.Date,
+                    IsPosted = "Y",
+                    Description = $"Apartment Sale - SR {sr.SalesRequestId} - {apartment.ApartmentName}",
+                    GlFiscalTypeId = "ACTUAL"
+                };
+
+                var acctgTransId = await _acctgTransService.CreateAcctgTrans(acctgTransParams);
+
+                var stamp = DateTime.UtcNow;
+                var seq = 0;
+
+                // Debit: Accounts Receivable - Customer owes full amount
+                var debitEntry = new AcctgTransEntry
+                {
+                    AcctgTransId = acctgTransId,
+                    AcctgTransEntrySeqId = (++seq).ToString().PadLeft(3, '0'), // "001"
+                    GlAccountId = "121100", // AR - Customers
+                    DebitCreditFlag = "D",
+                    AcctgTransEntryTypeId = "_NA_",
+                    Amount = totalPrice,
+                    ReconcileStatusId = "AES_NOT_RECONCILED",
+                    Description = $"Apartment sale receivable - {apartment.ApartmentName}",
+                    OrganizationPartyId = companyPartyId,
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp
+                };
+                await _acctgTransService.CreateAcctgTransEntry(debitEntry);
+
+                // Credit: Revenue from Apartment Sales
+                var creditEntry = new AcctgTransEntry
+                {
+                    AcctgTransId = acctgTransId,
+                    AcctgTransEntrySeqId = (++seq).ToString().PadLeft(3, '0'), // "002"
+                    GlAccountId = "250120", // Revenue - Apartment Sales
+                    DebitCreditFlag = "C",
+                    AcctgTransEntryTypeId = "_NA_",
+                    Amount = totalPrice,
+                    ReconcileStatusId = "AES_NOT_RECONCILED",
+                    Description = $"Apartment sale revenue - {apartment.ApartmentName}",
+                    OrganizationPartyId = companyPartyId,
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp
+                };
+                await _acctgTransService.CreateAcctgTransEntry(creditEntry);
+
+
+                // 7. Save approval
                 var saved = await _context.SaveChangesAsync(ct) > 0;
                 if (!saved)
                 {
                     await transaction.RollbackAsync(ct);
-                    return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure("Failed to approve sales request");
+                    return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure(
+                        "Failed to approve sales request");
                 }
 
                 await transaction.CommitAsync(ct);
 
-                // 7. Return full DTO (same as create)
+                // 8. Return full DTO (same as create)
                 var response = await BuildResponseDto(sr, ct);
                 return Result<CreateSalesRequest.SalesRequestResponseDto>.Success(response);
             }
@@ -141,7 +206,8 @@ public class ApproveSalesRequest
         }
 
         // Extracted for clarity — same as your existing logic
-        private async Task<CreateSalesRequest.SalesRequestResponseDto> BuildResponseDto(SalesRequest sr, CancellationToken ct)
+        private async Task<CreateSalesRequest.SalesRequestResponseDto> BuildResponseDto(SalesRequest sr,
+            CancellationToken ct)
         {
             var fromParty = await _context.Parties
                 .Where(p => p.PartyId == sr.FromPartyId)

@@ -123,7 +123,6 @@ function SalesRequestForm({
                               cancelEdit,
                               onSalesRequestCreated, onSalesRequestUpdated
                           }: Props) {
-    console.log(`SalesRequestForm render #${++renderCount}`);
 
     const [createSR, {isLoading: isCreating}] = useAddSalesRequestMutation();
     const [updateSR, {isLoading: isUpdating}] = useUpdateSalesRequestMutation();
@@ -143,7 +142,21 @@ function SalesRequestForm({
     // Internal ref for party input (no longer passed from parent)
     // -----------------------------------------------------------------
     const partyInputRef = useRef<HTMLInputElement>(null);
+    const canViewPaymentPlan = editMode === 2 || editMode === 3;
 
+    const viewPaymentPlanButton = (
+        <Grid item>
+            <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => setShowPaymentPlan(true)}
+                disabled={!salesRequest?.salesRequestId} // optional: disable if no record
+            >
+                {getTranslatedLabel("salesRequest.form.viewPaymentPlan", "View Payment Plan")}
+            </Button>
+        </Grid>
+    );
+    
     const isoToDate = (iso: string | null | undefined): Date | null => {
         if (!iso) return null;
         const d = new Date(iso);
@@ -153,8 +166,20 @@ function SalesRequestForm({
     // -----------------------------------------------------------------
     // Initial values
     // -----------------------------------------------------------------
+    const today = new Date();
     const formInitialValues = useMemo(() => {
-        if (editMode === 1) return {}; // create → empty form
+        if (editMode === 1) {
+            return {
+                saleDate: today, // ← Default to today when creating new
+                dateOfFirstInstallment: null,
+                // All other fields start empty/null
+                fromPartyId: null,
+                productId: null,
+                advancePayment: null,
+                totalPrice: null,
+                // ... etc
+            };
+        }
 
         const sr = salesRequest!; // guaranteed in edit mode
 
@@ -626,17 +651,32 @@ function SalesRequestForm({
                             SALES_REQUEST_CREATED: "#1976d2",
                             SALES_REQUEST_APPROVED: "#4caf50",
                         }[statusId ?? ""] ?? "#757575";
+                        
+                        console.log('showPaymentPlan', showPaymentPlan)
 
                         return (
                             <>
                                 <Grid container spacing={2} alignItems="center" position="relative">
                                     <Grid item xs={11}>
                                         <Box display="flex" justifyContent="space-between" sx={{p: 2}}>
-                                            <Typography color={salesRequest?.salesRequestId ? "black" : "green"}
-                                                        variant="h4">
+                                            <Typography
+                                                variant="h4"
+                                                color={salesRequest?.salesRequestId ? "text.primary" : "success.main"}
+                                                sx={{ fontWeight: 500 }}
+                                            >
                                                 {salesRequest?.salesRequestId
-                                                    ? salesRequest.salesRequestId
-                                                    : getTranslatedLabel("salesRequest.form.new", "New Sales Request")}
+                                                    ? (
+                                                        <>
+                                                            <Box component="span" sx={{ opacity: 0.7, mr: 1 }}>
+                                                                {getTranslatedLabel("salesRequest.form.new2", "Sales Request")}:
+                                                            </Box>
+                                                            <Box component="span" fontWeight="bold">
+                                                                {salesRequest.salesRequestId}
+                                                            </Box>
+                                                        </>
+                                                    )
+                                                    : getTranslatedLabel("salesRequest.form.new", "New Sales Request")
+                                                }
                                             </Typography>
 
                                             {editMode === 2 && (
@@ -914,17 +954,7 @@ function SalesRequestForm({
                                                         {getTranslatedLabel("general.cancel", "Cancel")}
                                                     </Button>
                                                 </Grid>
-                                                {editMode === 2 && (
-                                                    <Grid item>
-                                                        <Button
-                                                            variant="outlined"
-                                                            color="primary"
-                                                            onClick={() => setShowPaymentPlan(true)}
-                                                        >
-                                                            {getTranslatedLabel("salesRequest.form.viewPaymentPlan", "View Payment Plan")}
-                                                        </Button>
-                                                    </Grid>
-                                                )}
+                                                {canViewPaymentPlan && viewPaymentPlanButton}
                                             </Grid>
                                         </div>
 
@@ -934,15 +964,11 @@ function SalesRequestForm({
                                             />
                                         )}
 
-                                        {showPaymentPlan && editMode === 2 && (
-                                            <ModalContainer
-                                                show={showPaymentPlan}
-                                                onClose={() => setShowPaymentPlan(false)}
-                                                width={850}
-                                            >
+                                        {showPaymentPlan && canViewPaymentPlan && (
+                                            <ModalContainer show={showPaymentPlan} onClose={() => setShowPaymentPlan(false)} width={850}>
                                                 <PaymentPlanModal
                                                     onClose={() => setShowPaymentPlan(false)}
-                                                    salesRequest={currentFormValues}   // ← always fresh
+                                                    salesRequest={currentFormValues}
                                                     apartment={apartmentForModal}
                                                 />
                                             </ModalContainer>

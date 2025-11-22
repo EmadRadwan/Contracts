@@ -2,10 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+
 
 namespace Application.Order.SalesRequests;
 
@@ -38,8 +35,9 @@ class RawSalesRequest
     public string? DescriptionArabic { get; set; }
 
     public string? PartyDescription { get; set; }
-    public string? StatusId { get; set; }                     // SalesRequest.StatusId
-    public decimal? MaintenanceDeposit { get; set; }          // SalesRequest.MaintenanceDeposit
+    public string? StatusId { get; set; } 
+    public string? StatusDescription { get; set; } 
+    public decimal? MaintenanceDeposit { get; set; } // SalesRequest.MaintenanceDeposit
     public string? FromPartyPhone { get; set; }
 }
 
@@ -58,7 +56,7 @@ public class ListSalesRequestsQuery
         public Handler(DataContext context) => _context = context;
 
         public async Task<IQueryable<SalesRequestRecord>> Handle(Query request,
-                                                                CancellationToken ct)
+            CancellationToken ct)
         {
             var language = request.Language;
 
@@ -73,8 +71,8 @@ public class ListSalesRequestsQuery
                 {
                     ProjectId = g.Key,
                     ProjectName = g.OrderByDescending(w => w.WorkEffortId)
-                                   .Select(w => w.ProjectName)
-                                   .FirstOrDefault()
+                        .Select(w => w.ProjectName)
+                        .FirstOrDefault()
                 })
                 .ToDictionaryAsync(x => x.ProjectId, x => x.ProjectName ?? "", ct);
 
@@ -83,10 +81,10 @@ public class ListSalesRequestsQuery
                 .ToDictionaryAsync(s => s.StatusId, s => s.Description ?? s.StatusId, ct);
 
             var salesRequestStatusLookup = await _context.StatusItems
-                .Where(s => s.StatusTypeId == "SALES_REQUEST_STATUS")   // adjust type if different
-                .ToDictionaryAsync(s => s.StatusId, s => s.Description ?? s.StatusId, ct);
+                .Where(s => s.StatusTypeId == "SALES_REQUEST_STATUS") // adjust type if different
+                .ToDictionaryAsync(s => s.StatusId, s => s.DescriptionArabic ?? s.StatusId, ct);
 
-            
+
             var floorMap = new Dictionary<string, string>
             {
                 { "0", "الطابق الأرضي" },
@@ -103,42 +101,48 @@ public class ListSalesRequestsQuery
             // -------------------------------------------------------------
             //  Left join for Party (phone not in table)
             var dbQuery = from sr in _context.SalesRequests
-                          join p in _context.Products on sr.ProductId equals p.ProductId
-                          join pt in _context.ProductTypes on p.ProductTypeId equals pt.ProductTypeId
-                          join c in _context.Parties on sr.FromPartyId equals c.PartyId into partyGrp
-                          from c in partyGrp.DefaultIfEmpty()
-                          select new RawSalesRequest
-                          {
-                              SalesRequestId = sr.SalesRequestId,
-                              ProductId = sr.ProductId,
-                              FromPartyId = sr.FromPartyId,
-                              ApartmentPricePerM2 = sr.ApartmentPricePerM2,
-                              GardenPricePerM2 = sr.GardenPricePerM2,
-                              Discount = sr.Discount,
-                              TotalPrice = sr.TotalPrice,
-                              AdvancePayment = sr.AdvancePayment,
-                              NumberOfInstallments = sr.NumberOfInstallments,
-                              DateOfFirstInstallment = sr.DateOfFirstInstallment,
-                              MonthsBetweenInstallments = sr.MonthsBetweenInstallments,
-                              SaleDate = sr.SaleDate,
-                              Comments = sr.Comments,
-                              CreatedStamp = sr.CreatedStamp,
-                              LastUpdatedStamp = sr.LastUpdatedStamp,
+                join p in _context.Products on sr.ProductId equals p.ProductId
+                join s in _context.StatusItems on p.ApartmentStatusId equals s.StatusId into statusGrp
+                join pt in _context.ProductTypes on p.ProductTypeId equals pt.ProductTypeId
+                join c in _context.Parties on sr.FromPartyId equals c.PartyId into partyGrp
+                from c in partyGrp.DefaultIfEmpty()
+                select new RawSalesRequest
+                {
+                    SalesRequestId = sr.SalesRequestId,
+                    ProductId = sr.ProductId,
+                    FromPartyId = sr.FromPartyId,
+                    ApartmentPricePerM2 = sr.ApartmentPricePerM2,
+                    GardenPricePerM2 = sr.GardenPricePerM2,
+                    Discount = sr.Discount,
+                    TotalPrice = sr.TotalPrice,
+                    AdvancePayment = sr.AdvancePayment,
+                    NumberOfInstallments = sr.NumberOfInstallments,
+                    DateOfFirstInstallment = sr.DateOfFirstInstallment,
+                    MonthsBetweenInstallments = sr.MonthsBetweenInstallments,
+                    SaleDate = sr.SaleDate,
+                    Comments = sr.Comments,
+                    CreatedStamp = sr.CreatedStamp,
+                    LastUpdatedStamp = sr.LastUpdatedStamp,
 
-                              ProductName = p.ProductName,
-                              ProjectId = p.ProjectId,
-                              FloorNumber = p.FloorNumber,
-                              ApartmentSpaceM2 = p.ApartmentSpaceM2,
-                              GardenSpaceM2 = p.GardenSpaceM2,
-                              ApartmentStatusId = p.ApartmentStatusId,
+                    ProductName = p.ProductName,
+                    ProjectId = p.ProjectId,
+                    FloorNumber = p.FloorNumber,
+                    ApartmentSpaceM2 = p.ApartmentSpaceM2,
+                    GardenSpaceM2 = p.GardenSpaceM2,
+                    ApartmentStatusId = p.ApartmentStatusId,
 
-                              Description = pt.Description,
-                              DescriptionArabic = pt.DescriptionArabic,
+                    Description = pt.Description,
+                    DescriptionArabic = pt.DescriptionArabic,
 
-                              PartyDescription = c != null ? c.Description : null,
-                              StatusId = sr.StatusId,                               // NEW
-                              MaintenanceDeposit = sr.MaintenanceDeposit  
-                          };
+                    PartyDescription = c != null ? c.Description : null,
+                    StatusId = sr.StatusId,
+                    StatusDescription = sr.StatusId != null
+                        ? statusGrp.Where(st => st.StatusId == sr.StatusId)
+                            .Select(st => st.Description)
+                            .FirstOrDefault()
+                        : null,
+                    MaintenanceDeposit = sr.MaintenanceDeposit
+                };
 
             // -------------------------------------------------------------
             // 3. Materialize to List<RawSalesRequest>
@@ -184,13 +188,15 @@ public class ListSalesRequestsQuery
                     ApartmentSpaceM2 = x.ApartmentSpaceM2 ?? 0m,
                     GardenSpaceM2 = x.GardenSpaceM2,
 
-                    ApartmentStatusDescription = x.ApartmentStatusId != null && statusLookup.TryGetValue(x.ApartmentStatusId, out var sd)
+                    ApartmentStatusDescription = x.ApartmentStatusId != null &&
+                                                 statusLookup.TryGetValue(x.ApartmentStatusId, out var sd)
                         ? sd
                         : x.ApartmentStatusId ?? string.Empty,
-                    
+
                     MaintenanceDeposit = x.MaintenanceDeposit,
                     StatusId = x.StatusId ?? string.Empty,
-                    StatusDescription = x.StatusId != null && salesRequestStatusLookup.TryGetValue(x.StatusId, out var srd)
+                    StatusDescription = x.StatusId != null &&
+                                        salesRequestStatusLookup.TryGetValue(x.StatusId, out var srd)
                         ? srd
                         : x.StatusId ?? string.Empty,
 

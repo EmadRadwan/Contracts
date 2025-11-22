@@ -61,7 +61,7 @@ public class SetPaymentStatusToReceived
         }
 
         public async Task<Results<PaymentDetailsResponse>> Handle(Command request,
-                                                                CancellationToken ct)
+            CancellationToken ct)
         {
             var transaction = await _context.Database.BeginTransactionAsync(ct);
 
@@ -144,17 +144,17 @@ public class SetPaymentStatusToReceived
                 // ---- 6. Build the rich response --------------------------------------------
                 var response = new PaymentDetailsResponse
                 {
-                    PaymentId            = payment.PaymentId,
-                    StatusId             = payment.StatusId,
-                    StatusDescription    = statusItem,
-                    CurrencyUomId        = payment.CurrencyUomId,
-                    ActualCurrencyUomId  = payment.ActualCurrencyUomId,
-                    FinAccountTransId    = payment.FinAccountTransId,
-                    ChequeNumber         = payment.ChequeNumber,
-                    ChequeDate           = payment.ChequeDate,
-                    Comments             = payment.Comments,
-                    PartyIdFromName      = fromPartyName,
-                    PartyIdToName        = toPartyName
+                    PaymentId = payment.PaymentId,
+                    StatusId = payment.StatusId,
+                    StatusDescription = statusItem,
+                    CurrencyUomId = payment.CurrencyUomId,
+                    ActualCurrencyUomId = payment.ActualCurrencyUomId,
+                    FinAccountTransId = payment.FinAccountTransId,
+                    ChequeNumber = payment.ChequeNumber,
+                    ChequeDate = payment.ChequeDate,
+                    Comments = payment.Comments,
+                    PartyIdFromName = fromPartyName,
+                    PartyIdToName = toPartyName
                 };
 
                 return Results<PaymentDetailsResponse>.Success(response);

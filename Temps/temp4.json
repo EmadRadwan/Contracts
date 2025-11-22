@@ -1,2 +1,9 @@
-"totalToBePaid": "رصيد لصالح الطرف (مستحق سداده للطرف)",
-"totalToBeReceived": "رصيد لصالح الشركة (مقدم أو عميل مدين)"
+{
+  "PAYMENT_TYPE_ID": "RECEIPT_ADVANCE_PAYMENT",
+  "ORGANIZATION_PARTY_ID": "Company",
+  "GL_ACCOUNT_TYPE_ID": "CUSTOMER_DEPOSIT",
+  "LAST_UPDATED_STAMP": "2025-10-29 12:00:00.000",
+  "LAST_UPDATED_TX_STAMP": "2025-10-29 12:00:00.000",
+  "CREATED_STAMP": "2025-10-29 12:00:00.000",
+  "CREATED_TX_STAMP": "2025-10-29 12:00:00.000"
+},

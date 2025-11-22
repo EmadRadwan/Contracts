@@ -68,7 +68,7 @@ export default function ProjectCertificatesList() {
     const [viewMode, setViewMode] = useState<"list" | "form">("list");
     const [isGeneratingAll, setIsGeneratingAll] = useState(false);
 
-    console.log("Certificates data:", data);
+    //console.log("Certificates data:", data);
 
     // console.log('List rendered')
 
@@ -130,14 +130,14 @@ export default function ProjectCertificatesList() {
     const handleSelectCertificate = useCallback(
         debounce((workEffortId?: string, currentStatusId?: CertificateStatus) => {
             if (!workEffortId) {
-                console.warn("No workEffortId provided to handleSelectCertificate");
+                //console.warn("No workEffortId provided to handleSelectCertificate");
                 return;
             }
             const selectedCert: Certificate | undefined = certificates.data.find(
                 (cert: Certificate) => cert.workEffortId === workEffortId
             );
             if (!selectedCert) {
-                console.warn("No certificate found for workEffortId:", workEffortId);
+                //console.warn("No certificate found for workEffortId:", workEffortId);
                 return;
             }
             //dispatch(resetUiCertificateItems());

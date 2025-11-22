@@ -188,6 +188,11 @@ function SalesRequestsList() {
                                     width={200}
                                 />
                                 <Column
+                                    field="statusDescription"
+                                    title={getTranslatedLabel("salesRequest.list.status", "Status")}
+                                    width={200}
+                                />
+                                <Column
                                     field="saleDate"
                                     title={getTranslatedLabel("salesRequest.list.saleDate", "Sale Date")}
                                     format="{0:dd/MM/yyyy}"

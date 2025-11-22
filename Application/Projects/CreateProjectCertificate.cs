@@ -161,9 +161,9 @@ namespace Application.Projects
                                 OrderItemSeqId = seq.ToString("D4"),
                                 ProductId = item.ProductId,
                                 ProductName = item.ProductName,
-                                Quantity = 1,
-                                UnitPrice = netAmount - item.Insurance - item.AdditionalInsurance,
-                                SubTotal = netAmount - item.Insurance - item.AdditionalInsurance,
+                                Quantity = item.Quantity,
+                                UnitPrice = (netAmount - item.Insurance - item.AdditionalInsurance) / item.Quantity,
+                                SubTotal = (netAmount - item.Insurance - item.AdditionalInsurance) / item.Quantity,
                                 UomId = item.UomId,
                                 FacilityId = certificate.FacilityId,
                                 ItemDescription = item.Description,
@@ -219,12 +219,6 @@ namespace Application.Projects
                                     seq++;
                                 }
                             }
-
-                            // Optional: Add positive lines for transparency (Transportation, Gratuities, etc.)
-                            // Only if you want them visible in PO — otherwise skip (since already in net)
-                            // Example:
-                            // if (item.TransportationExpenses.GetValueOrDefault() > 0) { ... }
-                            // if (item.Gratuities.GetValueOrDefault() > 0) { ... }
                         }
 
                         var grandTotal = orderItems.Sum(i => i.SubTotal);
