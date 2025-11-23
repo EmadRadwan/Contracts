@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.OData.Query;
 using Microsoft.Extensions.Logging;
 using Persistence;
 using Application.Shipments.Invoices;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Accounting.Invoices
 {
@@ -33,84 +34,126 @@ namespace Application.Accounting.Invoices
 
             public async Task<IQueryable<InvoiceRecord>> Handle(Query request, CancellationToken cancellationToken)
             {
-                var language = request.Language ?? "en"; // fallback
+                var language = request.Language ?? "en";
 
-                // 1. Pre-calculate invoice totals separately (no cartesian risk)
-                var invoiceTotals = _context.InvoiceItems
+                // STEP 1: Get ALL invoice items for the relevant invoices (only what we need)
+                var relevantInvoiceItems = await _context.InvoiceItems
                     .Where(ii => ii.InvoiceId != null)
-                    .GroupBy(ii => ii.InvoiceId)
-                    .Select(g => new
+                    .Select(ii => new
                     {
-                        InvoiceId = g.Key,
-                        Total = g.Sum(ii => ii.Quantity * ii.Amount)
-                    });
+                        ii.InvoiceId,
+                        ii.Quantity,
+                        ii.Amount
+                    })
+                    .ToListAsync(cancellationToken);
 
-                // 2. Main query – get one row per invoice with certificate info
-                var query = from inv in _context.Invoices
+                // STEP 2: In-memory grouping + correct per-line rounding (AwayFromZero)
+                var invoiceTotalsDict = relevantInvoiceItems
+                    .GroupBy(x => x.InvoiceId!)
+                    .ToDictionary(
+                        g => g.Key,
+                        g =>
+                        {
+                            var lineTotal = g.Sum(item =>
+                                item.Quantity * Math.Round((decimal)item.Amount, 5, MidpointRounding.AwayFromZero)
+                            );
+
+                            // REFACTOR: Second rounding — this is what pushes 30999.99999 → 31000.00
+                            return Math.Round((decimal)lineTotal, 2, MidpointRounding.AwayFromZero);
+                        }
+                    );
+                
+                // Optional: Log to prove it's working
+                // foreach (var kv in invoiceTotalsDict)
+                //     _logger.LogInformation("Invoice {Id} → Rounded Total: {Total}", kv.Key, kv.Value);
+
+                // STEP 3: Main query — 100% translatable, no Math.Round, no client code
+                var baseQuery = from inv in _context.Invoices
                     join invt in _context.InvoiceTypes on inv.InvoiceTypeId equals invt.InvoiceTypeId
                     join fromParty in _context.Parties on inv.PartyIdFrom equals fromParty.PartyId
                     join toParty in _context.Parties on inv.PartyId equals toParty.PartyId
                     join sts in _context.StatusItems on inv.StatusId equals sts.StatusId
-                    join bil in _context.BillingAccounts on inv.BillingAccountId equals bil.BillingAccountId into bilGj
-                    from bil in bilGj.DefaultIfEmpty()
+                    join bil in _context.BillingAccounts on inv.BillingAccountId equals bil.BillingAccountId into
+                        billingGj
+                    from bil in billingGj.DefaultIfEmpty()
 
-                    // Get OrderId + CertificateNumber (at most one per invoice)
-                    // REFACTOR: Use FirstOrDefault instead of join explosion
-                    let orderInfo = _context.OrderItemBillings
-                        .Where(oib => oib.InvoiceId == inv.InvoiceId)
-                        .Select(oib => new { oib.OrderId })
-                        .FirstOrDefault()
-                    let certificate = orderInfo != null
-                        ? _context.WorkEfforts
-                            .Where(we =>
-                                we.RelatedOrderId == orderInfo.OrderId && we.WorkEffortTypeId == "PROJECT_CERTIFICATE")
-                            .Select(we => we.CertificateNumber)
-                            .FirstOrDefault()
-                        : null
-
-                    // Join pre-calculated total
-                    join tot in invoiceTotals on inv.InvoiceId equals tot.InvoiceId into totGj
-                    from tot in totGj.DefaultIfEmpty()
+                    // Certificate handling
+                    join oib in _context.OrderItemBillings on inv.InvoiceId equals oib.InvoiceId into oibGj
+                    from oib in oibGj.DefaultIfEmpty()
+                    let OrderId = oib != null ? oib.OrderId : null
+                    join we in _context.WorkEfforts
+                        on new { OrderId, Type = "PROJECT_CERTIFICATE" }
+                        equals new { OrderId = we.RelatedOrderId, Type = we.WorkEffortTypeId } into weGj
+                    from we in weGj.DefaultIfEmpty()
+                    group new
+                        {
+                            inv, invt, fromParty, toParty, sts, bil,
+                            OrderId,
+                            CertificateNumber = we != null ? we.CertificateNumber : (string?)null
+                        }
+                        by new
+                        {
+                            inv.InvoiceId,
+                            inv.InvoiceTypeId,
+                            InvoiceTypeDescriptionEn = invt.Description,
+                            InvoiceTypeDescriptionAr = invt.DescriptionArabic,
+                            inv.InvoiceDate,
+                            inv.DueDate,
+                            inv.PaidDate,
+                            inv.StatusId,
+                            StatusDescriptionEn = sts.Description,
+                            StatusDescriptionAr = sts.DescriptionArabic,
+                            inv.Description,
+                            inv.PartyId,
+                            ToPartyName = toParty.Description,
+                            inv.PartyIdFrom,
+                            FromPartyName = fromParty.Description,
+                            inv.BillingAccountId,
+                            BillingAccountName = bil != null ? bil.Description : (string?)null,
+                            OrderId,
+                            CertificateNumber = we != null ? we.CertificateNumber : (string?)null
+                        }
+                    into g
                     select new InvoiceRecord
                     {
-                        InvoiceId = inv.InvoiceId,
-                        InvoiceTypeId = inv.InvoiceTypeId,
-                        InvoiceTypeDescription = language == "ar" ? invt.DescriptionArabic : invt.Description,
-
-                        InvoiceDate = inv.InvoiceDate,
-                        DueDate = inv.DueDate,
-                        PaidDate = inv.PaidDate,
-
-                        StatusId = inv.StatusId,
-                        StatusDescription = language == "ar" ? sts.DescriptionArabic : sts.Description,
-
-                        Description = inv.Description,
-
-                        PartyIdFrom = new InvoicePartyDto
-                        {
-                            FromPartyId = inv.PartyIdFrom,
-                            FromPartyName = fromParty.Description
-                        },
-                        FromPartyName = fromParty.Description,
+                        InvoiceId = g.Key.InvoiceId,
+                        InvoiceTypeId = g.Key.InvoiceTypeId,
+                        InvoiceTypeDescription = language == "ar"
+                            ? g.Key.InvoiceTypeDescriptionAr
+                            : g.Key.InvoiceTypeDescriptionEn,
+                        InvoiceDate = g.Key.InvoiceDate,
+                        DueDate = g.Key.DueDate,
+                        PaidDate = g.Key.PaidDate,
+                        StatusId = g.Key.StatusId,
+                        StatusDescription = language == "ar" ? g.Key.StatusDescriptionAr : g.Key.StatusDescriptionEn,
+                        Description = g.Key.Description,
 
                         PartyId = new InvoicePartyDto
-                        {
-                            FromPartyId = inv.PartyId,
-                            FromPartyName = toParty.Description
-                        },
-                        ToPartyName = toParty.Description,
+                            { FromPartyId = g.Key.PartyId, FromPartyName = g.Key.ToPartyName },
+                        ToPartyName = g.Key.ToPartyName,
 
-                        BillingAccountId = inv.BillingAccountId,
-                        BillingAccountName = bil != null ? bil.Description : null,
+                        PartyIdFrom = new InvoicePartyDto
+                            { FromPartyId = g.Key.PartyIdFrom, FromPartyName = g.Key.FromPartyName },
+                        FromPartyName = g.Key.FromPartyName,
 
-                        Total = tot != null ? tot.Total : 0m,
-                        OutstandingAmount = 0m, // calculate separately if needed
+                        BillingAccountId = g.Key.BillingAccountId,
+                        BillingAccountName = g.Key.BillingAccountName,
 
-                        OrderId = orderInfo != null ? orderInfo.OrderId : null,
-                        CertificateNumber = certificate
+                        Total = 0m, // will be replaced
+                        OutstandingAmount = 0m,
+                        OrderId = g.Key.OrderId,
+                        CertificateNumber = g.Key.CertificateNumber
                     };
 
-                return await Task.FromResult(query);
+                // STEP 4: Final projection — apply correct accounting total
+                return baseQuery
+                    .AsEnumerable()
+                    .Select(x =>
+                    {
+                        x.Total = invoiceTotalsDict.TryGetValue(x.InvoiceId, out var total) ? total : 0m;
+                        return x;
+                    })
+                    .AsQueryable();
             }
         }
     }

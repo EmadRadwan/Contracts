@@ -1,67 +1,143 @@
-                // 6. Create single accounting transaction for the full apartment sale amount
-                // Following your exact OFBiz-style pattern (no balance check, manual seq, etc.)
-                var companyPartyId = await _productStoreService.GetProductStorePayToPartId();
+if (certificate.CertificateCategory != "COMPANY_SUPPLY_SALE_CERTIFICATE")
+{
+    var orderItems = new List<OrderItemDto2>();
+    var orderAdjustments = new List<OrderAdjustmentDto2>();
+    var seq = 1;
 
-                // Reuse the same service you already inject/instantiate elsewhere
-                // Assuming you have IAcctgTransService available — if not, add it to ctor
-                var acctgTransParams = new CreateAcctgTransParams
+    var fromPartyId = certificate.CertificateCategory switch
+    {
+        "SUPPLY_PROCUREMENT_CERTIFICATE" => certificate.PartyIdSupplier 
+            ?? throw new InvalidOperationException("PartyIdSupplier is required"),
+        "WORKMANSHIP_CONTRACTING_CERTIFICATE" => certificate.PartyIdContractor 
+            ?? throw new InvalidOperationException("PartyIdContractor is required"),
+        _ => throw new InvalidOperationException($"Unsupported category: {certificate.CertificateCategory}")
+    };
+
+    foreach (var item in certificate.CertificateItems!)
+    {
+        var mainSeqId = seq.ToString("D4");
+
+        if (certificate.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE")
+        {
+            // MAIN ITEM: Quantity = 1, UnitPrice = net (exact payable amount)
+            orderItems.Add(new OrderItemDto2
+            {
+                OrderItemSeqId = mainSeqId,
+                ProductId = item.ProductId,
+                ProductName = item.ProductName,
+                Quantity = 1m,
+                UnitPrice = item.Net,                    // ← EXACT net amount
+                SubTotal = item.Net,
+                UomId = item.UomId,
+                FacilityId = certificate.FacilityId,
+                ItemDescription = item.Description,
+                OrderItemTypeId = "PROJECT_CERTIFICATE_ITEM",
+                StatusId = "ITEM_CREATED",
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            });
+
+            // INSURANCE AS NEGATIVE ORDER ITEM
+            if (item.Insurance.GetValueOrDefault() != 0)
+            {
+                seq++;
+                orderItems.Add(new OrderItemDto2
                 {
-                    AcctgTransTypeId = "SALES_INVOICE",      // or "APARTMENT_SALE" if you add it later
-                    TransactionDate = sr.SaleDate ?? DateTime.UtcNow.Date,
-                    IsPosted = "Y",
-                    Description = $"Apartment Sale - SR {sr.SalesRequestId} - {apartment.ApartmentName}",
-                    GlFiscalTypeId = "ACTUAL"
-                };
-
-                var acctgTransId = await _acctgTransService.CreateAcctgTrans(acctgTransParams);
-
-                var stamp = DateTime.UtcNow;
-                var seq = 0;
-
-                // Debit: Accounts Receivable - Customer owes full amount
-                var debitEntry = new AcctgTransEntry
-                {
-                    AcctgTransId = acctgTransId,
-                    AcctgTransEntrySeqId = (++seq).ToString().PadLeft(3, '0'), // "001"
-                    GlAccountId = "121100",               // AR - Customers
-                    DebitCreditFlag = "D",
-                    AcctgTransEntryTypeId = "_NA_",
-                    Amount = totalPrice,
-                    ReconcileStatusId = "AES_NOT_RECONCILED",
-                    Description = $"Apartment sale receivable - {apartment.ApartmentName}",
-                    OrganizationPartyId = companyPartyId,
+                    OrderItemSeqId = seq.ToString("D4"),
+                    ProductId = item.ProductId,
+                    ProductName = $"تأمين - {item.ProductName}",
+                    Quantity = 1m,
+                    UnitPrice = -Math.Abs(item.Insurance.Value),
+                    SubTotal = -Math.Abs(item.Insurance.Value),
+                    UomId = item.UomId,
+                    FacilityId = certificate.FacilityId,
+                    ItemDescription = "تأمين مستحق",
+                    OrderItemTypeId = "PROJECT_INSURANCE",
+                    StatusId = "ITEM_CREATED",
                     CreatedStamp = stamp,
                     LastUpdatedStamp = stamp
-                };
-                await _acctgTransService.CreateAcctgTransEntry(debitEntry);
+                });
+            }
 
-                // Credit: Revenue from Apartment Sales
-                var creditEntry = new AcctgTransEntry
+            // ADDITIONAL INSURANCE AS NEGATIVE ORDER ITEM
+            if (item.AdditionalInsurance.GetValueOrDefault() != 0)
+            {
+                seq++;
+                orderItems.Add(new OrderItemDto2
                 {
-                    AcctgTransId = acctgTransId,
-                    AcctgTransEntrySeqId = (++seq).ToString().PadLeft(3, '0'), // "002"
-                    GlAccountId = "250120",               // Revenue - Apartment Sales
-                    DebitCreditFlag = "C",
-                    AcctgTransEntryTypeId = "_NA_",
-                    Amount = totalPrice,
-                    ReconcileStatusId = "AES_NOT_RECONCILED",
-                    Description = $"Apartment sale revenue - {apartment.ApartmentName}",
-                    OrganizationPartyId = companyPartyId,
+                    OrderItemSeqId = seq.ToString("D4"),
+                    ProductId = item.ProductId,
+                    ProductName = $"تأمين إضافي - {item.ProductName}",
+                    Quantity = 1m,
+                    UnitPrice = -Math.Abs(item.AdditionalInsurance.Value),
+                    SubTotal = -Math.Abs(item.AdditionalInsurance.Value),
+                    UomId = item.UomId,
+                    FacilityId = certificate.FacilityId,
+                    ItemDescription = "تأمين إضافي",
+                    OrderItemTypeId = "PROJECT_ADDITIONAL_INSURANCE",
+                    StatusId = "ITEM_CREATED",
                     CreatedStamp = stamp,
                     LastUpdatedStamp = stamp
-                };
-                await _acctgTransService.CreateAcctgTransEntry(creditEntry);
+                });
+            }
+        }
+        else // SUPPLY_PROCUREMENT_CERTIFICATE
+        {
+            // MAIN ITEM: Keep exact Quantity + UnitPrice from frontend
+            var baseTotal = item.Quantity * item.UnitPrice;
 
-                private readonly IAcctgTransService _acctgTransService;
+            orderItems.Add(new OrderItemDto2
+            {
+                OrderItemSeqId = mainSeqId,
+                ProductId = item.ProductId,
+                ProductName = item.ProductName,
+                Quantity = item.Quantity,
+                UnitPrice = item.UnitPrice,
+                SubTotal = baseTotal,
+                UomId = item.UomId,
+                FacilityId = certificate.FacilityId,
+                ItemDescription = item.Description,
+                OrderItemTypeId = "PROJECT_CERTIFICATE_ITEM",
+                StatusId = "ITEM_CREATED",
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            });
 
-                public Handler(
-                    DataContext context,
-                    IProductStoreService productStoreService,
-                    IPaymentHelperService paymentHelperService,
-                    IAcctgTransService acctgTransService)   // ← add this
-                {
-                    _context = context;
-                    _productStoreService = productStoreService;
-                    _paymentHelperService = paymentHelperService;
-                    _acctgTransService = acctgTransService;  // ← add this
-                }
+            // Add extras as adjustments
+            if (item.Discount.GetValueOrDefault() != 0)
+                orderAdjustments.Add(CreateAdjustment(mainSeqId, "DISCOUNT_ADJUSTMENT", -item.Discount.Value, item));
+            if (item.TransportationExpenses.GetValueOrDefault() != 0)
+                orderAdjustments.Add(CreateAdjustment(mainSeqId, "SHIPPING_CHARGES", item.TransportationExpenses.Value, item));
+            if (item.Gratuities.GetValueOrDefault() != 0)
+                orderAdjustments.Add(CreateAdjustment(mainSeqId, "MISCELLANEOUS_CHARGE", item.Gratuities.Value, item));
+        }
+
+        seq++; // Increment only after main item
+    }
+
+    // FINAL GRAND TOTAL = Sum of all OrderItems.SubTotal + All Adjustments
+    var grandTotal = orderItems.Sum(i => i.SubTotal) + orderAdjustments.Sum(a => a.Amount);
+
+    var orderDto = new OrderDto
+    {
+        OrderTypeId = "PURCHASE_ORDER",
+        FromPartyId = fromPartyId,
+        CurrencyUomId = await _productStoreService.GetProductStoreDefaultCurrencyId(),
+        OrderDate = stamp,
+        StatusId = "ORDER_CREATED",
+        StatusDescription = "Created",
+        InternalRemarks = $"Auto-generated from Certificate {newProjectCertificateSerial}",
+        GrandTotal = grandTotal,  // ← NOW 100% CORRECT
+        OrderItems = orderItems,
+        OrderAdjustments = orderAdjustments
+    };
+
+    poResult = await _orderService.CreatePurchaseOrder(orderDto);
+    if (poResult == null)
+    {
+        await transaction.RollbackAsync(cancellationToken);
+        return Result<ProjectCertificateDto>.Failure("Failed to create purchase order");
+    }
+
+    generatedOrderId = poResult.OrderId;
+}
