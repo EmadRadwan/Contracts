@@ -10,7 +10,7 @@ public class ListPaymentsDaily
     public class Query : IRequest<PaymentsDailyResponse>
     {
         public string? PaymentType { get; set; }
-        public string Language { get; set; } = "en";
+        public string Language { get; set; }
     }
 
     public class Handler : IRequestHandler<Query, PaymentsDailyResponse>
@@ -50,8 +50,8 @@ public class ListPaymentsDaily
                 join ptyFrom in _context.Parties on pyt.PartyIdFrom equals ptyFrom.PartyId
                 join ptyTo in _context.Parties on pyt.PartyIdTo equals ptyTo.PartyId
                 join pmt in _context.PaymentMethodTypes on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId
-                where pyt.EffectiveDate >= startUtc
-                      && pyt.EffectiveDate < endUtc
+                where pyt.CreatedStamp >= startUtc
+                      && pyt.CreatedStamp < endUtc
                       && (isOutgoing ? ptt.ParentTypeId == "DISBURSEMENT" : ptt.ParentTypeId != "DISBURSEMENT")
                 select new PaymentRecordDto
                 {

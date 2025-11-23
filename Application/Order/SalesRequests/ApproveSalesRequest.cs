@@ -135,7 +135,7 @@ public class ApproveSalesRequest
                 // Assuming you have IAcctgTransService available — if not, add it to ctor
                 var acctgTransParams = new CreateAcctgTransParams
                 {
-                    AcctgTransTypeId = "SALES_INVOICE", // or "APARTMENT_SALE" if you add it later
+                    AcctgTransTypeId = "APARTMENT_SALE", // or "APARTMENT_SALE" if you add it later
                     TransactionDate = sr.SaleDate ?? DateTime.UtcNow.Date,
                     IsPosted = "Y",
                     Description = $"Apartment Sale - SR {sr.SalesRequestId} - {apartment.ApartmentName}",

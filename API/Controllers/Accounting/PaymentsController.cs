@@ -154,11 +154,11 @@ public class PaymentsController : BaseApiController
         [FromQuery] string paymentType,
         CancellationToken ct = default)
     {
+        var language = GetLanguage();
         var query = new ListPaymentsDaily.Query
         {
             PaymentType = paymentType,
-            // Language can be pulled from header/culture if needed
-            Language = "en" 
+            Language = language
         };
 
         var result = await Mediator.Send(query, ct);

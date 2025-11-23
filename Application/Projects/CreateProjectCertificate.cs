@@ -221,7 +221,7 @@ namespace Application.Projects
                             }
                         }
 
-                        var grandTotal = orderItems.Sum(i => i.SubTotal);
+                        var grandTotal = orderItems.Sum(i => i.Quantity * i.UnitPrice);
 
                         var orderDto = new OrderDto
                         {
