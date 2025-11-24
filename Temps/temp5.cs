@@ -1,20 +1,23 @@
-<simple-method method-name="updateAcctgTransEntry" short-description="Update Entry To AcctgTrans">
-    <entity-one entity-name="AcctgTransEntry" value-field="lookedUpValue"/>
-    <!-- Only status change will be allowed in case of posted entry -->
-<make-value entity-name="AcctgTransEntry" value-field="acctgTransEntry"/>
-<set field="acctgTransEntry" from-field="lookedUpValue"/>
-<set-nonpk-fields map="parameters" value-field="acctgTransEntry"/>
-<set field="lookedUpValue.reconcileStatusId" from-field="acctgTransEntry.reconcileStatusId"/>
-<if-compare-field field="acctgTransEntry" operator="not-equals" to-field="lookedUpValue">
-<entity-one entity-name="AcctgTrans" value-field="acctgTrans"/>
-<if-compare field="acctgTrans.isPosted" operator="equals" value="Y">
-<add-error><fail-property resource="AccountingUiLabels" property="AccountingTransactionHasBeenAlreadyPosted"/></add-error>
-<check-errors/>
-</if-compare>
-</if-compare-field>
-<set-nonpk-fields map="parameters" value-field="lookedUpValue"/>
-<store-value value-field="lookedUpValue"/>
-
-<!-- when changing entries, also update the last modified info for the AcctgTrans -->
-<call-simple-method method-name="updateAcctgTransLastModified"/>
-</simple-method>
+// REFACTOR: Change to LEFT JOIN for PaymentMethodTypes
+// Purpose: Most payments have NULL PaymentMethodTypeId (cash, advance, etc.)
+// Improvement: Prevents legitimate payments from being excluded entirely
+var query = from pyt in _context.Payments
+    join ptt in _context.PaymentTypes on pyt.PaymentTypeId equals ptt.PaymentTypeId
+    join sts in _context.StatusItems on pyt.StatusId equals sts.StatusId
+    join ptyFrom in _context.Parties on pyt.PartyIdFrom equals ptyFrom.PartyId
+    join ptyTo in _context.Parties on pyt.PartyIdTo equals ptyTo.PartyId
+    join pmt in _context.PaymentMethodTypes 
+        on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into pmtGroup
+    from pmt in pmtGroup.DefaultIfEmpty()   // ← LEFT JOIN
+    where pyt.CreatedStamp >= startOfDayEgypt
+          && pyt.CreatedStamp < endOfDayEgypt
+          && (isOutgoing ? ptt.ParentTypeId == "DISBURSEMENT" : ptt.ParentTypeId != "DISBURSEMENT")
+    select new PaymentRecordDto
+    {
+        // ... other fields
+        PaymentMethodTypeId = pyt.PaymentMethodTypeId ?? "",
+        PaymentMethodTypeDescription = pmt != null 
+            ? (request.Language == "ar" ? pmt.DescriptionArabic : pmt.Description)
+            : "N/A",  // or "" or "Cash" or whatever makes sense
+        // ...
+    };

@@ -26,18 +26,13 @@ public class ListPaymentsDaily
 
         public async Task<PaymentsDailyResponse> Handle(Query request, CancellationToken ct)
         {
-            // REFACTOR: Server-side date filtering using local EET time (Egypt)
-            // Purpose: Match frontend "today" in Egypt time (EET = UTC+2)
-            // Improvement: Uses TimeZoneInfo to avoid UTC/local mismatch
-            var egyptZone = TimeZoneInfo.FindSystemTimeZoneById("Egypt Standard Time");
-            var nowInEgypt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, egyptZone);
-            var startOfDay = new DateTime(nowInEgypt.Year, nowInEgypt.Month, nowInEgypt.Day, 0, 0, 0);
-            var startOfTomorrow = startOfDay.AddDays(1);
+            var egyptZone = TimeZoneInfo.FindSystemTimeZoneById(
+                OperatingSystem.IsWindows() ? "Egypt Standard Time" : "Africa/Cairo");
 
-            // Convert to UTC for DB comparison
-            var startUtc = TimeZoneInfo.ConvertTimeToUtc(startOfDay, egyptZone);
-            var endUtc = TimeZoneInfo.ConvertTimeToUtc(startOfTomorrow, egyptZone);
-
+            var egyptNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, egyptZone);
+            var startOfDayEgypt = egyptNow.Date;                    // 00:00 today in Egypt
+            var endOfDayEgypt   = startOfDayEgypt.AddDays(1);
+            
             var isOutgoing = request.PaymentType == "outgoing";
 
             // REFACTOR: Removed unnecessary joins with CreditCards, OrderPaymentPreferences, OrderHeaders, WorkEfforts
@@ -49,9 +44,11 @@ public class ListPaymentsDaily
                 join sts in _context.StatusItems on pyt.StatusId equals sts.StatusId
                 join ptyFrom in _context.Parties on pyt.PartyIdFrom equals ptyFrom.PartyId
                 join ptyTo in _context.Parties on pyt.PartyIdTo equals ptyTo.PartyId
-                join pmt in _context.PaymentMethodTypes on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId
-                where pyt.CreatedStamp >= startUtc
-                      && pyt.CreatedStamp < endUtc
+                join pmt in _context.PaymentMethodTypes 
+                    on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into pmtGroup
+                from pmt in pmtGroup.DefaultIfEmpty() 
+                where pyt.CreatedStamp >= startOfDayEgypt
+                      && pyt.CreatedStamp < endOfDayEgypt
                       && (isOutgoing ? ptt.ParentTypeId == "DISBURSEMENT" : ptt.ParentTypeId != "DISBURSEMENT")
                 select new PaymentRecordDto
                 {

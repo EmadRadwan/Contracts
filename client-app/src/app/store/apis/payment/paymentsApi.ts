@@ -220,7 +220,7 @@ const paymentsApi = createApi({
                     // 'NotAppliedPayments' retained if needed elsewhere; add providesTags to relevant query if not already
                 ],
             }),
-            fetchDailyPayments: builder.query<
+            fetchDailyPaymentsLazy: builder.query<
                 { data: PaymentRecordDto[]; total: number },
                 { paymentType: 'incoming' | 'outgoing' }
                 >({
@@ -253,6 +253,6 @@ export const {
     useFetchPaymentApplicationsForPaymentQuery,
     useCalculatePaymentTotalsMutation,
     useRemovePaymentApplicationMutation,
-    useCreatePaymentApplicationMutation, useFetchDailyPaymentsQuery,
+    useCreatePaymentApplicationMutation, useLazyFetchDailyPaymentsLazyQuery,
 } = paymentsApi;
 export {paymentsApi};

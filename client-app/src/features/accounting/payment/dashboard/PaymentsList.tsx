@@ -25,7 +25,6 @@ import {useLocation, useNavigate} from "react-router";
 import {setSelectedPayment} from "../../slice/accountingSharedUiSlice";
 import {useSelector} from "react-redux";
 import {PaymentsDailyExcel} from "../report/PaymentsDailyExcel";
-import {useFetchDailyPaymentsQuery} from "../../../../app/store/apis";
 import { skipToken } from '@reduxjs/toolkit/query/react';   // <-- add this import
 
 
@@ -80,15 +79,9 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
     paymentType
   });
 
-  const {
-    data: dailyData,
-    isFetching: isDailyFetching,
-  } = useFetchDailyPaymentsQuery(dailyQueryArg);
 
-  const triggerDailyFetch = React.useCallback(() => {
-    setDailyQueryArg({ paymentType });          // <-- start the request
-    // optionally reset after download (see PaymentsDailyExcel)
-  }, [paymentType]);
+
+
 
   
   const [show, setShow] = useState(false);
@@ -201,12 +194,9 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
                   </Button>
 
                   <PaymentsDailyExcel
-                      paymentsData={dailyData || { data: [], total: 0 }}
                       companyName={companyName}
                       paymentType={paymentType}
                       getTranslatedLabel={getTranslatedLabel}
-                      isFetching={isDailyFetching}
-                      onExportClick={triggerDailyFetch}
                   />
                 </GridToolbar>
                 <Column
