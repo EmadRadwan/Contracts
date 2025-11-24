@@ -86,8 +86,8 @@ function PaymentPlanModal({
         );
     }
     
-    
-
+    console.log('salesRequest:', salesRequest)
+    console.log('Apartment:', apartment)
     return (
         <Grid container padding={2}>
             <Grid item xs={12}>

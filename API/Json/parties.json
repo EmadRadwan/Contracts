@@ -588,5 +588,125 @@
     "LAST_UPDATED_TX_STAMP": null,
     "CREATED_STAMP": "2024-07-31 06:03:42",
     "CREATED_TX_STAMP": null
-  }
+  },
+    {
+      "PARTY_ID": "30",
+      "PARTY_TYPE_ID": "PERSON",
+      "MAIN_ROLE": "CUSTOMER",
+      "DESCRIPTION": "احمد صالح",
+      "STATUS_ID": "PARTY_ENABLED",
+      "CREATED_DATE": "2024-07-31 06:03:42",
+      "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
+      "CREATED_STAMP": "2024-07-31 06:03:42"
+    },
+    {
+      "PARTY_ID": "31",
+      "PARTY_TYPE_ID": "PERSON",
+      "MAIN_ROLE": "CUSTOMER",
+      "DESCRIPTION": "اشرف كمال",
+      "STATUS_ID": "PARTY_ENABLED",
+      "CREATED_DATE": "2024-07-31 06:03:42",
+      "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
+      "CREATED_STAMP": "2024-07-31 06:03:42"
+    },
+    {
+      "PARTY_ID": "32",
+      "PARTY_TYPE_ID": "PERSON",
+      "MAIN_ROLE": "CUSTOMER",
+      "DESCRIPTION": "محمد أبو جامع",
+      "STATUS_ID": "PARTY_ENABLED",
+      "CREATED_DATE": "2024-07-31 06:03:42",
+      "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
+      "CREATED_STAMP": "2024-07-31 06:03:42"
+    },
+    {
+      "PARTY_ID": "33",
+      "PARTY_TYPE_ID": "PERSON",
+      "MAIN_ROLE": "CUSTOMER",
+      "DESCRIPTION": "رضا فتحى",
+      "STATUS_ID": "PARTY_ENABLED",
+      "CREATED_DATE": "2024-07-31 06:03:42",
+      "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
+      "CREATED_STAMP": "2024-07-31 06:03:42"
+    },
+    {
+      "PARTY_ID": "34",
+      "PARTY_TYPE_ID": "PERSON",
+      "MAIN_ROLE": "CUSTOMER",
+      "DESCRIPTION": "احمد سراج",
+      "STATUS_ID": "PARTY_ENABLED",
+      "CREATED_DATE": "2024-07-31 06:03:42",
+      "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
+      "CREATED_STAMP": "2024-07-31 06:03:42"
+    },
+    {
+      "PARTY_ID": "35",
+      "PARTY_TYPE_ID": "PERSON",
+      "MAIN_ROLE": "CUSTOMER",
+      "DESCRIPTION": "احمد عاشور",
+      "STATUS_ID": "PARTY_ENABLED",
+      "CREATED_DATE": "2024-07-31 06:03:42",
+      "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
+      "CREATED_STAMP": "2024-07-31 06:03:42"
+    },
+    {
+      "PARTY_ID": "36",
+      "PARTY_TYPE_ID": "PERSON",
+      "MAIN_ROLE": "CUSTOMER",
+      "DESCRIPTION": "فاطمة نبيل",
+      "STATUS_ID": "PARTY_ENABLED",
+      "CREATED_DATE": "2024-07-31 06:03:42",
+      "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
+      "CREATED_STAMP": "2024-07-31 06:03:42"
+    },
+    {
+      "PARTY_ID": "37",
+      "PARTY_TYPE_ID": "PERSON",
+      "MAIN_ROLE": "CUSTOMER",
+      "DESCRIPTION": "محمد الصعيدى",
+      "STATUS_ID": "PARTY_ENABLED",
+      "CREATED_DATE": "2024-07-31 06:03:42",
+      "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
+      "CREATED_STAMP": "2024-07-31 06:03:42"
+    },
+    {
+      "PARTY_ID": "38",
+      "PARTY_TYPE_ID": "PERSON",
+      "MAIN_ROLE": "CUSTOMER",
+      "DESCRIPTION": "علاء خاطر",
+      "STATUS_ID": "PARTY_ENABLED",
+      "CREATED_DATE": "2024-07-31 06:03:42",
+      "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
+      "CREATED_STAMP": "2024-07-31 06:03:42"
+    },
+    {
+      "PARTY_ID": "39",
+      "PARTY_TYPE_ID": "PERSON",
+      "MAIN_ROLE": "CUSTOMER",
+      "DESCRIPTION": "رامى حسين",
+      "STATUS_ID": "PARTY_ENABLED",
+      "CREATED_DATE": "2024-07-31 06:03:42",
+      "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
+      "CREATED_STAMP": "2024-07-31 06:03:42"
+    },
+    {
+      "PARTY_ID": "40",
+      "PARTY_TYPE_ID": "PERSON",
+      "MAIN_ROLE": "CUSTOMER",
+      "DESCRIPTION": "قطب مختار",
+      "STATUS_ID": "PARTY_ENABLED",
+      "CREATED_DATE": "2024-07-31 06:03:42",
+      "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
+      "CREATED_STAMP": "2024-07-31 06:03:42"
+    },
+    {
+      "PARTY_ID": "41",
+      "PARTY_TYPE_ID": "PERSON",
+      "MAIN_ROLE": "CUSTOMER",
+      "DESCRIPTION": "محمد القاضي",
+      "STATUS_ID": "PARTY_ENABLED",
+      "CREATED_DATE": "2024-07-31 06:03:42",
+      "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
+      "CREATED_STAMP": "2024-07-31 06:03:42"
+    }
 ]

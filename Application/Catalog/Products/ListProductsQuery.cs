@@ -59,7 +59,7 @@ public class ListProductsQuery
                     ApartmentPricePerM2 = product.ApartmentPricePerM2,
                     GardenPricePerM2 = product.GardenPricePerM2,
                     ApartmentStatusId = product.ApartmentStatusId,
-                    ApartmentNumber = product.ApartmentNumber
+                    BuildingNumber = product.BuildingNumber
                 };
 
             return query.AsQueryable();

@@ -75,7 +75,8 @@
       "error": "فشل معالجة طلب المبيعات",
       "validation": {
         "fullPayment": "دفع كامل – يجب أن تكون حقول الأقساط فارغة.",
-        "missingInstallments": "الحقول التالية مطلوبة عندما يكون المقدم أقل من الإجمالي:"
+        "missingInstallments": "الحقول التالية مطلوبة عندما يكون المقدم أقل من الإجمالي:",
+        "apartmentNotAvailable": "لا يمكن إنشاء طلب بيع: هذه الشقة محجوزة أو مباعة مسبقًا"
       }
     },
     "list": {
@@ -231,7 +232,7 @@
         "apartmentPricePerM2": "سعر الشقة لكل متر مربع",
         "gardenPricePerM2": "سعر الحديقة لكل متر مربع",
         "apartmentStatus": "حالة الشقة",
-        "landNumber": "رقم الأرض",
+        "buildingNumber": "رقم البناية",
         "menu": {
           "associations": "المنتجات المتصلة",
           "prices": "الأسعار",

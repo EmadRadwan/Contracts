@@ -37201,10 +37201,10 @@ entity.Property(e => e.ApartmentStatusId)
       .IsUnicode(false)
       .HasColumnName("APARTMENT_STATUS_ID");
 
-entity.Property(e => e.ApartmentNumber)
+entity.Property(e => e.BuildingNumber)
       .HasMaxLength(60)
       .IsUnicode(false)
-      .HasColumnName("APARTMENT_NUMBER");
+      .HasColumnName("BUILDING_NUMBER");
                     
                 entity.HasOne(d => d.AmountUomType)
                     .WithMany(p => p.Products)

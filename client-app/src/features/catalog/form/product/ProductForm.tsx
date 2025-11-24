@@ -148,7 +148,7 @@ function ProductForm({
           "gardenPricePerM2",
           "apartmentPricePerM2",
           "apartmentStatusId",
-          "landNumber",
+          "buildingNumber",
         ];
         apartmentFields.forEach((field) =>
             formRenderProps.onChange(field, { value: "" })
@@ -439,10 +439,10 @@ function ProductForm({
                               </Grid>
                               <Grid item xs={6}>
                                 <Field
-                                    id="landNumber"
-                                    name="landNumber"
+                                    id="buildingNumber"
+                                    name="buildingNumber"
                                     label={getTranslatedLabel(
-                                        "product.products.form.landNumber",
+                                        "product.products.form.buildingNumber",
                                         "Land Number *"
                                     )}
                                     component={FormInput}

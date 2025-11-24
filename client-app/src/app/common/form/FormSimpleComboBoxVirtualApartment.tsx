@@ -25,6 +25,16 @@ interface ApartmentItem {
     apartmentStatusDescription: string;
 }
 
+const statusCellStyle = `
+    /* Target the exact cells rendered inside the MultiColumnComboBox popup */
+    .k-popup .k-table-td.status-cell-override {
+        background-color: inherit !important;
+    }
+    /* Extra safety – also beat the row-level background */
+    .k-popup .k-table-row .status-cell-override {
+        background-color: inherit !important;
+    }
+` as const;
 
 export const FormSimpleComboBoxVirtualApartment = (fieldRenderProps: FieldRenderProps) => {
     const {
@@ -49,7 +59,6 @@ export const FormSimpleComboBoxVirtualApartment = (fieldRenderProps: FieldRender
     const keyField = "apartmentId";
     const textField = "apartmentName";
 
-
     const emptyItem: ApartmentItem = {
         apartmentId: "0",
         apartmentName: "loading ...",
@@ -64,16 +73,45 @@ export const FormSimpleComboBoxVirtualApartment = (fieldRenderProps: FieldRender
         apartmentStatusDescription: ""
     };
 
-
     const pageSize = 10;
 
     const columns = [
         { field: "apartmentId", header: "ID", width: "100px" },
         { field: "projectName", header: "Project", width: "180px" },
         { field: "apartmentName", header: "Apartment", width: "200px" },
-        { field: "floorNumber", header: "Floor", width: "110px" }
-    ];
+        { field: "floorNumber", header: "Floor", width: "110px" },
+        {
+            field: "apartmentStatusDescription",
+            header: "Status",
+            width: "130px",
+            cell: (props: any) => {
+                const statusId = props.dataItem.apartmentStatusId || "";
+                const statusText = props.dataItem.apartmentStatusDescription || "";
 
+                const isSold = statusId === "APARTMENT_SOLD";
+                const isReserved = statusId === "APARTMENT_RESERVED";
+
+                const bg = isSold ? "#ffebee" : isReserved ? "#fff3e0" : "#e8f5e8";
+                const color = isSold ? "#c62828" : isReserved ? "#ef6c00" : "#2e7d32";
+
+                return (
+                    <td
+                        className="status-cell-override"
+                        style={{
+                            textAlign: "center",
+                            fontWeight: 600,
+                            borderRadius: "4px",
+                            padding: "6px 8px",
+                            backgroundColor: bg,
+                            color: color,
+                        }}
+                    >
+                        {statusText || "—"}
+                    </td>
+                );
+            },
+        },
+    ];
 
     // REFACTOR: Loading placeholder – reuse the same pattern as the product version
     const loadingData: ApartmentItem[] = [];
@@ -205,37 +243,43 @@ export const FormSimpleComboBoxVirtualApartment = (fieldRenderProps: FieldRender
     const handleOnBlur  = React.useCallback(() => { onBlur();  setFocused(false); }, [onBlur]);
 
     return (
-        <FieldWrapper style={wrapperStyle}>
-            <Label id={labelId} editorRef={editorRef} editorId={id} editorValid={valid} editorDisabled={disabled}>
-                {label}
-            </Label>
-            <MultiColumnComboBox
-                ariaLabelledBy={labelId}
-                ariaDescribedBy={`${hintId} ${errorId}`}
-                ref={editorRef}
-                valid={valid}
-                id={id}
-                disabled={disabled}
-                dataItemKey={keyField}
-                textField={textField}
-                columns={columns}
-                value={value}
-                data={data}
-                onChange={onChangeHandler}
-                onFocus={handleOnFocus}
-                onBlur={handleOnBlur}
-                filterable={true}
-                onFilterChange={onFilterChange}
-                virtual={{ pageSize, skip: skipRef.current, total }}
-                onPageChange={pageChange}
-            />
-            {showHint && (
-                <NotificationGroup style={position.bottomRight}>
-                    <Notification type={{ style: "info", icon: true }} closable={false}>
-                        <span>{hint}</span>
-                    </Notification>
-                </NotificationGroup>
-            )}
-        </FieldWrapper>
+        <>
+            <style dangerouslySetInnerHTML={{ __html: statusCellStyle }} />
+
+            <FieldWrapper style={wrapperStyle}>
+                <Label id={labelId} editorRef={editorRef} editorId={id} editorValid={valid} editorDisabled={disabled}>
+                    {label}
+                </Label>
+                <MultiColumnComboBox
+                    ariaLabelledBy={labelId}
+                    ariaDescribedBy={`${hintId} ${errorId}`}
+                    ref={editorRef}
+                    valid={valid}
+                    id={id}
+                    disabled={disabled}
+                    dataItemKey={keyField}
+                    textField={textField}
+                    columns={columns}
+                    value={value}
+                    data={data}
+                    onChange={onChangeHandler}
+                    onFocus={handleOnFocus}
+                    onBlur={handleOnBlur}
+                    filterable={true}
+                    onFilterChange={onFilterChange}
+                    virtual={{ pageSize, skip: skipRef.current, total }}
+                    onPageChange={pageChange}
+                />
+
+                {showHint && (
+                    <NotificationGroup style={position.bottomRight}>
+                        <Notification type={{ style: "info", icon: true }} closable={false}>
+                            <span>{hint}</span>
+                        </Notification>
+                    </NotificationGroup>
+                )}
+            </FieldWrapper>
+        </>
     );
+       
 };

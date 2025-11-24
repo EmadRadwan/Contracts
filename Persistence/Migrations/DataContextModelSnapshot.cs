@@ -33436,12 +33436,6 @@ namespace Persistence.Migrations
                         .HasColumnType("varchar(36)")
                         .HasColumnName("AMOUNT_UOM_TYPE_ID");
 
-                    b.Property<string>("ApartmentNumber")
-                        .HasMaxLength(60)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(60)")
-                        .HasColumnName("APARTMENT_NUMBER");
-
                     b.Property<decimal?>("ApartmentPricePerM2")
                         .HasColumnType("decimal(18, 6)")
                         .HasColumnName("APARTMENT_PRICE_PER_M2");
@@ -33472,6 +33466,12 @@ namespace Persistence.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(100)")
                         .HasColumnName("BRAND_NAME");
+
+                    b.Property<string>("BuildingNumber")
+                        .HasMaxLength(60)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(60)")
+                        .HasColumnName("BUILDING_NUMBER");
 
                     b.Property<string>("ChargeShipping")
                         .HasMaxLength(1)

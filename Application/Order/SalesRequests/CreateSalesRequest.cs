@@ -4,7 +4,6 @@ using Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
-using System.Collections.Concurrent;
 
 namespace Application.Order.SalesRequests;
 

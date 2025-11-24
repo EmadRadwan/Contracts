@@ -62,5 +62,5 @@ public class ProductDto2
     public decimal? ApartmentPricePerM2 { get; set; }
     public decimal? GardenPricePerM2 { get; set; }
     public string? ApartmentStatusId { get; set; }
-    public string? ApartmentNumber { get; set; }
+    public string? BuildingNumber { get; set; }
 }

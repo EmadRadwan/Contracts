@@ -28,7 +28,8 @@ import {KeyValue} from "@progress/kendo-react-form";
 import PaymentPlanModal from "../dashboard/PaymentPlanModal";
 import {RibbonContainer, Ribbon} from "react-ribbons";
 
-let renderCount = 0;
+const APARTMENT_AVAILABLE = "APARTMENT_AVAILABLE";
+
 
 interface SalesRequestActionsMenuProps {
     salesRequestId: string | undefined;
@@ -515,6 +516,18 @@ function SalesRequestForm({
     const salesRequestValidator = (values: any): KeyValue<string> | undefined => {
         const t = getTranslatedLabel;                     // shortcut (defined later in render)
 
+        const apt = values.productId;
+        const aptStatusId = typeof apt === "object" ? apt?.apartmentStatusId : null;
+
+        if (aptStatusId && aptStatusId !== APARTMENT_AVAILABLE) {
+            return {
+                VALIDATION_SUMMARY: t(
+                    "salesRequest.form.validation.apartmentNotAvailable",
+                    "Cannot create a sales request: this apartment is already SOLD or RESERVED."
+                )
+            };
+        }
+
         const adv = Number(values.advancePayment ?? 0);
         const tot = Number(values.totalPrice ?? 0);
         const installments = values.numberOfInstallments;
@@ -574,7 +587,6 @@ function SalesRequestForm({
         }
     }
     
-    console.log('Rendering SalesRequestForm with editMode:', editMode);
 
     return (
         <>
@@ -598,7 +610,9 @@ function SalesRequestForm({
                         formRef.current = formRenderProps;
                         const {visited, errors, valueGetter} = formRenderProps;
 
-                        const apt = valueGetter("productId");
+                        const selectedApartmentObj = valueGetter("productId");
+                        
+                        const apt = selectedApartmentObj;
                         const party = valueGetter("fromPartyId");
 
                         const currentFormValues: SalesRequest = {
@@ -652,7 +666,6 @@ function SalesRequestForm({
                             SALES_REQUEST_APPROVED: "#4caf50",
                         }[statusId ?? ""] ?? "#757575";
                         
-                        console.log('showPaymentPlan', showPaymentPlan)
 
                         return (
                             <>
@@ -711,6 +724,24 @@ function SalesRequestForm({
                                 <FormElement>
                                     <fieldset className="k-form-fieldset">
                                         <Grid container spacing={1} alignItems="flex-end" className={editMode > 2 ? "grid-disabled" : "grid-normal"}>
+                                            {/*{showApartmentNotAvailableWarning && (
+                                                <Grid item xs={12}>
+                                                    <Box sx={{
+                                                        p: 2,
+                                                        backgroundColor: "#ffebee",
+                                                        border: "1px solid #f44336",
+                                                        borderRadius: 1,
+                                                        mb: 2
+                                                    }}>
+                                                        <Typography color="error" fontWeight="medium">
+                                                            {getTranslatedLabel(
+                                                                "salesRequest.form.validation.apartmentNotAvailable",
+                                                                "Cannot create sales request: This apartment is already SOLD or RESERVED."
+                                                            )}
+                                                        </Typography>
+                                                    </Box>
+                                                </Grid>
+                                            )}*/}
                                             <Grid item xs={4}>
                                                 <Field
                                                     id="productId"
