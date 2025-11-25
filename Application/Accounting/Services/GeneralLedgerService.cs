@@ -17,7 +17,9 @@ public interface IGeneralLedgerService
     Task<string> CreateAcctgTransForSalesShipmentIssuance(string itemIssuanceId);
     Task<string> CreateAcctgTransForSalesInvoice(string invoiceId);
     Task<string> CreateAcctgTransForPurchaseInvoice(string invoiceId);
+    Task<string> CreateAcctgTransForConstructionCertificateInvoice(string invoiceId);
     Task<string> CreateAcctgTransForShipmentReceipt(string receiptId);
+    Task<string> CreateAcctgTransForShipmentReceiptForProject(string receiptId);
     Task<string> CreateAcctgTransAndEntriesForIncomingPayment(string paymentId);
     Task<string> CreateAcctgTransAndEntriesForPaymentApplication(string paymentApplicationId);
     Task<string> CreateAcctgTransForWorkEffortIssuance(string workEffortId, string inventoryItemId);
@@ -136,6 +138,159 @@ public class GeneralLedgerService : IGeneralLedgerService
 
         // Logic to calculate origAmount, create inventory item detail, and prepare entries
         var origAmount = shipmentReceipt.QuantityAccepted * unitCost;
+
+        var createInventoryItemDetailParam = new CreateInventoryItemDetailParam
+        {
+            InventoryItemId = inventoryItem.InventoryItemId,
+            AccountingQuantityDiff = shipmentReceipt.QuantityAccepted
+        };
+        await _inventoryService.CreateInventoryItemDetail(createInventoryItemDetailParam);
+
+        //prepare the double posting (D/C) entries (AcctgTransEntry
+        var stamp = DateTime.UtcNow;
+        var newAcctgTransSequence = await _utilityService.GetNextSequence("AcctgTrans");
+
+
+        //Credit
+        var creditEntry = new AcctgTransEntry
+        {
+            AcctgTransId = newAcctgTransSequence,
+            AcctgTransEntrySeqId = "1",
+            AcctgTransEntryTypeId = "_NA_",
+            DebitCreditFlag = "C",
+            OrganizationPartyId = inventoryItem.OwnerPartyId,
+            GlAccountTypeId = creditAccountTypeId,
+            OrigAmount = origAmount,
+            ProductId = inventoryItem.ProductId,
+            CurrencyUomId = partyAcctgPreference.BaseCurrencyUomId,
+            OrigCurrencyUomId = inventoryItem.CurrencyUomId,
+            PartyId = shipment.PartyIdFrom,
+            RoleTypeId = "BILL_FROM_VENDOR",
+            ReconcileStatusId = "AES_NOT_RECONCILED",
+            CreatedStamp = stamp,
+            LastUpdatedStamp = stamp
+        };
+        acctgTransEntries.Add(creditEntry);
+
+        //Debit
+        var debitEntry = new AcctgTransEntry
+        {
+            AcctgTransId = newAcctgTransSequence,
+            AcctgTransEntrySeqId = "2",
+            AcctgTransEntryTypeId = "_NA_",
+            DebitCreditFlag = "D",
+            OrganizationPartyId = inventoryItem.OwnerPartyId,
+            GlAccountTypeId = "INVENTORY_ACCOUNT",
+            OrigAmount = origAmount,
+            ProductId = inventoryItem.ProductId,
+            CurrencyUomId = partyAcctgPreference.BaseCurrencyUomId,
+            OrigCurrencyUomId = inventoryItem.CurrencyUomId,
+            PartyId = shipment.PartyIdFrom,
+            RoleTypeId = "BILL_FROM_VENDOR",
+            ReconcileStatusId = "AES_NOT_RECONCILED",
+            CreatedStamp = stamp,
+            LastUpdatedStamp = stamp
+        };
+        acctgTransEntries.Add(debitEntry);
+
+        var createAcctgTransAndEntriesParams = new CreateAcctgTransAndEntriesParams
+        {
+            AcctgTransEntries = acctgTransEntries,
+            GlFiscalTypeId = "ACTUAL",
+            AcctgTransTypeId = "SHIPMENT_RECEIPT",
+            ShipmentId = shipmentReceipt.ShipmentId,
+            PaymentId = null,
+            PartyId = shipment.PartyIdFrom,
+            TransactionDate = shipmentReceipt.CreatedStamp
+        };
+
+        var acctgTransId = await CreateAcctgTransAndEntries(createAcctgTransAndEntriesParams);
+
+        return acctgTransId;
+    }
+
+    public async Task<string> CreateAcctgTransForShipmentReceiptForProject(string receiptId)
+    {
+        var shipmentReceiptEntry = _context.ChangeTracker
+            .Entries<ShipmentReceipt>()
+            .FirstOrDefault(e => e.State == EntityState.Added && e.Entity.ReceiptId == receiptId);
+
+        var shipmentReceipt = shipmentReceiptEntry?.Entity;
+
+        var inventoryItemEntry = _context.ChangeTracker.Entries<InventoryItem>()
+            .FirstOrDefault(e =>
+                e.Entity.InventoryItemId == shipmentReceipt.InventoryItemId && e.State == EntityState.Added);
+
+        var inventoryItem = inventoryItemEntry?.Entity;
+
+        var acctgTransEntries = new List<AcctgTransEntry>();
+
+        // Logic to determine credit account type
+        var creditAccountTypeId = string.IsNullOrEmpty(shipmentReceipt?.ReturnId)
+            ? "ACCOUNTS_PAYABLE"
+            : "COGS_ACCOUNT";
+
+        //get partyAcctPreference by organizationPartyId
+        var partyAcctgPreference =
+            await _acctgMiscService.GetPartyAccountingPreferences(inventoryItem.OwnerPartyId!);
+
+
+        // Logic to calculate unit cost based on preferences
+        decimal unitCost;
+        decimal totalLandedCostForFullQty = 0;
+
+
+        if (string.IsNullOrEmpty(shipmentReceipt.OrderId) || string.IsNullOrEmpty(shipmentReceipt.OrderItemSeqId))
+        {
+            // Fallback if no order link — fallback to inventory item cost
+            unitCost = (decimal)(inventoryItem.UnitCost ?? 0m);
+        }
+        else
+        {
+            var orderItem = await _context.OrderItems
+                .FirstOrDefaultAsync(oi =>
+                    oi.OrderId == shipmentReceipt.OrderId &&
+                    oi.OrderItemSeqId == shipmentReceipt.OrderItemSeqId);
+
+            if (orderItem == null || orderItem.UnitPrice == null)
+            {
+                unitCost = (decimal)(inventoryItem.UnitCost ?? 0m);
+            }
+            else
+            {
+                decimal baseUnitPrice = (decimal)orderItem.UnitPrice;
+                decimal orderedQty = (decimal)(orderItem.Quantity ?? 1m);
+
+                // Get ALL adjustments linked to this order item (gratuities, shipping, discount, etc.)
+                var adjustments = await _context.OrderAdjustments
+                    .Where(adj =>
+                        adj.OrderId == shipmentReceipt.OrderId &&
+                        adj.OrderItemSeqId == shipmentReceipt.OrderItemSeqId &&
+                        adj.Amount != null)
+                    .Select(adj => adj.Amount ?? 0m)
+                    .ToListAsync();
+
+                decimal totalAdjustmentAmount = adjustments.Sum();
+
+                // Total cost for the entire ordered quantity
+                totalLandedCostForFullQty = (baseUnitPrice * orderedQty) + totalAdjustmentAmount;
+
+                // Unit cost = total landed cost ÷ ordered quantity
+                unitCost = orderedQty > 0
+                    ? totalLandedCostForFullQty / orderedQty
+                    : baseUnitPrice;
+
+                inventoryItem.UnitCost = unitCost;
+            }
+        }
+
+        // get shipment using receiptId
+        var shipment = await _context.Shipments
+            .FirstOrDefaultAsync(s => s.ShipmentId == shipmentReceipt!.ShipmentId);
+
+
+        // Logic to calculate origAmount, create inventory item detail, and prepare entries
+        var origAmount = totalLandedCostForFullQty;
 
         var createInventoryItemDetailParam = new CreateInventoryItemDetailParam
         {
@@ -2177,6 +2332,182 @@ public class GeneralLedgerService : IGeneralLedgerService
         }
     }
 
+    // REFACTOR: Added full support for Additional Insurance as a separate withholding line.
+// In many construction contracts, there are two types of insurance:
+//   • Regular Insurance (e.g. 5% performance guarantee)
+//   • Additional Insurance (e.g. advance payment guarantee, bid bond, etc.)
+// Both must be withheld and posted to separate liability accounts if configured.
+// This change ensures audit clarity and allows independent release of each type later.
+    public async Task<string> CreateAcctgTransForConstructionCertificateInvoice(string invoiceId)
+    {
+        try
+        {
+            var invoice = await _context.Invoices
+                .Include(i => i.InvoiceItems)
+                .FirstOrDefaultAsync(i => i.InvoiceId == invoiceId);
+
+            if (invoice == null)
+            {
+                _logger.LogWarning("Invoice with ID {InvoiceId} not found.", invoiceId);
+                return null;
+            }
+            
+
+            var glSettings = _acctgMiscService.GetGlArithmeticSettingsInline();
+            var ledgerDecimals = glSettings.DecimalScale;
+            var roundingMode = glSettings.RoundingMode;
+
+            var acctgTransEntries = new List<AcctgTransEntry>();
+            int seqNum = 1;
+
+            // REFACTOR: Expected invoice item types for WORKMANSHIP_CONTRACTING_CERTIFICATE
+            var mainItem = invoice.InvoiceItems
+                .FirstOrDefault(ii => ii.InvoiceItemTypeId == "PINV_CERTIFICATE_ITEM");
+
+            var insuranceItem = invoice.InvoiceItems
+                .FirstOrDefault(ii => ii.InvoiceItemTypeId == "PINV_INSURANCE_ITEM");
+
+            var additionalInsuranceItem = invoice.InvoiceItems
+                .FirstOrDefault(ii => ii.InvoiceItemTypeId == "PINV_ADDITIONAL_INSURANCE_ITEM");
+
+            var deductionItem = invoice.InvoiceItems
+                .FirstOrDefault(ii => ii.InvoiceItemTypeId == "PINV_DEDUCTION_ITEM");
+
+            if (mainItem == null || mainItem.Amount == null)
+            {
+                _logger.LogError("Construction certificate invoice {InvoiceId} missing main certificate item.",
+                    invoiceId);
+                return null;
+            }
+
+            decimal deservedAmount =
+                _acctgMiscService.CustomRound(mainItem.Amount.Value, (int)ledgerDecimals, roundingMode);
+            decimal insuranceAmount = insuranceItem?.Amount ?? 0m;
+            decimal additionalInsuranceAmount = additionalInsuranceItem?.Amount ?? 0m;
+            decimal deductionAmount = deductionItem?.Amount ?? 0m;
+
+            decimal totalWithheld = insuranceAmount + additionalInsuranceAmount + deductionAmount;
+            decimal netPayable =
+                _acctgMiscService.CustomRound(deservedAmount - totalWithheld, (int)ledgerDecimals, roundingMode);
+
+            if (netPayable < 0)
+            {
+                _logger.LogWarning("Net payable negative for invoice {InvoiceId}. Setting to zero.", invoiceId);
+                netPayable = 0;
+            }
+
+            string productId = mainItem.ProductId;
+            string contractorPartyId = invoice.PartyIdFrom;
+
+            // 1. Debit: Projects Under Construction – the true value of work performed
+            acctgTransEntries.Add(new AcctgTransEntry
+            {
+                AcctgTransEntrySeqId = seqNum++.ToString("D2"),
+                DebitCreditFlag = "D",
+                OrganizationPartyId = invoice.PartyId,
+                PartyId = contractorPartyId,
+                RoleTypeId = "BILL_FROM_VENDOR",
+                ProductId = productId,
+                GlAccountTypeId = "PROJECTS_UNDER_CONSTRUCTION", // → 124420
+                OrigAmount = deservedAmount,
+                OrigCurrencyUomId = invoice.CurrencyUomId
+            });
+
+            // 2. Credit: Regular Insurance Withheld
+            if (insuranceAmount > 0)
+            {
+                acctgTransEntries.Add(new AcctgTransEntry
+                {
+                    AcctgTransEntrySeqId = seqNum++.ToString("D2"),
+                    DebitCreditFlag = "C",
+                    OrganizationPartyId = invoice.PartyId,
+                    PartyId = contractorPartyId,
+                    RoleTypeId = "BILL_FROM_VENDOR",
+                    ProductId = productId,
+                    GlAccountTypeId = "INSURANCE_WITHHELD", // → 250400
+                    OrigAmount = insuranceAmount,
+                    OrigCurrencyUomId = invoice.CurrencyUomId
+                });
+            }
+
+            // 3. Credit: Additional Insurance Withheld (e.g. advance guarantee)
+            if (additionalInsuranceAmount > 0)
+            {
+                acctgTransEntries.Add(new AcctgTransEntry
+                {
+                    AcctgTransEntrySeqId = seqNum++.ToString("D2"),
+                    DebitCreditFlag = "C",
+                    OrganizationPartyId = invoice.PartyId,
+                    PartyId = contractorPartyId,
+                    RoleTypeId = "BILL_FROM_VENDOR",
+                    ProductId = productId,
+                    GlAccountTypeId = "ADDITIONAL_INSURANCE_WITHHELD", // → e.g. 250410 or dedicated account
+                    OrigAmount = additionalInsuranceAmount,
+                    OrigCurrencyUomId = invoice.CurrencyUomId
+                });
+            }
+
+            // 4. Credit: Other Deductions (penalties, advance recovery, LD, etc.)
+            if (deductionAmount > 0)
+            {
+                acctgTransEntries.Add(new AcctgTransEntry
+                {
+                    AcctgTransEntrySeqId = seqNum++.ToString("D2"),
+                    DebitCreditFlag = "C",
+                    OrganizationPartyId = invoice.PartyId,
+                    PartyId = contractorPartyId,
+                    RoleTypeId = "BILL_FROM_VENDOR",
+                    ProductId = productId,
+                    GlAccountTypeId = "CONSTRUCTION_DEDUCTIONS", // → e.g. 250500
+                    OrigAmount = deductionAmount,
+                    OrigCurrencyUomId = invoice.CurrencyUomId
+                });
+            }
+
+            // 5. Credit: Accounts Payable – only the net amount contractor receives
+            acctgTransEntries.Add(new AcctgTransEntry
+            {
+                AcctgTransEntrySeqId = seqNum++.ToString("D2"),
+                DebitCreditFlag = "C",
+                OrganizationPartyId = invoice.PartyId,
+                PartyId = contractorPartyId,
+                RoleTypeId = "BILL_FROM_VENDOR",
+                GlAccountTypeId = "ACCOUNTS_PAYABLE", // → 210000
+                OrigAmount = netPayable,
+                OrigCurrencyUomId = invoice.CurrencyUomId
+            });
+
+            // REFACTOR: Reuse existing OFBiz service to persist the transaction
+            var createParams = new CreateAcctgTransAndEntriesParams()
+            {
+                GlFiscalTypeId = "ACTUAL",
+                AcctgTransTypeId = "PURCHASE_INVOICE",
+                InvoiceId = invoice.InvoiceId,
+                PartyId = invoice.PartyIdFrom,
+                RoleTypeId = "BILL_FROM_VENDOR",
+                TransactionDate = invoice.InvoiceDate ?? DateTime.UtcNow,
+                AcctgTransEntries = acctgTransEntries
+            };
+
+            var acctgTransId = await CreateAcctgTransAndEntries(createParams);
+
+            _logger.LogInformation(
+                "Custom construction certificate accounting posted: {AcctgTransId} | Invoice: {InvoiceId} | " +
+                "Deserved: {Deserved} | Insurance: {Ins} | Add.Ins: {AddIns} | Deductions: {Ded} | Net Payable: {Net}",
+                acctgTransId, invoiceId, deservedAmount, insuranceAmount, additionalInsuranceAmount, deductionAmount,
+                netPayable);
+
+            return acctgTransId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Error creating custom accounting transaction for construction certificate invoice {InvoiceId}",
+                invoiceId);
+            throw;
+        }
+    }
+
     public async Task<string> CreateAcctgTransAndEntriesForCustomerRefundPaymentApplication(
         string paymentApplicationId)
     {
@@ -4190,7 +4521,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             var acctgTransInMap = new CreateAcctgTransAndEntriesParams
             {
                 GlFiscalTypeId = "ACTUAL",
-                AcctgTransTypeId = "INVENTORY", 
+                AcctgTransTypeId = "INVENTORY",
                 WorkEffortId = workEffortId,
                 TransactionDate = stamp,
                 AcctgTransEntries = acctgTransEntries
@@ -4198,7 +4529,7 @@ public class GeneralLedgerService : IGeneralLedgerService
 
             // Create transaction and entries
             var acctgTransId = await CreateAcctgTransAndEntries(acctgTransInMap);
-           
+
 
             // REFACTOR: Log successful accounting transaction;
             // improves traceability for certificate issuance.

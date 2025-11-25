@@ -278,12 +278,21 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
 
     const getAvailableStatusTransitions = () => {
         if (!invoiceSource) return {};
+
+        const currentStatus = invoiceSource.statusId;
+
         return {
-            toApproved: invoiceSource.statusId === "INVOICE_IN_PROCESS",
-            toReady: invoiceSource.statusId === "INVOICE_APPROVED",
-            toPaid: invoiceSource.statusId === "INVOICE_READY" && iTotal === 0,
-            toWriteoff: invoiceSource.statusId === "INVOICE_READY",
-            toCancelled: invoiceSource.statusId === "INVOICE_READY",
+            // Approve only possible from In Process
+            toApproved: currentStatus === "INVOICE_IN_PROCESS",
+
+            // REFACTOR: "Ready" now available from both In Process AND Approved
+            // This makes "Ready" independent and parallel to "Approve"
+            toReady: currentStatus === "INVOICE_IN_PROCESS" || currentStatus === "INVOICE_APPROVED",
+
+            // These remain only from Ready
+            toPaid: currentStatus === "INVOICE_READY" && iTotal === 0,
+            toWriteoff: currentStatus === "INVOICE_READY",
+            toCancelled: currentStatus === "INVOICE_READY",
         };
     };
     

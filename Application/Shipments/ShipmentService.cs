@@ -184,10 +184,28 @@ public class ShipmentService : IShipmentService
                     affectAccounting = false;
                 }
             }
+            
+            bool isForProject = false;
 
-            // Create accounting transaction for shipment receipt
-            await _generalLedgerService.CreateAcctgTransForShipmentReceipt(newShipmentReceiptSequence);
-
+            if (!string.IsNullOrEmpty(parameters.OrderId))
+            {
+                isForProject = await _context.WorkEfforts
+                    .AnyAsync(we =>
+                        we.WorkEffortTypeId == "PROJECT_CERTIFICATE" &&
+                        we.RelatedOrderId == parameters.OrderId);
+            }
+            
+            if (isForProject)
+            {
+                // Special accounting: Debit Construction-in-Progress (CIP)
+                await _generalLedgerService.CreateAcctgTransForShipmentReceiptForProject(newShipmentReceiptSequence);
+            }
+            else
+            {
+                // Normal inventory receipt
+                await _generalLedgerService.CreateAcctgTransForShipmentReceipt(newShipmentReceiptSequence);
+            }
+            
             // Update order status
             await UpdateOrderStatusFromReceipt(parameters.OrderId);
 

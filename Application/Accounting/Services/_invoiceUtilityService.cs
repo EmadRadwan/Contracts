@@ -176,8 +176,31 @@ public class InvoiceUtilityService : IInvoiceUtilityService
                 var ledgerService = _generalLedgerService.Value;
                 try
                 {
-                    if (invoiceTypeId != "CUST_RTN_INVOICE")
+                    bool isSupplyCertificate = await _context.InvoiceItems
+                        .AnyAsync(ii => ii.InvoiceId == invoiceId && 
+                                        ii.InvoiceItemTypeId == "PINV_CERTIFICATE_SUPPLY_ITEM");
+
+                    if (isSupplyCertificate)
                     {
+                        _logger.LogInformation(
+                            "Invoice {InvoiceId} is a supply certificate (PINV_CERTIFICATE_SUPPLY_ITEM) → skipping all accounting transactions",
+                            invoiceId);
+                        goto SkipAccounting; // ← EARLY EXIT: No accounting needed
+                    }
+                    
+                    bool isConstructionCertificate = false;
+                    isConstructionCertificate = await _context.InvoiceItems
+                        .AnyAsync(ii => ii.InvoiceId == invoiceId &&
+                                        ii.InvoiceItemTypeId == "PINV_CERTIFICATE_ITEM");
+
+                    if (invoiceTypeId == "PURCHASE_INVOICE" && isConstructionCertificate)
+                    {
+                        // This is a WORKMANSHIP_CONTRACTING_CERTIFICATE invoice → use custom accounting
+                        await ledgerService.CreateAcctgTransForConstructionCertificateInvoice(invoiceId);
+                    }
+                    else if (invoiceTypeId != "CUST_RTN_INVOICE")
+                    {
+                        // All other cases: normal purchase/sales invoices
                         await ledgerService.CreateAcctgTransForPurchaseInvoice(invoiceId);
                         await ledgerService.CreateAcctgTransForSalesInvoice(invoiceId);
                     }
@@ -190,6 +213,8 @@ public class InvoiceUtilityService : IInvoiceUtilityService
                 {
                     _logger.LogError(ex, $"Failed to create accounting transactions for invoice {invoiceId}");
                 }
+                
+                SkipAccounting:
 
                 // ECA: Check payment applications and capture payments
                 try

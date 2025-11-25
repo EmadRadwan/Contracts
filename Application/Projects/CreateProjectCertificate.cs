@@ -173,8 +173,6 @@ public class CreateProjectCertificate
 
                         if (certificate.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE")
                         {
-                            decimal netAmount = item.Net;
-
                             // STRATEGY 1: Quantity = 1, UnitPrice = net → perfect rounding
                             orderItems.Add(new OrderItemDto2
                             {
@@ -182,8 +180,8 @@ public class CreateProjectCertificate
                                 ProductId = item.ProductId,
                                 ProductName = item.ProductName,
                                 Quantity = 1m,
-                                UnitPrice = (netAmount - item.Insurance - item.AdditionalInsurance),
-                                SubTotal = (netAmount - item.Insurance - item.AdditionalInsurance),
+                                UnitPrice = item.Deserved, // ← NOW USING DESERVED
+                                SubTotal = item.Deserved,
                                 UomId = item.UomId,
                                 FacilityId = certificate.FacilityId,
                                 ItemDescription = item.Description,
@@ -236,6 +234,29 @@ public class CreateProjectCertificate
                                 });
                                 seq++;
                             }
+
+                            if (item.Deductions.GetValueOrDefault() > 0)
+                            {
+                                orderItems.Add(new OrderItemDto2
+                                {
+                                    OrderItemSeqId = seq.ToString("D4"),
+                                    ProductId = item.ProductId,
+                                    ProductName = $"خصم - {item.ProductName}",
+                                    Quantity = 1m,
+                                    UnitPrice = item.Deductions.Value,
+                                    SubTotal = item.Deductions.Value,
+                                    UomId = item.UomId,
+                                    FacilityId = certificate.FacilityId,
+                                    ItemDescription = string.IsNullOrEmpty(item.DeductionDescription)
+                                        ? "خصومات متنوعة"
+                                        : item.DeductionDescription,
+                                    OrderItemTypeId = "PROJECT_DEDUCTION", // ← NEW TYPE
+                                    StatusId = "ITEM_CREATED",
+                                    CreatedStamp = stamp,
+                                    LastUpdatedStamp = stamp
+                                });
+                                seq++;
+                            }
                         }
                         else // SUPPLY_PROCUREMENT_CERTIFICATE
                         {
@@ -253,7 +274,7 @@ public class CreateProjectCertificate
                                 UomId = item.UomId,
                                 FacilityId = certificate.FacilityId,
                                 ItemDescription = item.Description,
-                                OrderItemTypeId = "PROJECT_CERTIFICATE_ITEM",
+                                OrderItemTypeId = "PROJECT_CERTIFICATE_SUPPLY_ITEM",
                                 StatusId = "ITEM_CREATED",
                                 CreatedStamp = stamp,
                                 LastUpdatedStamp = stamp
