@@ -50,8 +50,16 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
     const [showPaymentsList, setShowPaymentsList] = useState(false);
 
     const [changeStatus, {isLoading: isChangingStatus}] = useChangeInvoiceStatusMutation();
-    const {iTotal, isLoading: isTotalLoading, error: totalError} = useInvoiceTotal(invoice?.invoiceId);
-
+    // REFACTOR: Destructure both total and outstandingAmount from enhanced hook
+// Purpose: Display accurate invoice financial status
+// Improvement: Shows real outstanding balance instead of assuming total = unpaid
+    const {
+        total: iTotal,
+        outstandingAmount: iOutstanding,
+        isLoading: isTotalLoading,
+        error: totalError,
+        isSuccess: isTotalSuccess
+    } = useInvoiceTotal(invoice?.invoiceId);
 
     const invoiceSource = useMemo(() => selectedInvoice || invoice, [selectedInvoice, invoice]);
     const invoiceType = useMemo(() => invoiceSource?.invoiceTypeId, [invoiceSource]);
@@ -68,17 +76,17 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
     const {
         refetch: refetchInvoiceEntries,
     } = useFetchInvoiceAcctTransEntriesQuery(
-        { invoiceId: effectiveInvoiceId, acctgTransTypeId: invoiceType || "SALES_INVOICE" },
-        { skip: !effectiveInvoiceId || !invoiceType }
+        {invoiceId: effectiveInvoiceId, acctgTransTypeId: invoiceType || "SALES_INVOICE"},
+        {skip: !effectiveInvoiceId || !invoiceType}
     );
 
     const {
         refetch: refetchPaymentAppEntries,
     } = useFetchInvoiceAcctTransEntriesQuery(
-        { invoiceId: effectiveInvoiceId, acctgTransTypeId: "PAYMENT_APPL" },
-        { skip: !effectiveInvoiceId }
+        {invoiceId: effectiveInvoiceId, acctgTransTypeId: "PAYMENT_APPL"},
+        {skip: !effectiveInvoiceId}
     );
-    
+
     const permissions = useMemo(() => {
         const hasInvoiceId = !!invoiceSource?.invoiceId;
         const status = invoiceSource?.statusId;
@@ -295,7 +303,7 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
             toCancelled: currentStatus === "INVOICE_READY",
         };
     };
-    
+
     console.log('iTotal:', iTotal)
 
     return (
@@ -315,8 +323,8 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                     onClose={() => setShowPaymentsList(false)}
                     width={950}
                 >
-                    <InvoicePaymentApplicationsList
-                        onClose={() => setShowPaymentsList(false)}
+                    <InvoicePaymentApplicationsList invoiceId={effectiveInvoiceId}
+                                                    onClose={() => setShowPaymentsList(false)} canEdit={false}
                     />
                 </ModalContainer>
             )}
@@ -432,12 +440,36 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                                         : "N/A"}
                                 </strong>
                             </Typography>
-                            <Typography variant="h6" sx={{pl: 2}}>
+                            <Typography variant="h6" sx={{ pl: 2 }}>
                                 {getTranslatedLabel(`${localizationKey}.total`, "Total:")}{" "}
-                                <span style={{fontWeight: "bold", color: "red", marginLeft: "10px"}}>
-                  {iTotal || 0}
-                </span>
+                                <span style={{ fontWeight: "bold", color: "red", marginLeft: "10px" }}>
+    {isTotalLoading ? "..." : iTotal !== null ? iTotal.toFixed(2) : "—"}
+  </span>
                             </Typography>
+                            <Typography variant="h6" sx={{ pl: 2, mt: 1 }}>
+                                {getTranslatedLabel(`${localizationKey}.remaining-amount`, "Outstanding Amount:")}{" "}
+                                <span style={{
+                                    fontWeight: "bold",
+                                    color:
+                                        isTotalLoading ? "inherit" :
+                                            iOutstanding === 0 ? "green" :
+                                                iOutstanding === iTotal ? "red" : "orange",
+                                    marginLeft: "10px"
+                                }}>
+    {isTotalLoading
+        ? "..."
+        : iOutstanding !== null
+            ? iOutstanding.toFixed(2)
+            : "—"
+    }
+                                    {iOutstanding === 0 && !isTotalLoading && (
+                                        <strong style={{ color: "green", marginLeft: "8px" }}>
+                                            ({getTranslatedLabel(`${localizationKey}.fully-paid`, "Fully Paid")})
+                                        </strong>
+                                    )}
+  </span>
+                            </Typography>
+                            
                             {invoice?.billingAccountId && (
                                 <Typography variant="h6" sx={{pl: 2}}>
                                     {getTranslatedLabel(`${localizationKey}.billing-account`, "Billing Account:")}{" "}

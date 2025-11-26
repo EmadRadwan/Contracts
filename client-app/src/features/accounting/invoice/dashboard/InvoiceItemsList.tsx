@@ -26,7 +26,9 @@ interface Props {
 export default function InvoiceItemsList({invoiceId, canEdit}: Props) {
     const initialSort: Array<SortDescriptor> = [
         {field: "invoiceItemSeqId", dir: "desc"},
-    ];
+    ];    
+    const localizationKey = "accounting.invoices.display.form";
+
     const [sort, setSort] = React.useState(initialSort);
     const initialDataState: State = {skip: 0, take: 4};
     const [page, setPage] = React.useState<any>(initialDataState);
@@ -153,7 +155,9 @@ export default function InvoiceItemsList({invoiceId, canEdit}: Props) {
                     <Column field="description" title="Description" width={200}/>
 
                 </KendoGrid>
-                {isLoading && <LoadingComponent message={getTranslatedLabel("product.promos.list.loading", "Loading Invoice Items...")} />}
+                {isLoading && <LoadingComponent
+                    message={getTranslatedLabel(`${localizationKey}.loading`, "Loading Invoice Items...")}
+                />}
             </Grid>
         </>
 

@@ -15,20 +15,33 @@ import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
 import { router } from "../../../../app/router/Routes";
 
 interface Props {
+  invoiceId: string;
   onClose: () => void;
   canEdit: boolean;
 }
 
-const InvoicePaymentApplicationsList = ({ onClose, canEdit }: Props) => {
+const InvoicePaymentApplicationsList = ({invoiceId, onClose, canEdit }: Props) => {
   const initialDataState = { take: 6, skip: 0 };
   const [dataState, setDataState] = React.useState<State>(initialDataState);
   const dataStateChange = (e: GridDataStateChangeEvent) => {
     console.log("dataStateChange", e.dataState);
     setDataState(e.dataState);
   };
-  const {selectedInvoice} = useAppSelector(state => state.accountingSharedUi)
-  const {data: paymentApplications} = useFetchInvoicePaymentApplicationsQuery(selectedInvoice?.invoiceId!)
-  console.log(paymentApplications)
+
+  const {
+    data: paymentApplications,
+    isLoading,
+    isFetching,
+  } = useFetchInvoicePaymentApplicationsQuery(
+      {
+        invoiceId,
+      },
+      {
+        skip: !invoiceId, // <-- skip token: don't run query if invoiceId is falsy
+      }
+  );
+  
+  console.log('invoiceId', invoiceId)
   const [editMode, setEditMode] = useState(0);
   const memoizedOnClose = useCallback(() => {
     setEditMode(0);
@@ -69,6 +82,7 @@ const InvoicePaymentApplicationsList = ({ onClose, canEdit }: Props) => {
   if (editMode === 1) {
     return <InvoicePaymentApplicationForm onClose={memoizedOnClose} />;
   }
+  
   return (
       <Grid container columnSpacing={1} alignItems="center">
         <Grid item xs={12}>
@@ -86,7 +100,7 @@ const InvoicePaymentApplicationsList = ({ onClose, canEdit }: Props) => {
               <GridToolbar>
                 <Grid container>
                   <Grid item xs={3}>
-                    <Button
+                    {/*<Button
                       color={"secondary"}
                       onClick={() => {
                         setEditMode(1);
@@ -95,14 +109,14 @@ const InvoicePaymentApplicationsList = ({ onClose, canEdit }: Props) => {
                       disabled={!canEdit}
                     >
                       Assign Payment to Invoice
-                    </Button>
+                    </Button>*/}
                   </Grid>
                 </Grid>
               </GridToolbar>
               <Column
                 field="paymentId"
                 title="Payment Number"
-                cell={PaymentDescriptionCell}
+                //cell={PaymentDescriptionCell}
                 locked={true}
               />
               <Column

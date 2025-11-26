@@ -177,7 +177,7 @@ public class InvoiceUtilityService : IInvoiceUtilityService
                 try
                 {
                     bool isSupplyCertificate = await _context.InvoiceItems
-                        .AnyAsync(ii => ii.InvoiceId == invoiceId && 
+                        .AnyAsync(ii => ii.InvoiceId == invoiceId &&
                                         ii.InvoiceItemTypeId == "PINV_CERTIFICATE_SUPPLY_ITEM");
 
                     if (isSupplyCertificate)
@@ -187,7 +187,7 @@ public class InvoiceUtilityService : IInvoiceUtilityService
                             invoiceId);
                         goto SkipAccounting; // ← EARLY EXIT: No accounting needed
                     }
-                    
+
                     bool isConstructionCertificate = false;
                     isConstructionCertificate = await _context.InvoiceItems
                         .AnyAsync(ii => ii.InvoiceId == invoiceId &&
@@ -213,7 +213,7 @@ public class InvoiceUtilityService : IInvoiceUtilityService
                 {
                     _logger.LogError(ex, $"Failed to create accounting transactions for invoice {invoiceId}");
                 }
-                
+
                 SkipAccounting:
 
                 // ECA: Check payment applications and capture payments
@@ -257,7 +257,7 @@ public class InvoiceUtilityService : IInvoiceUtilityService
 
 
             /// ECA: Create matching payment application for INVOICE_READY from INVOICE_IN_PROCESS
-            if (statusId == "INVOICE_READY" && oldStatusId == "INVOICE_IN_PROCESS")
+            /*if (statusId == "INVOICE_READY" && oldStatusId == "INVOICE_IN_PROCESS")
             {
                 try
                 {
@@ -267,7 +267,7 @@ public class InvoiceUtilityService : IInvoiceUtilityService
                 {
                     _logger.LogError(ex, $"Failed to create matching payment application for invoice {invoiceId}");
                 }
-            }
+            }*/
         }
         catch (Exception ex)
         {
@@ -475,47 +475,73 @@ public class InvoiceUtilityService : IInvoiceUtilityService
 
     public async Task<decimal> GetInvoiceTotal(string invoiceId, bool actualCurrency)
     {
-        decimal invoiceTotal = 0;
+        decimal invoiceTotal = 0m;
 
         try
         {
-            // Retrieve invoice items, excluding taxable items (similar to Ofbiz)
-            var taxableItemTypeIds =
-                await GetTaxableInvoiceItemTypeIds(); // Assume this retrieves the relevant taxable item types
+            var taxableItemTypeIds = await GetTaxableInvoiceItemTypeIds();
 
             var invoiceItems = await _utilityService.FindLocalOrDatabaseListAsync<InvoiceItem>(
-                query => query.Where(ii =>
-                    ii.InvoiceId == invoiceId && !taxableItemTypeIds.Contains(ii.InvoiceItemTypeId))
-            );
-
-
-            // Calculate total amount for each invoice item and add to invoice total
-            if (invoiceItems != null)
+                q => q.Where(ii => ii.InvoiceId == invoiceId
+                                   && !taxableItemTypeIds.Contains(ii.InvoiceItemTypeId))
+                    .Select(ii => new InvoiceItem
+                    {
+                        InvoiceItemTypeId = ii.InvoiceItemTypeId,
+                        Quantity          = ii.Quantity,
+                        Amount            = ii.Amount
+                    }));
+            
+            if (invoiceItems?.Any() == true)
             {
-                foreach (var invoiceItem in invoiceItems)
+                // Detect the two certificate-specific item types
+                bool hasCertificateItem       = invoiceItems.Any(ii => ii.InvoiceItemTypeId == "PINV_CERTIFICATE_ITEM");
+                bool hasCertificateSupplyItem = invoiceItems.Any(ii => ii.InvoiceItemTypeId == "PINV_CERTIFICATE_SUPPLY_ITEM");
+
+                decimal baseTotal;
+
+                if (hasCertificateItem)
                 {
-                    invoiceTotal += GetInvoiceItemTotal(invoiceItem);
+                    // Rule 1 – Certificate invoice: certificate amount(s) MINUS everything else
+                    var certificateTotal = invoiceItems
+                        .Where(ii => ii.InvoiceItemTypeId == "PINV_CERTIFICATE_ITEM")
+                        .Sum(GetInvoiceItemTotal);
+
+                    var otherTotal = invoiceItems
+                        .Where(ii => ii.InvoiceItemTypeId != "PINV_CERTIFICATE_ITEM")
+                        .Sum(GetInvoiceItemTotal);
+
+                    baseTotal = certificateTotal - otherTotal;
                 }
+                else if (hasCertificateSupplyItem)
+                {
+                    // Rule 2 – Certificate-Supply invoice: normal sum (amounts already signed correctly)
+                    baseTotal = invoiceItems.Sum(GetInvoiceItemTotal);
+                }
+                else
+                {
+                    // Rule 3 – Regular invoice: normal sum of all non-taxable items
+                    baseTotal = invoiceItems.Sum(GetInvoiceItemTotal);
+                }
+
+                invoiceTotal = baseTotal;
             }
         }
         catch (Exception ex)
         {
-            // Log error if invoice items retrieval fails
             _logger.LogError(ex, $"Error retrieving invoice items for invoice {invoiceId}.");
             throw new Exception("Error retrieving invoice items.", ex);
         }
 
         try
         {
-            // Calculate and add the tax total, similar to Ofbiz
-            var invoiceTaxTotal = await GetInvoiceTaxTotal(invoiceId); // Assume this retrieves the tax total
+            // Add tax (unchanged)
+            var invoiceTaxTotal = await GetInvoiceTaxTotal(invoiceId);
             invoiceTotal += invoiceTaxTotal;
 
-            // If invoice total is not zero and currency conversion is required
-            if (invoiceTotal != 0 && !actualCurrency)
+            // Currency conversion (unchanged)
+            /*if (invoiceTotal != 0 && !actualCurrency)
             {
                 var invoice = await _context.Invoices.FindAsync(invoiceId);
-
                 if (invoice == null)
                 {
                     var errorMessage = $"Invoice with ID {invoiceId} not found for currency conversion.";
@@ -523,21 +549,18 @@ public class InvoiceUtilityService : IInvoiceUtilityService
                     throw new Exception(errorMessage);
                 }
 
-                // Apply currency conversion rate to the invoice total
                 invoiceTotal *= await GetInvoiceCurrencyConversionRate(invoice);
-            }
+            }*/
         }
         catch (Exception ex)
         {
-            // Log error during currency conversion process
-            _logger.LogError(ex, $"Error performing currency conversion for invoice {invoiceId}.");
-            throw new Exception("Error performing currency conversion.", ex);
+            _logger.LogError(ex, $"Error performing currency conversion or tax calculation for invoice {invoiceId}.");
+            throw new Exception("Error performing currency conversion or tax.", ex);
         }
 
-        // Return the rounded invoice total
-        return Math.Round(invoiceTotal, 2);
+        // REFACTOR: Final rounding moved here (consistent with previous handler)
+        return Math.Round(invoiceTotal, 2, MidpointRounding.AwayFromZero);
     }
-
 
     private async Task<decimal> GetInvoiceCurrencyConversionRate(Invoice invoice)
     {
@@ -631,7 +654,7 @@ public class InvoiceUtilityService : IInvoiceUtilityService
         }
     }
 
-    public decimal GetInvoiceItemTotal(InvoiceItem invoiceItem)
+    private decimal GetInvoiceItemTotal(InvoiceItem invoiceItem)
     {
         try
         {

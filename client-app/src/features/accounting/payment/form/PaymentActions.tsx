@@ -53,6 +53,11 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
         handleClose();
     };
 
+    const canViewApplications = payment?.statusId !== 'PMNT_NOT_PAID';
+    const canViewTransactions = payment?.statusId !== 'PMNT_NOT_PAID';
+
+    console.log('PaymentActions Rendered with payment:', payment);
+
     // In create mode (formEditMode === 1), only show create options
     if (formEditMode === 1) {
         return (
@@ -136,12 +141,14 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                 <MenuItem onClick={() => onMenuSelect('outgoing')}>
                     {getTranslatedLabel(`${LOCALIZATION_KEY}.new-outgoing`, "New Outgoing Payment")}
                 </MenuItem>*/}
-                <MenuItem onClick={() => onMenuSelect('transactions')}>
+                {canViewTransactions && <MenuItem onClick={() => onMenuSelect('transactions')}>
                     {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.transactions`, "Transactions")}
-                </MenuItem>
-                <MenuItem onClick={() => onMenuSelect('applications')}>
-                    {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.applications`, "Payment Applications")}
-                </MenuItem>
+                </MenuItem>}
+                {canViewApplications && (
+                    <MenuItem onClick={() => onMenuSelect('applications')}>
+                        {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.applications`, "Payment Applications")}
+                    </MenuItem>
+                )}
             </Menu>
         </>
     );

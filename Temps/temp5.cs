@@ -1,69 +1,89 @@
-// REFACTOR: Smart accounting transaction routing with explicit early-exit rules
-// Priority order:
-// 1. PINV_CERTIFICATE_SUPPLY_ITEM → internal supply certificate → NO accounting at all
-// 2. PINV_CERTIFICATE_ITEM → WORKMANSHIP_CONTRACTING_CERTIFICATE → use custom accounting
-// 3. All other invoices → standard OFBiz purchase/sales accounting
-if (!string.IsNullOrEmpty(invoiceId) && 
-    statusId == "INVOICE_READY" && 
-    oldStatusId != "INVOICE_READY" && 
-    oldStatusId != "INVOICE_PAID")
+public async Task<decimal> GetInvoiceTotal(string invoiceId, bool actualCurrency)
 {
-    var ledgerService = _generalLedgerService.Value;
+    decimal invoiceTotal = 0m;
+
     try
     {
-        // ——— RULE 1: Check for supply certificate (PINV_CERTIFICATE_SUPPLY_ITEM) ———
-        // These are internal material issuance certificates — no financial impact
-        bool isSupplyCertificate = await _context.InvoiceItems
-            .AnyAsync(ii => ii.InvoiceId == invoiceId && 
-                           ii.InvoiceItemTypeId == "PINV_CERTIFICATE_SUPPLY_ITEM");
+        var taxableItemTypeIds = await GetTaxableInvoiceItemTypeIds();
 
-        if (isSupplyCertificate)
-        {
-            _logger.LogInformation(
-                "Invoice {InvoiceId} is a supply certificate (PINV_CERTIFICATE_SUPPLY_ITEM) → skipping all accounting transactions",
-                invoiceId);
-            goto SkipAccounting; // ← EARLY EXIT: No accounting needed
-        }
+        // REFACTOR: Load InvoiceItemTypeId as well to detect certificate items
+        var invoiceItems = await _utilityService.FindLocalOrDatabaseListAsync<InvoiceItem>(
+            query => query.Where(ii => ii.InvoiceId == invoiceId 
+                                    && !taxableItemTypeIds.Contains(ii.InvoiceItemTypeId))
+                          .Select(ii => new InvoiceItem
+                          {
+                              InvoiceItemTypeId = ii.InvoiceItemTypeId,
+                              Quantity = ii.Quantity,
+                              Amount = ii.Amount
+                          }));
 
-        // ——— RULE 2: Check for construction workmanship certificate ———
-        bool isConstructionCertificate = await _context.InvoiceItems
-            .AnyAsync(ii => ii.InvoiceId == invoiceId && 
-                           ii.InvoiceItemTypeId == "PINV_CERTIFICATE_ITEM");
+        if (invoiceItems != null && invoiceItems.Any())
+        {
+            // REFACTOR: Detect certificate items
+            var certificateItems = invoiceItems
+                .Where(ii => ii.InvoiceItemTypeId == "PINV_CERTIFICATE_ITEM")
+                .ToList();
 
-        if (invoiceTypeId == "PURCHASE_INVOICE" && isConstructionCertificate)
-        {
-            _logger.LogInformation(
-                "Construction certificate detected (PINV_CERTIFICATE_ITEM) for invoice {InvoiceId} → using custom accounting logic",
-                invoiceId);
+            var nonCertificateItems = invoiceItems
+                .Where(ii => ii.InvoiceItemTypeId != "PINV_CERTIFICATE_ITEM")
+                .ToList();
 
-            await ledgerService.CreateAcctgTransForConstructionCertificateInvoice(invoiceId);
-        }
-        else if (invoiceTypeId != "CUST_RTN_INVOICE")
-        {
-            // ——— FALLBACK: Normal purchase or sales invoices ———
-            await ledgerService.CreateAcctgTransForPurchaseInvoice(invoiceId);
-            await ledgerService.CreateAcctgTransForSalesInvoice(invoiceId);
-        }
-        else if (invoiceTypeId == "CUST_RTN_INVOICE")
-        {
-            await ledgerService.CreateAcctgTransForCustomerReturnInvoice(invoiceId);
+            decimal baseTotal;
+
+            if (certificateItems.Any())
+            {
+                // Sum only certificate items (rounded per line)
+                var certificateTotal = certificateItems.Sum(item =>
+                    GetInvoiceItemTotal(item)); // Uses same rounding logic
+
+                // Sum all other non-certificate, non-taxable items
+                var otherItemsTotal = nonCertificateItems.Sum(item =>
+                    GetInvoiceItemTotal(item));
+
+                // Final base = Certificate Total - Other Items Total
+                baseTotal = certificateTotal - otherItemsTotal;
+            }
+            else
+            {
+                // Original behavior: sum all non-taxable items
+                baseTotal = invoiceItems.Sum(item => GetInvoiceItemTotal(item));
+            }
+
+            invoiceTotal = baseTotal;
         }
     }
     catch (Exception ex)
     {
-        _logger.LogError(ex, "Failed to create accounting transactions for invoice {InvoiceId}", invoiceId);
-        // Do NOT throw — invoice status change must succeed even if accounting fails
+        _logger.LogError(ex, $"Error retrieving invoice items for invoice {invoiceId}.");
+        throw new Exception("Error retrieving invoice items.", ex);
     }
 
-    // Label to skip accounting entirely for supply certificates
-    SkipAccounting:
-    // Continue with payment application checks (always run)
     try
     {
-        await _invoiceService.Value.CheckInvoicePaymentApplications(invoiceId);
+        // Add tax (unchanged)
+        var invoiceTaxTotal = await GetInvoiceTaxTotal(invoiceId);
+        invoiceTotal += invoiceTaxTotal;
+
+        // Currency conversion (unchanged)
+        if (invoiceTotal != 0 && !actualCurrency)
+        {
+            var invoice = await _context.Invoices.FindAsync(invoiceId);
+            if (invoice == null)
+            {
+                var errorMessage = $"Invoice with ID {invoiceId} not found for currency conversion.";
+                _logger.LogError(errorMessage);
+                throw new Exception(errorMessage);
+            }
+
+            invoiceTotal *= await GetInvoiceCurrencyConversionRate(invoice);
+        }
     }
     catch (Exception ex)
     {
-        _logger.LogError(ex, "Failed to check payment applications for invoice {InvoiceId}", invoiceId);
+        _logger.LogError(ex, $"Error performing currency conversion or tax calculation for invoice {invoiceId}.");
+        throw new Exception("Error performing currency conversion or tax.", ex);
     }
+
+    // REFACTOR: Final rounding moved here (consistent with previous handler)
+    return Math.Round(invoiceTotal, 2, MidpointRounding.AwayFromZero);
 }

@@ -295,8 +295,18 @@ public class CreateProjectCertificate
                         seq++;
                     }
 
-                    var grandTotal = orderItems.Sum(i => i.SubTotal) + orderAdjustments.Sum(a => a.Amount);
+                    //var grandTotal = orderItems.Sum(i => i.SubTotal) + orderAdjustments.Sum(a => a.Amount);
 
+                    decimal grandTotal = certificate.CertificateCategory switch
+                    {
+                        "WORKMANSHIP_CONTRACTING_CERTIFICATE" => certificate.CertificateItems!
+                            .Sum(item => item.Net),
+
+                        "SUPPLY_PROCUREMENT_CERTIFICATE" => (decimal)(orderItems.Sum(i => i.SubTotal) + orderAdjustments.Sum(a => a.Amount)),
+
+                        _ => 0m // Will be overridden or throw later
+                    };
+                    
                     var orderDto = new OrderDto
                     {
                         OrderTypeId = "PURCHASE_ORDER",

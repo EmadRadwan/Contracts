@@ -1155,6 +1155,7 @@
           "from-party": "من الطرف:",
           "invoice-date": "تاريخ الفاتورة:",
           "total": "الإجمالي:",
+          "remaining-amount": "المبلغ المتبقي:",
           "billing-account": "حساب الفواتير:",
           "invoice-status": "الحالة:",
           "to-party": "إلى الطرف:",

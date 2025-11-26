@@ -2359,6 +2359,7 @@ public class GeneralLedgerService : IGeneralLedgerService
 
             var acctgTransEntries = new List<AcctgTransEntry>();
             int seqNum = 1;
+            
 
             // REFACTOR: Expected invoice item types for WORKMANSHIP_CONTRACTING_CERTIFICATE
             var mainItem = invoice.InvoiceItems
@@ -2408,13 +2409,13 @@ public class GeneralLedgerService : IGeneralLedgerService
                 PartyId = contractorPartyId,
                 RoleTypeId = "BILL_FROM_VENDOR",
                 ProductId = productId,
-                GlAccountTypeId = "PROJECTS_UNDER_CONSTRUCTION", // → 124420
+                GlAccountTypeId = "PINV_CERTIFICATE_ITEM", // → 124420
                 OrigAmount = deservedAmount,
                 OrigCurrencyUomId = invoice.CurrencyUomId
             });
 
             // 2. Credit: Regular Insurance Withheld
-            if (insuranceAmount > 0)
+            if (insuranceItem != null)
             {
                 acctgTransEntries.Add(new AcctgTransEntry
                 {
@@ -2431,7 +2432,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             }
 
             // 3. Credit: Additional Insurance Withheld (e.g. advance guarantee)
-            if (additionalInsuranceAmount > 0)
+            if (additionalInsuranceItem != null)
             {
                 acctgTransEntries.Add(new AcctgTransEntry
                 {
@@ -2448,7 +2449,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             }
 
             // 4. Credit: Other Deductions (penalties, advance recovery, LD, etc.)
-            if (deductionAmount > 0)
+            if (deductionItem != null)
             {
                 acctgTransEntries.Add(new AcctgTransEntry
                 {

@@ -43,7 +43,8 @@ namespace Application.Accounting.Invoices
                     {
                         ii.InvoiceId,
                         ii.Quantity,
-                        ii.Amount
+                        ii.Amount,
+                        ii.InvoiceItemTypeId                     // NEW: bring the type so we can detect certificate items
                     })
                     .ToListAsync(cancellationToken);
 
@@ -54,14 +55,37 @@ namespace Application.Accounting.Invoices
                         g => g.Key,
                         g =>
                         {
-                            var lineTotal = g.Sum(item =>
-                                item.Quantity * Math.Round((decimal)item.Amount, 5, MidpointRounding.AwayFromZero)
-                            );
+                            var certificateItems = g.Where(i => i.InvoiceItemTypeId == "PINV_CERTIFICATE_ITEM").ToList();
+                            var nonCertificateItems = g.Where(i => i.InvoiceItemTypeId != "PINV_CERTIFICATE_ITEM").ToList();
 
-                            // REFACTOR: Second rounding — this is what pushes 30999.99999 → 31000.00
-                            return Math.Round((decimal)lineTotal, 2, MidpointRounding.AwayFromZero);
-                        }
-                    );
+                            decimal certificateTotal = 0m;
+                            decimal otherItemsTotal = 0m;
+
+                            if (certificateItems.Any())
+                            {
+                                // Sum all certificate items (in case there are multiple — though usually one)
+                                certificateTotal = (decimal)certificateItems.Sum(item =>
+                                    item.Quantity * Math.Round((decimal)item.Amount, 5, MidpointRounding.AwayFromZero));
+
+                                // Sum and round all non-certificate items
+                                otherItemsTotal = (decimal)nonCertificateItems.Sum(item =>
+                                    item.Quantity * Math.Round((decimal)item.Amount, 5, MidpointRounding.AwayFromZero));
+                            }
+                            else
+                            {
+                                // Original behavior: sum everything if no certificate item exists
+                                otherItemsTotal = (decimal)g.Sum(item =>
+                                    item.Quantity * Math.Round((decimal)item.Amount, 5, MidpointRounding.AwayFromZero));
+                            }
+
+                            // Final total: certificate amount MINUS all other items (or full sum if no certificate)
+                            var rawTotal = certificateItems.Any()
+                                ? certificateTotal - otherItemsTotal
+                                : otherItemsTotal;
+
+                            // REFACTOR: Final 2-decimal rounding (preserves 30999.99999 → 31000.00 behavior)
+                            return Math.Round(rawTotal, 2, MidpointRounding.AwayFromZero);
+                        });
                 
                 // Optional: Log to prove it's working
                 // foreach (var kv in invoiceTotalsDict)

@@ -386,8 +386,8 @@ public class PaymentHelperService : IPaymentHelperService
                     await _generalLedgerService.CreateAcctgTransAndEntriesForOutgoingPayment(paymentId);
                 }
 
-                await _invoiceService.CheckPaymentInvoices(paymentId);
-                await CreateMatchingPaymentApplication(paymentId, null);
+                //await _invoiceService.CheckPaymentInvoices(paymentId);
+                //await CreateMatchingPaymentApplication(paymentId, null);
             }
             catch (Exception ex)
             {

@@ -18,16 +18,12 @@ const invoicePaymentApplicationsApi = createApi({
     tagTypes: ["InvoicePaymentApplications"],
     endpoints(builder) {
         return {
-            fetchInvoicePaymentApplications: builder.query<any[], any>({
-                query: (invoiceId) => {
-                    // console.log("queryArgs invoice item", invoiceId)
-                    return {
-                        url: `/payments/${invoiceId}/getPaymentsApplicationsForInvoice`,
-                        params: invoiceId,
-                        method: "GET",
-                    };
-                }
-            })
+            fetchInvoicePaymentApplications: builder.query<any[], { invoiceId: string }>({
+                query: ({ invoiceId }) => ({
+                    url: `/payments/${invoiceId}/getPaymentsApplicationsForInvoice`,
+                    method: "GET",
+                }),
+            }),
         };
     },
 });
