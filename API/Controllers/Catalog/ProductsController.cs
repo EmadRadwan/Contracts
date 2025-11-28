@@ -1,3 +1,4 @@
+using Application.Catalog.ProductPrices;
 using Application.Catalog.ProductPromos;
 using Application.Catalog.Products;
 using Application.Order.Orders;
@@ -198,5 +199,23 @@ public class ProductsController : BaseApiController
     public async Task<IActionResult> GetProductQuantityUom(string productId)
     {
         return HandleResult(await Mediator.Send(new GetProductQuantityUom.Query { ProductId = productId }));
+    }
+    
+    // Presentation/API/Controllers/ProductController.cs
+    [HttpGet("lastUnitPrice")]
+    public async Task<IActionResult> GetLastUnitPrice(
+        [FromQuery] string productId,
+        [FromQuery] string facilityId)
+    {
+        if (string.IsNullOrEmpty(productId) || string.IsNullOrEmpty(facilityId))
+            return BadRequest("productId and facilityId are required");
+
+        var result = await Mediator.Send(new GetLastUnitPrice.Query
+        {
+            ProductId = productId,
+            FacilityId = facilityId
+        });
+
+        return HandleResult(result);
     }
 }

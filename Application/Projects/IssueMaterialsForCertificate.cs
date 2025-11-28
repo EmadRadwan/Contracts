@@ -1,5 +1,4 @@
 using Application.Core;
-using Application.Projects;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -20,12 +19,15 @@ public class IssueMaterialsForCertificate
         private readonly DataContext _context;
         private readonly ILogger<Handler> _logger;
         private readonly IProjectService _projectService;
+        private readonly IMediator _mediator;
 
-        public Handler(IProjectService projectService, DataContext context, ILogger<Handler> logger)
+
+        public Handler(IProjectService projectService, DataContext context, ILogger<Handler> logger, IMediator mediator)
         {
             _projectService = projectService;
             _context = context;
             _logger = logger;
+            _mediator = mediator;
         }
 
         public async Task<Results<IssueMaterialsForCertificateResult>> Handle(Command request,
@@ -33,14 +35,19 @@ public class IssueMaterialsForCertificate
         {
             //  Added transaction management to ensure atomicity of issuance operations;
             // this prevents partial issuances in case of errors, improving data consistency for certificate material issuance.
-            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            await using var transaction = _context.Database.CurrentTransaction == null
+                ? await _context.Database.BeginTransactionAsync(cancellationToken)
+                : null;
+
+            var ownsTransaction = transaction != null;
+            
             try
             {
                 var result = await _projectService.IssueMaterialsForCertificate(request.WorkEffortId);
 
                 if (!result.IsSuccess)
                 {
-                    await transaction.RollbackAsync(cancellationToken);
+                    if (ownsTransaction) await transaction!.RollbackAsync(cancellationToken);
                     return Results<IssueMaterialsForCertificateResult>.Failure(result.ErrorMessage, result.ErrorCode);
                 }
 
@@ -73,12 +80,16 @@ public class IssueMaterialsForCertificate
                         request.WorkEffortId);
                 }
 
-                await transaction.CommitAsync(cancellationToken);
+                if (ownsTransaction)
+                    await transaction!.CommitAsync(cancellationToken);
+
                 return Results<IssueMaterialsForCertificateResult>.Success(result.Value);
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync(cancellationToken);
+                if (ownsTransaction && transaction != null)
+                    await transaction.RollbackAsync(cancellationToken);
+
                 _logger.LogError(ex, "Error issuing materials for certificate WorkEffortId: {WorkEffortId}",
                     request.WorkEffortId);
                 return Results<IssueMaterialsForCertificateResult>.Failure(

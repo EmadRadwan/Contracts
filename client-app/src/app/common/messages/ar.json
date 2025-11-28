@@ -851,7 +851,8 @@
       "multiPaymentCertificates": "مستند صرف متعدد",
       "transactions": "القيود المحاسبية",
       "transactions-entries": "تفاصيل القيود المحاسبية",
-      "create-transactions": "إنشاء قيد محاسبي"
+      "create-transactions": "إنشاء قيد محاسبي",
+      "trialBalance": "ميزان المراجعة"
     },
     "payments": {
       "list": {
@@ -1246,6 +1247,7 @@
       "generating": "جاري إنشاء PDF...",
       "actions": "الإجراءات",
       "approve": "الموافقة على المستخلص",
+      "deliverToSite": "تسليم المواد إلى موقع المشروع مباشرة",
       "approved": "تمت الموافقة على المستخلص",
       "complete": "إكمال الشهادة",
       "completed": "تم إكمال الشهادة",

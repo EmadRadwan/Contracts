@@ -2603,7 +2603,7 @@ public class SeedContracts
         try
         {
             // Create roles
-            var requiredRoles = new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate" };
+            var requiredRoles = new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate",  "viewCrm" };
             foreach (var role in requiredRoles)
             {
                 // REFACTOR: Added error handling for role creation to catch and report failures.
@@ -2723,8 +2723,8 @@ public class SeedContracts
         // This ensures roles are assigned only to existing users and reports failures.
         var userRoles = new Dictionary<string, string[]>
         {
-            { "eradwan1967@gmail.com", new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate" } },
-            { "aagiba@gmail.com", new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate" } }
+            { "eradwan1967@gmail.com", new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm" } },
+            { "aagiba@gmail.com", new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate" , "viewCrm"} }
         };
 
         foreach (var (email, roles) in userRoles)

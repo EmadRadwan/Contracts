@@ -1,89 +1,48 @@
-public async Task<decimal> GetInvoiceTotal(string invoiceId, bool actualCurrency)
+public async Task<Results<IssueMaterialsForCertificateResult>> Handle(Command request, CancellationToken cancellationToken)
 {
-    decimal invoiceTotal = 0m;
+    // REFACTOR: Reuse existing transaction if present (e.g. called from ReceiveInventory)
+    // Why: Enables atomic end-to-end flow: Receive → Create Certificate → Issue Materials
+    await using var transaction = _context.Database.CurrentTransaction == null
+        ? await _context.Database.BeginTransactionAsync(cancellationToken)
+        : null;
+
+    var ownsTransaction = transaction != null;
 
     try
     {
-        var taxableItemTypeIds = await GetTaxableInvoiceItemTypeIds();
+        var result = await _projectService.IssueMaterialsForCertificate(request.WorkEffortId);
 
-        // REFACTOR: Load InvoiceItemTypeId as well to detect certificate items
-        var invoiceItems = await _utilityService.FindLocalOrDatabaseListAsync<InvoiceItem>(
-            query => query.Where(ii => ii.InvoiceId == invoiceId 
-                                    && !taxableItemTypeIds.Contains(ii.InvoiceItemTypeId))
-                          .Select(ii => new InvoiceItem
-                          {
-                              InvoiceItemTypeId = ii.InvoiceItemTypeId,
-                              Quantity = ii.Quantity,
-                              Amount = ii.Amount
-                          }));
-
-        if (invoiceItems != null && invoiceItems.Any())
+        if (!result.IsSuccess)
         {
-            // REFACTOR: Detect certificate items
-            var certificateItems = invoiceItems
-                .Where(ii => ii.InvoiceItemTypeId == "PINV_CERTIFICATE_ITEM")
-                .ToList();
-
-            var nonCertificateItems = invoiceItems
-                .Where(ii => ii.InvoiceItemTypeId != "PINV_CERTIFICATE_ITEM")
-                .ToList();
-
-            decimal baseTotal;
-
-            if (certificateItems.Any())
-            {
-                // Sum only certificate items (rounded per line)
-                var certificateTotal = certificateItems.Sum(item =>
-                    GetInvoiceItemTotal(item)); // Uses same rounding logic
-
-                // Sum all other non-certificate, non-taxable items
-                var otherItemsTotal = nonCertificateItems.Sum(item =>
-                    GetInvoiceItemTotal(item));
-
-                // Final base = Certificate Total - Other Items Total
-                baseTotal = certificateTotal - otherItemsTotal;
-            }
-            else
-            {
-                // Original behavior: sum all non-taxable items
-                baseTotal = invoiceItems.Sum(item => GetInvoiceItemTotal(item));
-            }
-
-            invoiceTotal = baseTotal;
+            if (ownsTransaction) await transaction!.RollbackAsync(cancellationToken);
+            return Results<IssueMaterialsForCertificateResult>.Failure(result.ErrorMessage, result.ErrorCode);
         }
+
+        var workEffort = await _context.WorkEfforts
+            .FirstOrDefaultAsync(we => we.WorkEffortId == request.WorkEffortId && we.WorkEffortTypeId == "PROJECT_CERTIFICATE", cancellationToken);
+
+        if (workEffort != null)
+        {
+            workEffort.CurrentStatusId = "WEPR_APPROVED";
+            workEffort.LastStatusUpdate = DateTime.UtcNow;
+            _context.WorkEfforts.Update(workEffort);
+            _logger.LogInformation("Updated WorkEffort {WorkEffortId} status to WEPR_APPROVED", request.WorkEffortId);
+        }
+
+        var saveResult = await _context.SaveChangesAsync(cancellationToken);
+
+        if (ownsTransaction)
+            await transaction!.CommitAsync(cancellationToken);
+
+        return Results<IssueMaterialsForCertificateResult>.Success(result.Value);
     }
     catch (Exception ex)
     {
-        _logger.LogError(ex, $"Error retrieving invoice items for invoice {invoiceId}.");
-        throw new Exception("Error retrieving invoice items.", ex);
+        if (ownsTransaction && transaction != null)
+            await transaction.RollbackAsync(cancellationToken);
+
+        _logger.LogError(ex, "Error issuing materials for certificate WorkEffortId: {WorkEffortId}", request.WorkEffortId);
+        return Results<IssueMaterialsForCertificateResult>.Failure(
+            ex.Message ?? "An unexpected error occurred while issuing materials.");
     }
-
-    try
-    {
-        // Add tax (unchanged)
-        var invoiceTaxTotal = await GetInvoiceTaxTotal(invoiceId);
-        invoiceTotal += invoiceTaxTotal;
-
-        // Currency conversion (unchanged)
-        if (invoiceTotal != 0 && !actualCurrency)
-        {
-            var invoice = await _context.Invoices.FindAsync(invoiceId);
-            if (invoice == null)
-            {
-                var errorMessage = $"Invoice with ID {invoiceId} not found for currency conversion.";
-                _logger.LogError(errorMessage);
-                throw new Exception(errorMessage);
-            }
-
-            invoiceTotal *= await GetInvoiceCurrencyConversionRate(invoice);
-        }
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, $"Error performing currency conversion or tax calculation for invoice {invoiceId}.");
-        throw new Exception("Error performing currency conversion or tax.", ex);
-    }
-
-    // REFACTOR: Final rounding moved here (consistent with previous handler)
-    return Math.Round(invoiceTotal, 2, MidpointRounding.AwayFromZero);
 }

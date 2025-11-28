@@ -2351,7 +2351,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 _logger.LogWarning("Invoice with ID {InvoiceId} not found.", invoiceId);
                 return null;
             }
-            
+
 
             var glSettings = _acctgMiscService.GetGlArithmeticSettingsInline();
             var ledgerDecimals = glSettings.DecimalScale;
@@ -2359,7 +2359,7 @@ public class GeneralLedgerService : IGeneralLedgerService
 
             var acctgTransEntries = new List<AcctgTransEntry>();
             int seqNum = 1;
-            
+
 
             // REFACTOR: Expected invoice item types for WORKMANSHIP_CONTRACTING_CERTIFICATE
             var mainItem = invoice.InvoiceItems
@@ -4456,20 +4456,20 @@ public class GeneralLedgerService : IGeneralLedgerService
             if (workEffort == null)
                 throw new Exception($"Certificate WorkEffort with ID {workEffortId} not found.");
 
-            // Fetch certificate item for the inventory item
-            var certificateItem = await _context.WorkEfforts
-                .FirstOrDefaultAsync(w => w.WorkEffortParentId == workEffortId
-                                          && w.WorkEffortTypeId == "CERTIFICATE_ITEM"
-                                          && w.ProductId != null
-                                          && w.Quantity > 0);
-            if (certificateItem == null)
-                throw new Exception($"No valid certificate item found for WorkEffortId {workEffortId}.");
-
             // Fetch InventoryItem
             var inventoryItem = await _context.InventoryItems
                 .FindAsync(inventoryItemId);
             if (inventoryItem == null)
                 throw new Exception($"InventoryItem with ID {inventoryItemId} not found.");
+
+            // Fetch certificate item for the inventory item
+            var certificateItem = await _context.WorkEfforts
+                .FirstOrDefaultAsync(w => w.WorkEffortParentId == workEffortId
+                                          && w.WorkEffortTypeId == "CERTIFICATE_ITEM"
+                                          && w.ProductId == inventoryItem.ProductId);
+            if (certificateItem == null)
+                throw new Exception($"No valid certificate item found for WorkEffortId {workEffortId}.");
+
 
             // Calculate amount (Quantity * UnitCost)
             // REFACTOR: Uses certificate item quantity and InventoryItem UnitCost;
@@ -4529,14 +4529,74 @@ public class GeneralLedgerService : IGeneralLedgerService
             };
 
             // Create transaction and entries
-            var acctgTransId = await CreateAcctgTransAndEntries(acctgTransInMap);
+            var inventoryTransId = await CreateAcctgTransAndEntries(acctgTransInMap);
 
+            // ---------------------------------------------------------------------
+            // 2. Second transaction: Transportation Expenses + Gratuities → Cash payment
+            // ---------------------------------------------------------------------
+            // REFACTOR: Extract and sum TransportationExpenses + Gratuities if they exist
+            decimal additionalExpenses = 0m;
+            if (certificateItem.TransportationExpenses.HasValue)
+                additionalExpenses += certificateItem.TransportationExpenses.Value;
+            if (certificateItem.Gratuities.HasValue)
+                additionalExpenses += certificateItem.Gratuities.Value;
 
-            // REFACTOR: Log successful accounting transaction;
-            // improves traceability for certificate issuance.
+            string cashTransId = null;
+
+            if (additionalExpenses > 0)
+            {
+                var cashTransSeq = await _utilityService.GetNextSequence("AcctgTrans");
+
+                var debitCashEntry = new AcctgTransEntry
+                {
+                    AcctgTransId = cashTransSeq,
+                    AcctgTransEntrySeqId = "1",
+                    AcctgTransEntryTypeId = "_NA_",
+                    ReconcileStatusId = "AES_NOT_RECONCILED",
+                    DebitCreditFlag = "D",
+                    GlAccountId = "124420", // 124420 – same project asset account
+                    OrganizationPartyId = inventoryItem.OwnerPartyId,
+                    ProductId = certificateItem.ProductId,
+                    OrigAmount = additionalExpenses,
+                    OrigCurrencyUomId = inventoryItem.CurrencyUomId,
+                    CurrencyUomId = inventoryItem.CurrencyUomId
+                };
+
+                var creditCashEntry = new AcctgTransEntry
+                {
+                    AcctgTransId = cashTransSeq,
+                    AcctgTransEntrySeqId = "2",
+                    AcctgTransEntryTypeId = "_NA_",
+                    ReconcileStatusId = "AES_NOT_RECONCILED",
+                    DebitCreditFlag = "C",
+                    GlAccountId = "111010", // 111010
+                    OrganizationPartyId = inventoryItem.OwnerPartyId,
+                    ProductId = certificateItem.ProductId,
+                    OrigAmount = additionalExpenses,
+                    OrigCurrencyUomId = inventoryItem.CurrencyUomId,
+                    CurrencyUomId = inventoryItem.CurrencyUomId
+                };
+
+                // REFACTOR: Use a more descriptive transaction type for expense-related cash outflow
+                var cashTransParams = new CreateAcctgTransAndEntriesParams
+                {
+                    GlFiscalTypeId = "ACTUAL",
+                    AcctgTransTypeId = "PROJECT_EXPENSE", // or "PROJECT_EXPENSE" if you have that type
+                    WorkEffortId = workEffortId,
+                    TransactionDate = stamp,
+                    AcctgTransEntries = new List<AcctgTransEntry> { debitCashEntry, creditCashEntry }
+                };
+
+                cashTransId = await CreateAcctgTransAndEntries(cashTransParams);
+            }
+
             _logger.LogInformation(
-                $"Created accounting transaction {acctgTransId} for certificate issuance WorkEffortId {workEffortId}, InventoryItemId {inventoryItemId}.");
-            return acctgTransId;
+                "Created accounting transactions for certificate issuance WorkEffortId {WorkEffortId}: " +
+                "Inventory transaction {InventoryTransId}, " +
+                "Cash/Expenses transaction {CashTransId} (amount {AdditionalExpenses})",
+                workEffortId, inventoryTransId, cashTransId ?? "N/A", additionalExpenses);
+
+            return inventoryTransId;
         }
         catch (Exception ex)
         {

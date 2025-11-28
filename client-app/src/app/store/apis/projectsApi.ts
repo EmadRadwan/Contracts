@@ -118,7 +118,7 @@ const projectsApi = createApi({
                     method: 'PUT',
                     body: { workEffortId },
                 }),
-            }),
+            })
         };
     },
 });
@@ -131,7 +131,8 @@ export const {
     useAddProjectCertificateMutation,
     useUpdateProjectCertificateMutation,
     useGetCertificatesByPartyQuery,
-    useProcessWorkEffortCertificateMutation, useIssueMaterialsForCertificateMutation
+    useProcessWorkEffortCertificateMutation,
+    useIssueMaterialsForCertificateMutation
 } = projectsApi;
 export {projectsApi};
 

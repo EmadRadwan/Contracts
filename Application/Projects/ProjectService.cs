@@ -80,6 +80,7 @@ public class ProjectService : BaseService, IProjectService
                     .Where(ii => ii.ProductId == productId &&
                                  ii.FacilityId == workEffort.FacilityId &&
                                  (string.IsNullOrEmpty(ii.StatusId) || ii.StatusId == "INV_AVAILABLE"))
+                    .OrderByDescending(ii => ii.LastUpdatedStamp ?? ii.CreatedStamp)
                     .SumAsync(ii => failIfItemsAreNotAvailable == "Y"
                         ? ii.QuantityOnHandTotal
                         : ii.AvailableToPromiseTotal) ?? 0;
@@ -114,13 +115,12 @@ public class ProjectService : BaseService, IProjectService
                 var productId = item.ProductId;
                 var quantity = item.Quantity ?? 0;
 
-                // REFACTOR: Fetch inventory items directly without WorkEffortInventoryAssigns;
-                // this issues materials all at once, using ItemIssuance for tracking, suitable for certificate context.
                 var inventoryItems = await _context.InventoryItems
                     .Where(ii => ii.ProductId == productId &&
                                  ii.FacilityId == workEffort.FacilityId &&
                                  ii.QuantityOnHandTotal > 0 &&
                                  (string.IsNullOrEmpty(ii.StatusId) || ii.StatusId == "INV_AVAILABLE"))
+                    .OrderByDescending(ii => ii.LastUpdatedStamp ?? ii.CreatedStamp)
                     .ToListAsync();
 
                 var quantityNotIssued = quantity;

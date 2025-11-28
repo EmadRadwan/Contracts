@@ -1,4 +1,5 @@
 using Application.Order.Orders;
+using Application.Projects;
 using Application.Shipments;
 using Domain;
 using MediatR;
@@ -14,7 +15,8 @@ public class ReceiveInventoryFromPurchaseOrder
     public class Command : IRequest<Result<ReceiveInventoryResult>>
     {
         public string OrderId { get; set; }
-        public string FacilityId { get; set; } // Optional: Default facility if not derived
+        public string FacilityId { get; set; }
+        public bool DeliverToSite { get; set; } = false;
     }
 
     public class Handler : IRequestHandler<Command, Result<ReceiveInventoryResult>>
@@ -125,16 +127,20 @@ public class ReceiveInventoryFromPurchaseOrder
                     if (ownsTransaction) await transaction.RollbackAsync(cancellationToken);
                     return result;
                 }
-                
+
                 var workEffort = await _context.WorkEfforts
-                    .FirstOrDefaultAsync(we => we.RelatedOrderId == request.OrderId && we.WorkEffortTypeId == "PROJECT_CERTIFICATE", cancellationToken);
+                    .FirstOrDefaultAsync(
+                        we => we.RelatedOrderId == request.OrderId && we.WorkEffortTypeId == "PROJECT_CERTIFICATE",
+                        cancellationToken);
 
                 if (workEffort != null)
                 {
                     workEffort.CurrentStatusId = "WEPR_APPROVED";
                     workEffort.LastStatusUpdate = DateTime.UtcNow; // Update timestamp for auditability
                     _context.WorkEfforts.Update(workEffort);
-                    _logger.LogInformation("Updated WorkEffort {WorkEffortId} status to WEPR_APPROVED for OrderId: {OrderId}", workEffort.WorkEffortId, request.OrderId);
+                    _logger.LogInformation(
+                        "Updated WorkEffort {WorkEffortId} status to WEPR_APPROVED for OrderId: {OrderId}",
+                        workEffort.WorkEffortId, request.OrderId);
                 }
                 else
                 {
@@ -148,6 +154,165 @@ public class ReceiveInventoryFromPurchaseOrder
                 if (workEffortSaveResult > 0)
                 {
                     _logger.LogDebug("Persisted WorkEffort status update for OrderId: {OrderId}", request.OrderId);
+                }
+
+                if (request.DeliverToSite && workEffort != null &&
+                    workEffort.CertificateCategory == "SUPPLY_PROCUREMENT_CERTIFICATE")
+                {
+                    try
+                    {
+                        _logger.LogInformation(
+                            "DeliverToSite is true — attempting to auto-create COMPANY_SUPPLY_SALE_CERTIFICATE for OrderId: {OrderId}",
+                            request.OrderId);
+
+                        // Fetch the original procurement certificate + its items
+                        var procurementCertificate = await _context.WorkEfforts
+                            .Where(we =>
+                                we.WorkEffortId == workEffort.WorkEffortId &&
+                                we.WorkEffortTypeId == "PROJECT_CERTIFICATE")
+                            .Select(we => new
+                            {
+                                we.ProjectId,
+                                we.PartyIdSupplier,
+                                we.FacilityId,
+                                we.Description,
+                                we.EstimatedStartDate,
+                                we.EstimatedCompletionDate,
+                                Items = _context.WorkEfforts
+                                    .Where(item =>
+                                        item.WorkEffortParentId == we.WorkEffortId &&
+                                        item.WorkEffortTypeId == "CERTIFICATE_ITEM")
+                                    .Select(item => new CertificateItemDto
+                                    {
+                                        ProductId = item.ProductId,
+                                        ProductName = item.Product != null ? item.Product.ProductName : "Unknown",
+                                        UomId = item.QuantityUomId,
+                                        UomName = item.QuantityUomId, // You may want to map from Uom table
+                                        Quantity = (decimal)item.Quantity,
+                                        UnitPrice = item.Rate ?? 0,
+                                        TotalAmount = item.TotalAmount ?? 0,
+                                        Description = item.Description,
+                                        ProcurementDate = item.ProcurementDate,
+                                        TransportationExpenses = item.TransportationExpenses,
+                                        Gratuities = item.Gratuities,
+                                        Discount = item.Discount,
+                                        // Note: We do NOT copy insurance/deductions — those belong to procurement
+                                        Insurance = 0,
+                                        AdditionalInsurance = 0,
+                                        Deductions = 0,
+                                        DeductionDescription = "",
+                                        AchievementPercentage = 100, // Fully issued to site
+                                        Net = item.TotalAmount ?? 0,
+                                        Deserved = item.TotalAmount ?? 0,
+                                    })
+                                    .ToList()
+                            })
+                            .FirstOrDefaultAsync(cancellationToken);
+
+                        var adjustedItems = new List<CertificateItemDto>();
+
+                        foreach (var item in procurementCertificate.Items)
+                        {
+                            // Guard against divide-by-zero
+                            var quantity = item.Quantity > 0 ? item.Quantity : 1;
+
+                            // REFACTOR: Calculate total landed cost and redistribute into unit price
+                            // Formula: (base amount - discount + transport + gratuities) / quantity
+                            var baseAmount = item.UnitPrice * quantity;
+                            var discount = item.Discount ?? 0;
+                            var transport = item.TransportationExpenses ?? 0;
+                            var gratuities = item.Gratuities ?? 0;
+
+                            var totalLandedCost = baseAmount - discount + transport + gratuities;
+                            var newUnitPrice = Math.Round(totalLandedCost / quantity, 4); // Adjust precision as needed
+
+                            // Create clean item for site issuance
+                            var cleanItem = new CertificateItemDto
+                            {
+                                ProductId = item.ProductId,
+                                ProductName = item.ProductName,
+                                UomId = item.UomId,
+                                UomName = item.UomName,
+                                Quantity = item.Quantity,
+                                UnitPrice = newUnitPrice,
+                                TotalAmount = Math.Round(newUnitPrice * quantity, 2),
+                                Description = item.Description ?? $"إصدار إلى الموقع - {item.ProductName}",
+                                ProcurementDate = DateTime.UtcNow,
+
+                                // REFACTOR: Zero out all adjustments — they are now baked into UnitPrice
+                                Discount = 0,
+                                TransportationExpenses = 0,
+                                Gratuities = 0,
+
+                                // Clean slate for contractor billing
+                                Insurance = 0,
+                                AdditionalInsurance = 0,
+                                Deductions = 0,
+                                DeductionDescription = "",
+                                AchievementPercentage = 100,
+                                Net = Math.Round(newUnitPrice * quantity, 2),
+                                Deserved = Math.Round(newUnitPrice * quantity, 2),
+                            };
+
+                            adjustedItems.Add(cleanItem);
+                        }
+
+                        // REFACTOR: Use adjusted items with capitalized cost
+                        var saleCertificate = new ProjectCertificateDto
+                        {
+                            CertificateCategory = "COMPANY_SUPPLY_SALE_CERTIFICATE",
+                            ProjectId = procurementCertificate.ProjectId,
+                            PartyIdContractor = "SITE",
+                            PartyIdSupplier = null,
+                            FacilityId = procurementCertificate.FacilityId,
+                            Description =
+                                $"إصدار مواد إلى الموقع (تكلفة مُدمجة) - مرجع: {workEffort.CertificateNumber}",
+                            EstimatedStartDate = procurementCertificate.EstimatedStartDate,
+                            EstimatedCompletionDate = DateTime.UtcNow,
+
+                            // REFACTOR: Use repriced, clean items
+                            CertificateItems = adjustedItems
+                        };
+
+                        var createSaleResult = await _mediator.Send(
+                            new CreateProjectCertificate.Command { Certificate = saleCertificate },
+                            cancellationToken);
+
+                        if (createSaleResult.IsSuccess)
+                        {
+                            _logger.LogInformation(
+                                "Successfully created COMPANY_SUPPLY_SALE_CERTIFICATE {CertificateNumber} for site delivery",
+                                createSaleResult.Value.CertificateNumber);
+                            
+                            var issueResult = await _mediator.Send(
+                                new IssueMaterialsForCertificate.Command
+                                {
+                                    WorkEffortId = createSaleResult.Value.WorkEffortId  // ← This is the new certificate ID
+                                },
+                                cancellationToken);
+
+                            if (issueResult.IsSuccess)
+                            {
+                                _logger.LogInformation(
+                                    "Materials successfully issued from inventory for certificate {CertificateNumber}",
+                                    createSaleResult.Value.CertificateNumber);
+                            }
+                        }
+                        else
+                        {
+                            // Do NOT fail the entire receipt — issuance is secondary
+                            _logger.LogError(
+                                "Failed to auto-create COMPANY_SUPPLY_SALE_CERTIFICATE: {Error}",
+                                createSaleResult.Error);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Critical: Do NOT crash inventory receipt if issuance fails
+                        _logger.LogError(ex,
+                            "Exception occurred while trying to auto-create COMPANY_SUPPLY_SALE_CERTIFICATE for OrderId {OrderId}. Continuing with receipt.",
+                            request.OrderId);
+                    }
                 }
 
 

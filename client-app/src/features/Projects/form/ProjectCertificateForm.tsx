@@ -1,10 +1,10 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {useAppDispatch, useAppSelector, useFetchFacilitiesQuery} from "../../../app/store/configureStore";
+import {RootState, useAppDispatch, useAppSelector, useFetchFacilitiesQuery} from "../../../app/store/configureStore";
 import {Field, Form, FormElement, FormRenderProps} from "@progress/kendo-react-form";
-import {Box, Button, Collapse, Grid, IconButton, Paper, Typography} from "@mui/material";
+import {Box, Button, Checkbox, Collapse, FormControlLabel, Grid, IconButton, Paper, Typography} from "@mui/material";
 import LoadingButton from "@mui/lab/LoadingButton";
 import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
-import {resetCertificateUi, setCertificateFormEditMode} from "../slice/certificateUiSlice";
+import {resetCertificateUi, setCertificateFormEditMode, setCurrentFacilityId} from "../slice/certificateUiSlice";
 import {RibbonContainer, Ribbon} from "react-ribbons";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
 import {requiredValidator} from "../../../app/common/form/Validators";
@@ -25,12 +25,11 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import {CertificateItemsListGroupedMemo} from "../dashboard/CertificateItemsListGrouped";
 import {FormComboBoxVirtualSupplierMultiColumn} from "../../../app/common/form/FormComboBoxVirtualSupplierMultiColumn";
 import {
-    certificateReportSelector,
     certificateSubTotal, displayCertificateItemsSelector, supplyCertificateReportSelector,
     workmanshipCertificateReportSelector
 } from "../slice/certificateSelectors";
 import CertificatesListModal from "../dashboard/CertificatesListModal";
-import {certificateItemsApi, useFetchCertificateItemsQuery} from "../../../app/store/apis/certificateItemsApi";
+import {certificateItemsApi} from "../../../app/store/apis/certificateItemsApi";
 import {WorkmanshipCertificateExcel} from "../report/WorkmanshipCertificateExcel";
 import {SupplyCertificateExcel} from "../report/SupplyCertificateExcel";
 
@@ -131,9 +130,17 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
     const subtotal = useAppSelector(certificateSubTotal);
     const [showCertificatesModal, setShowCertificatesModal] = useState(false);
     const [showPDF, setShowPDF] = useState(false);
-    /*const { data: items, isFetching, isError, error } = useFetchCertificateItemsQuery(selectedCertificate?.workEffortId || '', {
-        skip: !selectedCertificate?.workEffortId,
-    });*/
+    const currentFacilityId = useAppSelector((state: RootState) =>
+        state.certificateUi.selectedCertificate.currentFacilityId
+        ?? state.certificateUi.selectedCertificate.facilityId
+    );
+    const [deliverToSite, setDeliverToSite] = useState(false);
+
+    const handleFacilityChange = useCallback((event: any, formRenderProps: FormRenderProps) => {
+        const newFacilityId = event.value;
+        formRenderProps.onChange("facilityId", { value: newFacilityId });
+        dispatch(setCurrentFacilityId(newFacilityId));
+    }, [dispatch]);
 
     const certificateItems = useAppSelector(displayCertificateItemsSelector);
     
@@ -264,15 +271,14 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
     const handleProjectChange = useCallback(
         (event: any, formRenderProps: any) => {
             const project = event.value;
-            if (project?.facilityId && facilities.some((f: any) => f.facilityId === project.facilityId)) {
-                // Update facilityId in the form to match the project's facilityId
-                formRenderProps.onChange("facilityId", {value: project.facilityId});
-            } else {
-                // Clear facilityId if no valid facilityId is associated with the project
-                formRenderProps.onChange("facilityId", {value: undefined});
-            }
+            const newFacilityId = project?.facilityId && facilities.some((f: any) => f.facilityId === project.facilityId)
+                ? project.facilityId
+                : undefined;
+
+            formRenderProps.onChange("facilityId", { value: newFacilityId });
+            dispatch(setCurrentFacilityId(newFacilityId)); // ← Important!
         },
-        [facilities]
+        [facilities, dispatch]
     );
 
     const handleSubmit = useCallback(
@@ -325,6 +331,8 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                 values: {
                     workEffortId: selectedCertificate.workEffortId,
                     currentStatusId: action === 'Approve Certificate' ? CertificateStatus.APPROVED : CertificateStatus.COMPLETE,
+                    // NEW: include the flag when relevant
+                    deliverToSite: currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE" ? deliverToSite : undefined,
                 },
                 selectedMenuItem: action,
             };
@@ -640,6 +648,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                                             textField="facilityName"
                                                             validator={requiredValidator}
                                                             disabled={editMode > 3}
+                                                            onChange={(e: any) => handleFacilityChange(e, formRenderPropsRef.current!)}
                                                         />
                                                     </Grid>
                                                 )}
@@ -678,6 +687,23 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                                 </Grid>
                                             </Grid>
                                         </Grid>
+                                        {currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE" && editMode === 2 && (
+                                            <Grid item xs={12} sx={{ pl: 3, mt: 1 }}>
+                                                <FormControlLabel
+                                                    control={
+                                                        <Checkbox
+                                                            checked={deliverToSite}
+                                                            onChange={(e) => setDeliverToSite(e.target.checked)}
+                                                            color="primary"
+                                                        />
+                                                    }
+                                                    label={getTranslatedLabel(
+                                                        "projects.certificate.deliverToSite",
+                                                        "Deliver to project site (receive directly at site instead of main warehouse)"
+                                                    )}
+                                                />
+                                            </Grid>
+                                        )}
                                         <div className="k-form-buttons">
                                             <Grid container spacing={2}>
                                                 {(editMode === 1 || editMode === 2) && (

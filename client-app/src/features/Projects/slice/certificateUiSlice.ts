@@ -19,6 +19,8 @@ interface SelectedCertificate {
   relatedOrderId: string;
   facilityId?: string ;
   facilityName?: string;
+  currentFacilityId?: string;
+
 }
 interface CertificateUiState {
   currentCertificateType: string;
@@ -44,6 +46,7 @@ export const certificateUiInitialState: CertificateUiState = {
     relatedOrderId: "",
     facilityId: undefined,
     facilityName: "",
+    currentFacilityId: undefined,
   },
 };
 
@@ -90,6 +93,9 @@ export const certificateUiSlice = createSlice({
         facilityName: "",
       };
     },
+    setCurrentFacilityId: (state, action: PayloadAction<string | undefined>) => {
+      state.selectedCertificate.currentFacilityId = action.payload;
+    },
   },
 });
 
@@ -97,7 +103,7 @@ export const {
   setCurrentCertificateType,
   setCertificateFormEditMode,
   setSelectedCertificate,
-  resetCertificateUi,
+  resetCertificateUi, setCurrentFacilityId
 } = certificateUiSlice.actions;
 
 export const certificateUiSelectors = {

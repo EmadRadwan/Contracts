@@ -159,6 +159,13 @@ const productsApi = createApi({
                     }));
                 },
             }),
+            getLastUnitPrice: builder.query<number | null, { productId: string; facilityId: string }>({
+                query: ({ productId, facilityId }) => ({
+                    url: 'products/lastUnitPrice',
+                    params: { productId, facilityId },
+                }),
+                transformResponse: (response: { unitPrice: number | null }) => response.unitPrice,
+            }),
         };
     },
 });
@@ -173,7 +180,8 @@ export const {
     endpoints: productsEndpoints, useFetchProductQuantityUomQuery,
     useGetProductPriceQuery, useGetProductDetailsQuery, 
     useGetProductSuppliersQuery, useUpdateProductSupplierMutation,
-    useCreateProductSupplierMutation, useGetCurrenciesQuery, useGetQuantitiesQuery, useFetchInventoryItemColorsQuery
+    useCreateProductSupplierMutation, useGetCurrenciesQuery,
+    useGetQuantitiesQuery, useFetchInventoryItemColorsQuery, useGetLastUnitPriceQuery,
 } = productsApi;
 export {productsApi};
 

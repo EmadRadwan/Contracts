@@ -3,7 +3,6 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "../../../../app/store/configureStore";
-import { router } from "../../../../app/router/Routes";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import TrialBalanceCustomTimePeriodForm from "../form/TrialBalanceCustomTimePeriodForm";
 import { useFetchTrialBalanceReportQuery } from "../../../../app/store/apis/accounting/accountingReportsApi";
@@ -48,9 +47,11 @@ const TrialBalance = () => {
     seletedCustomTimePeriodId,
   } = useAppSelector((state) => state.accountingSharedUi);
   const dispatch = useAppDispatch();
-  if (!selectedAccountingCompanyId) {
-    router.navigate("/orgGl");
-  }
+  const {user} = useAppSelector((state) => state.account);
+  const companyId = user?.organizationPartyId || "";
+  console.log('user', user);
+  
+
   const handleSelectTimePeriod = (value: any) => {
     dispatch(setSeletedCustomTimePeriodId(value.customTimePeriodId));
   };
@@ -58,10 +59,10 @@ const TrialBalance = () => {
     useFetchTrialBalanceReportQuery(
       {
         customTimePeriodId: seletedCustomTimePeriodId!,
-        organizationPartyId: selectedAccountingCompanyId!,
+        organizationPartyId: companyId!,
       }!,
       {
-        skip: !seletedCustomTimePeriodId || !selectedAccountingCompanyId,
+        skip: !seletedCustomTimePeriodId || !companyId,
       }
     );
 

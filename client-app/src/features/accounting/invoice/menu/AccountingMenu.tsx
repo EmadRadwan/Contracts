@@ -14,6 +14,7 @@ import StoreIcon from '@mui/icons-material/Store';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import PaidIcon from '@mui/icons-material/Paid';
+import BalanceIcon from '@mui/icons-material/Balance';
 import React from "react"; 
 
 interface AccountingMenuProps {
@@ -47,6 +48,7 @@ const links = [
     { title: 'Transactions', key: 'transactions', path: '/accountingTransaction', icon: <ReceiptIcon sx={{ color: "#8BC34A" }} /> },
     { title: 'Transactions Entries', key: 'transactions-entries', path: '/accountingTransactionEntries', icon: <ReceiptLongIcon sx={{ color: "#FF4081" }} /> },
     { title: 'Create Transactions', key: 'create-transactions', path: '/glCreateAccountingTransaction', icon: <PaidIcon sx={{ color: "#4CAF50" }} /> },
+    { title: 'Trial Balance', key: 'trialBalance', path: '/trialBalance', icon: <BalanceIcon sx={{ color: "#E91E63" }} /> },
 
 
 ];

@@ -5,10 +5,11 @@ import FormDatePicker from "../../../app/common/form/FormDatePicker";
 import FormNumericTextBox from "../../../app/common/form/FormNumericTextBox";
 import { FormSimpleComboBoxVirtualProduct } from "../../../app/common/form/FormSimpleComboBoxVirtualProduct";
 import { FormComboBoxVirtualUOM } from "../../../app/common/form/FormComboBoxVirtualUOM";
-import { MemoizedFormDropDownList2 } from "../../../app/common/form/MemoizedFormDropDownList2";
 import { requiredValidator } from "../../../app/common/form/Validators";
 import FormButtons from "./FormButtons";
 import FormInput from "../../../app/common/form/FormInput";
+import {RootState, useAppSelector} from "../../../app/store/configureStore";
+import {useGetLastUnitPriceQuery} from "../../../app/store/apis";
 
 // Purpose: Ensure type safety for COMPANY_SUPPLY_SALE_CERTIFICATE, excluding discount fields
 // Context: Reflects the requirement that CompanySupplyForm is identical to ContractorPurchaseForm
@@ -40,6 +41,39 @@ const CompanySupplyForm = ({
                            }: CompanySupplyFormProps) => {
     const { valueGetter, onChange } = formRenderProps;
     const { finalTotal } = calculateTotals(valueGetter);
+    const currentFacilityId = useAppSelector((state: RootState) =>
+        state.certificateUi.selectedCertificate.currentFacilityId
+        ?? state.certificateUi.selectedCertificate.facilityId
+    );
+    const productId = valueGetter("productId")?.ProductId || valueGetter("productId");
+    const facilityId = currentFacilityId;
+    
+    console.log('productId', productId);
+
+    // REFACTOR: RTK Query hook — auto-triggers when both IDs exist
+    // skip: true if either is missing → avoids bad requests
+    const {
+        data: lastUnitPrice,
+        isFetching: isFetchingPrice,
+        isSuccess,
+    } = useGetLastUnitPriceQuery(
+        { productId: productId as string, facilityId: facilityId as string },
+        {
+            skip: !productId || !facilityId,
+        }
+    );
+
+    useEffect(() => {
+        if (isSuccess && lastUnitPrice !== null && lastUnitPrice !== undefined) {
+            const currentPrice = valueGetter("unitPrice");
+            // Only auto-fill if field is empty or still default (0 or null)
+            if (!currentPrice || currentPrice === 0) {
+                onChange("unitPrice", { value: lastUnitPrice });
+            }
+        }
+    }, [lastUnitPrice, isSuccess, onChange, valueGetter]);
+
+    const isLoadingPrice = isFetchingPrice && productId && facilityId;
 
     // Purpose: Ensure total field reflects calculated finalTotal without discount
     // Context: Consistent with ContractorPurchaseForm, updates total when finalTotal changes
@@ -60,6 +94,14 @@ const CompanySupplyForm = ({
                             autoComplete="off"
                             validator={requiredValidator}
                             disabled={formEditMode > 3}
+                            onChange={(e: any) => {
+                                const value = e.value;
+                                onChange("productId", { value });
+                                // Optional: Clear price until new one loads
+                                if (value) {
+                                    onChange("unitPrice", { value: 0 });
+                                }
+                            }}
                         />
                     </Grid>
                     <Grid item xs={6}>

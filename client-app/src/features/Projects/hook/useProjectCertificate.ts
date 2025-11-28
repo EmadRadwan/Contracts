@@ -4,7 +4,9 @@ import {Certificate, CertificateStatus} from "../../../app/models/project/certif
 import {CertificateItem} from "../../../app/models/project/certificateItem";
 import {
     useAddProjectCertificateMutation,
-    useFetchProjectCertificatesQuery, useIssueMaterialsForCertificateMutation, useProcessWorkEffortCertificateMutation,
+    useFetchProjectCertificatesQuery,
+    useIssueMaterialsForCertificateMutation,
+    useProcessWorkEffortCertificateMutation,
     useUpdateProjectCertificateMutation
 } from "../../../app/store/apis/projectsApi";
 import {setProcessedCertificateItems} from "../slice/certificateItemsUiSlice";
@@ -314,6 +316,9 @@ const useProjectCertificate = ({
                     certificateItems: nonDeletedCertificateItems,
                 };
 
+                const deliverToSite: boolean = !!data.values.deliverToSite;
+
+
                 if (nonDeletedCertificateItems.length === 0) {
                     toast.error("Certificate items cannot be empty");
                     return { success: false };
@@ -345,10 +350,23 @@ const useProjectCertificate = ({
                             toast.error("Missing orderId or facilityId for receiving inventory.");
                             return { success: false };
                         }
-                        result = await receiveInventoryFromPurchaseOrder({
+
+                        const receiveCommand = {
                             orderId: selectedCertificate.relatedOrderId,
                             facilityId: selectedCertificate.facilityId,
-                        }).unwrap();
+                            deliverToSite
+                        };
+
+                        result = await receiveInventoryFromPurchaseOrder(receiveCommand).unwrap();
+                        if (deliverToSite) {
+                            refetch();
+                        }
+
+                        toast.success(
+                            deliverToSite
+                                ? "Inventory received directly at project site"
+                                : "Inventory received at warehouse from purchase order"
+                        );
                     } else if (currentCertificateType === "COMPANY_SUPPLY_SALE_CERTIFICATE") {
                         try {
                             result = await issueMaterialsForCertificate({
@@ -425,7 +443,7 @@ const useProjectCertificate = ({
         formEditMode,
         setFormEditMode,
         handleCreate,
-        isReceiveLoading
+        isReceiveLoading: isReceiveLoading
     };
 };
 

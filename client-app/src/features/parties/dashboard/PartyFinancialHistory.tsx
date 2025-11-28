@@ -87,102 +87,61 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
         return isNaN(d.getTime()) ? null : d;
     }, []);
 
-    // REFACTOR: FINAL BULLETPROOF VERSION – Handles duplicate invoice entries correctly
-// - Aggregates multiple applications on same invoice
-// - Payment appears ONCE
-// - Invoice appears ONCE with total applied amount in notes
-// - Final balance always correct: +500 in your current case
 
+    // REFACTOR: FINAL SIMPLIFIED VERSION – NO APPLICATION ROWS (Recommended for external reports)
     const ledgerItems = useMemo((): LedgerRow[] => {
         if (!data) return [];
 
         const rows: LedgerRow[] = [];
-        let runningBalance = 0;
+        let balance = 0;
         const fmt = (d: string | null | undefined) => d ? new Date(d).toISOString().split('T')[0] : '';
 
-        // Step 1: Collect ALL unique payments (full amount once)
-        const paymentMap = new Map<string, { amount: number; date: string }>();
+        // 1. All invoices (applied + unapplied) – sorted by date
+        const invoices = new Map<string, { id: string; total: number; date: string }>();
 
-        // From applied payments
-        data.invoicesApplPayments?.forEach(inv => {
-            if (inv.paymentId && inv.paymentAmount) {
-                paymentMap.set(inv.paymentId, {
-                    amount: inv.paymentAmount,
-                    date: inv.paymentEffectiveDate || inv.invoiceDate,
+        data.invoicesApplPayments?.forEach(i => invoices.set(i.invoiceId, { id: i.invoiceId, total: i.total, date: i.invoiceDate! }));
+        data.unappliedInvoices?.forEach(i => invoices.set(i.invoiceId, { id: i.invoiceId, total: i.amount, date: i.invoiceDate! }));
+
+        Array.from(invoices.values())
+            .sort((a, b) => a.date.localeCompare(b.date))
+            .forEach(inv => {
+                balance += inv.total;
+                rows.push({
+                    date: fmt(inv.date),
+                    description: `فاتورة شراء رقم ${inv.id}`,
+                    invoiceNumber: inv.id,
+                    value: inv.total,
+                    toPay: inv.total,
+                    paid: 0,
+                    balance,
                 });
-            }
-        });
-
-        // From unapplied payments (in case not in applied list)
-        data.unappliedPayments?.forEach(pay => {
-            if (!paymentMap.has(pay.paymentId)) {
-                paymentMap.set(pay.paymentId, {
-                    amount: pay.amount || pay.unappliedAmount || 0,
-                    date: pay.effectiveDate,
-                });
-            }
-        });
-
-        // Add each payment ONCE
-        paymentMap.forEach((pay, paymentId) => {
-            runningBalance += pay.amount;
-            rows.push({
-                date: fmt(pay.date),
-                description: `دفعة رقم ${paymentId}`,
-                paymentNumber: paymentId,
-                value: 0,
-                toPay: 0,
-                paid: pay.amount,
-                balance: runningBalance,
-                notes: 'دفعة (كليًا أو جزئيًا مطبقة)',
             });
+
+        // 2. All payments (applied + unapplied) – sorted by effective date
+        const payments = new Map<string, { id: string; amount: number; date: string }>();
+
+        data.invoicesApplPayments?.forEach(i => {
+            if (i.paymentId) payments.set(i.paymentId, { id: i.paymentId, amount: i.paymentAmount, date: i.paymentEffectiveDate || i.invoiceDate! });
         });
+        data.unappliedPayments?.forEach(p => payments.set(p.paymentId, { id: p.paymentId, amount: p.amount, date: p.effectiveDate! }));
 
-        // Step 2: Process invoices – group by invoiceId
-        const invoiceMap = new Map<string, {
-            total: number;
-            applied: number;
-            date: string;
-            paymentIds: Set<string>;
-        }>();
-
-        data.invoicesApplPayments?.forEach(inv => {
-            const id = inv.invoiceId;
-            if (!invoiceMap.has(id)) {
-                invoiceMap.set(id, {
-                    total: inv.total || 0,
-                    applied: 0,
-                    date: inv.invoiceDate,
-                    paymentIds: new Set(),
+        Array.from(payments.values())
+            .sort((a, b) => a.date.localeCompare(b.date))
+            .forEach(pay => {
+                balance -= pay.amount;
+                rows.push({
+                    date: fmt(pay.date),
+                    description: `دفعة رقم ${pay.id}`,
+                    paymentNumber: pay.id,
+                    value: 0,
+                    toPay: 0,
+                    paid: pay.amount,
+                    balance,
+                    notes: data.unappliedPayments?.some(p => p.paymentId === pay.id) ? 'دفعة غير مطبقة' : undefined,
                 });
-            }
-            const entry = invoiceMap.get(id)!;
-            entry.applied += (inv.amountApplied || 0);
-            if (inv.paymentId) entry.paymentIds.add(inv.paymentId);
-        });
-
-        // Add each invoice ONCE
-        invoiceMap.forEach((inv, invoiceId) => {
-            runningBalance -= inv.total;
-
-            const appliedText = inv.applied > 0
-                ? `تم تطبيق ${inv.applied} من ${[...inv.paymentIds].join(', ')}`
-                : 'لم يتم التسديد';
-
-            rows.push({
-                date: fmt(inv.date),
-                description: `فاتورة شراء رقم ${invoiceId}`,
-                invoiceNumber: invoiceId,
-                value: inv.total,
-                toPay: inv.total,
-                paid: 0,
-                balance: runningBalance,
-                notes: appliedText,
             });
-        });
 
-        // Final sort by date DESC
-        return rows.sort((a, b) => b.date.localeCompare(a.date));
+        return rows;
     }, [data]);
     
     const processedData = useMemo(() => {

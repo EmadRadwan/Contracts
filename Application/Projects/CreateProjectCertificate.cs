@@ -64,7 +64,12 @@ public class CreateProjectCertificate
         public async Task<Result<ProjectCertificateDto>> Handle(Command request,
             CancellationToken cancellationToken)
         {
-            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            await using var transaction = _context.Database.CurrentTransaction == null
+                ? await _context.Database.BeginTransactionAsync(cancellationToken)
+                : null;
+
+            var ownsTransaction = transaction != null;
+            
             try
             {
                 var stamp = DateTime.UtcNow;
@@ -339,7 +344,7 @@ public class CreateProjectCertificate
                 var createResult = await _context.SaveChangesAsync(cancellationToken);
                 if (createResult <= 0)
                 {
-                    await transaction.RollbackAsync(cancellationToken);
+                    if (ownsTransaction) await transaction.RollbackAsync(cancellationToken);
                     return Result<ProjectCertificateDto>.Failure("Failed to create certificate and items");
                 }
 
@@ -410,12 +415,14 @@ public class CreateProjectCertificate
                     var approveResult = await _context.SaveChangesAsync(cancellationToken);
                     if (approveResult <= 0)
                     {
-                        await transaction.RollbackAsync(cancellationToken);
+                        if (ownsTransaction) await transaction.RollbackAsync(cancellationToken);
                         return Result<ProjectCertificateDto>.Failure("Failed to approve purchase order");
                     }
                 }
 
-                await transaction.CommitAsync(cancellationToken);
+                if (ownsTransaction)
+                    await transaction.CommitAsync(cancellationToken);
+
 
                 var project = await _context.WorkEfforts
                     .Where(p => p.WorkEffortId == certificate.ProjectId)
