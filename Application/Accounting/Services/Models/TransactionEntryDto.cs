@@ -13,6 +13,7 @@ public class TransactionEntryDto
     public string WorkEffortId { get; set; }
     public string ShipmentId { get; set; }
     public string PartyId { get; set; }
+    public string CertificateNumber { get; set; }
     public string PartyName { get; set; }
     public string ProductId { get; set; }
     public string ProductName { get; set; }

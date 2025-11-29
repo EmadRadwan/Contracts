@@ -113,7 +113,7 @@ public class ShipmentService : IShipmentService
 
         return orderItemShipGroup;
     }
-    
+
     public async Task<CreateShipmentReceiptResult> CreateShipmentReceipt(CreateShipmentReceiptParameters parameters)
     {
         var result = new CreateShipmentReceiptResult();
@@ -184,7 +184,7 @@ public class ShipmentService : IShipmentService
                     affectAccounting = false;
                 }
             }
-            
+
             bool isForProject = false;
 
             if (!string.IsNullOrEmpty(parameters.OrderId))
@@ -194,7 +194,7 @@ public class ShipmentService : IShipmentService
                         we.WorkEffortTypeId == "PROJECT_CERTIFICATE" &&
                         we.RelatedOrderId == parameters.OrderId);
             }
-            
+
             if (isForProject)
             {
                 // Special accounting: Debit Construction-in-Progress (CIP)
@@ -205,7 +205,7 @@ public class ShipmentService : IShipmentService
                 // Normal inventory receipt
                 await _generalLedgerService.CreateAcctgTransForShipmentReceipt(newShipmentReceiptSequence);
             }
-            
+
             // Update order status
             await UpdateOrderStatusFromReceipt(parameters.OrderId);
 
@@ -335,7 +335,7 @@ public class ShipmentService : IShipmentService
 
                     currentInventoryItemId = await _inventoryService.CreateInventoryItem(
                         createInventoryItemParam);
-                    
+
                     if (!string.IsNullOrEmpty(color))
                     {
                         var inventoryItemFeature = new InventoryItemFeature
@@ -354,6 +354,14 @@ public class ShipmentService : IShipmentService
                         availableToPromiseDiff);*/
                 }
 
+                string? workEffortId = null;
+                if (!string.IsNullOrEmpty(orderId))
+                {
+                    workEffortId = await _context.WorkEfforts
+                        .Where(we => we.RelatedOrderId == orderId) // <-- change to we.OrderId if needed
+                        .Select(we => we.WorkEffortId)
+                        .FirstOrDefaultAsync();
+                }
 
                 // PART 10: Creating Inventory Item Details (only for non-serialized items)
                 if (inventoryItemTypeId != "SERIALIZED_INV_ITEM")
@@ -365,7 +373,8 @@ public class ShipmentService : IShipmentService
                         AvailableToPromiseDiff = quantityAccepted,
                         AccountingQuantityDiff = 0,
                         OrderId = orderId,
-                        OrderItemSeqId = orderItemSeqId
+                        OrderItemSeqId = orderItemSeqId,
+                        WorkEffortId = workEffortId
                     };
                     await _inventoryService.CreateInventoryItemDetail(inventoryItemDetailParam);
                 }
@@ -831,8 +840,8 @@ public class ShipmentService : IShipmentService
                         }
                     }
                 }
-                
-                
+
+
                 var itemIssuances = await _utilityService.FindLocalOrDatabaseListAsync<ItemIssuance>(
                     query => query.Where(ii =>
                         ii.OrderId == orderHeader.OrderId && ii.ShipGroupSeqId == orderItemShipGroup.ShipGroupSeqId &&
@@ -1093,7 +1102,7 @@ public class ShipmentService : IShipmentService
                 /*var orderItemShipGroup =
                     await _utilityService.FindLocalOrDatabaseAsync<OrderItemShipGroup>(orderId, shipGroupSeqId);
                     */
-                
+
                 var orderItemShipGroup = await _context.OrderItemShipGroups
                     .FirstOrDefaultAsync(oisg => oisg.OrderId == orderId && oisg.ShipGroupSeqId == shipGroupSeqId);
 

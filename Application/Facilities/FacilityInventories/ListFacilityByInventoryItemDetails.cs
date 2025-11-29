@@ -35,6 +35,9 @@ public class ListFacilityByInventoryItemDetails
                 join invd in _context.InventoryItemDetails on invi.InventoryItemId equals invd.InventoryItemId
                 join prd in _context.Products on invi.ProductId equals prd.ProductId
                 join fac in _context.Facilities on invi.FacilityId equals fac.FacilityId
+                join we in _context.WorkEfforts 
+                    on invd.WorkEffortId equals we.WorkEffortId into weGroup
+                from workEffort in weGroup.DefaultIfEmpty()
                 where
                     (
                         Math.Abs(invd.AccountingQuantityDiff.GetValueOrDefault()) <=
@@ -54,7 +57,7 @@ public class ListFacilityByInventoryItemDetails
                 select new FacilityInventoryItemDetailRecord
                 {
                     ProductId = invi.ProductId,
-                    ProductName = language == "ar" ? prd.ProductNameArabic : language == "tr" ? prd.ProductNameTurkish : prd.ProductName,
+                    ProductName = prd.ProductName,
                     QuantityOnHandTotal = invi.QuantityOnHandTotal,
                     AvailableToPromiseTotal = invi.AvailableToPromiseTotal,
                     InventoryItemId = invi.InventoryItemId,
@@ -67,6 +70,7 @@ public class ListFacilityByInventoryItemDetails
                     AccountingQuantityDiff = invd.AccountingQuantityDiff,
                     OrderId = invd.OrderId,
                     WorkEffortId = invd.WorkEffortId,
+                    CertificateNumber       = workEffort != null ? workEffort.CertificateNumber : null
                 };
 
             return query;

@@ -189,7 +189,7 @@ export default function InventoryItemDetailsList() {
                                     format="{0: dd/MM/yyyy}"
                                 /> 
                                 <Column
-                                    field="workEffortId"
+                                    field="certificateNumber"
                                     title={getTranslatedLabel("facility.details.workEffortId", "Work Effort Id")}
                                 />
                             </KendoGrid>

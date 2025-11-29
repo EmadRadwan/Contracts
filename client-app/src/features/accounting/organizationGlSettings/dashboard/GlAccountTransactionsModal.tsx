@@ -225,7 +225,7 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                     width={100}
                                 />
                                 <Column
-                                    field="workEffortId"
+                                    field="certificateNumber"
                                     title={getTranslatedLabel(`${localizationKey}.workEffortId`, 'Work Effort ID')}
                                     width={100}
                                 />
@@ -258,11 +258,6 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                 />
                             </KendoGrid>
                         </Grid>
-                        {/*<Grid item xs={12} sx={{ mt: 2, textAlign: 'right' }}>
-                            <Button variant="contained" onClick={onClose}>
-                                {getTranslatedLabel('general.close', 'Close')}
-                            </Button>
-                        </Grid>*/}
                     </Grid>
                 )}
             </Box>

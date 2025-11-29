@@ -13,13 +13,16 @@ public class AccountController : ControllerBase
     private readonly SignInManager<AppUserLogin> _signInManager;
     private readonly TokenService _tokenService;
     private readonly UserManager<AppUserLogin> _userManager;
+    private readonly DataContext _context;
+
 
     public AccountController(UserManager<AppUserLogin> userManager,
-        SignInManager<AppUserLogin> signInManager, TokenService tokenService)
+        SignInManager<AppUserLogin> signInManager, TokenService tokenService, DataContext context)
     {
         _tokenService = tokenService;
         _signInManager = signInManager;
         _userManager = userManager;
+        _context = context;
     }
 
     [HttpPost("login")]
@@ -79,6 +82,17 @@ public class AccountController : ControllerBase
     private async Task<UserDto> CreateUserObject(AppUserLogin user)
     {
         var roles = await _userManager.GetRolesAsync(user);
+        string organizationPartyName = string.Empty;
+
+        if (user.OrganizationPartyId != null)
+        {
+            var party = await _context.Parties
+                .Where(p => p.PartyId == user.OrganizationPartyId)
+                .Select(p => p.Description)           // Only select the column we need
+                .FirstOrDefaultAsync();
+
+            organizationPartyName = party ?? string.Empty;
+        }
 
         return new UserDto
         {
@@ -88,6 +102,7 @@ public class AccountController : ControllerBase
             Token = await _tokenService.CreateToken(user),
             Username = user.UserName,
             OrganizationPartyId = user.OrganizationPartyId,
+            OrganizationPartyName = organizationPartyName,
             DualLanguage = user.DualLanguage,
             Roles = roles.ToArray()
         };

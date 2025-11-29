@@ -18,7 +18,7 @@ const accountingReportsApi = createApi({
             return headers;
         },
     }),
-
+    refetchOnMountOrArgChange: true,
     endpoints(builder) {
         return {
             fetchTrialBalanceReport: builder.query<

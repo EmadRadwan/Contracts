@@ -17,7 +17,7 @@ import {
   GridToolbar,
   GRID_COL_INDEX_ATTRIBUTE,
 } from "@progress/kendo-react-grid";
-import {useMemo, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
@@ -42,13 +42,12 @@ const TrialBalance = () => {
     setPage(event.page);
   };
   const {
-    selectedAccountingCompanyName,
-    selectedAccountingCompanyId,
     seletedCustomTimePeriodId,
   } = useAppSelector((state) => state.accountingSharedUi);
   const dispatch = useAppDispatch();
   const {user} = useAppSelector((state) => state.account);
   const companyId = user?.organizationPartyId || "";
+  const organizationPartyName = user?.organizationPartyName || "";
   console.log('user', user);
   
 
@@ -66,6 +65,18 @@ const TrialBalance = () => {
       }
     );
 
+  useEffect(() => {
+    return () => {
+      // Clear the selected custom time period so future mounts start fresh
+      dispatch(setSeletedCustomTimePeriodId(null));
+
+      // Optional: If you want to fully remove this query's data from cache
+      // You can dispatch api.util.resetApiState() globally (not recommended per query)
+      // Or use the unstable reset if available in your RTK Query version
+      // For most cases, just resetting the param (above) + skip: true is sufficient
+    };
+  }, [dispatch]);
+  
   const excelRows = useMemo(() => {
     if (!data?.accountBalances) return [];
     return data.accountBalances.map(ab => ({
@@ -117,7 +128,7 @@ const TrialBalance = () => {
           <AccountingReportBreadcrumbs />
 
           <Typography variant="h4" margin={3}>
-            {getTranslatedLabel(`${localizationKey}.title`, "Trial Balance For: ")} {selectedAccountingCompanyName}
+            {getTranslatedLabel(`${localizationKey}.title`, "Trial Balance For: ")} {organizationPartyName}
           </Typography>
           <Grid item xs={12} sx={{ margin: 3 }}>
             <TrialBalanceCustomTimePeriodForm
@@ -155,7 +166,7 @@ const TrialBalance = () => {
                     </Typography>
 
                     <TrialBalanceExcel
-                        companyName={selectedAccountingCompanyName ?? ''}
+                        companyName={organizationPartyName ?? ''}
                         rows={excelRows}
                         totals={{
                           postedDebitsTotal: data.postedDebitsTotal ?? 0,
@@ -186,7 +197,7 @@ const TrialBalance = () => {
           >
             <GlAccountTransactionsModal
                 onClose={() => setShowTransactionsModal(false)}
-                organizationPartyId={selectedAccountingCompanyId!}
+                organizationPartyId={companyId!}
                 customTimePeriodId={seletedCustomTimePeriodId!}
                 glAccountId={selectedGlAccountId!}
             />

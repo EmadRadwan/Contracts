@@ -58,6 +58,8 @@ public class GetGlAccountTransactionDetails
                     from p in parties.DefaultIfEmpty()
                     join prod in _context.Products on ate.ProductId equals prod.ProductId into products
                     from prod in products.DefaultIfEmpty()
+                    join we in _context.WorkEfforts on act.WorkEffortId equals we.WorkEffortId into workEfforts
+                    from we in workEfforts.DefaultIfEmpty()
                     where ate.OrganizationPartyId == request.OrganizationPartyId
                           && ate.GlAccountId == request.GlAccountId
                           && act.IsPosted == "Y"
@@ -83,7 +85,8 @@ public class GetGlAccountTransactionDetails
                         DebitCreditFlag = ate.DebitCreditFlag,
                         Amount = (decimal)ate.Amount,
                         Description = ate.Description,
-                        CurrencyUomId = ate.CurrencyUomId
+                        CurrencyUomId = ate.CurrencyUomId,
+                        CertificateNumber = we != null ? we.CertificateNumber : null
                     };
 
                 // 4. Filter transactions based on includePrePeriodTransactions

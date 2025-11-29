@@ -13,6 +13,21 @@ namespace Application.Projects
 {
     public class UpdateProjectCertificate
     {
+        private static OrderAdjustmentDto2 CreateAdjustment(string seqId, string typeId, decimal amount,
+            CertificateItemDto item)
+        {
+            return new OrderAdjustmentDto2
+            {
+                OrderAdjustmentId = Guid.NewGuid().ToString(),
+                OrderItemSeqId = seqId,
+                OrderAdjustmentTypeId = typeId,
+                Amount = amount,
+                CorrespondingProductId = item.ProductId,
+                IsManual = "Y",
+                CreatedDate = DateTime.UtcNow
+            };
+        }
+
         public class Command : IRequest<Result<ProjectCertificateDto>>
         {
             public ProjectCertificateDto? Certificate { get; set; }
@@ -100,11 +115,13 @@ namespace Application.Projects
                     foreach (var item in certificate.CertificateItems!)
                     {
                         var existingItem = existingItems.FirstOrDefault(ei => ei.WorkEffortId == item.WorkEffortId);
+
                         if (existingItem != null)
                         {
-                            // Update logic (same as yours)
+                            // UPDATE existing record
                             existingItem.ProductId = item.ProductId;
                             existingItem.Description = item.Description;
+                            existingItem.DeductionDescription = item.DeductionDescription;
                             existingItem.Quantity = item.Quantity;
                             existingItem.Rate = item.UnitPrice;
                             existingItem.TotalAmount = item.TotalAmount;
@@ -118,7 +135,6 @@ namespace Application.Projects
                                 category == "WORKMANSHIP_CONTRACTING_CERTIFICATE" ? item.LaborPrice : 0;
                             existingItem.QuantityUomId = item.UomId;
                             existingItem.Deductions = item.Deductions ?? 0;
-                            existingItem.DeductionDescription = item.DeductionDescription;
                             existingItem.AchievementPercent = item.AchievementPercentage ?? 0;
                             existingItem.Notes = item.Notes;
                             existingItem.ProcurementDate = item.ProcurementDate;
@@ -128,38 +144,55 @@ namespace Application.Projects
                         }
                         else
                         {
+                            // REFACTOR: Create ONLY for new items
                             var newId = await _utilityService.GetNextSequence("WorkEffort");
                             var newItem = new WorkEffort
                             {
-                                /* same as your create logic */
+                                WorkEffortId = newId,
+                                WorkEffortParentId = certificate.WorkEffortId,
+                                WorkEffortTypeId = "CERTIFICATE_ITEM",
+                                ProductId = item.ProductId,
+                                Description = item.Description,
+                                DeductionDescription = item.DeductionDescription,
+                                Quantity = item.Quantity,
+                                Rate = item.UnitPrice,
+                                TotalAmount = item.TotalAmount,
+                                Discount = item.Discount ?? 0,
+                                Insurance = item.Insurance ?? 0,
+                                AdditionalInsurance = item.AdditionalInsurance,
+                                MaterialPrice = category == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                                    ? item.MaterialPrice
+                                    : 0,
+                                LaborPrice = category == "WORKMANSHIP_CONTRACTING_CERTIFICATE" ? item.LaborPrice : 0,
+                                QuantityUomId = item.UomId,
+                                Deductions = item.Deductions ?? 0,
+                                AchievementPercent = item.AchievementPercentage ?? 0,
+                                Notes = item.Notes,
+                                ProcurementDate = item.ProcurementDate,
+                                TransportationExpenses = item.TransportationExpenses ?? 0,
+                                Gratuities = item.Gratuities ?? 0,
+                                CreatedDate = stamp,
+                                LastUpdatedStamp = stamp,
+                                CurrentStatusId = "WEPR_CREATED"
                             };
-                            newItem.WorkEffortId = newId;
-                            newItem.WorkEffortParentId = certificate.WorkEffortId;
-                            newItem.WorkEffortTypeId = "CERTIFICATE_ITEM";
-                            // ... copy all fields
-                            newItem.CreatedDate = stamp;
-                            newItem.LastUpdatedStamp = stamp;
-                            newItem.CurrentStatusId = "WEPR_CREATED";
+
                             _context.WorkEfforts.Add(newItem);
                         }
                     }
 
-                    // REFACTOR: Critical — Handle PO delete + recreate
                     string? newOrderId = null;
-                    string? newRelatedOrderId = null;
 
-
-                    // Step 2: Re-create PO using exact same logic as CreateProjectCertificate
+                    // REFACTOR: Only recreate PO if not COMPANY_SUPPLY_SALE_CERTIFICATE (same rule as Create)
                     if (category != "COMPANY_SUPPLY_SALE_CERTIFICATE")
                     {
+                        // 1. Delete old PO (if exists)
                         string? oldOrderId = workEffortQuery.RelatedOrderId;
                         if (!string.IsNullOrEmpty(oldOrderId))
                         {
-                            // 1. Clear FK + save
                             workEffortQuery.RelatedOrderId = null;
                             await _context.SaveChangesAsync(cancellationToken);
 
-                            // 2. Delete old PO completely
+                            // Delete cascade (same as before — kept intact)
                             await _context.Set<OrderItemShipGroupAssoc>().Where(x => x.OrderId == oldOrderId)
                                 .ExecuteDeleteAsync(cancellationToken);
                             await _context.Set<OrderItemBilling>().Where(x => x.OrderId == oldOrderId)
@@ -182,10 +215,8 @@ namespace Application.Projects
                                 .ExecuteDeleteAsync(cancellationToken);
 
                             var prefIds = await _context.OrderPaymentPreferences
-                                .Where(p => p.OrderId == oldOrderId)
-                                .Select(p => p.OrderPaymentPreferenceId)
+                                .Where(p => p.OrderId == oldOrderId).Select(p => p.OrderPaymentPreferenceId)
                                 .ToListAsync(cancellationToken);
-
                             if (prefIds.Any())
                                 await _context.Payments.Where(p => prefIds.Contains(p.PaymentPreferenceId))
                                     .ExecuteDeleteAsync(cancellationToken);
@@ -194,14 +225,14 @@ namespace Application.Projects
                                 .ExecuteDeleteAsync(cancellationToken);
                             await _context.OrderHeaders.Where(h => h.OrderId == oldOrderId)
                                 .ExecuteDeleteAsync(cancellationToken);
-
                         }
 
-                        // 3. NOW create new PO — change tracker is clean!
+                        // REFACTOR: Rebuild order items & adjustments EXACTLY like Create handler
                         var orderItems = new List<OrderItemDto2>();
-                        int seq = 1;
+                        var orderAdjustments = new List<OrderAdjustmentDto2>();
+                        var seq = 1;
 
-                        string fromPartyId = category switch
+                        var fromPartyId = category switch
                         {
                             "SUPPLY_PROCUREMENT_CERTIFICATE" => certificate.PartyIdSupplier ??
                                                                 throw new InvalidOperationException(
@@ -209,36 +240,39 @@ namespace Application.Projects
                             "WORKMANSHIP_CONTRACTING_CERTIFICATE" => certificate.PartyIdContractor ??
                                                                      throw new InvalidOperationException(
                                                                          "PartyIdContractor required"),
-                            _ => throw new InvalidOperationException("Unsupported category")
+                            _ => throw new InvalidOperationException($"Unsupported category: {category}")
                         };
 
                         foreach (var item in certificate.CertificateItems!)
                         {
-                            decimal netAmount = item.Net;
-
-                            orderItems.Add(new OrderItemDto2
-                            {
-                                OrderItemSeqId = seq.ToString("D4"),
-                                ProductId = item.ProductId,
-                                ProductName = item.ProductName,
-                                Quantity = 1,
-                                UnitPrice = netAmount - item.Insurance - item.AdditionalInsurance,
-                                SubTotal = netAmount - item.Insurance - item.AdditionalInsurance,
-                                UomId = item.UomId,
-                                FacilityId = certificate.FacilityId,
-                                ItemDescription = item.Description,
-                                OrderItemTypeId = "PROJECT_CERTIFICATE_ITEM",
-                                StatusId = "ITEM_CREATED"
-                            });
-                            seq++;
+                            var orderItemSeqId = seq.ToString("D4");
 
                             if (category == "WORKMANSHIP_CONTRACTING_CERTIFICATE")
                             {
+                                // STRATEGY 1: Quantity = 1, UnitPrice = Deserved (net after deductions but before insurance)
+                                orderItems.Add(new OrderItemDto2
+                                {
+                                    OrderItemSeqId = orderItemSeqId,
+                                    ProductId = item.ProductId,
+                                    ProductName = item.ProductName,
+                                    Quantity = 1m,
+                                    UnitPrice = item.Deserved,
+                                    SubTotal = item.Deserved,
+                                    UomId = item.UomId,
+                                    FacilityId = certificate.FacilityId,
+                                    ItemDescription = item.Description,
+                                    OrderItemTypeId = "PROJECT_CERTIFICATE_ITEM",
+                                    StatusId = "ITEM_CREATED",
+                                    CreatedStamp = stamp,
+                                    LastUpdatedStamp = stamp
+                                });
+
+                                // Insurance & Additional Insurance as negative line items
                                 if (item.Insurance.GetValueOrDefault() != 0)
                                 {
                                     orderItems.Add(new OrderItemDto2
                                     {
-                                        OrderItemSeqId = seq++.ToString("D4"),
+                                        OrderItemSeqId = (++seq).ToString("D4"),
                                         ProductId = item.ProductId,
                                         ProductName = $"تأمين - {item.ProductName}",
                                         Quantity = 1,
@@ -248,7 +282,9 @@ namespace Application.Projects
                                         FacilityId = certificate.FacilityId,
                                         ItemDescription = "تأمين مستحق",
                                         OrderItemTypeId = "PROJECT_INSURANCE",
-                                        StatusId = "ITEM_CREATED"
+                                        StatusId = "ITEM_CREATED",
+                                        CreatedStamp = stamp,
+                                        LastUpdatedStamp = stamp
                                     });
                                 }
 
@@ -256,7 +292,7 @@ namespace Application.Projects
                                 {
                                     orderItems.Add(new OrderItemDto2
                                     {
-                                        OrderItemSeqId = seq++.ToString("D4"),
+                                        OrderItemSeqId = (++seq).ToString("D4"),
                                         ProductId = item.ProductId,
                                         ProductName = $"تأمين إضافي - {item.ProductName}",
                                         Quantity = 1,
@@ -266,11 +302,77 @@ namespace Application.Projects
                                         FacilityId = certificate.FacilityId,
                                         ItemDescription = "تأمين إضافي",
                                         OrderItemTypeId = "PROJECT_ADDITIONAL_INSURANCE",
-                                        StatusId = "ITEM_CREATED"
+                                        StatusId = "ITEM_CREATED",
+                                        CreatedStamp = stamp,
+                                        LastUpdatedStamp = stamp
+                                    });
+                                }
+
+                                if (item.Deductions.GetValueOrDefault() > 0)
+                                {
+                                    orderItems.Add(new OrderItemDto2
+                                    {
+                                        OrderItemSeqId = (++seq).ToString("D4"),
+                                        ProductId = item.ProductId,
+                                        ProductName = $"خصم - {item.ProductName}",
+                                        Quantity = 1m,
+                                        UnitPrice = item.Deductions.Value,
+                                        SubTotal = item.Deductions.Value,
+                                        UomId = item.UomId,
+                                        FacilityId = certificate.FacilityId,
+                                        ItemDescription = string.IsNullOrEmpty(item.DeductionDescription)
+                                            ? "خصومات متنوعة"
+                                            : item.DeductionDescription,
+                                        OrderItemTypeId = "PROJECT_DEDUCTION",
+                                        StatusId = "ITEM_CREATED",
+                                        CreatedStamp = stamp,
+                                        LastUpdatedStamp = stamp
                                     });
                                 }
                             }
+                            else // SUPPLY_PROCUREMENT_CERTIFICATE
+                            {
+                                var baseAmount = item.Quantity * item.UnitPrice;
+
+                                orderItems.Add(new OrderItemDto2
+                                {
+                                    OrderItemSeqId = orderItemSeqId,
+                                    ProductId = item.ProductId,
+                                    ProductName = item.ProductName,
+                                    Quantity = item.Quantity,
+                                    UnitPrice = item.UnitPrice,
+                                    SubTotal = baseAmount,
+                                    UomId = item.UomId,
+                                    FacilityId = certificate.FacilityId,
+                                    ItemDescription = item.Description,
+                                    OrderItemTypeId = "PROJECT_CERTIFICATE_SUPPLY_ITEM",
+                                    StatusId = "ITEM_CREATED",
+                                    CreatedStamp = stamp,
+                                    LastUpdatedStamp = stamp
+                                });
+
+                                if (item.Discount.GetValueOrDefault() != 0)
+                                    orderAdjustments.Add(CreateAdjustment(orderItemSeqId,
+                                        "CERTIFICATE_DISCOUNT_ADJUSTMENT", -item.Discount.Value, item));
+                                if (item.TransportationExpenses.GetValueOrDefault() != 0)
+                                    orderAdjustments.Add(CreateAdjustment(orderItemSeqId,
+                                        "CERTIFICATE_SHIPPING_CHARGES", item.TransportationExpenses.Value, item));
+                                if (item.Gratuities.GetValueOrDefault() != 0)
+                                    orderAdjustments.Add(CreateAdjustment(orderItemSeqId,
+                                        "CERTIFICATE_GRATUTIES_CHARGES", item.Gratuities.Value, item));
+                            }
+
+                            seq++;
                         }
+
+                        // REFACTOR: GrandTotal now matches Create logic exactly
+                        decimal grandTotal = category switch
+                        {
+                            "WORKMANSHIP_CONTRACTING_CERTIFICATE" => certificate.CertificateItems!.Sum(x => x.Net),
+                            "SUPPLY_PROCUREMENT_CERTIFICATE" => (decimal)(orderItems.Sum(i => i.SubTotal) +
+                                                                          orderAdjustments.Sum(a => a.Amount)),
+                            _ => 0m
+                        };
 
                         var orderDto = new OrderDto
                         {
@@ -279,20 +381,15 @@ namespace Application.Projects
                             CurrencyUomId = await _productStoreService.GetProductStoreDefaultCurrencyId(),
                             OrderDate = stamp,
                             StatusId = "ORDER_CREATED",
+                            StatusDescription = "Created",
                             InternalRemarks =
                                 $"Auto-generated from Certificate {workEffortQuery.CertificateNumber} (Updated {stamp:yyyy-MM-dd HH:mm})",
-                            GrandTotal = orderItems.Sum(x => x.SubTotal),
+                            GrandTotal = grandTotal,
                             OrderItems = orderItems,
-                            OrderAdjustments = new()
+                            OrderAdjustments = orderAdjustments
                         };
 
                         var poResult = await _orderService.CreatePurchaseOrder(orderDto);
-                        
-                        newOrderId = poResult.OrderId; 
-                        workEffortQuery.RelatedOrderId = newOrderId;
-                    
-                        await _context.SaveChangesAsync(cancellationToken);
-                        
                         if (poResult == null)
                         {
                             await transaction.RollbackAsync(cancellationToken);
@@ -300,62 +397,66 @@ namespace Application.Projects
                         }
 
                         newOrderId = poResult.OrderId;
+                        workEffortQuery.RelatedOrderId = newOrderId;
 
-                        // APPROVE
+                        // REFACTOR: Save now so RelatedOrderId is persisted before approval query
+                        await _context.SaveChangesAsync(cancellationToken);
+
+                        // REFACTOR: Re-query fresh order data for approval (same pattern as Create)
+                        var orderHeader = await _context.OrderHeaders
+                            .FirstOrDefaultAsync(oh => oh.OrderId == newOrderId, cancellationToken);
+
+                        var freshItems = await _context.OrderItems
+                            .Where(oi => oi.OrderId == newOrderId)
+                            .Select(oi => new OrderItemDto2
+                            {
+                                OrderId = oi.OrderId,
+                                OrderItemSeqId = oi.OrderItemSeqId,
+                                ProductId = oi.ProductId,
+                                Quantity = oi.Quantity,
+                                UnitPrice = oi.UnitPrice,
+                                UomId = oi.UomId,
+                                ItemDescription = oi.ItemDescription,
+                                OrderItemTypeId = oi.OrderItemTypeId,
+                                StatusId = oi.StatusId,
+                                CreatedStamp = oi.CreatedStamp,
+                                LastUpdatedStamp = oi.LastUpdatedStamp
+                            }).ToListAsync(cancellationToken);
+
+                        var freshAdjustments = await _context.OrderAdjustments
+                            .Where(oa => oa.OrderId == newOrderId)
+                            .Select(oa => new OrderAdjustmentDto2
+                            {
+                                OrderAdjustmentId = oa.OrderAdjustmentId,
+                                OrderAdjustmentTypeId = oa.OrderAdjustmentTypeId,
+                                OrderId = oa.OrderId,
+                                OrderItemSeqId = oa.OrderItemSeqId,
+                                Amount = oa.Amount,
+                                CorrespondingProductId = oa.CorrespondingProductId,
+                                IsManual = oa.IsManual,
+                                CreatedDate = oa.CreatedDate,
+                                SourcePercentage = oa.SourcePercentage,
+                                IsAdjustmentDeleted = false
+                            }).ToListAsync(cancellationToken);
+
                         var approveDto = new OrderDto
                         {
                             OrderId = newOrderId,
                             FromPartyId = fromPartyId,
-                            GrandTotal = poResult.GrandTotal,
-                            CurrencyUomId = await _productStoreService.GetProductStoreDefaultCurrencyId(),
+                            GrandTotal = orderHeader!.GrandTotal,
                             OrderDate = stamp,
-                            StatusId = "ORDER_APPROVED", // or whatever your approval logic expects
-                            InternalRemarks =
-                                $"Auto-approved after certificate update - {workEffortQuery.CertificateNumber}",
-
-                            OrderItems = await _context.OrderItems
-                                .Where(oi => oi.OrderId == newOrderId)
-                                .Select(oi => new OrderItemDto2
-                                {
-                                    OrderId = oi.OrderId,
-                                    OrderItemSeqId = oi.OrderItemSeqId, // CRITICAL — WAS MISSING!
-                                    ProductId = oi.ProductId,
-                                    Quantity = oi.Quantity,
-                                    UnitPrice = oi.UnitPrice,
-                                    ItemDescription = oi.ItemDescription,
-                                    OrderItemTypeId = oi.OrderItemTypeId,
-                                    CreatedStamp = oi.CreatedStamp,
-                                    LastUpdatedStamp = oi.LastUpdatedStamp
-                                })
-                                .ToListAsync(cancellationToken),
-
-                            OrderAdjustments = await _context.OrderAdjustments
-                                .Where(oa => oa.OrderId == newOrderId)
-                                .Select(oa => new OrderAdjustmentDto2
-                                {
-                                    OrderAdjustmentId = oa.OrderAdjustmentId,
-                                    OrderAdjustmentTypeId = oa.OrderAdjustmentTypeId,
-                                    OrderId = oa.OrderId,
-                                    OrderItemSeqId = oa.OrderItemSeqId,
-                                    Amount = oa.Amount,
-                                    CorrespondingProductId = oa.CorrespondingProductId,
-                                    IsManual = oa.IsManual,
-                                    CreatedDate = oa.CreatedDate,
-                                    SourcePercentage = oa.SourcePercentage,
-                                    IsAdjustmentDeleted = false
-                                })
-                                .ToListAsync(cancellationToken)
+                            CurrencyUomId = await _productStoreService.GetProductStoreDefaultCurrencyId(),
+                            StatusId = "ORDER_APPROVED",
+                            OrderItems = freshItems,
+                            OrderAdjustments = freshAdjustments
                         };
 
                         await _orderService.UpdateOrApprovePurchaseOrder(approveDto, "APPROVE");
+                        await _context.SaveChangesAsync(cancellationToken);
                     }
 
-                    
-                    await _context.SaveChangesAsync(cancellationToken);   // ← ADD THIS
-
-
-                    // Final save
                     await transaction.CommitAsync(cancellationToken);
+
 
                     var project = await _context.WorkEfforts
                         .Where(p => p.WorkEffortId == workEffortQuery.ProjectId)

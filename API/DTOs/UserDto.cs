@@ -7,6 +7,7 @@ public class UserDto
     public string Token { get; set; }
     public string Username { get; set; }
     public string OrganizationPartyId { get; set; }
+    public string OrganizationPartyName { get; set; }
     public string Image { get; set; }
 
     public string DualLanguage { get; set; }

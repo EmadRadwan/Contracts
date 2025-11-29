@@ -381,7 +381,8 @@
       "atpTotal": "إجمالي المتاح للبيع",
       "qohDiff": "فرق المتوفر",
       "atpDiff": "فرق المتاح للبيع",
-      "date": "تاريخ السريان"
+      "date": "تاريخ السريان",
+      "workEffortId": "رقم المستخلص"
     },
     "receive": {
       "list": {
@@ -1063,7 +1064,35 @@
           "endingBalance": "الرصيد الختامي",
           "loading": "جارٍ تحميل بيانات التقرير...",
           "debits": "إجمالي المدين: ",
-          "credits": "إجمالي الدائن: "
+          "credits": "إجمالي الدائن: ",
+          "transactions": {
+            "title": "تفاصيل الحركات لحساب",
+            "transactions": "الحركات",
+            "totalDebit": "إجمالي المدين:",
+            "totalCredit": "إجمالي الدائن:",
+            "includePrePeriod": "تضمين الحركات قبل الفترة",
+            "accountCode": "كود الحساب:",
+            "accountName": "اسم الحساب:",
+            "openingBalance": "الرصيد الافتتاحي:",
+            "postedDebits": "المدين المرحل:",
+            "postedCredits": "الدائن المرحل:",
+            "endingBalance": "الرصيد الختامي:",
+            "transId": "رقم القيد المحاسبي",
+            "transEntrySeqId": "مسلسل البند",
+            "transDate": "تاريخ الحركة",
+            "transType": "نوع القيد",
+            "debitCredit": "مدين/دائن",
+            "amount": "المبلغ",
+            "fiscalType": "السنة المالية",
+            "invoiceId": "رقم الفاتورة",
+            "paymentId": "رقم الدفعة",
+            "workEffortId": "رقم المستخلص",
+            "partyId": "اسم الطرف",
+            "productId": "اسم الصنف",
+            "isPosted": "مرحّل",
+            "postedDate": "تاريخ الترحيل",
+            "description": "البيان"
+          }
         },
         "transaction-totals": {
           "list": {

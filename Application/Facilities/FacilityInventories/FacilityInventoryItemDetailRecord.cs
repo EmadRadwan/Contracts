@@ -20,5 +20,5 @@ public class FacilityInventoryItemDetailRecord
     public decimal? AvailableToPromiseDiff { get; set; }
     public string? OrderId { get; set; }
     public string? WorkEffortId { get; set; }
-    public string? OrderItemSeqId { get; set; }
+    public string? CertificateNumber { get; set; }
 }

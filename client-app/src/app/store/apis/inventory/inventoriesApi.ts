@@ -32,6 +32,7 @@ const inventoriesApi = createApi({
         },
     }),
     tagTypes: ["InventoryTransfer", "PurchaseOrderItemsForReceive", "InventoriesByInventoryItem"],
+    refetchOnMountOrArgChange: true,
     endpoints(builder) {
         return {
             fetchFacilityInventoriesByProduct: builder.query<ListResponse<FacilityInventory>, State>({

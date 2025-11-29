@@ -1,48 +1,34 @@
-public async Task<Results<IssueMaterialsForCertificateResult>> Handle(Command request, CancellationToken cancellationToken)
+private async Task<UserDto> CreateUserObject(AppUserLogin user)
 {
-    // REFACTOR: Reuse existing transaction if present (e.g. called from ReceiveInventory)
-    // Why: Enables atomic end-to-end flow: Receive → Create Certificate → Issue Materials
-    await using var transaction = _context.Database.CurrentTransaction == null
-        ? await _context.Database.BeginTransactionAsync(cancellationToken)
-        : null;
+    var roles = await _userManager.GetRolesAsync(user);
 
-    var ownsTransaction = transaction != null;
+    // REFACTOR: Query the Parties table directly to get the name
+    // This avoids lazy loading and works even if navigation properties are not included
+    string organizationPartyName = string.Empty;
 
-    try
+    if (user.OrganizationPartyId.HasValue)
     {
-        var result = await _projectService.IssueMaterialsForCertificate(request.WorkEffortId);
+        var party = await _context.Parties
+            .Where(p => p.Id == user.OrganizationPartyId.Value)
+            .Select(p => p.PartyName)           // Only select the column we need
+            .FirstOrDefaultAsync();
 
-        if (!result.IsSuccess)
-        {
-            if (ownsTransaction) await transaction!.RollbackAsync(cancellationToken);
-            return Results<IssueMaterialsForCertificateResult>.Failure(result.ErrorMessage, result.ErrorCode);
-        }
-
-        var workEffort = await _context.WorkEfforts
-            .FirstOrDefaultAsync(we => we.WorkEffortId == request.WorkEffortId && we.WorkEffortTypeId == "PROJECT_CERTIFICATE", cancellationToken);
-
-        if (workEffort != null)
-        {
-            workEffort.CurrentStatusId = "WEPR_APPROVED";
-            workEffort.LastStatusUpdate = DateTime.UtcNow;
-            _context.WorkEfforts.Update(workEffort);
-            _logger.LogInformation("Updated WorkEffort {WorkEffortId} status to WEPR_APPROVED", request.WorkEffortId);
-        }
-
-        var saveResult = await _context.SaveChangesAsync(cancellationToken);
-
-        if (ownsTransaction)
-            await transaction!.CommitAsync(cancellationToken);
-
-        return Results<IssueMaterialsForCertificateResult>.Success(result.Value);
+        organizationPartyName = party ?? string.Empty;
     }
-    catch (Exception ex)
+
+    return new UserDto
     {
-        if (ownsTransaction && transaction != null)
-            await transaction.RollbackAsync(cancellationToken);
+        Id                    = user.Id,
+        DisplayName           = user.DisplayName,
+        Image                 = null, // user?.Files?.FirstOrDefault(x => x.IsMain)?.Url,
+        Token                 = await _tokenService.CreateToken(user),
+        Username              = user.UserName,
+        OrganizationPartyId   = user.OrganizationPartyId,
+        
+        // NEW: Return the actual organization/party name from the Parties table
+        OrganizationPartyName = organizationPartyName,
 
-        _logger.LogError(ex, "Error issuing materials for certificate WorkEffortId: {WorkEffortId}", request.WorkEffortId);
-        return Results<IssueMaterialsForCertificateResult>.Failure(
-            ex.Message ?? "An unexpected error occurred while issuing materials.");
-    }
+        DualLanguage          = user.DualLanguage,
+        Roles                 = roles.ToArray()
+    };
 }
