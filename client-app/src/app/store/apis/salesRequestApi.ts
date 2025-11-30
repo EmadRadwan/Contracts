@@ -108,6 +108,16 @@ const salesRequestApi = createApi({
                 }),
                 invalidatesTags: ["SalesRequest"],
             }),
+            calculateInstallmentPrice: builder.mutation<
+                CalculatorResponse,
+                CalculateInstallmentPriceRequest
+                >({
+                query: (body) => ({
+                    url: "/salesRequests/calculate-installment-price",
+                    method: "POST",
+                    body,
+                }),
+            }),
         };
     },
 });
@@ -119,7 +129,40 @@ export const {
     useFetchSalesRequestsQuery,
     useAddSalesRequestMutation,
     useUpdateSalesRequestMutation,
-    useDeleteSalesRequestMutation, useApproveSalesRequestMutation,
+    useDeleteSalesRequestMutation,
+    useApproveSalesRequestMutation, useCalculateInstallmentPriceMutation,
 } = salesRequestApi;
 
 export { salesRequestApi };
+
+
+export interface CalculateInstallmentPriceRequest {
+    cashPricePerM2: number;
+    annualDiscountRate: number;
+    downPaymentPercentage: number;
+    durationYears: number;
+    installmentsPerYear: number;
+}
+
+export interface InstallmentCalcResult {
+    period: number;
+    dueDate: string;
+    amount: number;
+    presentValue: number;
+}
+
+
+
+interface CalculatorResponse {
+    cashPricePerM2: number;
+    installmentPricePerM2: number;
+    quarterlyInstallmentPerM2?: number;      // ← NEW – comes from backend
+    totalInstallments: number;
+    downPaymentPercentage: number;
+    annualDiscountRate: number;
+    pvaf: number;
+    increasePercentage: number;
+    installmentsPerYear?: number;            // ← optional, for dynamic label
+    schedule: InstallmentCalcResult[];
+}
+

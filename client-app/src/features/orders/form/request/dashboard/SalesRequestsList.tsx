@@ -18,6 +18,9 @@ import SalesRequestForm from "../form/SalesRequestForm";
 import LoadingComponent from "../../../../../app/layout/LoadingComponent";
 import SalesRequestMenu from "../menu/SalesRequestMenu";
 import {handleDatesArray} from "../../../../../app/util/utils";
+import InstallmentPriceCalculatorModal from "./InstallmentPriceCalculatorModal";
+import ModalContainer from "../../../../../app/common/modals/ModalContainer";
+import PaymentPlanModal from "./PaymentPlanModal";
 
 function SalesRequestsList() {
     // -----------------------------------------------------------------
@@ -30,6 +33,7 @@ function SalesRequestsList() {
         total: 0,
     });
     const [viewMode, setViewMode] = useState<"list" | "form">("list"); // NEW
+    const [showCalculator, setShowCalculator] = useState(false);
 
     const { getTranslatedLabel } = useTranslationHelper();
 
@@ -169,6 +173,16 @@ function SalesRequestsList() {
                                             </Button>
                                         </Grid>
                                     </Grid>
+
+                                    <Grid item>
+                                        <Button
+                                            color="primary"
+                                            variant="contained"
+                                            onClick={() => setShowCalculator(true)}
+                                        >
+                                            {getTranslatedLabel("installmentCalculator.open", "حاسبة سعر المتر بالتقسيط")}
+                                        </Button>
+                                    </Grid>
                                 </GridToolbar>
 
                                 <Column
@@ -223,6 +237,17 @@ function SalesRequestsList() {
                         </div>
                     </Grid>
                 </Grid>
+                {showCalculator && (
+                    <InstallmentPriceCalculatorModal onClose={() => setShowCalculator(false)} />
+                )}
+
+                {showCalculator && (
+                    <ModalContainer show={showCalculator} onClose={() => setShowCalculator(false)} width={850}>
+                        <InstallmentPriceCalculatorModal
+                            onClose={() => setShowCalculator(false)}
+                        />
+                    </ModalContainer>
+                )}
             </Paper>
         </>
     );

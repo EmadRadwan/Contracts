@@ -1,34 +1,17 @@
-private async Task<UserDto> CreateUserObject(AppUserLogin user)
-{
-    var roles = await _userManager.GetRolesAsync(user);
+// REFACTOR: The old code wrongly used the quarterly installment amount as "installment price per m2"
+// This made the price look 95% cheaper! We now calculate the correct total nominal price.
+// The true installment price per m2 = Down payment per m2 + total installments per m2
+var financedAmountPerM2 = request.CashPricePerM2 * financedPortion;
 
-    // REFACTOR: Query the Parties table directly to get the name
-    // This avoids lazy loading and works even if navigation properties are not included
-    string organizationPartyName = string.Empty;
+// Old buggy line (REMOVE THIS):
+// var installmentPricePerM2 = financedAmountPerM2 / (decimal)pvaf;
 
-    if (user.OrganizationPartyId.HasValue)
-    {
-        var party = await _context.Parties
-            .Where(p => p.Id == user.OrganizationPartyId.Value)
-            .Select(p => p.PartyName)           // Only select the column we need
-            .FirstOrDefaultAsync();
-
-        organizationPartyName = party ?? string.Empty;
-    }
-
-    return new UserDto
-    {
-        Id                    = user.Id,
-        DisplayName           = user.DisplayName,
-        Image                 = null, // user?.Files?.FirstOrDefault(x => x.IsMain)?.Url,
-        Token                 = await _tokenService.CreateToken(user),
-        Username              = user.UserName,
-        OrganizationPartyId   = user.OrganizationPartyId,
-        
-        // NEW: Return the actual organization/party name from the Parties table
-        OrganizationPartyName = organizationPartyName,
-
-        DualLanguage          = user.DualLanguage,
-        Roles                 = roles.ToArray()
-    };
-}
+// New correct calculation:
+var quarterlyInstallmentPerM2 = financedAmountPerM2 / totalPeriods;  // this is 625 in your example
+var totalInstallmentsPerM2 = quarterlyInstallmentPerM2 * totalPeriods;
+var installmentPricePerM2 = request.CashPricePerM2 * request.DownPaymentPercentage + totalInstallmentsPerM2;
+// OR simply: var installmentPricePerM2 = request.CashPricePerM2 + (totalInstallmentsPerM2 - financedAmountPerM2);
+// But the simplest and most accurate:
+installmentPricePerM2 = request.CashPricePerM2 + (financedAmountPerM2 - financedAmountPerM2 * (decimal)pvaf);
+// No! Even simpler and 100% correct:
+installmentPricePerM2 = request.CashPricePerM2; // At exact discount rate → same price!

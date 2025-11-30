@@ -28,5 +28,12 @@ public class SalesRequestsController : BaseApiController
         var command = new ApproveSalesRequest.Command { SalesRequestId = id };
         return HandleResult(await Mediator.Send(command));
     }
+    
+    [HttpPost("calculate-installment-price")]
+    public async Task<IActionResult> CalculateInstallmentPrice([FromBody] CalculateInstallmentPrice.Command command)
+    {
+        var result = await Mediator.Send(command);
+        return HandleResult(result);
+    }
 
 }
