@@ -113,7 +113,7 @@ const salesRequestApi = createApi({
                 CalculateInstallmentPriceRequest
                 >({
                 query: (body) => ({
-                    url: "/salesRequests/calculate-installment-price",
+                    url: "/salesRequests/calculate-meter-price",
                     method: "POST",
                     body,
                 }),

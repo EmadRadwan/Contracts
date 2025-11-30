@@ -237,9 +237,6 @@ function SalesRequestsList() {
                         </div>
                     </Grid>
                 </Grid>
-                {showCalculator && (
-                    <InstallmentPriceCalculatorModal onClose={() => setShowCalculator(false)} />
-                )}
 
                 {showCalculator && (
                     <ModalContainer show={showCalculator} onClose={() => setShowCalculator(false)} width={850}>

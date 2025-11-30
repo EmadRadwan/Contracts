@@ -29,11 +29,14 @@ public class SalesRequestsController : BaseApiController
         return HandleResult(await Mediator.Send(command));
     }
     
-    [HttpPost("calculate-installment-price")]
-    public async Task<IActionResult> CalculateInstallmentPrice([FromBody] CalculateInstallmentPrice.Command command)
+    [HttpPost("calculate-meter-price")]
+    public async Task<IActionResult> CalculateMeterPrice([FromBody] CalculateMeterPrice.Query query)
     {
-        var result = await Mediator.Send(command);
-        return HandleResult(result);
+        // الـ Handler بيرجع decimal مباشرة
+        decimal newMeterPrice = await Mediator.Send(query);
+
+        // نرجّع النتيجة كـ JSON بسيط وواضح
+        return Ok(newMeterPrice);
     }
 
 }
