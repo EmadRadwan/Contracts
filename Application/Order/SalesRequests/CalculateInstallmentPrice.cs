@@ -20,7 +20,7 @@ public class CalculateMeterPrice
     {
         public Task<decimal> Handle(Query request, CancellationToken ct)
         {
-            /*int n = request.DurationYears * request.InstallmentsPerYear;
+            int n = request.DurationYears * request.InstallmentsPerYear;
             decimal r = request.AnnualDiscountRate / request.InstallmentsPerYear;
 
             // PVAF
@@ -42,14 +42,14 @@ public class CalculateMeterPrice
                 decimal df = DP + (1 - DP) * pvaf / n;        // derivative
 
                 P -= f / df;                                  // update guess
-            }*/
-            
-            decimal remainingAfterDownPayment = request.CashPricePerM2 * (1 - request.DownPaymentPercentage);
-            decimal finalPrice = remainingAfterDownPayment * (1 + request.AnnualDiscountRate);
+            }
 
-
-            //return Task.FromResult(Math.Round(P, 0));
-            return Task.FromResult(finalPrice);
+            return Task.FromResult(Math.Round(P, 0));
         }
     }
 }
+
+/*decimal remainingAfterDownPayment = request.CashPricePerM2 * (1 - request.DownPaymentPercentage);
+decimal finalPrice = remainingAfterDownPayment * (1 + request.AnnualDiscountRate);*/
+
+
