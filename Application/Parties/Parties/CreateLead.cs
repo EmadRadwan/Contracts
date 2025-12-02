@@ -12,7 +12,6 @@ public class CreateLead
     public record Command : IRequest<Result<PartyDto2>>
     {
         public  PartyDto2 PartyDto { get; init; }
-        public string? DataSourceId { get; init; } 
     }
 
     public class Handler : IRequestHandler<Command, Result<PartyDto2>>
@@ -186,27 +185,12 @@ public class CreateLead
             _context.PartyDataSources.Add(new PartyDataSource
             {
                 Party        = party,
-                DataSourceId = request.DataSourceId ?? "COLD_CALL",
+                DataSourceId = request.PartyDto.DataSourceId ?? "COLD_CALL",
                 FromDate     = stamp,
                 CreatedStamp = stamp,
                 LastUpdatedStamp = stamp
             });
-
-            /*// Optional but recommended: link current user as sales rep
-            if (!string.IsNullOrEmpty(user?.PartyId))
-            {
-                _context.PartyRelationships.Add(new PartyRelationship
-                {
-                    PartyIdFrom           = user.PartyId,
-                    RoleTypeIdFrom        = "SALES_REP",
-                    PartyIdTo             = party.PartyId,
-                    RoleTypeIdTo          = "LEAD",
-                    PartyRelationshipTypeId = "SALES_ASSIGNMENT",
-                    FromDate              = stamp,
-                    CreatedStamp          = stamp,
-                    LastUpdatedStamp       = stamp
-                });
-            }*/
+            
 
             var saved = await _context.SaveChangesAsync(ct) > 0;
             if (!saved)

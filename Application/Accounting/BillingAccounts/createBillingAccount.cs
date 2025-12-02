@@ -9,16 +9,23 @@ namespace Application.Accounting.BillingAccounts;
 
 public class CreateBillingAccount
 {
+    // --------------------------------------------------------------------
+    // 1. Command – receives DTO from frontend
+    // --------------------------------------------------------------------
     public class Command : IRequest<Result<CreateBillingAccountResponse>>
     {
         public CreateBillingAccountRequest? Request { get; set; }
     }
 
+    // --------------------------------------------------------------------
+    // 2. Handler – full implementation
+    // --------------------------------------------------------------------
     public class Handler : IRequestHandler<Command, Result<CreateBillingAccountResponse>>
     {
         private readonly DataContext _context;
         private readonly IUserAccessor _userAccessor;
         private readonly IUtilityService _utilityService;
+
 
         public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService)
         {
@@ -31,7 +38,7 @@ public class CreateBillingAccount
             Command request,
             CancellationToken cancellationToken)
         {
-            var dto = request.Request!;
+            var dto = request.Request!; // guaranteed non-null by FluentValidation
 
             // --------------------------------------------------------------------
             // 1. User validation
@@ -44,20 +51,20 @@ public class CreateBillingAccount
                 return Result<CreateBillingAccountResponse>.Failure("Unauthorized: User not found");
 
             // --------------------------------------------------------------------
-            // 2. Business validation – one active account per Party + Project (WorkEffortId)
+            // 2. Business validation – duplicate PartyId + active account?
             // --------------------------------------------------------------------
             var hasExistingActiveAccount = await _context.BillingAccounts
                 .Where(ba =>
-                    ba.WorkEffortId == dto.ProjectId &&                              // Same project
-                    ba.StatusId == "BA_ACTIVE" &&                                    // Active
-                    (ba.ThruDate == null || ba.ThruDate > DateTime.UtcNow))          // Not expired
-                .Join(_context.BillingAccountRoles,
-                      ba => ba.BillingAccountId,
-                      role => role.BillingAccountId,
-                      (ba, role) => role)
+                    ba.WorkEffortId == dto.ProjectId && // Same project
+                    (ba.ThruDate == null || ba.ThruDate > DateTime.UtcNow)) // Not expired
+                .Join(
+                    _context.BillingAccountRoles,
+                    ba => ba.BillingAccountId,
+                    role => role.BillingAccountId,
+                    (ba, role) => role)
                 .AnyAsync(role =>
-                    role.PartyId == dto.PartyId &&
-                    (role.RoleTypeId == "BILL_TO_CUSTOMER" || role.RoleTypeId == "BILL_FROM_VENDOR"),
+                        role.PartyId == dto.PartyId &&
+                        (role.RoleTypeId == "BILL_FROM_VENDOR"),
                     cancellationToken);
 
             if (hasExistingActiveAccount)
@@ -69,41 +76,37 @@ public class CreateBillingAccount
             var now = DateTime.UtcNow;
 
             // --------------------------------------------------------------------
-            // 3. Transaction – create both BillingAccount + BillingAccountRole
+            // 3. Transaction scope – atomic create
             // --------------------------------------------------------------------
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
             try
             {
-                var newBillingAccountId = await _utilityService.GetNextSequence("BillingAccount");
+                var newBillingAccountSerial = await _utilityService.GetNextSequence("BillingAccount");
 
                 // ----------------------------------------------------------------
-                // 4. BillingAccount (main record)
+                // 4. Core BillingAccount entity
                 // ----------------------------------------------------------------
                 var billingAccount = new BillingAccount
                 {
-                    BillingAccountId = newBillingAccountId,
-                    WorkEffortId = dto.ProjectId!.Trim(),           // Project = WorkEffortId
+                    BillingAccountId = newBillingAccountSerial,
+                    WorkEffortId = !string.IsNullOrWhiteSpace(dto.ProjectId) ? dto.ProjectId.Trim() : null,
                     AccountLimit = dto.AccountLimit,
                     AccountCurrencyUomId = "EGP",
                     FromDate = dto.FromDate,
                     ThruDate = dto.ThruDate,
                     Description = dto.Description?.Trim(),
-                    StatusId = "BA_ACTIVE",
                     CreatedStamp = now,
                     LastUpdatedStamp = now
                 };
 
                 _context.BillingAccounts.Add(billingAccount);
 
-                // ----------------------------------------------------------------
-                // 5. BillingAccountRole – link customer to account
-                // ----------------------------------------------------------------
                 var billingAccountRole = new BillingAccountRole
                 {
-                    BillingAccountId = newBillingAccountId,
+                    BillingAccountId = newBillingAccountSerial,
                     PartyId = dto.PartyId.Trim(),
-                    RoleTypeId = "BILL_TO_CUSTOMER",   // or BILL_FROM_VENDOR as needed
+                    RoleTypeId = "BILL_FROM_VENDOR", // or BILL_FROM_VENDOR as needed
                     FromDate = dto.FromDate,
                     ThruDate = dto.ThruDate,
                     CreatedStamp = now,
@@ -112,8 +115,9 @@ public class CreateBillingAccount
 
                 _context.BillingAccountRoles.Add(billingAccountRole);
 
+
                 // ----------------------------------------------------------------
-                // 6. Save both records atomically
+                // 6. Persist both records
                 // ----------------------------------------------------------------
                 var saved = await _context.SaveChangesAsync(cancellationToken) > 0;
                 if (!saved)
@@ -124,30 +128,28 @@ public class CreateBillingAccount
 
                 await transaction.CommitAsync(cancellationToken);
 
-                // ----------------------------------------------------------------
-                // 7. Return enriched response with PartyName + ProjectName
-                // ----------------------------------------------------------------
                 var result = await (
-                    from ba in _context.BillingAccounts
-                    join role in _context.BillingAccountRoles on ba.BillingAccountId equals role.BillingAccountId
-                    join party in _context.Parties on role.PartyId equals party.PartyId
-                    join workEffort in _context.WorkEfforts on ba.WorkEffortId equals workEffort.WorkEffortId
-                    where ba.BillingAccountId == newBillingAccountId
-                    select new CreateBillingAccountResponse
-                    {
-                        BillingAccountId = ba.BillingAccountId,
-                        PartyId = role.PartyId,
-                        PartyName = party.PartyName ?? $"{party.FirstName} {party.LastName}".Trim(),
-                        ProjectId = ba.WorkEffortId,
-                        ProjectName = workEffort.WorkEffortName,
-                        AccountLimit = ba.AccountLimit,
-                        AvailableBalance = ba.AccountLimit,  // initial balance
-                        FromDate = ba.FromDate,
-                        ThruDate = ba.ThruDate,
-                        Description = ba.Description,
-                        CreatedDate = ba.CreatedStamp
-                    })
+                        from ba in _context.BillingAccounts
+                        join role in _context.BillingAccountRoles on ba.BillingAccountId equals role.BillingAccountId
+                        join party in _context.Parties on role.PartyId equals party.PartyId
+                        join workEffort in _context.WorkEfforts on ba.WorkEffortId equals workEffort.WorkEffortId
+                        where ba.BillingAccountId == newBillingAccountSerial
+                        select new CreateBillingAccountResponse
+                        {
+                            BillingAccountId = ba.BillingAccountId,
+                            PartyId = role.PartyId,
+                            PartyName = party.Description,
+                            ProjectId = ba.WorkEffortId,
+                            ProjectName = workEffort.WorkEffortName,
+                            AccountLimit = ba.AccountLimit,
+                            AvailableBalance = ba.AccountLimit, // initial balance
+                            FromDate = ba.FromDate,
+                            ThruDate = ba.ThruDate,
+                            Description = ba.Description,
+                            CreatedDate = ba.CreatedStamp
+                        })
                     .FirstOrDefaultAsync(cancellationToken);
+
 
                 return result != null
                     ? Result<CreateBillingAccountResponse>.Success(result)
@@ -163,16 +165,18 @@ public class CreateBillingAccount
     }
 }
 
-// --------------------------------------------------------------------
-// DTOs
-// --------------------------------------------------------------------
 public class CreateBillingAccountRequest
 {
-    public required string PartyId { get; init; }
-    public required string ProjectId { get; init; }      // This is WorkEffortId
-    public required decimal AccountLimit { get; init; }
-    public required DateTime FromDate { get; init; }
+    public string PartyId { get; init; }
+
+    public string? ProjectId { get; init; }
+
+    public decimal AccountLimit { get; init; }
+
+    public DateTime FromDate { get; init; }
+
     public DateTime? ThruDate { get; init; }
+
     public string? Description { get; init; }
 }
 
@@ -181,8 +185,8 @@ public class CreateBillingAccountResponse
     public string? BillingAccountId { get; set; }
     public string? PartyId { get; set; }
     public string? PartyName { get; set; }
-    public string? ProjectId { get; set; }        // WorkEffortId
-    public string? ProjectName { get; set; }      // From WorkEffort.WorkEffortName
+    public string? ProjectId { get; set; }
+    public string? ProjectName { get; set; }
     public decimal? AccountLimit { get; set; }
     public decimal? AvailableBalance { get; set; }
     public DateTime? FromDate { get; set; }

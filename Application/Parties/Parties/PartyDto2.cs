@@ -7,6 +7,7 @@ public class PartyDto2
     public string? Description { get; set; }
     public string? GroupName { get; set; }
     public string? MainRole { get; set; }
+    public string? DataSourceId { get; set; }
     public string? PartyTypeId { get; set; }
     public string? PartyTypeDescription { get; set; }
     public string? CreatedByUserName { get; set; }

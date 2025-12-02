@@ -27,7 +27,7 @@ const projectsApi = createApi({
             return headers;
         },
     }),
-
+    refetchOnMountOrArgChange: true,
     endpoints(builder) {
         return {
             fetchProjects: builder.query<ListResponse<WorkEffort>, State>({
@@ -110,7 +110,7 @@ const projectsApi = createApi({
                     method: 'POST',
                     body: data,
                 }),
-                invalidatesTags: ['Certificates'],
+                invalidatesTags: ['ProjectCertificates']
             }),
             issueMaterialsForCertificate: builder.mutation({
                 query: ({ workEffortId }) => ({
@@ -118,6 +118,7 @@ const projectsApi = createApi({
                     method: 'PUT',
                     body: { workEffortId },
                 }),
+                invalidatesTags: ['ProjectCertificates']
             })
         };
     },

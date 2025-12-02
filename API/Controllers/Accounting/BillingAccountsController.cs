@@ -11,19 +11,20 @@ public class BillingAccountsController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new ListPartyBillingAccounts.Query { PartyId = partyId }));
     }
-    
+
     [HttpGet("{partyId}/makePartyBillingAccountList")]
     public async Task<IActionResult> MakePartyBillingAccountList(string partyId)
     {
         return HandleResult(await Mediator.Send(new MakePartyBillingAccountList.Query { PartyId = partyId }));
     }
-    
+
     [HttpGet("{billingAccountId}/getBillingAccountBalance")]
     public async Task<IActionResult> GetBillingAccountBalance(string billingAccountId)
     {
-        return HandleResult(await Mediator.Send(new GetBillingAccountBalance.Query { BillingAccountId = billingAccountId}));
+        return HandleResult(await Mediator.Send(new GetBillingAccountBalance.Query
+            { BillingAccountId = billingAccountId }));
     }
-    
+
     [HttpGet("{billingAccountId}/listBillingAccountInvoices/{statusId?}")]
     public async Task<IActionResult> ListBillingAccountInvoices(string billingAccountId, string statusId = null)
     {
@@ -68,7 +69,7 @@ public class BillingAccountsController : BaseApiController
         // Use the base controller's HandleResult method to standardize the HTTP response
         return HandleResult(result);
     }
-    
+
     [HttpGet("{billingAccountId}/getBillingAccountOrders")]
     public async Task<IActionResult> GetBillingAccountOrders(string billingAccountId)
     {
@@ -87,13 +88,13 @@ public class BillingAccountsController : BaseApiController
         // Use the base controller's HandleResult method to standardize the HTTP response
         return HandleResult(result);
     }
-    
+
     [HttpGet("getBillingAccountsLov", Name = "GetBillingAccountsLov")]
     public async Task<IActionResult> GetBillingAccountsLov([FromQuery] BillingAccountLovParams param)
     {
         return HandleResult(await Mediator.Send(new GetBillingAccountsLov.Query { Params = param }));
     }
-    
+
     [HttpGet("getBillingAccountsForParty")]
     public async Task<ActionResult<List<BillingAccountDto>>> GetBillingAccounts([FromQuery] string partyId)
     {
@@ -104,6 +105,21 @@ public class BillingAccountsController : BaseApiController
 
         var query = new GetBillingAccountsQuery { PartyId = partyId };
         var result = await Mediator.Send(query);
+
+        return Ok(result);
+    }
+
+    // 2. Controller endpoint
+    [HttpPost("createBillingAccount")]
+    public async Task<ActionResult> CreateBillingAccount([FromBody] CreateBillingAccountRequest request)
+    {
+        // Wrap the DTO in the actual MediatR Command
+        var command = new CreateBillingAccount.Command
+        {
+            Request = request
+        };
+
+        var result = await Mediator.Send(command);
 
         return Ok(result);
     }

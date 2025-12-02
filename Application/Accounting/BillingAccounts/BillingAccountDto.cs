@@ -1,4 +1,4 @@
-namespace Application.Shipments.BillingAccounts;
+namespace Application.Accounting.BillingAccounts;
 
 public class BillingAccountDto
 {

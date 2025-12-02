@@ -358,9 +358,7 @@ const useProjectCertificate = ({
                         };
 
                         result = await receiveInventoryFromPurchaseOrder(receiveCommand).unwrap();
-                        if (deliverToSite) {
-                            refetch();
-                        }
+                        refetch();
 
                         toast.success(
                             deliverToSite

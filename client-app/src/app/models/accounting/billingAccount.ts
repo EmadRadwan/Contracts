@@ -4,6 +4,7 @@ export interface BillingAccount {
     accountCurrencyUomId?: string;
     accountCurrencyUomDescription?: string;
     partyId?: any;
+    projectId?: any;
     partyName?: string;
     fromDate?: Date | null;
     thruDate?: Date | null;

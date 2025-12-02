@@ -1,6 +1,9 @@
-import React, { useCallback, useState } from "react";
-import { Grid as KendoGrid, GridColumn as Column, GridToolbar, GridCustomFooterCellProps } from "@progress/kendo-react-grid";
-import { orderBy, SortDescriptor } from "@progress/kendo-data-query";
+import React, { useMemo } from "react";
+import {
+    Grid as KendoGrid,
+    GridColumn as Column,
+    GridToolbar,
+} from "@progress/kendo-react-grid";
 import { Box, Button, Typography } from "@mui/material";
 import ModalContainer from "../../../app/common/modals/ModalContainer";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
@@ -23,148 +26,204 @@ export default function CertificatesListModal({
                                                   certificateType,
                                               }: CertificatesListModalProps) {
     const { getTranslatedLabel } = useTranslationHelper();
-    const initialSort: Array<SortDescriptor> = [{ field: "certificateNumber", dir: "asc" }];
-    const [sort, setSort] = useState(initialSort);
 
-    // REFACTOR: Use RTK Query hook within the modal component
-    // Purpose: Fetches certificates based on passed contractorId or supplierId
-    // Improvement: Centralizes data fetching within the modal, aligning with component responsibility
     const {
         data: certificates = [],
-        isLoading: isCertificatesLoading,
-        error: certificatesError,
+        isLoading,
+        error,
     } = useGetCertificatesByPartyQuery(
         { contractorId, supplierId, certificateType },
         { skip: !show || (!contractorId && !supplierId) }
     );
 
-    // REFACTOR: Added calculation for total sum
-    // Purpose: Computes the sum of the 'total' field for display in the footer
-    // Improvement: Provides a clear summary of the total values, enhancing user understanding
-    const totalSum = certificates.reduce((sum, cert) => sum + (cert.total || 0), 0);
+    const isWorkmanship = certificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE";
 
-    // REFACTOR: Added TotalFooterCell for the 'total' column
-    // Purpose: Displays the sum of the 'total' field in the footer of the 'total' column
-    // Improvement: Mimics the approach in AcctgTransEntryList for consistency and clarity
-    const TotalFooterCell = (props: GridCustomFooterCellProps) => (
-        <td style={{ textAlign: "right", fontWeight: "bold", color: "#1565C0" }}>
-            {getTranslatedLabel('projects.certificate.totalSum', 'Total Sum')}: {totalSum.toFixed(2)}
-        </td>
-    );
+    // Build data with correct order: Header → Items → Subtotal
+    const displayData = useMemo(() => {
+        if (!isWorkmanship) return certificates;
 
-    const showSupplier = certificateType === "SUPPLY_PROCUREMENT_CERTIFICATE";
-    const showContractor = ["WORKMANSHIP_CONTRACTING_CERTIFICATE", "COMPANY_SUPPLY_SALE_CERTIFICATE"].includes(certificateType);
+        const result: any[] = [];
+
+        // Group by certificateNumber
+        const groups = new Map<string, any[]>();
+        certificates.forEach((item: any) => {
+            const key = item.certificateNumber;
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key)!.push(item);
+        });
+
+        // Sort certificate numbers
+        const sortedKeys = Array.from(groups.keys()).sort();
+
+        sortedKeys.forEach((certNum) => {
+            const items = groups.get(certNum)!;
+
+            // 1. Header row
+            result.push({
+                __type: "header",
+                certificateNumber: certNum,
+                projectName: items[0].projectName,
+                description: `Certificate ${certNum}`,
+            });
+
+            // 2. All items
+            items.forEach((item) =>
+                result.push({
+                    ...item,
+                    __type: "item",
+                })
+            );
+
+            // 3. Subtotal row (after items!)
+            const subtotal = items.reduce((sum: number, i: any) => sum + (i.total || 0), 0);
+            result.push({
+                __type: "subtotal",
+                certificateNumber: "Subtotal →",
+                total: subtotal,
+            });
+        });
+
+        return result;
+    }, [certificates, isWorkmanship]);
+
+    const grandTotal = certificates.reduce((sum: number, c: any) => sum + (c.total || 0), 0);
 
     const columns = [
         {
             field: "certificateNumber",
-            title: getTranslatedLabel('projects.certificate.certificateNumber', 'Certificate Number'),
-            width: 150,
+            title: getTranslatedLabel("projects.certificate.certificateNumber", "Certificate Number"),
+            width: 180,
+            cell: (props: any) => {
+                const type = props.dataItem.__type;
+                const isHeader = type === "header";
+                const isSubtotal = type === "subtotal";
+                const isItem = type === "item";
+
+                return (
+                    <td
+                        style={{
+                            fontWeight: isHeader || isSubtotal ? "bold" : "normal",
+                            backgroundColor: isHeader ? "#e3f2fd" : isSubtotal ? "#f5f5f5" : "inherit",
+                            paddingLeft: isHeader ? "12px" : isItem ? "36px" : "12px",
+                            color: isSubtotal ? "#1565c0" : isHeader ? "#1976d2" : "inherit",
+                        }}
+                    >
+                        {isSubtotal ? "Subtotal →" : props.dataItem.certificateNumber}
+                    </td>
+                );
+            },
         },
         {
             field: "projectName",
-            title: getTranslatedLabel('projects.certificate.projectName', 'Project Name'),
+            title: getTranslatedLabel("projects.certificate.projectName", "Project"),
             width: 200,
-        },
-        {
-            field: "description",
-            title: getTranslatedLabel('projects.certificate.description', 'Description'),
-            width: 250,
-        },
-        {
-            field: "statusDescription",
-            title: getTranslatedLabel('projects.certificate.status', 'Status'),
-            width: 150,
-        },
-        {
-            field: "total",
-            title: getTranslatedLabel('projects.certificate.total', 'Total'),
-            format: "{0:n2}",
-            width: 220,
-            // REFACTOR: Added footerCell to the 'total' column
-            // Purpose: Links the TotalFooterCell to display the sum of totals
-            // Improvement: Ensures the total sum is displayed only in the relevant column
-            footerCell: TotalFooterCell,
-        },
-        ...(showSupplier
-            ? [{
-                field: "partyNameSupplier",
-                title: getTranslatedLabel('projects.certificate.supplier', 'Supplier'),
-                width: 200,
-            }]
-            : []),
-        ...(showContractor
-            ? [{
-                field: "partyNameContractor",
-                title: getTranslatedLabel('projects.certificate.contractor', 'Contractor'),
-                width: 200,
-            }]
-            : []),
-        {
-            field: "estimatedStartDate",
-            title: getTranslatedLabel('projects.certificate.startDate', 'Start Date'),
-            width: 150,
             cell: (props: any) => (
-                <td>
-                    {props.dataItem.estimatedStartDate
-                        ? new Date(props.dataItem.estimatedStartDate).toLocaleDateString()
-                        : 'N/A'}
+                <td style={{ fontWeight: props.dataItem.__type === "header" ? "bold" : "normal" }}>
+                    {props.dataItem.projectName || ""}
                 </td>
             ),
         },
         {
-            field: "estimatedCompletionDate",
-            title: getTranslatedLabel('projects.certificate.completionDate', 'Completion Date'),
-            width: 150,
+            field: "description",
+            title: getTranslatedLabel("projects.certificate.description", "Description"),
+            width: 320,
             cell: (props: any) => (
-                <td>
-                    {props.dataItem.estimatedCompletionDate
-                        ? new Date(props.dataItem.estimatedCompletionDate).toLocaleDateString()
-                        : 'N/A'}
+                <td style={{ fontStyle: props.dataItem.__type === "header" ? "italic" : "normal" }}>
+                    {props.dataItem.description || "-"}
                 </td>
+            ),
+        },
+        ...(isWorkmanship
+            ? [
+                {
+                    field: "achievementPercent",
+                    title: getTranslatedLabel("projects.certificate.achievement", "Achievement %"),
+                    width: 140,
+                    cell: (props: any) => {
+                        if (props.dataItem.__type !== "item") return <td>-</td>;
+                        return (
+                            <td style={{ textAlign: "right", color: "#2e7d32", fontWeight: 600 }}>
+                                {props.dataItem.achievementPercent !== undefined
+                                    ? (props.dataItem.achievementPercent / 100).toLocaleString(undefined, {
+                                        style: "percent",
+                                        minimumFractionDigits: 2,
+                                    })
+                                    : "-"}
+                            </td>
+                        );
+                    },
+                },
+            ]
+            : []),
+        {
+            field: "total",
+            title: getTranslatedLabel("projects.certificate.total", "Total"),
+            width: 180,
+            format: "{0:n2}",
+            footerCell: () => (
+                <td style={{ textAlign: "right", fontWeight: "bold", color: "#d32f2f", fontSize: "1.2em" }}>
+                    {getTranslatedLabel("projects.certificate.grandTotal", "Grand Total")}: {grandTotal.toFixed(2)}
+                </td>
+            ),
+            cell: (props: any) => {
+                const type = props.dataItem.__type;
+                if (type === "header") return <td />;
+                return (
+                    <td
+                        style={{
+                            textAlign: "right",
+                            fontWeight: type === "subtotal" ? "bold" : "normal",
+                            color: type === "subtotal" ? "#1565c0" : "inherit",
+                        }}
+                    >
+                        {type === "subtotal" || type === "item"
+                            ? (props.dataItem.total ?? 0).toFixed(2)
+                            : ""}
+                    </td>
+                );
+            },
+        },
+        {
+            field: "statusDescription",
+            title: getTranslatedLabel("projects.certificate.status", "Status"),
+            width: 140,
+            cell: (props: any) => (
+                <td>{props.dataItem.__type === "item" ? props.dataItem.statusDescription : ""}</td>
             ),
         },
     ];
 
-    const sortedData = orderBy(certificates, sort);
+    if (isLoading) return <LoadingComponent />;
+    if (error) return <Typography color="error">Failed to load certificates</Typography>;
 
     return (
-        <ModalContainer show={show} onClose={onClose} width={1200}>
-            <Typography variant="h6" component="h2" gutterBottom>
-                {getTranslatedLabel('projects.certificate.list', 'Certificates List')}
+        <ModalContainer show={show} onClose={onClose} width={1350}>
+            <Typography variant="h5" gutterBottom>
+                Certificates List - {isWorkmanship ? "Workmanship Contracting" : "Supply"}
             </Typography>
-            {isCertificatesLoading ? (
-                <LoadingComponent message={getTranslatedLabel('projects.certificate.loading', 'Loading Certificates...')} />
-            ) : certificatesError ? (
-                <Typography color="error">
-                    {getTranslatedLabel('projects.certificate.error', 'Failed to load certificates')}
-                </Typography>
-            ) : certificates.length === 0 ? (
-                <Typography>
-                    {getTranslatedLabel('projects.certificate.noData', 'No certificates found')}
-                </Typography>
-            ) : (
-                <KendoGrid
-                    style={{ height: "60vh" }}
-                    data={sortedData}
-                    sortable
-                    scrollable="scrollable"
-                    resizable
-                    sort={sort}
-                    onSortChange={(e) => setSort(e.sort)}
-                >
-                    <GridToolbar>
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                            <Button variant="contained" color="primary" onClick={onClose}>
-                                {getTranslatedLabel('projects.certificate.close', 'Close')}
-                            </Button>
-                        </Box>
-                    </GridToolbar>
-                    {columns.map((column, index) => (
-                        <Column key={index} {...column} />
-                    ))}
-                </KendoGrid>
-            )}
+
+            <KendoGrid
+                data={displayData}
+                sortable={false} // Disabled to preserve perfect order
+                style={{ height: "70vh" }}
+            >
+                <GridToolbar>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
+                        <Typography variant="subtitle1">
+                            {isWorkmanship
+                                ? `${certificates.length} items • ${new Set(certificates.map((c: any) => c.certificateNumber)).size} certificates`
+                                : `${certificates.length} certificates`}
+                        </Typography>
+                        <Button variant="contained" onClick={onClose}>
+                            Close
+                        </Button>
+                    </Box>
+                </GridToolbar>
+
+                {columns.map((col: any, i) => (
+                    <Column key={i} {...col} />
+                ))}
+            </KendoGrid>
         </ModalContainer>
     );
 }

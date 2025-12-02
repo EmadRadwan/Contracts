@@ -3,7 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 
-namespace Application.Shipments.BillingAccounts;
+namespace Application.Accounting.BillingAccounts;
 
 public class ListPartyBillingAccounts
 {

@@ -146,11 +146,6 @@ function BillingAccountsList() {
                                         "accounting.billingAccounts.list.limit",
                                         "حد الحساب"
                                     )}/>
-                                    <Column field="accountCurrencyUomDescription" title={getTranslatedLabel(
-                                        "accounting.billingAccounts.list.currency",
-                                        "العملة"
-                                    )}
-                                    />
                                     <Column field="fromDate" title={getTranslatedLabel(
                                         "accounting.billingAccounts.list.fromDate",
                                         "من تاريخ"
