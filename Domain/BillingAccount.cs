@@ -25,6 +25,8 @@ public class BillingAccount
     public DateTime? ThruDate { get; set; }
     public string? Description { get; set; }
     public string? ExternalAccountId { get; set; }
+    public string? WorkEffortId { get; set; }
+
     public DateTime? LastUpdatedStamp { get; set; }
     public DateTime? LastUpdatedTxStamp { get; set; }
     public DateTime? CreatedStamp { get; set; }
@@ -33,6 +35,8 @@ public class BillingAccount
     public Uom? AccountCurrencyUom { get; set; }
     public ContactMech? ContactMech { get; set; }
     public PostalAddress? ContactMechNavigation { get; set; }
+    public WorkEffort? WorkEffort { get; set; }
+
     public ICollection<BillingAccountRole> BillingAccountRoles { get; set; }
     public ICollection<BillingAccountTerm> BillingAccountTerms { get; set; }
     public ICollection<Invoice> Invoices { get; set; }

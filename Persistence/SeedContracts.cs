@@ -1072,7 +1072,7 @@ public class SeedContracts
             // Process each party with MainRole = "CUSTOMER"
             int billingAccountCounter = 300; // Initialize the counter starting at 300
 
-            foreach (var party in parties.Where(p => p.MainRole == "CUSTOMER"))
+            foreach (var party in parties.Where(p => p.MainRole == "CONTRACTOR" || p.MainRole == "SUPPLIER"))
             {
                 // Generate BillingAccountId using the counter
                 var billingAccountId = $"BA-{billingAccountCounter++:D6}";
@@ -1098,7 +1098,7 @@ public class SeedContracts
                 {
                     BillingAccountId = billingAccount.BillingAccountId,
                     PartyId = party.PartyId,
-                    RoleTypeId = "BILL_TO_CUSTOMER",
+                    RoleTypeId = "BILL_FROM_VENDOR",
                     FromDate = DateTime.Now,
                     ThruDate = null,
                     CreatedStamp = DateTime.Now,

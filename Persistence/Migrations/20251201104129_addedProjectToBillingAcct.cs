@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class AddedBuildingNumber : Migration
+    public partial class addedProjectToBillingAcct : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -11321,49 +11321,6 @@ namespace Persistence.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "BILLING_ACCOUNT",
-                columns: table => new
-                {
-                    BILLING_ACCOUNT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ACCOUNT_LIMIT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    ACCOUNT_CURRENCY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CONTACT_MECH_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    EXTERNAL_ACCOUNT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_BILLING_ACCOUNT", x => x.BILLING_ACCOUNT_ID);
-                    table.ForeignKey(
-                        name: "BILLACCT_CMECH",
-                        column: x => x.CONTACT_MECH_ID,
-                        principalTable: "CONTACT_MECH",
-                        principalColumn: "CONTACT_MECH_ID");
-                    table.ForeignKey(
-                        name: "BILLACCT_CUOM",
-                        column: x => x.ACCOUNT_CURRENCY_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "BILLACCT_PADDR",
-                        column: x => x.CONTACT_MECH_ID,
-                        principalTable: "POSTAL_ADDRESS",
-                        principalColumn: "CONTACT_MECH_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
                 name: "POSTAL_ADDRESS_BOUNDARY",
                 columns: table => new
                 {
@@ -11421,72 +11378,6 @@ namespace Persistence.Migrations
                         column: x => x.TRACKING_CODE_ID,
                         principalTable: "TRACKING_CODE",
                         principalColumn: "TRACKING_CODE_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "BILLING_ACCOUNT_TERM",
-                columns: table => new
-                {
-                    BILLING_ACCOUNT_TERM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    BILLING_ACCOUNT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    TERM_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    TERM_VALUE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    TERM_DAYS = table.Column<int>(type: "int", nullable: true),
-                    UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_BILLING_ACCOUNT_TERM", x => x.BILLING_ACCOUNT_TERM_ID);
-                    table.ForeignKey(
-                        name: "BILLACCT_TRM_BACT",
-                        column: x => x.BILLING_ACCOUNT_ID,
-                        principalTable: "BILLING_ACCOUNT",
-                        principalColumn: "BILLING_ACCOUNT_ID");
-                    table.ForeignKey(
-                        name: "BILLACCT_TRM_TRM",
-                        column: x => x.TERM_TYPE_ID,
-                        principalTable: "TERM_TYPE",
-                        principalColumn: "TERM_TYPE_ID");
-                    table.ForeignKey(
-                        name: "BILLACCT_TRM_UOM",
-                        column: x => x.UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "BILLING_ACCOUNT_TERM_ATTR",
-                columns: table => new
-                {
-                    BILLING_ACCOUNT_TERM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ATTR_NAME = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ATTR_VALUE = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_BILLING_ACCOUNT_TERM_ATTR", x => new { x.BILLING_ACCOUNT_TERM_ID, x.ATTR_NAME });
-                    table.ForeignKey(
-                        name: "BILLACCT_TRM_ATTR",
-                        column: x => x.BILLING_ACCOUNT_TERM_ID,
-                        principalTable: "BILLING_ACCOUNT_TERM",
-                        principalColumn: "BILLING_ACCOUNT_TERM_ID");
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -12644,6 +12535,117 @@ namespace Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AUDIO_DATA_RESOURCE", x => x.DATA_RESOURCE_ID);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "BILLING_ACCOUNT",
+                columns: table => new
+                {
+                    BILLING_ACCOUNT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ACCOUNT_LIMIT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    ACCOUNT_CURRENCY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CONTACT_MECH_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    EXTERNAL_ACCOUNT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    WORK_EFFORT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BILLING_ACCOUNT", x => x.BILLING_ACCOUNT_ID);
+                    table.ForeignKey(
+                        name: "BILLACCT_CMECH",
+                        column: x => x.CONTACT_MECH_ID,
+                        principalTable: "CONTACT_MECH",
+                        principalColumn: "CONTACT_MECH_ID");
+                    table.ForeignKey(
+                        name: "BILLACCT_CUOM",
+                        column: x => x.ACCOUNT_CURRENCY_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "BILLACCT_PADDR",
+                        column: x => x.CONTACT_MECH_ID,
+                        principalTable: "POSTAL_ADDRESS",
+                        principalColumn: "CONTACT_MECH_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "BILLING_ACCOUNT_TERM",
+                columns: table => new
+                {
+                    BILLING_ACCOUNT_TERM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    BILLING_ACCOUNT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    TERM_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    TERM_VALUE = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    TERM_DAYS = table.Column<int>(type: "int", nullable: true),
+                    UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BILLING_ACCOUNT_TERM", x => x.BILLING_ACCOUNT_TERM_ID);
+                    table.ForeignKey(
+                        name: "BILLACCT_TRM_BACT",
+                        column: x => x.BILLING_ACCOUNT_ID,
+                        principalTable: "BILLING_ACCOUNT",
+                        principalColumn: "BILLING_ACCOUNT_ID");
+                    table.ForeignKey(
+                        name: "BILLACCT_TRM_TRM",
+                        column: x => x.TERM_TYPE_ID,
+                        principalTable: "TERM_TYPE",
+                        principalColumn: "TERM_TYPE_ID");
+                    table.ForeignKey(
+                        name: "BILLACCT_TRM_UOM",
+                        column: x => x.UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "BILLING_ACCOUNT_TERM_ATTR",
+                columns: table => new
+                {
+                    BILLING_ACCOUNT_TERM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ATTR_NAME = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ATTR_VALUE = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BILLING_ACCOUNT_TERM_ATTR", x => new { x.BILLING_ACCOUNT_TERM_ID, x.ATTR_NAME });
+                    table.ForeignKey(
+                        name: "BILLACCT_TRM_ATTR",
+                        column: x => x.BILLING_ACCOUNT_TERM_ID,
+                        principalTable: "BILLING_ACCOUNT_TERM",
+                        principalColumn: "BILLING_ACCOUNT_TERM_ID");
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -33013,6 +33015,11 @@ namespace Persistence.Migrations
                 column: "LAST_UPDATED_TX_STAMP");
 
             migrationBuilder.CreateIndex(
+                name: "IX_BILLING_ACCOUNT_WORK_EFFORT_ID",
+                table: "BILLING_ACCOUNT",
+                column: "WORK_EFFORT_ID");
+
+            migrationBuilder.CreateIndex(
                 name: "BILLACCT_RL_PARTY",
                 table: "BILLING_ACCOUNT_ROLE",
                 column: "PARTY_ID");
@@ -51083,6 +51090,13 @@ namespace Persistence.Migrations
                 principalColumn: "DATA_RESOURCE_ID");
 
             migrationBuilder.AddForeignKey(
+                name: "FK_BILLINGACCOUNT_WORKEFFORT",
+                table: "BILLING_ACCOUNT",
+                column: "WORK_EFFORT_ID",
+                principalTable: "WORK_EFFORT",
+                principalColumn: "WORK_EFFORT_ID");
+
+            migrationBuilder.AddForeignKey(
                 name: "BILLACCT_RL_PARTY",
                 table: "BILLING_ACCOUNT_ROLE",
                 column: "PARTY_ID",
@@ -52650,6 +52664,10 @@ namespace Persistence.Migrations
             migrationBuilder.DropForeignKey(
                 name: "PARTY_RLE_ROLE",
                 table: "PARTY_ROLE");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_BILLINGACCOUNT_WORKEFFORT",
+                table: "BILLING_ACCOUNT");
 
             migrationBuilder.DropForeignKey(
                 name: "FK_PRODUCT_WORK_EFFORT_PROJECT_ID",

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import { Box, Button, Grid, Paper, Typography } from "@mui/material";
 import { Field, Form, FormElement } from "@progress/kendo-react-form";
@@ -15,6 +15,8 @@ import FormTextArea from "../../../../app/common/form/FormTextArea";
 import { FormComboBoxVirtualCustomer } from "../../../../app/common/form/FormComboBoxVirtualCustomer";
 import { useFetchBillingAccountsBalanceQuery } from "../../../../app/store/apis";
 import { formatCurrency } from "../../../../app/util/utils";
+import {FormComboBoxVirtualProject} from "../../../../app/common/form/FormComboBoxVirtualProject";
+import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
 
 interface Props {
   editMode: number;
@@ -34,6 +36,7 @@ const BillingAccountForm = ({
     skip: !selectedBillingAccount?.billingAccountId
   })
   const [account, setAccount] = useState<BillingAccount | undefined>(selectedBillingAccount)
+  const {getTranslatedLabel} = useTranslationHelper();
 
   useEffect(() => {
     if (billingAccountBalance) {
@@ -43,7 +46,7 @@ const BillingAccountForm = ({
           availableBalance: billingAccountBalance.billingAccountBalance!
         }
       )
-      setFormKey(Math.random())
+      //setFormKey(Math.random())
     }
   }, [billingAccountBalance])
 
@@ -52,14 +55,14 @@ const BillingAccountForm = ({
     <>
       <AccountingMenu selectedMenuItem={"/billingAccounts"} />
       <Paper elevation={5} className={`div-container-withBorderCurved`}>
-        {editMode > 1 && <BillingAccountsMenu selectedMenuItem="/billingAccounts" />}
+        {/*{editMode > 1 && <BillingAccountsMenu selectedMenuItem="/billingAccounts" />}*/}
         <Grid container spacing={2}>
           <Grid item xs={5}>
             <Box display="flex" justifyContent="space-between">
               <Typography sx={{ p: 2 }} color={editMode > 1 ? "black" : "green"} variant="h4">
                 {editMode === 1
-                  ? "New Billing Account"
-                  : `Billing Account: ${selectedBillingAccount?.billingAccountId}`}
+                    ? getTranslatedLabel("accounting.billingAccounts.form.new", "حساب أجل جديد")
+                    : `${getTranslatedLabel("accounting.billingAccounts.form.title", "حساب الأجل")}: ${selectedBillingAccount?.billingAccountId}`}
               </Typography>
             </Box>
           </Grid>
@@ -77,7 +80,7 @@ const BillingAccountForm = ({
                     <Field
                       name="accountLimit"
                       id="accountLimit"
-                      label="Account Limit"
+                      label={getTranslatedLabel("accounting.billingAccounts.form.accountLimit", "حد الحساب")}
                       component={FormNumericTextBox}
                       validator={requiredValidator}
                     />
@@ -86,7 +89,7 @@ const BillingAccountForm = ({
                       <Field
                         name="accountCurrencyUomId"
                         id="accountCurrencyUomId"
-                        label="Account Currency"
+                        label={getTranslatedLabel("accounting.billingAccounts.form.currency", "عملة الحساب")}
                         component={MemoizedFormDropDownList2}
                         data={currencies ?? []}
                         dataItemKey="currencyUomId"
@@ -99,18 +102,30 @@ const BillingAccountForm = ({
                       <Field
                         name="partyId"
                         id="partyId"
-                        label="Party Name"
+                        label={getTranslatedLabel("accounting.billingAccounts.form.party", "العميل / الطرف")}
                         disabled={editMode > 1}
                         component={FormComboBoxVirtualCustomer}
                       />
                     </Grid>
                   </Grid>
+                <Grid item xs={2}>
+                  <Field
+                      id="projectId"
+                      name="projectId"
+                      component={FormComboBoxVirtualProject}
+                      label={getTranslatedLabel("projects.certificate.form.project", "Project")}
+                      dataItemKey="projectId"
+                      textField="ProjectName"
+                      validator={requiredValidator}
+                      disabled={editMode > 3}
+                  />
+                </Grid>
                   <Grid item container spacing={2} flexDirection={"row"}>
                     <Grid item xs={3}>
                       <Field
                         name="fromDate"
                         id="fromDate"
-                        label="From Date"
+                        label={getTranslatedLabel("accounting.billingAccounts.form.fromDate", "تاريخ البداية")}
                         disabled={editMode > 1}
                         component={FormDatePicker}
                         validator={requiredValidator}
@@ -120,13 +135,13 @@ const BillingAccountForm = ({
                       <Field
                         name="thruDate"
                         id="thruDate"
-                        label="Thru Date"
+                        label={getTranslatedLabel("accounting.billingAccounts.form.thruDate", "تاريخ النهاية")}
                         component={FormDatePicker}
                       />
                     </Grid>
                     <Grid item xs={12}>
-                      <Typography variant="body1" sx={{fontWeight: "bold"}}>
-                        Available Balance:
+                      <Typography variant="body1" sx={{ fontWeight: "bold", mt: 2 }}>
+                        {getTranslatedLabel("accounting.billingAccounts.form.availableBalance", "الرصيد المتاح")}
                       </Typography>
                       <Typography variant="h5" sx={{color: "red", fontWeight: "bold"}}>
                         {formatCurrency(account?.availableBalance || 0)}
@@ -136,7 +151,7 @@ const BillingAccountForm = ({
                       <Field
                         name="description"
                         id="description"
-                        label="Description"
+                        label={getTranslatedLabel("accounting.billingAccounts.form.description", "الوصف")}
                         component={FormTextArea}
                       />
                     </Grid>
@@ -150,7 +165,7 @@ const BillingAccountForm = ({
                   color="success"
                   disabled={!formRenderProps.allowSubmit}
                 >
-                  Save
+                  {getTranslatedLabel("general.save", "حفظ")}
                 </Button>
 
                 <Button
@@ -159,7 +174,7 @@ const BillingAccountForm = ({
                   color="error"
                   onClick={onClose}
                 >
-                  Back
+                  {getTranslatedLabel("general.back", "رجوع")}
                 </Button>
               </div>
             </FormElement>

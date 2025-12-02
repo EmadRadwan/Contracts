@@ -6,6 +6,7 @@ import PaymentOutlinedIcon from '@mui/icons-material/PaymentOutlined';
 import LocalAtmOutlinedIcon from '@mui/icons-material/LocalAtmOutlined';
 import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
 import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
+import BatteryCharging60Icon from '@mui/icons-material/BatteryCharging60';
 import GroupIcon from '@mui/icons-material/Group';
 import withFloatingLabelFlexible from '../../../../app/components/FloatingLabel'; 
 import { useTranslationHelper } from '../../../../app/hooks/useTranslationHelper';
@@ -41,7 +42,8 @@ const links = [
     { title: 'Invoices', key: 'invoices', path: '/invoices', icon: <ReceiptOutlinedIcon sx={{ color: "#FFA500" }} /> },
     { title: 'Incoming Payments', key: 'incomingPayments', path: '/payments/incoming', icon: <PaymentOutlinedIcon sx={{ color: "#4CAF50" }} /> }, 
     { title: 'Outgoing Payments', key: 'outgoingPayments', path: '/payments/outgoing', icon: <PaymentOutlinedIcon sx={{ color: "#F44336" }} /> }, 
-    { title: 'Payment Groups', key: 'pay-group', path: '/paymentGroups', icon: <GroupIcon sx={{ color: "#03A9F4" }} /> },
+    //{ title: 'Payment Groups', key: 'pay-group', path: '/paymentGroups', icon: <GroupIcon sx={{ color: "#03A9F4" }} /> },
+    { title: 'Billing Accounts', key: 'billingAccounts', path: '/billingAccounts', icon: <BatteryCharging60Icon sx={{ color: "#03A9F4" }} /> },
     { title: "Multi-Payment Certificates", key: "multiPaymentCertificates", path: "/multiPaymentCertificates", icon: <AccountBalanceWalletOutlinedIcon sx={{ color: "#3F51B5" }} /> },
     { title: 'Global GL Settings', key: 'globalGLSettings', path: '/globalGL', icon: <LocalAtmOutlinedIcon sx={{ color: "#E91E63" }} /> },
     { title: 'Organization GL Settings', key: 'organizationGLSettings', path: '/orgGL', icon: <AccountTreeOutlinedIcon sx={{ color: "#8BC34A" }} /> },

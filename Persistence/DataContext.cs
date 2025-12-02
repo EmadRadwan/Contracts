@@ -3953,6 +3953,12 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasMaxLength(36)
                     .IsUnicode(false)
                     .HasColumnName("EXTERNAL_ACCOUNT_ID");
+                    
+                    entity.Property(e => e.WorkEffortId)
+                        .HasMaxLength(36)                     // same as most OFBiz IDs (20-36 chars)
+                        .IsUnicode(false)                     // VARCHAR, not NVARCHAR
+                        .HasColumnName("WORK_EFFORT_ID")      // uppercase, matches your style
+                        .IsRequired(false); 
 
                 entity.Property(e => e.FromDate)
                     .HasColumnType("datetime")
@@ -3984,6 +3990,12 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .WithMany(p => p.BillingAccounts)
                     .HasForeignKey(d => d.ContactMechId)
                     .HasConstraintName("BILLACCT_PADDR");
+                    
+                    entity.HasOne(ba => ba.WorkEffort)
+                        .WithMany(we => we.BillingAccounts)
+                        .HasForeignKey(ba => ba.WorkEffortId)
+                        .OnDelete(DeleteBehavior.SetNull)   // or Restrict / ClientSetNull
+                        .HasConstraintName("FK_BILLINGACCOUNT_WORKEFFORT");
             });
 
             modelBuilder.Entity<BillingAccountRole>(entity =>

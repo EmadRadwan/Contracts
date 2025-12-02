@@ -11,8 +11,8 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20251124150706_CreateDatabaseViews")]
-    partial class CreateDatabaseViews
+    [Migration("20251201104129_addedProjectToBillingAcct")]
+    partial class addedProjectToBillingAcct
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -3047,7 +3047,15 @@ namespace Persistence.Migrations
                         .HasColumnType("datetime")
                         .HasColumnName("THRU_DATE");
 
+                    b.Property<string>("WorkEffortId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("WORK_EFFORT_ID");
+
                     b.HasKey("BillingAccountId");
+
+                    b.HasIndex("WorkEffortId");
 
                     b.HasIndex(new[] { "ContactMechId" }, "BILLACCT_CMECH");
 
@@ -60860,11 +60868,19 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("BILLACCT_PADDR");
 
+                    b.HasOne("Domain.WorkEffort", "WorkEffort")
+                        .WithMany("BillingAccounts")
+                        .HasForeignKey("WorkEffortId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_BILLINGACCOUNT_WORKEFFORT");
+
                     b.Navigation("AccountCurrencyUom");
 
                     b.Navigation("ContactMech");
 
                     b.Navigation("ContactMechNavigation");
+
+                    b.Navigation("WorkEffort");
                 });
 
             modelBuilder.Entity("Domain.BillingAccountRole", b =>
@@ -83702,6 +83718,8 @@ namespace Persistence.Migrations
                     b.Navigation("AgreementWorkEffortApplics");
 
                     b.Navigation("Apartments");
+
+                    b.Navigation("BillingAccounts");
 
                     b.Navigation("CommunicationEventWorkEffs");
 

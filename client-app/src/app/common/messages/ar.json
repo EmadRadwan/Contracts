@@ -1222,6 +1222,36 @@
           }
         }
       }
+    },
+    "billingAccounts": {
+      "menu": {
+        "billingAccounts": "حسابات الأجل"
+      },
+      "list": {
+        "title": "حسابات الأجل",
+        "new": "حساب أجل جديد",
+        "accountId": "رقم الحساب",
+        "party": "الطرف",
+        "project": "المشروع",
+        "limit": "حد الحساب",
+        "balance": "الرصيد المتاح",
+        "currency": "العملة",
+        "fromDate": "من تاريخ",
+        "thruDate": "إلى تاريخ",
+        "description": "الوصف"
+      },
+      "form": {
+        "new": "حساب أجل جديد",
+        "title": "حساب الأجل",
+        "accountLimit": "حد الحساب",
+        "currency": "عملة الحساب",
+        "party": "العميل / الطرف",
+        "project": "المشروع",
+        "fromDate": "تاريخ البداية",
+        "thruDate": "تاريخ النهاية",
+        "availableBalance": "الرصيد المتاح",
+        "description": "الوصف"
+      }
     }
   }
   ,
