@@ -8,6 +8,7 @@ public class ProjectDto
     public string? PartyId { get; set; }
     public string? WorkEffortTypeId { get; set; }
     public string? CurrentStatusId { get; set; }
+    public string? GlAccountId { get; set; }
     public DateTime? EstimatedStartDate { get; set; }
     public DateTime? EstimatedCompletionDate { get; set; }
 }

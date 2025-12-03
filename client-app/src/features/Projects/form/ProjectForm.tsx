@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, Grid, Paper, Typography } from "@mui/material";
+import { Button, Grid, Paper, Typography, Skeleton } from "@mui/material";
 import { Field, Form, FormElement } from "@progress/kendo-react-form";
 import { MemoizedFormDropDownList } from "../../../app/common/form/MemoizedFormDropDownList";
 import FormInput from "../../../app/common/form/FormInput";
@@ -7,12 +7,14 @@ import FormDatePicker from "../../../app/common/form/FormDatePicker";
 import { v4 as uuid } from "uuid";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
-import {WorkEffort} from "../../../app/models/manufacturing/workEffort";
-import {useAppDispatch} from "../../../app/store/configureStore";
-import { requiredValidator} from "../../../app/common/form/Validators";
-import {toast} from "react-toastify";
-import {useAddProjectMutation, useUpdateProjectMutation} from "../../../app/store/apis/projectsApi";
+import { WorkEffort } from "../../../app/models/manufacturing/workEffort";
+import { useAppDispatch, useAppSelector } from "../../../app/store/configureStore";
+import { requiredValidator } from "../../../app/common/form/Validators";
+import { toast } from "react-toastify";
+import { useAddProjectMutation, useUpdateProjectMutation } from "../../../app/store/apis/projectsApi";
 import ProjectMenu from "../menu/ProjectMenu";
+import { FormDropDownTreeGlAccount2 } from "../../../app/common/form/FormDropDownTreeGlAccount2";
+import { useFetchGlAccountOrganizationHierarchyLovQuery } from "../../../app/store/apis";
 
 interface Props {
     project?: WorkEffort;
@@ -26,6 +28,11 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
     const [updateProject, { isLoading: isUpdating }] = useUpdateProjectMutation();
     const [buttonFlag, setButtonFlag] = useState(false);
     const { getTranslatedLabel } = useTranslationHelper();
+    const { user } = useAppSelector((state) => state.account);
+    const companyId = user?.organizationPartyId || "";
+    const { data: glAccounts, isLoading: isLoadingGlAccounts } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
+        skip: companyId === undefined,
+    });
 
     // REFACTOR: Updated initialValues to use workEffortId instead of ProjectNum and lowercase field names.
     // Ensures consistency with field naming convention and aligns with backend workEffortId usage.
@@ -35,12 +42,14 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
         estimatedStartDate: project.estimatedStartDate,
         estimatedCompletionDate: project.estimatedCompletionDate,
         currentStatusId: project.currentStatusId,
+        glAccountId: project.glAccountId,
     } : {
         workEffortId: null, // Set to null in create mode as it’s backend-generated
         projectName: "",
         estimatedStartDate: null,
         estimatedCompletionDate: null,
         currentStatusId: "",
+        glAccountId: ""
     };
 
     console.log('project', project);
@@ -189,6 +198,26 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
                                             ]}
                                             validator={requiredValidator}
                                         />
+                                    </Grid>
+                                </Grid>
+                                {/* Parent Account – Tree dropdown */}
+                                <Grid container spacing={2}>
+                                    <Grid item xs={8}>
+                                        {isLoadingGlAccounts ? (
+                                            <Skeleton variant="rounded" height={40}
+                                                sx={{ width: "100%", borderRadius: "4px" }} />
+                                        ) : (<Field
+                                            id="glAccountId"
+                                            name="glAccountId"
+                                            validator={requiredValidator}
+                                            label={getTranslatedLabel("glAccount.parent", "Parent Account")}
+                                            component={FormDropDownTreeGlAccount2}
+                                            data={glAccounts || []}
+                                            dataItemKey="glAccountId"
+                                            textField="text"
+                                            selectField="selected"
+                                            expandField="expanded"
+                                        />)}
                                     </Grid>
                                 </Grid>
                                 <div className="k-form-buttons">

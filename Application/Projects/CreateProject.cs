@@ -67,6 +67,7 @@ public class CreateProject
                     ProjectName = request.ProjectDto!.ProjectName,
                     WorkEffortTypeId = "PROJECT",
                     CurrentStatusId = request.ProjectDto.CurrentStatusId,
+                    GlAccountId = request.ProjectDto.GlAccountId,
                     EstimatedStartDate = request.ProjectDto.EstimatedStartDate,
                     EstimatedCompletionDate = request.ProjectDto.EstimatedCompletionDate,
                     CreatedDate = stamp,

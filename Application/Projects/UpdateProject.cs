@@ -53,6 +53,7 @@ public class UpdateProject
             {
                 var stamp = DateTime.UtcNow;
                 project.ProjectName = request.ProjectDto.ProjectName ?? project.ProjectName;
+                project.GlAccountId = request.ProjectDto.GlAccountId ?? project.GlAccountId;
                 project.CurrentStatusId = request.ProjectDto.CurrentStatusId ?? project.CurrentStatusId;
                 project.EstimatedStartDate = request.ProjectDto.EstimatedStartDate ?? project.EstimatedStartDate;
                 project.EstimatedCompletionDate = request.ProjectDto.EstimatedCompletionDate ?? project.EstimatedCompletionDate;

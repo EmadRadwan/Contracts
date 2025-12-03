@@ -39,6 +39,7 @@ public class ProjectsList
                     CurrentStatusDescription = si != null ? si.Description : null,
                     EstimatedStartDate = we.EstimatedStartDate,
                     EstimatedCompletionDate = we.EstimatedCompletionDate,
+                    GlAccountId = we.GlAccountId
                 };
 
             return query;

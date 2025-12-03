@@ -8,6 +8,7 @@ export interface WorkEffort {
     currentStatusId?: string;
     currentStatusDescription?: string;
     lastStatusUpdate?: Date;
+    glAccountId?: string;
     workEffortPurposeTypeId?: string;
     workEffortParentId?: string;
     scopeEnumId?: string;

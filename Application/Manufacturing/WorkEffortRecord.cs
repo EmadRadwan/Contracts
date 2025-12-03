@@ -63,4 +63,5 @@ public class WorkEffortRecord
     public string? ProjectNum { get; set; }
     public string? ProjectName { get; set; }
     public int? RevisionNumber { get; set; }
+    public string? GlAccountId { get; set; }
 }
