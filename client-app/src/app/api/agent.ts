@@ -318,6 +318,10 @@ const Parties = {
         axios
             .get<Party[]>(`/parties/getContractorsLov`, {params})
             .then(responseBody),
+    getContractorsAndSuppliersLov: (params: URLSearchParams) =>
+        axios
+            .get<Party[]>(`/parties/getContractorsAndSuppliersLov`, {params})
+            .then(responseBody),
     getPartiesLov: (params: URLSearchParams) =>
         axios
             .get<Party[]>(`/parties/getPartiesLov`, {params})

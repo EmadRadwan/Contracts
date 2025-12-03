@@ -54,4 +54,11 @@ export const formatCurrency2 = (value: number, currencyUomId: string = 'EGP', lo
     return locale === 'ar' ? `${formattedValue} ${symbol}` : `${symbol} ${formattedValue}`;
 };
 
+export const parseDate = (dateStr: string | Date | null | undefined): Date | null => {
+    if (!dateStr) return null;
+    if (dateStr instanceof Date) return dateStr;
+    const parsed = new Date(dateStr);
+    return isNaN(parsed.getTime()) ? null : parsed;
+};
+
 export {}

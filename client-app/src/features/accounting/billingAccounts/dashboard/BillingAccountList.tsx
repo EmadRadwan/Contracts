@@ -1,176 +1,200 @@
-import React, {useEffect, useState} from "react";
-import {
-    Grid as KendoGrid,
-    GRID_COL_INDEX_ATTRIBUTE,
-    GridColumn as Column,
-    GridDataStateChangeEvent,
-    GridToolbar,
-} from "@progress/kendo-react-grid";
-import {useTableKeyboardNavigation} from "@progress/kendo-react-data-tools";
-import {Grid, Paper} from "@mui/material";
-import {useAppDispatch, useAppSelector, useFetchBillingAccountsQuery,} from "../../../../app/store/configureStore";
+// BillingAccountsList.tsx – fixed version
+import React, { useEffect, useState } from "react";
+import { Grid as KendoGrid, GridColumn as Column, GridToolbar } from "@progress/kendo-react-grid";
+import { Grid, Paper } from "@mui/material";
 import Button from "@mui/material/Button";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
-import {handleDatesArray} from "../../../../app/util/utils";
-import {useLocation} from 'react-router-dom';
-import {DataResult, State} from "@progress/kendo-data-query";
-import AccountingMenu from "../../invoice/menu/AccountingMenu";
-import {BillingAccount} from "../../../../app/models/accounting/billingAccount";
-import BillingAccountForm from "../form/BillingAccountForm";
-import {setSelectedBillingAccount} from "../../slice/accountingSharedUiSlice";
-import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
+import {handleDatesArray, handleDatesObject, parseDate} from "../../../../app/util/utils";
+import { useLocation } from "react-router-dom";
+import { State } from "@progress/kendo-data-query";
 
+import AccountingMenu from "../../invoice/menu/AccountingMenu";
+import BillingAccountForm from "../form/BillingAccountForm";
+
+import {
+    useAppDispatch,
+    useAppSelector,
+    useFetchBillingAccountsQuery,
+} from "../../../../app/store/configureStore";
+import { setSelectedBillingAccount } from "../../slice/accountingSharedUiSlice";
+import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
+import { BillingAccount } from "../../../../app/models/accounting/billingAccount";
 
 function BillingAccountsList() {
     const [editMode, setEditMode] = useState(0);
     const location = useLocation();
     const dispatch = useAppDispatch();
-    const {selectedBillingAccount} = useAppSelector(state => state.accountingSharedUi)
-    // const [show, setShow] = useState(false);
-    const [dataState, setDataState] = React.useState<State>({take: 9, skip: 0});
-    const [billingAccounts, setBillingAccounts] = React.useState<DataResult>({data: [], total: 0});
-    const {getTranslatedLabel} = useTranslationHelper();
+    const { selectedBillingAccount } = useAppSelector(state => state.accountingSharedUi);
+    const { getTranslatedLabel } = useTranslationHelper();
 
-    const dataStateChange = (e: GridDataStateChangeEvent) => {
-        console.log('dataStateChange', e.dataState);
-        setDataState(e.dataState);
-    };
-    const {data, isFetching} = useFetchBillingAccountsQuery({...dataState});
+    const [dataState, setDataState] = useState<State>({ take: 9, skip: 0 });
+    const [billingAccounts, setBillingAccounts] = useState({ data: [], total: 0 });
 
+    const { data, isFetching } = useFetchBillingAccountsQuery({ ...dataState });
+
+    // Adjust dates for the grid
     useEffect(() => {
-            if (data) {
-                const adjustedData = handleDatesArray(data.data);
-                setBillingAccounts({data: adjustedData, total: data.total})
-            }
+        if (data) {
+            const adjusted = handleDatesArray(data.data);
+            setBillingAccounts({ data: adjusted, total: data.total });
         }
-        , [data]);
+    }, [data]);
 
-    function handleSelectBillingAccounts(billingAccountId: string) {
-        const selectedAccount: BillingAccount | undefined = billingAccounts?.data.find((billingAccount: any) => billingAccount.billingAccountId === billingAccountId);
-        if (selectedAccount) {
-            dispatch(setSelectedBillingAccount({
-                ...selectedAccount!,
-                partyId: {
-                    fromPartyId: selectedAccount?.partyId,
-                    fromPartyName: selectedAccount?.partyName
-                }
-            }))
+    const dataStateChange = (e: any) => setDataState(e.dataState);
+
+    // ---------- Selection ----------
+    const handleSelectBillingAccounts = (billingAccountId: string) => {
+        const account = billingAccounts.data.find(
+            (a: any) => a.billingAccountId === billingAccountId
+        );
+        if (account) {
+            dispatch(
+                setSelectedBillingAccount({
+                    ...account,
+                    partyId: { fromPartyId: account.partyId, fromPartyName: account.partyName },
+                })
+            );
             setEditMode(2);
         }
-    }
+    };
 
+    // ---------- Navigation from other pages ----------
     useEffect(() => {
         if (location.state?.selectedBillingAccountId && billingAccounts.data.length > 0) {
-            handleSelectBillingAccounts(location.state?.selectedBillingAccountId)
+            handleSelectBillingAccounts(location.state.selectedBillingAccountId);
         }
-    }, [location.state?.selectedBillingAccountId, billingAccounts.data])
+    }, [location.state?.selectedBillingAccountId, billingAccounts.data]);
 
-    function cancelEdit() {
-        dispatch(setSelectedBillingAccount(undefined))
+    const cancelEdit = () => {
+        dispatch(setSelectedBillingAccount(undefined));
         setEditMode(0);
-    }
+    };
 
+    // ---------- Callback after creation (keeps form open) ----------
+    const handleBillingAccountCreated = (response: any) => {
+        if (response?.isSuccess && response?.value) {
+            const raw = response.value;
 
-    const BillingAccountCell = (props: any) => {
-        const navigationAttributes = useTableKeyboardNavigation(props.id);
-        return (
-            <td
-                className={props.className}
-                style={{...props.style, color: 'blue'}}
-                colSpan={props.colSpan}
-                role={'gridcell'}
-                aria-colindex={props.ariaColumnIndex}
-                aria-selected={props.isSelected}
-                {...{
-                    [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex
-                }}
-                {...navigationAttributes}
-            ><Button
-                onClick={() => handleSelectBillingAccounts(props.dataItem.billingAccountId)}
-            >
+            const account: BillingAccount = {
+                ...raw,
+
+                // Convert all date strings → Date objects
+                fromDate: parseDate(raw.fromDate),
+                thruDate: parseDate(raw.thruDate),
+                createdDate: parseDate(raw.createdDate),
+
+                // Normalize combo box fields
+                partyId: {
+                    fromPartyId: raw.partyId,
+                    fromPartyName: raw.partyName,
+                },
+                projectId: raw.projectId
+                    ? {
+                        projectId: raw.projectId,
+                        ProjectName: raw.projectName ?? null,
+                    }
+                    : null,
+            };
+
+            dispatch(setSelectedBillingAccount(account));
+            setEditMode(2);
+        }
+    };
+
+    const BillingAccountCell = (props: any) => (
+        <td style={{ color: "blue" }}>
+            <Button onClick={() => handleSelectBillingAccounts(props.dataItem.billingAccountId)}>
                 {props.dataItem.billingAccountId}
             </Button>
+        </td>
+    );
 
-            </td>
-        )
-    };
-    if (selectedBillingAccount) {
-        return <BillingAccountForm selectedBillingAccount={selectedBillingAccount} editMode={2} onClose={cancelEdit}/>
-    }
+    // ──────────────────────────────────────────────────────────────
+    // 1. If we are in create / edit mode → show ONLY the form
+    // 2. Otherwise → show the list
+    // ──────────────────────────────────────────────────────────────
     if (editMode > 0) {
-        return <BillingAccountForm selectedBillingAccount={selectedBillingAccount} editMode={editMode}
-                                   onClose={cancelEdit}/>
+        return (
+            <BillingAccountForm
+                selectedBillingAccount={selectedBillingAccount}
+                editMode={editMode}
+                onClose={cancelEdit}
+                setEditMode={setEditMode}
+                onBillingAccountCreated={handleBillingAccountCreated}
+            />
+        );
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Normal list view
+    // ──────────────────────────────────────────────────────────────
     return (
         <>
-            <AccountingMenu selectedMenuItem={'/billingAccounts'}/>
-            <Paper elevation={5} className={`div-container-withBorderCurved`}>
-
+            <AccountingMenu selectedMenuItem="/billingAccounts" />
+            <Paper elevation={5} className="div-container-withBorderCurved">
                 <Grid container columnSpacing={1} alignItems="center">
-                    <Grid item xs={6}>
+                    <Grid item xs={12}>
+                        <div className="div-container">
+                            <KendoGrid
+                                style={{ height: "65vh", width: "94vw" }}
+                                data={billingAccounts}
+                                resizable
+                                filterable
+                                sortable
+                                pageable
+                                {...dataState}
+                                onDataStateChange={dataStateChange}
+                            >
+                                <GridToolbar>
+                                    <Button
+                                        color="secondary"
+                                        variant="outlined"
+                                        onClick={() => setEditMode(1)}
+                                    >
+                                        {getTranslatedLabel(
+                                            "accounting.billingAccounts.list.new",
+                                            "إنشاء حساب أجل جديد"
+                                        )}
+                                    </Button>
+                                </GridToolbar>
 
-                        <Grid container>
-                            <div className="div-container">
-                                <KendoGrid style={{height: "65vh", width: "94vw", flex: 1}}
-                                           data={billingAccounts ? billingAccounts : {data: [], total: data!.total}}
-                                           resizable={true}
-                                           filterable={true}
-                                           sortable={true}
-                                           pageable={true}
-                                           {...dataState}
-                                           onDataStateChange={dataStateChange}
-                                >
-                                    <GridToolbar>
-                                        <Grid container>
-                                            <Grid item xs={4}>
-                                                <Button color={"secondary"} onClick={() => setEditMode(1)}
-                                                        variant="outlined">
-                                                    {getTranslatedLabel(
-                                                        "accounting.billingAccounts.list.new",
-                                                        "إنشاء حساب أجل جديد"
-                                                    )}
-                                                </Button>
-                                            </Grid>
+                                <Column
+                                    field="billingAccountId"
+                                    title={getTranslatedLabel("accounting.billingAccounts.list.accountId", "رقم الحساب")}
+                                    cell={BillingAccountCell}
+                                />
+                                <Column
+                                    field="partyName"
+                                    title={getTranslatedLabel("accounting.billingAccounts.list.party", "اسم العميل")}
+                                    width={250}
+                                />
+                                <Column
+                                    field="accountLimit"
+                                    title={getTranslatedLabel("accounting.billingAccounts.list.limit", "حد الحساب")}
+                                />
+                                <Column
+                                    field="fromDate"
+                                    title={getTranslatedLabel("accounting.billingAccounts.list.fromDate", "من تاريخ")}
+                                    format="{0:dd/MM/yyyy}"
+                                />
+                                <Column
+                                    field="thruDate"
+                                    title={getTranslatedLabel("accounting.billingAccounts.list.thruDate", "إلى تاريخ")}
+                                    format="{0:dd/MM/yyyy}"
+                                />
+                            </KendoGrid>
 
-                                        </Grid>
-                                    </GridToolbar>
-                                    <Column field="billingAccountId" title={getTranslatedLabel(
-                                        "accounting.billingAccounts.list.accountId",
-                                        "رقم الحساب"
-                                    )} cell={BillingAccountCell}/>
-                                    <Column field="partyName" title={getTranslatedLabel(
-                                        "accounting.billingAccounts.list.party",
-                                        "اسم العميل"
-                                    )} width={250}/>
-                                    <Column field="accountLimit" title={getTranslatedLabel(
-                                        "accounting.billingAccounts.list.limit",
-                                        "حد الحساب"
-                                    )}/>
-                                    <Column field="fromDate" title={getTranslatedLabel(
-                                        "accounting.billingAccounts.list.fromDate",
-                                        "من تاريخ"
-                                    )} format="{0: dd/MM/yyyy}"/>
-                                    <Column field="thruDate" title={getTranslatedLabel(
-                                        "accounting.billingAccounts.list.thruDate",
-                                        "إلى تاريخ"
-                                    )} format="{0: dd/MM/yyyy}"/>
-
-
-                                </KendoGrid>
-                                {isFetching && (
-                                    <LoadingComponent message={getTranslatedLabel("general.loading", "جاري تحميل حسابات الأجل...")} />
-                                )}
-                            </div>
-
-                        </Grid>
-
+                            {isFetching && (
+                                <LoadingComponent
+                                    message={getTranslatedLabel("general.loading", "جاري تحميل حسابات الأجل...")}
+                                />
+                            )}
+                        </div>
                     </Grid>
-
-
                 </Grid>
             </Paper>
         </>
-    )
+    );
 }
 
-export default BillingAccountsList
+export default BillingAccountsList;

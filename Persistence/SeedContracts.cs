@@ -439,7 +439,6 @@ public class SeedContracts
             await context.SaveChangesAsync();
         }
 
-        
 
         // Sequence Value Item
         if (!context.SequenceValueItems.Any())
@@ -463,7 +462,6 @@ public class SeedContracts
         }
 
 
-       
         /*if (!context.ProductPrices.Any())
         {
             var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/product_prices_medications.json");
@@ -633,8 +631,8 @@ public class SeedContracts
             await context.GlAccounts.AddRangeAsync(glAccounts);
             await context.SaveChangesAsync();
         }
-        
-         if (!context.Facilities.Any() && !context.WorkEfforts.Any())
+
+        if (!context.Facilities.Any() && !context.WorkEfforts.Any())
         {
             var projectNames = new List<string>
             {
@@ -670,7 +668,7 @@ public class SeedContracts
                 { "الثروة الخضراء - نسيم", "124430" },
                 { "الثالث زايد", "124431" },
                 { "السابع زايد", "124432" },
-                { "التاسع زايد", null },
+                { "التاسع زايد", "124433" },
                 { "بيت الوطن لادريس أكتوبر", "124422" },
                 { "بيت الوطن لادريس التجمع", "124421" }
             };
@@ -1064,7 +1062,7 @@ public class SeedContracts
             await context.SaveChangesAsync();
         }
 
-        if (!context.BillingAccounts.Any())
+        /*if (!context.BillingAccounts.Any())
         {
             var parties = await context.Parties.ToListAsync();
 
@@ -1125,6 +1123,7 @@ public class SeedContracts
 
             await context.SaveChangesAsync();
         }
+        */
 
 
         // Check and seed Persons table
@@ -2603,7 +2602,7 @@ public class SeedContracts
         try
         {
             // Create roles
-            var requiredRoles = new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate",  "viewCrm" };
+            var requiredRoles = new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm" };
             foreach (var role in requiredRoles)
             {
                 // REFACTOR: Added error handling for role creation to catch and report failures.
@@ -2723,8 +2722,14 @@ public class SeedContracts
         // This ensures roles are assigned only to existing users and reports failures.
         var userRoles = new Dictionary<string, string[]>
         {
-            { "eradwan1967@gmail.com", new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm" } },
-            { "aagiba@gmail.com", new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate" , "viewCrm"} }
+            {
+                "eradwan1967@gmail.com",
+                new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm" }
+            },
+            {
+                "aagiba@gmail.com",
+                new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm" }
+            }
         };
 
         foreach (var (email, roles) in userRoles)
