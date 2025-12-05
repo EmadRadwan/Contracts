@@ -56,6 +56,7 @@ public class WorkEffort
         WorkRequirementFulfillments = new HashSet<WorkRequirementFulfillment>();
         WorkEffortInventoryRes = new HashSet<WorkEffortInventoryRes>();
         BillingAccounts = new HashSet<BillingAccount>();
+        Payments = new HashSet<Payment>();
     }
 
     public string WorkEffortId { get; set; } = null!;
@@ -226,4 +227,6 @@ public class WorkEffort
     public ICollection<WorkEffortInventoryRes> WorkEffortInventoryRes { get; set; }
 
     public virtual ICollection<BillingAccount> BillingAccounts { get; set; } 
+    public virtual ICollection<Payment> Payments { get; set; }
+
 }

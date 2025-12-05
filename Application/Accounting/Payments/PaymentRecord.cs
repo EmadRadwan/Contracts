@@ -39,4 +39,8 @@ public class PaymentRecord
     public string? ChequeNumber { get; set; }
     public DateTime? ChequeDate { get; set; }
     public OrderPartyDto FromPartyId { get; set; }
+    public string? ProjectId { get; set; }
+    public string? ProjectName { get; set; }
+    public string? CostCenterId { get; set; }
+    public string? CostCenterDescription { get; set; }
 }

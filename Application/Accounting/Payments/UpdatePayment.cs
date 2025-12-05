@@ -146,7 +146,9 @@ public class UpdatePayment
                         PartyIdTo = request.PaymentDto.PartyIdTo,
                         PaymentTypeId = request.PaymentDto.PaymentTypeId,
                         FinAccountTransId = finAccountTransId,
-                        OverrideGlAccountId = request.PaymentDto.OverrideGlAccountId
+                        OverrideGlAccountId = request.PaymentDto.OverrideGlAccountId,
+                        ProjectId = request.PaymentDto.ProjectId,
+                        CostCenterId =  request.PaymentDto.CostCenterId
                     };
                     // update the payment itself
                     await _paymentHelperService.UpdatePayment(updatePaymentParam);
@@ -172,7 +174,9 @@ public class UpdatePayment
                     PartyIdTo = request.PaymentDto.PartyIdTo,
                     PaymentTypeId = request.PaymentDto.PaymentTypeId,
                     FinAccountTransId = finAccountTransId,
-                    OverrideGlAccountId = request.PaymentDto.OverrideGlAccountId
+                    OverrideGlAccountId = request.PaymentDto.OverrideGlAccountId,
+                    ProjectId = request.PaymentDto.ProjectId,
+                    CostCenterId =  request.PaymentDto.CostCenterId
                 };
                 // update the payment itself
                 var payment = await _paymentHelperService.UpdatePayment(updatePaymentParam2);

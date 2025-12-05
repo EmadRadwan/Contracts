@@ -9,7 +9,7 @@ import FormDatePicker from "../../../../app/common/form/FormDatePicker";
 import FormTextArea from "../../../../app/common/form/FormTextArea";
 import {
     useCreateBillingAccountMutation,
-    useUpdateBillingAccountMutation,
+    //useUpdateBillingAccountMutation,
     useFetchBillingAccountsBalanceQuery,
 } from "../../../../app/store/apis";
 import {formatCurrency, handleDatesObject, parseDate} from "../../../../app/util/utils";
@@ -124,7 +124,8 @@ const BillingAccountForm = ({
                 }
                 if (setEditMode) setEditMode(2);
 
-            } else if (editMode === 2) {
+            } 
+            /*else if (editMode === 2) {
                 // UPDATE MODE
                 const payload = {
                     billingAccountId: selectedBillingAccount?.billingAccountId,
@@ -146,7 +147,7 @@ const BillingAccountForm = ({
                 const updatedAccount = result.value;
                 setFormInitialValues(computeInitialValues(updatedAccount));
                 setFormKey((prev) => prev + 1); // Force form re-render
-            }
+            }*/
 
         } catch (error: any) {
             const errorMessage =

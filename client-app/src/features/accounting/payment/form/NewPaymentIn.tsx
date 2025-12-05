@@ -15,9 +15,10 @@ import { Error } from "@progress/kendo-react-labels";
 import FormInput from "../../../../app/common/form/FormInput";
 import FormDatePicker from "../../../../app/common/form/FormDatePicker";
 import {MemoizedFormDropDownList2} from "../../../../app/common/form/MemoizedFormDropDownList2";
-import {RootState, useAppSelector} from "../../../../app/store/configureStore";
+import {RootState, useAppSelector, useGetCostCentersQuery} from "../../../../app/store/configureStore";
 import {useFetchGlAccountOrganizationHierarchyLovQuery} from "../../../../app/store/apis";
 import {FormDropDownTreeGlAccount2} from "../../../../app/common/form/FormDropDownTreeGlAccount2";
+import {MemoizedFormComboBox2} from "../../../../app/common/form/FormComboBox2";
 
 interface NewPaymentInProps {
     partyInputRef: React.RefObject<HTMLInputElement>;
@@ -49,6 +50,10 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
         skip: !companyId,
     });
 
+    const {
+        data: paymentCostCenters = [],
+        isLoading: loadingOut
+    } = useGetCostCentersQuery({ type: 'in' });
 
 
   
@@ -83,6 +88,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                 isDisbursement: false,
                 chequeNumber: "",
                 chequeDate: null,
+                costCenterId: "",
             }}
             onSubmit={handleSubmit}
             render={(formRenderProps: FormRenderProps) => {
@@ -140,7 +146,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                 inputRef={partyInputRef}
                                             />
                                         </Grid>
-                                        <Grid item xs={4}>
+                                        <Grid item xs={1}>
                                             <Button
                                                 color="secondary"
                                                 onClick={() => setShowNewCustomer(true)}
@@ -151,6 +157,17 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                     "New Customer"
                                                 )}
                                             </Button>
+                                        </Grid>
+                                        <Grid item xs={3}>
+                                            <Field
+                                                id="costCenterId"
+                                                name="costCenterId"
+                                                label={getTranslatedLabel(`${localizationKey}.costCenter`, "Cost Center)")}
+                                                component={MemoizedFormComboBox2}
+                                                data={paymentCostCenters || []}
+                                                dataItemKey="costCenterId"      // tells FormComboBox which field is the key
+                                                textField="description"      // tells FormComboBox which field to display
+                                            />
                                         </Grid>
                                     </Grid>
                                 </Grid>

@@ -1,17 +1,22 @@
-import { useCallback } from "react";
+import {useCallback, useEffect, useState} from "react";
 import { FormComboBoxVirtualParty } from "../../../../app/common/form/FormComboBoxVirtualParty";
 import {chequeValidator, requiredValidator} from "../../../../app/common/form/Validators";
 import { Field, Form, FormElement, FormRenderProps } from "@progress/kendo-react-form";
 import { MemoizedFormDropDownList } from "../../../../app/common/form/MemoizedFormDropDownList";
-import {Button, Grid, Skeleton, Typography} from "@mui/material";
+import {Alert, Box, Button, Grid, Skeleton, Typography} from "@mui/material";
 import FormNumericTextBox from "../../../../app/common/form/FormNumericTextBox";
 import FormTextArea from "../../../../app/common/form/FormTextArea";
 import FormInput from "../../../../app/common/form/FormInput";
 import FormDatePicker from "../../../../app/common/form/FormDatePicker";
 import {MemoizedFormDropDownList2} from "../../../../app/common/form/MemoizedFormDropDownList2";
-import {RootState, useAppSelector} from "../../../../app/store/configureStore";
-import {useFetchGlAccountOrganizationHierarchyLovQuery} from "../../../../app/store/apis";
+import {RootState, useAppSelector, useGetCostCentersQuery} from "../../../../app/store/configureStore";
+import {
+    useFetchGlAccountOrganizationHierarchyLovQuery,
+    useLazyFetchBalancesForVendorAndProjectQuery
+} from "../../../../app/store/apis";
 import {FormDropDownTreeGlAccount2} from "../../../../app/common/form/FormDropDownTreeGlAccount2";
+import {FormComboBoxVirtualProject} from "../../../../app/common/form/FormComboBoxVirtualProject";
+import {MemoizedFormComboBox2} from "../../../../app/common/form/FormComboBox2";
 
 interface NewPaymentOutProps {
     partyInputRef: React.RefObject<HTMLInputElement>;
@@ -23,6 +28,7 @@ interface NewPaymentOutProps {
     onCreate: (data: { values: any;  menuItem: string }) => void;
     handleCancelForm: () => void;
 }
+const ADVANCE_TO_VENDOR_CONTRACTOR = "ADVANCE_TO_VENDOR_CONTRACTOR";
 
 const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                          partyInputRef,
@@ -41,8 +47,32 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
     const { data: glAccounts, isLoading: isLoadingGlAccounts } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
         skip: !companyId,
     });
+    const [partyIdTo, setPartyIdTo] = useState<string>("");
+    const [projectId, setProjectId] = useState<string>("");
+    const [triggerBalanceFetch, { data: balanceData, isFetching: balanceLoading }] =
+        useLazyFetchBalancesForVendorAndProjectQuery();
+    
+    console.log("Balance Data:", balanceData);
 
-   
+    const {
+        data: paymentCostCenters = [],
+        isLoading: loadingOut
+    } = useGetCostCentersQuery({ type: 'out' });
+
+    const stableTrigger = useCallback(
+        (params: { partyId: string; projectId: string }) => {
+            triggerBalanceFetch(params, false); // false = don't cache aggressively if you want fresh data
+        },
+        [triggerBalanceFetch] // ← still correct: only recreate if the query hook itself changes (which it doesn't)
+    );
+    
+    useEffect(() => {
+        if (partyIdTo && projectId) {
+            stableTrigger({ partyId: partyIdTo?.fromPartyId, projectId: projectId?.projectId });
+        }
+    }, [partyIdTo, projectId, stableTrigger]); // ← stableTrigger is now stable!
+
+
     // Handle form submission
     const handleSubmit = (values: any) => {
         onCreate({
@@ -54,6 +84,25 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
     const getDefaultOrganizationPartyId = useCallback(() => {
         return companies && companies.length > 0 ? companies[0].organizationPartyId : "";
     }, [companies]);
+
+    const amountValidator = (value: number, getter: any) => {
+        if (!value || value <= 0) return "الرجاء إدخال مبلغ صحيح";
+
+        const paymentTypeId = getter("paymentTypeId");
+        if (paymentTypeId !== ADVANCE_TO_VENDOR_CONTRACTOR) return;
+
+        if (!balanceData) return;
+
+        if (balanceData.initialBalance === 0) {
+            return "لا يمكن إنشاء دفعة مقدمة: لا يوجد سقف دفع مُعيَّن لهذا المورد على المشروع";
+        }
+
+        if (value > balanceData.remainingBalance) {
+            return `المبلغ المُدخل (${value.toLocaleString("ar-EG")}) يتجاوز الرصيد المتاح (${balanceData.remainingBalance.toLocaleString("ar-EG")})`;
+        }
+
+        return;
+    };
 
 
     return (
@@ -74,10 +123,26 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                 isDisbursement: true,
                 chequeNumber: "",
                 chequeDate: null,
+                projectId: "",
+                costCenterId: "",
             }}
             onSubmit={handleSubmit}
             render={(formRenderProps: FormRenderProps) => {
-                const { valid, onSubmit, onChange } = formRenderProps;
+                const { valid, onSubmit, onChange, valueGetter } = formRenderProps;
+                const currentPaymentTypeId = formRenderProps.valueGetter("paymentTypeId");
+                const showProjectField = currentPaymentTypeId === ADVANCE_TO_VENDOR_CONTRACTOR;
+                const amount = valueGetter("amount") || 0;
+
+                const hasBillingAccountIssue =
+                    showProjectField &&
+                    balanceData &&
+                    (balanceData.initialBalance === 0 || amount > balanceData.remainingBalance);
+
+                const isSubmitDisabled =
+                    !valid ||
+                    balanceLoading ||
+                    hasBillingAccountIssue ||
+                    !filteredPaymentTypes.length;
 
                 return (
                 <FormElement>
@@ -128,9 +193,15 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                             autoComplete="off"
                                             validator={requiredValidator}
                                             inputRef={partyInputRef}
+                                            onChange={(e: any) => {
+                                                const value = e.value || "";
+                                                setPartyIdTo(value);
+                                                formRenderProps.onChange("partyIdTo", { value });
+                                            }}
                                         />
                                     </Grid>
-                                    <Grid item xs={4}>
+                                    
+                                    <Grid item xs={1}>
                                         <Button
                                             color="secondary"
                                             onClick={() => setShowNewCustomer(true)}
@@ -138,9 +209,20 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                         >
                                             {getTranslatedLabel(
                                                 `${localizationKey}.new-customer`,
-                                                "New Customer"
+                                                "New Contractor"
                                             )}
                                         </Button>
+                                    </Grid>
+                                    <Grid item xs={3}>
+                                        <Field
+                                            id="costCenterId"
+                                            name="costCenterId"
+                                            label={getTranslatedLabel(`${localizationKey}.costCenter`, "Cost Center)")}
+                                            component={MemoizedFormComboBox2}
+                                            data={paymentCostCenters || []}
+                                            dataItemKey="costCenterId"      // tells FormComboBox which field is the key
+                                            textField="description"      // tells FormComboBox which field to display
+                                        />
                                     </Grid>
                                 </Grid>
                             </Grid>
@@ -199,7 +281,9 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                             validator={(value, getter) => chequeValidator(value, getter, undefined, formRenderProps)}
                                         />
                                     </Grid>
-                                    <Grid item xs={4}>
+                                    <Grid item xs={1}>
+                                    </Grid>
+                                    <Grid item xs={2}>
                                         <Field
                                             id="amount"
                                             format="n2"
@@ -210,10 +294,10 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                 "Amount *"
                                             )}
                                             component={FormNumericTextBox}
-                                            validator={requiredValidator}
+                                            validator={(value) => requiredValidator(value) || amountValidator(value, valueGetter)}
                                         />
                                     </Grid>
-                                    <Grid item xs={4}>
+                                    <Grid item xs={2}>
                                         {isLoadingGlAccounts ? (
                                             <Skeleton variant="rounded" height={56} />
                                         ) : (
@@ -230,6 +314,21 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                             />
                                         )}
                                     </Grid>
+                                    {showProjectField && (
+                                                <Grid item xs={3}>
+                                                    <Field
+                                                        name="projectId"
+                                                        component={FormComboBoxVirtualProject}
+                                                        label={getTranslatedLabel("projects.certificate.form.project", "Project")}
+                                                        validator={requiredValidator}
+                                                        onChange={(e: any) => {
+                                                            const value = e.value || "";
+                                                            setProjectId(value);
+                                                            formRenderProps.onChange("projectId", { value });
+                                                        }}
+                                                    />
+                                                </Grid>
+                                    )}
                                     <Grid item xs={3}>
                                         <Field
                                             id="comments"
@@ -246,11 +345,54 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                 </Grid>
                             </Grid>
 
-                            <Grid item xs={12}>
-                                <Grid container spacing={2} alignItems="flex-end">
-                                    
+                            
+                            
+
+                            {showProjectField && partyIdTo && projectId && (
+                                <Grid item xs={12}>
+                                    <Box sx={{ p: 2, border: "1px solid #e0e0e0", borderRadius: 2, bgcolor: "#f9f9f9" }}>
+                                        {balanceLoading ? (
+                                            <Skeleton height={80} />
+                                        ) : balanceData ? (
+                                            balanceData.initialBalance === 0 ? (
+                                                <Alert severity="warning" sx={{ mb: 0 }}>
+                                                    {balanceData.message || "لا يوجد سقف دفع مُعيَّن لهذا المورد على المشروع"}
+                                                </Alert>
+                                            ) : (
+                                                <Grid container spacing={2}>
+                                                    <Grid item xs={4}>
+                                                        <Typography variant="body2" color="text.secondary">السقف المتاح</Typography>
+                                                        <Typography variant="h6" color="success.main" fontWeight="bold">
+                                                            {balanceData.initialBalance.toLocaleString("ar-EG")} ج.م
+                                                        </Typography>
+                                                    </Grid>
+                                                    <Grid item xs={4}>
+                                                        <Typography variant="body2" color="text.secondary">المستخدم</Typography>
+                                                        <Typography variant="h6" color="warning.main">
+                                                            {balanceData.usedBalance.toLocaleString("ar-EG")} ج.م
+                                                        </Typography>
+                                                    </Grid>
+                                                    <Grid item xs={4}>
+                                                        <Typography variant="body2" color="text.secondary">المتبقي</Typography>
+                                                        <Typography variant="h6" color={balanceData.remainingBalance > 0 ? "primary" : "error"} fontWeight="bold">
+                                                            {balanceData.remainingBalance.toLocaleString("ar-EG")} ج.م
+                                                        </Typography>
+                                                    </Grid>
+                                                    {amount > balanceData.remainingBalance && (
+                                                        <Grid item xs={12}>
+                                                            <Alert severity="error">
+                                                                المبلغ المطلوب ({amount.toLocaleString("ar-EG")} ج.م) يتجاوز الرصيد المتاح
+                                                            </Alert>
+                                                        </Grid>
+                                                    )}
+                                                </Grid>
+                                            )
+                                        ) : (
+                                            <Typography color="text.secondary">جاري تحميل بيانات الحساب...</Typography>
+                                        )}
+                                    </Box>
                                 </Grid>
-                            </Grid>
+                            )}
 
 
                             <Grid container spacing={2}>
@@ -258,7 +400,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                     <Button
                                         type="submit"
                                         variant="contained"
-                                        disabled={!formRenderProps.valid || !filteredPaymentTypes.length}
+                                        disabled={isSubmitDisabled}
                                         sx={{ mt: 2 , ml: 2 }}
                                     >
                                         {getTranslatedLabel(`${localizationKey}.create`, "Create Payment")}

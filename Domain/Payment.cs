@@ -38,6 +38,10 @@ public class Payment
     public string? ActualCurrencyUomId { get; set; }
     public string? ChequeNumber { get; set; }
     public DateTime? ChequeDate { get; set; }
+    public string? WorkEffortId { get; set; }
+    public string? CostCenterId { get; set; }
+
+
     public DateTime? LastUpdatedStamp { get; set; }
     public DateTime? LastUpdatedTxStamp { get; set; }
     public DateTime? CreatedStamp { get; set; }
@@ -55,6 +59,10 @@ public class Payment
     public OrderPaymentPreference? PaymentPreference { get; set; }
     public PaymentType? PaymentType { get; set; }
     public RoleType? RoleTypeIdToNavigation { get; set; }
+    public virtual WorkEffort? WorkEffort { get; set; }
+    public virtual CostCenter? CostCenter { get; set; }
+
+
     public StatusItem? Status { get; set; }
     public ICollection<AcctgTran> AcctgTrans { get; set; }
     public ICollection<Deduction> Deductions { get; set; }

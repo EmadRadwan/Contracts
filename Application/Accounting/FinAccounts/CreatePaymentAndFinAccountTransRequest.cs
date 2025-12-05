@@ -16,5 +16,7 @@ public class CreatePaymentAndFinAccountTransRequest
     public string? ChequeNumber { get; set; }
     public DateTime? ChequeDate { get; set; }
     public string? OverrideGlAccountId { get; set; }
+    public string? ProjectId { get; set; }
+    public string? CostCenterId { get; set; }
 
 }

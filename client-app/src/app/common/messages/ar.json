@@ -914,6 +914,7 @@
         "chequeNumber": "رقم الشيك",
         "chequeDate": "تاريخ الشيك",
         "currency": "العملة",
+        "costCenter": "مركز التكلفة",
         "overrideGlAccountId": "حساب دفتر الأستاذ"
       },
       "applications": {

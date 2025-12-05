@@ -121,6 +121,8 @@ public class PaymentHelperService : IPaymentHelperService
             ChequeNumber = parameters.ChequeNumber, // Added
             ChequeDate = parameters.ChequeDate, // Added
             OverrideGlAccountId = parameters.OverrideGlAccountId,
+            WorkEffortId = parameters.ProjectId,
+            CostCenterId = parameters.CostCenterId,
             Comments = parameters.Comments,
             CreatedStamp = stamp,
             LastUpdatedStamp = stamp
@@ -200,6 +202,8 @@ public class PaymentHelperService : IPaymentHelperService
         payment.Amount = param.Amount ?? payment.Amount;
         payment.ActualCurrencyAmount = param.ActualCurrencyAmount ?? payment.ActualCurrencyAmount;
         payment.ActualCurrencyUomId = param.ActualCurrencyUomId ?? payment.ActualCurrencyUomId;
+        payment.WorkEffortId = param.ProjectId;
+        payment.CostCenterId = param.CostCenterId;
 
         // Validate payment method (OFBiz: paymentMethod check)
         if (!string.IsNullOrEmpty(param.PaymentMethodId))
@@ -1197,7 +1201,10 @@ public class PaymentHelperService : IPaymentHelperService
                 ChequeNumber = request.ChequeNumber, // Added
                 ChequeDate = request.ChequeDate, // Added
                 Comments = request.Comments,
-                OverrideGlAccountId = request.OverrideGlAccountId
+                OverrideGlAccountId = request.OverrideGlAccountId,
+                ProjectId = request.ProjectId,
+                CostCenterId =  request.CostCenterId
+                
             };
 
             // If PaymentMethodId is provided, fetch PaymentMethod and set PaymentMethodTypeId

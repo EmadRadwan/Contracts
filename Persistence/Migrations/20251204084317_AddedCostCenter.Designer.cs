@@ -11,8 +11,8 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20251201104129_addedProjectToBillingAcct")]
-    partial class addedProjectToBillingAcct
+    [Migration("20251204084317_AddedCostCenter")]
+    partial class AddedCostCenter
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -7620,6 +7620,55 @@ namespace Persistence.Migrations
                     b.HasIndex(new[] { "LastUpdatedTxStamp" }, "CA_TXSTMP");
 
                     b.ToTable("CORRECTIVE_ACTION", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.CostCenter", b =>
+                {
+                    b.Property<string>("CostCenterId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("COST_CENTER_ID");
+
+                    b.Property<DateTime?>("CreatedStamp")
+                        .HasColumnType("datetime")
+                        .HasColumnName("CREATED_STAMP");
+
+                    b.Property<DateTime?>("CreatedTxStamp")
+                        .HasColumnType("datetime")
+                        .HasColumnName("CREATED_TX_STAMP");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("DESCRIPTION");
+
+                    b.Property<string>("IsOutPayment")
+                        .IsRequired()
+                        .HasMaxLength(1)
+                        .IsUnicode(false)
+                        .HasColumnType("char(1)")
+                        .HasColumnName("IS_OUT_PAYMENT")
+                        .IsFixedLength();
+
+                    b.Property<DateTime?>("LastUpdatedStamp")
+                        .HasColumnType("datetime")
+                        .HasColumnName("LAST_UPDATED_STAMP");
+
+                    b.Property<DateTime?>("LastUpdatedTxStamp")
+                        .HasColumnType("datetime")
+                        .HasColumnName("LAST_UPDATED_TX_STAMP");
+
+                    b.HasKey("CostCenterId")
+                        .HasName("PK_COST_CENTER");
+
+                    b.HasIndex(new[] { "CreatedTxStamp" }, "COST_CENTER_TXCRTS");
+
+                    b.HasIndex(new[] { "LastUpdatedTxStamp" }, "COST_CENTER_TXSTMP");
+
+                    b.ToTable("COST_CENTER", (string)null);
                 });
 
             modelBuilder.Entity("Domain.CostComponent", b =>
@@ -28574,6 +28623,12 @@ namespace Persistence.Migrations
                         .HasColumnType("varchar(255)")
                         .HasColumnName("COMMENTS");
 
+                    b.Property<string>("CostCenterId")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("COST_CENTER_ID");
+
                     b.Property<DateTime?>("CreatedStamp")
                         .HasColumnType("datetime")
                         .HasColumnName("CREATED_STAMP");
@@ -28672,7 +28727,17 @@ namespace Persistence.Migrations
                         .HasColumnType("varchar(36)")
                         .HasColumnName("STATUS_ID");
 
+                    b.Property<string>("WorkEffortId")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("WORK_EFFORT_ID");
+
                     b.HasKey("PaymentId");
+
+                    b.HasIndex(new[] { "CostCenterId" }, "IX_PAYMENT_COST_CENTER_ID");
+
+                    b.HasIndex(new[] { "WorkEffortId" }, "IX_PAYMENT_WORK_EFFORT_ID");
 
                     b.HasIndex(new[] { "ActualCurrencyUomId" }, "PAYMENT_ACUOM");
 
@@ -69278,6 +69343,12 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("PAYMENT_ACUOM");
 
+                    b.HasOne("Domain.CostCenter", "CostCenter")
+                        .WithMany("Payments")
+                        .HasForeignKey("CostCenterId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_PAYMENT_COST_CENTER");
+
                     b.HasOne("Domain.Uom", "CurrencyUom")
                         .WithMany("PaymentCurrencyUoms")
                         .HasForeignKey("CurrencyUomId")
@@ -69350,7 +69421,15 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("PAYMENT_STTSITM");
 
+                    b.HasOne("Domain.WorkEffort", "WorkEffort")
+                        .WithMany("Payments")
+                        .HasForeignKey("WorkEffortId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_PAYMENT_WORK_EFFORT");
+
                     b.Navigation("ActualCurrencyUom");
+
+                    b.Navigation("CostCenter");
 
                     b.Navigation("CurrencyUom");
 
@@ -69375,6 +69454,8 @@ namespace Persistence.Migrations
                     b.Navigation("RoleTypeIdToNavigation");
 
                     b.Navigation("Status");
+
+                    b.Navigation("WorkEffort");
                 });
 
             modelBuilder.Entity("Domain.PaymentApplication", b =>
@@ -79419,6 +79500,11 @@ namespace Persistence.Migrations
                     b.Navigation("InverseParentType");
                 });
 
+            modelBuilder.Entity("Domain.CostCenter", b =>
+                {
+                    b.Navigation("Payments");
+                });
+
             modelBuilder.Entity("Domain.CostComponent", b =>
                 {
                     b.Navigation("CostComponentAttributes");
@@ -83736,6 +83822,8 @@ namespace Persistence.Migrations
                     b.Navigation("InverseWorkEffortParent");
 
                     b.Navigation("OrderHeaderWorkEfforts");
+
+                    b.Navigation("Payments");
 
                     b.Navigation("PersonTrainings");
 

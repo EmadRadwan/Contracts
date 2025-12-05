@@ -1,5 +1,6 @@
 using Application.Interfaces;
 using AutoMapper;
+using Domain;
 using MediatR;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.Extensions.Logging;
@@ -53,6 +54,15 @@ public class ListGlobalChartOfAccounts
                         .FirstOrDefault(),
                     Expanded = false
                 });
+            
+            var entityType = _context.Model.FindEntityType(typeof(GlAccount));
+
+            var foreignKeysPointingHere =
+                _context.Model.GetEntityTypes()
+                    .SelectMany(et => et.GetForeignKeys())
+                    .Where(fk => fk.PrincipalEntityType == entityType)
+                    .ToList();
+
 
             return accountsQuery;
         }

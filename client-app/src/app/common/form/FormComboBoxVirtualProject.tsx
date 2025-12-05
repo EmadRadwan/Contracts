@@ -186,12 +186,21 @@ export const FormComboBoxVirtualProject = (fieldRenderProps: FieldRenderProps) =
 
     // REFACTOR: Updated onChangeHandler to include facilityId in the value
     const onChangeHandler = React.useCallback(
-        (event) => {
+        (event: any) => {
+            const selectedValue = event.value;
+
+            if (!selectedValue) {
+                // User cleared the selection → pass null to form
+                onChange({ value: null });
+                return;
+            }
+
+            // Valid selection → map to expected shape
             onChange({
                 value: {
-                    projectId: event.value.projectId,
-                    projectName: event.value.projectName,
-                    facilityId: event.value.facilityId, // Include facilityId in the change event
+                    projectId: selectedValue.projectId,
+                    projectName: selectedValue.projectName,
+                    facilityId: selectedValue.facilityId || "0",
                 },
             });
         },

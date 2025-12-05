@@ -24,6 +24,18 @@ public class BillingAccountsController : BaseApiController
         return HandleResult(await Mediator.Send(new GetBillingAccountBalance.Query
             { BillingAccountId = billingAccountId }));
     }
+    
+    [HttpGet("getBalances")]
+    public async Task<IActionResult> GetBalancesForVendorAndProject(
+        [FromQuery] string partyId,
+        [FromQuery] string projectId)
+    {
+        if (string.IsNullOrWhiteSpace(partyId) || string.IsNullOrWhiteSpace(projectId))
+            return BadRequest("partyId and projectId are required.");
+
+        var result = await Mediator.Send(new GetBalancesForVendorAndProject.Query(partyId, projectId));
+        return HandleResult(result);
+    }
 
     [HttpGet("{billingAccountId}/listBillingAccountInvoices/{statusId?}")]
     public async Task<IActionResult> ListBillingAccountInvoices(string billingAccountId, string statusId = null)

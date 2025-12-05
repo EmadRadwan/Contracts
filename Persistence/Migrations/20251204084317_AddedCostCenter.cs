@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class addedProjectToBillingAcct : Migration
+    public partial class AddedCostCenter : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -756,6 +756,27 @@ namespace Persistence.Migrations
                         column: x => x.PARENT_TYPE_ID,
                         principalTable: "CONTENT_TYPE",
                         principalColumn: "CONTENT_TYPE_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "COST_CENTER",
+                columns: table => new
+                {
+                    COST_CENTER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    IS_OUT_PAYMENT = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_COST_CENTER", x => x.COST_CENTER_ID);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -23948,124 +23969,6 @@ namespace Persistence.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "PAYMENT",
-                columns: table => new
-                {
-                    PAYMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PAYMENT_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PAYMENT_METHOD_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PAYMENT_METHOD_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PAYMENT_GATEWAY_RESPONSE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PAYMENT_PREFERENCE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PARTY_ID_FROM = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PARTY_ID_TO = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ROLE_TYPE_ID_TO = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    EFFECTIVE_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    PAYMENT_REF_NUM = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
-                    CURRENCY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    COMMENTS = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FIN_ACCOUNT_TRANS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    OVERRIDE_GL_ACCOUNT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ACTUAL_CURRENCY_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    ACTUAL_CURRENCY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ChequeNumber = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ChequeDate = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PAYMENT", x => x.PAYMENT_ID);
-                    table.ForeignKey(
-                        name: "PAYMENT_ACUOM",
-                        column: x => x.ACTUAL_CURRENCY_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_CUOM",
-                        column: x => x.CURRENCY_UOM_ID,
-                        principalTable: "UOM",
-                        principalColumn: "UOM_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_FACTX",
-                        column: x => x.FIN_ACCOUNT_TRANS_ID,
-                        principalTable: "FIN_ACCOUNT_TRANS",
-                        principalColumn: "FIN_ACCOUNT_TRANS_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_FPTY",
-                        column: x => x.PARTY_ID_FROM,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_ORDPMPRF",
-                        column: x => x.PAYMENT_PREFERENCE_ID,
-                        principalTable: "ORDER_PAYMENT_PREFERENCE",
-                        principalColumn: "ORDER_PAYMENT_PREFERENCE_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_ORGLA",
-                        column: x => x.OVERRIDE_GL_ACCOUNT_ID,
-                        principalTable: "GL_ACCOUNT",
-                        principalColumn: "GL_ACCOUNT_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_PAYGATR",
-                        column: x => x.PAYMENT_GATEWAY_RESPONSE_ID,
-                        principalTable: "PAYMENT_GATEWAY_RESPONSE",
-                        principalColumn: "PAYMENT_GATEWAY_RESPONSE_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_PMETH",
-                        column: x => x.PAYMENT_METHOD_ID,
-                        principalTable: "PAYMENT_METHOD",
-                        principalColumn: "PAYMENT_METHOD_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_PMETH_TP",
-                        column: x => x.PAYMENT_METHOD_TYPE_ID,
-                        principalTable: "PAYMENT_METHOD_TYPE",
-                        principalColumn: "PAYMENT_METHOD_TYPE_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_PMTYP",
-                        column: x => x.PAYMENT_TYPE_ID,
-                        principalTable: "PAYMENT_TYPE",
-                        principalColumn: "PAYMENT_TYPE_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_STTSITM",
-                        column: x => x.STATUS_ID,
-                        principalTable: "STATUS_ITEM",
-                        principalColumn: "STATUS_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_TPTY",
-                        column: x => x.PARTY_ID_TO,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_TRTP",
-                        column: x => x.ROLE_TYPE_ID_TO,
-                        principalTable: "ROLE_TYPE",
-                        principalColumn: "ROLE_TYPE_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
                 name: "PAYMENT_GATEWAY_RESP_MSG",
                 columns: table => new
                 {
@@ -25482,305 +25385,6 @@ namespace Persistence.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "PAYMENT_APPLICATION",
-                columns: table => new
-                {
-                    PAYMENT_APPLICATION_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PAYMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    INVOICE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    INVOICE_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    BILLING_ACCOUNT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    OVERRIDE_GL_ACCOUNT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    TO_PAYMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    TAX_AUTH_GEO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    AMOUNT_APPLIED = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PAYMENT_APPLICATION", x => x.PAYMENT_APPLICATION_ID);
-                    table.ForeignKey(
-                        name: "PAYMENT_APP_BACT",
-                        column: x => x.BILLING_ACCOUNT_ID,
-                        principalTable: "BILLING_ACCOUNT",
-                        principalColumn: "BILLING_ACCOUNT_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_APP_GEO",
-                        column: x => x.TAX_AUTH_GEO_ID,
-                        principalTable: "GEO",
-                        principalColumn: "GEO_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_APP_INV",
-                        column: x => x.INVOICE_ID,
-                        principalTable: "INVOICE",
-                        principalColumn: "INVOICE_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_APP_ORGLA",
-                        column: x => x.OVERRIDE_GL_ACCOUNT_ID,
-                        principalTable: "GL_ACCOUNT",
-                        principalColumn: "GL_ACCOUNT_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_APP_PMT",
-                        column: x => x.PAYMENT_ID,
-                        principalTable: "PAYMENT",
-                        principalColumn: "PAYMENT_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_APP_TPMT",
-                        column: x => x.TO_PAYMENT_ID,
-                        principalTable: "PAYMENT",
-                        principalColumn: "PAYMENT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PAYMENT_ATTRIBUTE",
-                columns: table => new
-                {
-                    PAYMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ATTR_NAME = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ATTR_VALUE = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ATTR_DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PAYMENT_ATTRIBUTE", x => new { x.PAYMENT_ID, x.ATTR_NAME });
-                    table.ForeignKey(
-                        name: "PAYMENT_ATTR",
-                        column: x => x.PAYMENT_ID,
-                        principalTable: "PAYMENT",
-                        principalColumn: "PAYMENT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PAYMENT_BUDGET_ALLOCATION",
-                columns: table => new
-                {
-                    BUDGET_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    BUDGET_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PAYMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PAYMENT_BUDGET_ALLOCATION", x => new { x.BUDGET_ID, x.BUDGET_ITEM_SEQ_ID, x.PAYMENT_ID });
-                    table.ForeignKey(
-                        name: "PAYMENT_BA_BDGT",
-                        column: x => x.BUDGET_ID,
-                        principalTable: "BUDGET",
-                        principalColumn: "BUDGET_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_BA_PMT",
-                        column: x => x.PAYMENT_ID,
-                        principalTable: "PAYMENT",
-                        principalColumn: "PAYMENT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PAYMENT_CONTENT",
-                columns: table => new
-                {
-                    PAYMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PAYMENT_CONTENT_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CONTENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PAYMENT_CONTENT", x => new { x.CONTENT_ID, x.PAYMENT_ID, x.PAYMENT_CONTENT_TYPE_ID, x.FROM_DATE });
-                    table.ForeignKey(
-                        name: "PAYMENT_CNT_CNT",
-                        column: x => x.CONTENT_ID,
-                        principalTable: "CONTENT",
-                        principalColumn: "CONTENT_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_CNT_PROD",
-                        column: x => x.PAYMENT_ID,
-                        principalTable: "PAYMENT",
-                        principalColumn: "PAYMENT_ID");
-                    table.ForeignKey(
-                        name: "PAYMENT_CNT_TYPE",
-                        column: x => x.PAYMENT_CONTENT_TYPE_ID,
-                        principalTable: "PAYMENT_CONTENT_TYPE",
-                        principalColumn: "PAYMENT_CONTENT_TYPE_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PAYMENT_GROUP_MEMBER",
-                columns: table => new
-                {
-                    PAYMENT_GROUP_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PAYMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PAYMENT_GROUP_MEMBER", x => new { x.PAYMENT_GROUP_ID, x.PAYMENT_ID, x.FROM_DATE });
-                    table.ForeignKey(
-                        name: "PAYGRPMMBR_PAYMNT",
-                        column: x => x.PAYMENT_ID,
-                        principalTable: "PAYMENT",
-                        principalColumn: "PAYMENT_ID");
-                    table.ForeignKey(
-                        name: "PAYGRPMMBR_PG",
-                        column: x => x.PAYMENT_GROUP_ID,
-                        principalTable: "PAYMENT_GROUP",
-                        principalColumn: "PAYMENT_GROUP_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PERF_REVIEW",
-                columns: table => new
-                {
-                    EMPLOYEE_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    EMPLOYEE_ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PERF_REVIEW_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    MANAGER_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    MANAGER_ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PAYMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    EMPL_POSITION_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    COMMENTS = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PERF_REVIEW", x => new { x.EMPLOYEE_PARTY_ID, x.EMPLOYEE_ROLE_TYPE_ID, x.PERF_REVIEW_ID });
-                    table.ForeignKey(
-                        name: "PERF_REV_EPTRL",
-                        columns: x => new { x.EMPLOYEE_PARTY_ID, x.EMPLOYEE_ROLE_TYPE_ID },
-                        principalTable: "PARTY_ROLE",
-                        principalColumns: new[] { "PARTY_ID", "ROLE_TYPE_ID" });
-                    table.ForeignKey(
-                        name: "PERF_REV_EPTY",
-                        column: x => x.EMPLOYEE_PARTY_ID,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                    table.ForeignKey(
-                        name: "PERF_REV_MPTY",
-                        column: x => x.MANAGER_PARTY_ID,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                    table.ForeignKey(
-                        name: "PERF_REV_PMNT",
-                        column: x => x.PAYMENT_ID,
-                        principalTable: "PAYMENT",
-                        principalColumn: "PAYMENT_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "RETURN_ITEM_RESPONSE",
-                columns: table => new
-                {
-                    RETURN_ITEM_RESPONSE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ORDER_PAYMENT_PREFERENCE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    REPLACEMENT_ORDER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PAYMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    BILLING_ACCOUNT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FIN_ACCOUNT_TRANS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    RESPONSE_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
-                    RESPONSE_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_RETURN_ITEM_RESPONSE", x => x.RETURN_ITEM_RESPONSE_ID);
-                    table.ForeignKey(
-                        name: "RTN_PAY_BACT",
-                        column: x => x.BILLING_ACCOUNT_ID,
-                        principalTable: "BILLING_ACCOUNT",
-                        principalColumn: "BILLING_ACCOUNT_ID");
-                    table.ForeignKey(
-                        name: "RTN_PAY_FINACTTX",
-                        column: x => x.FIN_ACCOUNT_TRANS_ID,
-                        principalTable: "FIN_ACCOUNT_TRANS",
-                        principalColumn: "FIN_ACCOUNT_TRANS_ID");
-                    table.ForeignKey(
-                        name: "RTN_PAY_ORDPAYPF",
-                        column: x => x.ORDER_PAYMENT_PREFERENCE_ID,
-                        principalTable: "ORDER_PAYMENT_PREFERENCE",
-                        principalColumn: "ORDER_PAYMENT_PREFERENCE_ID");
-                    table.ForeignKey(
-                        name: "RTN_PAY_PAYMENT",
-                        column: x => x.PAYMENT_ID,
-                        principalTable: "PAYMENT",
-                        principalColumn: "PAYMENT_ID");
-                    table.ForeignKey(
-                        name: "RTN_RESP_NEWORD",
-                        column: x => x.REPLACEMENT_ORDER_ID,
-                        principalTable: "ORDER_HEADER",
-                        principalColumn: "ORDER_ID");
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
                 name: "QUOTE_ADJUSTMENT",
                 columns: table => new
                 {
@@ -26851,50 +26455,6 @@ namespace Persistence.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "PERF_REVIEW_ITEM",
-                columns: table => new
-                {
-                    EMPLOYEE_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    EMPLOYEE_ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PERF_REVIEW_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PERF_REVIEW_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PERF_REVIEW_ITEM_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PERF_RATING_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    COMMENTS = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
-                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PERF_REVIEW_ITEM", x => new { x.EMPLOYEE_PARTY_ID, x.EMPLOYEE_ROLE_TYPE_ID, x.PERF_REVIEW_ID, x.PERF_REVIEW_ITEM_SEQ_ID });
-                    table.ForeignKey(
-                        name: "PERF_RVITM_EPTRL",
-                        columns: x => new { x.EMPLOYEE_PARTY_ID, x.EMPLOYEE_ROLE_TYPE_ID },
-                        principalTable: "PARTY_ROLE",
-                        principalColumns: new[] { "PARTY_ID", "ROLE_TYPE_ID" });
-                    table.ForeignKey(
-                        name: "PERF_RVITM_EPTY",
-                        column: x => x.EMPLOYEE_PARTY_ID,
-                        principalTable: "PARTY",
-                        principalColumn: "PARTY_ID");
-                    table.ForeignKey(
-                        name: "PERF_RVITM_PFRV",
-                        columns: x => new { x.EMPLOYEE_PARTY_ID, x.EMPLOYEE_ROLE_TYPE_ID, x.PERF_REVIEW_ID },
-                        principalTable: "PERF_REVIEW",
-                        principalColumns: new[] { "EMPLOYEE_PARTY_ID", "EMPLOYEE_ROLE_TYPE_ID", "PERF_REVIEW_ID" });
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
                 name: "QUOTE_TERM_ATTRIBUTE",
                 columns: table => new
                 {
@@ -26989,6 +26549,476 @@ namespace Persistence.Migrations
                         column: x => x.ROLE_TYPE_ID,
                         principalTable: "ROLE_TYPE",
                         principalColumn: "ROLE_TYPE_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PAYMENT",
+                columns: table => new
+                {
+                    PAYMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PAYMENT_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PAYMENT_METHOD_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PAYMENT_METHOD_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PAYMENT_GATEWAY_RESPONSE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PAYMENT_PREFERENCE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PARTY_ID_FROM = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PARTY_ID_TO = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ROLE_TYPE_ID_TO = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    EFFECTIVE_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    PAYMENT_REF_NUM = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
+                    CURRENCY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    COMMENTS = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FIN_ACCOUNT_TRANS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    OVERRIDE_GL_ACCOUNT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ACTUAL_CURRENCY_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    ACTUAL_CURRENCY_UOM_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ChequeNumber = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ChequeDate = table.Column<DateTime>(type: "datetime", nullable: true),
+                    WORK_EFFORT_ID = table.Column<string>(type: "varchar(20)", unicode: false, maxLength: 20, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    COST_CENTER_ID = table.Column<string>(type: "varchar(20)", unicode: false, maxLength: 20, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PAYMENT", x => x.PAYMENT_ID);
+                    table.ForeignKey(
+                        name: "FK_PAYMENT_COST_CENTER",
+                        column: x => x.COST_CENTER_ID,
+                        principalTable: "COST_CENTER",
+                        principalColumn: "COST_CENTER_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_ACUOM",
+                        column: x => x.ACTUAL_CURRENCY_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_CUOM",
+                        column: x => x.CURRENCY_UOM_ID,
+                        principalTable: "UOM",
+                        principalColumn: "UOM_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_FACTX",
+                        column: x => x.FIN_ACCOUNT_TRANS_ID,
+                        principalTable: "FIN_ACCOUNT_TRANS",
+                        principalColumn: "FIN_ACCOUNT_TRANS_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_FPTY",
+                        column: x => x.PARTY_ID_FROM,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_ORDPMPRF",
+                        column: x => x.PAYMENT_PREFERENCE_ID,
+                        principalTable: "ORDER_PAYMENT_PREFERENCE",
+                        principalColumn: "ORDER_PAYMENT_PREFERENCE_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_ORGLA",
+                        column: x => x.OVERRIDE_GL_ACCOUNT_ID,
+                        principalTable: "GL_ACCOUNT",
+                        principalColumn: "GL_ACCOUNT_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_PAYGATR",
+                        column: x => x.PAYMENT_GATEWAY_RESPONSE_ID,
+                        principalTable: "PAYMENT_GATEWAY_RESPONSE",
+                        principalColumn: "PAYMENT_GATEWAY_RESPONSE_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_PMETH",
+                        column: x => x.PAYMENT_METHOD_ID,
+                        principalTable: "PAYMENT_METHOD",
+                        principalColumn: "PAYMENT_METHOD_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_PMETH_TP",
+                        column: x => x.PAYMENT_METHOD_TYPE_ID,
+                        principalTable: "PAYMENT_METHOD_TYPE",
+                        principalColumn: "PAYMENT_METHOD_TYPE_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_PMTYP",
+                        column: x => x.PAYMENT_TYPE_ID,
+                        principalTable: "PAYMENT_TYPE",
+                        principalColumn: "PAYMENT_TYPE_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_STTSITM",
+                        column: x => x.STATUS_ID,
+                        principalTable: "STATUS_ITEM",
+                        principalColumn: "STATUS_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_TPTY",
+                        column: x => x.PARTY_ID_TO,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_TRTP",
+                        column: x => x.ROLE_TYPE_ID_TO,
+                        principalTable: "ROLE_TYPE",
+                        principalColumn: "ROLE_TYPE_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PAYMENT_APPLICATION",
+                columns: table => new
+                {
+                    PAYMENT_APPLICATION_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PAYMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    INVOICE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    INVOICE_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    BILLING_ACCOUNT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    OVERRIDE_GL_ACCOUNT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    TO_PAYMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    TAX_AUTH_GEO_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AMOUNT_APPLIED = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PAYMENT_APPLICATION", x => x.PAYMENT_APPLICATION_ID);
+                    table.ForeignKey(
+                        name: "PAYMENT_APP_BACT",
+                        column: x => x.BILLING_ACCOUNT_ID,
+                        principalTable: "BILLING_ACCOUNT",
+                        principalColumn: "BILLING_ACCOUNT_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_APP_GEO",
+                        column: x => x.TAX_AUTH_GEO_ID,
+                        principalTable: "GEO",
+                        principalColumn: "GEO_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_APP_INV",
+                        column: x => x.INVOICE_ID,
+                        principalTable: "INVOICE",
+                        principalColumn: "INVOICE_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_APP_ORGLA",
+                        column: x => x.OVERRIDE_GL_ACCOUNT_ID,
+                        principalTable: "GL_ACCOUNT",
+                        principalColumn: "GL_ACCOUNT_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_APP_PMT",
+                        column: x => x.PAYMENT_ID,
+                        principalTable: "PAYMENT",
+                        principalColumn: "PAYMENT_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_APP_TPMT",
+                        column: x => x.TO_PAYMENT_ID,
+                        principalTable: "PAYMENT",
+                        principalColumn: "PAYMENT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PAYMENT_ATTRIBUTE",
+                columns: table => new
+                {
+                    PAYMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ATTR_NAME = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ATTR_VALUE = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ATTR_DESCRIPTION = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PAYMENT_ATTRIBUTE", x => new { x.PAYMENT_ID, x.ATTR_NAME });
+                    table.ForeignKey(
+                        name: "PAYMENT_ATTR",
+                        column: x => x.PAYMENT_ID,
+                        principalTable: "PAYMENT",
+                        principalColumn: "PAYMENT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PAYMENT_BUDGET_ALLOCATION",
+                columns: table => new
+                {
+                    BUDGET_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    BUDGET_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PAYMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PAYMENT_BUDGET_ALLOCATION", x => new { x.BUDGET_ID, x.BUDGET_ITEM_SEQ_ID, x.PAYMENT_ID });
+                    table.ForeignKey(
+                        name: "PAYMENT_BA_BDGT",
+                        column: x => x.BUDGET_ID,
+                        principalTable: "BUDGET",
+                        principalColumn: "BUDGET_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_BA_PMT",
+                        column: x => x.PAYMENT_ID,
+                        principalTable: "PAYMENT",
+                        principalColumn: "PAYMENT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PAYMENT_CONTENT",
+                columns: table => new
+                {
+                    PAYMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PAYMENT_CONTENT_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CONTENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PAYMENT_CONTENT", x => new { x.CONTENT_ID, x.PAYMENT_ID, x.PAYMENT_CONTENT_TYPE_ID, x.FROM_DATE });
+                    table.ForeignKey(
+                        name: "PAYMENT_CNT_CNT",
+                        column: x => x.CONTENT_ID,
+                        principalTable: "CONTENT",
+                        principalColumn: "CONTENT_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_CNT_PROD",
+                        column: x => x.PAYMENT_ID,
+                        principalTable: "PAYMENT",
+                        principalColumn: "PAYMENT_ID");
+                    table.ForeignKey(
+                        name: "PAYMENT_CNT_TYPE",
+                        column: x => x.PAYMENT_CONTENT_TYPE_ID,
+                        principalTable: "PAYMENT_CONTENT_TYPE",
+                        principalColumn: "PAYMENT_CONTENT_TYPE_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PAYMENT_GROUP_MEMBER",
+                columns: table => new
+                {
+                    PAYMENT_GROUP_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PAYMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: false),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    SEQUENCE_NUM = table.Column<int>(type: "int", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PAYMENT_GROUP_MEMBER", x => new { x.PAYMENT_GROUP_ID, x.PAYMENT_ID, x.FROM_DATE });
+                    table.ForeignKey(
+                        name: "PAYGRPMMBR_PAYMNT",
+                        column: x => x.PAYMENT_ID,
+                        principalTable: "PAYMENT",
+                        principalColumn: "PAYMENT_ID");
+                    table.ForeignKey(
+                        name: "PAYGRPMMBR_PG",
+                        column: x => x.PAYMENT_GROUP_ID,
+                        principalTable: "PAYMENT_GROUP",
+                        principalColumn: "PAYMENT_GROUP_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PERF_REVIEW",
+                columns: table => new
+                {
+                    EMPLOYEE_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    EMPLOYEE_ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PERF_REVIEW_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    MANAGER_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    MANAGER_ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PAYMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    EMPL_POSITION_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    THRU_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    COMMENTS = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PERF_REVIEW", x => new { x.EMPLOYEE_PARTY_ID, x.EMPLOYEE_ROLE_TYPE_ID, x.PERF_REVIEW_ID });
+                    table.ForeignKey(
+                        name: "PERF_REV_EPTRL",
+                        columns: x => new { x.EMPLOYEE_PARTY_ID, x.EMPLOYEE_ROLE_TYPE_ID },
+                        principalTable: "PARTY_ROLE",
+                        principalColumns: new[] { "PARTY_ID", "ROLE_TYPE_ID" });
+                    table.ForeignKey(
+                        name: "PERF_REV_EPTY",
+                        column: x => x.EMPLOYEE_PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "PERF_REV_MPTY",
+                        column: x => x.MANAGER_PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "PERF_REV_PMNT",
+                        column: x => x.PAYMENT_ID,
+                        principalTable: "PAYMENT",
+                        principalColumn: "PAYMENT_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "RETURN_ITEM_RESPONSE",
+                columns: table => new
+                {
+                    RETURN_ITEM_RESPONSE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ORDER_PAYMENT_PREFERENCE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    REPLACEMENT_ORDER_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PAYMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    BILLING_ACCOUNT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FIN_ACCOUNT_TRANS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RESPONSE_AMOUNT = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    RESPONSE_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RETURN_ITEM_RESPONSE", x => x.RETURN_ITEM_RESPONSE_ID);
+                    table.ForeignKey(
+                        name: "RTN_PAY_BACT",
+                        column: x => x.BILLING_ACCOUNT_ID,
+                        principalTable: "BILLING_ACCOUNT",
+                        principalColumn: "BILLING_ACCOUNT_ID");
+                    table.ForeignKey(
+                        name: "RTN_PAY_FINACTTX",
+                        column: x => x.FIN_ACCOUNT_TRANS_ID,
+                        principalTable: "FIN_ACCOUNT_TRANS",
+                        principalColumn: "FIN_ACCOUNT_TRANS_ID");
+                    table.ForeignKey(
+                        name: "RTN_PAY_ORDPAYPF",
+                        column: x => x.ORDER_PAYMENT_PREFERENCE_ID,
+                        principalTable: "ORDER_PAYMENT_PREFERENCE",
+                        principalColumn: "ORDER_PAYMENT_PREFERENCE_ID");
+                    table.ForeignKey(
+                        name: "RTN_PAY_PAYMENT",
+                        column: x => x.PAYMENT_ID,
+                        principalTable: "PAYMENT",
+                        principalColumn: "PAYMENT_ID");
+                    table.ForeignKey(
+                        name: "RTN_RESP_NEWORD",
+                        column: x => x.REPLACEMENT_ORDER_ID,
+                        principalTable: "ORDER_HEADER",
+                        principalColumn: "ORDER_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PERF_REVIEW_ITEM",
+                columns: table => new
+                {
+                    EMPLOYEE_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    EMPLOYEE_ROLE_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PERF_REVIEW_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PERF_REVIEW_ITEM_SEQ_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PERF_REVIEW_ITEM_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PERF_RATING_TYPE_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    COMMENTS = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PERF_REVIEW_ITEM", x => new { x.EMPLOYEE_PARTY_ID, x.EMPLOYEE_ROLE_TYPE_ID, x.PERF_REVIEW_ID, x.PERF_REVIEW_ITEM_SEQ_ID });
+                    table.ForeignKey(
+                        name: "PERF_RVITM_EPTRL",
+                        columns: x => new { x.EMPLOYEE_PARTY_ID, x.EMPLOYEE_ROLE_TYPE_ID },
+                        principalTable: "PARTY_ROLE",
+                        principalColumns: new[] { "PARTY_ID", "ROLE_TYPE_ID" });
+                    table.ForeignKey(
+                        name: "PERF_RVITM_EPTY",
+                        column: x => x.EMPLOYEE_PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "PERF_RVITM_PFRV",
+                        columns: x => new { x.EMPLOYEE_PARTY_ID, x.EMPLOYEE_ROLE_TYPE_ID, x.PERF_REVIEW_ID },
+                        principalTable: "PERF_REVIEW",
+                        principalColumns: new[] { "EMPLOYEE_PARTY_ID", "EMPLOYEE_ROLE_TYPE_ID", "PERF_REVIEW_ID" });
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -34577,6 +34607,16 @@ namespace Persistence.Migrations
                 column: "LAST_UPDATED_TX_STAMP");
 
             migrationBuilder.CreateIndex(
+                name: "COST_CENTER_TXCRTS",
+                table: "COST_CENTER",
+                column: "CREATED_TX_STAMP");
+
+            migrationBuilder.CreateIndex(
+                name: "COST_CENTER_TXSTMP",
+                table: "COST_CENTER",
+                column: "LAST_UPDATED_TX_STAMP");
+
+            migrationBuilder.CreateIndex(
                 name: "COST_COMP_CALC",
                 table: "COST_COMPONENT",
                 column: "COST_COMPONENT_CALC_ID");
@@ -41287,6 +41327,16 @@ namespace Persistence.Migrations
                 name: "PAYPAL_PMNTMETH",
                 table: "PAY_PAL_PAYMENT_METHOD",
                 column: "PAYMENT_METHOD_ID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PAYMENT_COST_CENTER_ID",
+                table: "PAYMENT",
+                column: "COST_CENTER_ID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PAYMENT_WORK_EFFORT_ID",
+                table: "PAYMENT",
+                column: "WORK_EFFORT_ID");
 
             migrationBuilder.CreateIndex(
                 name: "PAYMENT_ACUOM",
@@ -52504,6 +52554,13 @@ namespace Persistence.Migrations
                 principalColumn: "PRODUCT_ID");
 
             migrationBuilder.AddForeignKey(
+                name: "FK_PAYMENT_WORK_EFFORT",
+                table: "PAYMENT",
+                column: "WORK_EFFORT_ID",
+                principalTable: "WORK_EFFORT",
+                principalColumn: "WORK_EFFORT_ID");
+
+            migrationBuilder.AddForeignKey(
                 name: "PERS_TRNG_WREF",
                 table: "PERSON_TRAINING",
                 column: "WORK_EFFORT_ID",
@@ -55054,6 +55111,9 @@ namespace Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "SALES_OPPORTUNITY");
+
+            migrationBuilder.DropTable(
+                name: "COST_CENTER");
 
             migrationBuilder.DropTable(
                 name: "PAYMENT_GATEWAY_RESPONSE");

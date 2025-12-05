@@ -29,6 +29,8 @@ public class PaymentDto
     public string? ActualCurrencyUomId { get; set; }
     public string? PaymentMethodId { get; set; }
     public string? LovText { get; set; }
+    public string? ProjectId { get; set; }
+    public string? CostCenterId { get; set; }
 
 
     public decimal? Total { get; set; }

@@ -117,6 +117,9 @@ export default function usePayment({
     chequeNumber: "",
     chequeDate: null,
     comments: "",
+    overrideGlAccountId: undefined,
+    projectId: null,
+    costCenterId: null,
   }), [companies]);
 
   // Replace the entire useEffect with this:
@@ -180,7 +183,9 @@ export default function usePayment({
         chequeNumber: newPayment.chequeNumber,
         chequeDate: newPayment.chequeDate,
         comments: newPayment.comments || "",
-        overrideGlAccountId: newPayment.overrideGlAccountId
+        overrideGlAccountId: newPayment.overrideGlAccountId,
+        projectId: newPayment.projectId || null,
+        costCenterId: newPayment.costCenterId || null,
       };
 
       const created = await createPaymentAndFinAccountTrans(request).unwrap();
@@ -271,7 +276,10 @@ const handleCreate = async (data: {
     isDisbursement,
     chequeNumber: values.chequeNumber ?? "",
     chequeDate: values.chequeDate ? new Date(values.chequeDate).toISOString() : null,
-    overrideGlAccountId: values.overrideGlAccountId
+    overrideGlAccountId: values.overrideGlAccountId,
+    projectId: values.projectId?.projectId || null,
+    projectName: values.projectId?.projectName || null,
+    costCenterId: values.costCenterId || null,
   };
 
   await createPayment(newPayment);
@@ -295,7 +303,9 @@ const handleCreate = async (data: {
       chequeDate: data.values.chequeDate
           ? new Date(data.values.chequeDate).toISOString()
           : payment.chequeDate ?? null,
-      overrideGlAccountId: data.values.overrideGlAccountId
+      overrideGlAccountId: data.values.overrideGlAccountId,
+        projectId: data.values.projectId?.projectId,
+        costCenterId: data.values.costCenterId || null,
     };
 
     await updatePaymentData(updated);

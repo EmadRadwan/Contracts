@@ -2586,6 +2586,18 @@ public class SeedContracts
                 JsonConvert.DeserializeObject<List<TransactionTypeAccountRule>>(jsonData);
             await context.TransactionTypeAccountRules.AddRangeAsync(transactionTypeAccountRules);
             await context.SaveChangesAsync();
+        } 
+        
+        //cost centers
+        if (!context.CostCenters.Any())
+        {
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/cost_centers.json");
+            var jsonData = File.ReadAllText(path);
+
+            var costCenters =
+                JsonConvert.DeserializeObject<List<CostCenter>>(jsonData);
+            await context.CostCenters.AddRangeAsync(costCenters);
+            await context.SaveChangesAsync();
         }
 
         /*if (!context.SupplierProducts.Any())

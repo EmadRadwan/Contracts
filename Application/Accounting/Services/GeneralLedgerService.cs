@@ -2352,7 +2352,6 @@ public class GeneralLedgerService : IGeneralLedgerService
                 return null;
             }
 
-
             var glSettings = _acctgMiscService.GetGlArithmeticSettingsInline();
             var ledgerDecimals = glSettings.DecimalScale;
             var roundingMode = glSettings.RoundingMode;
@@ -2360,32 +2359,48 @@ public class GeneralLedgerService : IGeneralLedgerService
             var acctgTransEntries = new List<AcctgTransEntry>();
             int seqNum = 1;
 
+            // REFACTOR: Allow MULTIPLE main certificate items — sum all PINV_CERTIFICATE_ITEM lines
+            // This supports multi-phase, multi-contract, or split certificate invoices
+            var certificateItems = invoice.InvoiceItems
+                .Where(ii => ii.InvoiceItemTypeId == "PINV_CERTIFICATE_ITEM")
+                .ToList();
 
-            // REFACTOR: Expected invoice item types for WORKMANSHIP_CONTRACTING_CERTIFICATE
-            var mainItem = invoice.InvoiceItems
-                .FirstOrDefault(ii => ii.InvoiceItemTypeId == "PINV_CERTIFICATE_ITEM");
+            // REFACTOR: Handle multiple insurance/withholding/deduction items — real-world requirement
+            var insuranceItems = invoice.InvoiceItems
+                .Where(ii => ii.InvoiceItemTypeId == "PINV_INSURANCE_ITEM")
+                .ToList();
 
-            var insuranceItem = invoice.InvoiceItems
-                .FirstOrDefault(ii => ii.InvoiceItemTypeId == "PINV_INSURANCE_ITEM");
+            var additionalInsuranceItems = invoice.InvoiceItems
+                .Where(ii => ii.InvoiceItemTypeId == "PINV_ADDITIONAL_INSURANCE_ITEM")
+                .ToList();
 
-            var additionalInsuranceItem = invoice.InvoiceItems
-                .FirstOrDefault(ii => ii.InvoiceItemTypeId == "PINV_ADDITIONAL_INSURANCE_ITEM");
+            var deductionItems = invoice.InvoiceItems
+                .Where(ii => ii.InvoiceItemTypeId == "PINV_DEDUCTION_ITEM")
+                .ToList();
 
-            var deductionItem = invoice.InvoiceItems
-                .FirstOrDefault(ii => ii.InvoiceItemTypeId == "PINV_DEDUCTION_ITEM");
-
-            if (mainItem == null || mainItem.Amount == null)
+            // REFACTOR: Fail if no certificate items at all — invoice is invalid for this flow
+            if (!certificateItems.Any() || certificateItems.All(ii => ii.Amount == null))
             {
-                _logger.LogError("Construction certificate invoice {InvoiceId} missing main certificate item.",
+                _logger.LogError(
+                    "Construction certificate invoice {InvoiceId} has no valid PINV_CERTIFICATE_ITEM lines.",
                     invoiceId);
                 return null;
             }
 
+            // Sum all main certificate amounts
+            decimal deservedAmountGross = certificateItems.Sum(ii => ii.Amount ?? 0m);
             decimal deservedAmount =
-                _acctgMiscService.CustomRound(mainItem.Amount.Value, (int)ledgerDecimals, roundingMode);
-            decimal insuranceAmount = insuranceItem?.Amount ?? 0m;
-            decimal additionalInsuranceAmount = additionalInsuranceItem?.Amount ?? 0m;
-            decimal deductionAmount = deductionItem?.Amount ?? 0m;
+                _acctgMiscService.CustomRound(deservedAmountGross, (int)ledgerDecimals, roundingMode);
+
+            // Sum all withholding categories
+            decimal insuranceAmount = _acctgMiscService.CustomRound(
+                insuranceItems.Sum(ii => ii.Amount ?? 0m), (int)ledgerDecimals, roundingMode);
+
+            decimal additionalInsuranceAmount = _acctgMiscService.CustomRound(
+                additionalInsuranceItems.Sum(ii => ii.Amount ?? 0m), (int)ledgerDecimals, roundingMode);
+
+            decimal deductionAmount = _acctgMiscService.CustomRound(
+                deductionItems.Sum(ii => ii.Amount ?? 0m), (int)ledgerDecimals, roundingMode);
 
             decimal totalWithheld = insuranceAmount + additionalInsuranceAmount + deductionAmount;
             decimal netPayable =
@@ -2397,10 +2412,19 @@ public class GeneralLedgerService : IGeneralLedgerService
                 netPayable = 0;
             }
 
-            string productId = mainItem.ProductId;
+            // Use ProductId from first certificate item (or handle differently if needed)
+            // If ProductId varies per line, you may want to group by ProductId later
+            string productId = certificateItems.First().ProductId;
             string contractorPartyId = invoice.PartyIdFrom;
+            
+            string projectGlAccountId = await GetProjectGlAccountIdViaOrderItemBillingAsync(invoiceId);
+            if (string.IsNullOrEmpty(projectGlAccountId))
+            {
+                _logger.LogError("Failed to resolve Project GlAccountId for invoice {InvoiceId} via OrderItemBilling.", invoiceId);
+                return null;
+            }
 
-            // 1. Debit: Projects Under Construction – the true value of work performed
+            // 1. Debit: Projects Under Construction – TOTAL deserved value (sum of all cert items)
             acctgTransEntries.Add(new AcctgTransEntry
             {
                 AcctgTransEntrySeqId = seqNum++.ToString("D2"),
@@ -2409,13 +2433,14 @@ public class GeneralLedgerService : IGeneralLedgerService
                 PartyId = contractorPartyId,
                 RoleTypeId = "BILL_FROM_VENDOR",
                 ProductId = productId,
+                GlAccountId = projectGlAccountId,
                 GlAccountTypeId = "PINV_CERTIFICATE_ITEM", // → 124420
                 OrigAmount = deservedAmount,
                 OrigCurrencyUomId = invoice.CurrencyUomId
             });
 
-            // 2. Credit: Regular Insurance Withheld
-            if (insuranceItem != null)
+            // 2. Credit: Regular Insurance Withheld (aggregated)
+            if (insuranceAmount > 0)
             {
                 acctgTransEntries.Add(new AcctgTransEntry
                 {
@@ -2431,8 +2456,8 @@ public class GeneralLedgerService : IGeneralLedgerService
                 });
             }
 
-            // 3. Credit: Additional Insurance Withheld (e.g. advance guarantee)
-            if (additionalInsuranceItem != null)
+            // 3. Credit: Additional Insurance Withheld
+            if (additionalInsuranceAmount > 0)
             {
                 acctgTransEntries.Add(new AcctgTransEntry
                 {
@@ -2442,14 +2467,14 @@ public class GeneralLedgerService : IGeneralLedgerService
                     PartyId = contractorPartyId,
                     RoleTypeId = "BILL_FROM_VENDOR",
                     ProductId = productId,
-                    GlAccountTypeId = "ADDITIONAL_INSURANCE_WITHHELD", // → e.g. 250410 or dedicated account
+                    GlAccountTypeId = "ADDITIONAL_INSURANCE_WITHHELD",
                     OrigAmount = additionalInsuranceAmount,
                     OrigCurrencyUomId = invoice.CurrencyUomId
                 });
             }
 
-            // 4. Credit: Other Deductions (penalties, advance recovery, LD, etc.)
-            if (deductionItem != null)
+            // 4. Credit: Other Deductions (penalties, LD, advance recovery, etc.)
+            if (deductionAmount > 0)
             {
                 acctgTransEntries.Add(new AcctgTransEntry
                 {
@@ -2459,13 +2484,13 @@ public class GeneralLedgerService : IGeneralLedgerService
                     PartyId = contractorPartyId,
                     RoleTypeId = "BILL_FROM_VENDOR",
                     ProductId = productId,
-                    GlAccountTypeId = "CONSTRUCTION_DEDUCTIONS", // → e.g. 250500
+                    GlAccountTypeId = "CONSTRUCTION_DEDUCTIONS",
                     OrigAmount = deductionAmount,
                     OrigCurrencyUomId = invoice.CurrencyUomId
                 });
             }
 
-            // 5. Credit: Accounts Payable – only the net amount contractor receives
+            // 5. Credit: Accounts Payable – net amount actually payable
             acctgTransEntries.Add(new AcctgTransEntry
             {
                 AcctgTransEntrySeqId = seqNum++.ToString("D2"),
@@ -2478,7 +2503,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 OrigCurrencyUomId = invoice.CurrencyUomId
             });
 
-            // REFACTOR: Reuse existing OFBiz service to persist the transaction
+            // Persist via existing OFBiz service
             var createParams = new CreateAcctgTransAndEntriesParams()
             {
                 GlFiscalTypeId = "ACTUAL",
@@ -2493,8 +2518,8 @@ public class GeneralLedgerService : IGeneralLedgerService
             var acctgTransId = await CreateAcctgTransAndEntries(createParams);
 
             _logger.LogInformation(
-                "Custom construction certificate accounting posted: {AcctgTransId} | Invoice: {InvoiceId} | " +
-                "Deserved: {Deserved} | Insurance: {Ins} | Add.Ins: {AddIns} | Deductions: {Ded} | Net Payable: {Net}",
+                "Construction certificate accounting posted: {AcctgTransId} | Invoice: {InvoiceId} | " +
+                "Deserved: {Deserved} | Insurance: {Ins} | Add.Ins: {AddIns} | Deductions: {Ded} | Net: {Net}",
                 acctgTransId, invoiceId, deservedAmount, insuranceAmount, additionalInsuranceAmount, deductionAmount,
                 netPayable);
 
@@ -2503,10 +2528,37 @@ public class GeneralLedgerService : IGeneralLedgerService
         catch (Exception ex)
         {
             _logger.LogError(ex,
-                "Error creating custom accounting transaction for construction certificate invoice {InvoiceId}",
-                invoiceId);
+                "Error creating accounting transaction for construction certificate invoice {InvoiceId}", invoiceId);
             throw;
         }
+    }
+    
+    private async Task<string> GetProjectGlAccountIdViaOrderItemBillingAsync(string invoiceId)
+    {
+        var query = from oib in _context.OrderItemBillings
+            where oib.InvoiceId == invoiceId
+            join cert in _context.WorkEfforts on oib.OrderId equals cert.RelatedOrderId
+            where cert.WorkEffortTypeId == "PROJECT_CERTIFICATE"
+                  && cert.ProjectId != null
+            join proj in _context.WorkEfforts on cert.ProjectId equals proj.WorkEffortId
+            where proj.WorkEffortTypeId == "PROJECT"
+                  && proj.GlAccountId != null
+            select proj.GlAccountId;
+
+        // Ensure all certificate lines on the invoice belong to the same project (common case)
+        // If mixed projects → you’d need to split entries per project (advanced)
+        var distinctGlAccounts = await query.Distinct().ToListAsync();
+
+        if (!distinctGlAccounts.Any())
+            return null;
+
+        if (distinctGlAccounts.Count > 1)
+        {
+            _logger.LogWarning("Invoice {InvoiceId} references multiple projects. Using first GlAccountId: {First}", 
+                invoiceId, distinctGlAccounts.First());
+        }
+
+        return distinctGlAccounts.First();
     }
 
     public async Task<string> CreateAcctgTransAndEntriesForCustomerRefundPaymentApplication(

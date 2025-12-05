@@ -108,6 +108,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
         public DbSet<CommunicationEventType> CommunicationEventTypes { get; set; } = null!;
         public DbSet<CommunicationEventWorkEff> CommunicationEventWorkEffs { get; set; } = null!;
         public DbSet<Component> Components { get; set; } = null!;
+        public DbSet<CostCenter> CostCenters { get; set; } = null!;
         public DbSet<ConfigOptionProductOption> ConfigOptionProductOptions { get; set; } = null!;
         public DbSet<ContactList> ContactLists { get; set; } = null!;
         public DbSet<ContactListCommStatus> ContactListCommStatuses { get; set; } = null!;
@@ -31697,6 +31698,8 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 entity.HasIndex(e => e.CreatedTxStamp, "PAYMENT_TXCRTS");
 
                 entity.HasIndex(e => e.LastUpdatedTxStamp, "PAYMENT_TXSTMP");
+                entity.HasIndex(p => p.WorkEffortId, "IX_PAYMENT_WORK_EFFORT_ID");
+                entity.HasIndex(p => p.CostCenterId, "IX_PAYMENT_COST_CENTER_ID");
 
                 entity.Property(e => e.PaymentId)
                     .HasMaxLength(36)
@@ -31742,6 +31745,16 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasMaxLength(36)
                     .IsUnicode(false)
                     .HasColumnName("FIN_ACCOUNT_TRANS_ID");
+                    
+                     entity.Property(e => e.WorkEffortId)
+                    .HasMaxLength(20)                    // WorkEffort.WorkEffortId is varchar(20) in OFBiz
+                    .IsUnicode(false)
+                    .HasColumnName("WORK_EFFORT_ID");    // uppercase snake_case, matches your pattern
+ 
+             entity.Property(e => e.CostCenterId)
+                          .HasMaxLength(20)
+                          .IsUnicode(false)
+                          .HasColumnName("COST_CENTER_ID");
 
                 entity.Property(e => e.LastUpdatedStamp)
                     .HasColumnType("datetime")
@@ -31876,6 +31889,19 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .WithMany(p => p.Payments)
                     .HasForeignKey(d => d.StatusId)
                     .HasConstraintName("PAYMENT_STTSITM");
+                    
+                     entity.HasOne(p => p.WorkEffort)                    // Payment.WorkEffort navigation
+                        .WithMany(we => we.Payments)                  // WorkEffort.Payments collection
+                        .HasForeignKey(p => p.WorkEffortId)
+                        .HasConstraintName("FK_PAYMENT_WORK_EFFORT");
+                        
+                         entity.HasOne(p => p.CostCenter)
+                          .WithMany(cc => cc.Payments)
+                          .HasForeignKey(p => p.CostCenterId)
+                          .HasConstraintName("FK_PAYMENT_COST_CENTER");
+
+                
+                    
             });
 
             modelBuilder.Entity<PaymentApplication>(entity =>
@@ -65371,6 +65397,54 @@ entity.Property(e => e.BuildingNumber)
                       .HasForeignKey(e => e.GlAccountTypeId)
                       .OnDelete(DeleteBehavior.Restrict);
             });
+            
+            modelBuilder.Entity<CostCenter>(entity =>
+                    {
+                        entity.ToTable("COST_CENTER");
+                    
+                        // Primary key
+                        entity.HasKey(e => e.CostCenterId)
+                              .HasName("PK_COST_CENTER");
+                    
+                        // Indexes (following the same naming/style as the rest of the model)
+                        entity.HasIndex(e => e.CreatedTxStamp, "COST_CENTER_TXCRTS");
+                        entity.HasIndex(e => e.LastUpdatedTxStamp, "COST_CENTER_TXSTMP");
+                    
+                        // Columns
+                        entity.Property(e => e.CostCenterId)
+                            .HasMaxLength(36)
+                            .IsUnicode(false)
+                            .HasColumnName("COST_CENTER_ID");
+                    
+                        entity.Property(e => e.Description)
+                            .HasMaxLength(255)               // adjust if you have a different max length in the DB
+                            .IsUnicode(false)
+                            .HasColumnName("DESCRIPTION");
+                    
+                        entity.Property(e => e.IsOutPayment)
+                            .HasMaxLength(1)                 // typically 'Y'/'N' in OFBiz-style models
+                            .IsUnicode(false)
+                            .IsFixedLength()
+                            .HasColumnName("IS_OUT_PAYMENT");
+                    
+                        // Timestamp columns (kept for consistency with the rest of the model)
+                        entity.Property(e => e.CreatedStamp)
+                            .HasColumnType("datetime")
+                            .HasColumnName("CREATED_STAMP");
+                    
+                        entity.Property(e => e.CreatedTxStamp)
+                            .HasColumnType("datetime")
+                            .HasColumnName("CREATED_TX_STAMP");
+                    
+                        entity.Property(e => e.LastUpdatedStamp)
+                            .HasColumnType("datetime")
+                            .HasColumnName("LAST_UPDATED_STAMP");
+                    
+                        entity.Property(e => e.LastUpdatedTxStamp)
+                            .HasColumnType("datetime")
+                            .HasColumnName("LAST_UPDATED_TX_STAMP");
+                    
+                    });
 
             
             foreach (var foreignKey in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))

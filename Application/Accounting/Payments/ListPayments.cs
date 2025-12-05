@@ -30,17 +30,16 @@ public class ListPayments
             var language = request.Language?.ToLower() ?? "en";
             var isArabic = language == "ar";
 
+
             var query = (
                 from pyt in _context.Payments
 
                 // Required joins (inner – these should always exist)
-                join ptt in _context.PaymentTypes 
+                join ptt in _context.PaymentTypes
                     on pyt.PaymentTypeId equals ptt.PaymentTypeId
-
-                join sts in _context.StatusItems 
+                join sts in _context.StatusItems
                     on pyt.StatusId equals sts.StatusId
-
-                join pty in _context.Parties 
+                join pty in _context.Parties
                     on pyt.PartyIdFrom equals pty.PartyId
 
                 // REFACTOR: LEFT JOIN – PaymentMethodTypeId is often NULL
@@ -52,24 +51,23 @@ public class ListPayments
                 join ptyto in _context.Parties
                     on pyt.PartyIdTo equals ptyto.PartyId into ptytoJoin
                 from ptyto in ptytoJoin.DefaultIfEmpty()
-
-                // Optional joins (credit card, order, work effort)
-                join cc in _context.CreditCards
-                    on pyt.PaymentMethodId equals cc.PaymentMethodId into ccJoin
-                from cc in ccJoin.DefaultIfEmpty()
-
                 join opp in _context.OrderPaymentPreferences
                     on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId into oppJoin
                 from opp in oppJoin.DefaultIfEmpty()
-
                 join ord in _context.OrderHeaders
                     on opp.OrderId equals ord.OrderId into ordJoin
                 from ord in ordJoin.DefaultIfEmpty()
-
                 join we in _context.WorkEfforts
                     on ord.OrderId equals we.RelatedOrderId into weJoin
                 from we in weJoin.DefaultIfEmpty()
 
+                // REFACTOR: LEFT JOIN for CostCenter – assuming you have a CostCenter entity/table
+                join cc in _context.CostCenters on pyt.CostCenterId equals cc.CostCenterId into ccJoin
+                from cc in ccJoin.DefaultIfEmpty()
+
+                // REFACTOR: LEFT JOIN for Project (WorkEffort) – to get projectId & project name
+                join proj in _context.WorkEfforts on pyt.WorkEffortId equals proj.WorkEffortId into projJoin
+                from proj in projJoin.DefaultIfEmpty()
                 select new PaymentRecord
                 {
                     PaymentId = pyt.PaymentId,
@@ -86,8 +84,8 @@ public class ListPayments
                     PartyIdFromName = pty.Description ?? string.Empty,
 
                     PartyIdTo = pyt.PartyIdTo,
-                    PartyIdToName = ptyto != null 
-                        ? ptyto.Description 
+                    PartyIdToName = ptyto != null
+                        ? ptyto.Description
                         : (pyt.PartyIdTo == "Company" ? "Company" : pyt.PartyIdTo ?? "Unknown"),
 
                     StatusId = pyt.StatusId,
@@ -106,8 +104,6 @@ public class ListPayments
                     FinAccountTransId = pyt.FinAccountTransId,
                     OverrideGlAccountId = pyt.OverrideGlAccountId,
 
-                    CreditCardNumber = cc != null ? cc.CardNumber : null,
-                    CreditCardExpiryDate = cc != null ? cc.ExpireDate : null,
 
                     FromPartyId = new OrderPartyDto
                     {
@@ -122,7 +118,11 @@ public class ListPayments
                     CertificateNumber = we != null ? we.CertificateNumber : null,
 
                     ChequeNumber = pyt.ChequeNumber,
-                    ChequeDate = pyt.ChequeDate
+                    ChequeDate = pyt.ChequeDate,
+                    ProjectId = pyt.WorkEffortId,
+                    ProjectName = proj != null ? proj.ProjectName : null,
+                    CostCenterId = pyt.CostCenterId,
+                    CostCenterDescription = cc.Description
                 }
             ).AsQueryable();
 

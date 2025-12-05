@@ -1,26 +1,28 @@
 import {chequeValidator, requiredValidator} from "../../../../app/common/form/Validators";
-import {
-    Field,
-    Form,
-    FormElement,
-    FormRenderProps,
-} from "@progress/kendo-react-form";
+import {Field, Form, FormElement, FormRenderProps,} from "@progress/kendo-react-form";
 import {MemoizedFormDropDownList} from "../../../../app/common/form/MemoizedFormDropDownList";
-import {Button, Grid, Skeleton, Typography} from "@mui/material";
+import {Alert, Box, Button, Grid, Skeleton, Typography} from "@mui/material";
 import FormNumericTextBox from "../../../../app/common/form/FormNumericTextBox";
 import FormTextArea from "../../../../app/common/form/FormTextArea";
 import {Payment} from "../../../../app/models/accounting/payment";
 import FormInput from "../../../../app/common/form/FormInput";
 import FormDatePicker from "../../../../app/common/form/FormDatePicker";
 import React, {useCallback, useEffect, useMemo, useState} from "react";
-import {RootState, useAppSelector, useFetchPaymentAcctTransEntriesQuery} from "../../../../app/store/configureStore";
+import {
+    RootState,
+    useAppSelector,
+    useFetchPaymentAcctTransEntriesQuery,
+    useGetCostCentersQuery
+} from "../../../../app/store/configureStore";
 import {
     useFetchGlAccountOrganizationHierarchyLovQuery,
-    useFetchPaymentApplicationsForPaymentQuery
+    useFetchPaymentApplicationsForPaymentQuery, useLazyFetchBalancesForVendorAndProjectQuery
 } from "../../../../app/store/apis";
 import {FormDropDownTreeGlAccount2} from "../../../../app/common/form/FormDropDownTreeGlAccount2";
 import {PaymentExcelTechnical} from "../report/PaymentExcelTechnical";
 import {PaymentExcelParty} from "../report/PaymentExcelParty";
+import {MemoizedFormComboBox2} from "../../../../app/common/form/FormComboBox2";
+import {FormComboBoxVirtualProject} from "../../../../app/common/form/FormComboBoxVirtualProject";
 
 interface EditPaymentFormProps {
     onValidityChange?: (valid: boolean) => void;
@@ -45,18 +47,57 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                              paymentType,
                                                              currencies,
                                                              handleCancelForm, debugForm
-}) => {
+                                                         }) => {
     const localizationKey = "accounting.payments.form";
     const CASH_PAYMENT_METHOD_ID = "CASH";
+    const ADVANCE_TO_VENDOR_CONTRACTOR = "ADVANCE_TO_VENDOR_CONTRACTOR";
+    const showProjectField = payment?.paymentTypeId === ADVANCE_TO_VENDOR_CONTRACTOR;
+
+    const [triggerBalanceFetch, {data: balanceData, isFetching: balanceLoading}] =
+        useLazyFetchBalancesForVendorAndProjectQuery();
+
+    const partyIdTo = payment?.partyIdTo ?? "";
+    const projectIdFromPayment = payment?.projectId ?? "";
+    const [currentProjectId, setCurrentProjectId] = useState<string>("");
+
+    useEffect(() => {
+        if (payment?.projectId) {
+            setCurrentProjectId(payment.projectId);
+        }
+    }, [payment?.projectId]);
+
+    useEffect(() => {
+        if (showProjectField && partyIdTo && currentProjectId) {
+            triggerBalanceFetch(
+                { partyId: partyIdTo, projectId: currentProjectId },
+                false // fresh data
+            );
+        }
+    }, [showProjectField, partyIdTo, currentProjectId, triggerBalanceFetch]);
+
+
+
     const nonEditableStatuses = ['PMNT_RECEIVED', 'PMNT_SENT', 'PMNT_CONFIRMED' /*, 'PMNT_CANCELLED' */];
     const isFormDisabled = payment && nonEditableStatuses.includes(payment.statusId);
-    const { user } = useAppSelector((state) => state.account);
+    const {user} = useAppSelector((state) => state.account);
     const companyId = user?.organizationPartyId || "";
     const companyName = useAppSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
-    const { data: glAccounts, isLoading: isLoadingGlAccounts } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
+    const {
+        data: glAccounts,
+        isLoading: isLoadingGlAccounts
+    } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
         skip: !companyId,
     });
 
+    const costCenterType = payment?.isDisbursement ? 'out' : 'in';
+
+    const {
+        data: paymentCostCenters = [],
+        isLoading: loadingCostCenters
+    } = useGetCostCentersQuery({ type: costCenterType }, {
+        skip: !payment // Don't query until payment is loaded
+    });
+    
 
     const {
         data: paymentApplications = [],
@@ -103,8 +144,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
 
     const isExcelFetching = isAppsFetching || isTransFetching;
 
-    
-    
+
     const statusDesc = useMemo(() => ({
         'PMNT_NOT_PAID': 'Not Paid',
         'PMNT_RECEIVED': 'Received',
@@ -122,7 +162,6 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
         }));
     }, [currencies]);
 
-    
 
     const paymentTypeDesc = useMemo(() => {
         if (!payment?.paymentTypeId) return "";
@@ -186,6 +225,13 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
             actualCurrencyAmount: undefined,
             chequeNumber: isCash ? '' : (payment.chequeNumber ?? ''),
             chequeDate: isCash ? null : (payment.chequeDate ? new Date(payment.chequeDate) : null),
+            projectId: payment.projectId
+                ? {
+                    projectId: payment.projectId,
+                    projectName: payment.projectName,
+                }
+                : null,
+            costCenterId: payment.costCenterId || "",
         };
     }, [payment]);
 
@@ -199,8 +245,8 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
             </Typography>
         );
     }
-    
-    
+
+    console.log('payment from editPaymentForm', payment)
 
     // Handle form submission     
     const handleSubmit = (values: any) => {
@@ -211,90 +257,123 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
         });
     };
 
+    const amountValidator = (value: number, getter: any) => {
+        if (!value || value <= 0) return "الرجاء إدخال مبلغ صحيح";
 
+        const paymentTypeId = getter("paymentTypeId");
+        if (paymentTypeId !== ADVANCE_TO_VENDOR_CONTRACTOR) return;
+
+        if (!balanceData) return;
+
+        if (balanceData.initialBalance === 0) {
+            return "لا يمكن إنشاء دفعة مقدمة: لا يوجد سقف دفع مُعيَّن لهذا المورد على المشروع";
+        }
+
+        if (value > balanceData.remainingBalance) {
+            return `المبلغ المُدخل (${value.toLocaleString("ar-EG")}) يتجاوز الرصيد المتاح (${balanceData.remainingBalance.toLocaleString("ar-EG")})`;
+        }
+
+        return;
+    };
 
 
     return (
-            <Grid container>
-                <Form
-                    initialValues={initialValues}
-                    onSubmit={handleSubmit}
-                    key={payment.paymentId}
-                    render={(formRenderProps: FormRenderProps) => {
-                        const {
-                            valid,
-                            validator, onSubmit,
-                            errors,
-                            touched,
-                            visited,
-                            valueGetter,
-                            onChange,
-                        } = formRenderProps;
+        <Grid container>
+            <Form
+                initialValues={initialValues}
+                onSubmit={handleSubmit}
+                key={payment.paymentId}
+                render={(formRenderProps: FormRenderProps) => {
+                    const {
+                        valid,
+                        validator, onSubmit,
+                        errors,
+                        touched,
+                        visited,
+                        valueGetter,
+                        onChange,
+                    } = formRenderProps;
+                    
+                    const amount = valueGetter("amount") || 0;
 
-                        
-                        // REFACTOR: Custom handler for payment method change
-                        const handlePaymentMethodChange = (event: any) => {
-                            const selectedMethodId = event.value;
-                            const isCash = selectedMethodId === CASH_PAYMENT_METHOD_ID;
+                    const hasBillingAccountIssue = showProjectField &&
+                        balanceData &&
+                        (balanceData.initialBalance === 0 || amount > balanceData.remainingBalance);
 
-                            // Update the payment method
-                            onChange('paymentMethodId', { value: selectedMethodId });
+                    const isSubmitDisabled = !valid || isFormDisabled || balanceLoading || hasBillingAccountIssue;
 
-                            // Clear cheque fields if CASH is selected
-                            if (isCash) {
-                                onChange('chequeNumber', { value: '' });
-                                onChange('chequeDate', { value: null });
-                            }
-                        };
+                    const handleProjectChange = (event: any) => {
+                        const selectedProject = event.value;
+                        const newProjectId = selectedProject?.projectId || "";
 
-                        
-                        return (
+                        setCurrentProjectId(newProjectId);
+                        onChange("projectId", { value: selectedProject });
+                    };
+
+
+                    // REFACTOR: Custom handler for payment method change
+                    const handlePaymentMethodChange = (event: any) => {
+                        const selectedMethodId = event.value;
+                        const isCash = selectedMethodId === CASH_PAYMENT_METHOD_ID;
+
+                        // Update the payment method
+                        onChange('paymentMethodId', {value: selectedMethodId});
+
+                        // Clear cheque fields if CASH is selected
+                        if (isCash) {
+                            onChange('chequeNumber', {value: ''});
+                            onChange('chequeDate', {value: null});
+                        }
+                    };
+
+
+                    return (
                         <FormElement>
                             <fieldset
                                 className={`k-form-fieldset ${isFormDisabled ? 'grid-disabled' : 'grid-normal'}`}
                                 aria-disabled={isFormDisabled}
                             >
                                 <Grid container spacing={1} padding={2}>
-                                   
+
 
                                     {/* Hidden Fields */}
-                                    <Field name="statusId" component="input" type="hidden" />
-                                    <Field name="paymentTypeId" component="input" type="hidden" />
-                                    <Field name="partyIdFrom" component="input" type="hidden" />
-                                    <Field name="partyIdTo" component="input" type="hidden" />
-                                    <Field name="currencyUomId" component="input" type="hidden" />
-                                    <Field name="finAccountTransId" component="input" type="hidden" />
-                                    <Field name="isDepositWithDrawPayment" component="input" type="hidden" />
-                                    <Field name="finAcctTransTypeId" component="input" type="hidden" />
-                                    <Field name="isDisbursement" component="input" type="hidden" />
-                                    <Field name="paymentPreferenceId" component="input" type="hidden" />
-                                    <Field name="paymentGatewayResponseId" component="input" type="hidden" />
+                                    <Field name="statusId" component="input" type="hidden"/>
+                                    <Field name="paymentTypeId" component="input" type="hidden"/>
+                                    <Field name="partyIdFrom" component="input" type="hidden"/>
+                                    <Field name="partyIdTo" component="input" type="hidden"/>
+                                    <Field name="currencyUomId" component="input" type="hidden"/>
+                                    <Field name="finAccountTransId" component="input" type="hidden"/>
+                                    <Field name="isDepositWithDrawPayment" component="input" type="hidden"/>
+                                    <Field name="finAcctTransTypeId" component="input" type="hidden"/>
+                                    <Field name="isDisbursement" component="input" type="hidden"/>
+                                    <Field name="paymentPreferenceId" component="input" type="hidden"/>
+                                    <Field name="paymentGatewayResponseId" component="input" type="hidden"/>
 
                                     {/* Section 2: Party Details */}
                                     <Grid item xs={12}>
                                         <Grid container spacing={1} alignItems="flex-end">
                                             <Grid item xs={3}>
-                                                <Typography variant="h6" sx={{ pl: 2, pb: 1 }}>
+                                                <Typography variant="h6" sx={{pl: 2, pb: 1}}>
                                                     {getTranslatedLabel(
                                                         paymentType === 1 ? `${localizationKey}.from` : `${localizationKey}.to`,
                                                         paymentType === 1 ? "From Party" : "To Party"
                                                     )}
                                                 </Typography>
-                                                <Typography variant="h6" sx={{ pl: 2 }}>
-                                                    <strong style={{ color: "blue" }}>
+                                                <Typography variant="h6" sx={{pl: 2}}>
+                                                    <strong style={{color: "blue"}}>
                                                         {paymentType === 1 ? payment.partyIdFromName : payment.partyIdToName || "N/A"}
                                                     </strong>
                                                 </Typography>
                                             </Grid>
                                             <Grid item xs={3}>
-                                                <Typography variant="h6" sx={{ pl: 2, pb: 1 }}>
+                                                <Typography variant="h6" sx={{pl: 2, pb: 1}}>
                                                     {getTranslatedLabel(
                                                         paymentType === 1 ? `${localizationKey}.to` : `${localizationKey}.from`,
                                                         paymentType === 1 ? "To Party" : "From Party"
                                                     )}
                                                 </Typography>
-                                                <Typography variant="h6" sx={{ pl: 2 }}>
-                                                    <strong style={{ color: "blue" }}>
+                                                <Typography variant="h6" sx={{pl: 2}}>
+                                                    <strong style={{color: "blue"}}>
                                                         {paymentType === 1 ? payment.partyIdToName : payment.partyIdFromName || "N/A"}
                                                     </strong>
                                                 </Typography>
@@ -306,14 +385,14 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                     <Grid item xs={12}>
                                         <Grid container spacing={1} alignItems="flex-end">
                                             <Grid item xs={3}>
-                                                <Typography variant="h6" sx={{ pl: 2, pb: 1 }}>
+                                                <Typography variant="h6" sx={{pl: 2, pb: 1}}>
                                                     {getTranslatedLabel(
                                                         `${localizationKey}.paymentType`,
                                                         "Payment Type"
                                                     )}
                                                 </Typography>
-                                                <Typography variant="h6" sx={{ pl: 2 }}>
-                                                    <strong style={{ color: "blue" }}>{paymentTypeDesc}</strong>
+                                                <Typography variant="h6" sx={{pl: 2}}>
+                                                    <strong style={{color: "blue"}}>{paymentTypeDesc}</strong>
                                                 </Typography>
                                             </Grid>
                                             <Grid item xs={3}>
@@ -342,7 +421,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     validator={(value, getter) => chequeValidator(value, getter, undefined, formRenderProps)}
                                                 />
                                             </Grid>
-                                            <Grid item xs={2}>
+                                            <Grid item xs={3}>
                                                 <Field
                                                     id="chequeDate"
                                                     name="chequeDate"
@@ -369,24 +448,24 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     min={0}
                                                     name="amount"
                                                     component={FormNumericTextBox}
-                                                    validator={requiredValidator}
+                                                    validator={(value) => requiredValidator(value) || amountValidator(value, valueGetter)}
                                                 />
                                             </Grid>
 
                                             <Grid item xs={2}>
-                                                <Typography variant="h6" sx={{ pl: 2, pb: 1 }}>
+                                                <Typography variant="h6" sx={{pl: 2, pb: 1}}>
                                                     {getTranslatedLabel(
                                                         `${localizationKey}.currency`,
                                                         "Currency"
                                                     )}
                                                 </Typography>
-                                                <Typography variant="h6" sx={{ pl: 2 }}>
-                                                    <strong style={{ color: "blue" }}>{payment.currencyUomId}</strong>
+                                                <Typography variant="h6" sx={{pl: 2}}>
+                                                    <strong style={{color: "blue"}}>{payment.currencyUomId}</strong>
                                                 </Typography>
                                             </Grid>
                                             <Grid item xs={4}>
                                                 {isLoadingGlAccounts ? (
-                                                    <Skeleton variant="rounded" height={56} />
+                                                    <Skeleton variant="rounded" height={56}/>
                                                 ) : (
                                                     <Field
                                                         id="overrideGlAccountId"
@@ -401,100 +480,176 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     />
                                                 )}
                                             </Grid>
-                                           
-                                        </Grid>
-                                    </Grid>
-
-                                    {/* Section 4: Metadata */}
-                                    <Grid item xs={12}>
-                                        <Grid container spacing={1} alignItems="flex-end">
-                                            <Grid item xs={4}>
+                                            <Grid item xs={3}>
+                                            {loadingCostCenters ? (
+                                                <Skeleton variant="rounded" height={56}/>
+                                            ) : (
                                                 <Field
-                                                    id="effectiveDate"
-                                                    name="effectiveDate"
-                                                    label={getTranslatedLabel(
-                                                        `${localizationKey}.effectiveDate`,
-                                                        "Effective Date *"
-                                                    )}
-                                                    component={FormDatePicker}
-                                                    format="yyyy-MM-dd HH:mm:ss"
-                                                    validator={requiredValidator}
+                                                    id="costCenterId"
+                                                    name="costCenterId"
+                                                    label={getTranslatedLabel(`${localizationKey}.costCenter`, "Cost Center")}
+                                                    component={MemoizedFormComboBox2}
+                                                    data={paymentCostCenters || []}
+                                                    dataItemKey="costCenterId"
+                                                    textField="description"
                                                 />
-                                            </Grid>
-                                            
-                                            <Grid item xs={4}>
-                                                <Field
-                                                    id="comments"
-                                                    name="comments"
-                                                    label={getTranslatedLabel(
-                                                        `${localizationKey}.comments`,
-                                                        "Comments"
-                                                    )}
-                                                    component={FormTextArea}
-                                                    autoComplete="off"
-                                                    validator={requiredValidator}
-                                                />
-                                            </Grid>
-                                        </Grid>
-                                    </Grid>
-                                    
-                                </Grid>
-                            </fieldset>
-                            <div className="k-form-buttons">
-                                <Grid container spacing={2}>
-                                    <Grid item xs={2}>
-                                        <Button
-                                            type="submit"
-                                            variant="contained"
-                                            disabled={!formRenderProps.valid || isFormDisabled}
-                                            sx={{ mt: 2, mr: 1 }}
-                                        >
-                                            {getTranslatedLabel(
-                                                `${localizationKey}.update`,
-                                                "Update Payment"
                                             )}
-                                        </Button>
+                                        </Grid>
                                     </Grid>
-                                    {paymentRow && (
-                                        <Grid item xs={2}>
-                                            <PaymentExcelTechnical
-                                                companyName={companyName ?? "N/A"}
-                                                payment={paymentRow}
-                                                applications={excelApplications}
-                                                transactions={excelTransactions}
-                                                getTranslatedLabel={getTranslatedLabel}
-                                                isFetching={isExcelFetching}
+                                </Grid>
+
+                                {/* Section 4: Metadata */}
+                                <Grid item xs={12}>
+                                    <Grid container spacing={1} alignItems="flex-end">
+                                        <Grid item xs={4}>
+                                            <Field
+                                                id="effectiveDate"
+                                                name="effectiveDate"
+                                                label={getTranslatedLabel(
+                                                    `${localizationKey}.effectiveDate`,
+                                                    "Effective Date *"
+                                                )}
+                                                component={FormDatePicker}
+                                                format="yyyy-MM-dd HH:mm:ss"
+                                                validator={requiredValidator}
                                             />
                                         </Grid>
-                                    )}
 
-                                    {paymentRow && (
-                                            <Grid item xs={2}>
-                                                <PaymentExcelParty
-                                                    companyName={companyName ?? "N/A"}
-                                                    payment={paymentRow}
-                                                    getTranslatedLabel={getTranslatedLabel}
-                                                    isFetching={isExcelFetching}
+                                        <Grid item xs={4}>
+                                            <Field
+                                                id="comments"
+                                                name="comments"
+                                                label={getTranslatedLabel(
+                                                    `${localizationKey}.comments`,
+                                                    "Comments"
+                                                )}
+                                                component={FormTextArea}
+                                                autoComplete="off"
+                                                validator={requiredValidator}
+                                            />
+                                        </Grid>
+                                        {showProjectField && (
+                                            <Grid item xs={3}>
+                                                <Field
+                                                    id="projectId"
+                                                    name="projectId"
+                                                    component={FormComboBoxVirtualProject}
+                                                    label={getTranslatedLabel("projects.certificate.form.project", "Project")}
+                                                    dataItemKey="projectId"
+                                                    textField="ProjectName"
+                                                    validator={requiredValidator}
+                                                    onChange={handleProjectChange} 
                                                 />
                                             </Grid>
-                                    )}
-                                    <Grid item xs={1}>
-                                        <Button
-                                            sx={{ mt: 2 }}
-                                            onClick={handleCancelForm}
-                                            color="error"
-                                            variant="contained"
-                                        >
-                                            {getTranslatedLabel("general.cancel", "Cancel")}
-                                        </Button>
+                                        )}
+                                        {showProjectField && partyIdTo && projectIdFromPayment && (
+                                            <Grid item xs={12} sx={{mt: 2}}>
+                                                <Box sx={{p: 2, border: "1px solid #e0e0e0", borderRadius: 2, bgcolor: "#f9f9f9"}}>
+                                                    {balanceLoading ? (
+                                                        <Skeleton height={80}/>
+                                                    ) : balanceData ? (
+                                                        balanceData.initialBalance === 0 ? (
+                                                            <Alert severity="warning">
+                                                                {balanceData.message || "لا يوجد سقف دفع مُعيَّن لهذا المورد على المشروع"}
+                                                            </Alert>
+                                                        ) : (
+                                                            <Grid container spacing={2}>
+                                                                <Grid item xs={4}>
+                                                                    <Typography variant="body2" color="text.secondary">السقف المتاح</Typography>
+                                                                    <Typography variant="h6" color="success.main" fontWeight="bold">
+                                                                        {balanceData.initialBalance.toLocaleString("ar-EG")} ج.م
+                                                                    </Typography>
+                                                                </Grid>
+                                                                <Grid item xs={4}>
+                                                                    <Typography variant="body2" color="text.secondary">المستخدم</Typography>
+                                                                    <Typography variant="h6" color="warning.main">
+                                                                        {balanceData.usedBalance.toLocaleString("ar-EG")} ج.م
+                                                                    </Typography>
+                                                                </Grid>
+                                                                <Grid item xs={4}>
+                                                                    <Typography variant="body2" color="text.secondary">المتبقي</Typography>
+                                                                    <Typography variant="h6"
+                                                                                color={balanceData.remainingBalance > 0 ? "primary" : "error"}
+                                                                                fontWeight="bold">
+                                                                        {balanceData.remainingBalance.toLocaleString("ar-EG")} ج.م
+                                                                    </Typography>
+                                                                </Grid>
+                                                                {amount > balanceData.remainingBalance && (
+                                                                    <Grid item xs={12}>
+                                                                        <Alert severity="error">
+                                                                            المبلغ المطلوب ({amount.toLocaleString("ar-EG")} ج.م) يتجاوز الرصيد المتاح
+                                                                        </Alert>
+                                                                    </Grid>
+                                                                )}
+                                                            </Grid>
+                                                        )
+                                                    ) : (
+                                                        <Typography color="text.secondary">جاري تحميل بيانات الحساب...</Typography>
+                                                    )}
+                                                </Box>
+                                            </Grid>
+                                        )}
                                     </Grid>
                                 </Grid>
-                            </div>
-                        </FormElement>
-                        );
-                    }}
-                />
-            </Grid>
+
+                            </Grid>
+                        </fieldset>
+                    <div className="k-form-buttons">
+                        <Grid container spacing={2}>
+                            <Grid item xs={2}>
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    disabled={isSubmitDisabled}
+                                    sx={{mt: 2, mr: 1}}
+                                >
+                                    {getTranslatedLabel(
+                                        `${localizationKey}.update`,
+                                        "Update Payment"
+                                    )}
+                                </Button>
+                            </Grid>
+                            {paymentRow && (
+                                <Grid item xs={2}>
+                                    <PaymentExcelTechnical
+                                        companyName={companyName ?? "N/A"}
+                                        payment={paymentRow}
+                                        applications={excelApplications}
+                                        transactions={excelTransactions}
+                                        getTranslatedLabel={getTranslatedLabel}
+                                        isFetching={isExcelFetching}
+                                    />
+                                </Grid>
+                            )}
+
+                            {paymentRow && (
+                                <Grid item xs={2}>
+                                    <PaymentExcelParty
+                                        companyName={companyName ?? "N/A"}
+                                        payment={paymentRow}
+                                        getTranslatedLabel={getTranslatedLabel}
+                                        isFetching={isExcelFetching}
+                                    />
+                                </Grid>
+                            )}
+                            <Grid item xs={1}>
+                                <Button
+                                    sx={{mt: 2}}
+                                    onClick={handleCancelForm}
+                                    color="error"
+                                    variant="contained"
+                                >
+                                    {getTranslatedLabel("general.cancel", "Cancel")}
+                                </Button>
+                            </Grid>
+                        </Grid>
+                    </div>
+                </FormElement>
+                )
+                    ;
+                }}
+            />
+        </Grid>
     );
 };
 

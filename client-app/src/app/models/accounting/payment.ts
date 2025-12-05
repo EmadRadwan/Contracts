@@ -35,6 +35,8 @@ export interface Payment {
   isDisbursement?: boolean;
   chequeNumber?: string;
   chequeDate?: string | Date;
+  projectId?: string;
+  costCenterId?: string;
   paymentApplications?: any[];
 }
 

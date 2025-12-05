@@ -18,6 +18,7 @@ const paymentTypesApi = createApi({
             return headers;
         },
     }),
+    tagTypes: ['CostCenter'],
 
     endpoints (builder) {
         return {
@@ -28,10 +29,22 @@ const paymentTypesApi = createApi({
                         method: "GET"
                     }
                 }
-            })
+            }),
+            getCostCenters: builder.query<CostCenterDto[], GetCostCentersParams | void>({
+                query: (params) => ({
+                    url: '/costcenters',
+                    params: params ? { type: params.type } : undefined,
+                }),
+                providesTags: ['CostCenter'],
+            }),
         }
     }
 })
 
-export const {useFetchPaymentTypesQuery } = paymentTypesApi
+export const {useFetchPaymentTypesQuery, useGetCostCentersQuery
+} = paymentTypesApi
 export {paymentTypesApi}
+
+interface GetCostCentersParams {
+    type?: 'in' | 'out'; // optional: in = قبض, out = صرف
+}
