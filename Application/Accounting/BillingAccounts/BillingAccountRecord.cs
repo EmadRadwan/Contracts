@@ -9,6 +9,8 @@ public class BillingAccountRecord
     public decimal? AccountLimit { get; set; }
     public string? AccountCurrencyUomId { get; set; }
     public string? AccountCurrencyUomDescription { get; set; }
+    public string? ProjectId { get; set; }
+    public string? ProjectName { get; set; }
     public string? PartyId { get; set; }
     public string? PartyName { get; set; }
     public DateTime? FromDate { get; set; }

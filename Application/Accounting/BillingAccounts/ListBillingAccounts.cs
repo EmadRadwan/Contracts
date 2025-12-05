@@ -30,11 +30,14 @@ public class ListBillingAccounts
                     join bar in _context.BillingAccountRoles on ba.BillingAccountId equals bar.BillingAccountId
                     join pty in _context.Parties on bar.PartyId equals pty.PartyId
                     join uom in _context.Uoms on ba.AccountCurrencyUomId equals uom.UomId
+                    join workEffort in _context.WorkEfforts on ba.WorkEffortId equals workEffort.WorkEffortId 
                     where ba.ThruDate == null
                     select new BillingAccountRecord
                     {
                         BillingAccountId = ba.BillingAccountId,
                         AccountLimit = ba.AccountLimit,
+                        ProjectId = ba.WorkEffortId,
+                        ProjectName = workEffort.ProjectName,
                         AccountCurrencyUomId = ba.AccountCurrencyUomId,
                         AccountCurrencyUomDescription = uom.Description,
                         PartyId = bar.PartyId,

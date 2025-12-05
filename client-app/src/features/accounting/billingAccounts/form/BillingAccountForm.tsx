@@ -9,6 +9,7 @@ import FormDatePicker from "../../../../app/common/form/FormDatePicker";
 import FormTextArea from "../../../../app/common/form/FormTextArea";
 import {
     useCreateBillingAccountMutation,
+    useUpdateBillingAccountMutation,
     useFetchBillingAccountsBalanceQuery,
 } from "../../../../app/store/apis";
 import {formatCurrency, handleDatesObject, parseDate} from "../../../../app/util/utils";
@@ -36,6 +37,7 @@ const BillingAccountForm = ({
                             }: Props) => {
     const { getTranslatedLabel } = useTranslationHelper();
     const [createBillingAccount, { isLoading: isCreating }] = useCreateBillingAccountMutation();
+    const [updateBillingAccount, { isLoading: isUpdating }] = useUpdateBillingAccountMutation();
 
     // REFACTOR: Fetch balance only when viewing/editing existing account
     const { data: billingAccountBalance } = useFetchBillingAccountsBalanceQuery(
@@ -44,44 +46,50 @@ const BillingAccountForm = ({
     );
 
     const [buttonFlag, setButtonFlag] = useState(false);
+    const [formKey, setFormKey] = useState(0); // Used to force form re-render on update success
+
+    if (!selectedBillingAccount && editMode !== 1) onClose();
 
     // REFACTOR: Compute initial values cleanly using useMemo (same pattern as ProductForm)
-    const formInitialValues = useMemo(() => {
-        if (editMode === 1) {
+    const computeInitialValues = (account?: BillingAccount) => {
+        if (editMode === 1 && !account) {
             return {
                 fromDate: new Date(), // today
                 thruDate: null,
             };
         }
 
-        if (!selectedBillingAccount) return {};
+        const source = account || selectedBillingAccount;
+        if (!source) return {};
 
         return {
-            ...selectedBillingAccount,
+            ...source,
 
             // Convert string dates → real Date objects
-            fromDate: parseDate(selectedBillingAccount.fromDate),
-            thruDate: parseDate(selectedBillingAccount.thruDate),
-            createdDate: parseDate(selectedBillingAccount.createdDate),
+            fromDate: parseDate(source.fromDate),
+            thruDate: parseDate(source.thruDate),
+            createdDate: parseDate(source.createdDate),
 
             // Ensure ComboBox fields are objects (safe fallback)
-            partyId: typeof selectedBillingAccount.partyId === "string" || !selectedBillingAccount.partyId
+            partyId: typeof source.partyId === "string" || !source.partyId
                 ? {
-                    fromPartyId: selectedBillingAccount.partyId,
-                    fromPartyName: selectedBillingAccount.partyName,
+                    fromPartyId: source.partyId,
+                    fromPartyName: source.partyName,
                 }
-                : selectedBillingAccount.partyId,
+                : source.partyId,
 
-            projectId: typeof selectedBillingAccount.projectId === "string" || !selectedBillingAccount.projectId
-                ? selectedBillingAccount.projectId
+            projectId: typeof source.projectId === "string" || !source.projectId
+                ? source.projectId
                     ? {
-                        projectId: selectedBillingAccount.projectId,
-                        ProjectName: selectedBillingAccount.projectName ?? null,
+                        projectId: source.projectId,
+                        projectName: source.projectName ?? null,
                     }
                     : null
-                : selectedBillingAccount.projectId,
+                : source.projectId,
         };
-    }, [editMode, selectedBillingAccount]);
+    };
+
+    const [formInitialValues, setFormInitialValues] = useState(() => computeInitialValues());
     
     const availableBalance = selectedBillingAccount?.billingAccountId
         ? billingAccountBalance?.billingAccountBalance ?? selectedBillingAccount.availableBalance ?? 0
@@ -91,46 +99,63 @@ const BillingAccountForm = ({
         setButtonFlag(true);
 
         try {
-            const payload = {
-                partyId: data.partyId?.fromPartyId ?? data.partyId,
-                projectId: data.projectId?.projectId ?? data.projectId,
-                accountLimit: data.accountLimit,
-                fromDate: data.fromDate,
-                thruDate: data.thruDate || null,
-                description: data.description || "",
-            };
+            if (editMode === 1) {
+                // CREATE MODE
+                const payload = {
+                    partyId: data.partyId?.fromPartyId ?? data.partyId,
+                    projectId: data.projectId?.projectId ?? data.projectId,
+                    accountLimit: data.accountLimit,
+                    fromDate: data.fromDate,
+                    thruDate: data.thruDate || null,
+                    description: data.description || "",
+                };
 
-            const result = await createBillingAccount(payload).unwrap();
+                const result = await createBillingAccount(payload).unwrap();
 
-            // ─────────────────────────────────────────────────────
-            // CRITICAL: Check the actual result from your API
-            // ─────────────────────────────────────────────────────
-            if (!result?.isSuccess) {
-                // Backend explicitly told us it failed
-                const errorMsg = result?.error || result?.message || "فشل إنشاء حساب الأجل";
-                throw new Error(errorMsg); // go to catch block
+                if (!result?.isSuccess) {
+                    const errorMsg = result?.error || result?.message || "فشل إنشاء حساب الأجل";
+                    throw new Error(errorMsg);
+                }
+
+                toast.success("تم إنشاء حساب الأجل بنجاح");
+
+                if (onBillingAccountCreated) {
+                    onBillingAccountCreated(result);
+                }
+                if (setEditMode) setEditMode(2);
+
+            } else if (editMode === 2) {
+                // UPDATE MODE
+                const payload = {
+                    billingAccountId: selectedBillingAccount?.billingAccountId,
+                    fromDate: data.fromDate,
+                    thruDate: data.thruDate || null,
+                    description: data.description || "",
+                };
+
+                const result = await updateBillingAccount(payload).unwrap();
+
+                if (!result?.isSuccess) {
+                    const errorMsg = result?.error || result?.message || "فشل تحديث حساب الأجل";
+                    throw new Error(errorMsg);
+                }
+
+                toast.success("تم تحديث حساب الأجل بنجاح");
+
+                // Update form initial values with the response data
+                const updatedAccount = result.value;
+                setFormInitialValues(computeInitialValues(updatedAccount));
+                setFormKey((prev) => prev + 1); // Force form re-render
             }
-
-            // Only now we know it REALLY succeeded
-            toast.success("تم إنشاء حساب الأجل بنجاح");
-
-            if (onBillingAccountCreated) {
-                // Pass the whole successful response (contains the new account)
-                onBillingAccountCreated(result);
-            }
-            if (setEditMode) setEditMode(2);
 
         } catch (error: any) {
-            // This now catches BOTH network errors AND explicit { isSuccess: false } cases
             const errorMessage =
-                error?.message ||                    // from the throw above
+                error?.message ||
                 error?.data?.error ||
                 error?.data?.message ||
-                "حدث خطأ أثناء إنشاء حساب الأجل";
+                (editMode === 1 ? "حدث خطأ أثناء إنشاء حساب الأجل" : "حدث خطأ أثناء تحديث حساب الأجل");
 
             toast.error(errorMessage);
-
-            // Form stays exactly as-is (editMode stays 1 → no remount → values preserved)
         } finally {
             setButtonFlag(false);
         }
@@ -159,7 +184,7 @@ const BillingAccountForm = ({
                 </Grid>
 
                 <Form
-                    key={editMode === 2 ? selectedBillingAccount?.billingAccountId : "new-billing-account"}
+                    key={editMode === 2 ? `${selectedBillingAccount?.billingAccountId}-${formKey}` : "new-billing-account"}
                     initialValues={formInitialValues}
                     onSubmit={handleSubmit}
                     render={(formRenderProps) => (
@@ -172,6 +197,7 @@ const BillingAccountForm = ({
                                             label={getTranslatedLabel("accounting.billingAccounts.form.accountLimit", "حد الحساب")}
                                             component={FormNumericTextBox}
                                             validator={requiredValidator}
+                                            disabled={editMode > 1}
                                         />
                                     </Grid>
 
@@ -193,7 +219,7 @@ const BillingAccountForm = ({
                                             dataItemKey="projectId"
                                             textField="ProjectName"
                                             validator={requiredValidator}
-                                            disabled={editMode > 3}
+                                            disabled={editMode > 1}
                                         />
                                     </Grid>
                                 </Grid>
@@ -243,10 +269,10 @@ const BillingAccountForm = ({
                                     variant="contained"
                                     color="success"
                                     type="submit"
-                                    disabled={!formRenderProps.allowSubmit || buttonFlag || isCreating}
-                                    startIcon={isCreating ? <CircularProgress size={20} /> : null}
+                                    disabled={!formRenderProps.allowSubmit || buttonFlag || isCreating || isUpdating}
+                                    startIcon={(isCreating || isUpdating) ? <CircularProgress size={20} /> : null}
                                 >
-                                    {isCreating
+                                    {(isCreating || isUpdating)
                                         ? getTranslatedLabel("general.saving", "جاري الحفظ...")
                                         : getTranslatedLabel("general.save", "حفظ")}
                                 </Button>

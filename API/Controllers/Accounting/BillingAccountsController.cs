@@ -109,11 +109,9 @@ public class BillingAccountsController : BaseApiController
         return Ok(result);
     }
 
-    // 2. Controller endpoint
     [HttpPost("createBillingAccount")]
     public async Task<ActionResult> CreateBillingAccount([FromBody] CreateBillingAccountRequest request)
     {
-        // Wrap the DTO in the actual MediatR Command
         var command = new CreateBillingAccount.Command
         {
             Request = request
@@ -122,5 +120,18 @@ public class BillingAccountsController : BaseApiController
         var result = await Mediator.Send(command);
 
         return Ok(result);
+    }
+
+    [HttpPut("{billingAccountId}/updateBillingAccount")]
+    public async Task<ActionResult> UpdateBillingAccount(string billingAccountId, [FromBody] UpdateBillingAccountRequest request)
+    {
+        var command = new UpdateBillingAccount.Command
+        {
+            Request = request
+        };
+
+        var result = await Mediator.Send(command);
+
+        return HandleResult(result);
     }
 }

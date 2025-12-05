@@ -182,6 +182,11 @@ function BillingAccountsList() {
                                     title={getTranslatedLabel("accounting.billingAccounts.list.thruDate", "إلى تاريخ")}
                                     format="{0:dd/MM/yyyy}"
                                 />
+                                <Column
+                                    field="projectName"
+                                    title={getTranslatedLabel("accounting.billingAccounts.list.project", "المشروع")}
+                                    format="{0:dd/MM/yyyy}"
+                                />
                             </KendoGrid>
 
                             {isFetching && (

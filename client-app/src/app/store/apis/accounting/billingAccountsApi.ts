@@ -84,14 +84,21 @@ const billingAccountsApi = createApi({
             fetchBillingAccountsForParty: builder.query({
                 query: (partyId: string) => `/billingAccounts/getBillingAccountsForParty?partyId=${partyId}`,
             }),
-            // 1. RTK Query mutation (in your api slice)
             createBillingAccount: builder.mutation({
                 query: (body) => ({
                     url: "/billingAccounts/createBillingAccount",
                     method: "POST",
                     body: { ...body }
                 }),
-                invalidatesTags: ["BillingAccounts"] // optional: refresh list after create
+                invalidatesTags: ["BillingAccounts"]
+            }),
+            updateBillingAccount: builder.mutation({
+                query: (body: { billingAccountId: string; fromDate?: string; thruDate?: string; description?: string }) => ({
+                    url: `/billingAccounts/${body.billingAccountId}/updateBillingAccount`,
+                    method: "PUT",
+                    body: { ...body }
+                }),
+                invalidatesTags: ["BillingAccounts"]
             }),
         };
     },
@@ -104,6 +111,8 @@ export const {
     useFetchBillingAccountsPaymentsQuery,
     useFetchBillingAccountsOrdersQuery,
     useCreateBillingAccountPaymentMutation,
-    useFetchBillingAccountsForPartyQuery, useCreateBillingAccountMutation
+    useFetchBillingAccountsForPartyQuery,
+    useCreateBillingAccountMutation,
+    useUpdateBillingAccountMutation
 } = billingAccountsApi;
 export {billingAccountsApi};

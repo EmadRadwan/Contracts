@@ -34,6 +34,7 @@
       "service": "Service",
       "accounting": "Accounting",
       "manufacturing": "Manufacturing",
+      "crm": "CRM",
       "login": "Login"
     },
     "statuses": {
@@ -919,6 +920,43 @@
           }
         }
       }
+    },
+    "billingAccounts": {
+    "menu": {
+      "billingAccounts": "Billing Accounts"
+    },
+    "list": {
+      "title": "Billing Accounts",
+      "new": "New Billing Account",
+      "accountId": "Account ID",
+      "party": "Party",
+      "project": "Project",
+      "limit": "Account Limit",
+      "balance": "Available Balance",
+      "currency": "Currency",
+      "fromDate": "From Date",
+      "thruDate": "Thru Date",
+      "description": "Description"
+    },
+    "form": {
+      "new": "New Billing Account",
+      "title": "Billing Account",
+      "accountLimit": "Account Limit",
+      "currency": "Account Currency",
+      "party": "Customer / Party",
+      "project": "Project",
+      "fromDate": "Start Date",
+      "thruDate": "End Date",
+      "availableBalance": "Available Balance",
+      "description": "Description"
+    }
+  }
+  },
+  "crm": {
+    "menu": {
+      "leads": "Leads",
+      "contacts": "Contacts",
+      "accounts": "Accounts"
     }
   }
 }
