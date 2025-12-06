@@ -1,350 +1,299 @@
-import React, { useMemo, useRef, useState, useCallback, useEffect } from "react";
-import AccountingMenu from "../../invoice/menu/AccountingMenu";
-import { Box, Button, Grid, Paper, Typography, CircularProgress, Skeleton, Alert } from "@mui/material";
+// BillingAccountForm.tsx – FINAL VERSION (Perfect UX + Error Handling)
+import React, { useEffect, useMemo, useState } from "react";
+import {
+    Box,
+    Button,
+    Grid,
+    Paper,
+    Typography,
+    CircularProgress,
+    Alert,
+    Skeleton,
+} from "@mui/material";
 import { Field, Form, FormElement } from "@progress/kendo-react-form";
 import { requiredValidator } from "../../../../app/common/form/Validators";
-import { BillingAccount } from "../../../../app/models/accounting/billingAccount";
 import FormNumericTextBox from "../../../../app/common/form/FormNumericTextBox";
 import FormDatePicker from "../../../../app/common/form/FormDatePicker";
 import FormTextArea from "../../../../app/common/form/FormTextArea";
+import { FormComboBoxVirtualProject } from "../../../../app/common/form/FormComboBoxVirtualProject";
+import { FormComboBoxVirtualContractorsAndSuppliers } from "../../../../app/common/form/FormComboBoxVirtualContractorsAndSuppliers";
 import {
     useCreateBillingAccountMutation,
-    //useUpdateBillingAccountMutation,
-    useFetchBillingAccountsBalanceQuery,
     useLazyFetchBalancesForVendorAndProjectQuery,
 } from "../../../../app/store/apis";
-import {formatCurrency, handleDatesObject, parseDate} from "../../../../app/util/utils";
-import { FormComboBoxVirtualProject } from "../../../../app/common/form/FormComboBoxVirtualProject";
+import { parseDate } from "../../../../app/util/utils";
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
-import {
-    FormComboBoxVirtualContractorsAndSuppliers,
-} from "../../../../app/common/form/FormComboBoxVirtualContractorsAndSuppliers";
 import { toast } from "react-toastify";
+import { BillingAccount } from "../../../../app/models/accounting/billingAccount";
+import AccountingMenu from "../../invoice/menu/AccountingMenu";
 
 interface Props {
-    editMode: number;
-    selectedBillingAccount?: BillingAccount;
-    onClose: () => void;
-    setEditMode?: (mode: number) => void;
-    onBillingAccountCreated?: (account: BillingAccount) => void; // ← New callback
+    billingAccount?: BillingAccount;
+    editMode: number; // 1 = create, 2 = edit
+    cancelEdit: () => void;
+    onBillingAccountCreated?: (created: BillingAccount) => void;
 }
 
-const BillingAccountForm = ({
-                                editMode,
-                                onClose,
-                                selectedBillingAccount,
-                                setEditMode,
-                                onBillingAccountCreated,
-                            }: Props) => {
+const BillingAccountForm: React.FC<Props> = ({
+                                                 billingAccount,
+                                                 editMode,
+                                                 cancelEdit,
+                                                 onBillingAccountCreated,
+                                             }) => {
     const { getTranslatedLabel } = useTranslationHelper();
-    const [createBillingAccount, { isLoading: isCreating }] = useCreateBillingAccountMutation();
+    const [create, { isLoading: isCreating, error: createError }] = useCreateBillingAccountMutation();
+    const [triggerBalance, { data: balanceData, isFetching: balanceLoading }] =
+        useLazyFetchBalancesForVendorAndProjectQuery();
 
-    const [partyIdTo, setPartyIdTo] = useState<string>("");
-        const [projectId, setProjectId] = useState<string>("");
-        const [triggerBalanceFetch, { data: balanceData, isFetching: balanceLoading }] =
-            useLazyFetchBalancesForVendorAndProjectQuery();
+    const [currentPartyId, setCurrentPartyId] = useState<string | null>(null);
+    const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [creationError, setCreationError] = useState<string | null>(null);
 
-    const [buttonFlag, setButtonFlag] = useState(false);
-    const [formKey, setFormKey] = useState(0); // Used to force form re-render on update success
+    // This will hold the freshly created account (used to show balance right after create)
+    const [justCreatedAccount, setJustCreatedAccount] = useState<BillingAccount | null>(null);
 
-    const stableTrigger = useCallback(
-        (params: { partyId: string; projectId: string }) => {
-            triggerBalanceFetch(params, false); 
-        },
-        [triggerBalanceFetch] 
-    );
-    
-    useEffect(() => {
-        if (partyIdTo && projectId) {
-            stableTrigger({ partyId: partyIdTo, projectId }); // ← use fromPartyId if partyIdTo is an object
-        }
-    }, [partyIdTo, projectId, stableTrigger]); 
-
-    // REFACTOR: Compute initial values cleanly using useMemo (same pattern as ProductForm)
-    const computeInitialValues = (account?: BillingAccount) => {
-        if (editMode === 1 && !account) {
+    const initialValues = useMemo(() => {
+        if (editMode === 1) {
             return {
-                fromDate: new Date(), // today
+                fromDate: new Date(),
                 thruDate: null,
+                accountLimit: null,
+                partyId: null,
+                projectId: null,
+                description: "",
             };
         }
 
-        const source = account || selectedBillingAccount;
-        if (!source) return {};
-        setPartyIdTo(typeof source.partyId === "string" ? source.partyId : source.partyId?.fromPartyId);
-        setProjectId(typeof source.projectId === "string" ? source.projectId : source.projectId?.projectId);
-
+        const acc = billingAccount!;
         return {
-            ...source,
-
-            // Convert string dates → real Date objects
-            fromDate: parseDate(source.fromDate),
-            thruDate: parseDate(source.thruDate),
-            createdDate: parseDate(source.createdDate),
-
-            // Ensure ComboBox fields are objects (safe fallback)
-            partyId: typeof source.partyId === "string" || !source.partyId
-                ? {
-                    fromPartyId: source.partyId,
-                    fromPartyName: source.partyName,
-                }
-                : source.partyId,
-
-            projectId: typeof source.projectId === "string" || !source.projectId
-                ? source.projectId
-                    ? {
-                        projectId: source.projectId,
-                        projectName: source.projectName ?? null,
-                    }
-                    : null
-                : source.projectId,
+            billingAccountId: acc.billingAccountId,
+            accountLimit: acc.accountLimit,
+            description: acc.description ?? "",
+            fromDate: parseDate(acc.fromDate),
+            thruDate: parseDate(acc.thruDate),
+            createdDate: parseDate(acc.createdDate),
+            partyId: { fromPartyId: acc.partyId, fromPartyName: acc.partyName },
+            projectId: acc.projectId ? { projectId: acc.projectId, projectName: acc.projectName } : null,
         };
-    };
+    }, [editMode, billingAccount]);
 
-    const [formInitialValues, setFormInitialValues] = useState(() => computeInitialValues());
-
+    // Trigger balance fetch only when we have both IDs and account exists
     useEffect(() => {
-        setFormInitialValues(computeInitialValues());
-    }, [editMode, selectedBillingAccount]);
+        const hasBothIds = currentPartyId && currentProjectId;
+        const hasAccount = editMode === 2 || justCreatedAccount;
 
+        if (hasBothIds && hasAccount) {
+            triggerBalance({ partyId: currentPartyId, projectId: currentProjectId }, false);
+        }
+    }, [currentPartyId, currentProjectId, editMode, justCreatedAccount, triggerBalance]);
 
     const handleSubmit = async (data: any) => {
-        setButtonFlag(true);
+        setIsSubmitting(true);
+        setCreationError(null); // Reset previous error
 
         try {
-            if (editMode === 1) {
-                // CREATE MODE
-                const payload = {
-                    partyId: data.partyId?.fromPartyId ?? data.partyId,
-                    projectId: data.projectId?.projectId ?? data.projectId,
-                    accountLimit: data.accountLimit,
-                    fromDate: data.fromDate,
-                    thruDate: data.thruDate || null,
-                    description: data.description || "",
-                };
+            const payload = {
+                partyId: data.partyId?.fromPartyId ?? data.partyId,
+                projectId: data.projectId?.projectId ?? data.projectId ?? null,
+                accountLimit: data.accountLimit,
+                fromDate: data.fromDate,
+                thruDate: data.thruDate || null,
+                description: data.description || "",
+            };
 
-                const result = await createBillingAccount(payload).unwrap();
+            const result = await create(payload).unwrap(); // This does NOT throw on isSuccess: false
 
-                if (!result?.isSuccess) {
-                    const errorMsg = result?.error || result?.message || "فشل إنشاء حساب الأجل";
-                    throw new Error(errorMsg);
-                }
+            // CRITICAL: Manually check isSuccess
+            if (!result.isSuccess) {
+                const errorMsg = result.error || "فشل إنشاء حساب الأجل";
+                setCreationError(errorMsg);
+                toast.error(errorMsg);
+                return; // Stop here
+            }
 
-                toast.success("تم إنشاء حساب الأجل بنجاح");
+            // Success path
+            toast.success("تم إنشاء حساب الأجل بنجاح");
 
-                if (onBillingAccountCreated) {
-                    onBillingAccountCreated(result);
-                }
+            const createdAccount: BillingAccount = {
+                ...result.value,
+                fromDate: parseDate(result.value.fromDate),
+                thruDate: parseDate(result.value.thruDate),
+                createdDate: parseDate(result.value.createdDate),
+                partyId: result.value.partyId,
+                partyName: result.value.partyName,
+                projectId: result.value.projectId,
+                projectName: result.value.projectName,
+            };
 
-            } 
-            /*else if (editMode === 2) {
-                // UPDATE MODE
-                const payload = {
-                    billingAccountId: selectedBillingAccount?.billingAccountId,
-                    fromDate: data.fromDate,
-                    thruDate: data.thruDate || null,
-                    description: data.description || "",
-                };
-
-                const result = await updateBillingAccount(payload).unwrap();
-
-                if (!result?.isSuccess) {
-                    const errorMsg = result?.error || result?.message || "فشل تحديث حساب الأجل";
-                    throw new Error(errorMsg);
-                }
-
-                toast.success("تم تحديث حساب الأجل بنجاح");
-
-                // Update form initial values with the response data
-                const updatedAccount = result.value;
-                setFormInitialValues(computeInitialValues(updatedAccount));
-                setFormKey((prev) => prev + 1); // Force form re-render
-            }*/
-
-        } catch (error: any) {
-            const errorMessage =
-                error?.message ||
-                error?.data?.error ||
-                error?.data?.message ||
-                (editMode === 1 ? "حدث خطأ أثناء إنشاء حساب الأجل" : "حدث خطأ أثناء تحديث حساب الأجل");
-
-            toast.error(errorMessage);
+            setJustCreatedAccount(createdAccount);
+            onBillingAccountCreated?.(createdAccount);
+        } catch (err: any) {
+            // Only for real network errors
+            const msg = err?.data?.error || "حدث خطأ غير متوقع";
+            setCreationError(msg);
+            toast.error(msg);
         } finally {
-            setButtonFlag(false);
+            setIsSubmitting(false);
         }
     };
-    
-    console.log('selectedBillingAccount', selectedBillingAccount)
 
     return (
         <>
             <AccountingMenu selectedMenuItem="/billingAccounts" />
-            <Paper elevation={5} className="div-container-withBorderCurved">
-                <Grid container spacing={2}>
-                    <Grid item xs={12}>
-                        <Box display="flex" justifyContent="space-between" alignItems="center">
-                            <Typography
-                                sx={{ p: 2 }}
-                                color={editMode > 1 ? "black" : "green"}
-                                variant="h4"
-                            >
-                                {editMode === 1
-                                    ? getTranslatedLabel("accounting.billingAccounts.form.new", "حساب أجل جديد")
-                                    : `${getTranslatedLabel("accounting.billingAccounts.form.title", "حساب الأجل")}: ${selectedBillingAccount?.billingAccountId}`}
-                            </Typography>
-                        </Box>
-                    </Grid>
-                </Grid>
+            <Paper elevation={5} className="div-container-withBorderCurved" sx={{ p: 3 }}>
+                <Typography variant="h4" gutterBottom color={editMode === 1 ? "success.main" : "text.primary"}>
+                    {editMode === 1 ? "حساب أجل جديد" : `حساب الأجل: ${billingAccount?.billingAccountId}`}
+                </Typography>
+
 
                 <Form
-                    key={editMode === 2 ? `${selectedBillingAccount?.billingAccountId}-${formKey}` : "new-billing-account"}
-                    initialValues={formInitialValues}
+                    initialValues={initialValues}
                     onSubmit={handleSubmit}
-                    render={(formRenderProps) => (
-                        <FormElement>
-                            <fieldset className="k-form-fieldset">
-                                <Grid container spacing={2}>
-                                    <Grid item xs={12} md={4}>
-                                        <Field
-                                            name="accountLimit"
-                                            label={getTranslatedLabel("accounting.billingAccounts.form.accountLimit", "حد الحساب")}
-                                            component={FormNumericTextBox}
-                                            validator={requiredValidator}
-                                            disabled={editMode > 1}
-                                        />
-                                    </Grid>
+                    render={(formRenderProps) => {
+                        const { valueGetter, onChange } = formRenderProps;
 
-                                    <Grid item xs={12} md={4}>
-                                        <Field
-                                            name="partyId"
-                                            label={getTranslatedLabel("accounting.billingAccounts.form.party", "العميل / الطرف")}
-                                            component={FormComboBoxVirtualContractorsAndSuppliers}
-                                            disabled={editMode > 1}
-                                            validator={editMode === 1 ? requiredValidator : undefined}
-                                        />
-                                    </Grid>
+                        const partyObj = valueGetter("partyId");
+                        const projectObj = valueGetter("projectId");
 
-                                    <Grid item xs={12} md={4}>
-                                        <Field
-                                            name="projectId"
-                                            component={FormComboBoxVirtualProject}
-                                            label={getTranslatedLabel("projects.certificate.form.project", "المشروع")}
-                                            dataItemKey="projectId"
-                                            textField="ProjectName"
-                                            validator={requiredValidator}
-                                            disabled={editMode > 1}
-                                        />
-                                    </Grid>
-                                </Grid>
+                        const partyId = partyObj?.fromPartyId ?? partyObj?.partyId ?? null;
+                        const projectId = projectObj?.projectId ?? null;
 
-                                <Grid container spacing={2} sx={{ mt: 2 }}>
-                                    <Grid item xs={12} md={4}>
-                                        <Field
-                                            name="fromDate"
-                                            label={getTranslatedLabel("accounting.billingAccounts.form.fromDate", "تاريخ البداية")}
-                                            component={FormDatePicker}
-                                            validator={requiredValidator}
-                                            disabled={editMode > 1}
-                                        />
-                                    </Grid>
+                        // Update tracking state
+                        if (partyId !== currentPartyId) setCurrentPartyId(partyId);
+                        if (projectId !== currentProjectId) setCurrentProjectId(projectId);
 
-                                    <Grid item xs={12} md={4}>
-                                        <Field
-                                            name="thruDate"
-                                            label={getTranslatedLabel("accounting.billingAccounts.form.thruDate", "تاريخ النهاية")}
-                                            component={FormDatePicker}
-                                        />
-                                    </Grid>
+                        const showBalanceBox = partyId && projectId && (editMode === 2 || justCreatedAccount);
 
-                                    {/* {editMode > 1 && (
-                                        <Grid item xs={12}>
-                                            <Typography variant="body1" sx={{ fontWeight: "bold", mt: 2 }}>
-                                                {getTranslatedLabel("accounting.billingAccounts.form.availableBalance", "الرصيد المتاح")}
-                                            </Typography>
-                                            <Typography variant="h5" sx={{ color: "red", fontWeight: "bold" }}>
-                                                {formatCurrency(availableBalance)}
-                                            </Typography>
+                        return (
+                            <FormElement>
+                                <fieldset className="k-form-fieldset">
+                                    <Grid container spacing={3}>
+                                        <Grid item xs={12} md={4}>
+                                            <Field
+                                                name="partyId"
+                                                label="العميل / المورد"
+                                                component={FormComboBoxVirtualContractorsAndSuppliers}
+                                                validator={requiredValidator}
+                                                disabled={editMode === 2}
+                                            />
                                         </Grid>
-                                    )} */}
 
-                                    <Grid item xs={12} md={8}>
-                                        <Field
-                                            name="description"
-                                            label={getTranslatedLabel("accounting.billingAccounts.form.description", "الوصف")}
-                                            component={FormTextArea}
-                                        />
+                                        <Grid item xs={12} md={4}>
+                                            <Field
+                                                name="projectId"
+                                                label="المشروع"
+                                                component={FormComboBoxVirtualProject}
+                                                validator={requiredValidator}
+                                                disabled={editMode === 2}
+                                            />
+                                        </Grid>
+
+                                        <Grid item xs={12} md={4}>
+                                            <Field
+                                                name="accountLimit"
+                                                label="حد الحساب"
+                                                component={FormNumericTextBox}
+                                                format="n2"
+                                                validator={requiredValidator}
+                                                disabled={editMode === 2}
+                                            />
+                                        </Grid>
+
+                                        <Grid item xs={12} md={4}>
+                                            <Field
+                                                name="fromDate"
+                                                label="من تاريخ"
+                                                component={FormDatePicker}
+                                                validator={requiredValidator}
+                                                disabled={editMode === 2}
+                                            />
+                                        </Grid>
+
+                                        <Grid item xs={12} md={4}>
+                                            <Field
+                                                name="thruDate"
+                                                label="إلى تاريخ"
+                                                component={FormDatePicker}
+                                                disabled={editMode === 2}
+                                            />
+                                        </Grid>
+
+                                        <Grid item xs={12} md={8}>
+                                            <Field
+                                                name="description"
+                                                label="الوصف"
+                                                component={FormTextArea}
+                                                rows={3}
+                                            />
+                                        </Grid>
                                     </Grid>
-                                </Grid>
-                            </fieldset>
 
-                            {partyIdTo && projectId && (
-                                <Grid item xs={12}>
-                                    <Box sx={{ p: 2, border: "1px solid #e0e0e0", borderRadius: 2, bgcolor: "#f9f9f9" }}>
-                                        {balanceLoading ? (
-                                            <Skeleton height={80} />
-                                        ) : balanceData ? (
-                                            balanceData.initialBalance === 0 ? (
-                                                <Alert severity="warning" sx={{ mb: 0 }}>
-                                                    {balanceData.message || "لا يوجد سقف دفع مُعيَّن لهذا المورد على المشروع"}
-                                                </Alert>
-                                            ) : (
-                                                <Grid container spacing={2}>
-                                                    <Grid item xs={4}>
-                                                        <Typography variant="body2" color="text.secondary">السقف المتاح</Typography>
-                                                        <Typography variant="h6" color="success.main" fontWeight="bold">
-                                                            {balanceData.initialBalance.toLocaleString("ar-EG")} ج.م
-                                                        </Typography>
-                                                    </Grid>
-                                                    <Grid item xs={4}>
-                                                        <Typography variant="body2" color="text.secondary">المستخدم</Typography>
-                                                        <Typography variant="h6" color="warning.main">
-                                                            {balanceData.usedBalance.toLocaleString("ar-EG")} ج.م
-                                                        </Typography>
-                                                    </Grid>
-                                                    <Grid item xs={4}>
-                                                        <Typography variant="body2" color="text.secondary">المتبقي</Typography>
-                                                        <Typography variant="h6" color={balanceData.remainingBalance > 0 ? "primary" : "error"} fontWeight="bold">
-                                                            {balanceData.remainingBalance.toLocaleString("ar-EG")} ج.م
-                                                        </Typography>
-                                                    </Grid>
-                                                    {/* {amount > balanceData.remainingBalance && (
-                                                        <Grid item xs={12}>
-                                                            <Alert severity="error">
-                                                                المبلغ المطلوب ({amount.toLocaleString("ar-EG")} ج.م) يتجاوز الرصيد المتاح
-                                                            </Alert>
+                                    {/* Balance Box – Only show when account exists */}
+                                    {showBalanceBox && (
+                                        <Grid item xs={12} sx={{ mt: 4 }}>
+                                            <Box sx={{ p: 3, border: "1px solid #e0e0e0", borderRadius: 2, bgcolor: "#f9f9f9" }}>
+                                                {balanceLoading ? (
+                                                    <Skeleton variant="rounded" height={100} />
+                                                ) : balanceData ? (
+                                                    balanceData.initialBalance === 0 ? (
+                                                        <Alert severity="info">
+                                                            {balanceData.message || "لا يوجد سقف محدد حالياً"}
+                                                        </Alert>
+                                                    ) : (
+                                                        <Grid container spacing={3}>
+                                                            <Grid item xs={4}>
+                                                                <Typography variant="body2" color="text.secondary">السقف المتاح</Typography>
+                                                                <Typography variant="h6" color="success.main" fontWeight="bold">
+                                                                    {Number(balanceData.initialBalance).toLocaleString("ar-EG")} ج.م
+                                                                </Typography>
+                                                            </Grid>
+                                                            <Grid item xs={4}>
+                                                                <Typography variant="body2" color="text.secondary">المستخدم</Typography>
+                                                                <Typography variant="h6" color="warning.main">
+                                                                    {Number(balanceData.usedBalance).toLocaleString("ar-EG")} ج.م
+                                                                </Typography>
+                                                            </Grid>
+                                                            <Grid item xs={4}>
+                                                                <Typography variant="body2" color="text.secondary">المتبقي</Typography>
+                                                                <Typography
+                                                                    variant="h6"
+                                                                    color={balanceData.remainingBalance > 0 ? "primary" : "error"}
+                                                                    fontWeight="bold"
+                                                                >
+                                                                    {Number(balanceData.remainingBalance).toLocaleString("ar-EG")} ج.م
+                                                                </Typography>
+                                                            </Grid>
                                                         </Grid>
-                                                    )} */}
-                                                </Grid>
-                                            )
-                                        ) : (
-                                            <Typography color="text.secondary">جاري تحميل بيانات الحساب...</Typography>
-                                        )}
+                                                    )
+                                                ) : null}
+                                            </Box>
+                                        </Grid>
+                                    )}
+
+                                    <Box sx={{ mt: 5 }} className="k-form-buttons">
+                                        <Button
+                                            variant="contained"
+                                            color="success"
+                                            type="submit"
+                                            disabled={isSubmitting || isCreating || !formRenderProps.allowSubmit}
+                                            startIcon={isCreating ? <CircularProgress size={20} /> : null}
+                                        >
+                                            {isCreating ? "جاري الحفظ..." : "حفظ"}
+                                        </Button>
+
+                                        <Button variant="contained" color="error" onClick={cancelEdit} sx={{ ml: 2 }}>
+                                            رجوع
+                                        </Button>
                                     </Box>
-                                </Grid>
-                            )}
-
-                            <div className="k-form-buttons" style={{ marginTop: 24 }}>
-                                <Button
-                                    variant="contained"
-                                    color="success"
-                                    type="submit"
-                                    disabled={!formRenderProps.allowSubmit || buttonFlag || isCreating }
-                                    startIcon={(isCreating ) ? <CircularProgress size={20} /> : null}
-                                >
-                                    {(isCreating)
-                                        ? getTranslatedLabel("general.saving", "جاري الحفظ...")
-                                        : getTranslatedLabel("general.save", "حفظ")}
-                                </Button>
-
-                                <Button variant="contained" color="error" onClick={onClose} sx={{ ml: 2 }}>
-                                    {getTranslatedLabel("general.back", "رجوع")}
-                                </Button>
-                            </div>
-                        </FormElement>
-                    )}
+                                </fieldset>
+                            </FormElement>
+                        );
+                    }}
                 />
             </Paper>
         </>
+        
     );
 };
 
