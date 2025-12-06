@@ -97,6 +97,8 @@ export const PaymentsDailyExcel: React.FC<PaymentsDailyExcelProps> = ({
             getTranslatedLabel('accounting.payments.list.paymentType', 'Payment Type'),
             getTranslatedLabel('accounting.payments.list.orderId', 'Order ID'),
             getTranslatedLabel('accounting.payments.list.certificateNumber', 'Certificate Number'),
+            getTranslatedLabel('projects.certificate.form.project', 'Project'),
+            getTranslatedLabel('accounting.payments.form.costCenter', 'Cost Center'),
             getTranslatedLabel('accounting.payments.list.from', 'From Party'),
             getTranslatedLabel('accounting.payments.list.to', 'To Party'),
             getTranslatedLabel('accounting.payments.list.date', 'Payment Date'),
@@ -119,6 +121,8 @@ export const PaymentsDailyExcel: React.FC<PaymentsDailyExcelProps> = ({
                 utils.rtlEmbed(utils.safeString(payment.paymentTypeDescription)),
                 utils.rtlEmbed(utils.safeString(payment.orderId ?? '')),
                 utils.rtlEmbed(utils.safeString(payment.certificateNumber ?? '')),
+                utils.rtlEmbed(utils.safeString(payment.projectName ?? '')),
+                utils.rtlEmbed(utils.safeString(payment.costCenterDescription ?? '')),
                 utils.rtlEmbed(utils.safeString(payment.partyIdFromName)),
                 utils.rtlEmbed(utils.safeString(payment.partyIdToName)),
                 utils.formatDate(payment.effectiveDate),
@@ -147,11 +151,20 @@ export const PaymentsDailyExcel: React.FC<PaymentsDailyExcelProps> = ({
 
         // === COLUMN WIDTHS ===
         ws.columns = [
-            { width: 15 }, { width: 22 }, { width: 15 }, { width: 20 },
-            { width: 28 }, { width: 28 }, { width: 15 }, { width: 15 },
-            { width: 16 }, { width: 35 }
+            { width: 15 }, // Payment ID
+            { width: 22 }, // Type
+            { width: 15 }, // Order ID
+            { width: 20 }, // Certificate
+            { width: 30 }, // Project (NEW)
+            { width: 28 }, // Cost Center (NEW)
+            { width: 28 }, // From
+            { width: 28 }, // To
+            { width: 15 }, // Date
+            { width: 15 }, // Status
+            { width: 16 }, // Amount
+            { width: 35 }  // Comments
         ];
-        ws.getColumn(9).numFmt = '#,##0.00';
+        ws.getColumn(11).numFmt = '#,##0.00';
 
         return await workbook.xlsx.writeBuffer();
     }, [companyName, paymentType, getTranslatedLabel]);

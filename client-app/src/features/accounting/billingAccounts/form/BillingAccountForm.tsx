@@ -37,7 +37,7 @@ const BillingAccountForm = ({
                             }: Props) => {
     const { getTranslatedLabel } = useTranslationHelper();
     const [createBillingAccount, { isLoading: isCreating }] = useCreateBillingAccountMutation();
-    const [updateBillingAccount, { isLoading: isUpdating }] = useUpdateBillingAccountMutation();
+   // const [updateBillingAccount, { isLoading: isUpdating }] = useUpdateBillingAccountMutation();
 
     // REFACTOR: Fetch balance only when viewing/editing existing account
     const { data: billingAccountBalance } = useFetchBillingAccountsBalanceQuery(
@@ -270,10 +270,10 @@ const BillingAccountForm = ({
                                     variant="contained"
                                     color="success"
                                     type="submit"
-                                    disabled={!formRenderProps.allowSubmit || buttonFlag || isCreating || isUpdating}
-                                    startIcon={(isCreating || isUpdating) ? <CircularProgress size={20} /> : null}
+                                    disabled={!formRenderProps.allowSubmit || buttonFlag || isCreating }
+                                    //startIcon={(isCreating || isUpdating) ? <CircularProgress size={20} /> : null}
                                 >
-                                    {(isCreating || isUpdating)
+                                    {(isCreating )
                                         ? getTranslatedLabel("general.saving", "جاري الحفظ...")
                                         : getTranslatedLabel("general.save", "حفظ")}
                                 </Button>

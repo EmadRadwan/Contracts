@@ -51,7 +51,6 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
     const localizationKey = "accounting.payments.form";
     const CASH_PAYMENT_METHOD_ID = "CASH";
     const ADVANCE_TO_VENDOR_CONTRACTOR = "ADVANCE_TO_VENDOR_CONTRACTOR";
-    const showProjectField = payment?.paymentTypeId === ADVANCE_TO_VENDOR_CONTRACTOR;
 
     const [triggerBalanceFetch, {data: balanceData, isFetching: balanceLoading}] =
         useLazyFetchBalancesForVendorAndProjectQuery();
@@ -67,13 +66,17 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
     }, [payment?.projectId]);
 
     useEffect(() => {
-        if (showProjectField && partyIdTo && currentProjectId) {
+        if (
+            payment?.paymentTypeId === ADVANCE_TO_VENDOR_CONTRACTOR && // only for advance
+            partyIdTo &&
+            currentProjectId
+        ) {
             triggerBalanceFetch(
                 { partyId: partyIdTo, projectId: currentProjectId },
-                false // fresh data
+                false
             );
         }
-    }, [showProjectField, partyIdTo, currentProjectId, triggerBalanceFetch]);
+    }, [payment?.paymentTypeId, partyIdTo, currentProjectId, triggerBalanceFetch]);
 
 
 
@@ -190,13 +193,17 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                     ?.description ?? "",
             chequeNumber: isCash ? "" : payment.chequeNumber,
             chequeDate: isCash ? undefined : payment.chequeDate,
+            costCenter: paymentCostCenters.find(cc => cc.costCenterId === payment.costCenterId)?.description
+                ?? payment.costCenterId
+                ?? "N/A",
+            project: payment.projectName ?? payment.projectId ?? "N/A",
         };
     }, [
         payment,
         paymentTypeDesc,
         paymentType,
         statusDesc,
-        paymentMethods,
+        paymentMethods,paymentCostCenters
     ]);
 
     // Initialize form with payment values
@@ -296,7 +303,9 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                     
                     const amount = valueGetter("amount") || 0;
 
-                    const hasBillingAccountIssue = showProjectField &&
+                    const isAdvancePayment = payment?.paymentTypeId === ADVANCE_TO_VENDOR_CONTRACTOR;
+                    const hasBillingAccountIssue =
+                        isAdvancePayment &&
                         balanceData &&
                         (balanceData.initialBalance === 0 || amount > balanceData.remainingBalance);
 
@@ -528,25 +537,26 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                 validator={requiredValidator}
                                             />
                                         </Grid>
-                                        {showProjectField && (
-                                            <Grid item xs={3}>
-                                                <Field
-                                                    id="projectId"
-                                                    name="projectId"
-                                                    component={FormComboBoxVirtualProject}
-                                                    label={getTranslatedLabel("projects.certificate.form.project", "Project")}
-                                                    dataItemKey="projectId"
-                                                    textField="ProjectName"
-                                                    validator={requiredValidator}
-                                                    onChange={handleProjectChange} 
-                                                />
-                                            </Grid>
-                                        )}
-                                        {showProjectField && partyIdTo && projectIdFromPayment && (
-                                            <Grid item xs={12} sx={{mt: 2}}>
-                                                <Box sx={{p: 2, border: "1px solid #e0e0e0", borderRadius: 2, bgcolor: "#f9f9f9"}}>
+                                        <Grid item xs={3}>
+                                            <Field
+                                                id="projectId"
+                                                name="projectId"
+                                                component={FormComboBoxVirtualProject}
+                                                label={getTranslatedLabel("projects.certificate.form.project", "Project")}
+                                                dataItemKey="projectId"
+                                                textField="ProjectName"
+                                                // REFACTOR: Required ONLY when it's an advance payment
+                                                validator={(value) =>
+                                                    isAdvancePayment ? requiredValidator(value) : undefined
+                                                }
+                                                onChange={handleProjectChange}
+                                            />
+                                        </Grid>
+                                        {isAdvancePayment && partyIdTo && currentProjectId && (
+                                            <Grid item xs={12} sx={{ mt: 2 }}>
+                                                <Box sx={{ p: 2, border: "1px solid #e0e0e0", borderRadius: 2, bgcolor: "#f9f9f9" }}>
                                                     {balanceLoading ? (
-                                                        <Skeleton height={80}/>
+                                                        <Skeleton height={80} />
                                                     ) : balanceData ? (
                                                         balanceData.initialBalance === 0 ? (
                                                             <Alert severity="warning">
@@ -568,9 +578,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                                 </Grid>
                                                                 <Grid item xs={4}>
                                                                     <Typography variant="body2" color="text.secondary">المتبقي</Typography>
-                                                                    <Typography variant="h6"
-                                                                                color={balanceData.remainingBalance > 0 ? "primary" : "error"}
-                                                                                fontWeight="bold">
+                                                                    <Typography variant="h6" color={balanceData.remainingBalance > 0 ? "primary" : "error"} fontWeight="bold">
                                                                         {balanceData.remainingBalance.toLocaleString("ar-EG")} ج.م
                                                                     </Typography>
                                                                 </Grid>

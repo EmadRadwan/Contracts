@@ -19,6 +19,7 @@ import {RootState, useAppSelector, useGetCostCentersQuery} from "../../../../app
 import {useFetchGlAccountOrganizationHierarchyLovQuery} from "../../../../app/store/apis";
 import {FormDropDownTreeGlAccount2} from "../../../../app/common/form/FormDropDownTreeGlAccount2";
 import {MemoizedFormComboBox2} from "../../../../app/common/form/FormComboBox2";
+import {FormComboBoxVirtualProject} from "../../../../app/common/form/FormComboBoxVirtualProject";
 
 interface NewPaymentInProps {
     partyInputRef: React.RefObject<HTMLInputElement>;
@@ -88,6 +89,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                 isDisbursement: false,
                 chequeNumber: "",
                 chequeDate: null,
+                projectId: "",
                 costCenterId: "",
             }}
             onSubmit={handleSubmit}
@@ -230,7 +232,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
 
                                 <Grid item xs={12}>
                                     <Grid container spacing={2} alignItems="flex-end">
-                                        <Grid item xs={3}>
+                                        <Grid item xs={2}>
                                             <Field
                                                 id="amount"
                                                 format="n2"
@@ -244,7 +246,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                 validator={requiredValidator}
                                             />
                                         </Grid>
-                                        <Grid item xs={4}>
+                                        <Grid item xs={2}>
                                             {isLoadingGlAccounts ? (
                                                 <Skeleton variant="rounded" height={56} />
                                             ) : (
@@ -260,6 +262,14 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                     expandField="expanded"
                                                 />
                                             )}
+                                        </Grid>
+                                        <Grid item xs={3}>
+                                            <Field
+                                                id="projectId"
+                                                name="projectId"
+                                                component={FormComboBoxVirtualProject}
+                                                label={getTranslatedLabel("projects.certificate.form.project", "Project")}
+                                            />
                                         </Grid>
                                         <Grid item xs={3}>
                                             <Field

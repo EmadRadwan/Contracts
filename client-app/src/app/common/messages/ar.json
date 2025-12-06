@@ -871,6 +871,8 @@
         "status": "الحالة",
         "amount": "المبلغ",
         "outstanding": "المبلغ المستحق",
+        "projectName": " المشروع",
+        "costCenterDescription":  "مركز التكلفة",
         "comments": "التعليقات",
         "orderId": "رقم الطلب",
         "certificateNumber": "رقم المستخلص",
@@ -1002,7 +1004,8 @@
             "glAccountId": "كود الحساب ",
             "glAccountName": "اسم الحساب ",
             "glAccountType": "نوع الحساب المحاسبي",
-            "workEffortId": "رمز العمل"
+            "workEffortId": "رقم المستخلص",
+            "partyName": "اسم الطرف"
           }
         },
         "trans": {

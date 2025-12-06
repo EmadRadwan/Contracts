@@ -17,6 +17,8 @@ interface PaymentRow {
     paymentMethod: string;
     chequeNumber?: string;
     chequeDate?: string;
+    costCenter?: string;
+    project?: string;
 }
 
 interface PaymentApplicationRow {
@@ -127,6 +129,8 @@ export const PaymentExcelTechnical: React.FC<PaymentExcelProps> = ({
             getTranslatedLabel('accounting.payments.report.method', 'Method'),
             getTranslatedLabel('accounting.payments.report.cheque', 'Cheque #'),
             getTranslatedLabel('accounting.payments.report.chequeDate', 'Cheque Date'),
+            getTranslatedLabel('accounting.payments.form.costCenter', 'Cost Center'),
+            getTranslatedLabel('projects.certificate.form.project', 'Project'),
         ]);
         const headerRow = ws.getRow(ws.lastRow!.number);
         headerRow.font = { name: 'Amiri', size: 10, bold: true };
@@ -146,6 +150,8 @@ export const PaymentExcelTechnical: React.FC<PaymentExcelProps> = ({
             payment.paymentMethod,
             payment.chequeNumber || '',
             payment.chequeDate ? utils.formatDate(payment.chequeDate) : '',
+            utils.rtlEmbed(payment.costCenter || 'غير محدد'),
+            utils.rtlEmbed(payment.project || 'غير محدد'),
         ]);
         ws.getRow(ws.lastRow!.number).font = { name: 'Amiri', size: 9 };
         ws.getRow(ws.lastRow!.number).alignment = { horizontal: 'right', vertical: 'middle' };
@@ -235,9 +241,10 @@ export const PaymentExcelTechnical: React.FC<PaymentExcelProps> = ({
             { width: 15 }, // Status / Method
             { width: 15 }, // Cheque
             { width: 15 }, // Cheque Date
-            { width: 15 }, // Extra
+            { width: 20 }, // Cost Center (NEW)
+            { width: 25 }, // Project (NEW)
         ];
-        [5, 6].forEach(i => ws.getColumn(i).numFmt = '#,##0.00');
+        [5].forEach(i => ws.getColumn(i).numFmt = '#,##0.00');
 
         return await workbook.xlsx.writeBuffer();
     }, [companyName, payment, applications, transactions, getTranslatedLabel, isFetching]);

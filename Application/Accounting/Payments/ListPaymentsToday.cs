@@ -46,6 +46,26 @@ public class ListPaymentsDaily
                 join ptyTo in _context.Parties on pyt.PartyIdTo equals ptyTo.PartyId
                 join pmt in _context.PaymentMethodTypes 
                     on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into pmtGroup
+                
+                join opp in _context.OrderPaymentPreferences 
+                    on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId into oppJoin
+                from opp in oppJoin.DefaultIfEmpty()
+                join ord in _context.OrderHeaders 
+                    on opp.OrderId equals ord.OrderId into ordJoin
+                from ord in ordJoin.DefaultIfEmpty()
+                join we in _context.WorkEfforts 
+                    on ord.OrderId equals we.RelatedOrderId into weJoin
+                from we in weJoin.DefaultIfEmpty()
+
+                join proj in _context.WorkEfforts 
+                    on pyt.WorkEffortId equals proj.WorkEffortId into projJoin
+                from proj in projJoin.DefaultIfEmpty()
+
+                // NEW: Direct left join for CostCenterDescription
+                join cc in _context.CostCenters 
+                    on pyt.CostCenterId equals cc.CostCenterId into ccJoin
+                from cc in ccJoin.DefaultIfEmpty()
+
                 from pmt in pmtGroup.DefaultIfEmpty() 
                 where pyt.CreatedStamp >= startOfDayEgypt
                       && pyt.CreatedStamp < endOfDayEgypt
@@ -76,10 +96,11 @@ public class ListPaymentsDaily
                     CurrencyUomId = pyt.CurrencyUomId,
                     FinAccountTransId = pyt.FinAccountTransId,
                     IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
-                    // Removed: OrderId, CertificateNumber, CreditCardNumber, CreditCardExpiryDate
-                    // These were null anyway due to removed joins
                     ChequeNumber = pyt.ChequeNumber,
-                    ChequeDate = pyt.ChequeDate
+                    ChequeDate = pyt.ChequeDate,
+                    CertificateNumber = we != null ? we.CertificateNumber : null,
+                    ProjectName = proj != null ? proj.ProjectName : null,
+                    CostCenterDescription = cc != null ? cc.Description : null
                 };
 
             var data = await query.ToListAsync(ct);
@@ -125,6 +146,9 @@ public class PaymentRecordDto
     public bool IsDisbursement { get; set; }
     public string? ChequeNumber { get; set; }
     public DateTime? ChequeDate { get; set; }
+    public string? CertificateNumber { get; set; }       // From WorkEffort via Order chain
+    public string? ProjectName { get; set; }             // Direct from Payment.WorkEffortId
+    public string? CostCenterDescription { get; set; }
 }
 
 public class PaymentsDailyResponse

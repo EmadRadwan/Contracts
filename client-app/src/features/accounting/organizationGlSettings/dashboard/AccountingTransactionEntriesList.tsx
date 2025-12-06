@@ -203,6 +203,11 @@ export default function AccountingTransactionEntriesList() {
                                 "accounting.orgGL.accounting.summary.txnEntries.glAccountName",
                                 "Gl Account Id"
                             )} width={250}/>
+                            
+                            <Column field="partyName" title={getTranslatedLabel(
+                                "accounting.orgGL.accounting.summary.txnEntries.partyName",
+                                "Party Name"
+                            )} width={200}/>
 
                             <Column field="description" title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txns.description",
@@ -219,7 +224,7 @@ export default function AccountingTransactionEntriesList() {
                                 "Payment Id"
                             )} width={100}/>
 
-                            <Column field="workEffortId" title={getTranslatedLabel(
+                            <Column field="certificateNumber" title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txnEntries.workEffortId",
                                 "WorkEffort Id"
                             )} width={100}/>

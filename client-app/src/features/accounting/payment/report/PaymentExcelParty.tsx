@@ -20,6 +20,8 @@ interface PaymentRow {
     chequeNumber?: string;
     chequeDate?: string;
     comments?: string;
+    costCenter?: string;
+    project?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -203,6 +205,22 @@ export const PaymentExcelParty: React.FC<PaymentExcelCustomerProps> = ({
         ws.getRow(amtRow).font = { name: 'Amiri', size: 11, bold: true };
         ws.getRow(amtRow).alignment = { horizontal: 'right' };
         ws.addRow([]); // spacer
+
+        if (payment.costCenter || payment.project) {
+            const ccProjRow = ws.lastRow!.number + 1;
+            ws.addRow([
+                getTranslatedLabel('accounting.payments.form.costCenter', 'مركز التكلفة'),
+                utils.rtlEmbed(payment.costCenter || 'غير محدد'),
+                '',
+                getTranslatedLabel('projects.certificate.form.project', 'المشروع'),
+                utils.rtlEmbed(payment.project || 'غير محدد'),
+            ]);
+            ws.mergeCells(`B${ccProjRow}:C${ccProjRow}`);
+            ws.mergeCells(`E${ccProjRow}:F${ccProjRow}`);
+            ws.getRow(ccProjRow).font = { name: 'Amiri', size: 11, bold: true };
+            ws.getRow(ccProjRow).alignment = { horizontal: 'right' };
+            ws.addRow([]); // spacer
+        }
 
         // === EFFECTIVE DATE ===
         const effRow = ws.lastRow!.number + 1;

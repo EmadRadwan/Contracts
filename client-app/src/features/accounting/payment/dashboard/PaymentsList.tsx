@@ -235,6 +235,8 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
                 />
                 <Column field="statusDescription" title={getTranslatedLabel(`${localizationKey}.status`,"Status")} width={100} />
                 <Column field="amount" title={getTranslatedLabel(`${localizationKey}.amount`,"Amount")} width={130} />
+                <Column field="projectName" title={getTranslatedLabel(`${localizationKey}.projectName`,"Comments")} width={150} />
+                <Column field="costCenterDescription" title={getTranslatedLabel(`${localizationKey}.costCenterDescription`,"Comments")} width={150} />
                 <Column field="comments" title={getTranslatedLabel(`${localizationKey}.comments`,"Comments")} width={150} />
               </KendoGrid>
               {isFetching && <LoadingComponent message={getTranslatedLabel(`${localizationKey}.loading`,"Loading Payments...")} />}

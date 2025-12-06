@@ -18,6 +18,7 @@ public class AccountingTransactionEntryRecord
     public string? PaymentId { get; set; }
     public string? ShipmentId { get; set; }
     public string? WorkEffortId { get; set; }
+    public string? CertificateNumber { get; set; }
     public string? GlAccountTypeId { get; set; }
     public string? GlAccountId { get; set; }
     public string? GlAccountName { get; set; }

@@ -61,6 +61,9 @@ public class ListAccountingTransactionEntries
                 from glAccountOrg in glAccountOrgJoin.DefaultIfEmpty()
                 join p in _context.Parties on te.PartyId equals p.PartyId into partyJoin
                 from party in partyJoin.DefaultIfEmpty()
+                join we in _context.WorkEfforts on trans.WorkEffortId equals we.WorkEffortId into workEffortJoin
+                from workEffort in workEffortJoin.DefaultIfEmpty()
+
                 where request.CompanyId == null ||
                       (glAccountOrg != null && glAccountOrg.OrganizationPartyId == request.CompanyId)
                 select new AccountingTransactionEntryRecord
@@ -78,6 +81,7 @@ public class ListAccountingTransactionEntries
                     PaymentId = trans.PaymentId,
                     ShipmentId = trans.ShipmentId,
                     WorkEffortId = trans.WorkEffortId,
+                    CertificateNumber = workEffort.CertificateNumber,
                     GlAccountTypeId = te.GlAccountTypeId,
                     GlAccountId = te.GlAccountId,
                     Amount = te.Amount,

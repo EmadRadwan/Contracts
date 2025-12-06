@@ -303,6 +303,14 @@ public class GeneralLedgerService : IGeneralLedgerService
         var stamp = DateTime.UtcNow;
         var newAcctgTransSequence = await _utilityService.GetNextSequence("AcctgTrans");
 
+        string? workEffortId = null;
+        if (!string.IsNullOrEmpty(shipmentReceipt.OrderId))
+        {
+            workEffortId = await _context.WorkEfforts
+                .Where(we => we.RelatedOrderId == shipmentReceipt.OrderId)
+                .Select(we => we.WorkEffortId)
+                .FirstOrDefaultAsync();
+        }
 
         //Credit
         var creditEntry = new AcctgTransEntry
@@ -354,7 +362,8 @@ public class GeneralLedgerService : IGeneralLedgerService
             ShipmentId = shipmentReceipt.ShipmentId,
             PaymentId = null,
             PartyId = shipment.PartyIdFrom,
-            TransactionDate = shipmentReceipt.CreatedStamp
+            TransactionDate = shipmentReceipt.CreatedStamp,
+            WorkEffortId = workEffortId
         };
 
         var acctgTransId = await CreateAcctgTransAndEntries(createAcctgTransAndEntriesParams);
@@ -2417,11 +2426,18 @@ public class GeneralLedgerService : IGeneralLedgerService
             string productId = certificateItems.First().ProductId;
             string contractorPartyId = invoice.PartyIdFrom;
             
-            string projectGlAccountId = await GetProjectGlAccountIdViaOrderItemBillingAsync(invoiceId);
+            var (workEffortId, projectGlAccountId) = await GetProjectInfoViaOrderItemBillingAsync(invoiceId);
+
             if (string.IsNullOrEmpty(projectGlAccountId))
             {
                 _logger.LogError("Failed to resolve Project GlAccountId for invoice {InvoiceId} via OrderItemBilling.", invoiceId);
                 return null;
+            }
+
+            // Optional: Log if WorkEffortId is missing (but GlAccountId exists)
+            if (string.IsNullOrEmpty(workEffortId))
+            {
+                _logger.LogWarning("Project WorkEffortId not found for invoice {InvoiceId}, but GlAccountId was resolved.", invoiceId);
             }
 
             // 1. Debit: Projects Under Construction – TOTAL deserved value (sum of all cert items)
@@ -2512,7 +2528,8 @@ public class GeneralLedgerService : IGeneralLedgerService
                 PartyId = invoice.PartyIdFrom,
                 RoleTypeId = "BILL_FROM_VENDOR",
                 TransactionDate = invoice.InvoiceDate ?? DateTime.UtcNow,
-                AcctgTransEntries = acctgTransEntries
+                AcctgTransEntries = acctgTransEntries,
+                WorkEffortId = workEffortId 
             };
 
             var acctgTransId = await CreateAcctgTransAndEntries(createParams);
@@ -2533,7 +2550,8 @@ public class GeneralLedgerService : IGeneralLedgerService
         }
     }
     
-    private async Task<string> GetProjectGlAccountIdViaOrderItemBillingAsync(string invoiceId)
+    // REFACTOR: Changed return type to a tuple containing both WorkEffortId (project) and GlAccountId
+    private async Task<(string? WorkEffortId, string? GlAccountId)> GetProjectInfoViaOrderItemBillingAsync(string invoiceId)
     {
         var query = from oib in _context.OrderItemBillings
             where oib.InvoiceId == invoiceId
@@ -2543,24 +2561,25 @@ public class GeneralLedgerService : IGeneralLedgerService
             join proj in _context.WorkEfforts on cert.ProjectId equals proj.WorkEffortId
             where proj.WorkEffortTypeId == "PROJECT"
                   && proj.GlAccountId != null
-            select proj.GlAccountId;
+            select new { proj.WorkEffortId, proj.GlAccountId };
 
-        // Ensure all certificate lines on the invoice belong to the same project (common case)
-        // If mixed projects → you’d need to split entries per project (advanced)
-        var distinctGlAccounts = await query.Distinct().ToListAsync();
+        var results = await query.Distinct().ToListAsync();
 
-        if (!distinctGlAccounts.Any())
-            return null;
+        if (!results.Any())
+            return (null, null);
 
-        if (distinctGlAccounts.Count > 1)
+        if (results.Count > 1)
         {
-            _logger.LogWarning("Invoice {InvoiceId} references multiple projects. Using first GlAccountId: {First}", 
-                invoiceId, distinctGlAccounts.First());
+            var first = results.First();
+            _logger.LogWarning(
+                "Invoice {InvoiceId} references multiple projects. Using first project: {WorkEffortId}, GlAccountId: {GlAccountId}",
+                invoiceId, first.WorkEffortId, first.GlAccountId);
+            return (first.WorkEffortId, first.GlAccountId);
         }
 
-        return distinctGlAccounts.First();
+        var result = results.Single();
+        return (result.WorkEffortId, result.GlAccountId);
     }
-
     public async Task<string> CreateAcctgTransAndEntriesForCustomerRefundPaymentApplication(
         string paymentApplicationId)
     {
@@ -4546,6 +4565,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 GlAccountTypeId = "PROJECTS_UNDER_DEVELOPMENT", // GL account 143000
                 OrganizationPartyId = inventoryItem.OwnerPartyId,
                 ProductId = certificateItem.ProductId, // From certificate item
+                PartyId = workEffort.PartyIdContractor,
                 OrigAmount = (decimal?)origAmount,
                 OrigCurrencyUomId = inventoryItem.CurrencyUomId,
                 CurrencyUomId = inventoryItem.CurrencyUomId
@@ -4562,6 +4582,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 ReconcileStatusId = "AES_NOT_RECONCILED",
                 DebitCreditFlag = "C",
                 GlAccountTypeId = "INVENTORY_ACCOUNT", // GL account 140000
+                PartyId = workEffort.PartyIdContractor,
                 OrganizationPartyId = inventoryItem.OwnerPartyId,
                 ProductId = inventoryItem.ProductId,
                 OrigAmount = (decimal?)origAmount,
@@ -4577,7 +4598,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 AcctgTransTypeId = "INVENTORY",
                 WorkEffortId = workEffortId,
                 TransactionDate = stamp,
-                AcctgTransEntries = acctgTransEntries
+                AcctgTransEntries = acctgTransEntries,
             };
 
             // Create transaction and entries
