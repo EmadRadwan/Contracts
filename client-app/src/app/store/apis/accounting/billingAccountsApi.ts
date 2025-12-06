@@ -39,6 +39,7 @@ const billingAccountsApi = createApi({
                         total: totalCount,
                     };
                 },
+                providesTags: ["BillingAccounts"],
             }),
             fetchBillingAccountsBalance: builder.query<any, any>({
                 query: (billingAccountId) => {

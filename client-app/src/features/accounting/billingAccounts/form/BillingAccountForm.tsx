@@ -1,6 +1,6 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useCallback, useEffect } from "react";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
-import { Box, Button, Grid, Paper, Typography, CircularProgress } from "@mui/material";
+import { Box, Button, Grid, Paper, Typography, CircularProgress, Skeleton, Alert } from "@mui/material";
 import { Field, Form, FormElement } from "@progress/kendo-react-form";
 import { requiredValidator } from "../../../../app/common/form/Validators";
 import { BillingAccount } from "../../../../app/models/accounting/billingAccount";
@@ -11,6 +11,7 @@ import {
     useCreateBillingAccountMutation,
     //useUpdateBillingAccountMutation,
     useFetchBillingAccountsBalanceQuery,
+    useLazyFetchBalancesForVendorAndProjectQuery,
 } from "../../../../app/store/apis";
 import {formatCurrency, handleDatesObject, parseDate} from "../../../../app/util/utils";
 import { FormComboBoxVirtualProject } from "../../../../app/common/form/FormComboBoxVirtualProject";
@@ -37,18 +38,27 @@ const BillingAccountForm = ({
                             }: Props) => {
     const { getTranslatedLabel } = useTranslationHelper();
     const [createBillingAccount, { isLoading: isCreating }] = useCreateBillingAccountMutation();
-    const [updateBillingAccount, { isLoading: isUpdating }] = useUpdateBillingAccountMutation();
 
-    // REFACTOR: Fetch balance only when viewing/editing existing account
-    const { data: billingAccountBalance } = useFetchBillingAccountsBalanceQuery(
-        selectedBillingAccount?.billingAccountId!,
-        { skip: !selectedBillingAccount?.billingAccountId }
-    );
+    const [partyIdTo, setPartyIdTo] = useState<string>("");
+        const [projectId, setProjectId] = useState<string>("");
+        const [triggerBalanceFetch, { data: balanceData, isFetching: balanceLoading }] =
+            useLazyFetchBalancesForVendorAndProjectQuery();
 
     const [buttonFlag, setButtonFlag] = useState(false);
     const [formKey, setFormKey] = useState(0); // Used to force form re-render on update success
 
-    if (!selectedBillingAccount && editMode !== 1) onClose();
+    const stableTrigger = useCallback(
+        (params: { partyId: string; projectId: string }) => {
+            triggerBalanceFetch(params, false); 
+        },
+        [triggerBalanceFetch] 
+    );
+    
+    useEffect(() => {
+        if (partyIdTo && projectId) {
+            stableTrigger({ partyId: partyIdTo, projectId }); // ← use fromPartyId if partyIdTo is an object
+        }
+    }, [partyIdTo, projectId, stableTrigger]); 
 
     // REFACTOR: Compute initial values cleanly using useMemo (same pattern as ProductForm)
     const computeInitialValues = (account?: BillingAccount) => {
@@ -61,6 +71,8 @@ const BillingAccountForm = ({
 
         const source = account || selectedBillingAccount;
         if (!source) return {};
+        setPartyIdTo(typeof source.partyId === "string" ? source.partyId : source.partyId?.fromPartyId);
+        setProjectId(typeof source.projectId === "string" ? source.projectId : source.projectId?.projectId);
 
         return {
             ...source,
@@ -90,10 +102,11 @@ const BillingAccountForm = ({
     };
 
     const [formInitialValues, setFormInitialValues] = useState(() => computeInitialValues());
-    
-    const availableBalance = selectedBillingAccount?.billingAccountId
-        ? billingAccountBalance?.billingAccountBalance ?? selectedBillingAccount.availableBalance ?? 0
-        : 0;
+
+    useEffect(() => {
+        setFormInitialValues(computeInitialValues());
+    }, [editMode, selectedBillingAccount]);
+
 
     const handleSubmit = async (data: any) => {
         setButtonFlag(true);
@@ -122,7 +135,6 @@ const BillingAccountForm = ({
                 if (onBillingAccountCreated) {
                     onBillingAccountCreated(result);
                 }
-                if (setEditMode) setEditMode(2);
 
             } 
             /*else if (editMode === 2) {
@@ -244,7 +256,7 @@ const BillingAccountForm = ({
                                         />
                                     </Grid>
 
-                                    {editMode > 1 && (
+                                    {/* {editMode > 1 && (
                                         <Grid item xs={12}>
                                             <Typography variant="body1" sx={{ fontWeight: "bold", mt: 2 }}>
                                                 {getTranslatedLabel("accounting.billingAccounts.form.availableBalance", "الرصيد المتاح")}
@@ -253,7 +265,7 @@ const BillingAccountForm = ({
                                                 {formatCurrency(availableBalance)}
                                             </Typography>
                                         </Grid>
-                                    )}
+                                    )} */}
 
                                     <Grid item xs={12} md={8}>
                                         <Field
@@ -265,15 +277,61 @@ const BillingAccountForm = ({
                                 </Grid>
                             </fieldset>
 
+                            {partyIdTo && projectId && (
+                                <Grid item xs={12}>
+                                    <Box sx={{ p: 2, border: "1px solid #e0e0e0", borderRadius: 2, bgcolor: "#f9f9f9" }}>
+                                        {balanceLoading ? (
+                                            <Skeleton height={80} />
+                                        ) : balanceData ? (
+                                            balanceData.initialBalance === 0 ? (
+                                                <Alert severity="warning" sx={{ mb: 0 }}>
+                                                    {balanceData.message || "لا يوجد سقف دفع مُعيَّن لهذا المورد على المشروع"}
+                                                </Alert>
+                                            ) : (
+                                                <Grid container spacing={2}>
+                                                    <Grid item xs={4}>
+                                                        <Typography variant="body2" color="text.secondary">السقف المتاح</Typography>
+                                                        <Typography variant="h6" color="success.main" fontWeight="bold">
+                                                            {balanceData.initialBalance.toLocaleString("ar-EG")} ج.م
+                                                        </Typography>
+                                                    </Grid>
+                                                    <Grid item xs={4}>
+                                                        <Typography variant="body2" color="text.secondary">المستخدم</Typography>
+                                                        <Typography variant="h6" color="warning.main">
+                                                            {balanceData.usedBalance.toLocaleString("ar-EG")} ج.م
+                                                        </Typography>
+                                                    </Grid>
+                                                    <Grid item xs={4}>
+                                                        <Typography variant="body2" color="text.secondary">المتبقي</Typography>
+                                                        <Typography variant="h6" color={balanceData.remainingBalance > 0 ? "primary" : "error"} fontWeight="bold">
+                                                            {balanceData.remainingBalance.toLocaleString("ar-EG")} ج.م
+                                                        </Typography>
+                                                    </Grid>
+                                                    {/* {amount > balanceData.remainingBalance && (
+                                                        <Grid item xs={12}>
+                                                            <Alert severity="error">
+                                                                المبلغ المطلوب ({amount.toLocaleString("ar-EG")} ج.م) يتجاوز الرصيد المتاح
+                                                            </Alert>
+                                                        </Grid>
+                                                    )} */}
+                                                </Grid>
+                                            )
+                                        ) : (
+                                            <Typography color="text.secondary">جاري تحميل بيانات الحساب...</Typography>
+                                        )}
+                                    </Box>
+                                </Grid>
+                            )}
+
                             <div className="k-form-buttons" style={{ marginTop: 24 }}>
                                 <Button
                                     variant="contained"
                                     color="success"
                                     type="submit"
-                                    disabled={!formRenderProps.allowSubmit || buttonFlag || isCreating || isUpdating}
-                                    startIcon={(isCreating || isUpdating) ? <CircularProgress size={20} /> : null}
+                                    disabled={!formRenderProps.allowSubmit || buttonFlag || isCreating }
+                                    startIcon={(isCreating ) ? <CircularProgress size={20} /> : null}
                                 >
-                                    {(isCreating || isUpdating)
+                                    {(isCreating)
                                         ? getTranslatedLabel("general.saving", "جاري الحفظ...")
                                         : getTranslatedLabel("general.save", "حفظ")}
                                 </Button>
