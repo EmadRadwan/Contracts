@@ -140,7 +140,7 @@ public class CreateBillingAccount
                             PartyId = role.PartyId,
                             PartyName = party.Description,
                             ProjectId = ba.WorkEffortId,
-                            ProjectName = workEffort.WorkEffortName,
+                            ProjectName = workEffort.ProjectName,
                             AccountLimit = ba.AccountLimit,
                             AvailableBalance = ba.AccountLimit, // initial balance
                             FromDate = ba.FromDate,

@@ -91,7 +91,7 @@ function BillingAccountsList() {
                 projectId: raw.projectId
                     ? {
                         projectId: raw.projectId,
-                        ProjectName: raw.projectName ?? null,
+                        projectName: raw.projectName ?? null,
                     }
                     : null,
             };
