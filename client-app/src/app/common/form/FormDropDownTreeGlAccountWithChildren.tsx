@@ -6,7 +6,7 @@ import { Label } from '@progress/kendo-react-labels';
 import { Notification, NotificationGroup } from "@progress/kendo-react-notification";
 import { Item } from './custom-rendering2';
 
-export const FormDropDownTreeGlAccount2 = (fieldRenderProps: FieldRenderProps & DropDownTreeProps) => {
+export const FormDropDownTreeGlAccountWithChildren = (fieldRenderProps: FieldRenderProps & DropDownTreeProps) => {
   const {
     validationMessage,
     touched,
@@ -47,10 +47,14 @@ export const FormDropDownTreeGlAccount2 = (fieldRenderProps: FieldRenderProps & 
           processTreeData(
               data || [], // Fallback to empty array if data is undefined
               { expanded, value, filter },
-              { selectField, expandField, dataItemKey, subItemsField: 'items' }
+              { selectField, expandField, dataItemKey, subItemsField: 'children' }
           ),
       [expanded, value, filter, selectField, expandField, dataItemKey, data]
   );
+
+  React.useEffect(() => {
+    console.log("Tree Data Updated:", treeData);
+  }, [data, treeData])
 
   const onExpandChange = React.useCallback(
       (event) => setExpanded(expandedState(event.item, dataItemKey, expanded)),
@@ -72,9 +76,9 @@ export const FormDropDownTreeGlAccount2 = (fieldRenderProps: FieldRenderProps & 
         (event) => {
             const selectedItem = event.value;
             setLevel(event.level || []);
-            onChange({ value: selectedItem?.[dataItemKey] ?? null });
+            onChange({ value: selectedItem ?? null });
         },
-        [onChange, dataItemKey]
+        [onChange]
     );
 
 
@@ -82,16 +86,19 @@ export const FormDropDownTreeGlAccount2 = (fieldRenderProps: FieldRenderProps & 
     if (!matchingGlAccountId) return null;
     if (element.glAccountId === matchingGlAccountId) {
       return element;
-    } else if (element.items != null) {
-      for (let i = 0; i < element.items.length; i++) {
-        const result = searchTree(element.items[i], matchingGlAccountId);
+    } else if (element.children != null) {
+      for (let i = 0; i < element.children.length; i++) {
+        const result = searchTree(element.children[i], matchingGlAccountId);
         if (result) return result;
       }
     }
     return null;
   }
 
-  let selectedValue = data?.find(item => item[dataItemKey] === value[dataItemKey]);
+  let selectedValue
+  if (value) {
+    selectedValue = data?.find(item => item[dataItemKey] === value[dataItemKey]);
+  }
 
   if (value && level.length) {
     const element = filter.value && filter.value !== ""
@@ -105,8 +112,8 @@ export const FormDropDownTreeGlAccount2 = (fieldRenderProps: FieldRenderProps & 
     data?.forEach(item => {
       if (item[dataItemKey] === value[dataItemKey]) {
         element = item;
-      } else if (item.items?.length > 0 && !element) {
-        element = item.items.find((i: any) => i[dataItemKey] === value[dataItemKey]);
+      } else if (item.children?.length > 0 && !element) {
+        element = item.children.find((i: any) => i[dataItemKey] === value[dataItemKey]);
       }
     });
     if (element) {
@@ -156,6 +163,7 @@ export const FormDropDownTreeGlAccount2 = (fieldRenderProps: FieldRenderProps & 
             id={id}
             disabled={disabled}
             data={treeData}
+            subItemsField="children"
             onExpandChange={onExpandChange}
             //onItemClick={onItemClick} // Custom handler to manage parent node clicks
             filterable={true}

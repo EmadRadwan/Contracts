@@ -70,7 +70,7 @@ const ChartOfAccountsList = () => {
   };
 
   const handleAccountCreated = (newAccount: GlAccount) => {
-    toast.success("Account created successfully");
+    // toast.success("Account created successfully");
     setSelectedAccount(newAccount);
     setEditMode(2); // switch to edit mode
     // Optional: refetch top-level or flat list if needed
