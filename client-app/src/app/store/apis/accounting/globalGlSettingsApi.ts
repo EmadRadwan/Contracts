@@ -25,7 +25,7 @@ const globalGlSettingsApi = createApi({
             return headers;
         },
     }),
-
+    tagTypes: ["GlobalGl"],
     endpoints(builder) {
         return {
             fetchGlobalGlAccounts: builder.query<ListResponse<GlAccount>, State>({
@@ -43,6 +43,7 @@ const globalGlSettingsApi = createApi({
                         total: totalCount,
                     };
                 },
+                providesTags: ["GlobalGl"],
             }),
             fetchTopLevelGlobalGlAccounts: builder.query<any, any>({
                 query: () => {
@@ -69,6 +70,14 @@ const globalGlSettingsApi = createApi({
                     url: '/glAccounts/getAdvancePaymentGlAccounts',
                 }),
             }),
+            createGlAccount: builder.mutation<CreateGlAccountResponse, CreateGlAccountRequest>({
+                query: (request) => ({
+                    url: '/glAccounts',
+                    method: 'POST',
+                    body: request,
+                }),
+                invalidatesTags: ['GlobalGl'],
+            }),
         };
     },
 });
@@ -78,7 +87,9 @@ export const {
     useFetchGlobalGlAccountSettingsQuery,
     useLazyFetchGlobalGlAccountSettingsQuery,
     useFetchTopLevelGlobalGlAccountsQuery,
-    useFetchChildrenGlAccountsQuery, useFetchAdvancePaymentGlAccountsQuery,
+    useFetchChildrenGlAccountsQuery,
+    useFetchAdvancePaymentGlAccountsQuery,
+    useCreateGlAccountMutation,
 } = globalGlSettingsApi;
 export {globalGlSettingsApi};
 
@@ -89,5 +100,26 @@ export interface AdvancePaymentGlAccountDto {
     description: string;
     glAccountTypeId: string;
     glAccountClassId: string;
+}
+
+export interface CreateGlAccountRequest {
+    accountName?: string;
+    glResourceTypeId?: string;
+    glAccountTypeId?: string;
+    glAccountClassId?: string;
+    parentGlAccountId?: string;
+    description?: string;
+}
+
+export interface CreateGlAccountResponse {
+    glAccountId?: string;
+    accountCode?: string;
+    accountName?: string;
+    description?: string;
+    glAccountTypeId?: string;
+    glAccountClassId?: string;
+    glResourceTypeId?: string;
+    parentGlAccountId?: string;
+    createdDate?: string;
 }
 
