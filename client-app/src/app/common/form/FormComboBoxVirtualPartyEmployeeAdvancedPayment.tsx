@@ -8,7 +8,7 @@ import agent from "../../api/agent";
 import {useAppDispatch} from "../../store/configureStore";
 
 
-export const FormComboBoxVirtualPartyEmployeeAdvancedPayment = (fieldRenderProps: FieldRenderProps) => {
+export const FormComboBoxVirtualPartyEmployee = (fieldRenderProps: FieldRenderProps) => {
     const {
         validationMessage,
         touched,

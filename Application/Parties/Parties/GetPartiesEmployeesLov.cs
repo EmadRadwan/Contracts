@@ -40,7 +40,7 @@ public class GetPartiesEmployeesLov
             // REFACTOR: Removed queryByPhone and related logic since phone search is no longer needed.
             // Simplified to use only queryByName, improving code clarity and maintainability.
             var queryByName = _context.Parties
-                .Where(x => x.MainRole == "EMPLOYEE" && x.GlAccountIdAdvancedPayment != null)
+                .Where(x => x.MainRole == "EMPLOYEE")
                 .Select(x => new PartyFromPartyIdDto
                 {
                     FromPartyId = x.PartyId,
