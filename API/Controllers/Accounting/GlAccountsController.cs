@@ -33,5 +33,18 @@ namespace API.Controllers.Accounting
         {
             return HandleResult(await Mediator.Send(new CreateGlAccount.Command { Request = request }));
         }
+
+        [HttpPut("{glAccountId}")]
+        public async Task<IActionResult> UpdateGlAccount(string glAccountId, [FromBody] UpdateGlAccountRequest request)
+        {
+            var updateRequest = new UpdateGlAccountRequest
+            {
+                GlAccountId = glAccountId,
+                AccountName = request.AccountName,
+                Description = request.Description,
+                ParentGlAccountId = request.ParentGlAccountId
+            };
+            return HandleResult(await Mediator.Send(new UpdateGlAccount.Command { Request = updateRequest }));
+        }
     }
 }

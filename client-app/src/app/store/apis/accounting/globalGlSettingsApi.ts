@@ -78,6 +78,14 @@ const globalGlSettingsApi = createApi({
                 }),
                 invalidatesTags: ['GlobalGl'],
             }),
+            updateGlAccount: builder.mutation<UpdateGlAccountResponse, UpdateGlAccountRequest>({
+                query: ({glAccountId, ...body}) => ({
+                    url: `/glAccounts/${glAccountId}`,
+                    method: 'PUT',
+                    body,
+                }),
+                invalidatesTags: ['GlobalGl'],
+            }),
         };
     },
 });
@@ -90,6 +98,7 @@ export const {
     useFetchChildrenGlAccountsQuery,
     useFetchAdvancePaymentGlAccountsQuery,
     useCreateGlAccountMutation,
+    useUpdateGlAccountMutation,
 } = globalGlSettingsApi;
 export {globalGlSettingsApi};
 
@@ -121,5 +130,24 @@ export interface CreateGlAccountResponse {
     glResourceTypeId?: string;
     parentGlAccountId?: string;
     createdDate?: string;
+}
+
+export interface UpdateGlAccountRequest {
+    glAccountId: string;
+    accountName?: string;
+    description?: string;
+    parentGlAccountId?: string;
+}
+
+export interface UpdateGlAccountResponse {
+    glAccountId?: string;
+    accountCode?: string;
+    accountName?: string;
+    description?: string;
+    glAccountTypeId?: string;
+    glAccountClassId?: string;
+    glResourceTypeId?: string;
+    parentGlAccountId?: string;
+    lastUpdatedDate?: string;
 }
 

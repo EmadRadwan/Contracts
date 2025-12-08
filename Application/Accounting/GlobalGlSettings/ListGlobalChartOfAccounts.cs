@@ -46,11 +46,12 @@ public class ListGlobalChartOfAccounts
                     GlResourceTypeId = account.GlResourceTypeId,
                     GlResourceTypeDescription = language == "en" ? account.GlAccountClass.Description : account.GlAccountClass.DescriptionArabic,
                     ParentGlAccountId = account.ParentGlAccountId,
+                    Description = account.Description,
                     AccountCode = account.AccountCode,
-                    AccountName = language == "en" ? account.AccountName : account.AccountNameArabic,
+                    AccountName = account.AccountNameArabic ?? account.AccountName,
                     ParentAccountName = _context.GlAccounts
                         .Where(a => a.GlAccountId == account.ParentGlAccountId)
-                        .Select(a => language == "en" ? a.AccountName : a.AccountNameArabic) 
+                        .Select(a => a.AccountName) 
                         .FirstOrDefault(),
                     Expanded = false
                 });

@@ -634,6 +634,46 @@
         "globalGLSettings": "Global GL Settings",
         "organizationGLSettings": "Organization GL Settings"
       },
+    "glAccount": {
+      "list": {
+        "title": "Chart of Accounts",
+        "globalTitle": "Global Chart of Accounts",
+        "createNew": "Create New Account",
+        "accountId": "Account ID",
+        "accountName": "Account Name",
+        "accountNameArabic": "Name (Arabic)",
+        "parentId": "Parent ID",
+        "type": "Type",
+        "class": "Class",
+        "resourceType": "Resource Type",
+        "loading": "Loading accounts..."
+      },
+      "form": {
+        "new": "New GL Account",
+        "edit": "Edit GL Account",
+        "accountName": "Account Name *",
+        "accountNameArabic": "Account Name (Arabic)",
+        "accountType": "Account Type *",
+        "accountClass": "Account Class",
+        "resourceType": "Resource Type",
+        "parentAccount": "Parent Account",
+        "description": "Description",
+        "createAccount": "Create Account",
+        "updateAccount": "Update Account",
+        "creating": "Creating...",
+        "updating": "Updating...",
+        "createSuccess": "GL Account created successfully",
+        "updateSuccess": "GL Account updated successfully",
+        "saveFailed": "Failed to save GL Account"
+      }
+    },
+    "glSettingsMenu": {
+      "chartOfAccounts": "Chart of Accounts",
+      "customTimePeriods": "Edit Custom Time Periods",
+      "paymentMethodType": "Payment Method Type",
+      "invoiceItemType": "Invoice Item Type",
+      "fxRates": "Foreign Exchange Rates"
+    },
     "payments": {
       "list": {
         "actions": {

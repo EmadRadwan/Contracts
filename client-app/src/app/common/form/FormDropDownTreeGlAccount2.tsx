@@ -91,28 +91,26 @@ export const FormDropDownTreeGlAccount2 = (fieldRenderProps: FieldRenderProps & 
     return null;
   }
 
-  let selectedValue = data?.find(item => item[dataItemKey] === value[dataItemKey]);
+  let selectedValue = data?.find(item => item[dataItemKey] === value);
 
   if (value && level.length) {
     const element = filter.value && filter.value !== ""
         ? treeData?.[level[0]]
         : data?.[level[0]];
     if (element) {
-      selectedValue = searchTree(element, value[dataItemKey]);
+      selectedValue = searchTree(element, value);
     }
   } else if (value) {
     let element: any;
     data?.forEach(item => {
-      if (item[dataItemKey] === value[dataItemKey]) {
+      if (item[dataItemKey] === value) {
         element = item;
       } else if (item.items?.length > 0 && !element) {
-        element = item.items.find((i: any) => i[dataItemKey] === value[dataItemKey]);
+        element = item.items.find((i: any) => i[dataItemKey] === value);
       }
     });
     if (element) {
-      selectedValue = searchTree(element, value[dataItemKey]);
-    } else {
-      selectedValue = searchTree(data.find((item: any) => item[dataItemKey][0] === value[dataItemKey][0]), value[dataItemKey]);
+      selectedValue = searchTree(element, value);
     }
   }
 
