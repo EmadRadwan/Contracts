@@ -28,7 +28,7 @@ import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHel
 import {FormDropDownList} from "../../../../../app/common/form/MemoizedFormDropDownList2";
 import { useAppSelector } from "../../../../../app/store/configureStore";
 import { useFetchGlAccountOrganizationHierarchyLovQuery } from "../../../../../app/store/apis";
-import { useFetchTopLevelGlobalGlAccountsQuery, useCreateGlAccountMutation } from "../../../../../app/store/apis/accounting/globalGlSettingsApi";
+import { useFetchTopLevelGlobalGlAccountsQuery, useCreateGlAccountMutation, useUpdateGlAccountMutation } from "../../../../../app/store/apis/accounting/globalGlSettingsApi";
 import { FormDropDownTreeGlAccountWithChildren } from "../../../../../app/common/form/FormDropDownTreeGlAccountWithChildren";
 
 interface Props {
@@ -88,10 +88,12 @@ const AccountForm: React.FC<Props> = ({
 
     const { data: glAccounts, isLoading: isLoadingGlAccounts } = useFetchTopLevelGlobalGlAccountsQuery(undefined);
     const [createGlAccount, { isLoading: isCreating }] = useCreateGlAccountMutation();
+    const [updateGlAccount, { isLoading: isUpdating }] = useUpdateGlAccountMutation();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [creationError, setCreationError] = useState<string | null>(null);
     const [justCreatedAccount, setJustCreatedAccount] = useState<GlAccount | null>(null);
+    const [formKey, setFormKey] = useState(0);
     /* ------------------------------------------------------------------
        Initial values – empty on create, populated on edit
        ------------------------------------------------------------------ */
@@ -142,7 +144,7 @@ const AccountForm: React.FC<Props> = ({
             if (editMode === 1) {
                 const result = await createGlAccount(payload).unwrap();
 
-                toast.success("GL Account created successfully");
+                toast.success(getTranslatedLabel("accounting.glAccount.form.createSuccess", "GL Account created successfully"));
 
                 const createdAccount: GlAccount = {
                     ...result,
@@ -159,15 +161,41 @@ const AccountForm: React.FC<Props> = ({
                 setJustCreatedAccount(createdAccount);
                 onAccountCreated?.(createdAccount);
             } else {
-                // edit - TODO: implement update mutation
-                toast.info("Update functionality not yet implemented");
+                // edit - only send editable fields
+                const updatePayload = {
+                    glAccountId: account!.glAccountId!,
+                    accountName: data.accountName,
+                    description: data.description,
+                    parentGlAccountId: data.parentGlAccountId?.glAccountId ?? null,
+                };
+
+                const result = await updateGlAccount(updatePayload).unwrap();
+
+                toast.success(getTranslatedLabel("accounting.glAccount.form.updateSuccess", "GL Account updated successfully"));
+
+                const updatedAccount: GlAccount = {
+                    ...account,
+                    ...result,
+                    glAccountId: result.glAccountId,
+                    accountCode: result.accountCode,
+                    accountName: result.accountName,
+                    description: result.description,
+                    glAccountTypeId: result.glAccountTypeId,
+                    glAccountClassId: result.glAccountClassId,
+                    glResourceTypeId: result.glResourceTypeId,
+                    parentGlAccountId: result.parentGlAccountId,
+                };
+
+                // Reset form to untouched state
+                setFormKey(prev => prev + 1);
+                onAccountUpdated?.(updatedAccount);
             }
         } catch (err: any) {
             const msg =
                 err?.data?.error ||
                 err?.data?.message ||
                 err?.data?.title ||
-                "Failed to save GL Account";
+                getTranslatedLabel("accounting.glAccount.form.saveFailed", "Failed to save GL Account");
             setCreationError(msg);
             toast.error(msg);
         } finally {
@@ -179,13 +207,14 @@ const AccountForm: React.FC<Props> = ({
         <Paper elevation={6} sx={{ p: 4, mt: 2, mx: 2 }}>
             <Typography variant="h5" gutterBottom>
                 {editMode === 1
-                    ? getTranslatedLabel("glAccount.form.new", "New GL Account")
-                    : `${getTranslatedLabel("glAccount.form.edit", "Edit GL Account")} – ${
+                    ? getTranslatedLabel("accounting.glAccount.form.new", "New GL Account")
+                    : `${getTranslatedLabel("accounting.glAccount.form.edit", "Edit GL Account")} – ${
                         account?.glAccountId
                     }`}
             </Typography>
 
             <Form
+                key={formKey}
                 initialValues={initialValues}
                 onSubmit={handleSubmit}
                 render={(formRenderProps: FormRenderProps) => (
@@ -215,7 +244,7 @@ const AccountForm: React.FC<Props> = ({
                             <Grid item xs={12}>
                                 <Field
                                     name="accountName"
-                                    label={getTranslatedLabel("glAccount.name", "Account Name *")}
+                                    label={getTranslatedLabel("accounting.glAccount.form.accountName", "Account Name *")}
                                     component={FormInput}
                                     validator={requiredValidator}
                                 />
@@ -233,7 +262,7 @@ const AccountForm: React.FC<Props> = ({
                             <Grid item xs={12} sm={4}>
                                 <Field
                                     name="glAccountTypeId"
-                                    label={getTranslatedLabel("glAccount.type", "Account Type *")}
+                                    label={getTranslatedLabel("accounting.glAccount.form.accountType", "Account Type *")}
                                     component={FormDropDownList}
                                     data={glAccountTypes}
                                     textField="text"
@@ -246,7 +275,7 @@ const AccountForm: React.FC<Props> = ({
                             <Grid item xs={12} sm={4}>
                                 <Field
                                     name="glAccountClassId"
-                                    label={getTranslatedLabel("glAccount.class", "Account Class")}
+                                    label={getTranslatedLabel("accounting.glAccount.form.accountClass", "Account Class")}
                                     component={FormDropDownList}
                                     data={glAccountClasses}
                                     textField="text"
@@ -259,7 +288,7 @@ const AccountForm: React.FC<Props> = ({
                             <Grid item xs={12} sm={4}>
                                 <Field
                                     name="glResourceTypeId"
-                                    label={getTranslatedLabel("glAccount.resourceType", "Resource Type")}
+                                    label={getTranslatedLabel("accounting.glAccount.form.resourceType", "Resource Type")}
                                     component={FormDropDownList}
                                     data={glResourceTypes}
                                     textField="text"
@@ -273,10 +302,11 @@ const AccountForm: React.FC<Props> = ({
                                 <Field
                                     id="parentGlAccountId"
                                     name="parentGlAccountId"
-                                    label={getTranslatedLabel("glAccount.parent", "Parent Account")}
+                                    label={getTranslatedLabel("accounting.glAccount.form.parentAccount", "Parent Account")}
                                     component={FormDropDownTreeGlAccountWithChildren}
                                     dataItemKey="glAccountId"
                                     textField="accountName"
+                                    subItemsField="children"
                                     data={glAccounts || []}
                                     selectField="selected"
                                     expandField="expanded"
@@ -290,7 +320,7 @@ const AccountForm: React.FC<Props> = ({
                             <Grid item xs={12}>
                                 <Field
                                     name="description"
-                                    label={getTranslatedLabel("glAccount.description", "Description")}
+                                    label={getTranslatedLabel("accounting.glAccount.form.description", "Description")}
                                     component={FormInput}
                                     multiline
                                     rows={3}
@@ -313,10 +343,16 @@ const AccountForm: React.FC<Props> = ({
                                         variant="contained"
                                         color="primary"
                                         type="submit"
-                                        disabled={isSubmitting || isCreating || !formRenderProps.allowSubmit}
-                                        startIcon={isCreating ? <CircularProgress size={20} /> : null}
+                                        disabled={isSubmitting || isCreating || isUpdating || !formRenderProps.allowSubmit}
+                                        startIcon={(isCreating || isUpdating) ? <CircularProgress size={20} /> : null}
                                     >
-                                        {isCreating ? "Creating..." : editMode === 1 ? "Create" : "Update"} Account
+                                        {isCreating
+                                            ? getTranslatedLabel("accounting.glAccount.form.creating", "Creating...")
+                                            : isUpdating
+                                                ? getTranslatedLabel("accounting.glAccount.form.updating", "Updating...")
+                                                : editMode === 1
+                                                    ? getTranslatedLabel("accounting.glAccount.form.createAccount", "Create Account")
+                                                    : getTranslatedLabel("accounting.glAccount.form.updateAccount", "Update Account")}
                                     </Button>
 
                                     <Button
@@ -324,7 +360,7 @@ const AccountForm: React.FC<Props> = ({
                                         onClick={cancelEdit}
                                         sx={{ ml: 2 }}
                                     >
-                                        Cancel
+                                        {getTranslatedLabel("general.cancel", "Cancel")}
                                     </Button>
                                 </Box>
                             </Grid>

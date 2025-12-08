@@ -856,6 +856,46 @@
       "create-transactions": "إنشاء قيد محاسبي",
       "trialBalance": "ميزان المراجعة"
     },
+    "glAccount": {
+      "list": {
+        "title": "شجرة الحسابات",
+        "globalTitle": "شجرة الحسابات العامة",
+        "createNew": "إنشاء حساب جديد",
+        "accountId": "رقم الحساب",
+        "accountName": "اسم الحساب",
+        "accountNameArabic": "الاسم (عربي)",
+        "parentId": "رقم الحساب الأب",
+        "type": "النوع",
+        "class": "التصنيف",
+        "resourceType": "نوع المورد",
+        "loading": "جاري تحميل الحسابات..."
+      },
+      "form": {
+        "new": "حساب جديد",
+        "edit": "تعديل الحساب",
+        "accountName": "اسم الحساب *",
+        "accountNameArabic": "اسم الحساب (عربي)",
+        "accountType": "نوع الحساب *",
+        "accountClass": "تصنيف الحساب",
+        "resourceType": "نوع المورد",
+        "parentAccount": "الحساب الأب",
+        "description": "الوصف",
+        "createAccount": "إنشاء الحساب",
+        "updateAccount": "تحديث الحساب",
+        "creating": "جاري الإنشاء...",
+        "updating": "جاري التحديث...",
+        "createSuccess": "تم إنشاء الحساب بنجاح",
+        "updateSuccess": "تم تحديث الحساب بنجاح",
+        "saveFailed": "فشل في حفظ الحساب"
+      }
+    },
+    "glSettingsMenu": {
+      "chartOfAccounts": "شجرة الحسابات",
+      "customTimePeriods": "تعديل الفترات الزمنية",
+      "paymentMethodType": "طرق الدفع",
+      "invoiceItemType": "أنواع بنود الفواتير",
+      "fxRates": "أسعار صرف العملات"
+    },
     "payments": {
       "list": {
         "actions": {

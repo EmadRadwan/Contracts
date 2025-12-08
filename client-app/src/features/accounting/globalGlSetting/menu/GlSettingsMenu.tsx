@@ -2,17 +2,18 @@ import Grid from "@mui/material/Grid";
 import {Menu, MenuItem, MenuSelectEvent} from "@progress/kendo-react-layout";
 import {useLocation, useNavigate, useParams} from "react-router-dom";
 import {useTheme} from "@mui/material/styles";
+import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
 
-const links = [
-    {title: 'Chart Of Accounts', path: '/chartOfAccounts'},
-    {title: 'Edit Custom Time Periods', path: '/customTimePeriods'},
-    //{title: 'Cost', path: '/accountingCosts'},
-    {title: 'Payment Method Type', path: '/paymentMethodType'},
-    {title: 'Invoice Item Type', path: '/invoiceItemType'},
-    //{title: 'Rates', path: '/rates'},
-    {title: 'Foreign Exchange Rates', path: '/FXRates'},
-    // {title: 'GL Account Category', path: '/GLAccCategory'},
-    //{title: 'Cost Centers', path: '/globalCostCenters'},
+const linkKeys = [
+    {titleKey: 'accounting.glSettingsMenu.chartOfAccounts', defaultTitle: 'Chart of Accounts', path: '/chartOfAccounts'},
+    {titleKey: 'accounting.glSettingsMenu.customTimePeriods', defaultTitle: 'Edit Custom Time Periods', path: '/customTimePeriods'},
+    //{titleKey: 'accounting.glSettingsMenu.cost', defaultTitle: 'Cost', path: '/accountingCosts'},
+    {titleKey: 'accounting.glSettingsMenu.paymentMethodType', defaultTitle: 'Payment Method Type', path: '/paymentMethodType'},
+    {titleKey: 'accounting.glSettingsMenu.invoiceItemType', defaultTitle: 'Invoice Item Type', path: '/invoiceItemType'},
+    //{titleKey: 'accounting.glSettingsMenu.rates', defaultTitle: 'Rates', path: '/rates'},
+    {titleKey: 'accounting.glSettingsMenu.fxRates', defaultTitle: 'Foreign Exchange Rates', path: '/FXRates'},
+    // {titleKey: 'accounting.glSettingsMenu.glAccCategory', defaultTitle: 'GL Account Category', path: '/GLAccCategory'},
+    //{titleKey: 'accounting.glSettingsMenu.costCenters', defaultTitle: 'Cost Centers', path: '/globalCostCenters'},
 ];
 
 const normalizePath = (path: string) => path.replace(/^\//, '').toLowerCase();
@@ -35,6 +36,7 @@ function withRouter(Component: any) {
 const GlSettingsMenuNavContainer = ({selectedMenuItem, router}: GlSettingsMenuNavContainerProps & { router: any }) => {
     const theme = useTheme();
     const {location, navigate} = router;
+    const { getTranslatedLabel } = useTranslationHelper();
 
     const normalizedCurrentPath = normalizePath(location.pathname);
     const normalizedSelectedMenuItem = normalizePath(selectedMenuItem || '');
@@ -59,10 +61,10 @@ const GlSettingsMenuNavContainer = ({selectedMenuItem, router}: GlSettingsMenuNa
             <Grid item xs={12}>
                 <div className="col-md-6">
                     <Menu onSelect={onSelect}>
-                        {links.map((link: any, index: number) => (
+                        {linkKeys.map((link: any, index: number) => (
                             <MenuItem
                                 key={index}
-                                text={link.title}
+                                text={getTranslatedLabel(link.titleKey, link.defaultTitle)}
                                 data={{route: link.path}}
                                 cssStyle={menuStyles(link.path)}
                             />

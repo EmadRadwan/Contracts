@@ -53,7 +53,7 @@ public class CreateGlAccount
                 {
                     GlAccountId = newAccountCode,
                     AccountCode = newAccountCode,
-                    AccountName = dto.AccountName?.Trim(),
+                    AccountNameArabic = dto.AccountName?.Trim(),
                     Description = dto.Description?.Trim(),
                     GlAccountTypeId = dto.GlAccountTypeId,
                     GlAccountClassId = dto.GlAccountClassId,
@@ -74,7 +74,7 @@ public class CreateGlAccount
                 {
                     GlAccountId = glAccount.GlAccountId,
                     AccountCode = glAccount.AccountCode,
-                    AccountName = glAccount.AccountName,
+                    AccountName = glAccount.AccountNameArabic,
                     Description = glAccount.Description,
                     GlAccountTypeId = glAccount.GlAccountTypeId,
                     GlAccountClassId = glAccount.GlAccountClassId,
@@ -245,6 +245,7 @@ public class CreateGlAccountRequest
     public string? AccountName { get; init; }
     public string? GlResourceTypeId { get; init; }
     public string? GlAccountTypeId { get; init; }
+    
     public string? GlAccountClassId { get; init; }
     public string? ParentGlAccountId { get; init; }
     public string? Description { get; init; }

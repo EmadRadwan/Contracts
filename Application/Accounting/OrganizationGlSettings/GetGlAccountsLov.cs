@@ -30,8 +30,9 @@ namespace Application.Shipments.GlobalGlSettings
                         ? (language == "en" ? account.GlAccountClass.Description : account.GlAccountClass.DescriptionArabic) 
                         : "N/A",
                     ParentGlAccountId = account.ParentGlAccountId,
+                    Description = account.Description,
                     AccountCode = account.AccountCode,
-                    AccountName = language == "en" ? account.AccountName : account.AccountNameArabic,
+                    AccountName = (account.AccountNameArabic ?? account.AccountName) + " (" + account.GlAccountId + ")",
                     ParentAccountName = flatGlAccounts
                         .Where(a => a.GlAccountId == account.ParentGlAccountId)
                         .Select(a => language == "en" ? a.AccountName : a.AccountNameArabic) 
@@ -82,7 +83,8 @@ namespace Application.Shipments.GlobalGlSettings
                                 : "N/A",
                             ParentGlAccountId = account.ParentGlAccountId,
                             AccountCode = account.AccountCode,
-                            AccountName = language == "en" ? account.AccountName : account.AccountNameArabic,
+                            Description = account.Description,
+                            AccountName = (account.AccountNameArabic ?? account.AccountName) + " (" + account.GlAccountId + ")",
                             ParentAccountName = flatGlAccounts
                                 .Where(a => a.GlAccountId == account.ParentGlAccountId)
                                 .Select(a => language == "en" ? a.AccountName : a.AccountNameArabic) 

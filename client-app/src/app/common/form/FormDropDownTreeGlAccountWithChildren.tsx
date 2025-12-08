@@ -52,10 +52,6 @@ export const FormDropDownTreeGlAccountWithChildren = (fieldRenderProps: FieldRen
       [expanded, value, filter, selectField, expandField, dataItemKey, data]
   );
 
-  React.useEffect(() => {
-    console.log("Tree Data Updated:", treeData);
-  }, [data, treeData])
-
   const onExpandChange = React.useCallback(
       (event) => setExpanded(expandedState(event.item, dataItemKey, expanded)),
       [expanded, dataItemKey]
@@ -78,7 +74,7 @@ export const FormDropDownTreeGlAccountWithChildren = (fieldRenderProps: FieldRen
             setLevel(event.level || []);
             onChange({ value: selectedItem ?? null });
         },
-        [onChange]
+        [onChange, dataItemKey]
     );
 
 
@@ -95,31 +91,30 @@ export const FormDropDownTreeGlAccountWithChildren = (fieldRenderProps: FieldRen
     return null;
   }
 
-  let selectedValue
-  if (value) {
-    selectedValue = data?.find(item => item[dataItemKey] === value[dataItemKey]);
-  }
+  let selectedValue: any = null;
 
-  if (value && level.length) {
-    const element = filter.value && filter.value !== ""
-        ? treeData?.[level[0]]
-        : data?.[level[0]];
-    if (element) {
-      selectedValue = searchTree(element, value[dataItemKey]);
-    }
-  } else if (value) {
-    let element: any;
-    data?.forEach(item => {
-      if (item[dataItemKey] === value[dataItemKey]) {
-        element = item;
-      } else if (item.children?.length > 0 && !element) {
-        element = item.children.find((i: any) => i[dataItemKey] === value[dataItemKey]);
+  if (value) {
+    const targetId = value[dataItemKey];
+
+    if (filter.value && filter.value !== "") {
+      // When filtering, search through filtered treeData
+      const element = level.length ? treeData?.[level[0]] : null;
+      if (element) {
+        selectedValue = searchTree(element, targetId);
       }
-    });
-    if (element) {
-      selectedValue = searchTree(element, value[dataItemKey]);
+      // If not found with level, search all filtered items
+      if (!selectedValue) {
+        for (const item of treeData || []) {
+          selectedValue = searchTree(item, targetId);
+          if (selectedValue) break;
+        }
+      }
     } else {
-      selectedValue = searchTree(data.find((item: any) => item[dataItemKey][0] === value[dataItemKey][0]), value[dataItemKey]);
+      // No filter - search through original data
+      for (const item of data || []) {
+        selectedValue = searchTree(item, targetId);
+        if (selectedValue) break;
+      }
     }
   }
 
@@ -163,7 +158,6 @@ export const FormDropDownTreeGlAccountWithChildren = (fieldRenderProps: FieldRen
             id={id}
             disabled={disabled}
             data={treeData}
-            subItemsField="children"
             onExpandChange={onExpandChange}
             //onItemClick={onItemClick} // Custom handler to manage parent node clicks
             filterable={true}

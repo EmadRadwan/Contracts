@@ -26,9 +26,11 @@ import {
 import { StyledTabs } from "../../../../../app/components/StyledTabs";
 import { StyledTab } from "../../../../../app/components/StyledTab";
 import { useAppSelector } from "../../../../../app/store/configureStore";
+import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHelper";
 
 const ChartOfAccountsList = () => {
   const { language } = useAppSelector(state => state.localization);
+  const { getTranslatedLabel } = useTranslationHelper();
 
   // -----------------------------------------------------------------
   // View State: list vs form
@@ -77,7 +79,7 @@ const ChartOfAccountsList = () => {
   };
 
   const handleAccountUpdated = (updatedAccount: GlAccount) => {
-    toast.success("Account updated successfully");
+    
     setSelectedAccount(updatedAccount);
     // No need to change mode — stays in edit
   };
@@ -128,7 +130,7 @@ const ChartOfAccountsList = () => {
                   onClick={startCreate}
                   sx={{ mb: 2 }}
               >
-                Create New Account
+                {getTranslatedLabel("accounting.glAccount.list.createNew", "Create New Account")}
               </Button>
             </Grid>
 
@@ -136,7 +138,7 @@ const ChartOfAccountsList = () => {
               <TabContext value="1">
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                   <StyledTabs value="1">
-                    <StyledTab label="Chart of Accounts" value="1" />
+                    <StyledTab label={getTranslatedLabel("accounting.glAccount.list.title", "Chart of Accounts")} value="1" />
                   </StyledTabs>
                 </Box>
 
@@ -153,16 +155,16 @@ const ChartOfAccountsList = () => {
                       resizable
                   >
                     <GridToolbar>
-                      <strong>Global Chart of Accounts</strong>
+                      <strong>{getTranslatedLabel("accounting.glAccount.list.globalTitle", "Global Chart of Accounts")}</strong>
                     </GridToolbar>
 
-                    <Column field="glAccountId" title="Account ID" cell={AccountIdCell} width={140} />
-                    <Column field="accountName" title="Account Name" width={300} />
-                    <Column field="accountNameArabic" title="Name (Arabic)" width={300} />
-                    <Column field="parentGlAccountId" title="Parent ID" width={140} />
-                    <Column field="glAccountTypeId" title="Type" width={180} />
-                    <Column field="glAccountClassId" title="Class" width={180} />
-                    <Column field="glResourceTypeId" title="Resource Type" width={160} />
+                    <Column field="glAccountId" title={getTranslatedLabel("accounting.glAccount.list.accountId", "Account ID")} cell={AccountIdCell} width={140} />
+                    <Column field="accountName" title={getTranslatedLabel("accounting.glAccount.list.accountName", "Account Name")} />
+                    {/* <Column field="accountNameArabic" title={getTranslatedLabel("accounting.glAccount.list.accountNameArabic", "Name (Arabic)")} width={300} /> */}
+                    <Column field="parentGlAccountId" title={getTranslatedLabel("accounting.glAccount.list.parentId", "Parent ID")} width={140} />
+                    <Column field="glAccountTypeId" title={getTranslatedLabel("accounting.glAccount.list.type", "Type")} width={180} />
+                    <Column field="glAccountClassId" title={getTranslatedLabel("accounting.glAccount.list.class", "Class")} width={180} />
+                    <Column field="glResourceTypeId" title={getTranslatedLabel("accounting.glAccount.list.resourceType", "Resource Type")} width={160} />
                   </KendoGrid>
 
                   {(isFlatFetching || isTopFetching) && <LoadingComponent />}
