@@ -140,7 +140,11 @@ const BillingAccountForm: React.FC<Props> = ({
 
     return (
         <>
-            <AccountingMenu selectedMenuItem="/billingAccounts" />
+            <AccountingMenu selectedMenuItem="/billingAccounts" onMenuSelect={(key) => {
+                if (key === "billingAccounts") {
+                    cancelEdit(); // ← Forces back to list view
+                }
+            }}/>
             <Paper elevation={5} className="div-container-withBorderCurved" sx={{ p: 3 }}>
                 <Typography variant="h4" gutterBottom color={editMode === 1 ? "success.main" : "text.primary"}>
                     {editMode === 1 ? "حساب أجل جديد" : `حساب الأجل: ${billingAccount?.billingAccountId}`}

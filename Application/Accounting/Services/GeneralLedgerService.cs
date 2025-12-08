@@ -304,12 +304,20 @@ public class GeneralLedgerService : IGeneralLedgerService
         var newAcctgTransSequence = await _utilityService.GetNextSequence("AcctgTrans");
 
         string? workEffortId = null;
+        string? projectId = null;
+
         if (!string.IsNullOrEmpty(shipmentReceipt.OrderId))
         {
-            workEffortId = await _context.WorkEfforts
+            var workEffort = await _context.WorkEfforts
                 .Where(we => we.RelatedOrderId == shipmentReceipt.OrderId)
-                .Select(we => we.WorkEffortId)
+                .Select(we => new { we.WorkEffortId, we.ProjectId })  // REFACTOR: Project both needed IDs in a single query for efficiency
                 .FirstOrDefaultAsync();
+
+            if (workEffort != null)
+            {
+                workEffortId = workEffort.WorkEffortId;
+                projectId = workEffort.ProjectId;  // REFACTOR: Extract ProjectId alongside WorkEffortId to avoid multiple DB queries
+            }
         }
 
         //Credit
@@ -332,6 +340,10 @@ public class GeneralLedgerService : IGeneralLedgerService
             LastUpdatedStamp = stamp
         };
         acctgTransEntries.Add(creditEntry);
+        
+        // get project record from workefforts using workEffortId
+        var project = await _context.WorkEfforts
+            .FirstOrDefaultAsync(we => we.WorkEffortId == projectId);
 
         //Debit
         var debitEntry = new AcctgTransEntry
@@ -341,7 +353,8 @@ public class GeneralLedgerService : IGeneralLedgerService
             AcctgTransEntryTypeId = "_NA_",
             DebitCreditFlag = "D",
             OrganizationPartyId = inventoryItem.OwnerPartyId,
-            GlAccountTypeId = "INVENTORY_ACCOUNT",
+            //GlAccountTypeId = "INVENTORY_ACCOUNT",
+            GlAccountId = project?.GlAccountId,
             OrigAmount = origAmount,
             ProductId = inventoryItem.ProductId,
             CurrencyUomId = partyAcctgPreference.BaseCurrencyUomId,

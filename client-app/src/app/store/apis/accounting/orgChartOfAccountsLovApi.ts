@@ -37,6 +37,12 @@ const orgChartOfAccountsLovApi = createApi({
                     method: "GET",
                 }),
             }),
+            fetchGlAccountOrgCashOrEquivalentLov: builder.query<any, string>({
+                query: (companyId) => ({
+                    url: `/organizationGl/${companyId}/getGlAccountOrgCashOrEquivalentLov`,
+                    method: "GET",
+                }),
+            }),
             fetchGlAccountOrganizationGlAccounts: builder.query<any[], any>({
                 query: (companyId) => {
                     return {
@@ -52,7 +58,8 @@ const orgChartOfAccountsLovApi = createApi({
 
 export const {
     useFetchOrgChartOfAccountsLovQuery,
-    useFetchGlAccountOrganizationGlAccountsQuery, useFetchGlAccountOrganizationHierarchyLovQuery
+    useFetchGlAccountOrganizationGlAccountsQuery,
+    useFetchGlAccountOrganizationHierarchyLovQuery, useFetchGlAccountOrgCashOrEquivalentLovQuery
 
 } = orgChartOfAccountsLovApi;
 export {orgChartOfAccountsLovApi};

@@ -1,10 +1,10 @@
-import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {Field, Form, FormElement, FormRenderProps} from "@progress/kendo-react-form";
-import {Box, Button, Collapse, Grid, IconButton, Menu, MenuItem, Paper, Typography} from "@mui/material";
+import {Box, Button, Collapse, Grid, IconButton, Menu, MenuItem, Paper, Skeleton, Typography} from "@mui/material";
 import {Ribbon, RibbonContainer} from "react-ribbons";
 import useMultiPaymentCertificate from "../hook/useMultiPaymentCertificate";
 import {FormInitialValues, MultiPaymentCertificate} from "../../../app/models/project/MultiPaymentCertificate";
-import {useAppSelector} from "../../../app/store/configureStore";
+import {RootState, useAppSelector} from "../../../app/store/configureStore";
 import MultiPaymentItemsList from "../dashboard/MultiPaymentItemsList";
 import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
 import AccountingMenu from "../../accounting/invoice/menu/AccountingMenu";
@@ -16,6 +16,11 @@ import FormInput from "../../../app/common/form/FormInput";
 import {
     FormComboBoxVirtualPartyEmployeeAdvancedPayment
 } from "../../../app/common/form/FormComboBoxVirtualPartyEmployeeAdvancedPayment";
+import {MemoizedFormComboBox2} from "../../../app/common/form/FormComboBox2";
+import {
+    useFetchGlAccountOrganizationHierarchyLovQuery,
+    useFetchGlAccountOrgCashOrEquivalentLovQuery
+} from "../../../app/store/apis";
 
 
 interface CertificateActionsMenuProps {
@@ -92,7 +97,16 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
 
     const [formKey, setFormKey] = useState<number>(1);
     const formRef = useRef<any>(null);
-    
+    const {user} = useAppSelector((state) => state.account);
+    const companyId = user?.organizationPartyId || "";
+    const {
+        data: glAccounts,
+        isLoading: isLoadingGlAccounts
+    } = useFetchGlAccountOrgCashOrEquivalentLovQuery(companyId, {
+        skip: !companyId,
+    });
+
+
     const {
         certificate,
         setCertificate,
@@ -120,10 +134,7 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
             currentStatusId: "WEPR_CREATED",
             statusDescription: "Created",
             statusDescriptionArabic: "تم الإنشاء",
-            partyIdEmployee: {
-                fromPartyId: "",
-                fromPartyName: "",
-            },
+            glaccountId: "",
         };
 
         // REFACTOR: Only override default values if source exists and has valid properties
@@ -136,10 +147,7 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
                 currentStatusId: source.currentStatusId || defaultValues.currentStatusId,
                 statusDescription: source.statusDescription || defaultValues.statusDescription,
                 statusDescriptionArabic: source.statusDescriptionArabic || defaultValues.statusDescriptionArabic,
-                partyIdEmployee: {
-                    fromPartyId: source.partyIdEmployee || defaultValues.partyIdEmployee.fromPartyId,
-                    fromPartyName: source.partyEmployeeName || defaultValues.partyIdEmployee.fromPartyName,
-                },
+                glAccountId: source.glAccountId || defaultValues.glAccountId,
             };
         }
 
@@ -181,7 +189,7 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
             workEffortId: certificate?.workEffortId || values.workEffortId || "",
             date: values.date instanceof Date ? values.date.toISOString() : new Date().toISOString(),
             description: values.description || "",
-            partyIdEmployee: values.partyIdEmployee.fromPartyId || "",
+            glAccountId: values.glAccountId || "",
             items,
         };
         if (editMode === 1) {
@@ -233,9 +241,7 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
 
     const status = renderSwitchStatus();
     
-    console.log('certificate', certificate)
-    console.log('selectedCertificate', selectedCertificate)
-    console.log('editMode', editMode)
+    
 
     return (
         <>
@@ -300,14 +306,15 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
                                             />
                                         </Grid>
                                         
-                                        <Grid item xs={2}>
+                                        <Grid item xs={3}>
                                             <Field
-                                                id="partyIdEmployee"
-                                                name="partyIdEmployee"
-                                                component={FormComboBoxVirtualPartyEmployeeAdvancedPayment}
-                                                label={getTranslatedLabel(`${localizationKey}.employee`, "Employee")}
-                                                valueField="fromPartyId"
-                                                textField="fromPartyName"
+                                                id="glAccountId"
+                                                name="glAccountId"
+                                                label={getTranslatedLabel(`${localizationKey}.glAccount`, "Cost Center")}
+                                                component={MemoizedFormComboBox2}
+                                                data={glAccounts || []}
+                                                dataItemKey="glAccountId"
+                                                textField="accountName"
                                                 validator={requiredValidator}
                                             />
                                         </Grid>

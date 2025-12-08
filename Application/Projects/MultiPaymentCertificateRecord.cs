@@ -11,6 +11,6 @@ public class MultiPaymentCertificateRecord
     public string StatusDescription { get; init; }
     public string CurrentStatusId { get; init; }
 
-    public string PartyIdEmployee { get; init; }
-    public string PartyEmployeeName { get; set; }
+    public string GlAccountId { get; init; }
+    public string AccountName { get; init; }
 }

@@ -27,6 +27,11 @@ function BillingAccountsList() {
     const { data, isFetching } = useFetchBillingAccountsQuery(dataState);
     const [gridData, setGridData] = useState({ data: [], total: 0 });
 
+    const handleMenuSelect = () => {
+        setEditMode(0);
+        setSelectedAccount(undefined);
+    };
+    
     useEffect(() => {
         if (data) {
             setGridData({ data: handleDatesArray(data.data), total: data.total });
@@ -71,7 +76,8 @@ function BillingAccountsList() {
     // ── RENDER LIST ─────────────────────────────────────
     return (
         <>
-            <AccountingMenu selectedMenuItem="/billingAccounts" />
+            <AccountingMenu selectedMenuItem="/billingAccounts"
+                            onMenuSelect={handleMenuSelect}/>
             <Paper elevation={5} className="div-container-withBorderCurved">
                 <KendoGrid
                     style={{ height: "65vh" }}

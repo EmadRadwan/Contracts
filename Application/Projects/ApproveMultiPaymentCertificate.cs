@@ -75,17 +75,7 @@ namespace Application.Projects
 
                     var totalAmount = items.Sum(i => i.TotalAmount ?? 0);
 
-                    var employeeParty = await _context.Parties
-                        .Where(p => p.PartyId == certificate.PartyIdEmployee)
-                        .Select(p => new { p.GlAccountIdAdvancedPayment })
-                        .FirstOrDefaultAsync(cancellationToken);
-
-                    if (employeeParty == null || string.IsNullOrEmpty(employeeParty.GlAccountIdAdvancedPayment))
-                    {
-                        await transaction.RollbackAsync(cancellationToken);
-                        return Result<MultiPaymentCertificateDto>.Failure(
-                            "Employee party or advanced payment GL account not found");
-                    }
+                    
 
                     var updateResult = await _context.SaveChangesAsync(cancellationToken);
                     if (updateResult <= 0)
@@ -113,7 +103,7 @@ namespace Application.Projects
                         AcctgTransEntrySeqId = "00001",
                         AcctgTransEntryTypeId = "_NA_",
                         Description = $"مستند دفع متعدد {certificate.WorkEffortId}",
-                        GlAccountId = employeeParty.GlAccountIdAdvancedPayment,
+                        GlAccountId = certificate.GlAccountId,
                         OrganizationPartyId = request.CompanyId,
                         Amount = totalAmount,
                         CurrencyUomId = "EGP",
@@ -175,11 +165,7 @@ namespace Application.Projects
                             AcctgTransEntryTypeId = "_NA_",
                             Description = item.Description,
                             GlAccountId = project.GlAccountId,
-                            // REFACTOR: Use PartyIdSupplier or PartyIdContractor for PartyId
-                            // This links the debit entry to the supplier or contractor
                             PartyId = partyId,
-                            //InvoiceId = invoiceId, // REFACTOR: Add InvoiceId to debit entry
-                            // This associates the debit entry with the created invoice
                             OrganizationPartyId = request.CompanyId,
                             Amount = item.TotalAmount ?? 0,
                             CurrencyUomId = "EGP",

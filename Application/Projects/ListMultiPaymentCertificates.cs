@@ -27,35 +27,39 @@ namespace Application.Projects
                 _context = context;
             }
 
-            public async Task<IQueryable<MultiPaymentCertificateRecord>> Handle(Query request, CancellationToken cancellationToken)
+            public async Task<IQueryable<MultiPaymentCertificateRecord>> Handle(Query request,
+                CancellationToken cancellationToken)
             {
                 var language = request.Language;
 
                 var query = from we in _context.WorkEfforts.AsNoTracking()
-                            join si in _context.StatusItems on we.CurrentStatusId equals si.StatusId into statusGroup
-                            join p in _context.Parties on we.PartyIdEmployee equals p.PartyId into partyGroup
-                            from p in partyGroup.DefaultIfEmpty()
-                            from si in statusGroup.DefaultIfEmpty()
-                            where we.WorkEffortTypeId == "PAYMENT_CERTIFICATE"
-                            select new MultiPaymentCertificateRecord
-                            {
-                                WorkEffortId = we.WorkEffortId,
-                                Code = we.CertificateNumber,
-                                Date = (DateTime)we.EstimatedStartDate,
-                                Description = we.Description,
-                                StatusDescription = language == "ar" 
-                                    ? (si != null ? si.DescriptionArabic : 
-                                        (we.CurrentStatusId == "WEPR_CREATED" ? "تم الإنشاء" : 
-                                         we.CurrentStatusId == "WEPR_APPROVED" ? "تمت الموافقة" : 
-                                         we.CurrentStatusId == "WEPR_COMPLETE" ? "مكتمل" : "غير معروف"))
-                                    : (si != null ? si.Description : 
-                                        (we.CurrentStatusId == "WEPR_CREATED" ? "Created" : 
-                                         we.CurrentStatusId == "WEPR_APPROVED" ? "Approved" : 
-                                         we.CurrentStatusId == "WEPR_COMPLETE" ? "Complete" : "Unknown")),
-                                CurrentStatusId = we.CurrentStatusId,
-                                PartyIdEmployee = p != null ? p.PartyId : null,
-                                PartyEmployeeName = p != null ? p.Description : null
-                            };
+                    join gl in _context.GlAccounts on we.GlAccountId equals gl.GlAccountId into glGroup
+                    from gl in glGroup.DefaultIfEmpty()
+                    where we.WorkEffortTypeId == "PAYMENT_CERTIFICATE"
+                    select new MultiPaymentCertificateRecord
+                    {
+                        WorkEffortId = we.WorkEffortId,
+                        Code = we.CertificateNumber,
+                        Date = (DateTime)we.EstimatedStartDate,
+                        Description = we.Description,
+
+                        // REFACTOR: Status description logic unchanged – kept Arabic/English fallback based on Language
+                        StatusDescription = language == "ar"
+                            ? (we.CurrentStatusId == "WEPR_CREATED" ? "تم الإنشاء"
+                                : we.CurrentStatusId == "WEPR_APPROVED" ? "تمت الموافقة"
+                                : we.CurrentStatusId == "WEPR_COMPLETE" ? "مكتمل"
+                                : "غير معروف")
+                            : (we.CurrentStatusId == "WEPR_CREATED" ? "Created"
+                                : we.CurrentStatusId == "WEPR_APPROVED" ? "Approved"
+                                : we.CurrentStatusId == "WEPR_COMPLETE" ? "Complete"
+                                : "Unknown"),
+
+                        CurrentStatusId = we.CurrentStatusId,
+                        GlAccountId = we.GlAccountId,
+
+                        // REFACTOR: New field – Arabic account name from GLAccounts table
+                        AccountName = gl != null ? gl.AccountNameArabic : null
+                    };
 
                 return query;
             }

@@ -74,7 +74,7 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
             glFiscalTypeId: t.glFiscalTypeId ?? '',
             invoiceId: t.invoiceId,
             paymentId: t.paymentId,
-            workEffortId: t.workEffortId,
+            workEffortId: t.certificateNumber,
             partyName: t.partyName,
             productName: t.productName,
             isPosted: t.isPosted ?? false,

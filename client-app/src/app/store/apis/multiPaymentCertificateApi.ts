@@ -70,9 +70,6 @@ const multiPaymentCertificateApi = createApi({
             }),
             approveMultiPaymentCertificate: builder.mutation<MultiPaymentCertificate, { workEffortId: string; companyId: string }>({
                 query: ({ workEffortId, companyId }) => ({
-                    // REFACTOR: Changed to a fixed endpoint URL and moved workEffortId to the request body,
-                    // ensuring both workEffortId and companyId are sent together in the POST body for consistency
-                    // and to simplify the backend route handling.
                     url: `/project/approveMultiPaymentCertificate`,
                     method: 'POST',
                     body: { workEffortId, companyId }

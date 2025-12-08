@@ -20,7 +20,6 @@ import SalesRequestMenu from "../menu/SalesRequestMenu";
 import {handleDatesArray} from "../../../../../app/util/utils";
 import InstallmentPriceCalculatorModal from "./InstallmentPriceCalculatorModal";
 import ModalContainer from "../../../../../app/common/modals/ModalContainer";
-import PaymentPlanModal from "./PaymentPlanModal";
 
 function SalesRequestsList() {
     // -----------------------------------------------------------------

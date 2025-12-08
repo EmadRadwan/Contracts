@@ -12,7 +12,7 @@ export interface MultiPaymentCertificate {
     currentStatusId?: string;
     statusDescription?: string;
     statusDescriptionArabic?: string;
-    partyIdEmployee?: string;
+    glAccountId?: string;
     items: MultiPaymentItem[];
 }
 
@@ -23,10 +23,7 @@ export interface FormInitialValues {
     currentStatusId: string;
     statusDescription: string;
     statusDescriptionArabic: string;
-    partyIdEmployee: {
-        fromPartyId: string;
-        fromPartyName: string;
-    };
+    glAccountId: string;
 }
 
 export interface CertificateActionResult {

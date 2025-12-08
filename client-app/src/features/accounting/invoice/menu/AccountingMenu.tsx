@@ -20,6 +20,7 @@ import React from "react";
 
 interface AccountingMenuProps {
     selectedMenuItem?: string;
+    onMenuSelect?: (key: string) => void;   // ← already there in your code
 }
 
 const NavLinkWithReset = React.forwardRef<HTMLAnchorElement, NavLinkProps>(
@@ -57,7 +58,7 @@ const links = [
 
 const normalizePath = (path: string) => path.replace(/^\//, '').toLowerCase();
 
-export default function AccountingMenu({ selectedMenuItem }: AccountingMenuProps) {
+export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: AccountingMenuProps) {
     const theme = useTheme();
     const normalizedSelectedMenuItem = normalizePath(selectedMenuItem || '');
     const { getTranslatedLabel } = useTranslationHelper();
@@ -89,6 +90,12 @@ export default function AccountingMenu({ selectedMenuItem }: AccountingMenuProps
         };
     };
 
+    const handleClick = (key: string) => {
+        if (onMenuSelect) {
+            onMenuSelect(key);
+        }
+    };
+
     return (
         <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'left' }}>
             <Box display="flex" alignItems="left">
@@ -105,6 +112,7 @@ export default function AccountingMenu({ selectedMenuItem }: AccountingMenuProps
                                 to={path}
                                 key={path}
                                 sx={navStyles(path)}
+                                onClick={() => handleClick(key)}
                             >
                                 {icon}
                                 <FloatingLabelText

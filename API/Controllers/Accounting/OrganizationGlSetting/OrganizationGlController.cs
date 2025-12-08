@@ -110,6 +110,19 @@ public class OrganizationGlController : BaseApiController
         };
         return HandleResult(await Mediator.Send(query));
     }
+    
+[HttpGet("{companyId}/getGlAccountOrgCashOrEquivalentLov")]
+    public async Task<IActionResult> GetGlAccountOrgCashOrEquivalentLov(string companyId)
+    {
+        // REFACTOR: Added language retrieval to pass to the query for Arabic support
+        var language = GetLanguage(); // Assuming GetLanguage() is defined elsewhere
+        var query = new GetGlAccountOrgCashOrEquivalentLov.Query 
+        { 
+            CompanyId = companyId,
+            Language = language
+        };
+        return HandleResult(await Mediator.Send(query));
+    }
 
     [HttpGet("getGlAccountTypes")]
     public async Task<IActionResult> GetGlAccountTypes()

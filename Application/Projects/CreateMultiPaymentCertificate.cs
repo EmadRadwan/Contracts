@@ -60,7 +60,7 @@ namespace Application.Projects
                         EstimatedStartDate = certificate.Date,
                         Description = certificate.Description,
                         CurrentStatusId = "WEPR_CREATED",
-                        PartyIdEmployee = certificate.PartyIdEmployee,
+                        GlAccountId = certificate.GlAccountId,
                         CreatedDate = stamp,
                         LastUpdatedStamp = stamp
                     };
@@ -173,14 +173,7 @@ namespace Application.Projects
                     }
 
                     await transaction.CommitAsync(cancellationToken);
-
-                    var employeeParty = workEffort.PartyIdEmployee != null
-                        ? await _context.Parties
-                            .Where(p => p.PartyId == workEffort.PartyIdEmployee)
-                            .Select(p => new { p.PartyId, p.Description })
-                            .FirstOrDefaultAsync(cancellationToken)
-                        : null;
-
+                    
                     var resultItems = new List<MultiPaymentItemDto>();
                     foreach (var item in certificate.Items!)
                     {
@@ -282,8 +275,8 @@ namespace Application.Projects
                         CurrentStatusId = workEffort.CurrentStatusId,
                         StatusDescription = statusDescription,
                         StatusDescriptionArabic = statusDescriptionArabic,
-                        PartyIdEmployee = workEffort.PartyIdEmployee,
-                        PartyEmployeeName = employeeParty?.Description ?? null,
+                        GlAccountId = workEffort.GlAccountId,
+                        
                         Items = resultItems
                     };
 

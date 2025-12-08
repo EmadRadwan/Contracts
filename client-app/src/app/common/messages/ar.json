@@ -1366,7 +1366,7 @@
       "form": {
         "title": "مستند دفع متعدد",
         "date": "التاريخ *",
-        "employee": "الموظف *",
+        "glAccount": "حساب دفتر الأستاذ *",
         "paymentMethod": "طريقة الدفع *",
         "description": "الوصف",
         "chequeNumber": "رقم الشيك",

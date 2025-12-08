@@ -66,7 +66,7 @@ namespace Application.Projects
 
                     existingWorkEffort.EstimatedStartDate = certificate.Date;
                     existingWorkEffort.Description = certificate.Description;
-                    existingWorkEffort.PartyIdEmployee = certificate.PartyIdEmployee;
+                    existingWorkEffort.GlAccountId = certificate.GlAccountId;
                     existingWorkEffort.LastUpdatedStamp = stamp;
 
                     _logger.LogInformation("Updating WorkEffort: WorkEffortId={WorkEffortId}, Type={WorkEffortTypeId}",
@@ -263,8 +263,7 @@ namespace Application.Projects
                         CurrentStatusId = existingWorkEffort.CurrentStatusId,
                         StatusDescription = statusDescription,
                         StatusDescriptionArabic = statusDescriptionArabic,
-                        PartyIdEmployee = existingWorkEffort.PartyIdEmployee,
-                        PartyEmployeeName = employeeParty?.Description ?? null,
+                        GlAccountId = existingWorkEffort.GlAccountId,
                         Items = resultItems
                     };
 
