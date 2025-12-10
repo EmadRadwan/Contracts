@@ -171,17 +171,18 @@ function SalesRequestsList() {
                                                 {getTranslatedLabel("salesRequest.list.create", "Create Sales Request")}
                                             </Button>
                                         </Grid>
+                                        <Grid item>
+                                            <Button
+                                                color="primary"
+                                                variant="contained"
+                                                onClick={() => setShowCalculator(true)}
+                                            >
+                                                {getTranslatedLabel("installmentCalculator.open", "حاسبة سعر المتر بالتقسيط")}
+                                            </Button>
+                                        </Grid>
                                     </Grid>
 
-                                    <Grid item>
-                                        <Button
-                                            color="primary"
-                                            variant="contained"
-                                            onClick={() => setShowCalculator(true)}
-                                        >
-                                            {getTranslatedLabel("installmentCalculator.open", "حاسبة سعر المتر بالتقسيط")}
-                                        </Button>
-                                    </Grid>
+                                    
                                 </GridToolbar>
 
                                 <Column
@@ -198,6 +199,11 @@ function SalesRequestsList() {
                                 <Column
                                     field="fromPartyName"
                                     title={getTranslatedLabel("salesRequest.list.customer", "Customer")}
+                                    width={200}
+                                />
+                                <Column
+                                    field="employeeName"
+                                    title={getTranslatedLabel("salesRequest.list.employee", "Employee")}
                                     width={200}
                                 />
                                 <Column

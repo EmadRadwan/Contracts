@@ -30,8 +30,17 @@ public class ListBillingAccounts
                     join bar in _context.BillingAccountRoles on ba.BillingAccountId equals bar.BillingAccountId
                     join pty in _context.Parties on bar.PartyId equals pty.PartyId
                     join uom in _context.Uoms on ba.AccountCurrencyUomId equals uom.UomId
-                    join workEffort in _context.WorkEfforts on ba.WorkEffortId equals workEffort.WorkEffortId 
+                    join workEffort in _context.WorkEfforts on ba.WorkEffortId equals workEffort.WorkEffortId
                     where ba.ThruDate == null
+                    let usedBalance = _context.Payments
+                        .Where(p =>
+                            p.WorkEffortId == ba.WorkEffortId &&
+                            p.PartyIdTo == bar.PartyId &&
+                            p.StatusId == "PMNT_SENT" &&
+                            p.PaymentTypeId == "ADVANCE_TO_VENDOR_CONTRACTOR")
+                        .Sum(p => (decimal?)p.Amount ?? 0m)
+                    let initialBalance = ba.AccountLimit ?? 0m
+                    let remainingBalance = initialBalance - usedBalance
                     select new BillingAccountRecord
                     {
                         BillingAccountId = ba.BillingAccountId,
@@ -43,7 +52,9 @@ public class ListBillingAccounts
                         PartyId = bar.PartyId,
                         PartyName = pty.Description,
                         FromDate = ba.FromDate,
-                        ThruDate = ba.ThruDate
+                        ThruDate = ba.ThruDate.Value,
+                        UsedBalance = usedBalance,
+                        RemainingBalance = remainingBalance
                     }
                 ).AsQueryable();
 

@@ -2522,7 +2522,7 @@ public class SeedContracts
         */
 
         //Party Gl Accounts
-        if (!context.PartyGlAccounts.Any())
+        /*if (!context.PartyGlAccounts.Any())
         {
             var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/party_gl_accounts.json");
             var jsonData = File.ReadAllText(path);
@@ -2530,7 +2530,7 @@ public class SeedContracts
             var partyGlAccounts = JsonConvert.DeserializeObject<List<PartyGlAccount>>(jsonData);
             await context.PartyGlAccounts.AddRangeAsync(partyGlAccounts);
             await context.SaveChangesAsync();
-        }
+        }*/
 
         //Party classification types
         if (!context.PartyClassificationTypes.Any())

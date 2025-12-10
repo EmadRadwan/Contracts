@@ -213,6 +213,12 @@ public class ApproveSalesRequest
                 .Where(p => p.PartyId == sr.FromPartyId)
                 .Select(p => new { p.PartyId, p.Description, Phone = string.Empty })
                 .FirstOrDefaultAsync(ct);
+            
+            var employee = await _context.Parties
+                .Where(p => p.PartyId == sr.EmployeePartyId)
+                .Select(p => new { p.PartyId, p.Description })
+                .FirstOrDefaultAsync(ct);
+
 
             var apartment = await CreateSalesRequest.Handler.GetApartmentLovProjection(_context, sr.ProductId!, ct)
                             ?? new CreateSalesRequest.ApartmentLovProjection { ApartmentId = sr.ProductId! };
@@ -228,6 +234,8 @@ public class ApproveSalesRequest
                 FromPartyId = fromParty?.PartyId ?? sr.FromPartyId!,
                 FromPartyName = fromParty?.Description ?? string.Empty,
                 FromPartyPhone = fromParty?.Phone ?? string.Empty,
+                EmployeePartyId = employee?.PartyId ?? sr.EmployeePartyId ?? string.Empty,
+                EmployeeName = employee?.Description ?? string.Empty,
                 ApartmentId = apartment.ApartmentId,
                 ApartmentName = apartment.ApartmentName,
                 ProjectName = apartment.ProjectName,

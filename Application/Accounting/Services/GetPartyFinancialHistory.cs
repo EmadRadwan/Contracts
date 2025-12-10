@@ -110,6 +110,78 @@ public class GetPartyFinancialHistory
 
                 bool actualCurrency = !string.IsNullOrEmpty(party.PreferredCurrencyUomId) &&
                                       party.PreferredCurrencyUomId != currencyUomId;
+                
+                var openingBalanceEntries = await _context.AcctgTransEntries
+                    .Where(ate => 
+                        ate.AcctgTrans.AcctgTransTypeId == "OPENING_BALANCE" &&
+                        ate.AcctgTrans.PartyId == request.PartyId &&
+                        ate.AcctgTrans.IsPosted == "Y")
+                    .Select(ate => new
+                    {
+                        ate.AcctgTrans.TransactionDate,
+                        ate.GlAccountTypeId,                    // Critical: tells us if it's AR or AP
+                        ate.DebitCreditFlag,                    // "D" = Debit, "C" = Credit
+                        ate.Amount,
+                        // Use actual currency if available, fallback to orig or default
+                        CurrencyUomId = !string.IsNullOrEmpty(ate.CurrencyUomId) 
+                            ? ate.CurrencyUomId 
+                            : (!string.IsNullOrEmpty(ate.OrigCurrencyUomId) 
+                                ? ate.OrigCurrencyUomId 
+                                : currencyUomId)
+                    })
+                    .ToListAsync(cancellationToken);
+                
+                bool IsReceivableAccountType(string glAccountTypeId)
+                {
+                    return glAccountTypeId switch
+                    {
+                        "ACCOUNTS_RECEIVABLE"     => true,
+                        "ACCREC_UNAPPLIED"        => true,
+                        "MRCH_STLMNT_ACCOUNT"     => true,   // Merchant settlement is still receivable
+                        "INTRSTINC_RECEIVABLE"    => true,   // Interest receivable
+                        _ => false                           // Everything else (AP, deposits, etc.) = liability
+                    };
+                }
+                
+                decimal openingBalanceImpact = 0m;  // This will be added to final net amount
+                var openingBalanceDtos = new List<OpeningBalanceDto>();
+
+                foreach (var entry in openingBalanceEntries)
+                {
+                    // Standard accrual accounting:
+                    // Debit to AR  → increases what customer owes us → positive
+                    // Credit to AR → reduces receivable → negative
+                    decimal signedAmount = (decimal)(entry.DebitCreditFlag == "D" 
+                        ? entry.Amount 
+                        : -entry.Amount);
+
+                    bool isReceivable = IsReceivableAccountType(entry.GlAccountTypeId);
+
+                    // Final impact on "how much customer owes us":
+                    // - If posted to AR → use normal sign
+                    // - If posted to AP or Customer Deposit → reverse the sign (liability)
+                    decimal impactOnCustomerBalance = isReceivable 
+                        ? signedAmount 
+                        : -signedAmount;
+
+                    openingBalanceImpact += Math.Round(impactOnCustomerBalance, 2, MidpointRounding.AwayFromZero);
+
+                    // Optional: expose details in response (great for audit/troubleshooting)
+                    openingBalanceDtos.Add(new OpeningBalanceDto
+                    {
+                        TransactionDate = entry.TransactionDate,
+                        GlAccountTypeId = entry.GlAccountTypeId,
+                        Amount = (decimal)entry.Amount,
+                        DebitCreditFlag = entry.DebitCreditFlag,
+                        CurrencyUomId = entry.CurrencyUomId,
+                        ImpactOnBalance = Math.Round(impactOnCustomerBalance, 2, MidpointRounding.AwayFromZero),
+                        Description = "Opening Balance"
+                    });
+                }
+                
+                openingBalanceDtos = openingBalanceDtos
+                    .OrderBy(x => x.TransactionDate)
+                    .ToList();
 
                 // 3. Retrieve Invoices and Applied Payments
                 // Benefit: Filters valid invoices and payments, ensuring only PMNT_RECEIVED payments are applied, preventing invalid applications (e.g., PMNT_NOT_PAID)
@@ -452,17 +524,23 @@ public class GetPartyFinancialHistory
                 decimal transferAmount = financialSummary.TotalSalesInvoice
                                          - financialSummary.TotalPurchaseInvoice
                                          - financialSummary.TotalPaymentsIn
-                                         + financialSummary.TotalPaymentsOut;
+                                         + financialSummary.TotalPaymentsOut
+                                         + openingBalanceImpact;
 
                 if (transferAmount > 0)
                 {
-                    // Positive = لصالح الشركة (مقدم عند مورد، أو عميل مدين لنا)
-                    financialSummary.TotalToBeReceived = transferAmount;  // ← نستخدم TotalToBeReceived للإيجابي
+                    financialSummary.TotalToBeReceived = Math.Round(transferAmount, 2, MidpointRounding.AwayFromZero);
+                    financialSummary.TotalToBePaid     = 0m;
                 }
                 else if (transferAmount < 0)
                 {
-                    // Negative = علينا للطرف
-                    financialSummary.TotalToBePaid = -transferAmount;     // ← نستخدم TotalToBePaid للسالب (مضبوط بالموجب)
+                    financialSummary.TotalToBePaid     = Math.Round(-transferAmount, 2, MidpointRounding.AwayFromZero);
+                    financialSummary.TotalToBeReceived = 0m;
+                }
+                else
+                {
+                    financialSummary.TotalToBeReceived = 0m;
+                    financialSummary.TotalToBePaid     = 0m;
                 }
 
                 // 9. Return result
@@ -478,6 +556,8 @@ public class GetPartyFinancialHistory
                     UnappliedPayments = unappliedPaymentsDtos,
                     BillingAccounts = billingAccountsDtos,
                     Returns = returns,
+                    // REFACTOR: Include opening balances in the final response
+                    OpeningBalances = openingBalanceDtos,
                     FinancialSummary = financialSummary
                 });
             }
@@ -489,4 +569,15 @@ public class GetPartyFinancialHistory
         }
     }
     
+}
+
+public class OpeningBalanceDto
+{
+    public DateTime? TransactionDate { get; set; }
+    public string GlAccountTypeId { get; set; }
+    public decimal Amount { get; set; }
+    public string DebitCreditFlag { get; set; } // "D" or "C"
+    public string CurrencyUomId { get; set; }
+    public decimal ImpactOnBalance { get; set; } // Positive = customer owes us
+    public string Description { get; set; }
 }

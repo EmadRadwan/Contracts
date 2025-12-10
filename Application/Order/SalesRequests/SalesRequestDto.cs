@@ -7,6 +7,7 @@ public class SalesRequestDto
     public string? ProductId { get; set; }
     public DateTime? SaleDate { get; set; }
     public string? FromPartyId { get; set; }
+    public string? EmployeePartyId { get; set; }
 
     public decimal? ApartmentPricePerM2 { get; set; }
     public decimal? GardenPricePerM2 { get; set; }

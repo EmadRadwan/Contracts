@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class AddedCostCenter : Migration
+    public partial class AddedEmpToSalesRequest : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -28823,12 +28823,19 @@ namespace Persistence.Migrations
                     MONTHS_BETWEEN_INSTALLMENTS = table.Column<int>(type: "int", nullable: true),
                     STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    EMPLOYEE_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
                     CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SALES_REQUEST", x => x.SALES_REQUEST_ID);
+                    table.ForeignKey(
+                        name: "FK_SALES_REQUEST_PARTY_EMPLOYEE_PARTY_ID",
+                        column: x => x.EMPLOYEE_PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
                     table.ForeignKey(
                         name: "FK_SALES_REQUEST_STATUS_ITEM_STATUS_ID",
                         column: x => x.STATUS_ID,
@@ -46692,6 +46699,11 @@ namespace Persistence.Migrations
                 name: "SALES_REQ_CUST_IDX",
                 table: "SALES_REQUEST",
                 column: "FROM_PARTY_ID");
+
+            migrationBuilder.CreateIndex(
+                name: "SALES_REQ_EMP_IDX",
+                table: "SALES_REQUEST",
+                column: "EMPLOYEE_PARTY_ID");
 
             migrationBuilder.CreateIndex(
                 name: "SALES_REQ_PROD_IDX",

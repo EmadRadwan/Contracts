@@ -52,6 +52,7 @@ public class UpdateSalesRequest
                 sr.ProductId = dto.ProductId!;
                 sr.SaleDate = dto.SaleDate!.Value;
                 sr.FromPartyId = dto.FromPartyId!;
+                sr.EmployeePartyId = dto.EmployeePartyId;
                 sr.ApartmentPricePerM2 = dto.ApartmentPricePerM2;
                 sr.GardenPricePerM2 = dto.GardenPricePerM2;
                 sr.Discount = dto.Discount;
@@ -79,6 +80,11 @@ public class UpdateSalesRequest
                 var fromParty = await _context.Parties
                     .Where(p => p.PartyId == dto.FromPartyId)
                     .Select(p => new { p.PartyId, p.Description, Phone = string.Empty })
+                    .FirstOrDefaultAsync(ct);
+                
+                var employee = await _context.Parties
+                    .Where(p => p.PartyId == dto.EmployeePartyId)
+                    .Select(p => new { p.PartyId, p.Description })
                     .FirstOrDefaultAsync(ct);
 
                 var apartment = await CreateSalesRequest.Handler.GetApartmentLovProjection(_context, dto.ProductId!, ct)
@@ -112,7 +118,8 @@ public class UpdateSalesRequest
                     FromPartyId = fromParty?.PartyId ?? dto.FromPartyId!,
                     FromPartyName = fromParty?.Description ?? string.Empty,
                     FromPartyPhone = fromParty?.Phone ?? string.Empty,
-
+                    EmployeePartyId = employee?.PartyId ?? dto.EmployeePartyId ?? string.Empty,
+                    EmployeeName = employee?.Description ?? string.Empty,
                     ApartmentId = apartment.ApartmentId,
                     ApartmentName = apartment.ApartmentName,
                     ApartmentType = apartment.ApartmentType,

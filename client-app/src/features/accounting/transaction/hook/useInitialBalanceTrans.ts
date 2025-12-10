@@ -18,6 +18,7 @@ export interface CreateInitialBalanceTransParams {
     };
     Entry: {
         glAccountId: string;
+        partyId?: string;          // ← ADD: optional (only for AR/AP accounts typically)
         amount: number;
         description: string;
         debitCreditFlag: "D" | "C";

@@ -28,6 +28,8 @@ public class CreateSalesRequest
         public string FromPartyId { get; set; } = string.Empty;
         public string FromPartyName { get; set; } = string.Empty;
         public string FromPartyPhone { get; set; } = string.Empty;
+        public string EmployeePartyId { get; set; } = string.Empty;
+        public string EmployeeName { get; set; } = string.Empty;
 
         // Apartment (flattened)
         public string ApartmentId { get; set; } = string.Empty;
@@ -131,6 +133,7 @@ public class CreateSalesRequest
                 ProductId = dto.ProductId!,
                 SaleDate = dto.SaleDate!.Value,
                 FromPartyId = dto.FromPartyId!,
+                EmployeePartyId = dto.EmployeePartyId,
                 ApartmentPricePerM2 = dto.ApartmentPricePerM2,
                 GardenPricePerM2 = dto.GardenPricePerM2,
                 Discount = dto.Discount,
@@ -185,6 +188,11 @@ public class CreateSalesRequest
                 .Where(p => p.PartyId == dto.FromPartyId)
                 .Select(p => new { p.PartyId, p.Description, Phone = string.Empty })
                 .FirstOrDefaultAsync(ct);
+            
+            var employee = await _context.Parties
+                .Where(p => p.PartyId == dto.EmployeePartyId)
+                .Select(p => new { p.PartyId, p.Description })
+                .FirstOrDefaultAsync(ct);
 
             // REFACTOR: GetApartmentLovProjection now uses the same context safely (sequential awaits inside)
             var apartmentLov = await GetApartmentLovProjection(_context, dto.ProductId!, ct)
@@ -220,6 +228,8 @@ public class CreateSalesRequest
                 FromPartyId = fromParty?.PartyId ?? dto.FromPartyId!,
                 FromPartyName = fromParty?.Description ?? string.Empty,
                 FromPartyPhone = fromParty?.Phone ?? string.Empty,
+                EmployeePartyId = employee?.PartyId ?? dto.EmployeePartyId ?? string.Empty,
+                EmployeeName = employee?.Description ?? string.Empty,
 
                 // Apartment (consistent with LOV)
                 ApartmentId = apartmentLov.ApartmentId,

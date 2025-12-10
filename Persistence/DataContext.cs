@@ -28365,6 +28365,12 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                       .HasColumnName("FROM_PARTY_ID")
                       .IsRequired();
                       
+                      entity.Property(e => e.EmployeePartyId)
+                      .HasMaxLength(36)
+                      .IsUnicode(false)
+                      .HasColumnName("EMPLOYEE_PARTY_ID")
+                      .IsRequired();
+                      
                 entity.Property(e => e.StatusId)
                   .HasMaxLength(36)
                   .IsUnicode(false)
@@ -28439,6 +28445,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 // --------------------------------------------------------------
                 entity.HasIndex(e => e.ProductId,               "SALES_REQ_PROD_IDX");
                 entity.HasIndex(e => e.FromPartyId,              "SALES_REQ_CUST_IDX");
+                entity.HasIndex(e => e.EmployeePartyId,              "SALES_REQ_EMP_IDX");
                 entity.HasIndex(e => e.SaleDate,                "SALES_REQ_SALE_DT_IDX");
                 entity.HasIndex(e => e.CreatedStamp,          "SALES_REQ_TXCRTS");
                 entity.HasIndex(e => e.LastUpdatedStamp,      "SALES_REQ_TXSTMP");
@@ -28462,6 +28469,12 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                       .HasForeignKey(d => d.FromPartyId)
                       .OnDelete(DeleteBehavior.Restrict)
                       .HasConstraintName("FK_SALES_REQ_CUSTOMER");
+                      
+                       entity.HasOne(s => s.Employee)
+                        .WithMany(p => p.SalesRequestsAsEmployee) // new collection in Party
+                        .HasForeignKey(s => s.EmployeePartyId)
+                        .OnDelete(DeleteBehavior.Restrict); // choose Restrict or SetNull per business rules
+
                       
                       entity.HasOne(sr => sr.Status)
                         .WithMany(si => si.SalesRequests)

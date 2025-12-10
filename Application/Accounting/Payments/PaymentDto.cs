@@ -23,6 +23,8 @@ public class PaymentDto
     public decimal Amount { get; set; }
     public string? CurrencyUomId { get; set; }
     public string? Comments { get; set; }
+    public string? ChequeNumber { get; set; }
+    public DateTime? ChequeDate { get; set; }
     public string? FinAccountTransId { get; set; }
     public string? OverrideGlAccountId { get; set; }
     public decimal? ActualCurrencyAmount { get; set; }

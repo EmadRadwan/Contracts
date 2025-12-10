@@ -204,6 +204,8 @@ public class PaymentHelperService : IPaymentHelperService
         payment.ActualCurrencyUomId = param.ActualCurrencyUomId ?? payment.ActualCurrencyUomId;
         payment.WorkEffortId = param.ProjectId;
         payment.CostCenterId = param.CostCenterId;
+        payment.ChequeNumber = param.ChequeNumber;
+        payment.ChequeDate = param.ChequeDate;
 
         // Validate payment method (OFBiz: paymentMethod check)
         if (!string.IsNullOrEmpty(param.PaymentMethodId))

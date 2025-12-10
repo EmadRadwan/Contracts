@@ -41,6 +41,8 @@ public class SalesRequest
     public DateTime? DateOfFirstInstallment       { get; set; }
     public int?      MonthsBetweenInstallments  { get; set; } 
     public string? StatusId { get; set; }
+    public string? EmployeePartyId { get; set; }
+
 
     // -----------------------------------------------------------------
     // Audit stamps (same pattern as Product)
@@ -54,4 +56,6 @@ public class SalesRequest
     public virtual StatusItem? Status { get; set; }
     public virtual Product   Product   { get; set; } = null!;
     public virtual Party     Customer  { get; set; } = null!;
+    public virtual Party? Employee { get; set; }      // navigation for the employee
+
 }

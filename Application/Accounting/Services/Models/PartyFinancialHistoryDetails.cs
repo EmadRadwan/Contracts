@@ -9,5 +9,6 @@ public class PartyFinancialHistoryDetails
     public List<UnappliedPaymentDto> UnappliedPayments { get; set; }
     public List<BillingAccountDto> BillingAccounts { get; set; }
     public List<ReturnDto> Returns { get; set; }
+    public List<OpeningBalanceDto> OpeningBalances { get; set; } = new();
     public FinancialSummaryDto FinancialSummary { get; set; }
 }

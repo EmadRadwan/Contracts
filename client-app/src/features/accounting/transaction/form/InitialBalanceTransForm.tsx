@@ -14,9 +14,12 @@ import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import { useAppSelector } from "../../../../app/store/configureStore";
 import { useFetchGlAccountOrganizationHierarchyLovQuery } from "../../../../app/store/apis";
 import {FormDropDownList} from "../../../../app/common/form/FormDropDownList";
+import {FormComboBoxVirtualPartyEmployee} from "../../../../app/common/form/FormComboBoxVirtualPartyEmployee";
+import {FormComboBoxVirtualParty} from "../../../../app/common/form/FormComboBoxVirtualParty";
 
 interface FormValues {
     glAccountId?: string;
+    partyId?: string;
     amount: number | null;
     description?: string;
     debitCreditFlag: "D" | "C";
@@ -50,6 +53,7 @@ export default function InitialBalanceTransForm() {
     const initialFormValues: FormValues = useMemo(
         () => ({
             glAccountId: undefined,
+            partyId: undefined,
             amount: null,
             description: "الرصيد الافتتاحي",
             debitCreditFlag: "D",
@@ -67,11 +71,13 @@ export default function InitialBalanceTransForm() {
                 description,
                 debitCreditFlag,   // <-- this is now the selected data item
             } = data.values;
+            
+            const partyId = data.values.partyId?.fromPartyId; // <-- extract partyId from selected item
 
             try {
                 const result = await saveInitialBalanceTrans({
                     CreateInitialBalanceTransParams: {
-                        AcctgTransTypeId: "INITIAL_BALANCE",
+                        AcctgTransTypeId: "OPENING_BALANCE",
                         TransactionDate: headerValues.transactionDate,
                         OrganizationPartyId: companyId,
                         HeaderDescription: headerValues.headerDescription,
@@ -80,9 +86,9 @@ export default function InitialBalanceTransForm() {
                     },
                     Entry: {
                         glAccountId: glAccountId!,
+                        partyId,
                         amount: amount!,
                         description: description || "",
-                        // REFACTOR: Extract the primitive value
                         debitCreditFlag: debitCreditFlag?.value ?? debitCreditFlag,
                     },
                 });
@@ -156,7 +162,7 @@ export default function InitialBalanceTransForm() {
                             validator={requiredValidator}
                         />
                     </Grid>
-                    <Grid item xs={9}>
+                    <Grid item xs={6}>
                         <FormInput
                             id="headerDescription"
                             label={getTranslatedLabel(`${localizationKey}.headerDescription`, "Header Description")}
@@ -175,7 +181,7 @@ export default function InitialBalanceTransForm() {
                     render={(formRenderProps) => (
                         <FormElement>
                             <Grid container spacing={2} alignItems="flex-end">
-                                <Grid item xs={5}>
+                                <Grid item xs={4}>
                                     <Field
                                         id="glAccountId"
                                         name="glAccountId"
@@ -190,6 +196,16 @@ export default function InitialBalanceTransForm() {
                                         disabled={isLoadingGlAccounts}
                                     />
                                 </Grid>
+                                <Grid item xs={3}>
+                                    <Field
+                                        id="partyId"
+                                        name="partyId"
+                                        component={FormComboBoxVirtualParty}
+                                        label={getTranslatedLabel(`${localizationKey}.party`, "mployee")}
+                                        valueField="fromPartyId"
+                                        textField="fromPartyName"
+                                    />
+                                </Grid>
                                 <Grid item xs={2}>
                                     <Field
                                         id="amount"
@@ -201,7 +217,7 @@ export default function InitialBalanceTransForm() {
                                         validator={requiredValidator}
                                     />
                                 </Grid>
-                                <Grid item xs={2}>
+                                <Grid item xs={1}>
                                     <Field
                                         id="debitCreditFlag"
                                         name="debitCreditFlag"

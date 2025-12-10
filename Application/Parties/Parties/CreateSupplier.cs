@@ -14,11 +14,7 @@ public class CreateSupplier
     {
         public PartyDto2 PartyDto { get; set; }
     }
-
-    /*public class CommandValidator : AbstractValidator<Command>
-    {
-    }*/
-
+    
     public class Handler : IRequestHandler<Command, Result<PartyDto2>>
     {
         private readonly DataContext _context;

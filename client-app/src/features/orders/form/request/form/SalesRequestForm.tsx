@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo, useRef, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import {Field, Form, FormElement, FormRenderProps} from "@progress/kendo-react-form";
@@ -16,7 +16,6 @@ import FormDatePicker from "../../../../../app/common/form/FormDatePicker";
 import LoadingComponent from "../../../../../app/layout/LoadingComponent";
 import FormNumericTextBox from "../../../../../app/common/form/FormNumericTextBox";
 import FormTextArea from "../../../../../app/common/form/FormTextArea";
-import {FormComboBoxVirtualParty} from "../../../../../app/common/form/FormComboBoxVirtualParty";
 import {useTranslationHelper} from "../../../../../app/hooks/useTranslationHelper";
 import ModalContainer from "../../../../../app/common/modals/ModalContainer";
 import CreateCustomerModalForm from "../../../../parties/form/CreateCustomerModalForm";
@@ -27,6 +26,9 @@ import {toNumber} from "lodash";
 import {KeyValue} from "@progress/kendo-react-form";
 import PaymentPlanModal from "../dashboard/PaymentPlanModal";
 import {RibbonContainer, Ribbon} from "react-ribbons";
+import {FormComboBoxVirtualPartyEmployee} from "../../../../../app/common/form/FormComboBoxVirtualPartyEmployee";
+import {FormComboBoxVirtualCustomer} from "../../../../../app/common/form/FormComboBoxVirtualCustomer";
+import DefaultPercentagesModal from "../dashboard/DefaultPercentagesModal";
 
 const APARTMENT_AVAILABLE = "APARTMENT_AVAILABLE";
 
@@ -138,12 +140,52 @@ function SalesRequestForm({
     const [userEditedAdvance, setUserEditedAdvance] = useState(false);
     const [userEditedMaintenance, setUserEditedMaintenance] = useState(false);
     const [userEditedDiscount, setUserEditedDiscount] = useState(false);
+    const [defaultAdvancePercent, setDefaultAdvancePercent] = useState(0.10);        
+    const [defaultMaintenancePercent, setDefaultMaintenancePercent] = useState(0.08); 
+    const [showDefaultsModal, setShowDefaultsModal] = useState(false);
     const {language} = useAppSelector((state) => state.localization);
     // -----------------------------------------------------------------
     // Internal ref for party input (no longer passed from parent)
     // -----------------------------------------------------------------
     const partyInputRef = useRef<HTMLInputElement>(null);
     const canViewPaymentPlan = editMode === 2 || editMode === 3;
+
+    const autoSetDerivedFields = useCallback((
+        formRenderProps: FormRenderProps,
+        finalTotal: number | null
+    ) => {
+        if (finalTotal !== null) {
+            if (!userEditedAdvance) {
+                formRenderProps.onChange("advancePayment", {
+                    value: finalTotal * defaultAdvancePercent
+                });
+            }
+            if (!userEditedMaintenance) {
+                formRenderProps.onChange("maintenanceDeposit", {
+                    value: finalTotal * defaultMaintenancePercent
+                });
+            }
+        } else {
+            if (!userEditedAdvance) formRenderProps.onChange("advancePayment", { value: null });
+            if (!userEditedMaintenance) formRenderProps.onChange("maintenanceDeposit", { value: null });
+        }
+    }, [
+        userEditedAdvance,
+        userEditedMaintenance,
+        defaultAdvancePercent,
+        defaultMaintenancePercent
+    ]);
+    
+    useEffect(() => {
+        if (!formRef.current) return;
+
+        const finalTotal = formRef.current.valueGetter("totalPrice");
+        if (finalTotal == null) return;
+
+        // REFACTOR: Recalculate derived fields whenever default % change
+        // This runs only when user changes defaults via modal
+        autoSetDerivedFields(formRef.current, finalTotal);
+    }, [defaultAdvancePercent, defaultMaintenancePercent, autoSetDerivedFields]);
 
     const viewPaymentPlanButton = (
         <Grid item>
@@ -175,6 +217,7 @@ function SalesRequestForm({
                 dateOfFirstInstallment: null,
                 // All other fields start empty/null
                 fromPartyId: null,
+                partyIdEmployee: null,
                 productId: null,
                 advancePayment: null,
                 totalPrice: null,
@@ -192,6 +235,14 @@ function SalesRequestForm({
                 fromPartyId: sr.fromPartyId,
                 fromPartyName: sr.fromPartyName ?? "",
                 fromPartyPhone: sr.fromPartyPhone ?? "",
+            }
+            : null;
+
+        const employeeObj = sr.employeePartyId // assuming backend sends the string ID
+            ? {
+                fromPartyId: sr.employeePartyId,
+                fromPartyName: sr.employeeName ?? "",        // use denormalized name if available
+                fromPartyPhone: sr.employeePhone ?? "",
             }
             : null;
 
@@ -225,6 +276,10 @@ function SalesRequestForm({
             fromPartyId: partyObj,
             // keep the display name for the virtual combo (optional but handy)
             fromPartyIdName: sr.fromPartyName ?? "",
+
+            employeePartyId: employeeObj,
+            employeePartyIdName: sr.employeeName ?? "", // optional display field
+
 
             // ----- apartment combo (object) -----------------------------------
             productId: apartmentObj,
@@ -281,6 +336,10 @@ function SalesRequestForm({
         // Party combo returns { fromPartyId: "19", fromPartyName: "…" }
         if (copy.fromPartyId && typeof copy.fromPartyId === "object") {
             copy.fromPartyId = copy.fromPartyId.fromPartyId ?? copy.fromPartyId.partyId;
+        }
+
+        if (copy.employeePartyId && typeof copy.employeePartyId === "object") {
+            copy.employeePartyId = copy.employeePartyId.fromPartyId;
         }
 
         return copy;
@@ -387,22 +446,7 @@ function SalesRequestForm({
         return discount != null ? Math.max(0, baseTotal - discount) : baseTotal;
     }, []);
 
-    const autoSetDerivedFields = useCallback((
-        formRenderProps: FormRenderProps,
-        finalTotal: number | null
-    ) => {
-        if (finalTotal !== null) {
-            if (!userEditedAdvance) {
-                formRenderProps.onChange("advancePayment", {value: finalTotal * 0.20});
-            }
-            if (!userEditedMaintenance) {
-                formRenderProps.onChange("maintenanceDeposit", {value: finalTotal * 0.07});
-            }
-        } else {
-            if (!userEditedAdvance) formRenderProps.onChange("advancePayment", {value: null});
-            if (!userEditedMaintenance) formRenderProps.onChange("maintenanceDeposit", {value: null});
-        }
-    }, [userEditedAdvance, userEditedMaintenance]);
+
 
     const handleProductChange = useCallback((
         formRenderProps: FormRenderProps,
@@ -692,6 +736,14 @@ function SalesRequestForm({
                                                 }
                                             </Typography>
 
+                                            <Typography variant="caption" color="text.secondary">
+                                                Default Advance: {(defaultAdvancePercent * 100).toFixed(0)}% |
+                                                Maintenance Deposit: {(defaultMaintenancePercent * 100).toFixed(0)}%
+                                                {" "}(<a href="#" onClick={(e) => { e.preventDefault(); setShowDefaultsModal(true); }}>
+                                                change
+                                            </a>)
+                                            </Typography>
+
                                             {editMode === 2 && (
                                                 <SalesRequestActionsMenu
                                                     salesRequestId={salesRequest?.salesRequestId}
@@ -724,24 +776,6 @@ function SalesRequestForm({
                                 <FormElement>
                                     <fieldset className="k-form-fieldset">
                                         <Grid container spacing={1} alignItems="flex-end" className={editMode > 2 ? "grid-disabled" : "grid-normal"}>
-                                            {/*{showApartmentNotAvailableWarning && (
-                                                <Grid item xs={12}>
-                                                    <Box sx={{
-                                                        p: 2,
-                                                        backgroundColor: "#ffebee",
-                                                        border: "1px solid #f44336",
-                                                        borderRadius: 1,
-                                                        mb: 2
-                                                    }}>
-                                                        <Typography color="error" fontWeight="medium">
-                                                            {getTranslatedLabel(
-                                                                "salesRequest.form.validation.apartmentNotAvailable",
-                                                                "Cannot create sales request: This apartment is already SOLD or RESERVED."
-                                                            )}
-                                                        </Typography>
-                                                    </Box>
-                                                </Grid>
-                                            )}*/}
                                             <Grid item xs={4}>
                                                 <Field
                                                     id="productId"
@@ -767,7 +801,7 @@ function SalesRequestForm({
                                                     id="fromPartyId"
                                                     name="fromPartyId"
                                                     label={getTranslatedLabel("salesRequest.form.from", "From *")}
-                                                    component={FormComboBoxVirtualParty}
+                                                    component={FormComboBoxVirtualCustomer}
                                                     autoComplete="off"
                                                     validator={requiredValidator}
                                                     inputRef={partyInputRef}
@@ -783,6 +817,17 @@ function SalesRequestForm({
                                                 >
                                                     +
                                                 </Button>
+                                            </Grid>
+                                            <Grid item xs={2}>
+                                                <Field
+                                                    id="employeePartyId"
+                                                    name="employeePartyId"
+                                                    component={FormComboBoxVirtualPartyEmployee}
+                                                    label={getTranslatedLabel("salesRequest.form.employee", "mployee")}
+                                                    valueField="fromPartyId"
+                                                    textField="fromPartyName"
+                                                    validator={requiredValidator}
+                                                />
                                             </Grid>
                                         </Grid>
 
@@ -1003,6 +1048,19 @@ function SalesRequestForm({
                                                     apartment={apartmentForModal}
                                                 />
                                             </ModalContainer>
+                                        )}
+
+                                        {showDefaultsModal && (
+                                            <DefaultPercentagesModal
+                                                open={showDefaultsModal}
+                                                onClose={() => setShowDefaultsModal(false)}
+                                                advancePercent={defaultAdvancePercent}
+                                                maintenancePercent={defaultMaintenancePercent}
+                                                onSave={(adv, maint) => {
+                                                    setDefaultAdvancePercent(adv);
+                                                    setDefaultMaintenancePercent(maint);
+                                                }}
+                                            />
                                         )}
                                     </fieldset>
                                 </FormElement>

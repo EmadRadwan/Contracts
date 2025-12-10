@@ -104,6 +104,8 @@ function BillingAccountsList() {
                     <Column field="partyName" title="اسم العميل" width={280} />
                     <Column field="projectName" title="المشروع" width={220} />
                     <Column field="accountLimit" title="حد الحساب" format="{0:n2}" />
+                    <Column field="usedBalance" title="الرصيد المستخدم" format="{0:n2}" />
+                    <Column field="remainingBalance" title="الرصيد المتبقي" format="{0:n2}" />
                     <Column field="fromDate" title="من تاريخ" format="{0:dd/MM/yyyy}" />
                     <Column field="thruDate" title="إلى تاريخ" format="{0:dd/MM/yyyy}" />
                 </KendoGrid>

@@ -7,6 +7,8 @@ public class BillingAccountRecord
     [Key] public string BillingAccountId { get; set; } = null!;
 
     public decimal? AccountLimit { get; set; }
+    public decimal? UsedBalance { get; set; }
+    public decimal? RemainingBalance { get; set; }
     public string? AccountCurrencyUomId { get; set; }
     public string? AccountCurrencyUomDescription { get; set; }
     public string? ProjectId { get; set; }

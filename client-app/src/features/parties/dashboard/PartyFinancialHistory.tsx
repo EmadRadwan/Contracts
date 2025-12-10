@@ -96,6 +96,29 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
         let balance = 0;
         const fmt = (d: string | null | undefined) => d ? new Date(d).toISOString().split('T')[0] : '';
 
+        const openingBalanceEntries = data.openingBalances || [];
+        if (openingBalanceEntries.length > 0) {
+            // Sum all opening balance impacts (already correctly signed in backend)
+            const openingTotal = openingBalanceEntries
+                .reduce((sum, ob) => sum + ob.impactOnBalance, 0);
+
+            if (openingTotal !== 0) {
+                balance += openingTotal;
+
+                rows.push({
+                    date: '', // or use earliest transaction date if available
+                    description: 'الرصيد الافتتاحي',
+                    invoiceNumber: undefined,
+                    paymentNumber: undefined,
+                    value: 0,
+                    toPay: openingTotal > 0 ? openingTotal : 0,     // إذا كان مدين (نحن ندين له)
+                    paid: openingTotal < 0 ? -openingTotal : 0,     // إذا كان دائن (هو مدين لنا)
+                    balance: balance,
+                    notes: `${openingBalanceEntries.length} حركة افتتاحية`,
+                });
+            }
+        }
+
         // 1. All invoices (applied + unapplied) – sorted by date
         const invoices = new Map<string, { id: string; total: number; date: string }>();
 

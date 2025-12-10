@@ -42,20 +42,22 @@ namespace Application.Accounting.Transactions
 
                 try
                 {
+                    var entry = request.Entry;
+                    
                     // Create header
                     var headerParams = new CreateAcctgTransParams
                     {
-                        AcctgTransTypeId = "_NA_",
+                        AcctgTransTypeId = "OPENING_BALANCE",
                         TransactionDate = request.CreateInitialBalanceTransParams.TransactionDate,
                         Description = request.CreateInitialBalanceTransParams.HeaderDescription,
                         GlFiscalTypeId = "ACTUAL",
+                        PartyId = entry.PartyId,
                         IsPosted = "Y",
                     };
 
                     var acctgTransId = await _acctgTransService.CreateAcctgTrans(headerParams);
 
                     // Create single entry
-                    var entry = request.Entry;
                     var acctgTransEntry = new AcctgTransEntry
                     {
                         AcctgTransId = acctgTransId,
@@ -63,6 +65,7 @@ namespace Application.Accounting.Transactions
                         GlAccountId = entry.GlAccountId,
                         DebitCreditFlag = entry.DebitCreditFlag,
                         Amount = entry.Amount,
+                        PartyId = entry.PartyId,
                         Description = entry.Description,
                         OrganizationPartyId = request.CreateInitialBalanceTransParams.OrganizationPartyId,
                         AcctgTransEntryTypeId = "_NA_",
@@ -100,6 +103,7 @@ namespace Application.Accounting.Transactions
     public class InitialBalanceEntryParams
     {
         public string GlAccountId { get; set; }
+        public string PartyId { get; set; }
         public decimal Amount { get; set; }
         public string Description { get; set; }
         public string DebitCreditFlag { get; set; } // "D" or "C"

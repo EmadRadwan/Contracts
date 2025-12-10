@@ -159,6 +159,7 @@ public class Party
         WorkEffortsAsSupplier = new HashSet<WorkEffort>();
         WorkEffortsAsContractor = new HashSet<WorkEffort>();
         WorkEffortsAsEmployee = new HashSet<WorkEffort>();
+        SalesRequestsAsEmployee = new HashSet<SalesRequest>(); 
     }
 
     public string PartyId { get; set; } = null!;
@@ -346,4 +347,5 @@ public class Party
     public ICollection<WorkEffort> WorkEffortsAsContractor { get; set; }
     public ICollection<WorkEffort> WorkEffortsAsEmployee { get; set; }
     public virtual ICollection<SalesRequest> SalesRequests { get; set; } = new HashSet<SalesRequest>();
+    public virtual ICollection<SalesRequest> SalesRequestsAsEmployee { get; set; } = new HashSet<SalesRequest>();
 }

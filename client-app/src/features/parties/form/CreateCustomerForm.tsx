@@ -32,6 +32,8 @@ export default function CreateCustomerForm({ party, cancelEdit, editMode }: Prop
   const { data: customer, error, isFetching, isLoading } = useFetchCustomerQuery(party?.partyId, {
     skip: party?.partyId === undefined,
   });
+  
+  
   const { getTranslatedLabel } = useTranslationHelper();
 
   const dispatch = useAppDispatch();
@@ -72,7 +74,7 @@ export default function CreateCustomerForm({ party, cancelEdit, editMode }: Prop
           </Box>
         </Grid>
         <Grid item xs={6}>
-          <CreateCustomerMenu partyId={party?.partyId} />
+          <CreateCustomerMenu partyId={party?.partyId}  partyName={customer?.description}/>
         </Grid>
       </Grid>
 

@@ -11,8 +11,8 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20251206173805_CreateDatabaseViews")]
-    partial class CreateDatabaseViews
+    [Migration("20251209090438_AddedEmpToSalesRequest")]
+    partial class AddedEmpToSalesRequest
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -46023,6 +46023,13 @@ namespace Persistence.Migrations
                         .HasColumnType("numeric(18,4)")
                         .HasColumnName("DISCOUNT");
 
+                    b.Property<string>("EmployeePartyId")
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("EMPLOYEE_PARTY_ID");
+
                     b.Property<string>("FromPartyId")
                         .IsRequired()
                         .HasMaxLength(36)
@@ -46076,6 +46083,8 @@ namespace Persistence.Migrations
                     b.HasIndex("StatusId");
 
                     b.HasIndex(new[] { "FromPartyId" }, "SALES_REQ_CUST_IDX");
+
+                    b.HasIndex(new[] { "EmployeePartyId" }, "SALES_REQ_EMP_IDX");
 
                     b.HasIndex(new[] { "ProductId" }, "SALES_REQ_PROD_IDX");
 
@@ -74984,6 +74993,12 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.SalesRequest", b =>
                 {
+                    b.HasOne("Domain.Party", "Employee")
+                        .WithMany("SalesRequestsAsEmployee")
+                        .HasForeignKey("EmployeePartyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.HasOne("Domain.Party", "Customer")
                         .WithMany("SalesRequests")
                         .HasForeignKey("FromPartyId")
@@ -75004,6 +75019,8 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Customer");
+
+                    b.Navigation("Employee");
 
                     b.Navigation("Product");
 
@@ -81304,6 +81321,8 @@ namespace Persistence.Migrations
                     b.Navigation("SalesOpportunityRoles");
 
                     b.Navigation("SalesRequests");
+
+                    b.Navigation("SalesRequestsAsEmployee");
 
                     b.Navigation("ShipmentCostEstimates");
 

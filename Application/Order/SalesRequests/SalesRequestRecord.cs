@@ -9,8 +9,10 @@ public class SalesRequestRecord
     public string ApartmentId { get; set; } = null!;
     public string ApartmentName { get; set; } = null!;
     public string ProductTypeDescription { get; set; } = null!;
+    public string EmployeePartyId { get; set; } = null!;
     public string FromPartyId { get; set; } = null!;
     public string FromPartyName { get; set; } = null!;
+    public string EmployeeName { get; set; } = null!;
 
     public decimal? ApartmentPricePerM2 { get; set; }
     public decimal? GardenPricePerM2 { get; set; }

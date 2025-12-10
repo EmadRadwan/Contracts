@@ -176,7 +176,9 @@ public class UpdatePayment
                     FinAccountTransId = finAccountTransId,
                     OverrideGlAccountId = request.PaymentDto.OverrideGlAccountId,
                     ProjectId = request.PaymentDto.ProjectId,
-                    CostCenterId =  request.PaymentDto.CostCenterId
+                    CostCenterId =  request.PaymentDto.CostCenterId,
+                    ChequeNumber = request.PaymentDto.ChequeNumber,
+                    ChequeDate = request.PaymentDto.ChequeDate
                 };
                 // update the payment itself
                 var payment = await _paymentHelperService.UpdatePayment(updatePaymentParam2);
@@ -227,7 +229,9 @@ public class UpdatePayment
                     EffectiveDate = payment.EffectiveDate,
                     PartyIdFromName = fromParty,
                     PartyIdToName = toParty,
-                    OverrideGlAccountId = payment.OverrideGlAccountId
+                    OverrideGlAccountId = payment.OverrideGlAccountId,
+                    ChequeNumber = payment.ChequeNumber,
+                    ChequeDate = payment.ChequeDate,
                 };
 
 

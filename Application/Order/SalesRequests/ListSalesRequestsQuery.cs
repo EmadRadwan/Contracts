@@ -11,6 +11,7 @@ class RawSalesRequest
     public string SalesRequestId { get; set; } = null!;
     public string ProductId { get; set; } = null!;
     public string FromPartyId { get; set; } = null!;
+    public string EmployeePartyId { get; set; } = null!;
     public decimal? ApartmentPricePerM2 { get; set; }
     public decimal? GardenPricePerM2 { get; set; }
     public decimal? Discount { get; set; }
@@ -35,6 +36,7 @@ class RawSalesRequest
     public string? DescriptionArabic { get; set; }
 
     public string? PartyDescription { get; set; }
+    public string? EmployeeDescription { get; set; }
     public string? StatusId { get; set; } 
     public string? StatusDescription { get; set; } 
     public decimal? MaintenanceDeposit { get; set; } // SalesRequest.MaintenanceDeposit
@@ -106,11 +108,14 @@ public class ListSalesRequestsQuery
                 join pt in _context.ProductTypes on p.ProductTypeId equals pt.ProductTypeId
                 join c in _context.Parties on sr.FromPartyId equals c.PartyId into partyGrp
                 from c in partyGrp.DefaultIfEmpty()
+                join e in _context.Parties on sr.EmployeePartyId equals e.PartyId into employeeGrp
+                from e in employeeGrp.DefaultIfEmpty()
                 select new RawSalesRequest
                 {
                     SalesRequestId = sr.SalesRequestId,
                     ProductId = sr.ProductId,
                     FromPartyId = sr.FromPartyId,
+                    EmployeePartyId = sr.EmployeePartyId,
                     ApartmentPricePerM2 = sr.ApartmentPricePerM2,
                     GardenPricePerM2 = sr.GardenPricePerM2,
                     Discount = sr.Discount,
@@ -135,6 +140,8 @@ public class ListSalesRequestsQuery
                     DescriptionArabic = pt.DescriptionArabic,
 
                     PartyDescription = c != null ? c.Description : null,
+                    EmployeeDescription = e != null ? e.Description : null,
+
                     StatusId = sr.StatusId,
                     StatusDescription = sr.StatusId != null
                         ? statusGrp.Where(st => st.StatusId == sr.StatusId)
@@ -167,6 +174,10 @@ public class ListSalesRequestsQuery
 
                     FromPartyId = x.FromPartyId,
                     FromPartyName = x.PartyDescription ?? string.Empty,
+                    
+                    EmployeePartyId = x.EmployeePartyId, // make sure this column exists on SalesRequest
+                    EmployeeName = x.EmployeeDescription ?? string.Empty,
+
 
                     ApartmentPricePerM2 = x.ApartmentPricePerM2,
                     GardenPricePerM2 = x.GardenPricePerM2,
