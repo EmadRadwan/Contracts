@@ -1,27 +1,24 @@
 using Application.Core;
 using Application.Interfaces;
 using Domain;
-using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 
 namespace Application.Parties.Parties;
 
-public class CreateCustomer
+public class CreateParty
 {
     public class Command : IRequest<Result<PartyDto2>>
     {
         public PartyDto2 PartyDto { get; set; }
     }
-    
 
     public class Handler : IRequestHandler<Command, Result<PartyDto2>>
     {
         private readonly DataContext _context;
         private readonly IUserAccessor _userAccessor;
         private readonly IUtilityService _utilityService;
-
 
         public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService)
         {
@@ -40,8 +37,20 @@ public class CreateCustomer
             var partyStatusPartyEnabled = await _context.StatusItems.SingleOrDefaultAsync(x =>
                 x.StatusId == "PARTY_ENABLED", cancellationToken);
 
+            // REFACTOR: Dynamically determine PartyType based on MainRole
+            // PERSON for CUSTOMER/EMPLOYEE, PARTY_GROUP for SUPPLIER/CONTRACTOR
+            var mainRole = request.PartyDto.MainRole?.Trim().ToUpper();
+            var isPerson = mainRole is "CUSTOMER" or "EMPLOYEE";
+            var partyTypeId = isPerson ? "PERSON" : "PARTY_GROUP";
+
             var partyType = await _context.PartyTypes.SingleOrDefaultAsync(
-                x => x.PartyTypeId == "PERSON", cancellationToken);
+                x => x.PartyTypeId == partyTypeId, cancellationToken);
+
+            if (partyType == null)
+            {
+                transaction.Rollback();
+                return Result<PartyDto2>.Failure($"PartyType {partyTypeId} not found.");
+            }
 
             var contactMechTypeTelCommNumber = await _context.ContactMechTypes.SingleOrDefaultAsync(
                 x => x.ContactMechTypeId == "TELECOM_NUMBER", cancellationToken);
@@ -52,24 +61,35 @@ public class CreateCustomer
             var contactMechTypePostalAddress = await _context.ContactMechTypes.SingleOrDefaultAsync(
                 x => x.ContactMechTypeId == "POSTAL_ADDRESS", cancellationToken);
 
-            // REFACTOR: Fetch all required customer role types to match the target party's roles
-            // Purpose: Ensure the new party is assigned all roles (BILL_TO_CUSTOMER, CONTACT, CUSTOMER, END_USER_CUSTOMER, PLACING_CUSTOMER, SHIP_TO_CUSTOMER)
-            // Improvement: Centralizes role fetching for efficiency and ensures all roles are available
-            var roleTypeIds = new[] { "BILL_TO_CUSTOMER", "CONTACT", "CUSTOMER", "END_USER_CUSTOMER", "PLACING_CUSTOMER", "SHIP_TO_CUSTOMER" };
+            // REFACTOR: Dynamic role assignment based on MainRole from frontend
+            // This replaces the hardcoded customer roles
+            string[] roleTypeIds = mainRole switch
+            {
+                "CUSTOMER" => new[] { "CUSTOMER", "BILL_TO_CUSTOMER", "CONTACT", "END_USER_CUSTOMER", "PLACING_CUSTOMER", "SHIP_TO_CUSTOMER" },
+                "CONTRACTOR" => new[] { "CONTRACTOR", "ACCOUNT", "BILL_FROM_VENDOR", "SHIP_FROM_VENDOR", "SUPPLIER_AGENT" },
+                "SUPPLIER" => new[] { "SUPPLIER", "ACCOUNT", "BILL_FROM_VENDOR", "SHIP_FROM_VENDOR", "SUPPLIER_AGENT" },
+                "EMPLOYEE" => new[] { "EMPLOYEE", "INTERNAL_ORGANIZATIO" }, // adjust if needed
+                _ => Array.Empty<string>()
+            };
+
+            if (roleTypeIds.Length == 0)
+            {
+                transaction.Rollback();
+                return Result<PartyDto2>.Failure("Invalid or unsupported MainRole.");
+            }
+
             var roleTypes = await _context.RoleTypes
                 .Where(x => roleTypeIds.Contains(x.RoleTypeId))
                 .ToListAsync(cancellationToken);
 
-            // REFACTOR: Validate that all required roles are found
-            // Purpose: Prevent partial role assignment if any role type is missing
-            // Improvement: Adds robustness by ensuring all expected roles exist in the database
             if (roleTypes.Count != roleTypeIds.Length)
             {
                 transaction.Rollback();
-                return Result<PartyDto2>.Failure("One or more required customer role types are missing in the database.");
+                return Result<PartyDto2>.Failure($"One or more required roles for {mainRole} are missing in database.");
             }
 
-            var roleTypeCustomer = roleTypes.SingleOrDefault(x => x.RoleTypeId == "CUSTOMER");
+            // This is the primary role used in contact mechanisms and MainRole field
+            var primaryRoleType = roleTypes.Single(x => x.RoleTypeId == mainRole);
 
             var contactMechPurposeTypePhoneMobile = await _context.ContactMechPurposeTypes.SingleOrDefaultAsync(
                 x => x.ContactMechPurposeTypeId == "PRIMARY_PHONE", cancellationToken);
@@ -83,24 +103,31 @@ public class CreateCustomer
             var contactMechPurposeTypePrimaryEmail = await _context.ContactMechPurposeTypes.SingleOrDefaultAsync(
                 x => x.ContactMechPurposeTypeId == "PRIMARY_EMAIL", cancellationToken);
 
-            var stamp = DateTime.Now; // e.g., 2025-07-16 15:53:00 EEST
+            var stamp = DateTime.Now;
             var newPartyId = await _utilityService.GetNextSequence("Party");
+
+            // Description logic: use FirstName for PERSON, GroupName for PARTY_GROUP
+            var description = request.PartyDto.FirstName;
+
+            if (string.IsNullOrEmpty(description))
+            {
+                transaction.Rollback();
+                return Result<PartyDto2>.Failure("Name is required.");
+            }
 
             var party = new Party
             {
                 PartyId = newPartyId,
                 PartyType = partyType,
                 Status = partyStatusPartyEnabled,
-                MainRole = roleTypeCustomer?.RoleTypeId ?? "CUSTOMER", // Keep CUSTOMER as MainRole
-                Description = request.PartyDto.FirstName,
+                MainRole = primaryRoleType.RoleTypeId,
+                Description = description,
                 CreatedStamp = stamp,
                 LastUpdatedStamp = stamp
             };
             _context.Parties.Add(party);
 
-            // REFACTOR: Add PartyRole entries for all required customer roles
-            // Purpose: Assigns all roles from the target party to ensure consistency
-            // Improvement: Loops through roleTypes to create PartyRole entries, making the code scalable for role changes
+            // Assign all roles for this party type
             foreach (var roleType in roleTypes)
             {
                 var partyRole = new PartyRole
@@ -123,16 +150,41 @@ public class CreateCustomer
             };
             _context.PartyStatuses.Add(partyStatus);
 
-            var person = new Person
+            // Create Person or PartyGroup based on type
+            if (isPerson)
             {
-                FirstName = request.PartyDto.FirstName,
-                MiddleName = request.PartyDto.MiddleName,
-                PersonalTitle = request.PartyDto.PersonalTitle,
-                CreatedStamp = stamp,
-                LastUpdatedStamp = stamp,
-                Party = party
-            };
-            _context.Persons.Add(person);
+                var person = new Person
+                {
+                    FirstName = request.PartyDto.FirstName,
+                    MiddleName = request.PartyDto.MiddleName,
+                    PersonalTitle = request.PartyDto.PersonalTitle,
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp,
+                    Party = party
+                };
+                _context.Persons.Add(person);
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(request.PartyDto.FirstName))
+                {
+                    transaction.Rollback();
+                    return Result<PartyDto2>.Failure("GroupName is required for Supplier/Contractor.");
+                }
+
+                var partyGroup = new PartyGroup
+                {
+                    GroupName = request.PartyDto.FirstName,
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp,
+                    Party = party
+                };
+                _context.PartyGroups.Add(partyGroup);
+            }
+
+            // Use primary role for all contact mechanisms (consistent with original logic)
+            var primaryPartyRole = _context.PartyRoles
+                .FirstOrDefault(pr => pr.Party == party && pr.RoleType == primaryRoleType);
 
             // Add mobile
             if (!string.IsNullOrEmpty(request.PartyDto.MobileContactNumber))
@@ -155,10 +207,6 @@ public class CreateCustomer
                 };
                 _context.TelecomNumbers.Add(telecomNumber);
 
-                // REFACTOR: Use the CUSTOMER role's PartyRole for contact mechanisms
-                // Purpose: Ensure contact mechanisms are associated with the CUSTOMER role, consistent with the original logic
-                // Improvement: Maintains consistency with the primary role while supporting multiple role assignments
-                var partyRoleCustomer = _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeCustomer);
                 var partyContactMech = new PartyContactMech
                 {
                     FromDate = stamp,
@@ -166,8 +214,8 @@ public class CreateCustomer
                     CreatedStamp = stamp,
                     ContactMech = contactMech,
                     Party = party,
-                    PartyRole = partyRoleCustomer,
-                    RoleType = roleTypeCustomer
+                    PartyRole = primaryPartyRole,
+                    RoleType = primaryRoleType
                 };
                 _context.PartyContactMeches.Add(partyContactMech);
 
@@ -196,10 +244,6 @@ public class CreateCustomer
                 };
                 _context.ContactMeches.Add(contactMech);
 
-                // REFACTOR: Use the CUSTOMER role's PartyRole for contact mechanisms
-                // Purpose: Ensure email contact mechanism is associated with the CUSTOMER role
-                // Improvement: Consistent role usage across contact mechanisms
-                var partyRoleCustomer = _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeCustomer);
                 var partyContactMech = new PartyContactMech
                 {
                     FromDate = stamp,
@@ -207,8 +251,8 @@ public class CreateCustomer
                     CreatedStamp = stamp,
                     ContactMech = contactMech,
                     Party = party,
-                    PartyRole = partyRoleCustomer,
-                    RoleType = roleTypeCustomer
+                    PartyRole = primaryPartyRole,
+                    RoleType = primaryRoleType
                 };
                 _context.PartyContactMeches.Add(partyContactMech);
 
@@ -236,10 +280,6 @@ public class CreateCustomer
                 };
                 _context.ContactMeches.Add(contactMech);
 
-                // REFACTOR: Use the CUSTOMER role's PartyRole for contact mechanisms
-                // Purpose: Ensure address contact mechanism is associated with the CUSTOMER role
-                // Improvement: Maintains consistency with the primary role for contact mechanisms
-                var partyRoleCustomer = _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeCustomer);
                 var partyContactMech = new PartyContactMech
                 {
                     FromDate = stamp,
@@ -247,37 +287,37 @@ public class CreateCustomer
                     CreatedStamp = stamp,
                     ContactMech = contactMech,
                     Party = party,
-                    PartyRole = partyRoleCustomer,
-                    RoleType = roleTypeCustomer
+                    PartyRole = primaryPartyRole,
+                    RoleType = primaryRoleType
                 };
                 _context.PartyContactMeches.Add(partyContactMech);
 
-                var partyContactMechPurposeGeneralLocation = new PartyContactMechPurpose
+                var generalPurpose = new PartyContactMechPurpose
                 {
                     FromDate = stamp,
-                    LastUpdatedStamp = stamp,
-                    CreatedStamp = stamp,
                     ContactMech = contactMech,
                     ContactMechPurposeType = contactMechPurposeTypeGeneralLocation,
-                    Party = party
+                    Party = party,
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp
                 };
-                _context.PartyContactMechPurposes.Add(partyContactMechPurposeGeneralLocation);
+                _context.PartyContactMechPurposes.Add(generalPurpose);
 
-                var partyContactMechPurposeShippingLocation = new PartyContactMechPurpose
+                var shippingPurpose = new PartyContactMechPurpose
                 {
                     FromDate = stamp,
-                    LastUpdatedStamp = stamp,
-                    CreatedStamp = stamp,
                     ContactMech = contactMech,
                     ContactMechPurposeType = contactMechPurposeTypeShippingLocation,
-                    Party = party
+                    Party = party,
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp
                 };
-                _context.PartyContactMechPurposes.Add(partyContactMechPurposeShippingLocation);
+                _context.PartyContactMechPurposes.Add(shippingPurpose);
 
                 var postalAddress = new PostalAddress
                 {
                     ContactMech = contactMech,
-                    ToName = request.PartyDto.FirstName,
+                    ToName = isPerson ? request.PartyDto.FirstName : request.PartyDto.GroupName,
                     Address1 = request.PartyDto.Address1,
                     Address2 = request.PartyDto.Address2,
                     CountryGeoId = request.PartyDto.GeoId
@@ -290,7 +330,7 @@ public class CreateCustomer
             if (!result)
             {
                 transaction.Rollback();
-                return Result<PartyDto2>.Failure("Failed to create Customer");
+                return Result<PartyDto2>.Failure($"Failed to create {mainRole}.");
             }
 
             transaction.Commit();
@@ -298,14 +338,10 @@ public class CreateCustomer
             var partyToReturn = new PartyDto2
             {
                 PartyId = newPartyId,
-                Description = request.PartyDto.FirstName + " ( " + roleTypeCustomer?.RoleTypeId + " )",
-                PartyTypeDescription = partyStatus.PartyId,
-                FromPartyId = new FromPartyDto
-                {
-                    FromPartyId = party.PartyId,
-                    FromPartyName = party.Description
-                }
+                Description = $"{description} ({mainRole})",
+                PartyTypeDescription = party.PartyId
             };
+
             return Result<PartyDto2>.Success(partyToReturn);
         }
     }

@@ -26,6 +26,8 @@ import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper
 import { toast } from "react-toastify";
 import { BillingAccount } from "../../../../app/models/accounting/billingAccount";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
+import CreatePartyModalForm from "../../../parties/form/CreatePartyModalForm";
+import ModalContainer from "../../../../app/common/modals/ModalContainer";
 
 interface Props {
     billingAccount?: BillingAccount;
@@ -49,6 +51,7 @@ const BillingAccountForm: React.FC<Props> = ({
     const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [creationError, setCreationError] = useState<string | null>(null);
+    const [showNewContractor, setShowNewContractor] = useState(false);
 
     // This will hold the freshly created account (used to show balance right after create)
     const [justCreatedAccount, setJustCreatedAccount] = useState<BillingAccount | null>(null);
@@ -138,6 +141,21 @@ const BillingAccountForm: React.FC<Props> = ({
         }
     };
 
+    const handlePartyCreated = (newParty: { partyId: string; description: string }) => {
+        // Close modal
+        setShowNewContractor(false);
+
+        // Update form field directly using Kendo Form's onChange
+        const formRenderProps = (document.querySelector("form") as any)?.kendoForm;
+        if (formRenderProps) {
+            formRenderProps.onChange("partyId", {
+                value: { fromPartyId: newParty.partyId, fromPartyName: newParty.description },
+            });
+        }
+
+        toast.success(`تم إنشاء الطرف بنجاح: ${newParty.description}`);
+    };
+
     return (
         <>
             <AccountingMenu selectedMenuItem="/billingAccounts" onMenuSelect={(key) => {
@@ -173,25 +191,39 @@ const BillingAccountForm: React.FC<Props> = ({
                             <FormElement>
                                 <fieldset className="k-form-fieldset">
                                     <Grid container spacing={3}>
-                                        <Grid item xs={12} md={4}>
-                                            <Field
-                                                name="partyId"
-                                                label="العميل / المورد"
-                                                component={FormComboBoxVirtualContractorsAndSuppliers}
-                                                validator={requiredValidator}
-                                                disabled={editMode === 2}
-                                            />
-                                        </Grid>
+                                        <Grid container spacing={3} alignItems={"flex-end"}>
+                                            <Grid item xs={3}>
+                                                <Field
+                                                    name="partyId"
+                                                    label= "الطرف"
+                                                    component={FormComboBoxVirtualContractorsAndSuppliers}
+                                                    validator={requiredValidator}
+                                                    disabled={editMode === 2}
+                                                />
+                                            </Grid>
 
-                                        <Grid item xs={12} md={4}>
-                                            <Field
-                                                name="projectId"
-                                                label="المشروع"
-                                                component={FormComboBoxVirtualProject}
-                                                validator={requiredValidator}
-                                                disabled={editMode === 2}
-                                            />
+                                            <Grid item xs={1}>
+                                                <Button
+                                                    variant="outlined"
+                                                    color="secondary"
+                                                    fullWidth
+                                                    onClick={() => setShowNewContractor(true)}
+                                                >
+                                                    طرف جديد
+                                                </Button>
+                                            </Grid>
+
+                                            <Grid item xs={3}>
+                                                <Field
+                                                    name="projectId"
+                                                    label="المشروع"
+                                                    component={FormComboBoxVirtualProject}
+                                                    validator={requiredValidator}
+                                                    disabled={editMode === 2}
+                                                />
+                                            </Grid>
                                         </Grid>
+                                        
 
                                         <Grid item xs={12} md={4}>
                                             <Field
@@ -296,6 +328,16 @@ const BillingAccountForm: React.FC<Props> = ({
                     }}
                 />
             </Paper>
+            <ModalContainer
+                show={showNewContractor}
+                onClose={() => setShowNewContractor(false)}
+                width={600}
+            >
+                <CreatePartyModalForm
+                    onClose={() => setShowNewContractor(false)}
+                    onUpdateCustomerDropDown={handlePartyCreated}
+                />
+            </ModalContainer>
         </>
         
     );

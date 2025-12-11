@@ -9,7 +9,6 @@ import {
 } from "../../../../app/store/configureStore";
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
-import CreateCustomerModalForm from "../../../parties/form/CreateCustomerModalForm";
 import {Payment} from "../../../../app/models/accounting/payment";
 import ModalContainer from "../../../../app/common/modals/ModalContainer";
 import {setFormEditMode, setPaymentType} from "../slice/paymentsUiSlice";
@@ -24,6 +23,7 @@ import EditPaymentForm from "./EditPaymentForm";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import EditPaymentApplications from "./EditPaymentApplications";
 import {setCustomerId} from "../../../orders/slice/sharedOrderUiSlice";
+import CreatePartyModalForm from "../../../parties/form/CreatePartyModalForm";
 
 // Props interface for the PaymentForm component
 interface Props {
@@ -344,7 +344,7 @@ export default function PaymentForm({
                         onClose={() => setShowNewCustomer(false)}
                         width={500}
                     >
-                        <CreateCustomerModalForm
+                        <CreatePartyModalForm
                             onClose={() => setShowNewCustomer(false)}
                             onUpdateCustomerDropDown={updateCustomerDropDown}
                         />

@@ -90,6 +90,7 @@
       "saleDate": "تاريخ البيع",
       "total": "الإجمالي",
       "advance": "المقدم",
+      "project": "المشروع",
       "comments": "التعليقات"
     },
     "menu": {
@@ -947,7 +948,7 @@
         "orgPartyId": "الشركة *",
         "from": "من *",
         "to": "إلى *",
-        "new-customer": "عميل جديد",
+        "new-party": "طرف جديد",
         "paymentType": "نوع الدفعة *",
         "paymentMethod": "طريقة الدفع *",
         "finAccount-trans": "كود المعاملة المالية",

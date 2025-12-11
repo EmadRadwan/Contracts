@@ -89,6 +89,12 @@ public class PartiesController : BaseApiController
     public async Task<IActionResult> CreateCustomer(PartyDto2 partyDto)
     {
         return HandleResult(await Mediator.Send(new CreateCustomer.Command { PartyDto = partyDto }));
+    } 
+    
+    [HttpPost("createParty", Name = "CreateParty")]
+    public async Task<IActionResult> CreateParty(PartyDto2 partyDto)
+    {
+        return HandleResult(await Mediator.Send(new CreateParty.Command { PartyDto = partyDto }));
     }
 
     [HttpPost("createContractor", Name = "CreateContractor")]

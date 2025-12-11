@@ -226,7 +226,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                 variant="outlined"
                                             >
                                                 {getTranslatedLabel(
-                                                    `${localizationKey}.new-customer`,
+                                                    `${localizationKey}.new-party`,
                                                     "New Contractor"
                                                 )}
                                             </Button>

@@ -4530,7 +4530,6 @@ public class GeneralLedgerService : IGeneralLedgerService
 
     public async Task<string> CreateAcctgTransForCertificateIssuance(string workEffortId, string inventoryItemId)
     {
-        // uses PROJECTS_UNDER_DEVELOPMENT (143000) for debit and INVENTORY_ACCOUNT (140000) for credit, fetching from WorkEfforts.
         try
         {
             // Fetch certificate header
@@ -4539,6 +4538,14 @@ public class GeneralLedgerService : IGeneralLedgerService
                     w.WorkEffortId == workEffortId && w.WorkEffortTypeId == "PROJECT_CERTIFICATE");
             if (workEffort == null)
                 throw new Exception($"Certificate WorkEffort with ID {workEffortId} not found.");
+            
+            // get projectId from workEffort
+            var projectId = workEffort.ProjectId;
+            
+            // get project work effort
+            var projectWorkEffort = await _context.WorkEfforts
+                .FirstOrDefaultAsync(w =>
+                    w.WorkEffortId == projectId && w.WorkEffortTypeId == "PROJECT");
 
             // Fetch InventoryItem
             var inventoryItem = await _context.InventoryItems
@@ -4575,7 +4582,8 @@ public class GeneralLedgerService : IGeneralLedgerService
                 AcctgTransEntryTypeId = "_NA_",
                 ReconcileStatusId = "AES_NOT_RECONCILED",
                 DebitCreditFlag = "D",
-                GlAccountTypeId = "PROJECTS_UNDER_DEVELOPMENT", // GL account 143000
+                GlAccountId = projectWorkEffort.GlAccountId,
+                //GlAccountTypeId = "PROJECTS_UNDER_DEVELOPMENT",
                 OrganizationPartyId = inventoryItem.OwnerPartyId,
                 ProductId = certificateItem.ProductId, // From certificate item
                 PartyId = workEffort.PartyIdContractor,

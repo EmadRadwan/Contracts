@@ -155,7 +155,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                 variant="outlined"
                                             >
                                                 {getTranslatedLabel(
-                                                    `${localizationKey}.new-customer`,
+                                                    `${localizationKey}.new-party`,
                                                     "New Customer"
                                                 )}
                                             </Button>

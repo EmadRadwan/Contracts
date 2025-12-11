@@ -48,7 +48,7 @@ public class GetPartiesLov
             var query = Enumerable.Empty<PartyFromPartyIdDto>().AsQueryable();
 
             var queryByName = _context.Parties
-                .Where(x => x.MainRole == "CUSTOMER" || x.MainRole == "SUPPLIER")
+                .Where(x => x.MainRole == "CUSTOMER" || x.MainRole == "SUPPLIER" || x.MainRole == "CONTRACTOR" || x.MainRole == "EMPLOYEE")
                 .Select(x => new PartyFromPartyIdDto
                 {
                     FromPartyId = x.PartyId,

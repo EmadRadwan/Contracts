@@ -175,36 +175,14 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
         );
     }, [filteredPaymentTypes, payment?.paymentTypeId]);
 
-    const paymentRow = useMemo(() => {
-        if (!payment) return null;
+    const getCostCenterDescription = useCallback((costCenterId: string | undefined) => {
+        if (!costCenterId) return "غير محدد";
+        return paymentCostCenters.find(cc => cc.costCenterId === costCenterId)?.description
+            ? paymentCostCenters.find(cc => cc.costCenterId === costCenterId).description
+            : costCenterId;
+    }, [paymentCostCenters]);
 
-        const isCash = payment.paymentMethodId === "CASH";
-        return {
-            paymentId: payment.paymentId ?? "",
-            paymentType: paymentTypeDesc,
-            fromParty: paymentType === 1 ? payment.partyIdFromName ?? "" : payment.partyIdToName ?? "",
-            toParty: paymentType === 1 ? payment.partyIdToName ?? "" : payment.partyIdFromName ?? "",
-            amount: payment.amount ?? 0,
-            currency: payment.currencyUomId ?? "",
-            effectiveDate: payment.effectiveDate ?? "",
-            status: statusDesc,
-            paymentMethod:
-                paymentMethods?.find((m) => m.paymentMethodId === payment.paymentMethodId)
-                    ?.description ?? "",
-            chequeNumber: isCash ? "" : payment.chequeNumber,
-            chequeDate: isCash ? undefined : payment.chequeDate,
-            costCenter: paymentCostCenters.find(cc => cc.costCenterId === payment.costCenterId)?.description
-                ?? payment.costCenterId
-                ?? "N/A",
-            project: payment.projectName ?? payment.projectId ?? "N/A",
-        };
-    }, [
-        payment,
-        paymentTypeDesc,
-        paymentType,
-        statusDesc,
-        paymentMethods,paymentCostCenters
-    ]);
+console.log('payment', payment)
 
     // Initialize form with payment values
     const initialValues = useMemo(() => {
@@ -296,7 +274,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                         validator, onSubmit,
                         errors,
                         touched,
-                        visited,
+                        visited, values,
                         valueGetter,
                         onChange,
                     } = formRenderProps;
@@ -335,7 +313,44 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                         }
                     };
 
+                    // Remove safeValues completely — use valueGetter directly
+                    const excelPaymentData = {
+                        paymentId: payment.paymentId ?? "NEW",
+                        paymentType: paymentTypeDesc,
+                        fromParty: paymentType === 1 ? payment.partyIdFromName ?? "" : payment.partyIdToName ?? "",
+                        toParty:   paymentType === 1 ? payment.partyIdToName ?? "" : payment.partyIdFromName ?? "",
 
+                        amount: valueGetter("amount") ?? payment.amount ?? 0,
+                        currency: payment.currencyUomId ?? "",
+                        effectiveDate: payment.effectiveDate ?? "",
+                        status: statusDesc,
+
+                        paymentMethod: paymentMethods?.find(m => m.paymentMethodId === valueGetter("paymentMethodId"))
+                            ?.description ?? payment.paymentMethodId ?? "",
+
+                        chequeNumber: valueGetter("paymentMethodId") === CASH_PAYMENT_METHOD_ID
+                            ? ""
+                            : (valueGetter("chequeNumber") ?? ""),
+
+                        chequeDate: valueGetter("paymentMethodId") === CASH_PAYMENT_METHOD_ID
+                            ? undefined
+                            : valueGetter("chequeDate"),
+
+                        costCenter: (() => {
+                            const id = valueGetter("costCenterId") || payment.costCenterId;
+                            if (!id) return "غير محدد";
+                            return paymentCostCenters.find(cc => cc.costCenterId === id)?.description ?? id;
+                        })(),
+
+                        project: (() => {
+                            const proj = valueGetter("projectId");
+                            if (proj && typeof proj === "object") {
+                                return proj.projectName ?? proj.projectId ?? "غير محدد";
+                            }
+                            return payment.projectName ?? payment.projectId ?? "غير محدد";
+                        })(),
+                    };
+                    
                     return (
                         <FormElement>
                             <fieldset
@@ -617,29 +632,25 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                     )}
                                 </Button>
                             </Grid>
-                            {paymentRow && (
-                                <Grid item xs={2}>
-                                    <PaymentExcelTechnical
-                                        companyName={companyName ?? "N/A"}
-                                        payment={paymentRow}
-                                        applications={excelApplications}
-                                        transactions={excelTransactions}
-                                        getTranslatedLabel={getTranslatedLabel}
-                                        isFetching={isExcelFetching}
-                                    />
-                                </Grid>
-                            )}
+                            <Grid item xs={2}>
+                                <PaymentExcelTechnical
+                                    companyName={companyName ?? "N/A"}
+                                    payment={excelPaymentData}
+                                    applications={excelApplications}
+                                    transactions={excelTransactions}
+                                    getTranslatedLabel={getTranslatedLabel}
+                                    isFetching={isExcelFetching}
+                                />
+                            </Grid>
 
-                            {paymentRow && (
-                                <Grid item xs={2}>
-                                    <PaymentExcelParty
-                                        companyName={companyName ?? "N/A"}
-                                        payment={paymentRow}
-                                        getTranslatedLabel={getTranslatedLabel}
-                                        isFetching={isExcelFetching}
-                                    />
-                                </Grid>
-                            )}
+                            <Grid item xs={2}>
+                                <PaymentExcelParty
+                                    companyName={companyName ?? "N/A"}
+                                    payment={excelPaymentData}
+                                    getTranslatedLabel={getTranslatedLabel}
+                                    isFetching={isExcelFetching}
+                                />
+                            </Grid>
                             <Grid item xs={1}>
                                 <Button
                                     sx={{mt: 2}}
@@ -650,6 +661,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                     {getTranslatedLabel("general.cancel", "Cancel")}
                                 </Button>
                             </Grid>
+                            
                         </Grid>
                     </div>
                 </FormElement>
