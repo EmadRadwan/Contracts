@@ -16,6 +16,7 @@ import ReceiptIcon from '@mui/icons-material/Receipt';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import PaidIcon from '@mui/icons-material/Paid';
 import BalanceIcon from '@mui/icons-material/Balance';
+import PriceCheckIcon from '@mui/icons-material/PriceCheck';
 import React from "react"; 
 
 interface AccountingMenuProps {
@@ -52,6 +53,7 @@ const links = [
     { title: 'Transactions Entries', key: 'transactions-entries', path: '/accountingTransactionEntries', icon: <ReceiptLongIcon sx={{ color: "#FF4081" }} /> },
     { title: 'Create Transactions', key: 'create-transactions', path: '/glCreateAccountingTransaction', icon: <PaidIcon sx={{ color: "#4CAF50" }} /> },
     { title: 'Trial Balance', key: 'trialBalance', path: '/trialBalance', icon: <BalanceIcon sx={{ color: "#E91E63" }} /> },
+    //{ title: 'Cost Centers', key: 'costCenters', path: '/costCenters', icon: <PriceCheckIcon sx={{ color: "#E91E63" }} /> },
 
 
 ];
@@ -86,7 +88,7 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
             fontWeight: isSelected ? "bold" : "normal",
             display: 'flex',
             alignItems: 'center',
-            marginRight: '4px', // Adjust the space between icon and text
+            marginRight: '3px', // Adjust the space between icon and text
         };
     };
 

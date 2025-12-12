@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Persistence;
 using Application.Core;
 
-namespace Application.CostCenters;
+namespace Application.Accounting.CostCenters;
 
 public class GetCostCenters
 {

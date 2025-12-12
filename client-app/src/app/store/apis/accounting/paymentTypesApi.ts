@@ -37,11 +37,20 @@ const paymentTypesApi = createApi({
                 }),
                 providesTags: ['CostCenter'],
             }),
+            createCostCenter: builder.mutation<CostCenterDto, CreateCostCenterRequest>({
+                query: (body) => ({
+                    url: '/costCenters',
+                    method: 'POST',
+                    body,
+                }),
+                invalidatesTags: ['CostCenter'],
+            }),
         }
     }
 })
 
-export const {useFetchPaymentTypesQuery, useGetCostCentersQuery
+export const {useFetchPaymentTypesQuery,
+    useGetCostCentersQuery, useCreateCostCenterMutation
 } = paymentTypesApi
 export {paymentTypesApi}
 

@@ -233,11 +233,6 @@ function SalesRequestsList() {
                                     width={130}
                                 />
                                 <Column
-                                    field="fromPartyName"
-                                    title={getTranslatedLabel("salesRequest.list.employee", "Advance")}
-                                    width={130}
-                                />
-                                <Column
                                     field="projectName"
                                     title={getTranslatedLabel("salesRequest.list.project", "Advance")}
                                     width={130}

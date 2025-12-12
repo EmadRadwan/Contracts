@@ -1,5 +1,4 @@
-using Application.CostCenters;
-using MediatR;
+using Application.Accounting.CostCenters;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Accounting;
@@ -17,4 +16,11 @@ public class CostCentersController : BaseApiController
             Type = type?.ToLower() // "in" | "out" | null
         }));
     }
+    
+    [HttpPost]
+    public async Task<IActionResult> CreateCostCenter(CreateCostCenter.Command command)
+    {
+        return HandleResult(await Mediator.Send(command));
+    }
 }
+

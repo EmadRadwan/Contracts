@@ -37,7 +37,6 @@ const links2 = [
   { path: "/comparativeBalanceSheet", title: "Comparative Balance Sheet" },
   { path: "/glAccountTrialBalance", title: "GL Account Trial Balance" },
   { path: "/inventoryValuation", title: "Inventory Valuation" },
-  { path: "/costCenters", title: "Cost Centers" },
 ];
 
 const AccountingReportsMenu = ({ selectedMenuItem = "" }: AccountingMenuProps) => {
