@@ -12,6 +12,13 @@ public class TrialBalanceController : BaseApiController
         return HandleResult(await Mediator.Send(new GetTrialBalanceReport.Query { CustomTimePeriodId = customTimePeriodId, OrganizationPartyId = selectedAccountingCompanyId }));
     }
     
+    [HttpGet("{selectedAccountingCompanyId}/{customTimePeriodId}/getTrialBalanceReport")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GenerateTrialBalanceReport(string selectedAccountingCompanyId, string customTimePeriodId)
+    {
+        return HandleResult(await Mediator.Send(new GetTrialBalanceReport.Query { CustomTimePeriodId = customTimePeriodId, OrganizationPartyId = selectedAccountingCompanyId }));
+    }
+    
     [HttpGet("{selectedAccountingCompanyId}/{customTimePeriodId}/{glAccountId}/getGlAccountTransactionDetails")]
     public async Task<IActionResult> GetGlAccountTransactionDetails(
         string selectedAccountingCompanyId,
