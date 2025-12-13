@@ -50,7 +50,8 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
     const displayName = partyNameFromState || getTranslatedLabel(`${localizationKey}.unknownParty`, 'Unknown Party');
     
     // ALL HOOKS — UNCONDITIONAL
-    const { data, error, isLoading } = useGetPartyFinancialHistoryQuery(partyId, { skip: !partyId });
+    const { data, error, isLoading } = useGetPartyFinancialHistoryQuery(partyId, { skip: !partyId,
+        refetchOnMountOrArgChange: true, });
     const [tabValue, setTabValue] = useState(0);
     const [sort, setSort] = useState<SortDescriptor[]>([{ field: 'invoiceDate', dir: 'asc' }]);
     const [page, setPage] = useState<State>({ skip: 0, take: 10 });
@@ -88,81 +89,125 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
     }, []);
 
 
-    // REFACTOR: FINAL SIMPLIFIED VERSION – NO APPLICATION ROWS (Recommended for external reports)
     const ledgerItems = useMemo((): LedgerRow[] => {
         if (!data) return [];
 
         const rows: LedgerRow[] = [];
-        let balance = 0;
+        let balance = 0; // + = vendor owes us (after more payments), - = we owe vendor
+
         const fmt = (d: string | null | undefined) => d ? new Date(d).toISOString().split('T')[0] : '';
 
+        // === 1. Opening Balances ===
         const openingBalanceEntries = data.openingBalances || [];
         if (openingBalanceEntries.length > 0) {
-            // Sum all opening balance impacts (already correctly signed in backend)
-            const openingTotal = openingBalanceEntries
-                .reduce((sum, ob) => sum + ob.impactOnBalance, 0);
+            // impactOnBalance from backend: positive if we owe (original convention)
+            // We reverse it here to match new requirement
+            const openingTotalOriginal = openingBalanceEntries.reduce((sum, ob) => sum + ob.impactOnBalance, 0);
+            const openingTotal = -openingTotalOriginal; // reverse sign
 
             if (openingTotal !== 0) {
                 balance += openingTotal;
-
                 rows.push({
-                    date: '', // or use earliest transaction date if available
+                    date: '',
                     description: 'الرصيد الافتتاحي',
                     invoiceNumber: undefined,
                     paymentNumber: undefined,
                     value: 0,
-                    toPay: openingTotal > 0 ? openingTotal : 0,     // إذا كان مدين (نحن ندين له)
-                    paid: openingTotal < 0 ? -openingTotal : 0,     // إذا كان دائن (هو مدين لنا)
-                    balance: balance,
+                    toPay: openingTotalOriginal > 0 ? openingTotalOriginal : 0, // show in credit if we owed initially
+                    paid: openingTotalOriginal < 0 ? -openingTotalOriginal : 0,   // show in debit if vendor owed initially
+                    balance,
                     notes: `${openingBalanceEntries.length} حركة افتتاحية`,
                 });
             }
         }
 
-        // 1. All invoices (applied + unapplied) – sorted by date
-        const invoices = new Map<string, { id: string; total: number; date: string }>();
+        // === 2. Collect and combine all transactions with date and type ===
+        interface Transaction {
+            date: string;
+            type: 'invoice' | 'payment';
+            id: string;
+            amount: number;
+            isUnappliedPayment?: boolean;
+        }
 
-        data.invoicesApplPayments?.forEach(i => invoices.set(i.invoiceId, { id: i.invoiceId, total: i.total, date: i.invoiceDate! }));
-        data.unappliedInvoices?.forEach(i => invoices.set(i.invoiceId, { id: i.invoiceId, total: i.amount, date: i.invoiceDate! }));
+        const transactions: Transaction[] = [];
 
-        Array.from(invoices.values())
-            .sort((a, b) => a.date.localeCompare(b.date))
-            .forEach(inv => {
-                balance += inv.total;
+        // Invoices (purchase invoices → credit → negative impact)
+        const invoiceMap = new Map<string, { total: number; date: string }>();
+        data.invoicesApplPayments?.forEach(i => {
+            if (!invoiceMap.has(i.invoiceId)) {
+                invoiceMap.set(i.invoiceId, { total: i.total, date: i.invoiceDate! });
+            }
+        });
+        data.unappliedInvoices?.forEach(i => {
+            if (!invoiceMap.has(i.invoiceId)) {
+                invoiceMap.set(i.invoiceId, { total: i.amount, date: i.invoiceDate! });
+            }
+        });
+        invoiceMap.forEach((inv, id) => {
+            transactions.push({
+                date: inv.date,
+                type: 'invoice',
+                id,
+                amount: inv.total,
+            });
+        });
+
+        // Payments (vendor payments → debit → positive impact)
+        const paymentMap = new Map<string, { amount: number; date: string }>();
+        data.invoicesApplPayments?.forEach(i => {
+            if (i.paymentId) {
+                paymentMap.set(i.paymentId, {
+                    amount: i.paymentAmount,
+                    date: i.paymentEffectiveDate || i.invoiceDate!,
+                });
+            }
+        });
+        data.unappliedPayments?.forEach(p => {
+            paymentMap.set(p.paymentId, { amount: p.amount, date: p.effectiveDate! });
+        });
+        paymentMap.forEach((pay, id) => {
+            transactions.push({
+                date: pay.date,
+                type: 'payment',
+                id,
+                amount: pay.amount,
+                isUnappliedPayment: data.unappliedPayments?.some(up => up.paymentId === id),
+            });
+        });
+
+        // === 3. Sort all transactions chronologically ===
+        transactions.sort((a, b) => a.date.localeCompare(b.date));
+
+        // === 4. Process transactions in order and build ledger rows ===
+        transactions.forEach(t => {
+            if (t.type === 'invoice') {
+                // Invoice → credit → reduce balance (make it more negative)
+                balance -= t.amount;
                 rows.push({
-                    date: fmt(inv.date),
-                    description: `فاتورة شراء رقم ${inv.id}`,
-                    invoiceNumber: inv.id,
-                    value: inv.total,
-                    toPay: inv.total,
+                    date: fmt(t.date),
+                    description: `فاتورة شراء رقم ${t.id}`,
+                    invoiceNumber: t.id,
+                    value: t.amount,
+                    toPay: t.amount,  // دائن
                     paid: 0,
                     balance,
                 });
-            });
-
-        // 2. All payments (applied + unapplied) – sorted by effective date
-        const payments = new Map<string, { id: string; amount: number; date: string }>();
-
-        data.invoicesApplPayments?.forEach(i => {
-            if (i.paymentId) payments.set(i.paymentId, { id: i.paymentId, amount: i.paymentAmount, date: i.paymentEffectiveDate || i.invoiceDate! });
-        });
-        data.unappliedPayments?.forEach(p => payments.set(p.paymentId, { id: p.paymentId, amount: p.amount, date: p.effectiveDate! }));
-
-        Array.from(payments.values())
-            .sort((a, b) => a.date.localeCompare(b.date))
-            .forEach(pay => {
-                balance -= pay.amount;
+            } else {
+                // Payment → debit → increase balance (make it more positive)
+                balance += t.amount;
                 rows.push({
-                    date: fmt(pay.date),
-                    description: `دفعة رقم ${pay.id}`,
-                    paymentNumber: pay.id,
+                    date: fmt(t.date),
+                    description: `دفعة رقم ${t.id}`,
+                    paymentNumber: t.id,
                     value: 0,
                     toPay: 0,
-                    paid: pay.amount,
+                    paid: t.amount,  // مدين
                     balance,
-                    notes: data.unappliedPayments?.some(p => p.paymentId === pay.id) ? 'دفعة غير مطبقة' : undefined,
+                    notes: t.isUnappliedPayment ? 'دفعة غير مطبقة' : undefined,
                 });
-            });
+            }
+        });
 
         return rows;
     }, [data]);

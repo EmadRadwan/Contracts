@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import {useCallback, useState} from "react";
 import { FormComboBoxVirtualParty } from "../../../../app/common/form/FormComboBoxVirtualParty";
 import {chequeValidator, requiredValidator} from "../../../../app/common/form/Validators";
 import {
@@ -20,6 +20,7 @@ import {useFetchGlAccountOrganizationHierarchyLovQuery} from "../../../../app/st
 import {FormDropDownTreeGlAccount2} from "../../../../app/common/form/FormDropDownTreeGlAccount2";
 import {MemoizedFormComboBox2} from "../../../../app/common/form/FormComboBox2";
 import {FormComboBoxVirtualProject} from "../../../../app/common/form/FormComboBoxVirtualProject";
+import CreateCostCenterModal from "./CreateCostCenterModal";
 
 interface NewPaymentInProps {
     partyInputRef: React.RefObject<HTMLInputElement>;
@@ -54,10 +55,13 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
     const {
         data: paymentCostCenters = [],
         isLoading: loadingOut
-    } = useGetCostCentersQuery({ type: 'in' });
+    } = useGetCostCentersQuery({ type: 'in' }, { refetchOnMountOrArgChange: true });
+
+    // REFACTOR: Added state to control the Create Cost Center modal (mirrors EditPaymentForm behavior)
+    const [showCreateCostCenter, setShowCreateCostCenter] = useState(false);
 
 
-  
+
 
     // Kendo onSubmit → values + valid
     const handleSubmit = (values: any) => {
@@ -72,6 +76,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
     }, [companies]);
 
     return (
+        <>
         <Form
             initialValues={{
                 paymentId: "",
@@ -170,6 +175,19 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                 dataItemKey="costCenterId"      // tells FormComboBox which field is the key
                                                 textField="description"      // tells FormComboBox which field to display
                                             />
+                                        </Grid>
+
+                                        <Grid item xs={1}>
+                                            {/* REFACTOR: Added "+" button that opens the CreateCostCenterModal */}
+                                            <Button
+                                                size="small"
+                                                variant="outlined"
+                                                color="secondary"
+                                                onClick={() => setShowCreateCostCenter(true)}
+                                                sx={{ mt: 3 }} // Aligns with the ComboBox height
+                                            >
+                                                +
+                                            </Button>
                                         </Grid>
                                     </Grid>
                                 </Grid>
@@ -321,6 +339,12 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                 );
             }}
         />
+            <CreateCostCenterModal
+                open={showCreateCostCenter}
+                onClose={() => setShowCreateCostCenter(false)}
+                isOutPayment={false}
+            />
+        </>
     );
 };
 

@@ -20,10 +20,16 @@ const isOutOptions = [
     { value: 'N', text: 'لا (للقبض)' },
 ];
 
-export default function CreateCostCenterModal({ open, onClose, onCreated, isOutPayment }: Props) {
+export default function CreateCostCenterModal({ open, onClose, isOutPayment }: Props) {
     const [createCostCenter, { isLoading }] = useCreateCostCenterMutation();
     const [submitError, setSubmitError] = useState<string | null>(null);
 
+    const initialFormValues = {
+        description: '',
+        isOutPayment: isOutPayment ? 'Y' : 'N',
+    };
+
+    
     const handleSubmit = async (data: any) => {
         setSubmitError(null);
         try {
@@ -43,6 +49,7 @@ export default function CreateCostCenterModal({ open, onClose, onCreated, isOutP
             <Typography variant="h6" gutterBottom>إضافة مركز تكلفة جديد</Typography>
 
             <Form
+                initialValues={initialFormValues}
                 onSubmit={handleSubmit}
                 render={(formRenderProps) => (
                     <FormElement>
@@ -61,7 +68,6 @@ export default function CreateCostCenterModal({ open, onClose, onCreated, isOutP
                                 data={isOutOptions}
                                 dataItemKey="value"
                                 textField="text"
-                                defaultValue={isOutPayment ? 'Y' : 'N'}
                                 //disabled
                             />
 

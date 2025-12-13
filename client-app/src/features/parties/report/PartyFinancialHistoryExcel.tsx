@@ -142,9 +142,9 @@ export const PartyFinancialHistoryExcel: React.FC<PartyFinancialHistoryExcelProp
             // Color balance cell
             const balanceCell = row.getCell(8);
             if (item.balance > 0) {
-                balanceCell.font = { ...balanceCell.font, color: { argb: 'FF8B0000' }, bold: true }; // Red = we owe
+                balanceCell.font = { ...balanceCell.font, color: { argb: 'FF006400' }, bold: true }; // Green = vendor owes us
             } else if (item.balance < 0) {
-                balanceCell.font = { ...balanceCell.font, color: { argb: 'FF006400' }, bold: true }; // Green = he owes
+                balanceCell.font = { ...balanceCell.font, color: { argb: 'FF8B0000' }, bold: true }; // Red = we owe vendor
             }
         });
 
@@ -158,19 +158,19 @@ export const PartyFinancialHistoryExcel: React.FC<PartyFinancialHistoryExcelProp
         finalRow.getCell(8).numFmt = '#,##0.00';
 
         if (finalBalance > 0) {
-            finalRow.getCell(8).font = { color: { argb: 'FF8B0000' }, bold: true };
+            finalRow.getCell(8).font = { color: { argb: 'FF006400' }, bold: true }; // Green
         } else if (finalBalance < 0) {
-            finalRow.getCell(8).font = { color: { argb: 'FF006400' }, bold: true };
+            finalRow.getCell(8).font = { color: { argb: 'FF8B0000' }, bold: true }; // Red
         }
 
         // Clarity line – critical for accountants
         const clarityText = finalBalance > 0
-            ? '← علينا للطرف (مدينون له)'
+            ? '← للطرف عندنا (دائنون لنا)'
             : finalBalance < 0
-                ? '← للطرف عندنا (دائنون لنا)'
+                ? '← علينا للطرف (مدينون له)'
                 : 'لا يوجد رصيد متبقي';
-
         worksheet.addRow(['', clarityText, '', '', '', '', '', Math.abs(finalBalance), '']);
+        
         worksheet.lastRow!.font = { name: 'Amiri', size: 14, bold: true, color: { argb: 'FF000080' } };
 
         worksheet.addRow([]);

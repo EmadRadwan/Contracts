@@ -1,51 +1,31 @@
-// REFACTOR: Added "Add Cost Center" button with inline modal
-// Purpose: Allow creating cost centers without leaving the payment form
-// Improves: UX, reduces context switching
-// Context: Uses same pattern as "New Customer" modal
+// In PartyFinancialHistoryExcel.tsx
 
-const [showCreateCostCenter, setShowCreateCostCenter] = useState(false);
+// REFACTOR: Reverse balance coloring and final clarity text to match new balance sign
+// - Green (>0): debit impact dominant → vendor owes us (لنا عند الطرف)
+// - Red (<0): credit impact dominant → we owe vendor (علينا للطرف)
+ledgerItems.forEach(item => {
+    // ...
+    const balanceCell = row.getCell(8);
+    if (item.balance > 0) {
+        balanceCell.font = { ...balanceCell.font, color: { argb: 'FF006400' }, bold: true }; // Green = vendor owes us
+    } else if (item.balance < 0) {
+        balanceCell.font = { ...balanceCell.font, color: { argb: 'FF8B0000' }, bold: true }; // Red = we owe vendor
+    }
+});
 
-const handleCostCenterCreated = (newCc: { costCenterId: string; description: string }) => {
-    formRenderProps.onChange('costCenterId', { value: newCc.costCenterId });
-};
+// Final Balance Row (unchanged logic, but colors now match reversed sign)
+const finalBalance = ledgerItems[ledgerItems.length - 1]?.balance || 0;
+// ...
+if (finalBalance > 0) {
+    finalRow.getCell(8).font = { color: { argb: 'FF006400' }, bold: true }; // Green
+} else if (finalBalance < 0) {
+    finalRow.getCell(8).font = { color: { argb: 'FF8B0000' }, bold: true }; // Red
+}
 
-return (
-    <>
-        {/* ... existing fields ... */}
-
-        <Grid item xs={3}>
-            {loadingCostCenters ? (
-                <Skeleton variant="rounded" height={56}/>
-            ) : (
-                <>
-                    <Field
-                        id="costCenterId"
-                        name="costCenterId"
-                        label={getTranslatedLabel(`${localizationKey}.costCenter`, "Cost Center")}
-                        component={MemoizedFormComboBox2}
-                        data={paymentCostCenters || []}
-                        dataItemKey="costCenterId"
-                        textField="description"
-                    />
-                    <Button
-                        size="small"
-                        variant="outlined"
-                        color="secondary"
-                        onClick={() => setShowCreateCostCenter(true)}
-                        sx={{ mt: 1 }}
-                    >
-                        + إضافة مركز تكلفة
-                    </Button>
-                </>
-            )}
-        </Grid>
-
-        {/* Modal */}
-        <CreateCostCenterModal
-            open={showCreateCostCenter}
-            onClose={() => setShowCreateCostCenter(false)}
-            onCreated={handleCostCenterCreated}
-            isOutPayment={!!payment?.isDisbursement}
-        />
-    </>
-);
+// REFACTOR: Update clarity text direction and meaning for reversed balance
+const clarityText = finalBalance > 0
+    ? '← للطرف عندنا (دائنون لنا)'
+    : finalBalance < 0
+        ? '← علينا للطرف (مدينون له)'
+        : 'لا يوجد رصيد متبقي';
+worksheet.addRow(['', clarityText, '', '', '', '', '', Math.abs(finalBalance), '']);

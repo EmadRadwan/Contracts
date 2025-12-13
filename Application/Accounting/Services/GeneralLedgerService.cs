@@ -2513,6 +2513,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                     PartyId = contractorPartyId,
                     RoleTypeId = "BILL_FROM_VENDOR",
                     ProductId = productId,
+                    GlAccountId = projectGlAccountId,
                     GlAccountTypeId = "CONSTRUCTION_DEDUCTIONS",
                     OrigAmount = deductionAmount,
                     OrigCurrencyUomId = invoice.CurrencyUomId

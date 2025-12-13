@@ -17,6 +17,7 @@ import {
 import {FormDropDownTreeGlAccount2} from "../../../../app/common/form/FormDropDownTreeGlAccount2";
 import {FormComboBoxVirtualProject} from "../../../../app/common/form/FormComboBoxVirtualProject";
 import {MemoizedFormComboBox2} from "../../../../app/common/form/FormComboBox2";
+import CreateCostCenterModal from "./CreateCostCenterModal";
 
 interface NewPaymentOutProps {
     partyInputRef: React.RefObject<HTMLInputElement>;
@@ -62,7 +63,10 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
     const {
         data: paymentCostCenters = [],
         isLoading: loadingOut
-    } = useGetCostCentersQuery({type: 'out'});
+    } = useGetCostCentersQuery({ type: 'out' }, { refetchOnMountOrArgChange: true });
+
+    // REFACTOR: Added state to control the Create Cost Center modal (mirrors EditPaymentForm behavior)
+    const [showCreateCostCenter, setShowCreateCostCenter] = useState(false);
 
     const stableTrigger = useCallback(
         (partyId: string, projectId: string) => {
@@ -122,6 +126,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
 
 
     return (
+        <>
         <Form
             initialValues={{
                 paymentId: "",
@@ -241,6 +246,19 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                 dataItemKey="costCenterId"      // tells FormComboBox which field is the key
                                                 textField="description"      // tells FormComboBox which field to display
                                             />
+                                        </Grid>
+
+                                        <Grid item xs={1}>
+                                            {/* REFACTOR: Added "+" button that opens the CreateCostCenterModal */}
+                                            <Button
+                                                size="small"
+                                                variant="outlined"
+                                                color="secondary"
+                                                onClick={() => setShowCreateCostCenter(true)}
+                                                sx={{ mt: 3 }} // Aligns with the ComboBox height
+                                            >
+                                                +
+                                            </Button>
                                         </Grid>
                                     </Grid>
                                 </Grid>
@@ -458,6 +476,12 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                 );
             }}
         />
+            <CreateCostCenterModal
+                open={showCreateCostCenter}
+                onClose={() => setShowCreateCostCenter(false)}
+                isOutPayment={true}
+            />
+        </>
     );
 };
 
