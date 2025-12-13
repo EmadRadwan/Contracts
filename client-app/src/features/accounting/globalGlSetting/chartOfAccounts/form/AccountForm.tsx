@@ -25,9 +25,9 @@ import { FormDropDownTreeGlAccount2 } from "../../../../../app/common/form/FormD
 
 import { GlAccount } from "../../../../../app/models/accounting/globalGlSettings";
 import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHelper";
-import {FormDropDownList} from "../../../../../app/common/form/MemoizedFormDropDownList2";
+import { FormDropDownList } from "../../../../../app/common/form/MemoizedFormDropDownList2";
 import { useAppSelector } from "../../../../../app/store/configureStore";
-import { useFetchGlAccountOrganizationHierarchyLovQuery } from "../../../../../app/store/apis";
+import { useAssignGlAccountToOrganizationMutation, useFetchGlAccountOrganizationHierarchyLovQuery } from "../../../../../app/store/apis";
 import { useFetchTopLevelGlobalGlAccountsQuery, useCreateGlAccountMutation, useUpdateGlAccountMutation } from "../../../../../app/store/apis/accounting/globalGlSettingsApi";
 import { FormDropDownTreeGlAccountWithChildren } from "../../../../../app/common/form/FormDropDownTreeGlAccountWithChildren";
 
@@ -38,6 +38,43 @@ interface Props {
     onAccountCreated?: (created: GlAccount) => void;
     onAccountUpdated?: (updated: GlAccount) => void;
 }
+
+const messages: Record<string, Record<string, string>> = {
+    en: {
+        // Success messages
+        GL_ACCOUNT_CREATED: "GL Account created successfully.",
+        GL_ACCOUNT_UPDATED: "GL Account updated successfully.",
+        // Error messages
+        USER_NOT_FOUND: "Unauthorized: User not found.",
+        GL_ACCOUNT_ID_REQUIRED: "GL Account ID is required.",
+        GL_ACCOUNT_NOT_FOUND: "The specified GL Account could not be found.",
+        GL_ACCOUNT_SAVE_FAILED: "Failed to save the GL Account.",
+        GL_ACCOUNT_UPDATE_FAILED: "Failed to update the GL Account.",
+        GL_ACCOUNT_CREATE_FAILED: "Failed to create the GL Account.",
+        ACCOUNT_CODE_GENERATION_FAILED: "Failed to generate a unique account code.",
+        GL_ACCOUNT_INVALID_PARENT: "Cannot assign account as child to itself.",
+        UNEXPECTED_ERROR: "An unexpected error occurred. Please try again.",
+        DEFAULT: "An unexpected error occurred. Please try again.",
+        GL_ACCOUNT_ASSIGNED: "GL Account assigned successfully.",
+    },
+    ar: {
+        // Success messages
+        GL_ACCOUNT_CREATED: "تم إنشاء حساب دفتر الأستاذ بنجاح.",
+        GL_ACCOUNT_UPDATED: "تم تحديث حساب دفتر الأستاذ بنجاح.",
+        GL_ACCOUNT_ASSIGNED: "تم تعيين حساب دفتر الأستاذ بنجاح.",
+        // Error messages
+        USER_NOT_FOUND: "غير مصرح: المستخدم غير موجود.",
+        GL_ACCOUNT_ID_REQUIRED: "معرف حساب دفتر الأستاذ مطلوب.",
+        GL_ACCOUNT_NOT_FOUND: "حساب دفتر الأستاذ المحدد غير موجود.",
+        GL_ACCOUNT_SAVE_FAILED: "فشل في حفظ حساب دفتر الأستاذ.",
+        GL_ACCOUNT_UPDATE_FAILED: "فشل في تحديث حساب دفتر الأستاذ.",
+        GL_ACCOUNT_CREATE_FAILED: "فشل في إنشاء حساب دفتر الأستاذ.",
+        ACCOUNT_CODE_GENERATION_FAILED: "فشل في إنشاء رمز حساب فريد.",
+        UNEXPECTED_ERROR: "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
+        GL_ACCOUNT_INVALID_PARENT: "لا يمكن تعيين الحساب كتابع لنفسه.",
+        DEFAULT: "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
+    },
+};
 
 /* ------------------------------------------------------------------
    Static lookup data – no extra API calls needed
@@ -76,30 +113,64 @@ const glResourceTypes = ["MONEY", "INVENTORY_ITEM", "FIXED_ASSET", "SERVICE"].ma
 );
 
 const AccountForm: React.FC<Props> = ({
-                                          account,
-                                          editMode,
-                                          cancelEdit,
-                                          onAccountCreated,
-                                          onAccountUpdated,
-                                      }) => {
+    account,
+    editMode,
+    cancelEdit,
+    onAccountCreated,
+    onAccountUpdated,
+}) => {
     const { getTranslatedLabel } = useTranslationHelper();
     const { user } = useAppSelector((state) => state.account);
+    const language = useAppSelector((state) => state.localization.language || "en");
     const companyId = user?.organizationPartyId || "";
+
+    const getMessage = (code: string) => {
+        return messages[language]?.[code] || messages["en"]?.[code] || code;
+    };
+
+    const handleApiError = (error: any, defaultMessage: string) => {
+        const errorCode = error?.data?.errorCode || "DEFAULT";
+        const errorMessage = error?.data?.title || defaultMessage;
+        const localizedMessage = messages[language]?.[errorCode] || errorMessage || defaultMessage;
+        setCreationError(localizedMessage);
+        toast.error(localizedMessage);
+        console.error(error);
+    };
 
     const { data: glAccounts, isLoading: isLoadingGlAccounts } = useFetchTopLevelGlobalGlAccountsQuery(undefined);
     const [createGlAccount, { isLoading: isCreating }] = useCreateGlAccountMutation();
     const [updateGlAccount, { isLoading: isUpdating }] = useUpdateGlAccountMutation();
+    const [assignGlAccountToOrganization] = useAssignGlAccountToOrganizationMutation();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [creationError, setCreationError] = useState<string | null>(null);
     const [justCreatedAccount, setJustCreatedAccount] = useState<GlAccount | null>(null);
     const [formKey, setFormKey] = useState(0);
     /* ------------------------------------------------------------------
-       Initial values – empty on create, populated on edit
+       Initial values – empty on create (unless creating similar), populated on edit
        ------------------------------------------------------------------ */
     const initialValues = useMemo(() => {
-        if (editMode === 1) return {}; // create → empty form
+        // If create mode and no account provided, return empty form
+        if (editMode === 1 && !account) return {};
 
+        // If create mode with account (creating similar), pre-fill with parent settings
+        if (editMode === 1 && account) {
+            return {
+                accountName: account.accountName ?? "",
+                glAccountTypeId: account.glAccountTypeId ?? null,
+                glAccountClassId: account.glAccountClassId ?? null,
+                glResourceTypeId: account.glResourceTypeId ?? null,
+                parentGlAccountId: account.parentGlAccountId
+                    ? {
+                        glAccountId: account.parentGlAccountId,
+                        text: account.parentAccountName || account.parentGlAccountId,
+                    }
+                    : null,
+                description: null,
+            };
+        }
+
+        // Edit mode
         return {
             glAccountId: account?.glAccountId ?? "",
             accountCode: account?.accountCode ?? "",
@@ -144,7 +215,7 @@ const AccountForm: React.FC<Props> = ({
             if (editMode === 1) {
                 const result = await createGlAccount(payload).unwrap();
 
-                toast.success(getTranslatedLabel("accounting.glAccount.form.createSuccess", "GL Account created successfully"));
+                toast.success(getMessage("GL_ACCOUNT_CREATED"));
 
                 const createdAccount: GlAccount = {
                     ...result,
@@ -171,7 +242,7 @@ const AccountForm: React.FC<Props> = ({
 
                 const result = await updateGlAccount(updatePayload).unwrap();
 
-                toast.success(getTranslatedLabel("accounting.glAccount.form.updateSuccess", "GL Account updated successfully"));
+                toast.success(getMessage("GL_ACCOUNT_UPDATED"));
 
                 const updatedAccount: GlAccount = {
                     ...account,
@@ -191,27 +262,46 @@ const AccountForm: React.FC<Props> = ({
                 onAccountUpdated?.(updatedAccount);
             }
         } catch (err: any) {
-            const msg =
-                err?.data?.error ||
-                err?.data?.message ||
-                err?.data?.title ||
-                getTranslatedLabel("accounting.glAccount.form.saveFailed", "Failed to save GL Account");
-            setCreationError(msg);
-            toast.error(msg);
+            handleApiError(err, getMessage("GL_ACCOUNT_SAVE_FAILED"));
         } finally {
             setIsSubmitting(false);
         }
     };
 
+    async function handleAssign() {
+        try {
+            if (!companyId || !account?.glAccountId) return;
+            await assignGlAccountToOrganization({
+                glAccountId: account?.glAccountId,
+                companyId: companyId,
+            }).unwrap();
+            toast.success(getMessage("GL_ACCOUNT_ASSIGNED"));
+        } catch (error) {
+            handleApiError(error, getMessage("DEFAULT"));
+        }
+    }
+
     return (
         <Paper elevation={6} sx={{ p: 4, mt: 2, mx: 2 }}>
-            <Typography variant="h5" gutterBottom>
-                {editMode === 1
-                    ? getTranslatedLabel("accounting.glAccount.form.new", "New GL Account")
-                    : `${getTranslatedLabel("accounting.glAccount.form.edit", "Edit GL Account")} – ${
-                        account?.glAccountId
-                    }`}
-            </Typography>
+            <Grid container spacing={2}>
+                <Grid item xs={11}>
+                    <Typography variant="h5" gutterBottom>
+                        {editMode === 1
+                            ? getTranslatedLabel("accounting.glAccount.form.new", "New GL Account")
+                            : `${getTranslatedLabel("accounting.glAccount.form.edit", "Edit GL Account")} – ${account?.glAccountId
+                            }`}
+                    </Typography>
+                </Grid>
+                <Grid item xs={1}>
+                    <Button
+                        onClick={() => handleAssign()}
+                        variant="contained"
+                        color='success'
+                    >
+                        {getTranslatedLabel("general.assign-to-org", "Assign to Organization")}
+                    </Button>
+                </Grid>
+            </Grid>
 
             <Form
                 key={formKey}
@@ -221,26 +311,6 @@ const AccountForm: React.FC<Props> = ({
                     <FormElement>
                         <Grid container spacing={3}>
                             {/* Row 1 */}
-                            {/* <Grid item xs={12} sm={6}>
-                                <Field
-                                    name="glAccountId"
-                                    label={getTranslatedLabel("glAccount.id", "GL Account ID *")}
-                                    component={FormInput}
-                                    validator={requiredValidator}
-                                    disabled={editMode === 2} // cannot change ID on edit
-                                />
-                            </Grid>
-
-                            <Grid item xs={12} sm={6}>
-                                <Field
-                                    name="accountCode"
-                                    label={getTranslatedLabel("glAccount Code *")}
-                                    component={FormInput}
-                                    validator={requiredValidator}
-                                />
-                            </Grid> */}
-
-                            {/* Row 2 */}
                             <Grid item xs={12}>
                                 <Field
                                     name="accountName"
@@ -250,15 +320,7 @@ const AccountForm: React.FC<Props> = ({
                                 />
                             </Grid>
 
-                            {/* <Grid item xs={12} sm={6}>
-                                <Field
-                                    name="accountNameArabic"
-                                    label={getTranslatedLabel("glAccount.nameArabic", "Account Name (AR)")}
-                                    component={FormInput}
-                                />
-                            </Grid> */}
-
-                            {/* Row 3 – Dropdowns */}
+                            {/* Row 2 – Dropdowns */}
                             <Grid item xs={12} sm={4}>
                                 <Field
                                     name="glAccountTypeId"
@@ -312,7 +374,7 @@ const AccountForm: React.FC<Props> = ({
                                     expandField="expanded"
                                     loading={isLoadingGlAccounts}
                                     validator={requiredValidator}
-                                    // you can pass filter={item => item.glAccountId !== data.glAccountId} to prevent self-parent if needed
+                                // you can pass filter={item => item.glAccountId !== data.glAccountId} to prevent self-parent if needed
                                 />
                             </Grid>
 
@@ -326,15 +388,6 @@ const AccountForm: React.FC<Props> = ({
                                     rows={3}
                                 />
                             </Grid>
-
-                            {/* Error Alert */}
-                            {creationError && (
-                                <Grid item xs={12}>
-                                    <Alert severity="error" onClose={() => setCreationError(null)}>
-                                        {creationError}
-                                    </Alert>
-                                </Grid>
-                            )}
 
                             {/* Buttons */}
                             <Grid item xs={12}>
@@ -358,10 +411,11 @@ const AccountForm: React.FC<Props> = ({
                                     <Button
                                         variant="outlined"
                                         onClick={cancelEdit}
-                                        sx={{ ml: 2 }}
+                                        sx={{ mx: 2 }}
                                     >
                                         {getTranslatedLabel("general.cancel", "Cancel")}
                                     </Button>
+                                    
                                 </Box>
                             </Grid>
                         </Grid>

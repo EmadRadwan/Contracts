@@ -2,6 +2,8 @@
   "general": {
     "homepage": "Welcome Back",
     "save": "Save",
+    "assign": "Assign",
+    "assign-to-org": "Assign to Organization",
     "cancel": "Cancel",
     "back": "Back",
     "email": "email",
@@ -646,7 +648,8 @@
         "type": "Type",
         "class": "Class",
         "resourceType": "Resource Type",
-        "loading": "Loading accounts..."
+        "loading": "Loading accounts...",
+        "similar": "Create similar"
       },
       "form": {
         "new": "New GL Account",

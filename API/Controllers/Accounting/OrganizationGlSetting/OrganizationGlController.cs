@@ -515,4 +515,16 @@ public class OrganizationGlController : BaseApiController
 
         return NoContent();
     }
+
+    /// <summary>
+    /// Assigns a GL Account to an Organization.
+    /// </summary>
+    /// <param name="command">The command containing glAccountId and companyId.</param>
+    /// <returns>Ok with the result on success, or BadRequest on error.</returns>
+    [HttpPost("assignGlAccountToOrganization")]
+    public async Task<IActionResult> AssignGlAccountToOrganization([FromBody] AssignGlAccountToOrganization.Command command)
+    {
+        var result = await Mediator.Send(command);
+        return HandleResults(result);
+    }
 }

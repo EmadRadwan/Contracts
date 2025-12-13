@@ -103,16 +103,10 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
     { companyId, dataState },
     { skip: companyId === undefined }
   );
-  
-  const { data:  fullCompanyChartOfAccounts } = useFetchFullChartOfAccountsQuery(
-    { companyId},
-    { skip: companyId === undefined }
-  );
 
  
   
   console.log('data', data?.data);
-  console.log('fullCompanyChartOfAccounts', fullCompanyChartOfAccounts);
 
   const { data: structuredGlAccounts, isFetching: isStructuredGlFetching } =
       useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {

@@ -2,6 +2,7 @@ import {createApi, fetchBaseQuery} from "@reduxjs/toolkit/query/react";
 import {store} from "../../configureStore";
 import {GlAccount} from "../../../models/accounting/globalGlSettings";
 import {State, toODataString} from "@progress/kendo-data-query";
+import { orgChartOfAccountsLovApi } from "./orgChartOfAccountsLovApi";
 
 interface ListResponse<T> {
     data: T[];
@@ -25,7 +26,7 @@ const organizationGlChartOfAccountsApi = createApi({
             return headers;
         },
     }),
-
+    tagTypes: ["OrganizationGlChartOfAccounts"],
     endpoints(builder) {
         return {
             fetchOrganizationGlChartOfAccounts: builder.query<ListResponse<GlAccount>, { companyId?: string; dataState: State }>({
@@ -44,6 +45,7 @@ const organizationGlChartOfAccountsApi = createApi({
                         total: totalCount,
                     };
                 },
+                providesTags: ["OrganizationGlChartOfAccounts"],
             }),
             fetchOrganizationGlAccountsByClass: builder.query<GlAccount[], {companyId: string, accountClass: string}>({
                 query: ({companyId, accountClass}) => {
@@ -80,7 +82,19 @@ const organizationGlChartOfAccountsApi = createApi({
                     params: { companyId },
                     method: 'GET'
                 })
-            })
+            }),
+            assignGlAccountToOrganization: builder.mutation<any, { glAccountId: string; companyId: string }>({
+                query: (body) => ({
+                    url: `/organizationGl/assignGlAccountToOrganization`,
+                    method: "POST",
+                    body,
+                }),
+                transformResponse: (response: any, meta, arg) => {
+                    orgChartOfAccountsLovApi.util.invalidateTags(["OrgChartOfAccountsLov"]);
+                    return response;
+                },
+                invalidatesTags: ["OrganizationGlChartOfAccounts"],
+            }),
         };
     },
 });
@@ -88,6 +102,8 @@ const organizationGlChartOfAccountsApi = createApi({
 export const {
     useFetchOrganizationGlChartOfAccountsQuery,
     useFetchOrganizationGlAccountsByClassQuery,
-    useFetchOrganizationGlAccountsByTypeQuery, useFetchFullChartOfAccountsQuery
+    useFetchOrganizationGlAccountsByTypeQuery, 
+    useFetchFullChartOfAccountsQuery,
+    useAssignGlAccountToOrganizationMutation
 } = organizationGlChartOfAccountsApi;
 export {organizationGlChartOfAccountsApi};
