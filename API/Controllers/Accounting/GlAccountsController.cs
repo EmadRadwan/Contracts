@@ -31,7 +31,7 @@ namespace API.Controllers.Accounting
         [HttpPost]
         public async Task<IActionResult> CreateGlAccount([FromBody] CreateGlAccountRequest request)
         {
-            return HandleResult(await Mediator.Send(new CreateGlAccount.Command { Request = request }));
+            return HandleResults(await Mediator.Send(new CreateGlAccount.Command { Request = request }));
         }
 
         [HttpPut("{glAccountId}")]
@@ -44,7 +44,7 @@ namespace API.Controllers.Accounting
                 Description = request.Description,
                 ParentGlAccountId = request.ParentGlAccountId
             };
-            return HandleResult(await Mediator.Send(new UpdateGlAccount.Command { Request = updateRequest }));
+            return HandleResults(await Mediator.Send(new UpdateGlAccount.Command { Request = updateRequest }));
         }
     }
 }

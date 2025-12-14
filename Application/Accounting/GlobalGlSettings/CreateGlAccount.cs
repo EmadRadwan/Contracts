@@ -9,12 +9,12 @@ namespace Application.Accounting.GlobalGlSettings;
 
 public class CreateGlAccount
 {
-    public class Command : IRequest<Result<CreateGlAccountResponse>>
+    public class Command : IRequest<Results<CreateGlAccountResponse>>
     {
         public CreateGlAccountRequest? Request { get; set; }
     }
 
-    public class Handler : IRequestHandler<Command, Result<CreateGlAccountResponse>>
+    public class Handler : IRequestHandler<Command, Results<CreateGlAccountResponse>>
     {
         private readonly DataContext _context;
         private readonly IUserAccessor _userAccessor;
@@ -25,7 +25,7 @@ public class CreateGlAccount
             _userAccessor = userAccessor;
         }
 
-        public async Task<Result<CreateGlAccountResponse>> Handle(
+        public async Task<Results<CreateGlAccountResponse>> Handle(
             Command request,
             CancellationToken cancellationToken)
         {
@@ -36,7 +36,7 @@ public class CreateGlAccount
                 .FirstOrDefaultAsync(u => u.UserName == currentUsername, cancellationToken);
 
             if (user == null)
-                return Result<CreateGlAccountResponse>.Failure("Unauthorized: User not found");
+                return Results<CreateGlAccountResponse>.Failure("Unauthorized: User not found", "USER_NOT_FOUND");
 
             var now = DateTime.UtcNow;
 
@@ -46,7 +46,7 @@ public class CreateGlAccount
                 var newAccountCode = await GenerateNextAccountCode(dto.ParentGlAccountId, cancellationToken);
 
                 if (newAccountCode == null)
-                    return Result<CreateGlAccountResponse>.Failure("Failed to generate a unique account code");
+                    return Results<CreateGlAccountResponse>.Failure("Failed to generate a unique account code", "ACCOUNT_CODE_GENERATION_FAILED");
 
                 // Create the new GlAccount
                 var glAccount = new GlAccount
@@ -67,7 +67,7 @@ public class CreateGlAccount
 
                 var saved = await _context.SaveChangesAsync(cancellationToken) > 0;
                 if (!saved)
-                    return Result<CreateGlAccountResponse>.Failure("Failed to save GL account");
+                    return Results<CreateGlAccountResponse>.Failure("Failed to save GL account", "GL_ACCOUNT_SAVE_FAILED");
 
                 // Build response
                 var response = new CreateGlAccountResponse
@@ -83,11 +83,11 @@ public class CreateGlAccount
                     CreatedDate = glAccount.CreatedStamp
                 };
 
-                return Result<CreateGlAccountResponse>.Success(response);
+                return Results<CreateGlAccountResponse>.Success(response);
             }
             catch (Exception ex)
             {
-                return Result<CreateGlAccountResponse>.Failure($"Failed to create GL account: {ex.Message}");
+                return Results<CreateGlAccountResponse>.Failure($"Failed to create GL account: {ex.Message}", "GL_ACCOUNT_CREATE_FAILED");
             }
         }
 

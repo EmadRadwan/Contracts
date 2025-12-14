@@ -471,6 +471,7 @@ export {useFetchTaxAuthoritiesQuery} from "./apis/accounting/taxAuthoritiesApi";
 export {useFetchInternalAccountingOrganizationsQuery} from "./apis/accounting/internalAccountingOrganizationsApi";
 export {useFetchOrgGlSettingsQuery} from "./apis/accounting/orgGlSettingsApi";
 export {useFetchOrgChartOfAccountsLovQuery} from "./apis/accounting/orgChartOfAccountsLovApi";
+export {useAssignGlAccountToOrganizationMutation} from "./apis/accounting/organizationGlChartOfAccountsApi";
 export {useFetchOrganizationGlChartOfAccountsQuery} from "./apis/accounting/organizationGlChartOfAccountsApi";
 
 export {

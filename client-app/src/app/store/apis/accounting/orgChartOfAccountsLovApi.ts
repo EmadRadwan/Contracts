@@ -19,6 +19,7 @@ const orgChartOfAccountsLovApi = createApi({
             return headers;
         },
     }),
+    tagTypes: ["OrgChartOfAccountsLov"],
     endpoints(builder) {
         return {
             fetchOrgChartOfAccountsLov: builder.query<GlAccount[], any>({
@@ -29,13 +30,14 @@ const orgChartOfAccountsLovApi = createApi({
                         params: undefined,
                         method: "GET",
                     };
-                },
+                }
             }),
             fetchGlAccountOrganizationHierarchyLov: builder.query<any, string>({
                 query: (companyId) => ({
                     url: `/organizationGl/${companyId}/getGlAccountOrganizationHierarchyLov`,
                     method: "GET",
                 }),
+                providesTags: ["OrgChartOfAccountsLov"],
             }),
             fetchGlAccountOrgCashOrEquivalentLov: builder.query<any, string>({
                 query: (companyId) => ({
@@ -50,7 +52,7 @@ const orgChartOfAccountsLovApi = createApi({
                         method: "GET",
                     };
                 },
-            
+
             }),
         };
     },
@@ -59,7 +61,7 @@ const orgChartOfAccountsLovApi = createApi({
 export const {
     useFetchOrgChartOfAccountsLovQuery,
     useFetchGlAccountOrganizationGlAccountsQuery,
-    useFetchGlAccountOrganizationHierarchyLovQuery, useFetchGlAccountOrgCashOrEquivalentLovQuery
-
+    useFetchGlAccountOrganizationHierarchyLovQuery,
+    useFetchGlAccountOrgCashOrEquivalentLovQuery,
 } = orgChartOfAccountsLovApi;
 export {orgChartOfAccountsLovApi};
