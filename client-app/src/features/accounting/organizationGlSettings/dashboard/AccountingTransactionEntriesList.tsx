@@ -16,7 +16,7 @@ import {
     RootState,
     useAppDispatch,
     useAppSelector,
-    useFetchAcctTransEntriesQuery, useFetchAcctTransQuery,
+    useFetchAcctTransEntriesQuery
 } from "../../../../app/store/configureStore";
 import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
 import {useLocation} from "react-router-dom";

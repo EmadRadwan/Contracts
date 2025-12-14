@@ -47,6 +47,33 @@ const paymentsApi = createApi({
                     };
                 },
             }),
+            fetchPaymentsWithDueStatus: builder.query<ListResponse<PaymentWithDueStatus>, PaymentQueryArgs>({
+                providesTags: ['Payments'],
+
+                query: (queryArgs) => {
+                    // REFACTOR: Removed paymentType parameter handling
+                    // The new endpoint returns both incoming and outgoing payments by default,
+                    // so we no longer append &paymentType=... to the URL.
+                    // This simplifies the query string and avoids sending an unnecessary parameter.
+                    const baseUrl = `/odata/paymentRecordsWithDueStatus?count=true&${toODataString(queryArgs)}`;
+
+                    return {
+                        url: baseUrl,
+                        method: 'GET',
+                    };
+                },
+
+                // REFACTOR: Updated transformResponse to work with the new DTO type
+                // The response shape remains the same (OData array + count header),
+                // but we type the returned data as PaymentWithDueStatus to reflect the new DueStatusArabic property.
+                transformResponse: (response: any, meta, arg) => {
+                    const { totalCount } = JSON.parse(meta!.response!.headers.get('count')!);
+                    return {
+                        data: response,
+                        total: totalCount,
+                    };
+                },
+            }),
             addSalesOrderPayments: builder.mutation({
                 invalidatesTags: ["Payments"],
                 query: (payments) => {
@@ -253,6 +280,7 @@ export const {
     useFetchPaymentApplicationsForPaymentQuery,
     useCalculatePaymentTotalsMutation,
     useRemovePaymentApplicationMutation,
-    useCreatePaymentApplicationMutation, useLazyFetchDailyPaymentsLazyQuery,
+    useCreatePaymentApplicationMutation,
+    useLazyFetchDailyPaymentsLazyQuery, useFetchPaymentsWithDueStatusQuery
 } = paymentsApi;
 export {paymentsApi};
