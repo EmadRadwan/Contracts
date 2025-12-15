@@ -32,7 +32,6 @@ public class PaymentRecord
     public string CurrencyUomId { get; set; }
     public string OrganizationPartyId { get; set; }
     public string FinAccountTransId { get; set; }
-    public string DueStatusArabic { get; set; } = string.Empty;
     public string? OrderId { get; set; }
     public bool IsDisbursement { get; set; }
     public string? ChequeNumber { get; set; }
@@ -42,4 +41,5 @@ public class PaymentRecord
     public string? ProjectName { get; set; }
     public string? CostCenterId { get; set; }
     public string? CostCenterDescription { get; set; }
+    public int DaysUntilDue { get; set; }
 }

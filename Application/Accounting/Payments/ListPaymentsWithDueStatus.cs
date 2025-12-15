@@ -1,6 +1,7 @@
 using Application.Order.Orders;
 using MediatR;
 using Microsoft.AspNetCore.OData.Query;
+using Microsoft.EntityFrameworkCore;
 using Persistence;
 
 namespace Application.Accounting.Payments;
@@ -120,24 +121,7 @@ public class ListPaymentsWithDueStatus
                     CostCenterId = pyt.CostCenterId,
                     CostCenterDescription = cc != null ? cc.Description : null,
 
-                    // REFACTOR: New column – Arabic due status based on EffectiveDate
-                    // Calculates days until due date and assigns appropriate Arabic phrase.
-                    // Distinguishes between incoming (receipt) and outgoing (disbursement) using IsDisbursement.
-                    DueStatusArabic = (DateTime)pyt.EffectiveDate < Today
-                        ? (ptt.ParentTypeId == "DISBURSEMENT" ? "دفعة متأخرة" : "مستحق متأخر")
-                        : (DateTime)pyt.EffectiveDate == Today
-                            ? (ptt.ParentTypeId == "DISBURSEMENT" ? "دفعة مستحقة اليوم" : "مستحق اليوم")
-                            : (DateTime)pyt.EffectiveDate == Today.AddDays(1)
-                                ? (ptt.ParentTypeId == "DISBURSEMENT" ? "دفعة مستحقة غداً" : "مستحق غداً")
-                                : (DateTime)pyt.EffectiveDate <= Today.AddDays(7)
-                                    ? (ptt.ParentTypeId == "DISBURSEMENT"
-                                        ? "دفعة مستحقة خلال أسبوع"
-                                        : "مستحق خلال أسبوع")
-                                    : (DateTime)pyt.EffectiveDate <= Today.AddDays(30)
-                                        ? (ptt.ParentTypeId == "DISBURSEMENT"
-                                            ? "دفعة مستحقة خلال شهر"
-                                            : "مستحق خلال شهر")
-                                        : (ptt.ParentTypeId == "DISBURSEMENT" ? "دفعة مستحقة لاحقاً" : "مستحق لاحقاً")
+                    DaysUntilDue = EF.Functions.DateDiffDay(Today, (DateTime)pyt.EffectiveDate), // Positive = future, 0 = today, negative = overdue
                 }
             ).AsQueryable();
 

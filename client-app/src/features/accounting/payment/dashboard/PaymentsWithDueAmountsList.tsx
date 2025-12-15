@@ -1,7 +1,14 @@
 import { RootState, useAppDispatch, useAppSelector } from "../../../../app/store/configureStore"; // REFACTOR: Updated import to use the new RTK Query hook for the combined payments endpoint
 import React, { useEffect, useState } from "react";
 import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
-import { Grid as KendoGrid, GRID_COL_INDEX_ATTRIBUTE, GridColumn as Column, GridDataStateChangeEvent, GridToolbar } from "@progress/kendo-react-grid";
+import {
+    Grid as KendoGrid,
+    GRID_COL_INDEX_ATTRIBUTE,
+    GridColumn as Column,
+    GridColumnMenuFilter,
+    GridDataStateChangeEvent,
+    GridToolbar
+} from "@progress/kendo-react-grid";
 import { DataResult, State } from "@progress/kendo-data-query";
 import Button from "@mui/material/Button";
 import { Grid, Paper } from "@mui/material";
@@ -14,7 +21,6 @@ import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper
 import { useLocation, useNavigate } from "react-router";
 import { setSelectedPayment } from "../../slice/accountingSharedUiSlice";
 import { useSelector } from "react-redux";
-import { PaymentsDailyExcel } from "../report/PaymentsDailyExcel";
 import {useFetchPaymentsWithDueStatusQuery} from "../../../../app/store/apis"; // Note: You may need to update or create a version of this report that handles both directions
 
 // REFACTOR: Removed paymentType prop – this component now shows both incoming and outgoing payments with due status
@@ -102,18 +108,53 @@ export default function PaymentsWithDueAmountsList() {
         );
     };
 
-    // REFACTOR: Removed paymentType-specific new button logic
-    // For a combined list, you may want a separate selector or modal to choose direction when creating new
-    // Here we default to incoming (1) – adjust based on your business needs
-    const handleNewPayment = () => {
-        dispatch(setPaymentType(1)); // Default to incoming; consider adding a chooser if needed
-        dispatch(setSelectedPayment(undefined));
-        dispatch(setFormEditMode(1)); // new
-    };
-
+    
     if (formEditMode > 0) {
         return <PaymentForm editMode={formEditMode} cancelEdit={() => dispatch(resetForm())} />;
     }
+
+    const getDueStatusArabic = (daysUntilDue: number, isDisbursement: boolean): string => {
+        const type = isDisbursement ? "دفعة" : "مستحق";
+        const typePaid = isDisbursement ? "دفعة مستحقة" : "مستحق";
+
+        if (daysUntilDue < 0) {
+            const daysOverdue = Math.abs(daysUntilDue);
+            if (daysOverdue <= 30) {
+                return `${type} متأخرة منذ ${daysOverdue} يوم`;
+            }
+            return `${type} متأخرة جداً`;
+        }
+
+        if (daysUntilDue === 0) return `${typePaid} اليوم`;
+        if (daysUntilDue === 1) return `${typePaid} غداً`;
+        if (daysUntilDue <= 3) return `${typePaid} بعد ${daysUntilDue} أيام`;
+        if (daysUntilDue <= 7) return `${typePaid} هذا الأسبوع`;
+        if (daysUntilDue <= 30) return `${typePaid} خلال الشهر`;
+        if (daysUntilDue <= 90) return `${typePaid} خلال 3 أشهر`;
+
+        return `${typePaid} لاحقاً`;
+    };
+
+// Custom cell for Due Status
+    const DueStatusCell = (props: any) => {
+        const { daysUntilDue, isDisbursement } = props.dataItem;
+        const status = getDueStatusArabic(daysUntilDue ?? 0, isDisbursement ?? false);
+
+        return (
+            <td style={{ ...props.style, textAlign: "center" }}>
+      <span style={{
+          padding: "4px 8px",
+          borderRadius: "4px",
+          backgroundColor: daysUntilDue < 0 ? "#ffebee" : daysUntilDue <= 7 ? "#fff3e0" : "#e8f5e8",
+          color: daysUntilDue < 0 ? "#c62828" : daysUntilDue <= 7 ? "#ef6c00" : "#2e7d32",
+          fontWeight: "bold"
+      }}>
+        {status}
+      </span>
+            </td>
+        );
+    };
+    
 
     return (
         <>
@@ -166,17 +207,12 @@ export default function PaymentsWithDueAmountsList() {
                                     width={150}
                                     format="{0:dd/MM/yyyy}"
                                 />
-                                {/* REFACTOR: New column for Arabic due status – placed prominently for quick visibility */}
                                 <Column
-                                    field="dueStatusArabic"
+                                    field="daysUntilDue"
                                     title={getTranslatedLabel(`${localizationKey}.dueStatus`, "Due Status")}
-                                    width={200}
-                                    // Optional: style overdue items in red
-                                    cell={(props) => (
-                                        <td style={{ color: props.dataItem.dueStatusArabic.includes("متأخر") ? "red" : "inherit" }}>
-                                            {props.dataItem.dueStatusArabic}
-                                        </td>
-                                    )}
+                                    width={220}
+                                    cell={DueStatusCell} 
+                                    filter={"numeric"}
                                 />
                                 <Column
                                     field="statusDescription"
