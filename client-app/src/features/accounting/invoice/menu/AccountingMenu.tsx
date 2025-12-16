@@ -52,7 +52,7 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
         color: isSelected ? theme.palette.primary.main : 'inherit',
         textDecoration: "none",
         typography: "h6",
-        "&:hover": { color: "grey.500" },
+        "&:hover": { color: "grey.500", borderRadius: "3rem" },
         fontWeight: isSelected ? "bold" : "normal",
         display: 'flex',
         alignItems: 'center',
