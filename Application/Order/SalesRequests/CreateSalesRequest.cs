@@ -45,6 +45,7 @@ public class CreateSalesRequest
 
         public string ApartmentStatusId { get; set; } = string.Empty;
         public string ApartmentStatusDescription { get; set; } = string.Empty;
+        public string? ApartmentReservedBySalesRequestId { get; set; }
 
         // Pricing & Payment
         public decimal TotalPrice { get; set; }
@@ -80,6 +81,7 @@ public class CreateSalesRequest
         public decimal ApartmentPricePerM2 { get; set; }
         public string ApartmentStatusId { get; set; } = string.Empty;
         public string ApartmentStatusDescription { get; set; } = string.Empty;
+        public string ReservedBySalesRequestId { get; set; } = string.Empty;
     }
 
     // -----------------------------------------------------------------
@@ -160,6 +162,7 @@ public class CreateSalesRequest
             // REFACTOR: Change status to APARTMENT_RESERVED.
             //           Improves domain consistency: apartment becomes reserved the moment the request is created.
             apartment.ApartmentStatusId = ApartmentReservedStatusId;
+            apartment.ReservedBySalesRequestId = salesRequestId;
 
 
             // -----------------------------------------------------------------
@@ -239,11 +242,11 @@ public class CreateSalesRequest
                 FloorNumber = apartmentLov.FloorNumber,
                 ApartmentSpaceM2 = apartmentLov.ApartmentSpaceM2,
                 GardenSpaceM2 = apartmentLov.GardenSpaceM2,
-                GardenPricePerM2 = apartmentLov.GardenPricePerM2 ?? dto.GardenPricePerM2,
-                ApartmentPricePerM2 = apartmentLov.ApartmentPricePerM2,
                 ApartmentStatusId = apartmentLov.ApartmentStatusId,
                 ApartmentStatusDescription = apartmentLov.ApartmentStatusDescription,
 
+                ApartmentPricePerM2 = (decimal)dto.ApartmentPricePerM2,  // ← was apartmentLov.ApartmentPricePerM2
+                GardenPricePerM2 = dto.GardenPricePerM2,        // ← was apartmentLov.GardenPricePerM2 ?? dto...
 
                 // Pricing & Payment
                 TotalPrice = (decimal)dto.TotalPrice,
@@ -253,6 +256,8 @@ public class CreateSalesRequest
                 DateOfFirstInstallment = dto.DateOfFirstInstallment,
                 MonthsBetweenInstallments = (int)dto.MonthsBetweenInstallments,
                 MaintenanceDeposit = dto.MaintenanceDeposit,
+                ApartmentReservedBySalesRequestId = apartmentLov.ReservedBySalesRequestId,
+
 
                 // Metadata
                 SaleDate = dto.SaleDate!.Value,
@@ -319,7 +324,8 @@ public class CreateSalesRequest
                     p.GardenSpaceM2,
                     p.GardenPricePerM2,
                     p.ApartmentPricePerM2,
-                    p.ApartmentStatusId
+                    p.ApartmentStatusId,
+                    p.ReservedBySalesRequestId
                 })
                 .FirstOrDefaultAsync(ct);
 
@@ -352,7 +358,8 @@ public class CreateSalesRequest
                 GardenPricePerM2 = raw.GardenPricePerM2,
                 ApartmentPricePerM2 = raw.ApartmentPricePerM2 ?? 0m,
                 ApartmentStatusId = raw.ApartmentStatusId ?? string.Empty,
-                ApartmentStatusDescription = statusDesc
+                ApartmentStatusDescription = statusDesc,
+                ReservedBySalesRequestId = raw.ReservedBySalesRequestId
             };
         }
     }

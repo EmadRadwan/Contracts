@@ -13,7 +13,6 @@ import ReceiptIcon from '@mui/icons-material/Receipt';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import PaidIcon from '@mui/icons-material/Paid';
 import BalanceIcon from '@mui/icons-material/Balance';
-import PriceCheckIcon from '@mui/icons-material/PriceCheck';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import withFloatingLabelFlexible from '../../../../app/components/FloatingLabel';
 import { useTranslationHelper } from '../../../../app/hooks/useTranslationHelper';
@@ -72,12 +71,6 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
         }
     };
 
-    // REFACTOR: Grouped related menu items into logical categories to reduce top-level items and save horizontal space.
-    //    - Orders: Sales + Purchase
-    //    - Payments: Incoming + Outgoing (preserves special NavLinkWithReset behavior)
-    //    - GL Settings: Global + Organization
-    //    - Transactions: All transaction-related items
-    // This reduces the number of top-level horizontal items significantly while keeping submenus compact.
     const menuGroups = [
         {
             groupKey: "orders",

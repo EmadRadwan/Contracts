@@ -1,53 +1,218 @@
-// REFACTOR: Import required components for column menu filtering
-// This replaces the default filter row with a more controlled menu-based approach,
-// preventing immediate filter application and invalid queries when no value is entered.
-import {
-    Grid,
-    GridColumn as Column,
-    // ... your other imports
-    GridColumnMenuFilter,      // Built-in filter component for the menu
-    GridColumnMenuCheckboxFilter, // Optional: for distinct values checkbox list if needed
-} from "@progress/kendo-react-grid";
+import { RootState, useAppDispatch, useAppSelector } from "../../../../app/store/configureStore";
+import React, { useEffect, useState } from "react";
+import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
+import { Grid as KendoGrid, GRID_COL_INDEX_ATTRIBUTE, GridColumn as Column, GridDataStateChangeEvent, GridToolbar } from "@progress/kendo-react-grid";
+import { DataResult, State } from "@progress/kendo-data-query";
+import Button from "@mui/material/Button";
+import { Grid, Paper } from "@mui/material";
+import LoadingComponent from "../../../../app/layout/LoadingComponent";
+import AccountingMenu from "../../invoice/menu/AccountingMenu";
+import { handleDatesArray } from "../../../../app/util/utils";
+import PaymentForm from "../form/PaymentForm";
+import { resetForm, setFormEditMode, setPaymentType } from "../slice/paymentsUiSlice";
+import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
+import { useLocation, useNavigate } from "react-router";
+import { setSelectedPayment } from "../../slice/accountingSharedUiSlice";
+import { useSelector } from "react-redux";
+import { useFetchPaymentsWithDueStatusQuery } from "../../../../app/store/apis";
 
-// REFACTOR: Add a reusable column menu component
-// This ensures consistent filtering behavior across columns and avoids immediate triggers.
-const DefaultColumnMenu = (props: any) => {
+export default function PaymentsWithDueAmountsList() {
+    const { getTranslatedLabel } = useTranslationHelper();
+    const localizationKey = "accounting.payments.list";
+    const location = useLocation();
+    const navigate = useNavigate();
+    const dispatch = useAppDispatch();
+    const companyName = useSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
+    const [payments, setPayments] = React.useState<DataResult>({ data: [], total: 0 });
+    const [dataState, setDataState] = React.useState<State>({
+        sort: [{ field: "effectiveDate", dir: "desc" }],
+        skip: 0,
+        take: 20,
+    });
+
+    const formEditMode = useAppSelector((s) => s.paymentsUi.formEditMode);
+
+    useEffect(() => {
+        if (location.state?.resetPaymentForm) {
+            dispatch(resetForm());
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location.state, dispatch, navigate]);
+
+    const dataStateChange = (e: GridDataStateChangeEvent) => {
+        setDataState(e.dataState);
+    };
+
+    const { data, error, isFetching, refetch } = useFetchPaymentsWithDueStatusQuery(dataState);
+
+    React.useEffect(() => {
+        if (data) {
+            const adjustedData = handleDatesArray(data.data);
+            setPayments({ data: adjustedData, total: data.total });
+        }
+    }, [data]);
+
+    const handleSelectPayment = (paymentId: string) => {
+        const pay = payments.data.find((p: any) => p.paymentId === paymentId);
+        if (!pay) return;
+        dispatch(setSelectedPayment(pay));
+        dispatch(setPaymentType(pay.isDisbursement ? 2 : 1));
+
+        const statusMap: Record<string, number> = {
+            "PMNT_NOT_PAID": 2,
+            "PMNT_RECEIVED": 3,
+            "PMNT_SENT": 4,
+            "PMNT_CONFIRMED": 5,
+            "PMNT_CANCELLED": 6,
+        };
+        const mode = statusMap[pay.statusId] ?? 2;
+        dispatch(setFormEditMode(mode));
+    };
+
+    const PaymentDescriptionCell = (props: any) => {
+        const field = props.field || "";
+        const value = props.dataItem[field];
+        const navigationAttributes = useTableKeyboardNavigation(props.id);
+        return (
+            <td
+                className={props.className}
+                style={{ ...props.style, color: "blue" }}
+                colSpan={props.colSpan}
+                role={"gridcell"}
+                aria-colindex={props.ariaColumnIndex}
+                aria-selected={props.isSelected}
+                {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
+                {...navigationAttributes}
+            >
+                <Button onClick={() => handleSelectPayment(props.dataItem.paymentId)}>
+                    {props.dataItem.paymentId}
+                </Button>
+            </td>
+        );
+    };
+
+    if (formEditMode > 0) {
+        return <PaymentForm editMode={formEditMode} cancelEdit={() => dispatch(resetForm())} />;
+    }
+
+    // REFACTOR: Updated getDueStatusArabic to consider payment statusId
+    // If status is not PMNT_NOT_PAID, return the actual status description
+    // Otherwise keep the original days-due Arabic phrasing
+    const getDueStatusArabic = (dataItem: any): string => {
+        const { statusId, statusDescription, daysUntilDue, isDisbursement } = dataItem;
+
+        if (statusId !== "PMNT_NOT_PAID") {
+            return statusDescription || "";
+        }
+
+        // Existing logic for unpaid payments only
+        const type = isDisbursement ? "دفعة" : "مستحق";
+        const typePaid = isDisbursement ? "دفعة مستحقة" : "مستحق";
+
+        if (daysUntilDue < 0) {
+            const daysOverdue = Math.abs(daysUntilDue);
+            if (daysOverdue <= 30) {
+                return `${type} متأخرة منذ ${daysOverdue} يوم`;
+            }
+            return `${type} متأخرة جداً`;
+        }
+        if (daysUntilDue === 0) return `${typePaid} اليوم`;
+        if (daysUntilDue === 1) return `${typePaid} غداً`;
+        if (daysUntilDue <= 3) return `${typePaid} بعد ${daysUntilDue} أيام`;
+        if (daysUntilDue <= 7) return `${typePaid} هذا الأسبوع`;
+        if (daysUntilDue <= 30) return `${typePaid} خلال الشهر`;
+        if (daysUntilDue <= 90) return `${typePaid} خلال 3 أشهر`;
+        return `${typePaid} لاحقاً`;
+    };
+
+    // REFACTOR: DueStatusCell now uses the updated function and applies color styling only for unpaid payments
+    // This prevents misleading colors/backgrounds on paid, cancelled, etc. rows
+    const DueStatusCell = (props: any) => {
+        const dataItem = props.dataItem;
+        const displayText = getDueStatusArabic(dataItem);
+        const isUnpaid = dataItem.statusId === "PMNT_NOT_PAID";
+        const daysUntilDue = dataItem.daysUntilDue ?? 0;
+
+        const backgroundColor = isUnpaid
+            ? daysUntilDue < 0
+                ? "#ffebee"
+                : daysUntilDue <= 7
+                    ? "#fff3e0"
+                    : "#e8f5e8"
+            : "transparent";
+
+        const color = isUnpaid
+            ? daysUntilDue < 0
+                ? "#c62828"
+                : daysUntilDue <= 7
+                    ? "#ef6c00"
+                    : "#2e7d32"
+            : "inherit";
+
+        return (
+            <td style={{ ...props.style, textAlign: "center" }}>
+        <span
+            style={{
+                padding: "4px 8px",
+                borderRadius: "4px",
+                backgroundColor,
+                color,
+                fontWeight: isUnpaid ? "bold" : "normal",
+            }}
+        >
+          {displayText}
+        </span>
+            </td>
+        );
+    };
+
     return (
-        <div>
-            <GridColumnMenuFilter {...props} expanded={true} />
-        </div>
+        <>
+            <AccountingMenu selectedMenuItem={"/payments"} />
+            <Paper elevation={5} className={`div-container-withBorderCurved`}>
+                <Grid container columnSpacing={1} alignItems="center">
+                    <Grid item xs={12}>
+                        <div className="div-container">
+                            <KendoGrid
+                                style={{ height: "65vh", flex: 1 }}
+                                data={payments || { data: [], total: 0 }}
+                                resizable={true}
+                                filterable={true}
+                                sortable={true}
+                                pageable={true}
+                                {...dataState}
+                                onDataStateChange={dataStateChange}
+                            >
+                                <Column
+                                    field="paymentId"
+                                    title={getTranslatedLabel(`${localizationKey}.paymentId`, "Payment Number")}
+                                    cell={PaymentDescriptionCell}
+                                    width={150}
+                                />
+                                <Column field="paymentTypeDescription" title={getTranslatedLabel(`${localizationKey}.paymentType`, "Payment Type")} width={150} />
+                                <Column field="orderId" title={getTranslatedLabel(`${localizationKey}.orderId`, "Order ID")} width={150} />
+                                <Column field="certificateNumber" title={getTranslatedLabel(`${localizationKey}.certificateNumber`, "Certificate Number")} width={150} />
+                                <Column field="partyIdFromName" title={getTranslatedLabel(`${localizationKey}.from`, "From Party")} width={180} />
+                                <Column field="partyIdToName" title={getTranslatedLabel(`${localizationKey}.to`, "To Party")} width={180} />
+                                <Column field="effectiveDate" title={getTranslatedLabel(`${localizationKey}.date`, "Payment Date")} width={150} format="{0:dd/MM/yyyy}" />
+                                <Column
+                                    field="daysUntilDue"
+                                    title={getTranslatedLabel(`${localizationKey}.dueStatus`, "Due Status")}
+                                    width={220}
+                                    cell={DueStatusCell}
+                                    filter={"numeric"}
+                                />
+                                <Column field="statusDescription" title={getTranslatedLabel(`${localizationKey}.status`, "Status")} width={140} />
+                                <Column field="amount" title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")} width={130} />
+                                <Column field="projectName" title={getTranslatedLabel(`${localizationKey}.projectName`, "Project")} width={180} />
+                                <Column field="costCenterDescription" title={getTranslatedLabel(`${localizationKey}.costCenterDescription`, "Cost Center")} width={180} />
+                                <Column field="comments" title={getTranslatedLabel(`${localizationKey}.comments`, "Comments")} width={200} />
+                            </KendoGrid>
+                            {isFetching && <LoadingComponent message={getTranslatedLabel(`${localizationKey}.loading`, "Loading Payments...")} />}
+                        </div>
+                    </Grid>
+                </Grid>
+            </Paper>
+        </>
     );
-};
-
-// Inside your KendoGrid component:
-<KendoGrid
-    style={{ height: "65vh", flex: 1 }}
-    data={payments || { data: [], total: 0 }}
-    resizable={true}
-    filterable={true}              // Keep this to enable filtering
-    sortable={true}
-    pageable={true}
-    {...dataState}
-    onDataStateChange={dataStateChange}
->
-    {/* REFACTOR: Apply columnMenu to each column for menu-based filtering */}
-    {/* This changes filtering to popup menu with Apply button, fixing the 'undefined' error */}
-    <Column
-        field="paymentId"
-        title={getTranslatedLabel(`${localizationKey}.paymentId`, "Payment Number")}
-        cell={PaymentDescriptionCell}
-        width={150}
-        columnMenu={DefaultColumnMenu}   // Menu mode
-    />
-    {/* Repeat columnMenu={DefaultColumnMenu} for other columns as needed */}
-    {/* Especially important for daysUntilDue */}
-    <Column
-        field="daysUntilDue"
-        title={getTranslatedLabel(`${localizationKey}.dueStatus`, "Due Status")}
-        width={220}
-        cell={DueStatusCell}
-        filter="numeric"                 // Keep numeric type
-        columnMenu={DefaultColumnMenu}   // Critical: uses menu with explicit Apply
-    />
-    {/* ... other columns with columnMenu={DefaultColumnMenu} */}
-</KendoGrid>
+}

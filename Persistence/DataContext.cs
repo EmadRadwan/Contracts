@@ -36863,6 +36863,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasMaxLength(36)
                     .IsUnicode(false)
                     .HasColumnName("PRODUCT_ID");
+                    
+                entity.Property(e => e.ReservedBySalesRequestId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("RESERVED_BY_SALES_REQUEST_ID");
 
                 entity.Property(e => e.AmountUomTypeId)
                     .HasMaxLength(36)

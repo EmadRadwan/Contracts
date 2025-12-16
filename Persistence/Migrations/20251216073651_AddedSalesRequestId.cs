@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class AddedEmpToSalesRequest : Migration
+    public partial class AddedSalesRequestId : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -27211,6 +27211,8 @@ namespace Persistence.Migrations
                     APARTMENT_STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     BUILDING_NUMBER = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RESERVED_BY_SALES_REQUEST_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
                     LAST_UPDATED_TX_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),

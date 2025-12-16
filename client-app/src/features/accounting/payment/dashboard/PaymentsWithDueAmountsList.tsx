@@ -113,7 +113,14 @@ export default function PaymentsWithDueAmountsList() {
         return <PaymentForm editMode={formEditMode} cancelEdit={() => dispatch(resetForm())} />;
     }
 
-    const getDueStatusArabic = (daysUntilDue: number, isDisbursement: boolean): string => {
+    const getDueStatusArabic = (dataItem: any): string => {
+        const { statusId, statusDescription, daysUntilDue, isDisbursement } = dataItem;
+
+        if (statusId !== "PMNT_NOT_PAID") {
+            return statusDescription || "";
+        }
+
+        // Existing logic for unpaid payments only
         const type = isDisbursement ? "دفعة" : "مستحق";
         const typePaid = isDisbursement ? "دفعة مستحقة" : "مستحق";
 
@@ -124,37 +131,57 @@ export default function PaymentsWithDueAmountsList() {
             }
             return `${type} متأخرة جداً`;
         }
-
         if (daysUntilDue === 0) return `${typePaid} اليوم`;
         if (daysUntilDue === 1) return `${typePaid} غداً`;
         if (daysUntilDue <= 3) return `${typePaid} بعد ${daysUntilDue} أيام`;
         if (daysUntilDue <= 7) return `${typePaid} هذا الأسبوع`;
         if (daysUntilDue <= 30) return `${typePaid} خلال الشهر`;
         if (daysUntilDue <= 90) return `${typePaid} خلال 3 أشهر`;
-
         return `${typePaid} لاحقاً`;
     };
 
+
 // Custom cell for Due Status
     const DueStatusCell = (props: any) => {
-        const { daysUntilDue, isDisbursement } = props.dataItem;
-        const status = getDueStatusArabic(daysUntilDue ?? 0, isDisbursement ?? false);
+        const dataItem = props.dataItem;
+        const displayText = getDueStatusArabic(dataItem);
+        const isUnpaid = dataItem.statusId === "PMNT_NOT_PAID";
+        const daysUntilDue = dataItem.daysUntilDue ?? 0;
+
+        const backgroundColor = isUnpaid
+            ? daysUntilDue < 0
+                ? "#ffebee"
+                : daysUntilDue <= 7
+                    ? "#fff3e0"
+                    : "#e8f5e8"
+            : "transparent";
+
+        const color = isUnpaid
+            ? daysUntilDue < 0
+                ? "#c62828"
+                : daysUntilDue <= 7
+                    ? "#ef6c00"
+                    : "#2e7d32"
+            : "inherit";
 
         return (
             <td style={{ ...props.style, textAlign: "center" }}>
-      <span style={{
-          padding: "4px 8px",
-          borderRadius: "4px",
-          backgroundColor: daysUntilDue < 0 ? "#ffebee" : daysUntilDue <= 7 ? "#fff3e0" : "#e8f5e8",
-          color: daysUntilDue < 0 ? "#c62828" : daysUntilDue <= 7 ? "#ef6c00" : "#2e7d32",
-          fontWeight: "bold"
-      }}>
-        {status}
-      </span>
+        <span
+            style={{
+                padding: "4px 8px",
+                borderRadius: "4px",
+                backgroundColor,
+                color,
+                fontWeight: isUnpaid ? "bold" : "normal",
+            }}
+        >
+          {displayText}
+        </span>
             </td>
         );
     };
-    
+
+
 
     return (
         <>

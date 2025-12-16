@@ -33880,6 +33880,12 @@ namespace Persistence.Migrations
                         .HasColumnType("decimal(18, 6)")
                         .HasColumnName("RESERV_NTH_P_P_PERC");
 
+                    b.Property<string>("ReservedBySalesRequestId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("RESERVED_BY_SALES_REQUEST_ID");
+
                     b.Property<string>("Returnable")
                         .HasMaxLength(1)
                         .IsUnicode(false)

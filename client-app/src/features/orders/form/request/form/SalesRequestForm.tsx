@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-import {Field, Form, FormElement, FormRenderProps} from "@progress/kendo-react-form";
+import {Field, Form, FormElement, FormRenderProps, KeyValue} from "@progress/kendo-react-form";
 
 import {Box, Menu, MenuItem, Paper, Typography} from "@mui/material";
 import {toast} from "react-toastify";
@@ -23,9 +23,8 @@ import {useAppDispatch, useAppSelector} from "../../../../../app/store/configure
 import {FormSimpleComboBoxVirtualApartment} from "../../../../../app/common/form/FormSimpleComboBoxVirtualApartment";
 import SalesRequestMenu from "../menu/SalesRequestMenu";
 import {toNumber} from "lodash";
-import {KeyValue} from "@progress/kendo-react-form";
 import PaymentPlanModal from "../dashboard/PaymentPlanModal";
-import {RibbonContainer, Ribbon} from "react-ribbons";
+import {Ribbon, RibbonContainer} from "react-ribbons";
 import {FormComboBoxVirtualPartyEmployee} from "../../../../../app/common/form/FormComboBoxVirtualPartyEmployee";
 import {FormComboBoxVirtualCustomer} from "../../../../../app/common/form/FormComboBoxVirtualCustomer";
 import DefaultPercentagesModal from "../dashboard/DefaultPercentagesModal";
@@ -48,8 +47,8 @@ const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = ({
                                                                              disabled,
                                                                              onSalesRequestUpdated,
                                                                          }) => {
-    const { getTranslatedLabel } = useTranslationHelper();
-    const [approveSR, { isLoading }] = useApproveSalesRequestMutation();
+    const {getTranslatedLabel} = useTranslationHelper();
+    const [approveSR, {isLoading}] = useApproveSalesRequestMutation();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
 
@@ -88,7 +87,7 @@ const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = ({
                 color="primary"
                 onClick={handleClick}
                 disabled={disabled || isLoading || !salesRequestId}
-                sx={{ mt: 2, mr: 2 }}
+                sx={{mt: 2, mr: 2}}
             >
                 {getTranslatedLabel('salesRequest.actions', 'Actions')}
             </Button>
@@ -97,8 +96,8 @@ const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = ({
                 anchorEl={anchorEl}
                 open={open}
                 onClose={handleClose}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}
+                transformOrigin={{vertical: 'top', horizontal: 'right'}}
             >
                 <MenuItem onClick={handleApprove} disabled={isApproveDisabled || isLoading}>
                     {getTranslatedLabel('salesRequest.approve', 'Approve Sales Request')}
@@ -137,11 +136,8 @@ function SalesRequestForm({
     const formRef = useRef<FormRenderProps | null>(null);
     const [buttonFlag, setButtonFlag] = useState(false);
     const [selectedApartment, setSelectedApartment] = useState<SalesRequest | null>(null);
-    const [userEditedAdvance, setUserEditedAdvance] = useState(false);
-    const [userEditedMaintenance, setUserEditedMaintenance] = useState(false);
-    const [userEditedDiscount, setUserEditedDiscount] = useState(false);
-    const [defaultAdvancePercent, setDefaultAdvancePercent] = useState(0.10);        
-    const [defaultMaintenancePercent, setDefaultMaintenancePercent] = useState(0.08); 
+    const [defaultAdvancePercent, setDefaultAdvancePercent] = useState(0.10);
+    const [defaultMaintenancePercent, setDefaultMaintenancePercent] = useState(0.08);
     const [showDefaultsModal, setShowDefaultsModal] = useState(false);
     const {language} = useAppSelector((state) => state.localization);
     // -----------------------------------------------------------------
@@ -150,32 +146,31 @@ function SalesRequestForm({
     const partyInputRef = useRef<HTMLInputElement>(null);
     const canViewPaymentPlan = editMode === 2 || editMode === 3;
 
+    const normalizeNumeric = (value: any): number | null => {
+        if (value === null || value === undefined || value === "") return null;
+        const num = Number(value);
+        return isNaN(num) ? null : num;
+    };
+    
     const autoSetDerivedFields = useCallback((
         formRenderProps: FormRenderProps,
         finalTotal: number | null
     ) => {
-        if (finalTotal !== null) {
-            if (!userEditedAdvance) {
-                formRenderProps.onChange("advancePayment", {
-                    value: finalTotal * defaultAdvancePercent
-                });
-            }
-            if (!userEditedMaintenance) {
-                formRenderProps.onChange("maintenanceDeposit", {
-                    value: finalTotal * defaultMaintenancePercent
-                });
-            }
-        } else {
-            if (!userEditedAdvance) formRenderProps.onChange("advancePayment", { value: null });
-            if (!userEditedMaintenance) formRenderProps.onChange("maintenanceDeposit", { value: null });
+        if (finalTotal === null) {
+            formRenderProps.onChange("advancePayment", { value: null });
+            formRenderProps.onChange("maintenanceDeposit", { value: null });
+            return;
         }
-    }, [
-        userEditedAdvance,
-        userEditedMaintenance,
-        defaultAdvancePercent,
-        defaultMaintenancePercent
-    ]);
-    
+
+        // Always apply defaults — overrides user changes
+        formRenderProps.onChange("advancePayment", {
+            value: finalTotal * defaultAdvancePercent
+        });
+        formRenderProps.onChange("maintenanceDeposit", {
+            value: finalTotal * defaultMaintenancePercent
+        });
+    }, [defaultAdvancePercent, defaultMaintenancePercent]);
+
     useEffect(() => {
         if (!formRef.current) return;
 
@@ -199,7 +194,7 @@ function SalesRequestForm({
             </Button>
         </Grid>
     );
-    
+
     const isoToDate = (iso: string | null | undefined): Date | null => {
         if (!iso) return null;
         const d = new Date(iso);
@@ -256,12 +251,13 @@ function SalesRequestForm({
                 apartmentType: sr.apartmentType ?? "",
                 projectName: sr.projectName ?? "",
                 floorNumber: sr.floorNumber ?? "",
-                apartmentSpaceM2: sr.apartmentSpaceM2 ?? null,
-                gardenSpaceM2: sr.gardenSpaceM2 ?? null,
-                gardenPricePerM2: sr.gardenPricePerM2 ?? null,
-                apartmentPricePerM2: sr.apartmentPricePerM2 ?? null,
+                apartmentSpaceM2: normalizeNumeric(sr.apartmentSpaceM2),
+                gardenSpaceM2: normalizeNumeric(sr.gardenSpaceM2),
+                gardenPricePerM2: normalizeNumeric(sr.gardenPricePerM2),
+                apartmentPricePerM2: normalizeNumeric(sr.apartmentPricePerM2),
                 apartmentStatusId: sr.apartmentStatusId ?? "",
                 apartmentStatusDescription: sr.apartmentStatusDescription ?? "",
+                reservedBySalesRequestId: sr.apartmentReservedBySalesRequestId ?? null,
             }
             : null;
 
@@ -294,14 +290,14 @@ function SalesRequestForm({
             apartmentStatusDescription: sr.apartmentStatusDescription ?? null,
 
             // ----- pricing -----------------------------------------------------
-            apartmentPricePerM2: sr.apartmentPricePerM2 ?? null,
-            gardenPricePerM2: sr.gardenPricePerM2 ?? null,
-            discount: sr.discount ?? null,
-            totalPrice: sr.totalPrice ?? null,
-            maintenanceDeposit: sr.maintenanceDeposit ?? null,
-
+            apartmentPricePerM2: normalizeNumeric(sr.apartmentPricePerM2),
+            gardenPricePerM2: normalizeNumeric(sr.gardenPricePerM2),
+            discount: normalizeNumeric(sr.discount),
+            totalPrice: normalizeNumeric(sr.totalPrice),
+            advancePayment: normalizeNumeric(sr.advancePayment),
+            maintenanceDeposit: normalizeNumeric(sr.maintenanceDeposit),
+            
             // ----- payment plan ------------------------------------------------
-            advancePayment: sr.advancePayment ?? null,
             numberOfInstallments: sr.numberOfInstallments ?? null,
             monthsBetweenInstallments: sr.monthsBetweenInstallments ?? null,
 
@@ -316,7 +312,6 @@ function SalesRequestForm({
         };
     }, [editMode, salesRequest]);
 
-    console.log('formInitialValues', formInitialValues);
 
 
     // -----------------------------------------------------------------
@@ -447,18 +442,13 @@ function SalesRequestForm({
     }, []);
 
 
-
     const handleProductChange = useCallback((
         formRenderProps: FormRenderProps,
         e: any
     ) => {
         const apartment = e.value as any;
         setSelectedApartment(apartment);
-
-        // Reset flags
-        setUserEditedAdvance(false);
-        setUserEditedDiscount(false);
-        setUserEditedMaintenance(false);
+        
 
         // Set prices
         formRenderProps.onChange("apartmentPricePerM2", {
@@ -470,7 +460,7 @@ function SalesRequestForm({
             value: isGroundFloor ? (apartment?.gardenPricePerM2 ?? null) : null,
         });
 
-        formRenderProps.onChange("discount", { value: null });
+        formRenderProps.onChange("discount", {value: null});
 
         // This will now work perfectly for both cases
         const baseTotal = calculateBaseTotal(
@@ -481,7 +471,7 @@ function SalesRequestForm({
         );
 
         const finalTotal = calculateFinalTotal(baseTotal, null);
-        formRenderProps.onChange("totalPrice", { value: finalTotal });
+        formRenderProps.onChange("totalPrice", {value: finalTotal});
         autoSetDerivedFields(formRenderProps, finalTotal);
     }, [calculateBaseTotal, calculateFinalTotal, autoSetDerivedFields]);
 
@@ -490,86 +480,113 @@ function SalesRequestForm({
         fieldName: "apartmentPricePerM2" | "gardenPricePerM2",
         value: number | null
     ) => {
-        formRenderProps.onChange(fieldName, { value });
+        formRenderProps.onChange(fieldName, {value});
 
-        const aptM2 = toNumber(selectedApartment?.apartmentSpaceM2);
+        const aptObj = formRenderProps.valueGetter("productId");
+        if (!aptObj) return;
+
+        const aptM2 = normalizeNumeric(aptObj.apartmentSpaceM2);
         const aptPrice = fieldName === "apartmentPricePerM2"
             ? value
-            : toNumber(formRenderProps.valueGetter("apartmentPricePerM2"));
+            : normalizeNumeric(formRenderProps.valueGetter("apartmentPricePerM2"));
 
-        const isGroundFloor = selectedApartment?.floorNumber === GROUND_FLOOR_ARABIC;
-        const gardenM2 = isGroundFloor ? toNumber(selectedApartment?.gardenSpaceM2) : 0;
+        const isGroundFloor = aptObj.floorNumber === GROUND_FLOOR_ARABIC;
+        const gardenM2 = isGroundFloor ? normalizeNumeric(aptObj.gardenSpaceM2) : 0;
         const gardenPrice = fieldName === "gardenPricePerM2" && isGroundFloor
             ? value
-            : toNumber(formRenderProps.valueGetter("gardenPricePerM2"));
+            : normalizeNumeric(formRenderProps.valueGetter("gardenPricePerM2"));
 
-        const discount = userEditedDiscount
-            ? toNumber(formRenderProps.valueGetter("discount"))
-            : null;
+        const discount = normalizeNumeric(formRenderProps.valueGetter("discount")) ?? 0;
 
         const baseTotal = calculateBaseTotal(aptM2, aptPrice, gardenM2, gardenPrice);
         const finalTotal = calculateFinalTotal(baseTotal, discount);
 
-        formRenderProps.onChange("totalPrice", { value: finalTotal });
+        formRenderProps.onChange("totalPrice", {value: finalTotal});
         autoSetDerivedFields(formRenderProps, finalTotal);
-    }, [selectedApartment, calculateBaseTotal, calculateFinalTotal, userEditedDiscount, autoSetDerivedFields]);
+    }, [calculateBaseTotal, calculateFinalTotal, autoSetDerivedFields]);
 
+    // REFACTOR: Use current productId from form instead of selectedApartment
     const handleDiscountChange = useCallback((
         formRenderProps: FormRenderProps,
         value: number | null
     ) => {
-        setUserEditedDiscount(true);
-        formRenderProps.onChange("discount", { value });
+        formRenderProps.onChange("discount", {value});
 
-        const isGroundFloor = selectedApartment?.floorNumber === GROUND_FLOOR_ARABIC;
+        const aptObj = formRenderProps.valueGetter("productId");
+        if (!aptObj) return;
+
+        const isGroundFloor = aptObj.floorNumber === GROUND_FLOOR_ARABIC;
+
         const baseTotal = calculateBaseTotal(
-            toNumber(selectedApartment?.apartmentSpaceM2),
-            toNumber(formRenderProps.valueGetter("apartmentPricePerM2")),
-            isGroundFloor ? toNumber(selectedApartment?.gardenSpaceM2) : 0,
-            isGroundFloor ? toNumber(formRenderProps.valueGetter("gardenPricePerM2")) : null
+            normalizeNumeric(aptObj.apartmentSpaceM2),
+            normalizeNumeric(formRenderProps.valueGetter("apartmentPricePerM2")),
+            isGroundFloor ? normalizeNumeric(aptObj.gardenSpaceM2) : 0,
+            isGroundFloor ? normalizeNumeric(formRenderProps.valueGetter("gardenPricePerM2")) : null
         );
 
         const finalTotal = calculateFinalTotal(baseTotal, value);
-        formRenderProps.onChange("totalPrice", { value: finalTotal });
+        formRenderProps.onChange("totalPrice", {value: finalTotal});
         autoSetDerivedFields(formRenderProps, finalTotal);
-    }, [selectedApartment, calculateBaseTotal, calculateFinalTotal, autoSetDerivedFields]);
-
+    }, [calculateBaseTotal, calculateFinalTotal, autoSetDerivedFields]);
+    
     const handleAdvanceChange = useCallback((
         formRenderProps: FormRenderProps,
         value: number | null
     ) => {
-        setUserEditedAdvance(true);
+        // Update the advance payment field directly
         formRenderProps.onChange("advancePayment", { value });
 
-        const isGroundFloor = selectedApartment?.floorNumber === GROUND_FLOOR_ARABIC;
+        // -----------------------------------------------------------------
+        // Special case: If user sets advance higher than current total,
+        // automatically increase totalPrice to match the advance (common UX in sales forms)
+        // -----------------------------------------------------------------
+        if (value == null) return;
+
+        const selectedApartmentObj = formRenderProps.valueGetter("productId");
+        if (!selectedApartmentObj) return;
+
+        const isGroundFloor = selectedApartmentObj.floorNumber === GROUND_FLOOR_ARABIC;
+
         const baseTotal = calculateBaseTotal(
-            toNumber(selectedApartment?.apartmentSpaceM2),
-            toNumber(formRenderProps.valueGetter("apartmentPricePerM2")),
-            isGroundFloor ? toNumber(selectedApartment?.gardenSpaceM2) : 0,
-            isGroundFloor ? toNumber(formRenderProps.valueGetter("gardenPricePerM2")) : null
+            normalizeNumeric(selectedApartmentObj.apartmentSpaceM2),
+            normalizeNumeric(formRenderProps.valueGetter("apartmentPricePerM2")),
+            isGroundFloor ? normalizeNumeric(selectedApartmentObj.gardenSpaceM2) : null,
+            isGroundFloor ? normalizeNumeric(formRenderProps.valueGetter("gardenPricePerM2")) : null
         );
 
-        const discount = userEditedDiscount ? toNumber(formRenderProps.valueGetter("discount")) : 0;
-        const currentTotal = calculateFinalTotal(baseTotal, discount);
+        if (baseTotal == null) return;
 
-        if (value != null && baseTotal != null && value > currentTotal) {
+        const discount = toNumber(formRenderProps.valueGetter("discount")) || 0;
+        const currentTotal = Math.max(0, baseTotal - discount);
+
+        if (value > currentTotal) {
             formRenderProps.onChange("totalPrice", { value });
         }
-    }, [selectedApartment, calculateBaseTotal, calculateFinalTotal, userEditedDiscount]);
+    }, [
+        calculateBaseTotal,
+    ]);
     
     const salesRequestValidator = (values: any): KeyValue<string> | undefined => {
         const t = getTranslatedLabel;                     // shortcut (defined later in render)
 
         const apt = values.productId;
+        const currentSalesRequestId = values.salesRequestId; // available in form values
+
         const aptStatusId = typeof apt === "object" ? apt?.apartmentStatusId : null;
 
+        console.log('aptStatusId', aptStatusId)
         if (aptStatusId && aptStatusId !== APARTMENT_AVAILABLE) {
-            return {
-                VALIDATION_SUMMARY: t(
-                    "salesRequest.form.validation.apartmentNotAvailable",
-                    "Cannot create a sales request: this apartment is already SOLD or RESERVED."
-                )
-            };
+            const reservedByThisRequest =
+                apt.reservedBySalesRequestId === currentSalesRequestId;
+
+            if (!reservedByThisRequest) {
+                return {
+                    VALIDATION_SUMMARY: t(
+                        "salesRequest.form.validation.apartmentNotAvailable",
+                        "Cannot proceed: this apartment is already SOLD or RESERVED by another sales request."
+                    )
+                };
+            }
         }
 
         const adv = Number(values.advancePayment ?? 0);
@@ -630,7 +647,7 @@ function SalesRequestForm({
             };
         }
     }
-    
+
 
     return (
         <>
@@ -655,7 +672,7 @@ function SalesRequestForm({
                         const {visited, errors, valueGetter} = formRenderProps;
 
                         const selectedApartmentObj = valueGetter("productId");
-                        
+
                         const apt = selectedApartmentObj;
                         const party = valueGetter("fromPartyId");
 
@@ -697,8 +714,7 @@ function SalesRequestForm({
 
                         const statusId = formRenderProps.valueGetter("statusId") as string | undefined;
                         const statusDescription = formRenderProps.valueGetter("statusDescription") as string | undefined;
-                        
-                        console.log('Rendering form with statusId:', statusId, 'and statusDescription:', statusDescription);
+
 
                         const ribbonLabel = statusDescription ?? {
                             SALES_REQUEST_CREATED: "Created",
@@ -709,7 +725,7 @@ function SalesRequestForm({
                             SALES_REQUEST_CREATED: "#1976d2",
                             SALES_REQUEST_APPROVED: "#4caf50",
                         }[statusId ?? ""] ?? "#757575";
-                        
+
 
                         return (
                             <>
@@ -719,12 +735,12 @@ function SalesRequestForm({
                                             <Typography
                                                 variant="h4"
                                                 color={salesRequest?.salesRequestId ? "text.primary" : "success.main"}
-                                                sx={{ fontWeight: 500 }}
+                                                sx={{fontWeight: 500}}
                                             >
                                                 {salesRequest?.salesRequestId
                                                     ? (
                                                         <>
-                                                            <Box component="span" sx={{ opacity: 0.7, mr: 1 }}>
+                                                            <Box component="span" sx={{opacity: 0.7, mr: 1}}>
                                                                 {getTranslatedLabel("salesRequest.form.new2", "Sales Request")}:
                                                             </Box>
                                                             <Box component="span" fontWeight="bold">
@@ -739,7 +755,10 @@ function SalesRequestForm({
                                             <Typography variant="caption" color="text.secondary">
                                                 Default Advance: {(defaultAdvancePercent * 100).toFixed(0)}% |
                                                 Maintenance Deposit: {(defaultMaintenancePercent * 100).toFixed(0)}%
-                                                {" "}(<a href="#" onClick={(e) => { e.preventDefault(); setShowDefaultsModal(true); }}>
+                                                {" "}(<a href="#" onClick={(e) => {
+                                                e.preventDefault();
+                                                setShowDefaultsModal(true);
+                                            }}>
                                                 change
                                             </a>)
                                             </Typography>
@@ -752,7 +771,7 @@ function SalesRequestForm({
                                                     onSalesRequestUpdated={onSalesRequestUpdated}  // ← PASS IT HERE
                                                 />
                                             )}
-                                            
+
                                         </Box>
                                     </Grid>
 
@@ -775,7 +794,8 @@ function SalesRequestForm({
                                 </Grid>
                                 <FormElement>
                                     <fieldset className="k-form-fieldset">
-                                        <Grid container spacing={1} alignItems="flex-end" className={editMode > 2 ? "grid-disabled" : "grid-normal"}>
+                                        <Grid container spacing={1} alignItems="flex-end"
+                                              className={editMode > 2 ? "grid-disabled" : "grid-normal"}>
                                             <Grid item xs={4}>
                                                 <Field
                                                     id="productId"
@@ -982,8 +1002,7 @@ function SalesRequestForm({
                                                     min={0}
                                                     component={FormNumericTextBox}
                                                     onChange={(e: any) => {
-                                                        formRenderProps.onChange("maintenanceDeposit", {value: e.value});
-                                                        if (e.value !== null) setUserEditedMaintenance(true);
+                                                        formRenderProps.onChange("maintenanceDeposit", { value: e.value });
                                                     }}
                                                 />
                                             </Grid>
@@ -1017,7 +1036,9 @@ function SalesRequestForm({
                                                         color="success"
                                                         disabled={buttonFlag || isCreating || isUpdating || editMode > 2}
                                                     >
-                                                        {getTranslatedLabel("general.submit", "Submit")}
+                                                        {editMode === 1
+                                                            ? getTranslatedLabel("general.create", "Create")
+                                                            : getTranslatedLabel("general.update", "Update")}
                                                     </Button>
                                                 </Grid>
                                                 <Grid item>
@@ -1041,7 +1062,8 @@ function SalesRequestForm({
                                         )}
 
                                         {showPaymentPlan && canViewPaymentPlan && (
-                                            <ModalContainer show={showPaymentPlan} onClose={() => setShowPaymentPlan(false)} width={850}>
+                                            <ModalContainer show={showPaymentPlan}
+                                                            onClose={() => setShowPaymentPlan(false)} width={850}>
                                                 <PaymentPlanModal
                                                     onClose={() => setShowPaymentPlan(false)}
                                                     salesRequest={currentFormValues}

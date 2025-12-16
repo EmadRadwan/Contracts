@@ -154,6 +154,7 @@ public class Product
     public decimal? ApartmentPricePerM2 { get; set; }
     public string? ApartmentStatusId { get; set; }
     public string? BuildingNumber { get; set; }
+    public string? ReservedBySalesRequestId { get; set; }
 
 
     public DateTime? LastUpdatedStamp { get; set; }

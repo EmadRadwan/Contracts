@@ -20,6 +20,9 @@ public class UpdateSalesRequest
     public class Handler : IRequestHandler<Command, Result<CreateSalesRequest.SalesRequestResponseDto>>
     {
         private readonly DataContext _context;
+        private const string ApartmentAvailableStatusId = "APARTMENT_AVAILABLE";
+        private const string ApartmentReservedStatusId = "APARTMENT_RESERVED";
+
 
         public Handler(DataContext context)
         {
@@ -35,21 +38,57 @@ public class UpdateSalesRequest
             // 1. Load existing entity (optimistic concurrency not needed now)
             // -----------------------------------------------------------------
             var sr = await _context.SalesRequests
+                .Include(s => s.Product) // eager load current apartment
                 .FirstOrDefaultAsync(x => x.SalesRequestId == dto.SalesRequestId, ct);
 
             if (sr == null)
                 return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure("Sales request not found");
+            
+            var oldProductId = sr.ProductId;
+            var newProductId = dto.ProductId!;
+
 
             // -----------------------------------------------------------------
             // 2. Transaction
             // -----------------------------------------------------------------
             await using var transaction = await _context.Database.BeginTransactionAsync(ct);
+            
+            if (oldProductId != newProductId)
+            {
+                // Release old apartment (if it was reserved)
+                if (sr.Product != null && sr.Product.ApartmentStatusId == ApartmentReservedStatusId)
+                {
+                    sr.Product.ApartmentStatusId = ApartmentAvailableStatusId;
+                    sr.Product.ReservedBySalesRequestId = null;
+                }
+
+                // Load and validate new apartment
+                var newApartment = await _context.Products
+                    .FirstOrDefaultAsync(p => p.ProductId == newProductId && p.ProductTypeId == "APARTMENT", ct);
+
+                if (newApartment == null)
+                    return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure("Selected apartment not found");
+
+                // Validate availability: must be AVAILABLE or reserved by THIS request
+                if (newApartment.ApartmentStatusId != ApartmentAvailableStatusId &&
+                    newApartment.ReservedBySalesRequestId != sr.SalesRequestId)
+                {
+                    return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure(
+                        "Cannot update: the selected apartment is already reserved or sold.");
+                }
+
+                // Reserve the new apartment
+                newApartment.ApartmentStatusId = ApartmentReservedStatusId;
+                newApartment.ReservedBySalesRequestId = sr.SalesRequestId;
+            }
+
+            
             try
             {
                 // -----------------------------------------------------------------
                 // 3. Update scalar fields
                 // -----------------------------------------------------------------
-                sr.ProductId = dto.ProductId!;
+                sr.ProductId = newProductId;
                 sr.SaleDate = dto.SaleDate!.Value;
                 sr.FromPartyId = dto.FromPartyId!;
                 sr.EmployeePartyId = dto.EmployeePartyId;
@@ -131,6 +170,9 @@ public class UpdateSalesRequest
                     ApartmentPricePerM2 = apartment.ApartmentPricePerM2,
                     ApartmentStatusId = apartment.ApartmentStatusId,
                     ApartmentStatusDescription = apartment.ApartmentStatusDescription,
+                    
+                    ApartmentReservedBySalesRequestId = apartment.ReservedBySalesRequestId,
+
 
                     TotalPrice = (decimal)dto.TotalPrice,
                     Discount = dto.Discount,

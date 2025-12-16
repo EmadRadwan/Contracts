@@ -11,8 +11,8 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20251209090438_AddedEmpToSalesRequest")]
-    partial class AddedEmpToSalesRequest
+    [Migration("20251216073651_AddedSalesRequestId")]
+    partial class AddedSalesRequestId
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -33882,6 +33882,12 @@ namespace Persistence.Migrations
                     b.Property<decimal?>("ReservNthPPPerc")
                         .HasColumnType("decimal(18, 6)")
                         .HasColumnName("RESERV_NTH_P_P_PERC");
+
+                    b.Property<string>("ReservedBySalesRequestId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("RESERVED_BY_SALES_REQUEST_ID");
 
                     b.Property<string>("Returnable")
                         .HasMaxLength(1)
