@@ -49,6 +49,21 @@ public class AssignGlAccountToOrganization
                     return Results<AssignGlAccountToOrganizationResult>.Failure("Record already exists", "ALREADY_EXISTS");
                 }
 
+                var parentRecord = await _context.GlAccounts.FindAsync(request.GlAccountId, cancellationToken);
+                if (parentRecord == null)
+                {
+                    return Results<AssignGlAccountToOrganizationResult>.Failure("GL Account not found", "GL_ACCOUNT_NOT_FOUND");
+                }
+
+                var parentAssignedToCompany = await _context.GlAccountOrganizations.FindAsync(
+                    new object[] { parentRecord.GlAccountId, request.CompanyId },
+                    cancellationToken);
+
+                if (parentAssignedToCompany == null)
+                {
+                    return Results<AssignGlAccountToOrganizationResult>.Failure("Parent GL Account is not assigned to the specified Company", "PARENT_GL_ACCOUNT_NOT_ASSIGNED");
+                }
+
                 var entity = new GlAccountOrganization
                 {
                     GlAccountId = request.GlAccountId,

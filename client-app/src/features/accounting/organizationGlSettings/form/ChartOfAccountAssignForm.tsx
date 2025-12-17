@@ -24,6 +24,7 @@ const messages: Record<string, Record<string, string>> = {
         GL_ACCOUNT_ASSIGNED: "GL Account assigned successfully.",
         // Error messages
         ALREADY_EXISTS: "Record already exists.",
+        PARENT_GL_ACCOUNT_NOT_ASSIGNED: "Parent GL Account is not assigned to the specified Company.",
         USER_NOT_FOUND: "Unauthorized: User not found.",
         GL_ACCOUNT_NOT_FOUND: "The specified GL Account could not be found.",
         UNEXPECTED_ERROR: "An unexpected error occurred. Please try again.",
@@ -34,6 +35,7 @@ const messages: Record<string, Record<string, string>> = {
         GL_ACCOUNT_ASSIGNED: "تم تعيين حساب دفتر الأستاذ بنجاح.",
         // Error messages
         ALREADY_EXISTS: "السجل موجود بالفعل.",
+        PARENT_GL_ACCOUNT_NOT_ASSIGNED: "لم يتم تعيين حساب دفتر الأستاذ الرئيسي للشركة المحددة.",
         USER_NOT_FOUND: "غير مصرح: المستخدم غير موجود.",
         GL_ACCOUNT_NOT_FOUND: "حساب دفتر الأستاذ المحدد غير موجود.",
         UNEXPECTED_ERROR: "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
