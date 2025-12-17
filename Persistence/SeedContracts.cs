@@ -2614,7 +2614,7 @@ public class SeedContracts
         try
         {
             // Create roles
-            var requiredRoles = new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm" };
+            var requiredRoles = new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm", "ReviewCertificate" };
             foreach (var role in requiredRoles)
             {
                 // REFACTOR: Added error handling for role creation to catch and report failures.
@@ -2736,11 +2736,11 @@ public class SeedContracts
         {
             {
                 "eradwan1967@gmail.com",
-                new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm" }
+                new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm", "ReviewCertificate"  }
             },
             {
                 "aagiba@gmail.com",
-                new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm" }
+                new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm", "ReviewCertificate"  }
             }
         };
 

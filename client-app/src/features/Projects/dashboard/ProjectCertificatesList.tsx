@@ -81,9 +81,11 @@ export default function ProjectCertificatesList() {
     };
 
     const editModeMap: { [key in CertificateStatus]: number } = useMemo(() => ({
-        [CertificateStatus.CREATED]: 2,
-        [CertificateStatus.APPROVED]: 3,
-        [CertificateStatus.COMPLETE]: 4,
+        [CertificateStatus.CREATED]: 2,           // Editable (creator)
+        [CertificateStatus.REQUIRES_EDIT]: 2,     // ← NEW: Creator can edit and resubmit
+        [CertificateStatus.READY_FOR_APPROVAL]: 3, // ← NEW: Read-only for approver/reviewer
+        [CertificateStatus.APPROVED]: 3,          // Read-only
+        [CertificateStatus.COMPLETE]: 4,          // Read-only (final)
     }), []);
 
     useEffect(() => {
@@ -140,8 +142,6 @@ export default function ProjectCertificatesList() {
                 //console.warn("No certificate found for workEffortId:", workEffortId);
                 return;
             }
-            //dispatch(resetUiCertificateItems());
-            //dispatch(certificateItemsApi.util.invalidateTags(['CertificateItems']));
 
             dispatch(
                 setSelectedCertificate({

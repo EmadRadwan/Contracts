@@ -218,6 +218,8 @@
         "create": "إضافة منتج",
         "type": "نوع المنتج",
         "category": "فئة المنتج",
+        "projectName": "المشروع",
+        "buildingNumber": "رقم البناية",
         "description": "وصف المنتج"
       },
       "form": {
@@ -1362,6 +1364,8 @@
       "generating": "جاري إنشاء PDF...",
       "actions": "الإجراءات",
       "approve": "الموافقة على المستخلص",
+      "markAsReadyForApproval": " جاهز للموافقة",
+      "markAsRequiresEdit": " يتطلب تعديل",
       "deliverToSite": "تسليم المواد إلى موقع المشروع مباشرة",
       "approved": "تمت الموافقة على المستخلص",
       "complete": "إكمال الشهادة",

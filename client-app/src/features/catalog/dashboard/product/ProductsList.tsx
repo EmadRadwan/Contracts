@@ -185,13 +185,19 @@ function ProductsList() {
                           "Product Category"
                       )}
                   />
-                  {/*<Column
-                      field="productTrademarkDescription"
+                  <Column
+                      field="projectName"
                       title={getTranslatedLabel(
-                          "product.products.list.trademark",
-                          "Trademark"
+                          "product.products.list.projectName",
+                          "Project Name"
                       )}
-                  />*/}
+                  /><Column
+                      field="buildingNumber"
+                      title={getTranslatedLabel(
+                          "product.products.list.buildingNumber",
+                          "Building Number"
+                      )}
+                  />
                   <Column
                       field="description"
                       title={getTranslatedLabel(

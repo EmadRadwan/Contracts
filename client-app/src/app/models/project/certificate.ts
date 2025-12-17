@@ -21,7 +21,9 @@ export interface Certificate {
 }
 
 export enum CertificateStatus {
-  CREATED = "WEPR_CREATED",
-  APPROVED = "WEPR_APPROVED",
-  COMPLETE = "WEPR_COMPLETE",
+  CREATED = 'WEPR_CREATED',
+  REQUIRES_EDIT = 'WEPR_REQUIRES_EDIT',       // New: reviewer rejected
+  READY_FOR_APPROVAL = 'WEPR_READY_FOR_APPROVAL',         // New: reviewer accepted
+  APPROVED = 'WEPR_APPROVED',
+  COMPLETE = 'WEPR_COMPLETE',
 }

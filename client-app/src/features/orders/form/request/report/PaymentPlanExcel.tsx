@@ -29,7 +29,14 @@ export const PaymentPlanExcel: React.FC<PaymentPlanExcelProps> = ({
     const totalPrice = salesRequest.totalPrice || aptTotal + gardenTotal;
     const advance = salesRequest.advancePayment || 0;
     const remaining = totalPrice - advance;
-    const maintenance = salesRequest.maintenanceDeposit || Math.round(totalPrice * 0.07 * 100) / 100;
+    const advancePercent = totalPrice > 0
+        ? (advance / totalPrice) * 100
+        : 20; // fallback if no data
+
+    const maintenance = salesRequest.maintenanceDeposit || Math.round(totalPrice * 0.08 * 100) / 100; // using 8% as current app default
+    const maintenancePercent = totalPrice > 0
+        ? (maintenance / totalPrice) * 100
+        : 8;
 
     const displayUnitName = salesRequest.apartmentName || apartment?.productName || 'الوحدة';
 
@@ -63,11 +70,17 @@ export const PaymentPlanExcel: React.FC<PaymentPlanExcelProps> = ({
         row1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9EAD3' } };
         row1.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
 
+        const advanceHeader = `مقدم (${advancePercent.toFixed(0)}%)`;
+
+        
         const headers = [
             'البيان', 'الدور', 'رقم الوحدة', 'مساحة الوحدة ( م2 )', '',
             'سعر المتر المحدد', '', 'اجمالي الاسعار بالتفصيل', '',
-            'اجمالي ثمن الوحده بالكامل ( حديقة + شقة)', 'مقدم (20% )', 'المتبقي',
-            'وديعة صيانة ( 7 % )', 'ملاحظات',
+            'اجمالي ثمن الوحده بالكامل ( حديقة + شقة)',
+            advanceHeader, // ← DYNAMIC
+            'المتبقي',
+            `وديعة صيانة (${maintenancePercent.toFixed(0)}%)`, // ← DYNAMIC
+            'ملاحظات',
         ];
         headers.forEach((h, i) => ws.getCell(1, i + 1).value = h);
         ws.mergeCells('D1:E1'); ws.mergeCells('F1:G1'); ws.mergeCells('H1:I1');

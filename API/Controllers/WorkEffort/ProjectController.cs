@@ -112,5 +112,12 @@ public class ProjectController : BaseApiController
         return HandleResult(result);
     }
     
+    [HttpPost("review", Name = "ReviewProjectCertificate")]
+    public async Task<ActionResult<ProjectCertificateDto>> ReviewProjectCertificate([FromBody] ReviewProjectCertificate.Command command)
+    {
+        var result = await Mediator.Send(command);
+        return HandleResult(result);
+    }
+    
 }
 

@@ -2,15 +2,19 @@ import {createApi, fetchBaseQuery} from "@reduxjs/toolkit/query/react";
 import {store} from "../configureStore";
 import {State, toODataString} from "@progress/kendo-data-query";
 import {WorkEffort} from "../../models/manufacturing/workEffort";
+import {CertificateStatus} from "../../../features/Projects/hook/useProjectCertificate";
 
 interface ListResponse<T> {
     data: T[];
     total: number;
 }
 
+const REVIEW_CERTIFICATE_TAG = "ReviewCertificate" as const;
+
+
 const projectsApi = createApi({
     reducerPath: "projects",
-    tagTypes: ["WorkEffort", "ProjectCertificates"],
+    tagTypes: ["WorkEffort", "ProjectCertificates", REVIEW_CERTIFICATE_TAG],
     baseQuery: fetchBaseQuery({
         baseUrl: import.meta.env.VITE_API_URL,
         prepareHeaders: (headers, {getState}) => {
@@ -119,7 +123,27 @@ const projectsApi = createApi({
                     body: { workEffortId },
                 }),
                 invalidatesTags: ['ProjectCertificates']
-            })
+            }),
+            reviewCertificate: builder.mutation<
+                { success: boolean; certificate?: any }, // adjust return type to match your DTO
+                { workEffortId: string; status: CertificateStatus }
+                >({
+                query: ({ workEffortId, status }) => ({
+                    url: `project/review`,
+                    method: "POST",
+                    body: {
+                        workEffortId,
+                        newStatusId: status, // backend expects the status string like 'WEPR_READY_FOR_APPROVAL'
+                    },
+                }),
+                // Invalidate relevant caches so UI updates immediately
+                invalidatesTags: [
+                    "ProjectCertificates",
+                    "ProjectCertificate",
+                    "CertificateItems",
+                    REVIEW_CERTIFICATE_TAG,
+                ],
+            }),
         };
     },
 });
@@ -133,7 +157,8 @@ export const {
     useUpdateProjectCertificateMutation,
     useGetCertificatesByPartyQuery,
     useProcessWorkEffortCertificateMutation,
-    useIssueMaterialsForCertificateMutation
+    useIssueMaterialsForCertificateMutation,
+    useReviewCertificateMutation,
 } = projectsApi;
 export {projectsApi};
 

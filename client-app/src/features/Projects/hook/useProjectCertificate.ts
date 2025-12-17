@@ -6,7 +6,7 @@ import {
     useAddProjectCertificateMutation,
     useFetchProjectCertificatesQuery,
     useIssueMaterialsForCertificateMutation,
-    useProcessWorkEffortCertificateMutation,
+    useProcessWorkEffortCertificateMutation, useReviewCertificateMutation,
     useUpdateProjectCertificateMutation
 } from "../../../app/store/apis/projectsApi";
 import {setProcessedCertificateItems} from "../slice/certificateItemsUiSlice";
@@ -22,6 +22,8 @@ type UseProjectCertificateProps = {
     editMode: number; // 1: create, 2: edit
     setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 };
+
+
 
 const useProjectCertificate = ({
                                    selectedMenuItem,
@@ -42,6 +44,7 @@ const useProjectCertificate = ({
     const [receiveInventoryFromPurchaseOrder, {isLoading: isReceiveLoading}] = useReceiveInventoryFromPurchaseOrderMutation();
     const [processWorkEffortCertificate, {isLoading: isProcessCertificateLoading}] = useProcessWorkEffortCertificateMutation();
     const [issueMaterialsForCertificate, {isLoading: isIssueMaterialsLoading}] = useIssueMaterialsForCertificateMutation(); // REFACTOR: Added mutation hook for issuing materials
+    const [reviewCertificate, {isLoading: isReviewLoading}] = useReviewCertificateMutation();
 
     const formEditMode = certificateFormEditMode;
     const setFormEditMode = useCallback((mode: number) => {
@@ -383,7 +386,8 @@ const useProjectCertificate = ({
                             setIsLoading(false); // Ensure loading state is reset
                             return { success: false };
                         }
-                    } else {
+                    }
+                    else {
                         toast.error("Invalid certificate type for approval");
                         return { success: false };
                     }
@@ -405,7 +409,25 @@ const useProjectCertificate = ({
                     formRef2.current = !formRef2.current; // Trigger form re-render
                     toast.success("Certificate approved successfully");
                     return { success: true };
-                } else {
+                } else if (action === "MarkReadyForApproval" || action === "MarkRequiresEdit") {
+                    const newStatus = action === "MarkReadyForApproval"
+                        ? CertificateStatus.READY_FOR_APPROVAL
+                        : CertificateStatus.REQUIRES_EDIT;
+
+                    await reviewCertificate({
+                        workEffortId: selectedCertificate.workEffortId,
+                        status: newStatus,
+                        // comments?: string (if implemented)
+                    }).unwrap();
+
+                    dispatch(setSelectedCertificate({
+                        ...selectedCertificate,
+                        currentStatusId: newStatus,
+                        // update description fields if returned
+                    }));
+
+                    toast.success(`Certificate marked as ${newStatus}`);
+                }else {
                     toast.error("Invalid action type");
                     return { success: false };
                 }

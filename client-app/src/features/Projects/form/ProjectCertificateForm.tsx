@@ -45,6 +45,7 @@ interface CertificateActionsMenuProps {
     disabled: boolean;
 }
 
+
 const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
                                                                            workEffortId,
                                                                            currentStatusId,
@@ -97,16 +98,23 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
                 anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}
                 transformOrigin={{vertical: 'top', horizontal: 'right'}}
             >
+                {user?.roles?.includes('ReviewCertificate') &&
+                    [CertificateStatus.CREATED, CertificateStatus.REQUIRES_EDIT].includes(currentStatusId) && (
+                        <>
+                        <MenuItem onClick={() => handleStatusUpdate('MarkReadyForApproval')}>
+                            {getTranslatedLabel('projects.certificate.markAsReadyForApproval', 'Mark as Ready for Approval')}
+                        </MenuItem>
+                        <MenuItem onClick={() => handleStatusUpdate('MarkRequiresEdit')}>
+                            {getTranslatedLabel('projects.certificate.markAsRequiresEdit', 'Mark as Requires Editing')}
+                        </MenuItem>
+                    </>
+                )}
                 {user?.roles?.includes('ApproveCertificate') && (
                     <MenuItem onClick={handleApprove} disabled={isApproveDisabled}>
                         {getTranslatedLabel('projects.certificate.approve', 'Approve Certificate')}
                     </MenuItem>
                 )}
-                {/*{user?.roles?.includes('CompleteCertificate') && (
-                    <MenuItem onClick={handleComplete} disabled={isCompleteDisabled}>
-                        {getTranslatedLabel('certificate.complete', 'Complete Certificate')}
-                    </MenuItem>
-                )}*/}
+               
             </Menu>
         </>
     );
@@ -179,51 +187,35 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
 
 
     const renderSwitchStatus = useCallback(() => {
-        const status = selectedCertificate?.currentStatusId || CertificateStatus.CREATED;
-        const {language} = useAppSelector((state) => state.localization);
-        // Purpose: Use descriptions from ProjectCertificateDto if available, fallback to static mapping
-        // Context: Ensures consistency with backend status objects
-        if (selectedCertificate?.statusDescription && selectedCertificate?.statusDescriptionArabic) {
-            return {
-                label: language === "ar" ? selectedCertificate.statusDescriptionArabic : selectedCertificate.statusDescription,
-                backgroundColor: status === CertificateStatus.CREATED ? "blue" : status === CertificateStatus.APPROVED ? "yellow" : "green",
-                foreColor: status === CertificateStatus.APPROVED ? "#000000" : "#ffffff"
-            };
-        }
-        // Fallback mapping
-        const statusLabels: { [key in CertificateStatus]: { en: string; ar: string } } = {
-            [CertificateStatus.CREATED]: {en: "Created", ar: "تم الإنشاء"},
-            [CertificateStatus.APPROVED]: {en: "Approved", ar: "تمت الموافقة"},
-            [CertificateStatus.COMPLETE]: {en: "Complete", ar: "مكتمل"},
-        };
-        switch (status) {
-            case CertificateStatus.CREATED:
-                return {
-                    label: language === "ar" ? statusLabels[CertificateStatus.CREATED].ar : statusLabels[CertificateStatus.CREATED].en,
-                    backgroundColor: "blue",
-                    foreColor: "#ffffff"
-                };
-            case CertificateStatus.APPROVED:
-                return {
-                    label: language === "ar" ? statusLabels[CertificateStatus.APPROVED].ar : statusLabels[CertificateStatus.APPROVED].en,
-                    backgroundColor: "yellow",
-                    foreColor: "#000000"
-                };
-            case CertificateStatus.COMPLETE:
-                return {
-                    label: language === "ar" ? statusLabels[CertificateStatus.COMPLETE].ar : statusLabels[CertificateStatus.COMPLETE].en,
-                    backgroundColor: "green",
-                    foreColor: "#ffffff"
-                };
-            default:
-                return {
-                    label: language === "ar" ? "غير معروف" : "Unknown",
-                    backgroundColor: "gray",
-                    foreColor: "#ffffff"
-                };
-        }
-    }, [selectedCertificate]);
+        const currentStatus = selectedCertificate?.currentStatusId || CertificateStatus.CREATED;
+        const { language } = useAppSelector((state) => state.localization);
 
+        // Define color configuration centrally (kept unchanged for visual consistency)
+        const statusConfig: Record<CertificateStatus, { bg: string; fg: string }> = {
+            [CertificateStatus.CREATED]: { bg: "#1976d2", fg: "#ffffff" }, // blue
+            [CertificateStatus.REQUIRES_EDIT]: { bg: "#ff9800", fg: "#ffffff" }, // orange
+            [CertificateStatus.READY_FOR_APPROVAL]: { bg: "#4fc3f7", fg: "#000000" }, // light blue
+            [CertificateStatus.APPROVED]: { bg: "#ffeb3b", fg: "#000000" }, // yellow
+            [CertificateStatus.COMPLETE]: { bg: "#4caf50", fg: "#ffffff" }, // green
+        };
+
+        // Get color config with fallback
+        const config = statusConfig[currentStatus] || { bg: "#757575", fg: "#ffffff" };
+
+        // FALLBACK: Hardcoded labels only when no backend description is available at all
+        const fallbackLabels: Record<CertificateStatus, { en: string; ar: string }> = {
+            [CertificateStatus.CREATED]: { en: "Created", ar: "تم الإنشاء" },
+            [CertificateStatus.REQUIRES_EDIT]: { en: "Requires Editing", ar: "يتطلب تعديل" },
+            [CertificateStatus.READY_FOR_APPROVAL]: { en: "Ready for Approval", ar: "جاهز للموافقة" },
+            [CertificateStatus.APPROVED]: { en: "Approved", ar: "تمت الموافقة" },
+            [CertificateStatus.COMPLETE]: { en: "Complete", ar: "مكتمل" },
+        };
+
+        const fallback = fallbackLabels[currentStatus] || { en: "Unknown", ar: "غير معروف" };
+        const label = language === "ar" ? fallback.ar : fallback.en;
+
+        return { label, backgroundColor: config.bg, foreColor: config.fg };
+    }, [selectedCertificate, language]);
 
 
     const formKey = useMemo(() => formRef2.current.toString(), [formRef2.current]);
@@ -338,14 +330,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
             };
             try {
                 const result = await handleCreate(statusUpdate);
-                if (result.success) {
-                    toast.success(
-                        getTranslatedLabel(
-                            action === 'Approve Certificate' ? 'certificate.approved' : 'certificate.completed',
-                            action === 'Approve Certificate' ? 'Certificate approved' : 'Certificate completed'
-                        )
-                    );
-                }
+                
             } catch (error) {
                 toast.error(getTranslatedLabel("certificate.statusUpdate.error", "Failed to update certificate status"));
             } finally {
