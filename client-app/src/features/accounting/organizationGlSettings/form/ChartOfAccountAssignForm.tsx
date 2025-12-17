@@ -106,7 +106,7 @@ export default function ChartOfAccountAssignForm() {
                                         <Field
                                             id={"glAccountId"}
                                             name={"glAccountId"}
-                                            label={"GL Account"}
+                                            label={getTranslatedLabel("accounting.glAccount.form.glAccount", "GL Account")}
                                             data={glAccounts ? glAccounts : []}
                                             component={FormDropDownTreeGlAccount2}
                                             dataItemKey={"glAccountId"}

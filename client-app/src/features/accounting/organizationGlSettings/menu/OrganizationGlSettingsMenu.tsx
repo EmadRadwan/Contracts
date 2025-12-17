@@ -1,7 +1,8 @@
-import { useTheme } from "@mui/material";
-import Grid from "@mui/material/Grid";
-import { Menu, MenuItem, MenuSelectEvent } from "@progress/kendo-react-layout";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Box, List, ListItem, Toolbar, Typography, useTheme } from "@mui/material";
+import { NavLink, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
+
+const normalizePath = (path: string) => path.replace(/^\//, "").toLowerCase();
 
 function withRouter(Component: any) {
   function ComponentWithRouterProp(props: any) {
@@ -17,58 +18,71 @@ function withRouter(Component: any) {
 interface OrgGlSettingsMenuProps {
   selectedMenuItem?: string;
 }
-const normalizePath = (path: string) => path.replace(/^\//, "").toLowerCase();
 
 const OrganizationGlSettingsMenuNavContainer = ({
   selectedMenuItem,
   router,
 }: OrgGlSettingsMenuProps & { router: any }) => {
   const theme = useTheme();
-  const { location, navigate } = router;
-  const onSelect = (event: MenuSelectEvent) => {
-    navigate(event.item.data.route);
-  };
+  const { location } = router;
+  const { getTranslatedLabel } = useTranslationHelper();
 
   const normalizedCurrentPath = normalizePath(location.pathname);
-  const normalizedSelectedMenuItem = normalizePath(selectedMenuItem || "");
 
-  const menuStyles = (path: string) => {
+  const navStyles = (path: string) => {
     const normalizedPath = normalizePath(path);
     const isSelected = normalizedPath === normalizedCurrentPath;
 
     return {
       color: isSelected ? theme.palette.primary.main : "inherit",
+      "&.active": {
+        color: theme.palette.primary.main,
+      },
+      textDecoration: "none",
+      typography: "h6",
+      "&:hover": {
+        color: "grey.500",
+      },
       fontWeight: isSelected ? "bold" : "normal",
+      display: "flex",
+      borderRadius: "4px",
+      padding: "4px",
+      border: "1px solid",
+      borderColor: theme.palette.grey[300],
+      alignItems: "center",
+      whiteSpace: "nowrap",
+      marginRight: "4px",
     };
   };
 
   return (
-    <Grid container spacing={2}>
-      <Grid item xs={12}>
-        <div className="col-md-6">
-          <Menu onSelect={onSelect}>
-            {links.map((link: any, index: number) => {
-              return (
-                <MenuItem
-                  key={index}
-                  text={link.title}
-                  data={{ route: link.path }}
-                  cssClass={"div-container-withBorderCurved-wrap"}
-                  cssStyle={menuStyles(link.path)}
-                />
-              );
-            })}
-          </Menu>
-        </div>
-      </Grid>
-    </Grid>
+    <Toolbar sx={{ display: "flex", justifyContent: "space-between", alignItems: "left" }}>
+      <Box display="flex" alignItems="left">
+        <List sx={{ display: "flex" }}>
+          {links.map(({ title, path, key }, index) => (
+            <ListItem
+              component={NavLink}
+              to={path}
+              key={index}
+              sx={navStyles(path)}
+            >
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Typography variant="body1" sx={{ marginX: "4px" }}>
+                  {getTranslatedLabel(`accounting.orgGlSettingsMenu.${key}`, title)}
+                </Typography>
+              </Box>
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+    </Toolbar>
   );
 };
 
 const links = [
-  { title: "Chart Of Accounts", path: "/orgChartOfAccount" },
-  { title: "GL Account Defaults", path: "/gLAccountDefaults" },
-  { title: "Time Period", path: "/timePeriod" },
+  { title: "Chart Of Accounts", path: "/orgChartOfAccount", key: "chartOfAccounts" },
+  { title: "GL Account Defaults", path: "/gLAccountDefaults", key: "glAccountDefaults" },
+  { title: "Time Period", path: "/timePeriod", key: "timePeriod" },
 ];
 
 export default withRouter(OrganizationGlSettingsMenuNavContainer);

@@ -95,6 +95,22 @@ const organizationGlChartOfAccountsApi = createApi({
                 },
                 invalidatesTags: ["OrganizationGlChartOfAccounts"],
             }),
+            createAndAssignGlAccountToOrganization: builder.mutation<any, {
+                companyId: string;
+                accountName: string;
+                glResourceTypeId?: string;
+                glAccountTypeId?: string;
+                glAccountClassId?: string;
+                parentGlAccountId?: string;
+                description?: string;
+            }>({
+                query: ({ companyId, ...body }) => ({
+                    url: `/organizationGl/${companyId}/createAndAssignGlAccount`,
+                    method: "POST",
+                    body,
+                }),
+                invalidatesTags: ["OrganizationGlChartOfAccounts"],
+            }),
         };
     },
 });
@@ -102,8 +118,9 @@ const organizationGlChartOfAccountsApi = createApi({
 export const {
     useFetchOrganizationGlChartOfAccountsQuery,
     useFetchOrganizationGlAccountsByClassQuery,
-    useFetchOrganizationGlAccountsByTypeQuery, 
+    useFetchOrganizationGlAccountsByTypeQuery,
     useFetchFullChartOfAccountsQuery,
-    useAssignGlAccountToOrganizationMutation
+    useAssignGlAccountToOrganizationMutation,
+    useCreateAndAssignGlAccountToOrganizationMutation
 } = organizationGlChartOfAccountsApi;
 export {organizationGlChartOfAccountsApi};

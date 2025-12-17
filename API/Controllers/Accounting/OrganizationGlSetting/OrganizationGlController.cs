@@ -527,4 +527,25 @@ public class OrganizationGlController : BaseApiController
         var result = await Mediator.Send(command);
         return HandleResults(result);
     }
+
+    /// <summary>
+    /// Creates a new GL Account and assigns it to the specified organization.
+    /// </summary>
+    /// <param name="companyId">The organization party identifier.</param>
+    /// <param name="request">The GL account data.</param>
+    /// <returns>Ok with the created GL account on success, or an error response.</returns>
+    [HttpPost("{companyId}/createAndAssignGlAccount")]
+    public async Task<IActionResult> CreateAndAssignGlAccountToOrganization(
+        string companyId,
+        [FromBody] CreateAndAssignGlAccountRequest request)
+    {
+        var command = new CreateAndAssignGlAccountToOrganization.Command
+        {
+            CompanyId = companyId,
+            Request = request
+        };
+
+        var result = await Mediator.Send(command);
+        return HandleResults(result);
+    }
 }

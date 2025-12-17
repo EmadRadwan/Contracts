@@ -636,6 +636,14 @@
         "globalGLSettings": "Global GL Settings",
         "organizationGLSettings": "Organization GL Settings"
       },
+    "chartOfAccounts": {
+      "excel": "Export to Excel"
+    },
+    "orgGlSettingsMenu": {
+      "chartOfAccounts": "Chart Of Accounts",
+      "glAccountDefaults": "GL Account Defaults",
+      "timePeriod": "Time Period"
+    },
     "glAccount": {
       "list": {
         "title": "Chart of Accounts",
@@ -649,11 +657,26 @@
         "class": "Class",
         "resourceType": "Resource Type",
         "loading": "Loading accounts...",
-        "similar": "Create similar"
+        "similar": "Create similar",
+        "childAccountsFor": "Child Accounts for",
+        "accountNumber": "Account Number",
+        "parentAccountName": "Parent Account Name",
+        "chartOfAccounts": "Chart of Accounts",
+        "loadingAccounts": "Loading Accounts..."
+      },
+      "tabs": {
+        "accountsTree": "Accounts Tree",
+        "listOfAccounts": "List of Accounts"
+      },
+      "modal": {
+        "title": "Create Similar Account",
+        "enterName": "Enter new account name",
+        "nameRequired": "Account name is required"
       },
       "form": {
         "new": "New GL Account",
         "edit": "Edit GL Account",
+        "glAccount": "GL Account",
         "accountName": "Account Name *",
         "accountNameArabic": "Account Name (Arabic)",
         "accountType": "Account Type *",

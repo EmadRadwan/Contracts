@@ -866,6 +866,14 @@
       "create-transactions": "إنشاء قيد محاسبي",
       "trialBalance": "ميزان المراجعة"
     },
+    "chartOfAccounts": {
+      "excel": "تصدير إلى Excel"
+    },
+    "orgGlSettingsMenu": {
+      "chartOfAccounts": "شجرة الحسابات",
+      "glAccountDefaults": "إعدادات الحسابات الافتراضية",
+      "timePeriod": "الفترة الزمنية"
+    },
     "glAccount": {
       "list": {
         "title": "شجرة الحسابات",
@@ -879,11 +887,26 @@
         "class": "التصنيف",
         "resourceType": "نوع المورد",
         "loading": "جاري تحميل الحسابات...",
-        "similar": "إنشاء حساب مشابه"
+        "similar": "إنشاء حساب مشابه",
+        "childAccountsFor": "الحسابات الفرعية لـ",
+        "accountNumber": "رقم الحساب",
+        "parentAccountName": "اسم الحساب الأب",
+        "chartOfAccounts": "شجرة الحسابات",
+        "loadingAccounts": "جاري تحميل الحسابات..."
+      },
+      "tabs": {
+        "accountsTree": "شجرة الحسابات",
+        "listOfAccounts": "قائمة الحسابات"
+      },
+      "modal": {
+        "title": "إنشاء حساب مشابه",
+        "enterName": "أدخل اسم الحساب الجديد",
+        "nameRequired": "اسم الحساب مطلوب"
       },
       "form": {
         "new": "حساب جديد",
         "edit": "تعديل الحساب",
+        "glAccount": "حساب دفتر الأستاذ",
         "accountName": "اسم الحساب *",
         "accountNameArabic": "اسم الحساب (عربي)",
         "accountType": "نوع الحساب *",
