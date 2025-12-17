@@ -895,6 +895,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
         
         public DbSet<TransactionTypeAccountRule> TransactionTypeAccountRules { get; set; }
         public DbSet<SalesRequest> SalesRequests { get; set; }
+        public DbSet<ReserveRequest> ReserveRequests { get; set; }
 
         
 
@@ -28481,6 +28482,125 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                         .HasForeignKey(sr => sr.StatusId)
                         .OnDelete(DeleteBehavior.Restrict);
             });
+            
+            modelBuilder.Entity<ReserveRequest>(entity =>
+                {
+                    // --------------------------------------------------------------
+                    // Table name (OFBiz convention)
+                    // --------------------------------------------------------------
+                    entity.ToTable("RESERVE_REQUEST");
+                
+                    // --------------------------------------------------------------
+                    // Primary key
+                    // --------------------------------------------------------------
+                    entity.HasKey(e => e.ReserveRequestId);
+                
+                    entity.Property(e => e.ReserveRequestId)
+                          .HasMaxLength(20)
+                          .IsUnicode(false)
+                          .HasColumnName("RESERVE_REQUEST_ID");
+                
+                    // --------------------------------------------------------------
+                    // Foreign keys
+                    // --------------------------------------------------------------
+                    entity.Property(e => e.ProductId)
+                          .HasMaxLength(20)
+                          .IsUnicode(false)
+                          .HasColumnName("PRODUCT_ID")
+                          .IsRequired();
+                
+                    entity.Property(e => e.FromPartyId)
+                          .HasMaxLength(36)
+                          .IsUnicode(false)
+                          .HasColumnName("FROM_PARTY_ID")
+                          .IsRequired();
+                
+                    entity.Property(e => e.EmployeePartyId)
+                          .HasMaxLength(36)
+                          .IsUnicode(false)
+                          .HasColumnName("EMPLOYEE_PARTY_ID");
+                
+                    entity.Property(e => e.StatusId)
+                          .HasMaxLength(36)
+                          .IsUnicode(false)
+                          .HasColumnName("STATUS_ID");
+                
+                    // --------------------------------------------------------------
+                    // Business fields
+                    // --------------------------------------------------------------
+                    entity.Property(e => e.ReserveDate)
+                          .HasColumnType("datetime")
+                          .HasColumnName("RESERVE_DATE");
+                
+                    entity.Property(e => e.ReserveAmount)
+                          .HasColumnType("numeric(18,4)")
+                          .HasColumnName("RESERVE_AMOUNT");
+                
+                    entity.Property(e => e.Comments)
+                          .HasColumnName("COMMENTS");
+                
+                    entity.Property(e => e.PayMethod)
+                          .HasMaxLength(60)               // adjust if you have a standard length
+                          .IsUnicode(false)
+                          .HasColumnName("PAY_METHOD");
+                
+                    // --------------------------------------------------------------
+                    // Audit stamps (standard OFBiz)
+                    // --------------------------------------------------------------
+                    entity.Property(e => e.LastUpdatedStamp)
+                          .HasColumnType("datetime")
+                          .HasColumnName("LAST_UPDATED_STAMP");
+                
+                    entity.Property(e => e.CreatedStamp)
+                          .HasColumnType("datetime")
+                          .HasColumnName("CREATED_STAMP");
+                
+                    // --------------------------------------------------------------
+                    // Indexes (OFBiz style – one per frequently queried column)
+                    // --------------------------------------------------------------
+                    entity.HasIndex(e => e.ProductId, "RESERVE_REQ_PROD_IDX");
+                    entity.HasIndex(e => e.FromPartyId, "RESERVE_REQ_CUST_IDX");
+                    entity.HasIndex(e => e.EmployeePartyId, "RESERVE_REQ_EMP_IDX");
+                    entity.HasIndex(e => e.ReserveDate, "RESERVE_REQ_DATE_IDX");
+                    entity.HasIndex(e => e.CreatedStamp, "RESERVE_REQ_TXCRTS");
+                    entity.HasIndex(e => e.LastUpdatedStamp, "RESERVE_REQ_TXSTMP");
+                
+                    // --------------------------------------------------------------
+                    // Relationships
+                    // --------------------------------------------------------------
+                
+                    // REFACTOR: Product → ReserveRequests (one apartment can have many reservations)
+                    // Why: Enables eager loading Include(p => p.ReserveRequests) and proper change tracking
+                    entity.HasOne(rr => rr.Product)
+                          .WithMany(p => p.ReserveRequests)
+                          .HasForeignKey(rr => rr.ProductId)
+                          .OnDelete(DeleteBehavior.Restrict)
+                          .HasConstraintName("FK_RESERVE_REQ_PRODUCT");
+                
+                    // REFACTOR: Party (Customer) → ReserveRequests
+                    // Why: Clear role separation; matches existing SalesRequest pattern
+                    entity.HasOne(rr => rr.Customer)
+                          .WithMany(p => p.ReserveRequestsAsCustomer)
+                          .HasForeignKey(rr => rr.FromPartyId)
+                          .OnDelete(DeleteBehavior.Restrict)
+                          .HasConstraintName("FK_RESERVE_REQ_CUSTOMER");
+                
+                    // REFACTOR: Party (Employee) → ReserveRequests
+                    // Why: Optional employee who handled the reserve; separate collection avoids ambiguity
+                    entity.HasOne(rr => rr.Employee)
+                          .WithMany(p => p.ReserveRequestsAsEmployee)
+                          .HasForeignKey(rr => rr.EmployeePartyId)
+                          .OnDelete(DeleteBehavior.Restrict)     // or SetNull if employee can be cleared
+                          .HasConstraintName("FK_RESERVE_REQ_EMPLOYEE");
+                
+                    // REFACTOR: StatusItem → ReserveRequests
+                    // Why: Allows navigation and eager loading when status is needed
+                    entity.HasOne(rr => rr.Status)
+                          .WithMany(s => s.ReserveRequests)
+                          .HasForeignKey(rr => rr.StatusId)
+                          .OnDelete(DeleteBehavior.Restrict)
+                          .HasConstraintName("FK_RESERVE_REQ_STATUS");
+                });
             
             modelBuilder.Entity<PartyAcctgPreference>(entity =>
             {

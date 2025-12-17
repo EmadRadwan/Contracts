@@ -348,4 +348,8 @@ public class Party
     public ICollection<WorkEffort> WorkEffortsAsEmployee { get; set; }
     public virtual ICollection<SalesRequest> SalesRequests { get; set; } = new HashSet<SalesRequest>();
     public virtual ICollection<SalesRequest> SalesRequestsAsEmployee { get; set; } = new HashSet<SalesRequest>();
+    public ICollection<ReserveRequest> ReserveRequestsAsCustomer { get; set; } = new List<ReserveRequest>();
+    public ICollection<ReserveRequest> ReserveRequestsAsEmployee { get; set; } = new List<ReserveRequest>();
+
+
 }

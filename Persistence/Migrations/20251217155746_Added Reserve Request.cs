@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class AddedSalesRequestId : Migration
+    public partial class AddedReserveRequest : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -28663,6 +28663,55 @@ namespace Persistence.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "RESERVE_REQUEST",
+                columns: table => new
+                {
+                    RESERVE_REQUEST_ID = table.Column<string>(type: "varchar(20)", unicode: false, maxLength: 20, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PRODUCT_ID = table.Column<string>(type: "varchar(20)", unicode: false, maxLength: 20, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FROM_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RESERVE_DATE = table.Column<DateTime>(type: "datetime", nullable: true),
+                    RESERVE_AMOUNT = table.Column<decimal>(type: "numeric(18,4)", nullable: true),
+                    COMMENTS = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PAY_METHOD = table.Column<string>(type: "varchar(60)", unicode: false, maxLength: 60, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    EMPLOYEE_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CREATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RESERVE_REQUEST", x => x.RESERVE_REQUEST_ID);
+                    table.ForeignKey(
+                        name: "FK_RESERVE_REQ_CUSTOMER",
+                        column: x => x.FROM_PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "FK_RESERVE_REQ_EMPLOYEE",
+                        column: x => x.EMPLOYEE_PARTY_ID,
+                        principalTable: "PARTY",
+                        principalColumn: "PARTY_ID");
+                    table.ForeignKey(
+                        name: "FK_RESERVE_REQ_PRODUCT",
+                        column: x => x.PRODUCT_ID,
+                        principalTable: "PRODUCT",
+                        principalColumn: "PRODUCT_ID");
+                    table.ForeignKey(
+                        name: "FK_RESERVE_REQ_STATUS",
+                        column: x => x.STATUS_ID,
+                        principalTable: "STATUS_ITEM",
+                        principalColumn: "STATUS_ID");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "RETURN_ITEM",
                 columns: table => new
                 {
@@ -45878,6 +45927,41 @@ namespace Persistence.Migrations
                 column: "LAST_UPDATED_TX_STAMP");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RESERVE_REQUEST_STATUS_ID",
+                table: "RESERVE_REQUEST",
+                column: "STATUS_ID");
+
+            migrationBuilder.CreateIndex(
+                name: "RESERVE_REQ_CUST_IDX",
+                table: "RESERVE_REQUEST",
+                column: "FROM_PARTY_ID");
+
+            migrationBuilder.CreateIndex(
+                name: "RESERVE_REQ_DATE_IDX",
+                table: "RESERVE_REQUEST",
+                column: "RESERVE_DATE");
+
+            migrationBuilder.CreateIndex(
+                name: "RESERVE_REQ_EMP_IDX",
+                table: "RESERVE_REQUEST",
+                column: "EMPLOYEE_PARTY_ID");
+
+            migrationBuilder.CreateIndex(
+                name: "RESERVE_REQ_PROD_IDX",
+                table: "RESERVE_REQUEST",
+                column: "PRODUCT_ID");
+
+            migrationBuilder.CreateIndex(
+                name: "RESERVE_REQ_TXCRTS",
+                table: "RESERVE_REQUEST",
+                column: "CREATED_STAMP");
+
+            migrationBuilder.CreateIndex(
+                name: "RESERVE_REQ_TXSTMP",
+                table: "RESERVE_REQUEST",
+                column: "LAST_UPDATED_STAMP");
+
+            migrationBuilder.CreateIndex(
                 name: "RESP_PTY_CMECH",
                 table: "RESPONDING_PARTY",
                 column: "CONTACT_MECH_ID");
@@ -53910,6 +53994,9 @@ namespace Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "REQUIREMENT_TYPE_ATTR");
+
+            migrationBuilder.DropTable(
+                name: "RESERVE_REQUEST");
 
             migrationBuilder.DropTable(
                 name: "RESPONDING_PARTY");

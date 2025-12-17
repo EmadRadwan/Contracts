@@ -249,4 +249,6 @@ public class Product
     public ICollection<WorkEffort> WorkEfforts { get; set; }
     public ICollection<WorkEffort> WorkEffortsAsService { get; set; } = new HashSet<WorkEffort>();
     public virtual ICollection<SalesRequest> SalesRequests { get; set; } = new HashSet<SalesRequest>();
+    public ICollection<ReserveRequest> ReserveRequests { get; set; } = new List<ReserveRequest>();
+
 }

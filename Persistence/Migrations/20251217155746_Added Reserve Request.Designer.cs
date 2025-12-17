@@ -11,8 +11,8 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20251216074316_CreateDatabaseViews")]
-    partial class CreateDatabaseViews
+    [Migration("20251217155746_Added Reserve Request")]
+    partial class AddedReserveRequest
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -43703,6 +43703,85 @@ namespace Persistence.Migrations
                     b.ToTable("REQUIREMENT_TYPE_ATTR", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.ReserveRequest", b =>
+                {
+                    b.Property<string>("ReserveRequestId")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("RESERVE_REQUEST_ID");
+
+                    b.Property<string>("Comments")
+                        .HasColumnType("longtext")
+                        .HasColumnName("COMMENTS");
+
+                    b.Property<DateTime?>("CreatedStamp")
+                        .HasColumnType("datetime")
+                        .HasColumnName("CREATED_STAMP");
+
+                    b.Property<string>("EmployeePartyId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("EMPLOYEE_PARTY_ID");
+
+                    b.Property<string>("FromPartyId")
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("FROM_PARTY_ID");
+
+                    b.Property<DateTime?>("LastUpdatedStamp")
+                        .HasColumnType("datetime")
+                        .HasColumnName("LAST_UPDATED_STAMP");
+
+                    b.Property<string>("PayMethod")
+                        .HasMaxLength(60)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(60)")
+                        .HasColumnName("PAY_METHOD");
+
+                    b.Property<string>("ProductId")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("PRODUCT_ID");
+
+                    b.Property<decimal?>("ReserveAmount")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("RESERVE_AMOUNT");
+
+                    b.Property<DateTime?>("ReserveDate")
+                        .HasColumnType("datetime")
+                        .HasColumnName("RESERVE_DATE");
+
+                    b.Property<string>("StatusId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("STATUS_ID");
+
+                    b.HasKey("ReserveRequestId");
+
+                    b.HasIndex("StatusId");
+
+                    b.HasIndex(new[] { "FromPartyId" }, "RESERVE_REQ_CUST_IDX");
+
+                    b.HasIndex(new[] { "ReserveDate" }, "RESERVE_REQ_DATE_IDX");
+
+                    b.HasIndex(new[] { "EmployeePartyId" }, "RESERVE_REQ_EMP_IDX");
+
+                    b.HasIndex(new[] { "ProductId" }, "RESERVE_REQ_PROD_IDX");
+
+                    b.HasIndex(new[] { "CreatedStamp" }, "RESERVE_REQ_TXCRTS");
+
+                    b.HasIndex(new[] { "LastUpdatedStamp" }, "RESERVE_REQ_TXSTMP");
+
+                    b.ToTable("RESERVE_REQUEST", (string)null);
+                });
+
             modelBuilder.Entity("Domain.RespondingParty", b =>
                 {
                     b.Property<string>("RespondingPartySeqId")
@@ -74105,6 +74184,43 @@ namespace Persistence.Migrations
                     b.Navigation("RequirementType");
                 });
 
+            modelBuilder.Entity("Domain.ReserveRequest", b =>
+                {
+                    b.HasOne("Domain.Party", "Employee")
+                        .WithMany("ReserveRequestsAsEmployee")
+                        .HasForeignKey("EmployeePartyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_RESERVE_REQ_EMPLOYEE");
+
+                    b.HasOne("Domain.Party", "Customer")
+                        .WithMany("ReserveRequestsAsCustomer")
+                        .HasForeignKey("FromPartyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired()
+                        .HasConstraintName("FK_RESERVE_REQ_CUSTOMER");
+
+                    b.HasOne("Domain.Product", "Product")
+                        .WithMany("ReserveRequests")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired()
+                        .HasConstraintName("FK_RESERVE_REQ_PRODUCT");
+
+                    b.HasOne("Domain.StatusItem", "Status")
+                        .WithMany("ReserveRequests")
+                        .HasForeignKey("StatusId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_RESERVE_REQ_STATUS");
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Status");
+                });
+
             modelBuilder.Entity("Domain.RespondingParty", b =>
                 {
                     b.HasOne("Domain.ContactMech", "ContactMech")
@@ -81310,6 +81426,10 @@ namespace Persistence.Migrations
 
                     b.Navigation("RequirementRoles");
 
+                    b.Navigation("ReserveRequestsAsCustomer");
+
+                    b.Navigation("ReserveRequestsAsEmployee");
+
                     b.Navigation("RespondingParties");
 
                     b.Navigation("ReturnHeaderFromParties");
@@ -81970,6 +82090,8 @@ namespace Persistence.Migrations
                     b.Navigation("ReorderGuidelines");
 
                     b.Navigation("Requirements");
+
+                    b.Navigation("ReserveRequests");
 
                     b.Navigation("ReturnItems");
 
@@ -83053,6 +83175,8 @@ namespace Persistence.Migrations
                     b.Navigation("RequirementStatuses");
 
                     b.Navigation("Requirements");
+
+                    b.Navigation("ReserveRequests");
 
                     b.Navigation("ReturnHeaders");
 
