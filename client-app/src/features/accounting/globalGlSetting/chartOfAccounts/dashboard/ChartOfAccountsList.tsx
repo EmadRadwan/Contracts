@@ -242,15 +242,7 @@ const ChartOfAccountsList = () => {
           </Grid>
 
           <Grid item xs={12}>
-            <TabContext value="1">
-              <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <StyledTabs value="1">
-                  <StyledTab label={getTranslatedLabel("accounting.glAccount.list.title", "Chart of Accounts")} value="1" />
-                </StyledTabs>
-              </Box>
-
-              <TabPanel value="1">
-                <KendoGrid
+            <KendoGrid
                   style={{ height: "70vh" }}
                   data={flatGlAccounts?.data ?? []}
                   total={flatGlAccounts?.total ?? 0}
@@ -276,8 +268,6 @@ const ChartOfAccountsList = () => {
                 </KendoGrid>
 
                 {(isFlatFetching || isTopFetching) && <LoadingComponent />}
-              </TabPanel>
-            </TabContext>
           </Grid>
         </Grid>
       </Paper>
