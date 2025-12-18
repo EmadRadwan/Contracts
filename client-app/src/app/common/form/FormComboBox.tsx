@@ -105,7 +105,7 @@ export const FormComboBox = (fieldRenderProps: FieldRenderProps) => {
                 onBlur={handleOnBlur}
                 {...others}
             />
-            {
+            {/*{
                 showHint &&
                 <NotificationGroup style={position.bottomRight}>
                     <Notification type={{style: 'info', icon: true}} closable={false}>
@@ -116,7 +116,7 @@ export const FormComboBox = (fieldRenderProps: FieldRenderProps) => {
             {
                 showValidationMessage &&
                 <Error id={errorId}>{validationMessage}</Error>
-            }
+            }*/}
         </FieldWrapper>
     );
 };

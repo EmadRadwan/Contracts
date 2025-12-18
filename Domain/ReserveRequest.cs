@@ -19,6 +19,7 @@ public class ReserveRequest
     public decimal?  ReserveAmount                   { get; set; }
     public string?   Comments                     { get; set; }
     public string?   PayMethod                     { get; set; }
+    public string?   ChequeStatus                     { get; set; }
     public string? StatusId { get; set; }
     public string? EmployeePartyId { get; set; }
 

@@ -129,6 +129,7 @@ import MultiPaymentCertificatesList from "../../features/Projects/dashboard/Mult
 import InitialBalanceTransForm from "../../features/accounting/transaction/form/InitialBalanceTransForm";
 import SalesRequestsList from "../../features/orders/form/request/dashboard/SalesRequestsList";
 import PaymentsWithDueAmountsList from "../../features/accounting/payment/dashboard/PaymentsWithDueAmountsList";
+import ReserveRequestsList from "../../features/orders/form/request/dashboard/ReserveRequestsList";
 
 // Wrapper component to extract partyId from URL
 const PartyFinancialHistoryWrapper = () => {
@@ -299,6 +300,7 @@ export const routes: RouteObject[] = [
                     {path: "managePicklists", element: <ManagePicklists />},
                     {path: "issueRawMaterials", element: <WorkEffortsWithReservationsList />},
                     { path: "sales-requests", element: <SalesRequestsList /> },
+                    { path: "reserve-requests", element: <ReserveRequestsList /> },
                     {path: "billingAccounts", element: <BillingAccountsLayout />, children: [
                         {path: "/billingAccounts", element: <BillingAccountsList/>},
                         {path: "/billingAccounts/invoices", element: <BillingAccountInvoicesList />},

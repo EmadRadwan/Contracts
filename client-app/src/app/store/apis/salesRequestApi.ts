@@ -2,6 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { store } from "../configureStore";
 import { State, toODataString } from "@progress/kendo-data-query";
 import {SalesRequest} from "../../models/order/SalesRequest";
+import {ReserveRequest} from "../../models/order/ReserveRequest";
 
 interface ListResponse<T> {
     data: T[];
@@ -61,6 +62,26 @@ const salesRequestApi = createApi({
                     };
                 },
             }),
+            
+        fetchReserveRequests: builder.query<ListResponse<ReserveRequest>, State>({
+                query: (dataState) => {
+                    const odata = toODataString(dataState);
+                    // Backend expects $count=true for total
+                    const url = `/odata/reserveRequestRecords?$count=true&${odata}`;
+                    return { url, method: "GET" };
+                },
+                providesTags: ["ReserveRequest"],
+
+                transformResponse: (response: any, meta) => {
+                    const {totalCount} = JSON.parse(
+                        meta!.response!.headers.get("count")!,
+                    );
+                    return {
+                        data: response,
+                        total: totalCount,
+                    };
+                },
+            }),
 
             // -----------------------------------------------------------------
             // CREATE
@@ -73,6 +94,14 @@ const salesRequestApi = createApi({
                 }),
                 invalidatesTags: ["SalesRequest"],
             }),
+            addReserveRequest: builder.mutation<string, any>({
+                query: (payload) => ({
+                    url: "/reserveRequests/reserve",
+                    method: "POST",
+                    body: payload,
+                }),
+                invalidatesTags: ["ReserveRequest"],
+            }),
             // -----------------------------------------------------------------
             // UPDATE
             // -----------------------------------------------------------------
@@ -83,6 +112,14 @@ const salesRequestApi = createApi({
                     body: payload,
                 }),
                 invalidatesTags: ["SalesRequest"],
+            }),
+            updateReserveRequest: builder.mutation<ReserveRequestResponseDto, { reserveRequestDto: ReserveRequestDto }>({
+                query: (payload) => ({
+                    url: "reserveRequests",        // ← simplified, no ID in URL
+                    method: "PUT",
+                    body: payload,
+                }),
+                invalidatesTags: ["ReserveRequest"],
             }),
             // In your salesRequestApi.ts
             approveSalesRequest: builder.mutation<
@@ -130,7 +167,11 @@ export const {
     useAddSalesRequestMutation,
     useUpdateSalesRequestMutation,
     useDeleteSalesRequestMutation,
-    useApproveSalesRequestMutation, useCalculateInstallmentPriceMutation,
+    useApproveSalesRequestMutation,
+    useCalculateInstallmentPriceMutation,
+    useFetchReserveRequestsQuery,
+    useAddReserveRequestMutation,
+    useUpdateReserveRequestMutation,
 } = salesRequestApi;
 
 export { salesRequestApi };

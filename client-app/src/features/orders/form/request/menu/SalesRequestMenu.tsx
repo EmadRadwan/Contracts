@@ -25,6 +25,12 @@ const links = [
         key: "salesRequest.menu.salesRequests",
         icon: <RequestQuoteOutlinedIcon sx={{ color: "#4CAF50" }} />
     },
+    {
+        title: 'Reserve Requests',
+        path: '/reserve-requests',
+        key: "salesRequest.menu.reserveRequests",
+        icon: <RequestQuoteOutlinedIcon sx={{ color: "#4CAF50" }} />
+    },
 ];
 
 const normalizePath = (path: string) => path.replace(/^\//, '').toLowerCase();

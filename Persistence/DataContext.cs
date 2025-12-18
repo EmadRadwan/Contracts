@@ -28543,6 +28543,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                           .HasMaxLength(60)               // adjust if you have a standard length
                           .IsUnicode(false)
                           .HasColumnName("PAY_METHOD");
+                          
+                    entity.Property(e => e.ChequeStatus)
+                          .HasMaxLength(60)               // adjust if you have a standard length
+                          .IsUnicode(false)
+                          .HasColumnName("CHEQUE_STATUS");
                 
                     // --------------------------------------------------------------
                     // Audit stamps (standard OFBiz)

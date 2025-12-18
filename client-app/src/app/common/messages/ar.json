@@ -96,7 +96,44 @@
       "comments": "التعليقات"
     },
     "menu": {
-      "salesRequests": "طلبات المبيعات"
+      "salesRequests": "طلبات المبيعات",
+      "reserveRequests": "استمارات الحجز"
+    }
+  },
+  "reserveRequest": {
+    "titleNew": "طلب حجز جديد",
+    "titleEdit": "طلب الحجز",
+    "updated": "تم تحديث طلب الحجز",
+    "created": "تم إنشاء طلب الحجز",
+    "error": "فشل حفظ طلب الحجز",
+    "apartment": "الشقة *",
+    "reserveDate": "تاريخ الحجز *",
+    "customer": "العميل *",
+    "employee": "الموظف",
+    "project": "المشروع",
+    "status": "الحالة",
+    "amount": "مبلغ الحجز *",
+    "payMethod": "طريقة الدفع *",
+    "payMethod.cash": "نقدي",
+    "payMethod.bankTransfer": "تحويل بنكي",
+    "payMethod.cheque": "شيك",
+    "chequeStatus": "حالة الشيك *",
+    "chequeStatus.collect": "تحصيل",
+    "chequeStatus.register": "خزنة",
+    "comments": "تعليقات",
+    "list": {
+      "create": "إنشاء استمارة حجز",
+      "id": "رقم الطلب",
+      "apartment": "الشقة",
+      "customer": "العميل",
+      "employee": "الموظف",
+      "reserveDate": "تاريخ الحجز",
+      "amount": "مبلغ الحجز",
+      "payMethod": "طريقة الدفع",
+      "comments": "تعليقات"
+    },
+    "menu": {
+      "reserveRequests": "طلبات الحجز"
     }
   },
   "party": {

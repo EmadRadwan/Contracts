@@ -326,6 +326,13 @@
     "LAST_UPDATED_TX_STAMP": null,
     "CREATED_STAMP": "2022-05-27 12:23:42.217",
     "CREATED_TX_STAMP": null
+  },{
+    "SEQ_NAME": "ReserveRequest",
+    "SEQ_ID": 10000,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
   },
   {
     "SEQ_NAME": "ServerHitBin",
