@@ -48,7 +48,7 @@ public class UpdateGlAccount
                 if (glAccount == null)
                     return Results<UpdateGlAccountResponse>.Failure("GL Account not found", "GL_ACCOUNT_NOT_FOUND");
 
-                if (glAccount?.ParentGlAccountId == dto.ParentGlAccountId)
+                if (glAccount?.GlAccountId == dto.ParentGlAccountId)
                     return Results<UpdateGlAccountResponse>.Failure("Cannot assign account as child to itself", "GL_ACCOUNT_INVALID_PARENT");
 
                 // Update only the allowed fields
