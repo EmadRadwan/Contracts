@@ -42,6 +42,10 @@ public class UpdatePayment
         {
             var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             string finAccountTransId = null!;
+            var dto = request.PaymentDto;
+            var effectiveDate = dto.ChequeDate 
+                                ?? dto.EffectiveDate 
+                                ?? dto.EffectiveDate; // fallback preserves original if both are null (though unlikely)
 
 
             try
@@ -69,7 +73,7 @@ public class UpdatePayment
                                     ? request.PaymentDto.PartyIdFrom
                                     : request.PaymentDto.PartyIdTo,
                                 Amount = request.PaymentDto.Amount,
-                                EffectiveDate = request.PaymentDto.EffectiveDate,
+                                EffectiveDate = effectiveDate,
                                 FinAccountTransTypeId = finAccountTrans.FinAccountTransTypeId,
                                 FinAccountTransId = finAccountTrans.FinAccountTransId
                             };
@@ -137,7 +141,7 @@ public class UpdatePayment
                         StatusId = request.PaymentDto.StatusId,
                         PaymentMethodId = request.PaymentDto.PaymentMethodId,
                         PaymentMethodTypeId = paymentMethod.PaymentMethodTypeId,
-                        EffectiveDate = request.PaymentDto.EffectiveDate,
+                        EffectiveDate = effectiveDate,
                         Amount = request.PaymentDto.Amount,
                         Comments = request.PaymentDto.Comments,
                         ActualCurrencyAmount = request.PaymentDto.ActualCurrencyAmount,
@@ -162,7 +166,7 @@ public class UpdatePayment
                     StatusId = request.PaymentDto.StatusId,
                     PaymentMethodId = request.PaymentDto.PaymentMethodId,
                     PaymentMethodTypeId = paymentMethod.PaymentMethodTypeId,
-                    EffectiveDate = request.PaymentDto.EffectiveDate,
+                    EffectiveDate = effectiveDate,
                     Amount = request.PaymentDto.Amount,
                     ActualCurrencyAmount = request.PaymentDto.ActualCurrencyAmount,
                     ActualCurrencyUomId = request.PaymentDto.ActualCurrencyUomId == ""
@@ -176,7 +180,7 @@ public class UpdatePayment
                     FinAccountTransId = finAccountTransId,
                     OverrideGlAccountId = request.PaymentDto.OverrideGlAccountId,
                     ProjectId = request.PaymentDto.ProjectId,
-                    CostCenterId =  request.PaymentDto.CostCenterId,
+                    CostCenterId = request.PaymentDto.CostCenterId,
                     ChequeNumber = request.PaymentDto.ChequeNumber,
                     ChequeDate = request.PaymentDto.ChequeDate
                 };

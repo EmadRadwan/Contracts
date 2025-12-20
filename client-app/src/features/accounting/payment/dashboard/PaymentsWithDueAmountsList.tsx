@@ -35,9 +35,9 @@ export default function PaymentsWithDueAmountsList() {
 
     const [payments, setPayments] = React.useState<DataResult>({ data: [], total: 0 });
     const [dataState, setDataState] = React.useState<State>({
-        sort: [{ field: "effectiveDate", dir: "desc" }],
+        sort: [{ field: "effectiveDate", dir: "asc" }],
         skip: 0,
-        take: 20, // REFACTOR: Increased default page size slightly for combined view
+        take: 20,
     });
 
     const formEditMode = useAppSelector((s) => s.paymentsUi.formEditMode);

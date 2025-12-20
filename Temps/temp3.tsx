@@ -1,26 +1,22 @@
-const handleSubmitData = async (data: any) => {
-    try {
-        const flattened = flattenComboValues(data);
+// Inside the Accounting module's children array
 
-        // REFACTOR: Include ReserveRequestId when in edit mode
-        // Purpose: Allows backend to identify which record to update
-        const payload = {
-            reserveRequestDto: {
-                ...(editMode === 2 && { reserveRequestId: reserveRequest?.reserveRequestId }),
-                ...flattened
-            }
-        };
+// Payments sub-module (Incoming + Outgoing)
+{
+    element: <RequireRole allowedRoles="Accounting_Payments_View" />,
+        children: [
+    { path: "payments/incoming", element: <PaymentsList paymentType="incoming" /> },
+    { path: "payments/outgoing", element: <PaymentsList paymentType="outgoing" /> },
+],
+},
 
-        if (editMode === 2) {
-            const updated = await updateRR(payload).unwrap();
-            toast.success(getTranslatedLabel("reserveRequest.updated", "Reserve request updated"));
-            onReserveRequestUpdated?.(updated as ReserveRequest);
-        } else {
-            const created = await createRR(payload).unwrap();
-            toast.success(getTranslatedLabel("reserveRequest.created", "Reserve request created"));
-            onReserveRequestCreated?.(created as ReserveRequest);
-        }
-    } catch (error: any) {
-        // ... error handling
-    }
-};
+// Due Payments — separately protected
+{
+    element: <RequireRole allowedRoles="Accounting_Payments_Due_View" />,
+        children: [
+    // REFACTOR: Wrapped duePayments route in its own RequireRole wrapper.
+    // Purpose: Allow fine-grained access — users can have permission for regular payments
+    // but not for due/overdue payments view (or vice versa).
+    // Improves: Maximum flexibility in role assignments without affecting other payment routes.
+    { path: "duePayments", element: <PaymentsWithDueAmountsList /> },
+],
+},

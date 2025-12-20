@@ -1191,6 +1191,10 @@ public class PaymentHelperService : IPaymentHelperService
     {
         try
         {
+            var effectiveDate = request.ChequeDate 
+                                ?? request.PaymentDate 
+                                ?? DateTime.UtcNow;
+            
             // 1) Map parameters to createPayment
             var createPaymentMap = new CreatePaymentParam
             {
@@ -1198,7 +1202,7 @@ public class PaymentHelperService : IPaymentHelperService
                 PartyIdTo = request.PartyIdTo,
                 Amount = request.Amount,
                 StatusId = request.StatusId,
-                EffectiveDate = request.PaymentDate ?? DateTime.UtcNow,
+                EffectiveDate = effectiveDate,
                 PaymentTypeId = request.PaymentTypeId,
                 ChequeNumber = request.ChequeNumber, // Added
                 ChequeDate = request.ChequeDate, // Added
@@ -1272,7 +1276,7 @@ public class PaymentHelperService : IPaymentHelperService
                             PartyId = request.PartyIdFrom,
                             Amount = request.Amount,
                             FinAccountTransTypeId = request.FinAccountTransTypeId,
-                            EffectiveDate = request.PaymentDate ?? DateTime.UtcNow
+                            EffectiveDate = effectiveDate
                         };
 
                         // Create FinAccountTrans
@@ -1283,17 +1287,28 @@ public class PaymentHelperService : IPaymentHelperService
 
 
                         // Update Payment with FinAccountTransId
-                        var updatePaymentCtx = new CreatePaymentParam
+                        var updatePaymentMap = new CreatePaymentParam // Note: assuming UpdatePayment accepts the same param type
                         {
                             PaymentId = paymentId,
-                            PaymentMethodId = request.PaymentMethodId,
+                            PartyIdFrom = createPaymentMap.PartyIdFrom,
+                            PartyIdTo = createPaymentMap.PartyIdTo,
+                            Amount = createPaymentMap.Amount,
+                            StatusId = payment.StatusId ?? createPaymentMap.StatusId, // use returned value if changed
+                            EffectiveDate = createPaymentMap.EffectiveDate,
+                            PaymentTypeId = createPaymentMap.PaymentTypeId,
+                            ChequeNumber = createPaymentMap.ChequeNumber,
+                            ChequeDate = createPaymentMap.ChequeDate,
+                            Comments = createPaymentMap.Comments,
+                            OverrideGlAccountId = createPaymentMap.OverrideGlAccountId,
+                            ProjectId = createPaymentMap.ProjectId,
+                            CostCenterId = createPaymentMap.CostCenterId,
+                            PaymentMethodId = createPaymentMap.PaymentMethodId,
+                            PaymentMethodTypeId = createPaymentMap.PaymentMethodTypeId,
                             FinAccountTransId = finAccountTransId,
-                            StatusId = payment.StatusId,
-                            Comments = payment.Comments,
-                            PaymentRefNum = payment.PaymentRefNum,
+                            PaymentRefNum = payment.PaymentRefNum // preserve any server-generated ref
                         };
 
-                        await UpdatePayment(updatePaymentCtx);
+                        await UpdatePayment(updatePaymentMap);
                     }
                 }
             }

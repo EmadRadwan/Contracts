@@ -32,6 +32,7 @@ import CertificatesListModal from "../dashboard/CertificatesListModal";
 import {certificateItemsApi} from "../../../app/store/apis/certificateItemsApi";
 import {WorkmanshipCertificateExcel} from "../report/WorkmanshipCertificateExcel";
 import {SupplyCertificateExcel} from "../report/SupplyCertificateExcel";
+import {Can} from "../../account/Can";
 
 interface ProjectCertificateFormProps {
     editMode: number; // 0: view, 1: create, 2: edit (CREATED), 3: edit (APPROVED), 4: edit (COMPLETED)
@@ -98,9 +99,11 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
                 anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}
                 transformOrigin={{vertical: 'top', horizontal: 'right'}}
             >
-                {user?.roles?.includes('ReviewCertificate') &&
-                    [CertificateStatus.CREATED, CertificateStatus.REQUIRES_EDIT].includes(currentStatusId) && (
-                        <>
+                <Can
+                    perform="ReviewCertificate"
+                    yes={() => [CertificateStatus.CREATED, CertificateStatus.REQUIRES_EDIT].includes(currentStatusId)}
+                >
+                    <>
                         <MenuItem onClick={() => handleStatusUpdate('MarkReadyForApproval')}>
                             {getTranslatedLabel('projects.certificate.markAsReadyForApproval', 'Mark as Ready for Approval')}
                         </MenuItem>
@@ -108,12 +111,13 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
                             {getTranslatedLabel('projects.certificate.markAsRequiresEdit', 'Mark as Requires Editing')}
                         </MenuItem>
                     </>
-                )}
-                {user?.roles?.includes('ApproveCertificate') && (
+                </Can>
+
+                <Can perform="ApproveCertificate">
                     <MenuItem onClick={handleApprove} disabled={isApproveDisabled}>
                         {getTranslatedLabel('projects.certificate.approve', 'Approve Certificate')}
                     </MenuItem>
-                )}
+                </Can>
                
             </Menu>
         </>

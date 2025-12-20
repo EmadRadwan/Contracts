@@ -1,10 +1,7 @@
-public class StatusItem
-{
-    // existing properties...
-
-    // existing SalesRequests collection...
-
-    // REFACTOR: Add collection for ReserveRequest entities using this status
-    // Why: Completes bidirectional navigation for status-based queries
-    public ICollection<ReserveRequest> ReserveRequests { get; set; } = new List<ReserveRequest>();
-}
+,
+"Accounting_Invoices_View",
+"Accounting_Payments_View",
+"Accounting_GLSettings_View",
+"Accounting_Transactions_View",
+"Accounting_BillingAccounts_View",
+"Accounting_MultiPaymentCertificates_View"

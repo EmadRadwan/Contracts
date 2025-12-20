@@ -2586,8 +2586,8 @@ public class SeedContracts
                 JsonConvert.DeserializeObject<List<TransactionTypeAccountRule>>(jsonData);
             await context.TransactionTypeAccountRules.AddRangeAsync(transactionTypeAccountRules);
             await context.SaveChangesAsync();
-        } 
-        
+        }
+
         //cost centers
         if (!context.CostCenters.Any())
         {
@@ -2614,7 +2614,25 @@ public class SeedContracts
         try
         {
             // Create roles
-            var requiredRoles = new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm", "ReviewCertificate" };
+            var requiredRoles = new[]
+            {
+                "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm", "ReviewCertificate",
+                // Add these new module-level roles
+                "Catalog_View",
+                "Facility_View",
+                "Party_View",
+                "Accounting_View",
+                "Projects_View",
+                "Sales_View",
+                "Accounting_Invoices_View",
+                "Accounting_Payments_View",
+                "Accounting_Payments_Due_View",
+                "Accounting_GLSettings_View",
+                "Accounting_Transactions_View",
+                "Accounting_BillingAccounts_View",
+                "Accounting_MultiPaymentCertificates_View"
+            };
+
             foreach (var role in requiredRoles)
             {
                 // REFACTOR: Added error handling for role creation to catch and report failures.
@@ -2689,7 +2707,14 @@ public class SeedContracts
                 PartyId = "27",
                 CreatedStamp = nowDateTime,
                 LastUpdatedStamp = nowDateTime
-            }
+            },
+            new UserLogin
+            {
+                UserLoginId = "92a02dc0-70ea-64d0-a687-6a72b2f91d06",
+                PartyId = "28",
+                CreatedStamp = nowDateTime,
+                LastUpdatedStamp = nowDateTime
+            },
         };
     }
 
@@ -2724,6 +2749,34 @@ public class SeedContracts
                 EmailConfirmed = true,
                 CreatedStamp = nowDateTime,
                 LastUpdatedStamp = nowDateTime
+            },
+            new()
+            {
+                Id = "92a02dc0-70ea-64d0-a687-6a72b2f91d06", // REFACTOR: Added Id to match UserLoginId for consistency.
+                DisplayName = "Ahmad Maher",
+                UserName = "Maher",
+                PartyId = "28",
+                OrganizationPartyId = "Company",
+                ProductStoreId = "9000",
+                Email = "amaher@gmail.com",
+                DualLanguage = "N",
+                EmailConfirmed = true,
+                CreatedStamp = nowDateTime,
+                LastUpdatedStamp = nowDateTime
+            },
+            new()
+            {
+                Id = "87a02dc0-60ea-64d0-a687-6a72b2f91d45", // REFACTOR: Added Id to match UserLoginId for consistency.
+                DisplayName = "Abulla Adel",
+                UserName = "Adel",
+                PartyId = "149",
+                OrganizationPartyId = "Company",
+                ProductStoreId = "9000",
+                Email = "aadel@gmail.com",
+                DualLanguage = "N",
+                EmailConfirmed = true,
+                CreatedStamp = nowDateTime,
+                LastUpdatedStamp = nowDateTime
             }
         };
     }
@@ -2735,12 +2788,46 @@ public class SeedContracts
         var userRoles = new Dictionary<string, string[]>
         {
             {
-                "eradwan1967@gmail.com",
-                new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm", "ReviewCertificate"  }
+                "eradwan1967@gmail.com", new[]
+                {
+                    "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm", "ReviewCertificate",
+                    "Catalog_View", "Facility_View", "Party_View", "Accounting_View", "Projects_View", "Sales_View",
+                    "Accounting_Invoices_View",
+                    "Accounting_Payments_View",
+                    "Accounting_Payments_Due_View",
+                    "Accounting_GLSettings_View",
+                    "Accounting_Transactions_View",
+                    "Accounting_BillingAccounts_View",
+                    "Accounting_MultiPaymentCertificates_View"
+                }
             },
             {
-                "aagiba@gmail.com",
-                new[] { "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm", "ReviewCertificate"  }
+                "aagiba@gmail.com", new[]
+                {
+                    "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm", "ReviewCertificate",
+                    "Catalog_View", "Facility_View", "Party_View", "Accounting_View", "Projects_View", "Sales_View",
+                    "Accounting_Invoices_View",
+                    "Accounting_Payments_View",
+                    "Accounting_Payments_Due_View",
+                    "Accounting_GLSettings_View",
+                    "Accounting_Transactions_View",
+                    "Accounting_BillingAccounts_View",
+                    "Accounting_MultiPaymentCertificates_View"
+                }
+            },
+            {
+                "amaher@gmail.com", new[]
+                {
+                    "CreateCertificate", "Projects_View", "Sales_View", "Accounting_View",
+                    "Accounting_Invoices_View"
+                }
+            },
+            {
+                "aadel@gmail.com", new[]
+                {
+                    "Accounting_View", "Accounting_Payments_View",
+                    "Accounting_MultiPaymentCertificates_View"
+                }
             }
         };
 

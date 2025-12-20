@@ -50,7 +50,7 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
     sort: [
       {
         field: "effectiveDate",
-        dir: "desc",
+        dir: "asc",
       },
     ],
     skip: 0,

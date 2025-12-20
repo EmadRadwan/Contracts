@@ -13,6 +13,7 @@ import {setHeaderSelectedMenu} from "../slice/appUiSlice";
 import {StoreMallDirectory} from "@mui/icons-material";
 import { useTranslationHelper } from "../hooks/useTranslationHelper";
 import withFloatingLabel from "../components/FloatingLabel";
+import {Can} from "../../features/account/Can";
 
 const MyNavLink = React.forwardRef<any, any>((props, ref) => (
     <NavLink
@@ -22,6 +23,15 @@ const MyNavLink = React.forwardRef<any, any>((props, ref) => (
         {props.children}
     </NavLink>
 ));
+
+const moduleRoleMap: Record<string, string> = {
+    catalog: "Catalog_View",
+    facility: "Facility_View",
+    party: "Party_View",
+    accounting: "Accounting_View",
+    projects: "Projects_View",
+    sales: "Sales_View",
+};
 
 const midLinks = [
     { title: "catalog", path: "/products", key: "catalog", icon: <ShoppingCartOutlinedIcon sx={{ color: "#FFA500" }} /> },
@@ -93,24 +103,31 @@ export default function Header() {
                 </Box>
                 <Box display="flex" alignItems="left">
                     <List sx={{display: "flex"}}>
-                        {midLinks.map(({ title, path, icon, key }) => (
-                            <ListItem
-                                component={NavLink}
-                                to={path}
-                                key={path}
-                                sx={{
-                                    ...navStyles(path)
-                                }}
-                                onClick={() => dispatch(setHeaderSelectedMenu(path))}
-                            >
-                                <ListItemIcon sx={{ minWidth: "unset", marginX: "8px", fontSize: 28 }}>
-                                    {icon}
-                                </ListItemIcon>
-                                <FloatingLabelText label={title} translationKey={`general.header.${key}`} placement="bottom">
-                                    {getTranslatedLabel(`general.header.${key}`, title).toUpperCase()}
-                                </FloatingLabelText>
-                            </ListItem>
-                        ))}
+                        {midLinks.map(({ title, path, icon, key }) => {
+                            const requiredRole = moduleRoleMap[key];
+
+                            return requiredRole ? (
+                                <Can perform={requiredRole} key={path}>
+                                    <ListItem
+                                        component={NavLink}
+                                        to={path}
+                                        sx={{ ...navStyles(path) }}
+                                        onClick={() => dispatch(setHeaderSelectedMenu(path))}
+                                    >
+                                        <ListItemIcon sx={{ minWidth: "unset", marginX: "8px", fontSize: 28 }}>
+                                            {icon}
+                                        </ListItemIcon>
+                                        <FloatingLabelText
+                                            label={title}
+                                            translationKey={`general.header.${key}`}
+                                            placement="bottom"
+                                        >
+                                            {getTranslatedLabel(`general.header.${key}`, title).toUpperCase()}
+                                        </FloatingLabelText>
+                                    </ListItem>
+                                </Can>
+                            ) : null;
+                        })}
                         {/*{user && user.roles?.includes('Admin') &&
                             <ListItem
                                 component={NavLink}

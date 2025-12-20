@@ -17,6 +17,8 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import withFloatingLabelFlexible from '../../../../app/components/FloatingLabel';
 import { useTranslationHelper } from '../../../../app/hooks/useTranslationHelper';
 import React, { useState } from "react";
+import {Can} from "../../../account/Can";
+import {useAppSelector} from "../../../../app/store/configureStore";
 
 interface AccountingMenuProps {
     selectedMenuItem?: string;
@@ -40,9 +42,11 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
     const theme = useTheme();
     const normalizedSelectedMenuItem = normalizePath(selectedMenuItem || '');
     const { getTranslatedLabel } = useTranslationHelper();
-
+    /*const { user } = useAppSelector(state => state.account);
+    console.log('Current user roles:', user?.roles);
+*/
     const FloatingLabelText = withFloatingLabelFlexible(({ children }: { children: string }) => (
-        <Typography variant="body2" sx={{ marginLeft: '4px' }}>
+        <Typography variant="body2" sx={{ marginLeft: '1px' }}>
             {children}
         </Typography>
     ));
@@ -56,13 +60,11 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
         fontWeight: isSelected ? "bold" : "normal",
         display: 'flex',
         alignItems: 'center',
-        padding: '6px 12px',           // Slightly increased horizontal padding for comfort
-        minWidth: '150px',             // ← Key change: consistent minimum width
-        justifyContent: 'center',      // Centers content (icon + text + arrow) within the box
-        textAlign: 'center',           // Ensures text centering even if it wraps
-        whiteSpace: 'nowrap',          // Optional: prevent wrapping (default behavior)
-        // overflow: 'hidden',         // Use with nowrap if you want to truncate very long text
-        // textOverflow: 'ellipsis',
+        padding: '6px 12px',
+        minWidth: '130px',
+        justifyContent: 'center',
+        textAlign: 'center',
+        whiteSpace: 'nowrap',
     });
 
     const handleClick = (key: string) => {
@@ -71,48 +73,26 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
         }
     };
 
+    // REFACTOR: Flattened the Payments group — removed the dropdown and promoted the 3 sub-items to top-level menu items
+    // Purpose: Display Incoming, Outgoing, and Due Payments directly in the main horizontal bar as requested
+    // Improves: Better visibility and quicker access to frequently used payment views; reduces clicks
+    // Context: The parent "Payments" dropdown was removed entirely
     const menuGroups = [
         {
             groupKey: "orders",
             title: "Orders",
             icon: <AddShoppingCartIcon sx={{ color: "#FF4081" }} />,
+            requiredRole: "Sales_View",
             subItems: [
                 { title: "Sales Orders", key: "salesOrders", path: "/orders/sales", icon: <AddShoppingCartIcon sx={{ color: "#FF4081" }} /> },
                 { title: "Purchase Orders", key: "purchaseOrders", path: "/orders/purchase", icon: <StoreIcon sx={{ color: "#FF4081" }} /> },
             ],
         },
-        {
-            groupKey: "payments",
-            title: "Payments",
-            icon: <PaymentOutlinedIcon sx={{ color: "#4CAF50" }} />,
-            subItems: [
-                { title: "Incoming Payments", key: "incomingPayments", path: "/payments/incoming", icon: <PaymentOutlinedIcon sx={{ color: "#4CAF50" }} />, isPayment: true },
-                { title: "Outgoing Payments", key: "outgoingPayments", path: "/payments/outgoing", icon: <PaymentOutlinedIcon sx={{ color: "#F44336" }} />, isPayment: true },
-                { title: "Due Payments", key: "duePayments", path: "/duePayments", icon: <PaymentOutlinedIcon sx={{ color: "#F44336" }} /> },
-            ],
-        },
-        {
-            title: 'Invoices',
-            key: 'invoices',
-            path: '/invoices',
-            icon: <ReceiptOutlinedIcon sx={{ color: "#FFA500" }} />,
-        },
-        {
-            title: 'Billing Accounts',
-            key: 'creditLimitFormAdvancePayments',
-            path: '/billingAccounts',
-            icon: <BatteryCharging60Icon sx={{ color: "#03A9F4" }} />,
-        },
-        {
-            title: "Multi-Payment Certificates",
-            key: "multiPaymentCertificates",
-            path: "/multiPaymentCertificates",
-            icon: <AccountBalanceWalletOutlinedIcon sx={{ color: "#3F51B5" }} />,
-        },
-        {
+       {
             groupKey: "glSettings",
             title: "GL Settings",
             icon: <LocalAtmOutlinedIcon sx={{ color: "#E91E63" }} />,
+            requiredRole: "Accounting_GLSettings_View",
             subItems: [
                 { title: 'Global GL Settings', key: 'globalGLSettings', path: '/globalGL', icon: <LocalAtmOutlinedIcon sx={{ color: "#E91E63" }} /> },
                 { title: 'Organization GL Settings', key: 'organizationGLSettings', path: '/orgGL', icon: <AccountTreeOutlinedIcon sx={{ color: "#8BC34A" }} /> },
@@ -122,6 +102,7 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
             groupKey: "transactions",
             title: "Transactions",
             icon: <ReceiptIcon sx={{ color: "#8BC34A" }} />,
+            requiredRole: "Accounting_Transactions_View",
             subItems: [
                 { title: 'Transactions', key: 'transactions', path: '/accountingTransaction', icon: <ReceiptIcon sx={{ color: "#8BC34A" }} /> },
                 { title: 'Transactions Entries', key: 'transactions-entries', path: '/accountingTransactionEntries', icon: <ReceiptLongIcon sx={{ color: "#FF4081" }} /> },
@@ -131,89 +112,104 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
         },
     ];
 
+    const standaloneItems = [
+        { title: "Incoming Payments", key: "incomingPayments", path: "/payments/incoming", icon: <PaymentOutlinedIcon sx={{ color: "#4CAF50" }} />, requiredRole: "Accounting_Payments_View", isPayment: true },
+        { title: "Outgoing Payments", key: "outgoingPayments", path: "/payments/outgoing", icon: <PaymentOutlinedIcon sx={{ color: "#F44336" }} />, requiredRole: "Accounting_Payments_View", isPayment: true },
+        { title: "Due Payments", key: "duePayments", path: "/duePayments", icon: <PaymentOutlinedIcon sx={{ color: "#F44336" }} />, requiredRole: "Accounting_Payments_Due_View", isPayment: true },
+        { title: 'Invoices', key: 'invoices', path: '/invoices', icon: <ReceiptOutlinedIcon sx={{ color: "#FFA500" }} />, requiredRole: "Accounting_Invoices_View" },
+        { title: 'Billing Accounts', key: 'creditLimitFormAdvancePayments', path: '/billingAccounts', icon: <BatteryCharging60Icon sx={{ color: "#03A9F4" }} />, requiredRole: "Accounting_BillingAccounts_View" },
+        { title: "Multi-Payment Certificates", key: "multiPaymentCertificates", path: "/multiPaymentCertificates", icon: <AccountBalanceWalletOutlinedIcon sx={{ color: "#3F51B5" }} />, requiredRole: "Accounting_MultiPaymentCertificates_View" },
+    ];
+
     return (
         <Toolbar sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', paddingLeft: 0 }}>
             <Box display="flex" alignItems="center">
-                <List sx={{ display: 'flex', padding: 0, gap: 3}}>
-                    {menuGroups.map((item) => {
-                        // Determine if this top-level item (or any sub-item) is selected
-                        const itemPaths = 'subItems' in item ? item.subItems.map(sub => normalizePath(sub.path)) : [normalizePath(item.path || '')];
-                        const isGroupSelected = itemPaths.some(p => p === normalizedSelectedMenuItem);
+                <List sx={{ display: 'flex', padding: 0, gap: .1 }}>
+                    {menuGroups.map((group) => (
+                        <Can perform={group.requiredRole} key={group.groupKey}>
+                            {(() => {
+                                const itemPaths = group.subItems.map(sub => normalizePath(sub.path));
+                                const isGroupSelected = itemPaths.some(p => p === normalizedSelectedMenuItem);
+                                const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+                                const open = Boolean(anchorEl);
 
-                        if ('subItems' in item) {
-                            // REFACTOR: Introduced dropdown menus using MUI Menu + IconButton for grouped items.
-                            // This keeps the main bar fully horizontal, saves significant space, and opens submenus vertically below without affecting main content area.
-                            const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-                            const open = Boolean(anchorEl);
+                                const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+                                    setAnchorEl(event.currentTarget);
+                                };
 
-                            const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-                                setAnchorEl(event.currentTarget);
-                            };
+                                const handleMenuClose = () => {
+                                    setAnchorEl(null);
+                                };
 
-                            const handleMenuClose = () => {
-                                setAnchorEl(null);
-                            };
+                                return (
+                                    <ListItem key={group.groupKey} disablePadding>
+                                        <IconButton onClick={handleMenuOpen} sx={getNavItemStyles(isGroupSelected)}>
+                                            {group.icon}
+                                            <FloatingLabelText label={group.title} translationKey={`accounting.menu.${group.groupKey}`}>
+                                                {getTranslatedLabel(`accounting.menu.${group.groupKey}`, group.title).toUpperCase()}
+                                            </FloatingLabelText>
+                                            <ArrowDropDownIcon fontSize="small" />
+                                        </IconButton>
+                                        <Menu
+                                            anchorEl={anchorEl}
+                                            open={open}
+                                            onClose={handleMenuClose}
+                                            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                                            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                                        >
+                                            {group.subItems.map((sub) => {
+                                                const isSubSelected = normalizePath(sub.path) === normalizedSelectedMenuItem;
+                                                return (
+                                                    <MenuItem
+                                                        key={sub.key}
+                                                        component={NavLink}
+                                                        to={sub.path}
+                                                        onClick={() => {
+                                                            handleClick(sub.key);
+                                                            handleMenuClose();
+                                                        }}
+                                                        selected={isSubSelected}
+                                                        sx={{ display: 'flex', alignItems: 'center' }}
+                                                    >
+                                                        {sub.icon}
+                                                        <Typography variant="body2" sx={{ ml: 1 }}>
+                                                            {getTranslatedLabel(`accounting.menu.${sub.key}`, sub.title)}
+                                                        </Typography>
+                                                    </MenuItem>
+                                                );
+                                            })}
+                                        </Menu>
+                                    </ListItem>
+                                );
+                            })()}
+                        </Can>
+                    ))}
 
-                            return (
-                                <ListItem key={item.groupKey} disablePadding>
-                                    <IconButton
-                                        onClick={handleMenuOpen}
-                                        sx={getNavItemStyles(isGroupSelected)}
+                    {/* Standalone Items – wrapped in <Can> */}
+                    {standaloneItems.map((item) => (
+                        <Can perform={item.requiredRole} key={item.key}>
+                            {(() => {
+                                const isSelected = normalizePath(item.path) === normalizedSelectedMenuItem;
+                                const LinkComponent = item.isPayment ? NavLinkWithReset : NavLink;
+
+                                return (
+                                    <ListItem
+                                        component={LinkComponent}
+                                        to={item.path}
+                                        sx={getNavItemStyles(isSelected)}
+                                        onClick={() => handleClick(item.key)}
+                                        disablePadding
                                     >
                                         {item.icon}
-                                        <FloatingLabelText label={item.title} translationKey={`accounting.menu.${item.groupKey}`}>
-                                            {getTranslatedLabel(`accounting.menu.${item.groupKey}`, item.title).toUpperCase()}
+                                        <FloatingLabelText label={item.title} translationKey={`accounting.menu.${item.key}`}>
+                                            {getTranslatedLabel(`accounting.menu.${item.key}`, item.title).toUpperCase()}
                                         </FloatingLabelText>
-                                        <ArrowDropDownIcon fontSize="small" />
-                                    </IconButton>
-                                    <Menu
-                                        anchorEl={anchorEl}
-                                        open={open}
-                                        onClose={handleMenuClose}
-                                        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                                        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-                                    >
-                                        {item.subItems.map((sub) => {
-                                            const LinkComponent = sub.isPayment ? NavLinkWithReset : NavLink;
-                                            const isSubSelected = normalizePath(sub.path) === normalizedSelectedMenuItem;
-
-                                            return (
-                                                <MenuItem
-                                                    key={sub.key}
-                                                    component={LinkComponent}
-                                                    to={sub.path}
-                                                    onClick={() => {
-                                                        handleClick(sub.key);
-                                                        handleMenuClose();
-                                                    }}
-                                                    selected={isSubSelected}
-                                                    sx={{ display: 'flex', alignItems: 'center' }}
-                                                >
-                                                    {sub.icon}
-                                                    <Typography variant="body2" sx={{ ml: 1 }}>
-                                                        {getTranslatedLabel(`accounting.menu.${sub.key}`, sub.title)}
-                                                    </Typography>
-                                                </MenuItem>
-                                            );
-                                        })}
-                                    </Menu>
-                                </ListItem>
-                            );
-                        }
-
-                        // Single items (no submenu)
-                        const LinkComponent = item.key.startsWith('incoming') || item.key.startsWith('outgoing') ? NavLinkWithReset : NavLink;
-                        const isSelected = normalizePath(item.path) === normalizedSelectedMenuItem;
-
-                        return (
-                            <ListItem key={item.key} component={LinkComponent} to={item.path} sx={getNavItemStyles(isSelected)} onClick={() => handleClick(item.key)} disablePadding>
-                                {item.icon}
-                                <FloatingLabelText label={item.title} translationKey={`accounting.menu.${item.key}`}>
-                                    {getTranslatedLabel(`accounting.menu.${item.key}`, item.title).toUpperCase()}
-                                </FloatingLabelText>
-                            </ListItem>
-                        );
-                    })}
+                                    </ListItem>
+                                );
+                            })()}
+                        </Can>
+                    ))}
+                    
                 </List>
             </Box>
         </Toolbar>
