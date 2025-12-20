@@ -2630,7 +2630,8 @@ public class SeedContracts
                 "Accounting_GLSettings_View",
                 "Accounting_Transactions_View",
                 "Accounting_BillingAccounts_View",
-                "Accounting_MultiPaymentCertificates_View"
+                "Accounting_MultiPaymentCertificates_View",
+                "Process_Payment"
             };
 
             foreach (var role in requiredRoles)
@@ -2715,6 +2716,13 @@ public class SeedContracts
                 CreatedStamp = nowDateTime,
                 LastUpdatedStamp = nowDateTime
             },
+            new UserLogin
+            {
+                UserLoginId = "87a02dc0-60ea-64d0-a687-6a72b2f91d45",
+                PartyId = "149",
+                CreatedStamp = nowDateTime,
+                LastUpdatedStamp = nowDateTime
+            }
         };
     }
 
@@ -2798,7 +2806,7 @@ public class SeedContracts
                     "Accounting_GLSettings_View",
                     "Accounting_Transactions_View",
                     "Accounting_BillingAccounts_View",
-                    "Accounting_MultiPaymentCertificates_View"
+                    "Accounting_MultiPaymentCertificates_View", "Process_Payment"
                 }
             },
             {
@@ -2812,7 +2820,7 @@ public class SeedContracts
                     "Accounting_GLSettings_View",
                     "Accounting_Transactions_View",
                     "Accounting_BillingAccounts_View",
-                    "Accounting_MultiPaymentCertificates_View"
+                    "Accounting_MultiPaymentCertificates_View", "Process_Payment"
                 }
             },
             {

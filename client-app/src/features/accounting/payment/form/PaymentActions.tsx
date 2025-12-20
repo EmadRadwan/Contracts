@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Button, Menu, MenuItem } from '@mui/material';
 import { Payment } from "../../../../app/models/accounting/payment";
+import {CertificateStatus} from "../../../../app/models/project/certificate";
+import {Can} from "../../../account/Can";
 
 const LOCALIZATION_KEY = "accounting.payments.form";
 
@@ -109,17 +111,25 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
+
+                <Can
+                    perform="Process_Payment"
+                >
+                    <>
+                        {getAvailableStatusTransitions(payment).toSent && (
+                            <MenuItem onClick={() => onMenuSelect('send')}>
+                                {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.send`, "Status to Sent")}
+                            </MenuItem>
+                        )}
+
+                        {getAvailableStatusTransitions(payment).toReceived  && (
+                            <MenuItem onClick={() => onMenuSelect('receive')}>
+                                {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.receive`, "Status to Received")}
+                            </MenuItem>
+                        )}
+                    </>
+                </Can>
                 
-                {getAvailableStatusTransitions(payment).toSent  && (
-                    <MenuItem onClick={() => onMenuSelect('send')}>
-                        {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.send`, "Status to Sent")}
-                    </MenuItem>
-                )}
-                {getAvailableStatusTransitions(payment).toReceived  && (
-                    <MenuItem onClick={() => onMenuSelect('receive')}>
-                        {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.receive`, "Status to Received")}
-                    </MenuItem>
-                )}
                 {/*{getAvailableStatusTransitions(payment).toCancelled && (
                     <MenuItem onClick={() => onMenuSelect('cancel')}>
                         {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.cancel`, "Status to Cancelled")}
