@@ -30,6 +30,8 @@ import { useAppSelector } from "../../../../../app/store/configureStore";
 import { useAssignGlAccountToOrganizationMutation, useFetchGlAccountOrganizationHierarchyLovQuery } from "../../../../../app/store/apis";
 import { useFetchTopLevelGlobalGlAccountsQuery, useCreateGlAccountMutation, useUpdateGlAccountMutation } from "../../../../../app/store/apis/accounting/globalGlSettingsApi";
 import { FormDropDownTreeGlAccountWithChildren } from "../../../../../app/common/form/FormDropDownTreeGlAccountWithChildren";
+import {FormComboBoxVirtualGlAccountTypes} from "../../../../../app/common/form/FormComboBoxVirtualGlAccountTypes";
+import {FormComboBoxVirtualGlAccountClasses} from "../../../../../app/common/form/FormComboBoxVirtualGlAccountClasses";
 
 interface Props {
     account?: GlAccount;
@@ -76,41 +78,38 @@ const messages: Record<string, Record<string, string>> = {
     },
 };
 
-/* ------------------------------------------------------------------
-   Static lookup data – no extra API calls needed
-   ------------------------------------------------------------------ */
-const glAccountTypes = [
-    "_NA_",
-    "ACCOUNTS_PAYABLE",
-    "ACCOUNTS_RECEIVABLE",
-    "CURRENT_ASSET",
-    "CURRENT_LIABILITY",
-    "INCOME",
-    "EXPENSE",
-    "OWNERS_EQUITY",
-    "INVENTORY_ACCOUNT",
-    "COGS_ACCOUNT",
-    "SALES_ACCOUNT",
-    "BANK_STLMNT_ACCOUNT",
-    "UNDEPOSITED_RECEIPTS",
-    // … add the rest from your list if you want them visible
-].map((id) => ({ glAccountTypeId: id, text: id === "_NA_" ? id : id.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ") }));
 
-const glAccountClasses = [
-    "ASSET",
-    "LIABILITY",
-    "EQUITY",
-    "REVENUE",
-    "EXPENSE",
-    "CASH_EQUIVALENT",
-    "BANK_ACCOUNT",
-    "INVENTORY",
-    "ACCUMULATED_DEPRECIATION",
-].map((id) => ({ glAccountClassId: id, text: id.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ") }));
-
-const glResourceTypes = ["MONEY", "INVENTORY_ITEM", "FIXED_ASSET", "SERVICE"].map(
-    (id) => ({ glResourceTypeId: id, text: id.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ") })
-);
+// REFACTOR: Replaced dynamic English text generation with static Arabic descriptions for consistency with backend data and Arabic UI requirements. This avoids potential mismatches and ensures exact translation as defined in the database.
+const glResourceTypes = [
+    {
+        glResourceTypeId: "_NA_",
+        descriptionArabic: "غير قابل للتطبيق"
+    },
+    {
+        glResourceTypeId: "DELIVERED_GOODS",
+        descriptionArabic: "البضائع المستلمة"
+    },
+    {
+        glResourceTypeId: "FINISHED_GOODS",
+        descriptionArabic: "البضائع النهائية"
+    },
+    {
+        glResourceTypeId: "LABOR",
+        descriptionArabic: "العمالة"
+    },
+    {
+        glResourceTypeId: "MONEY",
+        descriptionArabic: "النقود"
+    },
+    {
+        glResourceTypeId: "RAW_MATERIALS",
+        descriptionArabic: "المواد الخام"
+    },
+    {
+        glResourceTypeId: "SERVICES",
+        descriptionArabic: "الخدمات"
+    }
+];
 
 const AccountForm: React.FC<Props> = ({
     account,
@@ -150,51 +149,49 @@ const AccountForm: React.FC<Props> = ({
        Initial values – empty on create (unless creating similar), populated on edit
        ------------------------------------------------------------------ */
     const initialValues = useMemo(() => {
-        // If create mode and no account provided, return empty form
         if (editMode === 1 && !account) return {};
 
-        // If create mode with account (creating similar), pre-fill with parent settings
-        if (editMode === 1 && account) {
-            return {
-                accountName: account.accountName ?? "",
-                glAccountTypeId: account.glAccountTypeId ?? null,
-                glAccountClassId: account.glAccountClassId ?? null,
-                glResourceTypeId: account.glResourceTypeId ?? null,
-                parentGlAccountId: account.parentGlAccountId
-                    ? {
-                        glAccountId: account.parentGlAccountId,
-                        text: account.parentAccountName || account.parentGlAccountId,
-                    }
-                    : null,
-                description: null,
-            };
-        }
-
-        // Edit mode
-        return {
-            glAccountId: account?.glAccountId ?? "",
-            accountCode: account?.accountCode ?? "",
+        const baseValues = {
             accountName: account?.accountName ?? "",
-            accountNameArabic: account?.accountNameArabic ?? "",
             description: account?.description ?? null,
-
-            glAccountTypeId: account?.glAccountTypeId ?? null,
-            glAccountClassId: account?.glAccountClassId ?? null,
             glResourceTypeId: account?.glResourceTypeId ?? null,
-
-            // For the tree dropdown we need an object with glAccountId + text
             parentGlAccountId: account?.parentGlAccountId
                 ? {
                     glAccountId: account.parentGlAccountId,
-                    text:
-                        account.parentAccountName ||
-                        account.parentGlAccountId ||
-                        account.parentGlAccountId,
+                    text: account.parentAccountName || account.parentGlAccountId,
                 }
                 : null,
         };
-    }, [account, editMode]);
 
+        if (editMode === 1 && account) {
+            // Creating similar — inherit type/class from parent account
+            return {
+                ...baseValues,
+                glAccountTypeId: account.glAccountTypeId
+                    ? { glAccountTypeId: account.glAccountTypeId, description: "" } // description will be fetched if needed
+                    : null,
+                glAccountClassId: account.glAccountClassId
+                    ? { glAccountClassId: account.glAccountClassId, description: "" }
+                    : null,
+            };
+        }
+
+        // Edit mode — shape full objects (descriptionArabic may be missing from query, but ComboBox will display ID if not available)
+        return {
+            ...baseValues,
+            glAccountId: account?.glAccountId ?? "",
+            accountCode: account?.accountCode ?? "",
+            accountNameArabic: account?.accountNameArabic ?? "",
+
+            glAccountTypeId: account?.glAccountTypeId
+                ? { glAccountTypeId: account.glAccountTypeId, description: account.glAccountTypeDescription || account.glAccountTypeId }
+                : null,
+
+            glAccountClassId: account?.glAccountClassId
+                ? { glAccountClassId: account.glAccountClassId, description: account.glAccountClassDescription || account.glAccountClassId }
+                : null,
+        };
+    }, [account, editMode]);
     /* ------------------------------------------------------------------
        Submit handler
        ------------------------------------------------------------------ */
@@ -203,17 +200,23 @@ const AccountForm: React.FC<Props> = ({
         setCreationError(null);
 
         try {
-            const payload = {
+            // Common fields for both create and edit
+            const commonPayload = {
                 accountName: data.accountName,
-                glAccountTypeId: data.glAccountTypeId,
-                glAccountClassId: data.glAccountClassId,
-                glResourceTypeId: data.glResourceTypeId,
-                parentGlAccountId: data.parentGlAccountId?.glAccountId ?? null,
                 description: data.description,
+                parentGlAccountId: data.parentGlAccountId?.glAccountId ?? null,
             };
 
             if (editMode === 1) {
-                const result = await createGlAccount(payload).unwrap();
+                // Create mode
+                const createPayload = {
+                    ...commonPayload,
+                    glAccountTypeId: data.glAccountTypeId?.glAccountTypeId ?? null,
+                    glAccountClassId: data.glAccountClassId?.glAccountClassId ?? null,
+                    glResourceTypeId: data.glResourceTypeId ?? null, // string or null
+                };
+
+                const result = await createGlAccount(createPayload).unwrap();
 
                 toast.success(getMessage("GL_ACCOUNT_CREATED"));
 
@@ -227,17 +230,23 @@ const AccountForm: React.FC<Props> = ({
                     glAccountClassId: result.glAccountClassId,
                     glResourceTypeId: result.glResourceTypeId,
                     parentGlAccountId: result.parentGlAccountId,
+                    // Include descriptions if returned by backend for proper rebinding
+                    glAccountTypeDescription: result.GlAccountTypeDescription,
+                    glAccountClassDescription: result.GlAccountClassDescription,
                 };
 
                 setJustCreatedAccount(createdAccount);
                 onAccountCreated?.(createdAccount);
             } else {
-                // edit - only send editable fields
+                // Edit mode — now send all editable dropdown values
+                // REFACTOR: Added glAccountTypeId, glAccountClassId, and glResourceTypeId to update payload
+                // since dropdowns are now enabled for editing. Extract IDs from objects where needed.
                 const updatePayload = {
                     glAccountId: account!.glAccountId!,
-                    accountName: data.accountName,
-                    description: data.description,
-                    parentGlAccountId: data.parentGlAccountId?.glAccountId ?? null,
+                    ...commonPayload,
+                    glAccountTypeId: data.glAccountTypeId?.glAccountTypeId ?? null,
+                    glAccountClassId: data.glAccountClassId?.glAccountClassId ?? null,
+                    glResourceTypeId: data.glResourceTypeId ?? null,
                 };
 
                 const result = await updateGlAccount(updatePayload).unwrap();
@@ -245,20 +254,17 @@ const AccountForm: React.FC<Props> = ({
                 toast.success(getMessage("GL_ACCOUNT_UPDATED"));
 
                 const updatedAccount: GlAccount = {
-                    ...account,
+                    ...account!,
                     ...result,
-                    glAccountId: result.glAccountId,
-                    accountCode: result.accountCode,
-                    accountName: result.accountName,
-                    description: result.description,
-                    glAccountTypeId: result.glAccountTypeId,
-                    glAccountClassId: result.glAccountClassId,
-                    glResourceTypeId: result.glResourceTypeId,
-                    parentGlAccountId: result.parentGlAccountId,
+                    accountName: result.accountName || data.accountName,
+                    description: result.description ?? data.description,
+                    parentGlAccountId: result.parentGlAccountId ?? data.parentGlAccountId?.glAccountId,
+                    glAccountTypeId: result.glAccountTypeId ?? data.glAccountTypeId?.glAccountTypeId,
+                    glAccountClassId: result.glAccountClassId ?? data.glAccountClassId?.glAccountClassId,
+                    glResourceTypeId: result.glResourceTypeId ?? data.glResourceTypeId,
                 };
 
-                // Reset form to untouched state
-                setFormKey(prev => prev + 1);
+                setFormKey(prev => prev + 1); // Reset form state
                 onAccountUpdated?.(updatedAccount);
             }
         } catch (err: any) {
@@ -267,7 +273,6 @@ const AccountForm: React.FC<Props> = ({
             setIsSubmitting(false);
         }
     };
-
     async function handleAssign() {
         try {
             if (!companyId || !account?.glAccountId) return;
@@ -323,27 +328,27 @@ const AccountForm: React.FC<Props> = ({
                             {/* Row 2 – Dropdowns */}
                             <Grid item xs={12} sm={4}>
                                 <Field
+                                    id="glAccountTypeId"
                                     name="glAccountTypeId"
                                     label={getTranslatedLabel("accounting.glAccount.form.accountType", "Account Type *")}
-                                    component={FormDropDownList}
-                                    data={glAccountTypes}
-                                    textField="text"
+                                    component={FormComboBoxVirtualGlAccountTypes}
+                                    validator={requiredValidator}
+                                    textField="description"
                                     dataItemKey="glAccountTypeId"
-                                    // validator={requiredValidator}
-                                    disabled={editMode > 1}
+                                    //disabled={editMode > 1}
                                 />
                             </Grid>
 
                             <Grid item xs={12} sm={4}>
                                 <Field
+                                    id="glAccountClassId"
                                     name="glAccountClassId"
                                     label={getTranslatedLabel("accounting.glAccount.form.accountClass", "Account Class")}
-                                    component={FormDropDownList}
-                                    data={glAccountClasses}
-                                    textField="text"
+                                    component={FormComboBoxVirtualGlAccountClasses}
+                                    validator={requiredValidator}
+                                    textField="description"
                                     dataItemKey="glAccountClassId"
-                                    // validator={requiredValidator}
-                                    disabled={editMode > 1}
+                                    //disabled={editMode > 1}
                                 />
                             </Grid>
 
@@ -353,9 +358,9 @@ const AccountForm: React.FC<Props> = ({
                                     label={getTranslatedLabel("accounting.glAccount.form.resourceType", "Resource Type")}
                                     component={FormDropDownList}
                                     data={glResourceTypes}
-                                    textField="text"
+                                    textField="descriptionArabic" 
                                     dataItemKey="glResourceTypeId"
-                                    disabled={editMode > 1}
+                                    //disabled={editMode > 1}
                                 />
                             </Grid>
 

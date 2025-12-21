@@ -42,9 +42,24 @@ namespace API.Controllers.Accounting
                 GlAccountId = glAccountId,
                 AccountName = request.AccountName,
                 Description = request.Description,
-                ParentGlAccountId = request.ParentGlAccountId
+                ParentGlAccountId = request.ParentGlAccountId,
+                GlAccountTypeId = request.GlAccountTypeId,
+                GlAccountClassId = request.GlAccountClassId,
+                GlResourceTypeId = request.GlResourceTypeId
             };
             return HandleResults(await Mediator.Send(new UpdateGlAccount.Command { Request = updateRequest }));
+        }
+        
+        [HttpGet("getAllGlAccountTypes")]
+        public async Task<IActionResult> GetAllGlAccountTypes([FromQuery] GlAccountTypeParams param)
+        {
+            return HandleResult(await Mediator.Send(new GetAllGlAccountTypes.Query { Params = param }));
+        }
+        
+        [HttpGet("getAllGlAccountClasses")]
+        public async Task<IActionResult> GetAllGlAccountClasses([FromQuery] GlAccountClassParams param)
+        {
+            return HandleResult(await Mediator.Send(new GetAllGlAccountClasses.Query { Params = param }));
         }
     }
 }

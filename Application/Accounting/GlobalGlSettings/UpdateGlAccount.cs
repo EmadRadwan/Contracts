@@ -56,11 +56,32 @@ public class UpdateGlAccount
                 glAccount.Description = dto.Description?.Trim();
                 glAccount.ParentGlAccountId = dto.ParentGlAccountId;
                 glAccount.LastUpdatedStamp = DateTime.UtcNow;
+                
+                if (!string.IsNullOrWhiteSpace(dto.GlAccountTypeId))
+                    glAccount.GlAccountTypeId = dto.GlAccountTypeId;
+
+                if (!string.IsNullOrWhiteSpace(dto.GlAccountClassId))
+                    glAccount.GlAccountClassId = dto.GlAccountClassId;
+
+                if (!string.IsNullOrWhiteSpace(dto.GlResourceTypeId))
+                    glAccount.GlResourceTypeId = dto.GlResourceTypeId;
+
 
                 var saved = await _context.SaveChangesAsync(cancellationToken) > 0;
                 if (!saved)
                     return Results<UpdateGlAccountResponse>.Failure("Failed to update GL account", "GL_ACCOUNT_UPDATE_FAILED");
 
+                var typeDesc = await _context.GlAccountTypes
+                    .Where(t => t.GlAccountTypeId == glAccount.GlAccountTypeId)
+                    .Select(t => t.DescriptionArabic)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                var classDesc = await _context.GlAccountClasses
+                    .Where(c => c.GlAccountClassId == glAccount.GlAccountClassId)
+                    .Select(c => c.DescriptionArabic)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                
                 var response = new UpdateGlAccountResponse
                 {
                     GlAccountId = glAccount.GlAccountId,
@@ -71,7 +92,9 @@ public class UpdateGlAccount
                     GlAccountClassId = glAccount.GlAccountClassId,
                     GlResourceTypeId = glAccount.GlResourceTypeId,
                     ParentGlAccountId = glAccount.ParentGlAccountId,
-                    LastUpdatedDate = glAccount.LastUpdatedStamp
+                    LastUpdatedDate = glAccount.LastUpdatedStamp,
+                    GlAccountTypeDescription = typeDesc,
+                    GlAccountClassDescription = classDesc
                 };
 
                 return Results<UpdateGlAccountResponse>.Success(response);
@@ -90,6 +113,9 @@ public class UpdateGlAccountRequest
     public string? AccountName { get; init; }
     public string? Description { get; init; }
     public string? ParentGlAccountId { get; init; }
+    public string? GlAccountTypeId { get; init; }
+    public string? GlAccountClassId { get; init; }
+    public string? GlResourceTypeId { get; init; }
 }
 
 public class UpdateGlAccountResponse
@@ -102,5 +128,7 @@ public class UpdateGlAccountResponse
     public string? GlAccountClassId { get; set; }
     public string? GlResourceTypeId { get; set; }
     public string? ParentGlAccountId { get; set; }
+    public string? GlAccountTypeDescription { get; set; }
+    public string? GlAccountClassDescription { get; set; }
     public DateTime? LastUpdatedDate { get; set; }
 }

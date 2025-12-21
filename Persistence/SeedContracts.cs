@@ -2722,6 +2722,13 @@ public class SeedContracts
                 PartyId = "149",
                 CreatedStamp = nowDateTime,
                 LastUpdatedStamp = nowDateTime
+            },
+            new UserLogin
+            {
+                UserLoginId = "28a02dc0-70ea-56d0-a687-7a72b2f91d08",
+                PartyId = "149",
+                CreatedStamp = nowDateTime,
+                LastUpdatedStamp = nowDateTime
             }
         };
     }
@@ -2753,6 +2760,20 @@ public class SeedContracts
                 OrganizationPartyId = "Company",
                 ProductStoreId = "9000",
                 Email = "aagiba@gmail.com",
+                DualLanguage = "N",
+                EmailConfirmed = true,
+                CreatedStamp = nowDateTime,
+                LastUpdatedStamp = nowDateTime
+            },
+            new()
+            {
+                Id = "28a02dc0-70ea-56d0-a687-7a72b2f91d08", // REFACTOR: Added Id to match UserLoginId for consistency.
+                DisplayName = "Ashraf Agiba",
+                UserName = "Ashraf",
+                PartyId = "150",
+                OrganizationPartyId = "Company",
+                ProductStoreId = "9000",
+                Email = "ashrafa@gmail.com",
                 DualLanguage = "N",
                 EmailConfirmed = true,
                 CreatedStamp = nowDateTime,
@@ -2824,6 +2845,20 @@ public class SeedContracts
                 }
             },
             {
+                "ashrafa@gmail.com", new[]
+                {
+                    "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm", "ReviewCertificate",
+                    "Catalog_View", "Facility_View", "Party_View", "Accounting_View", "Projects_View", "Sales_View",
+                    "Accounting_Invoices_View",
+                    "Accounting_Payments_View",
+                    "Accounting_Payments_Due_View",
+                    "Accounting_GLSettings_View",
+                    "Accounting_Transactions_View",
+                    "Accounting_BillingAccounts_View",
+                    "Accounting_MultiPaymentCertificates_View", "Process_Payment"
+                }
+            },
+            {
                 "amaher@gmail.com", new[]
                 {
                     "CreateCertificate", "Projects_View", "Sales_View", "Accounting_View",
@@ -2834,7 +2869,7 @@ public class SeedContracts
                 "aadel@gmail.com", new[]
                 {
                     "Accounting_View", "Accounting_Payments_View",
-                    "Accounting_MultiPaymentCertificates_View"
+                    "Accounting_MultiPaymentCertificates_View", "Accounting_Invoices_View"
                 }
             }
         };

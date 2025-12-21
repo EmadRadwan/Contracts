@@ -69,6 +69,16 @@ public class CreateGlAccount
                 if (!saved)
                     return Results<CreateGlAccountResponse>.Failure("Failed to save GL account", "GL_ACCOUNT_SAVE_FAILED");
 
+                var typeDesc = await _context.GlAccountTypes
+                    .Where(t => t.GlAccountTypeId == glAccount.GlAccountTypeId)
+                    .Select(t => t.DescriptionArabic)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                var classDesc = await _context.GlAccountClasses
+                    .Where(c => c.GlAccountClassId == glAccount.GlAccountClassId)
+                    .Select(c => c.DescriptionArabic)
+                    .FirstOrDefaultAsync(cancellationToken);
+                
                 // Build response
                 var response = new CreateGlAccountResponse
                 {
@@ -80,7 +90,9 @@ public class CreateGlAccount
                     GlAccountClassId = glAccount.GlAccountClassId,
                     GlResourceTypeId = glAccount.GlResourceTypeId,
                     ParentGlAccountId = glAccount.ParentGlAccountId,
-                    CreatedDate = glAccount.CreatedStamp
+                    CreatedDate = glAccount.CreatedStamp,
+                    GlAccountTypeDescription = typeDesc,
+                    GlAccountClassDescription = classDesc,
                 };
 
                 return Results<CreateGlAccountResponse>.Success(response);
@@ -262,4 +274,6 @@ public class CreateGlAccountResponse
     public string? GlResourceTypeId { get; set; }
     public string? ParentGlAccountId { get; set; }
     public DateTime? CreatedDate { get; set; }
+    public string? GlAccountTypeDescription { get; set; }
+    public string? GlAccountClassDescription { get; set; }
 }

@@ -10,7 +10,7 @@ public class GlAccountRecord
     public string GlAccountTypeDescription { get; set; }
     public string GlAccountClassId { get; set; }
     public string GlResourceTypeId { get; set; }
-    public string GlResourceTypeDescription { get; set; }
+    public string GlAccountClassDescription { get; set; }
     public string GlXbrlClassId { get; set; }
     public string ParentGlAccountId { get; set; }
     public string AccountCode { get; set; }

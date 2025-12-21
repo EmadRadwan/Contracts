@@ -1,22 +1,17 @@
-// Inside the Accounting module's children array
+// REFACTOR: Fixed display of English class/type IDs in Arabic UI by avoiding fallback to raw English codes.
+// Instead, use empty description or placeholder. Since ComboBox is virtual and bound by key (glAccountClassId),
+// it will still be correctly selected — just shows ID until user interacts or we pre-fetch description.
+// Best long-term: enrich query with Arabic descriptions.
+glAccountTypeId: account?.glAccountTypeId
+    ? {
+        glAccountTypeId: account.glAccountTypeId,
+        descriptionArabic: account.glAccountTypeDescription || "" // Don't show English ID
+    }
+    : null,
 
-// Payments sub-module (Incoming + Outgoing)
-{
-    element: <RequireRole allowedRoles="Accounting_Payments_View" />,
-        children: [
-    { path: "payments/incoming", element: <PaymentsList paymentType="incoming" /> },
-    { path: "payments/outgoing", element: <PaymentsList paymentType="outgoing" /> },
-],
-},
-
-// Due Payments — separately protected
-{
-    element: <RequireRole allowedRoles="Accounting_Payments_Due_View" />,
-        children: [
-    // REFACTOR: Wrapped duePayments route in its own RequireRole wrapper.
-    // Purpose: Allow fine-grained access — users can have permission for regular payments
-    // but not for due/overdue payments view (or vice versa).
-    // Improves: Maximum flexibility in role assignments without affecting other payment routes.
-    { path: "duePayments", element: <PaymentsWithDueAmountsList /> },
-],
-},
+    glAccountClassId: account?.glAccountClassId
+    ? {
+        glAccountClassId: account.glAccountClassId,
+        descriptionArabic: account.glAccountClassDescription || "" // Critical fix: was falling back to "SGA_EXPENSE"
+    }
+    : null,

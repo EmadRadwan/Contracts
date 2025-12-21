@@ -44,7 +44,7 @@ public class ListGlobalChartOfAccounts
                     GlAccountTypeDescription = language == "en" ? account.GlAccountType.Description : account.GlAccountType.DescriptionArabic,
                     GlAccountClassId = account.GlAccountClassId,
                     GlResourceTypeId = account.GlResourceTypeId,
-                    GlResourceTypeDescription = language == "en" ? account.GlAccountClass.Description : account.GlAccountClass.DescriptionArabic,
+                    GlAccountClassDescription = language == "en" ? account.GlAccountClass.Description : account.GlAccountClass.DescriptionArabic,
                     ParentGlAccountId = account.ParentGlAccountId,
                     Description = account.Description,
                     AccountCode = account.AccountCode,

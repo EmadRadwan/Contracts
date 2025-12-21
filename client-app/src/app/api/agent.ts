@@ -372,6 +372,16 @@ const BillingAccounts = {
             .then(responseBody),
 };
 
+const GlAccountTypes = {
+    getAll: (params: URLSearchParams) =>
+        axios.get<GlAccountTypesEnvelope>("/glAccounts/getAllGlAccountTypes", { params }).then(responseBody),
+};
+
+const GlAccountClasses = {
+    getAll: (params: URLSearchParams) =>
+        axios.get<GlAccountClassesEnvelope>("/glAccounts/getAllGlAccountClasses", { params }).then(responseBody),
+};
+
 const Orders = {
     listQuotes: (params: URLSearchParams) =>
         axios.get<Quote[]>("/quotes", {params}).then(responseBody),
@@ -449,7 +459,8 @@ const Accounting = {
     updatePayment: (payment: any) =>
         requests.put("/payments/updatePayment", payment),
     getPaymentApplications: (params: URLSearchParams) => 
-        axios.get<Payment[]>("/payments/getPaymentApplicationsLov", {params}).then(responseBody)
+        axios.get<Payment[]>("/payments/getPaymentApplicationsLov", {params}).then(responseBody),
+    
 };
 
 const Geos = {
@@ -503,7 +514,7 @@ const agent = {
     Accounting,
     VehicleContents,
     Services,
-    BillingAccounts, WorkEfforts, Projects
+    BillingAccounts, WorkEfforts, Projects, GlAccountTypes, GlAccountClasses
 };
 
 export default agent;
