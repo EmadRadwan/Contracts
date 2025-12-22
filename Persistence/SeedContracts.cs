@@ -2617,13 +2617,12 @@ public class SeedContracts
             var requiredRoles = new[]
             {
                 "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm", "ReviewCertificate",
-                // Add these new module-level roles
                 "Catalog_View",
                 "Facility_View",
                 "Party_View",
                 "Accounting_View",
                 "Projects_View",
-                "Sales_View",
+                "Sales_View", "CreateSalesRequest", "ApproveSalesRequest", "CreateReserveRequest",
                 "Accounting_Invoices_View",
                 "Accounting_Payments_View",
                 "Accounting_Payments_Due_View",
@@ -2726,7 +2725,42 @@ public class SeedContracts
             new UserLogin
             {
                 UserLoginId = "28a02dc0-70ea-56d0-a687-7a72b2f91d08",
-                PartyId = "149",
+                PartyId = "150",
+                CreatedStamp = nowDateTime,
+                LastUpdatedStamp = nowDateTime
+            },
+            new UserLogin
+            {
+                UserLoginId = "76a02dc0-60ea-54d0-a687-5a72b2f91d45",
+                PartyId = "151",
+                CreatedStamp = nowDateTime,
+                LastUpdatedStamp = nowDateTime
+            },
+            new UserLogin
+            {
+                UserLoginId = "65a02dc0-50ea-54d0-a587-4a72b2f91d32",
+                PartyId = "152",
+                CreatedStamp = nowDateTime,
+                LastUpdatedStamp = nowDateTime
+            },
+            new UserLogin
+            {
+                UserLoginId = "54a02dc0-40ea-43d0-a587-4a72b2f91d21",
+                PartyId = "153",
+                CreatedStamp = nowDateTime,
+                LastUpdatedStamp = nowDateTime
+            },
+            new UserLogin
+            {
+                UserLoginId = "43a02dc0-40ea-32d0-a487-3a72b2f91d2110",
+                PartyId = "154",
+                CreatedStamp = nowDateTime,
+                LastUpdatedStamp = nowDateTime
+            },
+            new UserLogin
+            {
+                UserLoginId = "32a02dc0-30ea-21d0-a487-2a72b2f91d2109",
+                PartyId = "155",
                 CreatedStamp = nowDateTime,
                 LastUpdatedStamp = nowDateTime
             }
@@ -2806,6 +2840,76 @@ public class SeedContracts
                 EmailConfirmed = true,
                 CreatedStamp = nowDateTime,
                 LastUpdatedStamp = nowDateTime
+            },
+            new()
+            {
+                Id = "76a02dc0-60ea-54d0-a687-5a72b2f91d43", // REFACTOR: Added Id to match UserLoginId for consistency.
+                DisplayName = "Mahmoud Reda",
+                UserName = "Reda",
+                PartyId = "151",
+                OrganizationPartyId = "Company",
+                ProductStoreId = "9000",
+                Email = "mreda@gmail.com",
+                DualLanguage = "N",
+                EmailConfirmed = true,
+                CreatedStamp = nowDateTime,
+                LastUpdatedStamp = nowDateTime
+            },
+            new()
+            {
+                Id = "65a02dc0-50ea-54d0-a587-4a72b2f91d32", // REFACTOR: Added Id to match UserLoginId for consistency.
+                DisplayName = "Mohamed Hamdy",
+                UserName = "Hamdy",
+                PartyId = "152",
+                OrganizationPartyId = "Company",
+                ProductStoreId = "9000",
+                Email = "mhamdy@gmail.com",
+                DualLanguage = "N",
+                EmailConfirmed = true,
+                CreatedStamp = nowDateTime,
+                LastUpdatedStamp = nowDateTime
+            },
+            new()
+            {
+                Id = "54a02dc0-40ea-43d0-a587-4a72b2f91d21", // REFACTOR: Added Id to match UserLoginId for consistency.
+                DisplayName = "Enji",
+                UserName = "Enji",
+                PartyId = "153",
+                OrganizationPartyId = "Company",
+                ProductStoreId = "9000",
+                Email = "engi@gmail.com",
+                DualLanguage = "N",
+                EmailConfirmed = true,
+                CreatedStamp = nowDateTime,
+                LastUpdatedStamp = nowDateTime
+            },
+            new()
+            {
+                Id = "43a02dc0-40ea-32d0-a487-3a72b2f91d2110", // REFACTOR: Added Id to match UserLoginId for consistency.
+                DisplayName = "Naira",
+                UserName = "Naira",
+                PartyId = "154",
+                OrganizationPartyId = "Company",
+                ProductStoreId = "9000",
+                Email = "naira@gmail.com",
+                DualLanguage = "N",
+                EmailConfirmed = true,
+                CreatedStamp = nowDateTime,
+                LastUpdatedStamp = nowDateTime
+            },
+            new()
+            {
+                Id = "32a02dc0-30ea-21d0-a487-2a72b2f91d2109", // REFACTOR: Added Id to match UserLoginId for consistency.
+                DisplayName = "Ahmed Abdulrahman",
+                UserName = "Abdulrahman",
+                PartyId = "155",
+                OrganizationPartyId = "Company",
+                ProductStoreId = "9000",
+                Email = "aabdulrahman@gmail.com",
+                DualLanguage = "N",
+                EmailConfirmed = true,
+                CreatedStamp = nowDateTime,
+                LastUpdatedStamp = nowDateTime
             }
         };
     }
@@ -2859,17 +2963,46 @@ public class SeedContracts
                 }
             },
             {
-                "amaher@gmail.com", new[]
-                {
-                    "CreateCertificate", "Projects_View", "Sales_View", "Accounting_View",
-                    "Accounting_Invoices_View"
-                }
-            },
-            {
                 "aadel@gmail.com", new[]
                 {
                     "Accounting_View", "Accounting_Payments_View",
                     "Accounting_MultiPaymentCertificates_View", "Accounting_Invoices_View"
+                }
+            },
+            {
+                "amaher@gmail.com", new[]
+                {
+                    "Projects_View", "ReviewCertificate"
+                }
+            },
+            {
+                "mreda@gmail.com", new[]
+                {
+                    "Projects_View", "CreateCertificate"
+                }
+            },
+            {
+                "mhamdy@gmail.com", new[]
+                {
+                    "Projects_View", "ApproveCertificate"
+                }
+            },
+            {
+                "engi@gmail.com", new[]
+                {
+                    "Sales_View", "CreateReserveRequest"
+                }
+            },
+            {
+                "naira@gmail.com", new[]
+                {
+                    "Sales_View", "CreateReserveRequest", "CreateSalesRequest"
+                }
+            },
+            {
+                "aabdulrahman@gmail.com", new[]
+                {
+                    "Sales_View", "ApproveSalesRequest"
                 }
             }
         };

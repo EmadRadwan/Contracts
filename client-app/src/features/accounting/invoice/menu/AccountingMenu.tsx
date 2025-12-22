@@ -18,7 +18,6 @@ import withFloatingLabelFlexible from '../../../../app/components/FloatingLabel'
 import { useTranslationHelper } from '../../../../app/hooks/useTranslationHelper';
 import React, { useState } from "react";
 import {Can} from "../../../account/Can";
-import {useAppSelector} from "../../../../app/store/configureStore";
 
 interface AccountingMenuProps {
     selectedMenuItem?: string;

@@ -49,6 +49,19 @@ export const fetchCurrentUser = createAsyncThunk<User>(
   }
 );
 
+export const changePassword = createAsyncThunk<void, { currentPassword: string; newPassword: string; confirmPassword: string }>(
+    "account/changePassword",
+    async (data, thunkAPI) => {
+      try {
+        await agent.Account.changePassword(data);
+        toast.success("Password changed successfully");
+      } catch (error: any) {
+        toast.error("Failed to change password");
+        return thunkAPI.rejectWithValue({ error: error.data });
+      }
+    }
+);
+
 export const accountSlice = createSlice({
   name: "account",
   initialState,

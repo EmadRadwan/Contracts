@@ -472,6 +472,8 @@ const Account = {
     login: (user: UserFormValues) => requests.post<User>("/account/login", user),
     register: (user: UserFormValues) =>
         requests.post<User>("/account/register", user),
+    changePassword: (data: { currentPassword: string; newPassword: string; confirmPassword: string }) =>
+        requests.post<void>('/account/change-password', data),
 };
 
 const VehicleContents = {

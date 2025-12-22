@@ -34,4 +34,21 @@ public class TrialBalanceController : BaseApiController
             IncludePrePeriodTransactions = includePrePeriodTransactions
         }));
     }
+    
+    [HttpGet("{selectedAccountingCompanyId}/{customTimePeriodId}/{glAccountId}/generateGlAccountTransactionDetails")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GenerateGlAccountTransactionDetails(
+        string selectedAccountingCompanyId,
+        string customTimePeriodId,
+        string glAccountId,
+        [FromQuery] bool includePrePeriodTransactions = true)
+    {
+        return HandleResult(await Mediator.Send(new GetGlAccountTransactionDetails.Query
+        {
+            CustomTimePeriodId = customTimePeriodId,
+            OrganizationPartyId = selectedAccountingCompanyId,
+            GlAccountId = glAccountId,
+            IncludePrePeriodTransactions = includePrePeriodTransactions
+        }));
+    }
 }

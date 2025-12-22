@@ -5,9 +5,10 @@ import { useTheme } from "@mui/material/styles";
 import RequestQuoteOutlinedIcon from '@mui/icons-material/RequestQuoteOutlined';
 import { useAppDispatch } from "../../../../../app/store/configureStore";
 import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHelper";
+import {Can} from "../../../../account/Can";
 
 // ---------------------------------------------------------------
-// Props – now includes the callback that notifies the list page
+// Props – includes callback that notifies the list page
 // ---------------------------------------------------------------
 interface SalesRequestMenuProps {
     selectedMenuItem?: string;
@@ -16,20 +17,24 @@ interface SalesRequestMenuProps {
 }
 
 // ---------------------------------------------------------------
-// Menu data
+// Menu data – now with requiredRole for each item
 // ---------------------------------------------------------------
 const links = [
     {
         title: 'Sales Requests',
         path: '/sales-requests',
         key: "salesRequest.menu.salesRequests",
-        icon: <RequestQuoteOutlinedIcon sx={{ color: "#4CAF50" }} />
+        translationKey: "salesRequest.menu.salesRequests",
+        icon: <RequestQuoteOutlinedIcon sx={{ color: "#4CAF50" }} />,
+        requiredRole: "CreateSalesRequest" as const,
     },
     {
         title: 'Reserve Requests',
         path: '/reserve-requests',
         key: "salesRequest.menu.reserveRequests",
-        icon: <RequestQuoteOutlinedIcon sx={{ color: "#4CAF50" }} />
+        translationKey: "salesRequest.menu.reserveRequests",
+        icon: <RequestQuoteOutlinedIcon sx={{ color: "#4CAF50" }} />,
+        requiredRole: "CreateReserveRequest" as const,
     },
 ];
 
@@ -42,31 +47,26 @@ export default function SalesRequestMenu({ selectedMenuItem, onMenuSelect }: Sal
 
     const normalizedSelectedMenuItem = normalizePath(selectedMenuItem || '');
 
-    // REFACTOR: Extracted shared NavLink styling into a reusable function
-    const navStyles = (path: string) => {
-        const normalizedPath = normalizePath(path);
-        const isSelected = normalizedPath === normalizedSelectedMenuItem;
-        return {
-            color: isSelected ? theme.palette.primary.main : 'inherit',
-            '&.active': { color: theme.palette.primary.main },
-            textDecoration: "none",
-            typography: "h6",
-            "&:hover": { color: "grey.500" },
-            fontWeight: isSelected ? "bold" : "normal",
-            display: 'flex',
-            alignItems: 'center',
-            marginRight: '16px'
-        };
-    };
+    // REFACTOR: Extracted shared NavLink styling into a reusable function (consistent with AccountingMenu)
+    // Purpose: Centralize style logic, ensure visual consistency across menus, and simplify future changes
+    const getNavItemStyles = (isSelected: boolean) => ({
+        color: isSelected ? theme.palette.primary.main : 'inherit',
+        textDecoration: "none",
+        typography: "h6",
+        "&:hover": { color: "grey.500" },
+        fontWeight: isSelected ? "bold" : "normal",
+        display: 'flex',
+        alignItems: 'center',
+        marginRight: '16px',
+    });
 
     // ---------------------------------------------------------------
     // Click handler – forwards the menu key to the parent list page
     // ---------------------------------------------------------------
     const handleClick = (key: string) => {
         if (onMenuSelect) {
-            // REFACTOR: Notify parent (SalesRequestsList) that the menu was selected
-            // Purpose: Allows the list to exit edit/add mode and show only the grid
-            // Context: Works even when the route does not change
+            // REFACTOR: Notify parent that the menu was selected
+            // Purpose: Allows the list page to exit edit/add mode even when route doesn't change
             onMenuSelect(key);
         }
     };
@@ -75,22 +75,32 @@ export default function SalesRequestMenu({ selectedMenuItem, onMenuSelect }: Sal
         <Toolbar sx={{ display: "flex", justifyContent: "space-between", alignItems: "left" }}>
             <Box display="flex" alignItems="left">
                 <List sx={{ display: "flex" }}>
-                    {links.map(({ title, path, icon, key }) => (
-                        <ListItem
-                            component={NavLink}
-                            to={path}
-                            key={path}
-                            sx={navStyles(path)}
-                            // REFACTOR: Pass the key via callback – no URL change required
-                            onClick={() => handleClick(key)}
-                        >
-                            <ListItemIcon sx={{ minWidth: "unset", marginX: "4px", fontSize: 28 }}>
-                                {icon}
-                            </ListItemIcon>
-                            <Typography variant="body1" sx={{ margin: 0 }}>
-                                {getTranslatedLabel(key, title).toUpperCase()}
-                            </Typography>
-                        </ListItem>
+                    {links.map((link) => (
+                        // REFACTOR: Wrapped each item in <Can> to enforce role-based visibility
+                        // Purpose: Hide menu items the user is not authorized to access
+                        // Improves: Security and UI cleanliness – matches pattern used in AccountingMenu
+                        <Can perform={link.requiredRole} key={link.path}>
+                            {(() => {
+                                const isSelected = normalizePath(link.path) === normalizedSelectedMenuItem;
+
+                                return (
+                                    <ListItem
+                                        component={NavLink}
+                                        to={link.path}
+                                        sx={getNavItemStyles(isSelected)}
+                                        onClick={() => handleClick(link.key)}
+                                        disablePadding
+                                    >
+                                        <ListItemIcon sx={{ minWidth: "unset", marginX: "4px", fontSize: 28 }}>
+                                            {link.icon}
+                                        </ListItemIcon>
+                                        <Typography variant="body1" sx={{ margin: 0 }}>
+                                            {getTranslatedLabel(link.translationKey, link.title).toUpperCase()}
+                                        </Typography>
+                                    </ListItem>
+                                );
+                            })()}
+                        </Can>
                     ))}
                 </List>
             </Box>

@@ -149,6 +149,7 @@ import SalesRequestsList from "../../features/orders/form/request/dashboard/Sale
 import PaymentsWithDueAmountsList from "../../features/accounting/payment/dashboard/PaymentsWithDueAmountsList";
 import ReserveRequestsList from "../../features/orders/form/request/dashboard/ReserveRequestsList";
 import RequireRole from "./RequireRole";
+import ChangePasswordPage from "../../features/account/ChangePasswordPage";
 
 const PartyFinancialHistoryWrapper = () => {
     const {partyId} = useParams<{ partyId: string }>();
@@ -179,6 +180,10 @@ export const routes: RouteObject[] = [
             {
                 element: <RequireAuth/>,
                 children: [
+                    {
+                        path: "change-password",
+                        element: <ChangePasswordPage />
+                    },
                     // === Catalog Module ===
                     {
                         element: <RequireRole allowedRoles="Catalog_View"/>,
@@ -372,8 +377,18 @@ export const routes: RouteObject[] = [
                             {path: "returns/:returnId", element: <EditReturn/>},
                             {path: "returns/:returnId/items", element: <OrderReturnItems/>},
                             {path: "quotes", element: <QuotesList/>},
-                            {path: "sales-requests", element: <SalesRequestsList/>},
-                            {path: "reserve-requests", element: <ReserveRequestsList/>},
+                            {
+                                element: <RequireRole allowedRoles="CreateSalesRequest" />,
+                                children: [
+                                    {path: "sales-requests", element: <SalesRequestsList/>},
+                                ],
+                            },
+                            {
+                                element: <RequireRole allowedRoles="CreateReserveRequest" />,
+                                children: [
+                                    {path: "reserve-requests", element: <ReserveRequestsList/>},
+                                ],
+                            },
                         ],
                     },
 

@@ -1,17 +1,30 @@
-// REFACTOR: Fixed display of English class/type IDs in Arabic UI by avoiding fallback to raw English codes.
-// Instead, use empty description or placeholder. Since ComboBox is virtual and bound by key (glAccountClassId),
-// it will still be correctly selected — just shows ID until user interacts or we pre-fetch description.
-// Best long-term: enrich query with Arabic descriptions.
-glAccountTypeId: account?.glAccountTypeId
-    ? {
-        glAccountTypeId: account.glAccountTypeId,
-        descriptionArabic: account.glAccountTypeDescription || "" // Don't show English ID
-    }
-    : null,
+// === Sales / Orders Module ===
+{
+    element: <RequireRole allowedRoles="Sales_View"/>,
+        children: [
+    {path: "ordersDashboard", element: <OrderDashboard/>},
+    {path: "orders/sales", element: <OrdersList orderType="SALES_ORDER"/>},
+    {path: "orders/purchase", element: <OrdersList orderType="PURCHASE_ORDER"/>},
+    {path: "returns", element: <ReturnsList/>},
+    {path: "returns/:returnId", element: <EditReturn/>},
+    {path: "returns/:returnId/items", element: <OrderReturnItems/>},
+    {path: "quotes", element: <QuotesList/>},
 
-    glAccountClassId: account?.glAccountClassId
-    ? {
-        glAccountClassId: account.glAccountClassId,
-        descriptionArabic: account.glAccountClassDescription || "" // Critical fix: was falling back to "SGA_EXPENSE"
-    }
-    : null,
+    // REFACTOR: Added dedicated RequireRole wrappers for the two sales request routes
+    // Purpose: Protect access to Sales Requests and Reserve Requests with granular roles
+    // Improves: Prevents unauthorized users from accessing these pages via direct URL
+    // Context: Matches the pattern used elsewhere (e.g., Accounting_Payments_Due_View)
+    {
+        element: <RequireRole allowedRoles="CreateSalesRequest" />,
+        children: [
+            {path: "sales-requests", element: <SalesRequestsList/>},
+        ],
+    },
+    {
+        element: <RequireRole allowedRoles="CreateReserveRequest" />,
+        children: [
+            {path: "reserve-requests", element: <ReserveRequestsList/>},
+        ],
+    },
+],
+},
