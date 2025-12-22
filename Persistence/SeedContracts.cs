@@ -2931,7 +2931,7 @@ public class SeedContracts
                     "Accounting_GLSettings_View",
                     "Accounting_Transactions_View",
                     "Accounting_BillingAccounts_View",
-                    "Accounting_MultiPaymentCertificates_View", "Process_Payment"
+                    "Accounting_MultiPaymentCertificates_View", "Process_Payment", "CreateReserveRequest", "CreateSalesRequest"
                 }
             },
             {
@@ -2945,7 +2945,7 @@ public class SeedContracts
                     "Accounting_GLSettings_View",
                     "Accounting_Transactions_View",
                     "Accounting_BillingAccounts_View",
-                    "Accounting_MultiPaymentCertificates_View", "Process_Payment"
+                    "Accounting_MultiPaymentCertificates_View", "Process_Payment", "CreateReserveRequest", "CreateSalesRequest"
                 }
             },
             {
@@ -2959,7 +2959,7 @@ public class SeedContracts
                     "Accounting_GLSettings_View",
                     "Accounting_Transactions_View",
                     "Accounting_BillingAccounts_View",
-                    "Accounting_MultiPaymentCertificates_View", "Process_Payment"
+                    "Accounting_MultiPaymentCertificates_View", "Process_Payment", "CreateReserveRequest", "CreateSalesRequest"
                 }
             },
             {
