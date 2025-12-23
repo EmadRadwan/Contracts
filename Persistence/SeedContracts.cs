@@ -2622,7 +2622,7 @@ public class SeedContracts
                 "Party_View",
                 "Accounting_View",
                 "Projects_View",
-                "Sales_View", "CreateSalesRequest", "ApproveSalesRequest", "CreateReserveRequest",
+                "Sales_View", "CreateSalesRequest", "ApproveSalesRequest", "DeleteSalesRequest", "CreateReserveRequest",
                 "Accounting_Invoices_View",
                 "Accounting_Payments_View",
                 "Accounting_Payments_Due_View",
@@ -2923,7 +2923,7 @@ public class SeedContracts
             {
                 "eradwan1967@gmail.com", new[]
                 {
-                    "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm", "ReviewCertificate",
+                    "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "DeleteSalesRequest", "viewCrm", "ReviewCertificate",
                     "Catalog_View", "Facility_View", "Party_View", "Accounting_View", "Projects_View", "Sales_View",
                     "Accounting_Invoices_View",
                     "Accounting_Payments_View",
@@ -2937,7 +2937,7 @@ public class SeedContracts
             {
                 "aagiba@gmail.com", new[]
                 {
-                    "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm", "ReviewCertificate",
+                    "CreateCertificate", "ApproveCertificate", "CompleteCertificate","DeleteSalesRequest", "viewCrm", "ReviewCertificate",
                     "Catalog_View", "Facility_View", "Party_View", "Accounting_View", "Projects_View", "Sales_View",
                     "Accounting_Invoices_View",
                     "Accounting_Payments_View",
@@ -2951,7 +2951,7 @@ public class SeedContracts
             {
                 "ashrafa@gmail.com", new[]
                 {
-                    "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm", "ReviewCertificate",
+                    "CreateCertificate", "ApproveCertificate", "CompleteCertificate","DeleteSalesRequest", "viewCrm", "ReviewCertificate",
                     "Catalog_View", "Facility_View", "Party_View", "Accounting_View", "Projects_View", "Sales_View",
                     "Accounting_Invoices_View",
                     "Accounting_Payments_View",
@@ -3002,7 +3002,7 @@ public class SeedContracts
             {
                 "aabdulrahman@gmail.com", new[]
                 {
-                    "Sales_View", "ApproveSalesRequest"
+                    "Sales_View", "ApproveSalesRequest", "CreateReserveRequest", "CreateSalesRequest"
                 }
             }
         };

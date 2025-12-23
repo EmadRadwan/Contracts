@@ -32,11 +32,22 @@ public class SalesRequestsController : BaseApiController
     [HttpPost("calculate-meter-price")]
     public async Task<IActionResult> CalculateMeterPrice([FromBody] CalculateMeterPrice.Query query)
     {
-        // الـ Handler بيرجع decimal مباشرة
         decimal newMeterPrice = await Mediator.Send(query);
 
-        // نرجّع النتيجة كـ JSON بسيط وواضح
         return Ok(newMeterPrice);
+    }
+    
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(string id)
+    {
+        var command = new DeleteSalesRequest.Command { SalesRequestId = id };
+        var result = await Mediator.Send(command);
+
+        if (!result.IsSuccess)
+            return HandleResult(result); // Will return appropriate error (e.g., NotFound, BadRequest)
+
+        // 204 No Content – standard response for successful DELETE with no body
+        return NoContent();
     }
 
 }

@@ -3,15 +3,11 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import {Field, Form, FormElement, FormRenderProps, KeyValue} from "@progress/kendo-react-form";
 
-import {Box, Menu, MenuItem, Paper, Typography} from "@mui/material";
+import {Box, Paper, Typography} from "@mui/material";
 import {toast} from "react-toastify";
 import {SalesRequest} from "../../../../../app/models/order/SalesRequest";
 import {requiredValidator} from "../../../../../app/common/form/Validators";
-import {
-    useAddSalesRequestMutation,
-    useApproveSalesRequestMutation,
-    useUpdateSalesRequestMutation
-} from "../../../../../app/store/apis/salesRequestApi";
+import {useAddSalesRequestMutation, useUpdateSalesRequestMutation} from "../../../../../app/store/apis/salesRequestApi";
 import FormDatePicker from "../../../../../app/common/form/FormDatePicker";
 import LoadingComponent from "../../../../../app/layout/LoadingComponent";
 import FormNumericTextBox from "../../../../../app/common/form/FormNumericTextBox";
@@ -28,102 +24,28 @@ import {Ribbon, RibbonContainer} from "react-ribbons";
 import {FormComboBoxVirtualPartyEmployee} from "../../../../../app/common/form/FormComboBoxVirtualPartyEmployee";
 import {FormComboBoxVirtualCustomer} from "../../../../../app/common/form/FormComboBoxVirtualCustomer";
 import DefaultPercentagesModal from "../dashboard/DefaultPercentagesModal";
+import {SalesRequestActionsMenu} from "../menu/SalesRequestActionsMenu";
 
 const APARTMENT_AVAILABLE = "APARTMENT_AVAILABLE";
 
 
-interface SalesRequestActionsMenuProps {
-    salesRequestId: string | undefined;
-    currentStatusId: string | undefined;
-    disabled: boolean;
-    onSalesRequestUpdated?: (updated: SalesRequest) => void;  // ← ADD THIS
-}
-
 const GROUND_FLOOR_ARABIC = "الطابق الأرضي";
 
-const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = ({
-                                                                             salesRequestId,
-                                                                             currentStatusId,
-                                                                             disabled,
-                                                                             onSalesRequestUpdated,
-                                                                         }) => {
-    const {getTranslatedLabel} = useTranslationHelper();
-    const [approveSR, {isLoading}] = useApproveSalesRequestMutation();
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const open = Boolean(anchorEl);
 
-    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
-
-    const handleApprove = async () => {
-        if (!salesRequestId) return;
-
-        try {
-            // This returns the full updated object from backend
-            const updatedSalesRequest = await approveSR(salesRequestId).unwrap();
-
-            toast.success(getTranslatedLabel("salesRequest.approved", "Sales Request Approved"));
-
-            // THIS IS THE KEY: Notify parent so ribbon updates instantly
-            onSalesRequestUpdated?.(updatedSalesRequest);
-        } catch (error) {
-            toast.error(getTranslatedLabel("salesRequest.approveError", "Failed to approve sales request"));
-        } finally {
-            handleClose();
-        }
-    };
-
-    const isApproveDisabled = !salesRequestId || currentStatusId === "SALES_REQUEST_APPROVED";
-
-    return (
-        <>
-            <Button
-                variant="contained"
-                color="primary"
-                onClick={handleClick}
-                disabled={disabled || isLoading || !salesRequestId}
-                sx={{mt: 2, mr: 2}}
-            >
-                {getTranslatedLabel('salesRequest.actions', 'Actions')}
-            </Button>
-
-            <Menu
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleClose}
-                anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}
-                transformOrigin={{vertical: 'top', horizontal: 'right'}}
-            >
-                <MenuItem onClick={handleApprove} disabled={isApproveDisabled || isLoading}>
-                    {getTranslatedLabel('salesRequest.approve', 'Approve Sales Request')}
-                </MenuItem>
-            </Menu>
-        </>
-    );
-};
-
-/* ------------------------------------------------------------------ */
-/* Props – removed partyInputRef (now internal)                       */
-
-/* ------------------------------------------------------------------ */
 interface Props {
     salesRequest?: SalesRequest;
     editMode: number; // 1 = create, 2 = edit
     cancelEdit: () => void;
     onSalesRequestCreated?: (createdRequest: SalesRequest) => void;
     onSalesRequestUpdated?: (updated: SalesRequest) => void;
+    onSalesRequestDeleted?: () => void;
 }
 
 function SalesRequestForm({
                               salesRequest,
                               editMode,
                               cancelEdit,
-                              onSalesRequestCreated, onSalesRequestUpdated
+                              onSalesRequestCreated, onSalesRequestUpdated, onSalesRequestDeleted
                           }: Props) {
 
     const [createSR, {isLoading: isCreating}] = useAddSalesRequestMutation();
@@ -151,14 +73,14 @@ function SalesRequestForm({
         const num = Number(value);
         return isNaN(num) ? null : num;
     };
-    
+
     const autoSetDerivedFields = useCallback((
         formRenderProps: FormRenderProps,
         finalTotal: number | null
     ) => {
         if (finalTotal === null) {
-            formRenderProps.onChange("advancePayment", { value: null });
-            formRenderProps.onChange("maintenanceDeposit", { value: null });
+            formRenderProps.onChange("advancePayment", {value: null});
+            formRenderProps.onChange("maintenanceDeposit", {value: null});
             return;
         }
 
@@ -296,7 +218,7 @@ function SalesRequestForm({
             totalPrice: normalizeNumeric(sr.totalPrice),
             advancePayment: normalizeNumeric(sr.advancePayment),
             maintenanceDeposit: normalizeNumeric(sr.maintenanceDeposit),
-            
+
             // ----- payment plan ------------------------------------------------
             numberOfInstallments: sr.numberOfInstallments ?? null,
             monthsBetweenInstallments: sr.monthsBetweenInstallments ?? null,
@@ -311,7 +233,6 @@ function SalesRequestForm({
             statusDescription: sr.statusDescription ?? null,
         };
     }, [editMode, salesRequest]);
-
 
 
     // -----------------------------------------------------------------
@@ -448,7 +369,7 @@ function SalesRequestForm({
     ) => {
         const apartment = e.value as any;
         setSelectedApartment(apartment);
-        
+
 
         // Set prices
         formRenderProps.onChange("apartmentPricePerM2", {
@@ -528,13 +449,13 @@ function SalesRequestForm({
         formRenderProps.onChange("totalPrice", {value: finalTotal});
         autoSetDerivedFields(formRenderProps, finalTotal);
     }, [calculateBaseTotal, calculateFinalTotal, autoSetDerivedFields]);
-    
+
     const handleAdvanceChange = useCallback((
         formRenderProps: FormRenderProps,
         value: number | null
     ) => {
         // Update the advance payment field directly
-        formRenderProps.onChange("advancePayment", { value });
+        formRenderProps.onChange("advancePayment", {value});
 
         // -----------------------------------------------------------------
         // Special case: If user sets advance higher than current total,
@@ -560,12 +481,12 @@ function SalesRequestForm({
         const currentTotal = Math.max(0, baseTotal - discount);
 
         if (value > currentTotal) {
-            formRenderProps.onChange("totalPrice", { value });
+            formRenderProps.onChange("totalPrice", {value});
         }
     }, [
         calculateBaseTotal,
     ]);
-    
+
     const salesRequestValidator = (values: any): KeyValue<string> | undefined => {
         const t = getTranslatedLabel;                     // shortcut (defined later in render)
 
@@ -763,12 +684,13 @@ function SalesRequestForm({
                                             </a>)
                                             </Typography>
 
-                                            {editMode === 2 && (
+                                            {(editMode === 2 || editMode === 3) && (
                                                 <SalesRequestActionsMenu
                                                     salesRequestId={salesRequest?.salesRequestId}
                                                     currentStatusId={salesRequest?.statusId}
                                                     disabled={isCreating || isUpdating || buttonFlag}
-                                                    onSalesRequestUpdated={onSalesRequestUpdated}  // ← PASS IT HERE
+                                                    onSalesRequestUpdated={onSalesRequestUpdated}
+                                                    onSalesRequestDeleted={cancelEdit}
                                                 />
                                             )}
 
@@ -1002,7 +924,7 @@ function SalesRequestForm({
                                                     min={0}
                                                     component={FormNumericTextBox}
                                                     onChange={(e: any) => {
-                                                        formRenderProps.onChange("maintenanceDeposit", { value: e.value });
+                                                        formRenderProps.onChange("maintenanceDeposit", {value: e.value});
                                                     }}
                                                 />
                                             </Grid>
@@ -1124,4 +1046,4 @@ const arePropsEqual = (prev: Props, next: Props) => {
     );
 };
 
-export default React.memo(SalesRequestForm, arePropsEqual);
+export default React.memo(SalesRequestForm);

@@ -8,6 +8,7 @@ namespace Application.Accounting.Services.Models
         public string? AcctgTransTypeId { get; set; }          // ACCTG_TRANS_TYPE_ID
         public string? IsPosted { get; set; }                  // IS_POSTED
         public string? InvoiceId { get; set; }                 // INVOICE_ID
+        public string? SalesRequestId { get; set; }                   // ORDER_ID
         public string? PaymentId { get; set; }                 // PAYMENT_ID
         public string? ShipmentId { get; set; }                // SHIPMENT_ID
         public string? WorkEffortId { get; set; }              // WORK_EFFORT_ID

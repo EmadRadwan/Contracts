@@ -123,6 +123,7 @@ public class PaymentHelperService : IPaymentHelperService
             OverrideGlAccountId = parameters.OverrideGlAccountId,
             WorkEffortId = parameters.ProjectId,
             CostCenterId = parameters.CostCenterId,
+            SalesRequestId = parameters.SalesRequestId,
             Comments = parameters.Comments,
             CreatedStamp = stamp,
             LastUpdatedStamp = stamp

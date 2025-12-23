@@ -11,8 +11,8 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20251218144537_CreateDatabaseViews")]
-    partial class CreateDatabaseViews
+    [Migration("20251223115355_AddedSalesIdToPayment")]
+    partial class AddedSalesIdToPayment
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -367,6 +367,12 @@ namespace Persistence.Migrations
                         .HasColumnType("varchar(36)")
                         .HasColumnName("ROLE_TYPE_ID");
 
+                    b.Property<string>("SalesRequestId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("SALES_REQUEST_ID");
+
                     b.Property<DateTime?>("ScheduledPostingDate")
                         .HasColumnType("datetime")
                         .HasColumnName("SCHEDULED_POSTING_DATE");
@@ -440,6 +446,8 @@ namespace Persistence.Migrations
                     b.HasIndex(new[] { "AcctgTransTypeId" }, "ACCTTX_TYPE");
 
                     b.HasIndex(new[] { "WorkEffortId" }, "ACCTTX_WEFF");
+
+                    b.HasIndex(new[] { "SalesRequestId" }, "IX_ACCTG_TRANS_SALES_REQUEST_ID");
 
                     b.ToTable("ACCTG_TRANS", (string)null);
                 });
@@ -28721,6 +28729,12 @@ namespace Persistence.Migrations
                         .HasColumnType("varchar(36)")
                         .HasColumnName("ROLE_TYPE_ID_TO");
 
+                    b.Property<string>("SalesRequestId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("SALES_REQUEST_ID");
+
                     b.Property<string>("StatusId")
                         .HasMaxLength(36)
                         .IsUnicode(false)
@@ -28736,6 +28750,8 @@ namespace Persistence.Migrations
                     b.HasKey("PaymentId");
 
                     b.HasIndex(new[] { "CostCenterId" }, "IX_PAYMENT_COST_CENTER_ID");
+
+                    b.HasIndex(new[] { "SalesRequestId" }, "IX_PAYMENT_SALES_REQUEST_ID");
 
                     b.HasIndex(new[] { "WorkEffortId" }, "IX_PAYMENT_WORK_EFFORT_ID");
 
@@ -60129,6 +60145,12 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("ACCTTX_ROLETYP");
 
+                    b.HasOne("Domain.SalesRequest", "SalesRequest")
+                        .WithMany("AcctgTrans")
+                        .HasForeignKey("SalesRequestId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_ACCTG_TRANS_SALES_REQUEST");
+
                     b.HasOne("Domain.Shipment", "Shipment")
                         .WithMany("AcctgTrans")
                         .HasForeignKey("ShipmentId")
@@ -60174,6 +60196,8 @@ namespace Persistence.Migrations
                     b.Navigation("Receipt");
 
                     b.Navigation("RoleType");
+
+                    b.Navigation("SalesRequest");
 
                     b.Navigation("Shipment");
 
@@ -69515,6 +69539,12 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("PAYMENT_TRTP");
 
+                    b.HasOne("Domain.SalesRequest", "SalesRequest")
+                        .WithMany("Payments")
+                        .HasForeignKey("SalesRequestId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_PAYMENT_SALES_REQUEST");
+
                     b.HasOne("Domain.StatusItem", "Status")
                         .WithMany("Payments")
                         .HasForeignKey("StatusId")
@@ -69552,6 +69582,8 @@ namespace Persistence.Migrations
                     b.Navigation("PaymentType");
 
                     b.Navigation("RoleTypeIdToNavigation");
+
+                    b.Navigation("SalesRequest");
 
                     b.Navigation("Status");
 
@@ -82846,6 +82878,13 @@ namespace Persistence.Migrations
                     b.Navigation("SalesOpportunities");
 
                     b.Navigation("SalesOpportunityHistories");
+                });
+
+            modelBuilder.Entity("Domain.SalesRequest", b =>
+                {
+                    b.Navigation("AcctgTrans");
+
+                    b.Navigation("Payments");
                 });
 
             modelBuilder.Entity("Domain.SecurityGroup", b =>

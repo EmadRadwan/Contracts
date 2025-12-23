@@ -469,8 +469,10 @@ public class GeneralLedgerService : IGeneralLedgerService
                 PartyId = payment.PartyIdFrom, // The “from” party is the customer for a receipt
                 RoleTypeId = "BILL_TO_CUSTOMER",
                 PaymentId = payment.PaymentId,
+                SalesRequestId = payment.SalesRequestId,
                 AcctgTransTypeId = "INCOMING_PAYMENT",
                 TransactionDate = payment.EffectiveDate,
+                
                 AcctgTransEntries = new List<AcctgTransEntry>
                 {
                     debitEntry,
@@ -1741,7 +1743,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             TransactionDate = parameters.TransactionDate, // might set later if null
             ShipmentId = parameters.ShipmentId,
             WorkEffortId = parameters.WorkEffortId,
-
+            SalesRequestId = parameters.SalesRequestId,
             // The Ofbiz snippet sets 'IsPosted' to "Y" and 'PostedDate' to now at creation-time
             IsPosted = "Y",
             PostedDate = DateTime.UtcNow

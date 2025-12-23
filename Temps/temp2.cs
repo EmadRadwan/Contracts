@@ -1,36 +1,27 @@
-using Microsoft.AspNetCore.Identity; // For IdentityResult
-using System.Linq; // For Errors.Select
-
-// ... existing code ...
-
-[Authorize]
-[HttpPost("change-password")]
-public async Task<IActionResult> ChangePassword(ChangePasswordDto changePasswordDto)
+modelBuilder.Entity<AcctgTran>(entity =>
 {
-    if (!ModelState.IsValid) return BadRequest(ModelState);
+    entity.ToTable("ACCTG_TRANS");
 
-    if (changePasswordDto.NewPassword != changePasswordDto.ConfirmPassword)
-    {
-        ModelState.AddModelError("confirmPassword", "The new password and confirmation password do not match.");
-        return BadRequest(ModelState);
-    }
+    // ... your existing indexes and property configurations ...
 
-    var user = await _userManager.Users
-        .FirstOrDefaultAsync(x => x.Email == User.FindFirstValue(ClaimTypes.Email));
+    // REFACTOR: Added index on SalesRequestId for query performance
+    entity.HasIndex(e => e.SalesRequestId, "IX_ACCTG_TRANS_SALES_REQUEST_ID");
 
-    if (user == null) return Unauthorized();
+    // REFACTOR: Map the new optional foreign key column
+    // Length matches typical OFBiz primary key (36 chars), nullable.
+    entity.Property(e => e.SalesRequestId)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("SALES_REQUEST_ID");
 
-    var result = await _userManager.ChangePasswordAsync(user, changePasswordDto.CurrentPassword, changePasswordDto.NewPassword);
+    // ... existing relationships ...
 
-    if (result.Succeeded)
-    {
-        return Ok("Password changed successfully.");
-    }
-
-    foreach (var error in result.Errors)
-    {
-        ModelState.AddModelError(string.Empty, error.Description);
-    }
-
-    return BadRequest(ModelState);
-}
+    // REFACTOR: Configure optional one-to-many relationship with SalesRequest
+    // One SalesRequest → many AcctgTran
+    // Optional: AcctgTran may or may not belong to a SalesRequest
+    entity.HasOne(at => at.SalesRequest)
+        .WithMany(sr => sr.AcctgTrans)
+        .HasForeignKey(at => at.SalesRequestId)
+        .OnDelete(DeleteBehavior.ClientSetNull)
+        .HasConstraintName("FK_ACCTG_TRANS_SALES_REQUEST");
+});

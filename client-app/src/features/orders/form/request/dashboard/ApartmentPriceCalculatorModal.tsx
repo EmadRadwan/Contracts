@@ -1,0 +1,167 @@
+import React, { useState } from "react";
+import {
+    Button,
+    Grid,
+    Typography,
+    Box,
+} from "@mui/material";
+import {
+    Form,
+    FormElement,
+    Field,
+    FormRenderProps,
+} from "@progress/kendo-react-form";
+import FormNumericTextBox from "../../../../../app/common/form/FormNumericTextBox";
+import { requiredValidator } from "../../../../../app/common/form/Validators";
+
+// REFACTOR: Made second discount optional
+// Purpose: Allow users to apply only one discount if needed, without forcing a second one
+// Why it improves: Better UX flexibility; avoids unnecessary validation errors
+// Context: Second field now has no requiredValidator, default 0, and calculation handles zero gracefully
+
+const ApartmentPriceCalculatorModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+    const [result, setResult] = useState<{
+        afterFirstDiscount: number;
+        afterSecondDiscount: number;
+        finalPrice: number;
+    } | null>(null);
+
+    const handleSubmit = (data: any) => {
+        const basePrice = Number(data.values.basePrice);
+        const firstDiscountPct = Number(data.values.firstDiscountPct || 0);
+        const secondDiscountPct = Number(data.values.secondDiscountPct || 0);
+
+        const afterFirst = basePrice * (1 - firstDiscountPct);
+        const final = afterFirst * (1 - secondDiscountPct);
+
+        setResult({
+            afterFirstDiscount: afterFirst,
+            afterSecondDiscount: final,
+            finalPrice: final,
+        });
+    };
+
+    return (
+        <Grid container spacing={3} padding={3}>
+            <Grid item xs={12}>
+                <Typography variant="h5" gutterBottom>
+                    حاسبة سعر الشقة بعد الخصومات
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                    احسب سعر الشقة النهائي بعد تطبيق خصم أول (إجباري) وخصم ثاني (اختياري).
+                </Typography>
+            </Grid>
+
+            {/* =============== INPUT FORM =============== */}
+            <Grid item xs={12}>
+                <Form
+                    initialValues={{
+                        basePrice: 5000000,
+                        firstDiscountPct: 0.05,   // 5%
+                        secondDiscountPct: 0,     // 0% by default → optional
+                    }}
+                    onSubmitClick={handleSubmit}
+                    render={(formRenderProps: FormRenderProps) => (
+                        <FormElement>
+                            <fieldset className="k-form-fieldset">
+                                <Grid container spacing={2}>
+                                    <Grid item xs={12} md={4}>
+                                        <Field
+                                            id="basePrice"
+                                            name="basePrice"
+                                            label="سعر الشقة الأساسي (ج.م)"
+                                            component={FormNumericTextBox}
+                                            format="n0"
+                                            validator={requiredValidator}
+                                        />
+                                    </Grid>
+
+                                    <Grid item xs={12} md={4}>
+                                        <Field
+                                            id="firstDiscountPct"
+                                            name="firstDiscountPct"
+                                            label="الخصم الأول (%)"
+                                            component={FormNumericTextBox}
+                                            format="p2"
+                                            min={0}
+                                            max={1}
+                                            validator={requiredValidator}
+                                        />
+                                    </Grid>
+
+                                    {/* REFACTOR: Removed requiredValidator and added hint */}
+                                    <Grid item xs={12} md={4}>
+                                        <Field
+                                            id="secondDiscountPct"
+                                            name="secondDiscountPct"
+                                            label="الخصم الثاني (%) - اختياري"
+                                            hint="اتركه صفرًا إذا لم يكن هناك خصم ثاني"
+                                            component={FormNumericTextBox}
+                                            format="p2"
+                                            min={0}
+                                            max={1}
+                                            // No requiredValidator → optional
+                                        />
+                                    </Grid>
+
+                                    <Grid item xs={12}>
+                                        <Box display="flex" gap={2} mt={2}>
+                                            <Button
+                                                variant="contained"
+                                                color="primary"
+                                                type="submit"
+                                                disabled={!formRenderProps.valid}
+                                            >
+                                                احسب
+                                            </Button>
+                                            <Button variant="outlined" onClick={onClose}>
+                                                إغلاق
+                                            </Button>
+                                        </Box>
+                                    </Grid>
+                                </Grid>
+                            </fieldset>
+                        </FormElement>
+                    )}
+                />
+            </Grid>
+
+            {/* ==================== RESULTS ==================== */}
+            {result && (
+                <>
+                    <Grid item xs={12}>
+                        <Typography variant="h6" gutterBottom>
+                            نتائج الحساب
+                        </Typography>
+                    </Grid>
+
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} sm={6} md={4}>
+                            <Box bgcolor="#f5f5f5" p={2} borderRadius={2}>
+                                <Typography variant="caption" color="text.secondary">
+                                    السعر بعد الخصم الأول
+                                </Typography>
+                                <Typography variant="h5" color="primary" fontWeight="bold">
+                                    {result.afterFirstDiscount.toLocaleString("ar-EG")} ج.م
+                                </Typography>
+                            </Box>
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={4}>
+                            <Box bgcolor="#e8f5e8" p={2} borderRadius={2}>
+                                <Typography variant="caption" color="text.secondary">
+                                    السعر النهائي
+                                </Typography>
+                                <Typography variant="h5" color="success.main" fontWeight="bold">
+                                    {result.finalPrice.toLocaleString("ar-EG")} ج.م
+                                </Typography>
+                            </Box>
+                        </Grid>
+                    </Grid>
+                </>
+            )}
+        </Grid>
+    );
+};
+
+export default ApartmentPriceCalculatorModal;

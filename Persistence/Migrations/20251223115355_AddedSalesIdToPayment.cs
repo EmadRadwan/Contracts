@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class AddedReserveRequest : Migration
+    public partial class AddedSalesIdToPayment : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -11504,6 +11504,8 @@ namespace Persistence.Migrations
                     PAYMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     FIN_ACCOUNT_TRANS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    SALES_REQUEST_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     SHIPMENT_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -26570,6 +26572,8 @@ namespace Persistence.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     PARTY_ID_FROM = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    SALES_REQUEST_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     PARTY_ID_TO = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ROLE_TYPE_ID_TO = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
@@ -32286,6 +32290,11 @@ namespace Persistence.Migrations
                 name: "ACCTTX_WEFF",
                 table: "ACCTG_TRANS",
                 column: "WORK_EFFORT_ID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ACCTG_TRANS_SALES_REQUEST_ID",
+                table: "ACCTG_TRANS",
+                column: "SALES_REQUEST_ID");
 
             migrationBuilder.CreateIndex(
                 name: "ACCTTX_ATTR",
@@ -41392,6 +41401,11 @@ namespace Persistence.Migrations
                 name: "IX_PAYMENT_COST_CENTER_ID",
                 table: "PAYMENT",
                 column: "COST_CENTER_ID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PAYMENT_SALES_REQUEST_ID",
+                table: "PAYMENT",
+                column: "SALES_REQUEST_ID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PAYMENT_WORK_EFFORT_ID",
@@ -50995,6 +51009,13 @@ namespace Persistence.Migrations
                 principalColumn: "WORK_EFFORT_ID");
 
             migrationBuilder.AddForeignKey(
+                name: "FK_ACCTG_TRANS_SALES_REQUEST",
+                table: "ACCTG_TRANS",
+                column: "SALES_REQUEST_ID",
+                principalTable: "SALES_REQUEST",
+                principalColumn: "SALES_REQUEST_ID");
+
+            migrationBuilder.AddForeignKey(
                 name: "ACCTTXENT_GLACOG",
                 table: "ACCTG_TRANS_ENTRY",
                 columns: new[] { "GL_ACCOUNT_ID", "ORGANIZATION_PARTY_ID" },
@@ -52654,6 +52675,13 @@ namespace Persistence.Migrations
                 principalColumn: "PRODUCT_ID");
 
             migrationBuilder.AddForeignKey(
+                name: "FK_PAYMENT_SALES_REQUEST",
+                table: "PAYMENT",
+                column: "SALES_REQUEST_ID",
+                principalTable: "SALES_REQUEST",
+                principalColumn: "SALES_REQUEST_ID");
+
+            migrationBuilder.AddForeignKey(
                 name: "FK_PAYMENT_WORK_EFFORT",
                 table: "PAYMENT",
                 column: "WORK_EFFORT_ID",
@@ -54055,9 +54083,6 @@ namespace Persistence.Migrations
                 name: "SALES_OPPORTUNITY_WORK_EFFORT");
 
             migrationBuilder.DropTable(
-                name: "SALES_REQUEST");
-
-            migrationBuilder.DropTable(
                 name: "SECURITY_GROUP_PERMISSION");
 
             migrationBuilder.DropTable(
@@ -55217,6 +55242,9 @@ namespace Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "COST_CENTER");
+
+            migrationBuilder.DropTable(
+                name: "SALES_REQUEST");
 
             migrationBuilder.DropTable(
                 name: "PAYMENT_GATEWAY_RESPONSE");

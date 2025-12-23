@@ -20,6 +20,7 @@ import SalesRequestMenu from "../menu/SalesRequestMenu";
 import {handleDatesArray} from "../../../../../app/util/utils";
 import InstallmentPriceCalculatorModal from "./InstallmentPriceCalculatorModal";
 import ModalContainer from "../../../../../app/common/modals/ModalContainer";
+import ApartmentPriceCalculatorModal from "./ApartmentPriceCalculatorModal";
 
 function SalesRequestsList() {
     // -----------------------------------------------------------------
@@ -33,6 +34,7 @@ function SalesRequestsList() {
     });
     const [viewMode, setViewMode] = useState<"list" | "form">("list"); // NEW
     const [showCalculator, setShowCalculator] = useState(false);
+    const [showApartmentCalculator, setShowApartmentCalculator] = useState(false);
 
     const { getTranslatedLabel } = useTranslationHelper();
 
@@ -171,13 +173,23 @@ function SalesRequestsList() {
                                                 {getTranslatedLabel("salesRequest.list.create", "Create Sales Request")}
                                             </Button>
                                         </Grid>
-                                        <Grid item>
+                                        <Grid item xs={2}>
                                             <Button
                                                 color="primary"
                                                 variant="contained"
                                                 onClick={() => setShowCalculator(true)}
                                             >
                                                 {getTranslatedLabel("installmentCalculator.open", "حاسبة سعر المتر بالتقسيط")}
+                                            </Button>
+                                        </Grid>
+
+                                        <Grid item>
+                                            <Button
+                                                color="success"
+                                                variant="contained"
+                                                onClick={() => setShowApartmentCalculator(true)}
+                                            >
+                                                حاسبة سعر الشقة بعد الخصومات
                                             </Button>
                                         </Grid>
                                     </Grid>
@@ -252,6 +264,14 @@ function SalesRequestsList() {
                     <ModalContainer show={showCalculator} onClose={() => setShowCalculator(false)} width={850}>
                         <InstallmentPriceCalculatorModal
                             onClose={() => setShowCalculator(false)}
+                        />
+                    </ModalContainer>
+                )}
+
+                {showApartmentCalculator && (
+                    <ModalContainer show={showApartmentCalculator} onClose={() => setShowApartmentCalculator(false)} width={900}>
+                        <ApartmentPriceCalculatorModal
+                            onClose={() => setShowApartmentCalculator(false)}
                         />
                     </ModalContainer>
                 )}

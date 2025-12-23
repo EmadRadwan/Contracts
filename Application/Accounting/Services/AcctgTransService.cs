@@ -48,6 +48,7 @@ public class AcctgTransService : IAcctgTransService
             RoleTypeId = parameters.RoleTypeId,
             ShipmentId = parameters.ShipmentId,
             WorkEffortId = parameters.WorkEffortId,
+            SalesRequestId = parameters.SalesRequestId,
             Description = parameters.Description,
 
             // Additional fields from the record

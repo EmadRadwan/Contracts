@@ -24,6 +24,8 @@ public class Payment
     public string? PaymentGatewayResponseId { get; set; }
     public string? PaymentPreferenceId { get; set; }
     public string? PartyIdFrom { get; set; }
+    public string? SalesRequestId { get; set; }
+
     public string? PartyIdTo { get; set; }
     public string? RoleTypeIdTo { get; set; }
     public string? StatusId { get; set; }
@@ -61,6 +63,7 @@ public class Payment
     public RoleType? RoleTypeIdToNavigation { get; set; }
     public virtual WorkEffort? WorkEffort { get; set; }
     public virtual CostCenter? CostCenter { get; set; }
+    public virtual SalesRequest? SalesRequest { get; set; }
 
 
     public StatusItem? Status { get; set; }

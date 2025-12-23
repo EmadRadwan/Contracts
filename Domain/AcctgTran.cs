@@ -32,6 +32,8 @@ public class AcctgTran
     public string? InvoiceId { get; set; }
     public string? PaymentId { get; set; }
     public string? FinAccountTransId { get; set; }
+    public string? SalesRequestId { get; set; }
+
     public string? ShipmentId { get; set; }
     public string? ReceiptId { get; set; }
     public string? WorkEffortId { get; set; }
@@ -61,6 +63,8 @@ public class AcctgTran
     public RoleType? RoleType { get; set; }
     public Shipment? Shipment { get; set; }
     public WorkEffort? WorkEffort { get; set; }
+    public virtual SalesRequest? SalesRequest { get; set; }
+
     public ICollection<AcctgTransAttribute> AcctgTransAttributes { get; set; }
     public ICollection<AcctgTransEntry> AcctgTransEntries { get; set; }
 }

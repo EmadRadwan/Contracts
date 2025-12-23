@@ -24,5 +24,6 @@ public class CreatePaymentParam
     public string? ChequeNumber { get; set; }
     public string? ProjectId { get; set; }
     public string? CostCenterId { get; set; }
+    public string? SalesRequestId { get; set; }
     public DateTime? ChequeDate { get; set; }
 }

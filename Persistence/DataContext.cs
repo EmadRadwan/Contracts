@@ -1195,6 +1195,8 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 entity.HasIndex(e => e.AcctgTransTypeId, "ACCTTX_TYPE");
 
                 entity.HasIndex(e => e.WorkEffortId, "ACCTTX_WEFF");
+                    entity.HasIndex(e => e.SalesRequestId, "IX_ACCTG_TRANS_SALES_REQUEST_ID");
+
 
                 entity.Property(e => e.AcctgTransId)
                     .HasMaxLength(36)
@@ -1346,6 +1348,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasMaxLength(36)
                     .IsUnicode(false)
                     .HasColumnName("WORK_EFFORT_ID");
+                    
+                    entity.Property(e => e.SalesRequestId)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("SALES_REQUEST_ID");
 
                 entity.HasOne(d => d.AcctgTransType)
                     .WithMany(p => p.AcctgTrans)
@@ -1426,6 +1433,12 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .WithMany(p => p.AcctgTrans)
                     .HasForeignKey(d => new { d.InventoryItemId, d.PhysicalInventoryId })
                     .HasConstraintName("ACCTTX_INVITEMVAR");
+                    
+                     entity.HasOne(at => at.SalesRequest)
+                        .WithMany(sr => sr.AcctgTrans)
+                        .HasForeignKey(at => at.SalesRequestId)
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_ACCTG_TRANS_SALES_REQUEST");
             });
 
             modelBuilder.Entity<AcctgTransAttribute>(entity =>
@@ -31838,11 +31851,18 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 entity.HasIndex(e => e.LastUpdatedTxStamp, "PAYMENT_TXSTMP");
                 entity.HasIndex(p => p.WorkEffortId, "IX_PAYMENT_WORK_EFFORT_ID");
                 entity.HasIndex(p => p.CostCenterId, "IX_PAYMENT_COST_CENTER_ID");
+                entity.HasIndex(p => p.SalesRequestId, "IX_PAYMENT_SALES_REQUEST_ID");
 
                 entity.Property(e => e.PaymentId)
                     .HasMaxLength(36)
                     .IsUnicode(false)
                     .HasColumnName("PAYMENT_ID");
+                    
+                    entity.Property(e => e.SalesRequestId)
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnName("SALES_REQUEST_ID");
+
 
                 entity.Property(e => e.ActualCurrencyAmount)
                     .HasColumnType("decimal(18,3)")
@@ -32037,6 +32057,12 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                           .WithMany(cc => cc.Payments)
                           .HasForeignKey(p => p.CostCenterId)
                           .HasConstraintName("FK_PAYMENT_COST_CENTER");
+                          
+                           entity.HasOne(p => p.SalesRequest)
+                    .WithMany(sr => sr.Payments)
+                    .HasForeignKey(p => p.SalesRequestId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)  // Optional: explicit for clarity; allows deleting SalesRequest without cascading
+                    .HasConstraintName("FK_PAYMENT_SALES_REQUEST");
 
                 
                     

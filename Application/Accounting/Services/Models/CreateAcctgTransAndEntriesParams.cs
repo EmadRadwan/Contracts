@@ -20,6 +20,7 @@ public class CreateAcctgTransAndEntriesParams
     public string? InventoryItemId { get; set; }
     public string? PaymentId { get; set; }
     public string? PartyId { get; set; }
+    public string? SalesRequestId { get; set; }
     public string? ShipmentId { get; set; }
     public string? WorkEffortId { get; set; }
     public string? PhysicalInventoryId { get; set; }

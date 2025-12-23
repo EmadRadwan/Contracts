@@ -29,21 +29,19 @@ interface SalesRequestActionsMenuProps {
 }
 
 export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = ({
-                                                                                    salesRequestId,
-                                                                                    currentStatusId,
-                                                                                    disabled,
-                                                                                    onSalesRequestUpdated,
-                                                                                    onSalesRequestDeleted
-                                                                                }) => {
+                                                                             salesRequestId,
+                                                                             currentStatusId,
+                                                                             disabled,
+                                                                             onSalesRequestUpdated, onSalesRequestDeleted
+                                                                         }) => {
     const {getTranslatedLabel} = useTranslationHelper();
-    const [approveSR, {isLoading: isApproving}] = useApproveSalesRequestMutation();
-    const [deleteSR, {isLoading: isDeleting}] = useDeleteSalesRequestMutation();
-    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+    const [approveSR, {isLoading}] = useApproveSalesRequestMutation();
+    const [deleteSR, { isLoading: isDeleting }] = useDeleteSalesRequestMutation();  // ← new mutation
+    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);  // ← NEW: Confirmation state
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
     const navigate = useNavigate();
-
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
     };
@@ -52,18 +50,19 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
         setAnchorEl(null);
     };
 
-    // REFACTOR: Renamed isLoading to isApproving for clarity since there are now two mutations
     const handleApprove = async () => {
         if (!salesRequestId) return;
 
         try {
+            // This returns the full updated object from backend
             const updatedSalesRequest = await approveSR(salesRequestId).unwrap();
 
-            toast.success(getTranslatedLabel("salesRequest.approved"));
+            toast.success(getTranslatedLabel("salesRequest.approved", "Sales Request Approved"));
 
+            // THIS IS THE KEY: Notify parent so ribbon updates instantly
             onSalesRequestUpdated?.(updatedSalesRequest);
         } catch (error) {
-            toast.error(getTranslatedLabel("salesRequest.approveError"));
+            toast.error(getTranslatedLabel("salesRequest.approveError", "Failed to approve sales request"));
         } finally {
             handleClose();
         }
@@ -71,7 +70,7 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
 
     const handleDeleteClick = () => {
         setConfirmDeleteOpen(true);
-        handleClose();
+        handleClose();  // Close the menu
     };
 
     const handleDeleteConfirm = async () => {
@@ -79,12 +78,12 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
 
         try {
             await deleteSR(salesRequestId).unwrap();
-            toast.success(getTranslatedLabel("salesRequest.deleted"));
+            toast.success(getTranslatedLabel("salesRequest.deleted", "Sales Request Deleted"));
             onSalesRequestDeleted?.();
         } catch (error) {
-            toast.error(getTranslatedLabel("salesRequest.deleteError"));
+            toast.error(getTranslatedLabel("salesRequest.deleteError", "Failed to delete sales request"));
         } finally {
-            setConfirmDeleteOpen(false);
+            setConfirmDeleteOpen(false);  // Always close dialog
         }
     };
 
@@ -96,10 +95,10 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
                 variant="contained"
                 color="primary"
                 onClick={handleClick}
-                disabled={disabled || isApproving || isDeleting || !salesRequestId}
+                disabled={disabled || isLoading || !salesRequestId}
                 sx={{mt: 2, mr: 2}}
             >
-                {getTranslatedLabel('salesRequest.actions')}
+                {getTranslatedLabel('salesRequest.form.actions', 'Actions')}
             </Button>
 
             <Menu
@@ -109,17 +108,17 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
                 anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}
                 transformOrigin={{vertical: 'top', horizontal: 'right'}}
             >
-                <MenuItem onClick={handleApprove} disabled={isApproveDisabled || isApproving}>
-                    {getTranslatedLabel('salesRequest.approve')}
+                <MenuItem onClick={handleApprove} disabled={isApproveDisabled || isLoading}>
+                    {getTranslatedLabel('salesRequest.form.approve', 'Approve Sales Request')}
                 </MenuItem>
 
                 <Can perform="DeleteSalesRequest">
                     <MenuItem
                         onClick={handleDeleteClick}
                         disabled={isDeleting}
-                        sx={{ color: "error.main" }}
+                        sx={{ color: "error.main" }} // visual cue that it's destructive
                     >
-                        {getTranslatedLabel('salesRequest.delete')}
+                        {getTranslatedLabel('salesRequest.form.delete', 'Delete Sales Request')}
                     </MenuItem>
                 </Can>
             </Menu>
@@ -131,16 +130,20 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
                 fullWidth
             >
                 <DialogTitle sx={{ color: "error.main" }}>
-                    {getTranslatedLabel('salesRequest.deleteConfirmTitle')}
+                    {getTranslatedLabel('salesRequest.form.deleteConfirmTitle', 'Confirm Delete')}
                 </DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        {getTranslatedLabel('salesRequest.deleteConfirmMessage')}
+                        {getTranslatedLabel('salesRequest.form.deleteConfirmMessage',
+                            'Are you sure you want to permanently delete this Sales Request? ' +
+                            'This action will also remove all related payments and accounting entries. ' +
+                            'This cannot be undone.'
+                        )}
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setConfirmDeleteOpen(false)} disabled={isDeleting}>
-                        {getTranslatedLabel('general.cancel')}
+                        {getTranslatedLabel('general.cancel', 'Cancel')}
                     </Button>
                     <Button
                         onClick={handleDeleteConfirm}
@@ -150,8 +153,8 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
                         startIcon={isDeleting ? <CircularProgress size={16} /> : null}
                     >
                         {isDeleting
-                            ? getTranslatedLabel('general.deleting')
-                            : getTranslatedLabel('general.delete')
+                            ? getTranslatedLabel('salesRequest.form.deleting', 'Deleting...')
+                            : getTranslatedLabel('salesRequest.form.delete', 'Delete')
                         }
                     </Button>
                 </DialogActions>

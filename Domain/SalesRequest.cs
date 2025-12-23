@@ -57,5 +57,7 @@ public class SalesRequest
     public virtual Product   Product   { get; set; } = null!;
     public virtual Party     Customer  { get; set; } = null!;
     public virtual Party? Employee { get; set; }      // navigation for the employee
+    public virtual ICollection<Payment> Payments { get; set; }
+    public virtual ICollection<AcctgTran> AcctgTrans { get; set; }
 
 }

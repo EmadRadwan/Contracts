@@ -79,6 +79,7 @@ public class ApproveSalesRequest
                     PaymentTypeId = "RECEIPT_ADVANCE_PAYMENT",
                     StatusId = "PMNT_NOT_PAID", // or "PMNT_PAID" if paid on spot?
                     Comments = "Advance payment - Sales Request Approved",
+                    SalesRequestId = sr.SalesRequestId,
                     PaymentMethodId = null,
                     PaymentMethodTypeId = null
                 });
@@ -103,6 +104,7 @@ public class ApproveSalesRequest
                             PaymentTypeId = "RECEIPT_DUE_INSTALLMENT",
                             StatusId = "PMNT_NOT_PAID",
                             Comments = $"Installment {i} of {sr.NumberOfInstallments} - SR {sr.SalesRequestId}",
+                            SalesRequestId = sr.SalesRequestId,
                             PaymentMethodId = null,
                             PaymentMethodTypeId = null
                         });
@@ -139,7 +141,8 @@ public class ApproveSalesRequest
                     TransactionDate = sr.SaleDate ?? DateTime.UtcNow.Date,
                     IsPosted = "Y",
                     Description = $"Apartment Sale - SR {sr.SalesRequestId} - {apartment.ApartmentName}",
-                    GlFiscalTypeId = "ACTUAL"
+                    GlFiscalTypeId = "ACTUAL",
+                    SalesRequestId = sr.SalesRequestId
                 };
 
                 var acctgTransId = await _acctgTransService.CreateAcctgTrans(acctgTransParams);
