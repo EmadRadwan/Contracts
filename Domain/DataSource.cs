@@ -1,5 +1,9 @@
-﻿namespace Domain;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
+namespace Domain;
+
+[JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]
 public class DataSource
 {
     public DataSource()

@@ -135,6 +135,9 @@ import {certificateItemsSlice} from "../../features/Projects/slice/certificateIt
 import {certificateItemsApi} from "./apis/certificateItemsApi";
 import {multiPaymentCertificateApi} from "./apis/multiPaymentCertificateApi";
 import {salesRequestApi} from "./apis/salesRequestApi";
+import {salesOpportunitiesApi} from "./apis/crm/salesOpportunitiesApi";
+import {contactsApi} from "./apis/crm/contactsApi";
+import {dataSourcesApi} from "./apis/crm/dataSourcesApi";
 
 
 // REFACTOR: Added logger middleware for debugging
@@ -320,7 +323,10 @@ export const store = configureStore({
         [accountingReportsApi.reducerPath]: accountingReportsApi.reducer,
         [finAccountStatusApi.reducerPath]: finAccountStatusApi.reducer,
         [paymentGroupsApi.reducerPath]: paymentGroupsApi.reducer,
-        [paymentGroupTypesApi.reducerPath]: paymentGroupTypesApi.reducer
+        [paymentGroupTypesApi.reducerPath]: paymentGroupTypesApi.reducer,
+        [salesOpportunitiesApi.reducerPath]: salesOpportunitiesApi.reducer,
+        [contactsApi.reducerPath]: contactsApi.reducer,
+        [dataSourcesApi.reducerPath]: dataSourcesApi.reducer
     },
     middleware: (getDefaultMiddleware) => {
         return getDefaultMiddleware({
@@ -417,6 +423,9 @@ export const store = configureStore({
             .concat(finAccountStatusApi.middleware)
             .concat(paymentGroupsApi.middleware)
             .concat(paymentGroupTypesApi.middleware)
+            .concat(salesOpportunitiesApi.middleware)
+            .concat(contactsApi.middleware)
+            .concat(dataSourcesApi.middleware)
     },
     devTools: devToolsConfig,
 });
@@ -687,6 +696,11 @@ export * from "./apis/accounting/finAccountStatusApi"
 
 export * from "./apis/payment/paymentGroupsApi"
 export * from "./apis/payment/paymentGroupTypesApi"
+
+// CRM - Sales Opportunities, Contacts & Data Sources
+export * from "./apis/crm/salesOpportunitiesApi"
+export * from "./apis/crm/contactsApi"
+export * from "./apis/crm/dataSourcesApi"
 
 
 
