@@ -150,6 +150,9 @@ import PaymentsWithDueAmountsList from "../../features/accounting/payment/dashbo
 import ReserveRequestsList from "../../features/orders/form/request/dashboard/ReserveRequestsList";
 import RequireRole from "./RequireRole";
 import ChangePasswordPage from "../../features/account/ChangePasswordPage";
+import CRMDashboard from "../../features/CRM/dashboard/CRMDashboard";
+import LeadsDashboard from "../../features/CRM/leads/LeadsDashboard";
+import ContactsDashboard from "../../features/CRM/contacts/ContactsDashboard";
 
 const PartyFinancialHistoryWrapper = () => {
     const {partyId} = useParams<{ partyId: string }>();
@@ -207,6 +210,9 @@ export const routes: RouteObject[] = [
                             {path: "parties", element: <PartiesList/>},
                             {path: "partyContacts", element: <PartyContactsList/>},
                             {path: "party/:partyId/financial-history", element: <PartyFinancialHistoryWrapper/>},
+                            {path: "leads", element: <LeadsDashboard/>},
+                            {path: "contacts", element: <ContactsDashboard/>},
+                            {path: "crm", element: <CRMDashboard/>},
                         ],
                     },
 

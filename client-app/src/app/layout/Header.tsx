@@ -1,19 +1,20 @@
 import React from "react";
-import {NavLink, useLocation} from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import ReceiptOutlinedIcon from '@mui/icons-material/ReceiptOutlined';
 import HomeWork from '@mui/icons-material/HomeWork';
-import {AppBar, Box, List, ListItem, ListItemIcon, ListItemText, Toolbar, Typography,} from "@mui/material";
+import { AppBar, Box, List, ListItem, ListItemIcon, ListItemText, Toolbar, Typography, } from "@mui/material";
 import SignedInMenu from "./SignedInMenu";
-import {useAppDispatch, useAppSelector} from "../store/configureStore";
+import { useAppDispatch, useAppSelector } from "../store/configureStore";
 import LanguageChooser from "./LanguageChooser";
-import {setHeaderSelectedMenu} from "../slice/appUiSlice";
-import {StoreMallDirectory} from "@mui/icons-material";
+import { setHeaderSelectedMenu } from "../slice/appUiSlice";
+import { StoreMallDirectory } from "@mui/icons-material";
 import { useTranslationHelper } from "../hooks/useTranslationHelper";
 import withFloatingLabel from "../components/FloatingLabel";
 import {Can} from "../../features/account/Can";
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 
 const MyNavLink = React.forwardRef<any, any>((props, ref) => (
     <NavLink
@@ -31,6 +32,7 @@ const moduleRoleMap: Record<string, string> = {
     accounting: "Accounting_View",
     projects: "Projects_View",
     sales: "Sales_View",
+    crm: "CRM_View",
 };
 
 const midLinks = [
@@ -45,21 +47,24 @@ const midLinks = [
         key: "sales",
         icon: <ReceiptIcon sx={{ color: "#4CAF50" }} />, // Green for sales
     },
+    { title: "CRM", path: "/leads", key: "crm", icon: <ManageAccountsIcon sx={{ color: "#fabd52" }} /> },
+
 ];
 
 
-const rightLinks = [{title: "login", path: "/login", key: "login"}];
+const rightLinks = [{ title: "login", path: "/login", key: "login" }];
 
 
 export default function Header() {
 
     const location = useLocation();
-    // const {language} = useAppSelector(state => state.localization)
-    const {getTranslatedLabel} = useTranslationHelper()
-    // console.log('location', location);
-    const {user} = useAppSelector((state) => state.account);
-    const {headerSelectedMenu} = useAppSelector((state) => state.appUi);
+    const { language } = useAppSelector(state => state.localization);
+    const { getTranslatedLabel } = useTranslationHelper();
+    const { user } = useAppSelector((state) => state.account);
+    const { headerSelectedMenu } = useAppSelector((state) => state.appUi);
     const dispatch = useAppDispatch();
+
+    const isRTL = language === 'ar';
     const navStyles = (selectedpath: string) => ({
         color: "inherit",
         textDecoration: selectedpath === headerSelectedMenu ? "underline" : "none",
@@ -77,7 +82,7 @@ export default function Header() {
 
     const FloatingLabelText = withFloatingLabel(({ children }: { children: string }) => (
         <ListItemText primary={children} sx={{ margin: 0 }} />
-      ));
+    ));
 
 
     return (
@@ -85,24 +90,19 @@ export default function Header() {
             <Toolbar
                 sx={{
                     display: "flex",
+                    flexDirection: isRTL ? "row-reverse" : "row",
                     justifyContent: "space-between",
                     alignItems: "center",
                 }}
             >
+                {/* Language Chooser - at start (left for LTR, right for RTL) */}
                 <Box display="flex" alignItems="center">
-                    <Typography
-                        variant="h6"
-                        component={MyNavLink}
-                        exact
-                        to="/"
-                        //sx={navStyles}
-                    ></Typography>
+                    <LanguageChooser />
                 </Box>
-                <Box display="flex">
-                    <LanguageChooser/>
-                </Box>
-                <Box display="flex" alignItems="left">
-                    <List sx={{display: "flex"}}>
+
+                {/* Navigation Links - center */}
+                <Box display="flex" alignItems="center" sx={{ flexGrow: 1, justifyContent: "center" }}>
+                    <List sx={{ display: "flex", flexDirection: isRTL ? "row-reverse" : "row" }}>
                         {midLinks.map(({ title, path, icon, key }) => {
                             const requiredRole = moduleRoleMap[key];
 
@@ -128,23 +128,16 @@ export default function Header() {
                                 </Can>
                             ) : null;
                         })}
-                        {/*{user && user.roles?.includes('Admin') &&
-                            <ListItem
-                                component={NavLink}
-                                to={'/inventory'}
-                                sx={navStyles}
-                            >
-                                INVENTORY
-                            </ListItem>}*/}
                     </List>
                 </Box>
 
+                {/* User Menu / Login - at end (right for LTR, left for RTL) */}
                 <Box display="flex" alignItems="center">
                     {user ? (
-                        <SignedInMenu/>
+                        <SignedInMenu />
                     ) : (
-                        <List sx={{display: "flex"}}>
-                            {rightLinks.map(({title, path, key}) => (
+                        <List sx={{ display: "flex" }}>
+                            {rightLinks.map(({ title, path, key }) => (
                                 <ListItem
                                     component={NavLink}
                                     to={path}

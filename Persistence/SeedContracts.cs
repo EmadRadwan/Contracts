@@ -115,6 +115,70 @@ public class SeedContracts
             await context.SaveChangesAsync();
         }
 
+        // Sales Opportunity Stages (CRM Pipeline)
+        if (!context.SalesOpportunityStages.Any())
+        {
+            var stages = new List<SalesOpportunityStage>
+            {
+                new SalesOpportunityStage
+                {
+                    OpportunityStageId = "SOSTG_PROSPECT",
+                    Description = "Prospect",
+                    DefaultProbability = 10,
+                    SequenceNum = 1,
+                    CreatedStamp = nowDateTime,
+                    LastUpdatedStamp = nowDateTime
+                },
+                new SalesOpportunityStage
+                {
+                    OpportunityStageId = "SOSTG_QUALIFIED",
+                    Description = "Qualified",
+                    DefaultProbability = 25,
+                    SequenceNum = 2,
+                    CreatedStamp = nowDateTime,
+                    LastUpdatedStamp = nowDateTime
+                },
+                new SalesOpportunityStage
+                {
+                    OpportunityStageId = "SOSTG_PROPOSAL",
+                    Description = "Proposal",
+                    DefaultProbability = 50,
+                    SequenceNum = 3,
+                    CreatedStamp = nowDateTime,
+                    LastUpdatedStamp = nowDateTime
+                },
+                new SalesOpportunityStage
+                {
+                    OpportunityStageId = "SOSTG_NEGOTIATION",
+                    Description = "Negotiation",
+                    DefaultProbability = 75,
+                    SequenceNum = 4,
+                    CreatedStamp = nowDateTime,
+                    LastUpdatedStamp = nowDateTime
+                },
+                new SalesOpportunityStage
+                {
+                    OpportunityStageId = "SOSTG_CLOSED_WON",
+                    Description = "Closed Won",
+                    DefaultProbability = 100,
+                    SequenceNum = 5,
+                    CreatedStamp = nowDateTime,
+                    LastUpdatedStamp = nowDateTime
+                },
+                new SalesOpportunityStage
+                {
+                    OpportunityStageId = "SOSTG_CLOSED_LOST",
+                    Description = "Closed Lost",
+                    DefaultProbability = 0,
+                    SequenceNum = 6,
+                    CreatedStamp = nowDateTime,
+                    LastUpdatedStamp = nowDateTime
+                }
+            };
+            await context.SalesOpportunityStages.AddRangeAsync(stages);
+            await context.SaveChangesAsync();
+        }
+
         //Status Type 
         if (!context.StatusTypes.Any())
         {
@@ -238,7 +302,7 @@ public class SeedContracts
         }
 
 
-        //Role Type 
+        //Role Type
         if (!context.RoleTypes.Any())
         {
             var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/role_types.json");
@@ -247,6 +311,19 @@ public class SeedContracts
             var roleTypes = JsonConvert.DeserializeObject<List<RoleType>>(jsonData);
             await context.RoleTypes.AddRangeAsync(roleTypes);
             await context.SaveChangesAsync();
+        }
+
+        //Data Sources (CRM lead sources)
+        if (!context.DataSources.Any())
+        {
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/data_sources.json");
+            if (File.Exists(path))
+            {
+                var jsonData = File.ReadAllText(path);
+                var dataSources = JsonConvert.DeserializeObject<List<DataSource>>(jsonData);
+                await context.DataSources.AddRangeAsync(dataSources);
+                await context.SaveChangesAsync();
+            }
         }
 
         //Return Header Type 
@@ -2630,7 +2707,11 @@ public class SeedContracts
                 "Accounting_Transactions_View",
                 "Accounting_BillingAccounts_View",
                 "Accounting_MultiPaymentCertificates_View",
-                "Process_Payment"
+                "Process_Payment",
+                // CRM Roles
+                "CRM_View",
+                "CRM_Leads_View", "CRM_Leads_Create", "CRM_Leads_Edit", "CRM_Leads_Delete",
+                "CRM_Contacts_View", "CRM_Contacts_Create", "CRM_Contacts_Edit", "CRM_Contacts_Delete"
             };
 
             foreach (var role in requiredRoles)
@@ -2931,7 +3012,11 @@ public class SeedContracts
                     "Accounting_GLSettings_View",
                     "Accounting_Transactions_View",
                     "Accounting_BillingAccounts_View",
-                    "Accounting_MultiPaymentCertificates_View", "Process_Payment", "CreateReserveRequest", "CreateSalesRequest"
+                    "Accounting_MultiPaymentCertificates_View", "Process_Payment", "CreateReserveRequest", "CreateSalesRequest",
+                    // CRM Roles
+                    "CRM_View",
+                    "CRM_Leads_View", "CRM_Leads_Create", "CRM_Leads_Edit", "CRM_Leads_Delete",
+                    "CRM_Contacts_View", "CRM_Contacts_Create", "CRM_Contacts_Edit", "CRM_Contacts_Delete"
                 }
             },
             {

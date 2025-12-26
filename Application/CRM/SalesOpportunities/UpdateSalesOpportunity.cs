@@ -1,0 +1,269 @@
+using Application.Core;
+using Application.Interfaces;
+using Domain;
+using FluentValidation;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Persistence;
+
+namespace Application.CRM.SalesOpportunities;
+
+/// <summary>
+/// Updates an existing Sales Opportunity.
+/// Tracks changes in SalesOpportunityHistory for audit trail.
+/// </summary>
+public class UpdateSalesOpportunity
+{
+    public record Command : IRequest<Result<SalesOpportunityDto>>
+    {
+        public SalesOpportunityDto Opportunity { get; init; } = null!;
+    }
+
+    public class CommandValidator : AbstractValidator<Command>
+    {
+        public CommandValidator()
+        {
+            RuleFor(x => x.Opportunity.SalesOpportunityId)
+                .NotEmpty().WithMessage("Opportunity ID is required");
+
+            RuleFor(x => x.Opportunity.OpportunityName)
+                .NotEmpty().WithMessage("Opportunity name is required");
+        }
+    }
+
+    public class Handler : IRequestHandler<Command, Result<SalesOpportunityDto>>
+    {
+        private readonly DataContext _context;
+        private readonly IUserAccessor _userAccessor;
+        private readonly IUtilityService _utilityService;
+
+        public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService)
+        {
+            _context = context;
+            _userAccessor = userAccessor;
+            _utilityService = utilityService;
+        }
+
+        public async Task<Result<SalesOpportunityDto>> Handle(Command request, CancellationToken ct)
+        {
+            await using var transaction = await _context.Database.BeginTransactionAsync(ct);
+
+            try
+            {
+                var stamp = DateTime.UtcNow;
+                var dto = request.Opportunity;
+
+                var opportunity = await _context.SalesOpportunities
+                    .Include(o => o.OpportunityStage)
+                    .Include(o => o.SalesOpportunityRoles)
+                    .FirstOrDefaultAsync(o => o.SalesOpportunityId == dto.SalesOpportunityId, ct);
+
+                if (opportunity == null)
+                    return Result<SalesOpportunityDto>.Failure("Opportunity not found");
+
+                var user = await _context.Users
+                    .FirstOrDefaultAsync(x => x.UserName == _userAccessor.GetUsername(), ct);
+                var userLogin = user != null
+                    ? await _context.UserLogins.FirstOrDefaultAsync(x => x.PartyId == user.PartyId, ct)
+                    : null;
+
+                // Check if stage changed (important for history)
+                var stageChanged = opportunity.OpportunityStageId != dto.OpportunityStageId;
+                var amountChanged = opportunity.EstimatedAmount != dto.EstimatedAmount;
+
+                // Update the opportunity - preserve existing values if not provided in DTO
+                opportunity.OpportunityName = dto.OpportunityName;
+
+                // Only update these fields if they are explicitly provided
+                if (dto.Description != null)
+                    opportunity.Description = dto.Description;
+                if (dto.EstimatedAmount.HasValue)
+                    opportunity.EstimatedAmount = dto.EstimatedAmount.Value;
+                if (dto.EstimatedProbability.HasValue)
+                    opportunity.EstimatedProbability = dto.EstimatedProbability.Value;
+                if (dto.CurrencyUomId != null)
+                    opportunity.CurrencyUomId = dto.CurrencyUomId;
+                if (dto.EstimatedCloseDate.HasValue)
+                    opportunity.EstimatedCloseDate = dto.EstimatedCloseDate;
+                if (dto.NextStep != null)
+                    opportunity.NextStep = dto.NextStep;
+                if (dto.NextStepDate.HasValue)
+                    opportunity.NextStepDate = dto.NextStepDate;
+                if (dto.DataSourceId != null)
+                    opportunity.DataSourceId = dto.DataSourceId;
+                if (dto.MarketingCampaignId != null)
+                    opportunity.MarketingCampaignId = dto.MarketingCampaignId;
+                if (dto.TypeEnumId != null)
+                    opportunity.TypeEnumId = dto.TypeEnumId;
+
+                opportunity.LastUpdatedStamp = stamp;
+
+                // Update stage if changed
+                if (stageChanged && !string.IsNullOrEmpty(dto.OpportunityStageId))
+                {
+                    var newStage = await _context.SalesOpportunityStages
+                        .FirstOrDefaultAsync(s => s.OpportunityStageId == dto.OpportunityStageId, ct);
+
+                    if (newStage == null)
+                        return Result<SalesOpportunityDto>.Failure($"Stage '{dto.OpportunityStageId}' not found");
+
+                    opportunity.OpportunityStageId = dto.OpportunityStageId;
+
+                    // Update probability from stage default if not explicitly set
+                    if (!dto.EstimatedProbability.HasValue && newStage.DefaultProbability.HasValue)
+                    {
+                        opportunity.EstimatedProbability = newStage.DefaultProbability.Value;
+                    }
+                }
+
+                // Update owner if changed
+                if (!string.IsNullOrEmpty(dto.OwnerPartyId))
+                {
+                    var existingOwnerRole = opportunity.SalesOpportunityRoles
+                        .FirstOrDefault(r => r.RoleTypeId == "OWNER");
+
+                    if (existingOwnerRole == null || existingOwnerRole.PartyId != dto.OwnerPartyId)
+                    {
+                        // Remove old owner
+                        if (existingOwnerRole != null)
+                        {
+                            _context.SalesOpportunityRoles.Remove(existingOwnerRole);
+                        }
+
+                        // Add new owner
+                        await EnsurePartyRoleExists(dto.OwnerPartyId, "OWNER", stamp, ct);
+                        _context.SalesOpportunityRoles.Add(new SalesOpportunityRole
+                        {
+                            SalesOpportunityId = opportunity.SalesOpportunityId,
+                            PartyId = dto.OwnerPartyId,
+                            RoleTypeId = "OWNER",
+                            CreatedStamp = stamp,
+                            LastUpdatedStamp = stamp
+                        });
+                    }
+                }
+
+                // Update contacts
+                if (dto.Contacts.Any())
+                {
+                    // Remove existing non-owner roles
+                    var existingContactRoles = opportunity.SalesOpportunityRoles
+                        .Where(r => r.RoleTypeId != "OWNER")
+                        .ToList();
+
+                    foreach (var role in existingContactRoles)
+                    {
+                        _context.SalesOpportunityRoles.Remove(role);
+                    }
+
+                    // Add new contacts
+                    foreach (var contact in dto.Contacts)
+                    {
+                        if (string.IsNullOrEmpty(contact.PartyId))
+                            continue;
+
+                        var roleTypeId = contact.RoleTypeId ?? "LEAD_CONTACT";
+                        await EnsurePartyRoleExists(contact.PartyId, roleTypeId, stamp, ct);
+
+                        _context.SalesOpportunityRoles.Add(new SalesOpportunityRole
+                        {
+                            SalesOpportunityId = opportunity.SalesOpportunityId,
+                            PartyId = contact.PartyId,
+                            RoleTypeId = roleTypeId,
+                            CreatedStamp = stamp,
+                            LastUpdatedStamp = stamp
+                        });
+                    }
+                }
+
+                // Create history entry if significant changes
+                if (stageChanged || amountChanged)
+                {
+                    var historyId = await _utilityService.GetNextSequence("SalesOpportunityHistory");
+                    var changeNote = stageChanged
+                        ? $"Stage changed to {dto.OpportunityStageId}"
+                        : "Amount updated";
+
+                    _context.SalesOpportunityHistories.Add(new SalesOpportunityHistory
+                    {
+                        SalesOpportunityHistoryId = historyId,
+                        SalesOpportunityId = opportunity.SalesOpportunityId,
+                        Description = opportunity.Description,
+                        EstimatedAmount = opportunity.EstimatedAmount,
+                        EstimatedProbability = opportunity.EstimatedProbability,
+                        CurrencyUomId = opportunity.CurrencyUomId,
+                        OpportunityStageId = opportunity.OpportunityStageId,
+                        EstimatedCloseDate = opportunity.EstimatedCloseDate,
+                        ChangeNote = changeNote,
+                        ModifiedByUserLogin = userLogin?.UserLoginId,
+                        ModifiedTimestamp = stamp,
+                        CreatedStamp = stamp,
+                        LastUpdatedStamp = stamp
+                    });
+                }
+
+                var saved = await _context.SaveChangesAsync(ct) > 0;
+                if (!saved)
+                {
+                    await transaction.RollbackAsync(ct);
+                    return Result<SalesOpportunityDto>.Failure("Failed to update Sales Opportunity");
+                }
+
+                await transaction.CommitAsync(ct);
+
+                // Reload to get updated stage name
+                var stage = await _context.SalesOpportunityStages
+                    .FirstOrDefaultAsync(s => s.OpportunityStageId == opportunity.OpportunityStageId, ct);
+
+                var result = new SalesOpportunityDto
+                {
+                    SalesOpportunityId = opportunity.SalesOpportunityId,
+                    OpportunityName = opportunity.OpportunityName,
+                    Description = opportunity.Description,
+                    EstimatedAmount = opportunity.EstimatedAmount,
+                    CurrencyUomId = opportunity.CurrencyUomId,
+                    EstimatedProbability = opportunity.EstimatedProbability,
+                    OpportunityStageId = opportunity.OpportunityStageId,
+                    OpportunityStageName = stage?.Description,
+                    StageSequenceNum = stage?.SequenceNum,
+                    OwnerPartyId = dto.OwnerPartyId,
+                    EstimatedCloseDate = opportunity.EstimatedCloseDate,
+                    CreatedStamp = opportunity.CreatedStamp,
+                    NextStep = opportunity.NextStep,
+                    NextStepDate = opportunity.NextStepDate,
+                    Contacts = dto.Contacts
+                };
+
+                return Result<SalesOpportunityDto>.Success(result);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(ct);
+                return Result<SalesOpportunityDto>.Failure($"Error updating opportunity: {ex.Message}");
+            }
+        }
+
+        private async Task EnsurePartyRoleExists(string partyId, string roleTypeId, DateTime stamp, CancellationToken ct)
+        {
+            var exists = await _context.PartyRoles
+                .AnyAsync(pr => pr.PartyId == partyId && pr.RoleTypeId == roleTypeId, ct);
+
+            if (!exists)
+            {
+                var party = await _context.Parties.FindAsync(new object[] { partyId }, ct);
+                var roleType = await _context.RoleTypes.FindAsync(new object[] { roleTypeId }, ct);
+
+                if (party != null && roleType != null)
+                {
+                    _context.PartyRoles.Add(new PartyRole
+                    {
+                        Party = party,
+                        RoleType = roleType,
+                        CreatedStamp = stamp,
+                        LastUpdatedStamp = stamp
+                    });
+                }
+            }
+        }
+    }
+}
