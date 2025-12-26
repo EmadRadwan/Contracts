@@ -36,7 +36,11 @@ const salesRequestApi = createApi({
         },
     }),
 
-    tagTypes: ["SalesRequest"],
+    tagTypes: [
+        "SalesRequest",           // For individual sales requests + list
+        "SalesRequestInstallments", // Specific to installments per SR
+        "ReserveRequest",         // For reserve requests
+    ],
 
     endpoints(builder) {
         return {
@@ -92,7 +96,7 @@ const salesRequestApi = createApi({
                     method: "POST",
                     body: payload,
                 }),
-                invalidatesTags: ["SalesRequest"],
+                invalidatesTags: ["SalesRequest", "SalesRequestInstallments"],
             }),
             addReserveRequest: builder.mutation<string, any>({
                 query: (payload) => ({
@@ -111,7 +115,7 @@ const salesRequestApi = createApi({
                     method: "PUT",
                     body: payload,
                 }),
-                invalidatesTags: ["SalesRequest"],
+                invalidatesTags: ["SalesRequest", "SalesRequestInstallments"],
             }),
             updateReserveRequest: builder.mutation<ReserveRequestResponseDto, { reserveRequestDto: ReserveRequestDto }>({
                 query: (payload) => ({
@@ -130,10 +134,7 @@ const salesRequestApi = createApi({
                     url: `salesRequests/${salesRequestId}/approve`,
                     method: 'POST',
                 }),
-                invalidatesTags: (result, error, id) => [
-                    { type: 'SalesRequest', id },
-                    { type: 'SalesRequest', id: 'LIST' },
-                ],
+                invalidatesTags: ['SalesRequest'],
             }),
             // -----------------------------------------------------------------
             // DELETE – optional (not used in current UI but kept for completeness)
@@ -155,6 +156,18 @@ const salesRequestApi = createApi({
                     body,
                 }),
             }),
+            getSalesRequestInstallments: builder.query<
+                Array<{
+                    installmentNumber: number;
+                    dueDate: string; // YYYY-MM-DD
+                    amount: number;
+                    isAdvance: boolean;
+                }>,
+                string // salesRequestId
+                >({
+                query: (salesRequestId) => `salesRequests/${salesRequestId}/installments`,
+                providesTags: ["SalesRequestInstallments"],
+            }),
         };
     },
 });
@@ -171,7 +184,7 @@ export const {
     useCalculateInstallmentPriceMutation,
     useFetchReserveRequestsQuery,
     useAddReserveRequestMutation,
-    useUpdateReserveRequestMutation,
+    useUpdateReserveRequestMutation, useGetSalesRequestInstallmentsQuery,
 } = salesRequestApi;
 
 export { salesRequestApi };

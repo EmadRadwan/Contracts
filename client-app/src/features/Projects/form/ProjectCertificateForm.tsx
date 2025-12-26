@@ -33,6 +33,7 @@ import {certificateItemsApi} from "../../../app/store/apis/certificateItemsApi";
 import {WorkmanshipCertificateExcel} from "../report/WorkmanshipCertificateExcel";
 import {SupplyCertificateExcel} from "../report/SupplyCertificateExcel";
 import {Can} from "../../account/Can";
+import {ReviewCommentsDialog} from "./ReviewCommentsDialog";
 
 interface ProjectCertificateFormProps {
     editMode: number; // 0: view, 1: create, 2: edit (CREATED), 3: edit (APPROVED), 4: edit (COMPLETED)
@@ -153,7 +154,8 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
         formRenderProps.onChange("facilityId", { value: newFacilityId });
         dispatch(setCurrentFacilityId(newFacilityId));
     }, [dispatch]);
-
+    const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+    const [pendingReviewAction, setPendingReviewAction] = useState<string>("");
     const certificateItems = useAppSelector(displayCertificateItemsSelector);
     
     console.log('certificateItems', certificateItems)
@@ -312,37 +314,80 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
         [isSubmitting, editMode, currentCertificateType, getTranslatedLabel, handleCreate]
     );
 
-    // Purpose: Sends status update requests to useProjectCertificate hook.
     const handleStatusUpdate = useCallback(
         async (action: string) => {
             if (!selectedCertificate?.workEffortId) {
                 toast.error(getTranslatedLabel("certificate.noWorkEffortId", "No certificate selected"));
                 return;
             }
+
+            // Direct actions (Approve / Complete) – no comments needed
+            if (action === "Approve Certificate" || action === "Complete Certificate") {
+                setIsSubmitting(true);
+                setSelectedMenuItem(action);
+
+                const statusUpdate = {
+                    values: {
+                        workEffortId: selectedCertificate.workEffortId,
+                        currentStatusId:
+                            action === "Approve Certificate" ? CertificateStatus.APPROVED : CertificateStatus.COMPLETE,
+                        deliverToSite:
+                            currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE" ? deliverToSite : undefined,
+                    },
+                    selectedMenuItem: action,
+                };
+
+                try {
+                    await handleCreate(statusUpdate);
+                } finally {
+                    setIsSubmitting(false);
+                    setSelectedMenuItem("");
+                }
+                return;
+            }
+
+            // Review actions – open dialog to collect comments
+            if (action === "MarkReadyForApproval" || action === "MarkRequiresEdit") {
+                setPendingReviewAction(action);
+                setReviewDialogOpen(true);
+                return;
+            }
+
+            // Fallback
+            toast.error("Unknown action");
+        },
+        [
+            handleCreate,
+            selectedCertificate,
+            getTranslatedLabel,
+            currentCertificateType,
+            deliverToSite,
+        ]
+    );
+
+    const handleReviewConfirm = useCallback(
+        async (comments: string) => {
             setIsSubmitting(true);
-            // Purpose: Ensure status transitions use WEPR_CREATED, WEPR_APPROVED, WEPR_COMPLETE
-            // Context: Aligns with editModeMap and backend expectations
-            setSelectedMenuItem(action);
+            setSelectedMenuItem(pendingReviewAction);
+
             const statusUpdate = {
                 values: {
-                    workEffortId: selectedCertificate.workEffortId,
-                    currentStatusId: action === 'Approve Certificate' ? CertificateStatus.APPROVED : CertificateStatus.COMPLETE,
-                    // NEW: include the flag when relevant
-                    deliverToSite: currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE" ? deliverToSite : undefined,
+                    workEffortId: selectedCertificate!.workEffortId,
+                    comments: comments || undefined, // send only if provided
                 },
-                selectedMenuItem: action,
+                selectedMenuItem: pendingReviewAction,
             };
+
             try {
-                const result = await handleCreate(statusUpdate);
-                
-            } catch (error) {
-                toast.error(getTranslatedLabel("certificate.statusUpdate.error", "Failed to update certificate status"));
+                await handleCreate(statusUpdate);
             } finally {
                 setIsSubmitting(false);
                 setSelectedMenuItem("");
+                setReviewDialogOpen(false);
+                setPendingReviewAction("");
             }
         },
-        [handleCreate, selectedCertificate, getTranslatedLabel]
+        [handleCreate, selectedCertificate, pendingReviewAction]
     );
 
     const handleCancel = useCallback(() => {
@@ -746,6 +791,16 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                 contractorId={contractorId}
                 supplierId={supplierId}
                 certificateType={currentCertificateType}
+            />
+
+            <ReviewCommentsDialog
+                open={reviewDialogOpen}
+                action={pendingReviewAction}
+                onClose={() => {
+                    setReviewDialogOpen(false);
+                    setPendingReviewAction("");
+                }}
+                onConfirm={handleReviewConfirm}
             />
         </>
     );

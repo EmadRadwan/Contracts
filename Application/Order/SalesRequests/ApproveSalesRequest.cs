@@ -46,6 +46,7 @@ public class ApproveSalesRequest
             {
                 // 1. Load SalesRequest with required data
                 var sr = await _context.SalesRequests
+                    .Include(s => s.Installments) // Critical: Load custom installments
                     .FirstOrDefaultAsync(x => x.SalesRequestId == salesRequestId, ct);
 
                 if (sr == null)
@@ -55,6 +56,12 @@ public class ApproveSalesRequest
                     return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure(
                         "Sales request is already approved");
 
+                if (sr.Installments == null || !sr.Installments.Any())
+                {
+                    return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure(
+                        "Cannot approve: No payment plan defined. Please create and apply a custom payment plan.");
+                }
+                
                 // 2. Update status
                 sr.StatusId = "SALES_REQUEST_APPROVED";
                 sr.LastUpdatedStamp = DateTime.UtcNow;
@@ -66,51 +73,36 @@ public class ApproveSalesRequest
                 var paymentsToCreate = new List<CreatePaymentParam>();
 
                 var totalPrice = sr.TotalPrice ?? 0m;
-                var advance = sr.AdvancePayment ?? 0m;
-                var remaining = totalPrice - advance;
 
-                // Always create Advance Payment (even if full payment)
-                paymentsToCreate.Add(new CreatePaymentParam
+                // Sort by due date (and installment number as fallback) to ensure consistent order
+                var orderedInstallments = sr.Installments
+                    .OrderBy(i => i.DueDate)
+                    .ThenBy(i => i.InstallmentNumber)
+                    .ToList();
+
+                foreach (var inst in orderedInstallments)
                 {
-                    PartyIdFrom = sr.FromPartyId!, // Customer pays
-                    PartyIdTo = companyPartyId, // Company receives
-                    Amount = advance,
-                    EffectiveDate = sr.SaleDate ?? DateTime.UtcNow.Date,
-                    PaymentTypeId = "RECEIPT_ADVANCE_PAYMENT",
-                    StatusId = "PMNT_NOT_PAID", // or "PMNT_PAID" if paid on spot?
-                    Comments = "Advance payment - Sales Request Approved",
-                    SalesRequestId = sr.SalesRequestId,
-                    PaymentMethodId = null,
-                    PaymentMethodTypeId = null
-                });
+                    var paymentTypeId = inst.IsAdvance
+                        ? "RECEIPT_ADVANCE_PAYMENT"
+                        : "RECEIPT_DUE_INSTALLMENT";
 
-                // Only generate installments if partial payment
-                if (advance < totalPrice &&
-                    sr.NumberOfInstallments > 0 &&
-                    sr.DateOfFirstInstallment.HasValue &&
-                    sr.MonthsBetweenInstallments > 0)
-                {
-                    var installmentAmount = remaining / sr.NumberOfInstallments;
-                    var currentDueDate = sr.DateOfFirstInstallment.Value.Date;
+                    var comments = inst.IsAdvance
+                        ? $"Advance payment ({inst.InstallmentNumber}) - SR {sr.SalesRequestId}"
+                        : $"Installment {inst.InstallmentNumber} - Due {inst.DueDate:yyyy-MM-dd} - SR {sr.SalesRequestId}";
 
-                    for (int i = 1; i <= sr.NumberOfInstallments; i++)
+                    paymentsToCreate.Add(new CreatePaymentParam
                     {
-                        paymentsToCreate.Add(new CreatePaymentParam
-                        {
-                            PartyIdFrom = sr.FromPartyId!,
-                            PartyIdTo = companyPartyId,
-                            Amount = installmentAmount,
-                            EffectiveDate = currentDueDate,
-                            PaymentTypeId = "RECEIPT_DUE_INSTALLMENT",
-                            StatusId = "PMNT_NOT_PAID",
-                            Comments = $"Installment {i} of {sr.NumberOfInstallments} - SR {sr.SalesRequestId}",
-                            SalesRequestId = sr.SalesRequestId,
-                            PaymentMethodId = null,
-                            PaymentMethodTypeId = null
-                        });
-
-                        currentDueDate = currentDueDate.AddMonths((int)sr.MonthsBetweenInstallments);
-                    }
+                        PartyIdFrom = sr.FromPartyId!,           // Customer
+                        PartyIdTo = companyPartyId,              // Company
+                        Amount = inst.Amount,
+                        EffectiveDate = inst.DueDate,            // Use exact due date from plan
+                        PaymentTypeId = paymentTypeId,
+                        StatusId = "PMNT_NOT_PAID",              // Unpaid by default
+                        Comments = comments,
+                        SalesRequestId = sr.SalesRequestId,
+                        PaymentMethodId = null,
+                        PaymentMethodTypeId = null
+                    });
                 }
 
                 // 5. Create all payments

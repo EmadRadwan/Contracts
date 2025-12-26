@@ -19,6 +19,7 @@ public class SalesRequestRecord
     public DateTime? SaleDate { get; set; }
     public decimal? Discount { get; set; }
     public decimal? TotalPrice { get; set; }
+
     public string? Comments { get; set; }
     public decimal? AdvancePayment { get; set; }
     public int? NumberOfInstallments { get; set; }

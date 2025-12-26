@@ -1,161 +1,173 @@
-import {SalesRequest} from "../../../../../app/models/order/SalesRequest";
-import React, {useState} from "react";
-import {useTranslationHelper} from "../../../../../app/hooks/useTranslationHelper";
-import {
-    useApproveSalesRequestMutation,
-    useDeleteSalesRequestMutation
-} from "../../../../../app/store/apis/salesRequestApi";
-import {useNavigate} from "react-router";
-import {toast} from "react-toastify";
-import Button from "@mui/material/Button";
-import {
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
-    Menu,
-    MenuItem
-} from "@mui/material";
-import {Can} from "../../../../account/Can";
+const salesRequestApi = createApi({
+        reducerPath: "salesRequests",
+        baseQuery: fetchBaseQuery({
+                baseUrl: import.meta.env.VITE_API_URL,
+                prepareHeaders: (headers, { getState }) => {
+                        const token = (getState as () => { account: { user?: { token?: string } } })().account.user?.token;
+                        const lang = (getState as () => { localization: { language?: string } })().localization.language;
 
-interface SalesRequestActionsMenuProps {
-    salesRequestId: string | undefined;
-    currentStatusId: string | undefined;
-    disabled: boolean;
-    onSalesRequestUpdated?: (updated: SalesRequest) => void;
-    onSalesRequestDeleted?: () => void;
-}
+                        if (token) headers.set("authorization", `Bearer ${token}`);
+                        if (lang) headers.set("Accept-Language", lang);
 
-export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = ({
-                                                                                    salesRequestId,
-                                                                                    currentStatusId,
-                                                                                    disabled,
-                                                                                    onSalesRequestUpdated,
-                                                                                    onSalesRequestDeleted
-                                                                                }) => {
-    const {getTranslatedLabel} = useTranslationHelper();
-    const [approveSR, {isLoading: isApproving}] = useApproveSalesRequestMutation();
-    const [deleteSR, {isLoading: isDeleting}] = useDeleteSalesRequestMutation();
-    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+                        return headers;
+                },
+        }),
+        tagTypes: [
+                "SalesRequest",           // For individual sales requests + list
+                "SalesRequestInstallments", // Specific to installments per SR
+                "ReserveRequest",         // For reserve requests
+        ],
+        endpoints: (builder) => ({
+                // -----------------------------------------------------------------
+                // LIST – Sales Requests
+                // -----------------------------------------------------------------
+                fetchSalesRequests: builder.query<ListResponse<SalesRequest>, State>({
+                        query: (dataState) => {
+                                const odata = toODataString(dataState);
+                                return `/odata/salesRequestRecords?$count=true&${odata}`;
+                        },
+                        providesTags: (result) =>
+                            result
+                                ? [
+                                        ...result.data.map(({ salesRequestId }) => ({
+                                                type: "SalesRequest" as const,
+                                                id: salesRequestId,
+                                        })),
+                                        { type: "SalesRequest", id: "LIST" },
+                                ]
+                                : [{ type: "SalesRequest", id: "LIST" }],
+                        transformResponse: (response: any, meta) => {
+                                const totalCountHeader = meta?.response?.headers.get("count");
+                                const totalCount = totalCountHeader ? JSON.parse(totalCountHeader).totalCount : 0;
+                                return { data: response.value || response, total: totalCount };
+                        },
+                }),
 
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const open = Boolean(anchorEl);
-    const navigate = useNavigate();
+                // -----------------------------------------------------------------
+                // LIST – Reserve Requests
+                // -----------------------------------------------------------------
+                fetchReserveRequests: builder.query<ListResponse<ReserveRequest>, State>({
+                        query: (dataState) => {
+                                const odata = toODataString(dataState);
+                                return `/odata/reserveRequestRecords?$count=true&${odata}`;
+                        },
+                        providesTags: (result) =>
+                            result
+                                ? [
+                                        ...result.data.map(({ reserveRequestId }) => ({
+                                                type: "ReserveRequest" as const,
+                                                id: reserveRequestId,
+                                        })),
+                                        { type: "ReserveRequest", id: "LIST" },
+                                ]
+                                : [{ type: "ReserveRequest", id: "LIST" }],
+                        transformResponse: (response: any, meta) => {
+                                const totalCountHeader = meta?.response?.headers.get("count");
+                                const totalCount = totalCountHeader ? JSON.parse(totalCountHeader).totalCount : 0;
+                                return { data: response.value || response, total: totalCount };
+                        },
+                }),
 
-    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
+                // -----------------------------------------------------------------
+                // CREATE
+                // -----------------------------------------------------------------
+                addSalesRequest: builder.mutation<string, any>({
+                        query: (payload) => ({
+                                url: "/salesRequests",
+                                method: "POST",
+                                body: payload,
+                        }),
+                        invalidatesTags: [{ type: "SalesRequest", id: "LIST" }],
+                }),
 
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
+                addReserveRequest: builder.mutation<string, any>({
+                        query: (payload) => ({
+                                url: "/reserveRequests/reserve",
+                                method: "POST",
+                                body: payload,
+                        }),
+                        invalidatesTags: [{ type: "ReserveRequest", id: "LIST" }],
+                }),
 
-    // REFACTOR: Renamed isLoading to isApproving for clarity since there are now two mutations
-    const handleApprove = async () => {
-        if (!salesRequestId) return;
+                // -----------------------------------------------------------------
+                // UPDATE
+                // -----------------------------------------------------------------
+                updateSalesRequest: builder.mutation<any, any>({
+                        query: (payload) => ({
+                                url: `/salesRequests/${payload.salesRequestDto.salesRequestId}`,
+                                method: "PUT",
+                                body: payload,
+                        }),
+                        invalidatesTags: (result, error, arg) => [
+                                { type: "SalesRequest", id: arg.salesRequestDto.salesRequestId },
+                                { type: "SalesRequest", id: "LIST" },
+                                // Installments may have changed → invalidate cached installments
+                                { type: "SalesRequestInstallments", id: arg.salesRequestDto.salesRequestId },
+                        ],
+                }),
 
-        try {
-            const updatedSalesRequest = await approveSR(salesRequestId).unwrap();
+                updateReserveRequest: builder.mutation<any, { reserveRequestDto: any }>({
+                        query: (payload) => ({
+                                url: "/reserveRequests",
+                                method: "PUT",
+                                body: payload,
+                        }),
+                        invalidatesTags: [{ type: "ReserveRequest", id: "LIST" }],
+                }),
 
-            toast.success(getTranslatedLabel("salesRequest.approved"));
+                // -----------------------------------------------------------------
+                // APPROVE – Critical: invalidates both item and list + installments
+                // -----------------------------------------------------------------
+                approveSalesRequest: builder.mutation<CreateSalesRequest.SalesRequestResponseDto, string>({
+                        query: (salesRequestId) => ({
+                                url: `salesRequests/${salesRequestId}/approve`,
+                                method: "POST",
+                        }),
+                        invalidatesTags: (result, error, salesRequestId) => [
+                                { type: "SalesRequest", id: salesRequestId },
+                                { type: "SalesRequest", id: "LIST" },
+                                // Payments are created from installments → likely no longer editable/viewable same way
+                                { type: "SalesRequestInstallments", id: salesRequestId },
+                        ],
+                }),
 
-            onSalesRequestUpdated?.(updatedSalesRequest);
-        } catch (error) {
-            toast.error(getTranslatedLabel("salesRequest.approveError"));
-        } finally {
-            handleClose();
-        }
-    };
+                // -----------------------------------------------------------------
+                // DELETE
+                // -----------------------------------------------------------------
+                deleteSalesRequest: builder.mutation<void, string>({
+                        query: (salesRequestId) => ({
+                                url: `/salesRequests/${salesRequestId}`,
+                                method: "DELETE",
+                        }),
+                        invalidatesTags: (result, error, salesRequestId) => [
+                                { type: "SalesRequest", id: salesRequestId },
+                                { type: "SalesRequest", id: "LIST" },
+                        ],
+                }),
 
-    const handleDeleteClick = () => {
-        setConfirmDeleteOpen(true);
-        handleClose();
-    };
+                // -----------------------------------------------------------------
+                // CALCULATOR
+                // -----------------------------------------------------------------
+                calculateInstallmentPrice: builder.mutation<CalculatorResponse, CalculateInstallmentPriceRequest>({
+                        query: (body) => ({
+                                url: "/salesRequests/calculate-meter-price",
+                                method: "POST",
+                                body,
+                        }),
+                        // No cache invalidation needed — pure calculation
+                }),
 
-    const handleDeleteConfirm = async () => {
-        if (!salesRequestId) return;
-
-        try {
-            await deleteSR(salesRequestId).unwrap();
-            toast.success(getTranslatedLabel("salesRequest.deleted"));
-            onSalesRequestDeleted?.();
-        } catch (error) {
-            toast.error(getTranslatedLabel("salesRequest.deleteError"));
-        } finally {
-            setConfirmDeleteOpen(false);
-        }
-    };
-
-    const isApproveDisabled = !salesRequestId || currentStatusId === "SALES_REQUEST_APPROVED";
-
-    return (
-        <>
-            <Button
-                variant="contained"
-                color="primary"
-                onClick={handleClick}
-                disabled={disabled || isApproving || isDeleting || !salesRequestId}
-                sx={{mt: 2, mr: 2}}
-            >
-                {getTranslatedLabel('salesRequest.actions')}
-            </Button>
-
-            <Menu
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleClose}
-                anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}
-                transformOrigin={{vertical: 'top', horizontal: 'right'}}
-            >
-                <MenuItem onClick={handleApprove} disabled={isApproveDisabled || isApproving}>
-                    {getTranslatedLabel('salesRequest.approve')}
-                </MenuItem>
-
-                <Can perform="DeleteSalesRequest">
-                    <MenuItem
-                        onClick={handleDeleteClick}
-                        disabled={isDeleting}
-                        sx={{ color: "error.main" }}
-                    >
-                        {getTranslatedLabel('salesRequest.delete')}
-                    </MenuItem>
-                </Can>
-            </Menu>
-
-            <Dialog
-                open={confirmDeleteOpen}
-                onClose={() => setConfirmDeleteOpen(false)}
-                maxWidth="sm"
-                fullWidth
-            >
-                <DialogTitle sx={{ color: "error.main" }}>
-                    {getTranslatedLabel('salesRequest.deleteConfirmTitle')}
-                </DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        {getTranslatedLabel('salesRequest.deleteConfirmMessage')}
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setConfirmDeleteOpen(false)} disabled={isDeleting}>
-                        {getTranslatedLabel('general.cancel')}
-                    </Button>
-                    <Button
-                        onClick={handleDeleteConfirm}
-                        variant="contained"
-                        color="error"
-                        disabled={isDeleting}
-                        startIcon={isDeleting ? <CircularProgress size={16} /> : null}
-                    >
-                        {isDeleting
-                            ? getTranslatedLabel('general.deleting')
-                            : getTranslatedLabel('general.delete')
-                        }
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        </>
-    );
-};
+                // -----------------------------------------------------------------
+                // GET INSTALLMENTS FOR A SPECIFIC SALES REQUEST
+                // -----------------------------------------------------------------
+                getSalesRequestInstallments: builder.query<
+                    Array<{ installmentNumber: number; dueDate: string; amount: number; isAdvance: boolean }>,
+                    string
+                    >({
+                        query: (salesRequestId) => `salesRequests/${salesRequestId}/installments`,
+                        providesTags: (result, error, salesRequestId) => [
+                                { type: "SalesRequestInstallments", id: salesRequestId },
+                        ],
+                }),
+        }),
+});

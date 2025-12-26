@@ -46,6 +46,7 @@ public class DeleteSalesRequest
             {
                 // 1. Load SalesRequest
                 var sr = await _context.SalesRequests
+                    .Include(s => s.Installments)      // ← NEW: Load custom installments
                     .FirstOrDefaultAsync(x => x.SalesRequestId == salesRequestId, ct);
 
                 if (sr == null)
@@ -92,6 +93,11 @@ public class DeleteSalesRequest
                         // REFACTOR: Now safely remove all parent AcctgTran records
                         _context.AcctgTrans.RemoveRange(acctgTransList);
                     }
+                }
+                
+                if (sr.Installments.Any())
+                {
+                    _context.SalesRequestInstallments.RemoveRange(sr.Installments);
                 }
 
                 // -----------------------------------------------------------------

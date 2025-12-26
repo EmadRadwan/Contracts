@@ -49,5 +49,14 @@ public class SalesRequestsController : BaseApiController
         // 204 No Content – standard response for successful DELETE with no body
         return NoContent();
     }
+    
+    // Controllers/SalesRequestsController.cs
+
+    [HttpGet("{id}/installments")]
+    public async Task<ActionResult<List<SalesRequestInstallmentDto>>> GetInstallments(string id)
+    {
+        var installments = await Mediator.Send(new GetInstallmentsQuery.Query { SalesRequestId = id });
+        return Ok(installments);
+    }
 
 }

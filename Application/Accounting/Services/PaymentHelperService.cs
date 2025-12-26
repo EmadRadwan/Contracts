@@ -198,13 +198,14 @@ public class PaymentHelperService : IPaymentHelperService
         payment.Comments = param.Comments ?? payment.Comments;
         payment.PaymentRefNum = param.PaymentRefNum;
         payment.FinAccountTransId = param.FinAccountTransId;
-        payment.EffectiveDate = payment.EffectiveDate ?? DateTime.UtcNow;
+        payment.EffectiveDate = param.EffectiveDate;
         payment.PaymentPreferenceId = param.PaymentPreferenceId ?? payment.PaymentPreferenceId;
         payment.Amount = param.Amount ?? payment.Amount;
         payment.ActualCurrencyAmount = param.ActualCurrencyAmount ?? payment.ActualCurrencyAmount;
         payment.ActualCurrencyUomId = param.ActualCurrencyUomId ?? payment.ActualCurrencyUomId;
         payment.WorkEffortId = param.ProjectId;
         payment.CostCenterId = param.CostCenterId;
+        payment.OverrideGlAccountId = param.OverrideGlAccountId;
         payment.ChequeNumber = param.ChequeNumber;
         payment.ChequeDate = param.ChequeDate;
 

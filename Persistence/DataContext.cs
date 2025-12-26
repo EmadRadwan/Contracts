@@ -895,6 +895,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
         
         public DbSet<TransactionTypeAccountRule> TransactionTypeAccountRules { get; set; }
         public DbSet<SalesRequest> SalesRequests { get; set; }
+        public DbSet<SalesRequestInstallment> SalesRequestInstallments { get; set; }
         public DbSet<ReserveRequest> ReserveRequests { get; set; }
 
         
@@ -28427,6 +28428,8 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
             entity.Property(e => e.MaintenanceDeposit)
                       .HasColumnType("numeric(18,4)")
                       .HasColumnName("MAINTENANCE_DEPOSIT");
+                      
+         
             
                 entity.Property(e => e.NumberOfInstallments)
                       .HasColumnName("NUMBER_OF_INSTALLMENTS");
@@ -28496,6 +28499,63 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                         .OnDelete(DeleteBehavior.Restrict);
             });
             
+            modelBuilder.Entity<SalesRequestInstallment>(entity =>
+            {
+                // --------------------------------------------------------------
+                // Table name (OFBiz convention)
+                // --------------------------------------------------------------
+                entity.ToTable("SALES_REQUEST_INSTALLMENT");
+            
+                // --------------------------------------------------------------
+                // Composite Primary Key – matches OFBiz pattern (parent ID + sequence)
+                // --------------------------------------------------------------
+                entity.HasKey(e => new { e.SalesRequestId, e.InstallmentNumber });
+            
+                // --------------------------------------------------------------
+                // Columns
+                // --------------------------------------------------------------
+                entity.Property(e => e.SalesRequestId)
+                      .HasMaxLength(20)
+                      .IsUnicode(false)
+                      .HasColumnName("SALES_REQUEST_ID")
+                      .IsRequired();
+            
+                entity.Property(e => e.InstallmentNumber)
+                      .HasColumnName("INSTALLMENT_NUMBER")
+                      .IsRequired();
+            
+                entity.Property(e => e.DueDate)
+                      .HasColumnType("datetime")
+                      .HasColumnName("DUE_DATE")
+                      .IsRequired();
+            
+                entity.Property(e => e.Amount)
+                      .HasColumnType("numeric(18,4)")
+                      .HasColumnName("AMOUNT")
+                      .IsRequired();
+                      
+                entity.Property(e => e.IsAdvance)
+                    .HasColumnType("tinyint(1)")
+                    .HasColumnName("IS_ADVANCE")
+                    .HasDefaultValue(false)
+                    .IsRequired();
+            
+                // --------------------------------------------------------------
+                // Indexes – following OFBiz naming: TABLE_COL_IDX
+                // --------------------------------------------------------------
+                entity.HasIndex(e => e.SalesRequestId, "SALES_REQ_INST_SR_IDX");
+            
+                entity.HasIndex(e => e.DueDate, "SALES_REQ_INST_DUE_DT_IDX");
+            
+                entity.HasIndex(e => e.InstallmentNumber, "SALES_REQ_INST_NUM_IDX");
+            
+                entity.HasOne(e => e.SalesRequest)
+                      .WithMany(sr => sr.Installments)
+                      .HasForeignKey(e => e.SalesRequestId)
+                      .OnDelete(DeleteBehavior.Cascade)
+                      .HasConstraintName("FK_SALES_REQ_INST_PARENT");
+            });
+                        
             modelBuilder.Entity<ReserveRequest>(entity =>
                 {
                     // --------------------------------------------------------------

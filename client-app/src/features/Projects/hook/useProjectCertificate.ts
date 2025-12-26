@@ -414,16 +414,17 @@ const useProjectCertificate = ({
                         ? CertificateStatus.READY_FOR_APPROVAL
                         : CertificateStatus.REQUIRES_EDIT;
 
-                    await reviewCertificate({
+                    const result = await reviewCertificate({
                         workEffortId: selectedCertificate.workEffortId,
                         status: newStatus,
-                        // comments?: string (if implemented)
+                        comments: data.values.comments, // ← now receives comments from dialog
                     }).unwrap();
+
 
                     dispatch(setSelectedCertificate({
                         ...selectedCertificate,
+                        description: result.description || selectedCertificate?.description || "",
                         currentStatusId: newStatus,
-                        // update description fields if returned
                     }));
 
                     toast.success(`Certificate marked as ${newStatus}`);

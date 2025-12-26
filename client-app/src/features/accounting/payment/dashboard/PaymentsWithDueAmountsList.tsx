@@ -233,6 +233,7 @@ export default function PaymentsWithDueAmountsList() {
                                     title={getTranslatedLabel(`${localizationKey}.date`, "Payment Date")}
                                     width={150}
                                     format="{0:dd/MM/yyyy}"
+                                    filter={"date"}
                                 />
                                 <Column
                                     field="daysUntilDue"
@@ -246,7 +247,7 @@ export default function PaymentsWithDueAmountsList() {
                                     title={getTranslatedLabel(`${localizationKey}.status`, "Status")}
                                     width={140}
                                 />
-                                <Column field="amount" title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")} width={130} />
+                                <Column field="amount" title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")} width={130}  filter={"numeric"}/>
                                 <Column field="projectName" title={getTranslatedLabel(`${localizationKey}.projectName`, "Project")} width={180} />
                                 <Column
                                     field="costCenterDescription"

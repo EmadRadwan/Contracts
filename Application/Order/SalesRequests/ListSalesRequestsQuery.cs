@@ -16,6 +16,8 @@ class RawSalesRequest
     public decimal? GardenPricePerM2 { get; set; }
     public decimal? Discount { get; set; }
     public decimal? TotalPrice { get; set; }
+   
+
     public decimal? AdvancePayment { get; set; }
     public int? NumberOfInstallments { get; set; }
     public DateTime? DateOfFirstInstallment { get; set; }
@@ -39,8 +41,7 @@ class RawSalesRequest
     public string? EmployeeDescription { get; set; }
     public string? StatusId { get; set; } 
     public string? StatusDescription { get; set; } 
-    public decimal? MaintenanceDeposit { get; set; } // SalesRequest.MaintenanceDeposit
-    public string? FromPartyPhone { get; set; }
+    public decimal? MaintenanceDeposit { get; set; } 
 }
 
 public class ListSalesRequestsQuery
@@ -160,7 +161,6 @@ public class ListSalesRequestsQuery
             // -------------------------------------------------------------
             // 4. Project into SalesRequestRecord (in-memory)
             // -------------------------------------------------------------
-            // REFACTOR: All TryGetValue calls are now in-memory → no EF error
             var records = materialized
                 .Select(x => new SalesRequestRecord
                 {
@@ -187,7 +187,6 @@ public class ListSalesRequestsQuery
                     NumberOfInstallments = x.NumberOfInstallments,
                     DateOfFirstInstallment = x.DateOfFirstInstallment,
                     MonthsBetweenInstallments = x.MonthsBetweenInstallments,
-
                     ProjectName = x.ProjectId != null && projectNameLookup.TryGetValue(x.ProjectId, out var pn)
                         ? pn
                         : string.Empty,
@@ -221,7 +220,6 @@ public class ListSalesRequestsQuery
             // -------------------------------------------------------------
             // 5. Apply OData to IQueryable<SalesRequestRecord>
             // -------------------------------------------------------------
-            // REFACTOR: Apply OData after projecting to correct type
             var final = request.Options.ApplyTo(records) as IQueryable<SalesRequestRecord>
                         ?? records;
 

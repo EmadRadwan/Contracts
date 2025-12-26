@@ -14,12 +14,13 @@ import {
 import FormNumericTextBox from "../../../../../app/common/form/FormNumericTextBox";
 import { requiredValidator } from "../../../../../app/common/form/Validators";
 
-// REFACTOR: Made second discount optional
-// Purpose: Allow users to apply only one discount if needed, without forcing a second one
-// Why it improves: Better UX flexibility; avoids unnecessary validation errors
-// Context: Second field now has no requiredValidator, default 0, and calculation handles zero gracefully
+interface Props {
+    basePrice: number;
+    onClose: () => void;
+    onApply: (totalDiscountAmount: number, finalPrice: number) => void;
+}
 
-const ApartmentPriceCalculatorModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+const ApartmentPriceCalculatorModal: React.FC<Props> = ({ basePrice, onClose, onApply }) => {
     const [result, setResult] = useState<{
         afterFirstDiscount: number;
         afterSecondDiscount: number;
@@ -27,7 +28,6 @@ const ApartmentPriceCalculatorModal: React.FC<{ onClose: () => void }> = ({ onCl
     } | null>(null);
 
     const handleSubmit = (data: any) => {
-        const basePrice = Number(data.values.basePrice);
         const firstDiscountPct = Number(data.values.firstDiscountPct || 0);
         const secondDiscountPct = Number(data.values.secondDiscountPct || 0);
 
@@ -41,6 +41,15 @@ const ApartmentPriceCalculatorModal: React.FC<{ onClose: () => void }> = ({ onCl
         });
     };
 
+    // REFACTOR: Added "Apply Discount" button that sends data back to parent form
+    // Purpose: Close the loop – user can calculate and directly apply discount
+    // Why it improves: Eliminates manual re-entry, reduces errors
+    const handleApply = () => {
+        if (!result) return;
+        const totalDiscount = basePrice - result.finalPrice;
+        onApply(totalDiscount, result.finalPrice);
+    };
+
     return (
         <Grid container spacing={3} padding={3}>
             <Grid item xs={12}>
@@ -48,35 +57,22 @@ const ApartmentPriceCalculatorModal: React.FC<{ onClose: () => void }> = ({ onCl
                     حاسبة سعر الشقة بعد الخصومات
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    احسب سعر الشقة النهائي بعد تطبيق خصم أول (إجباري) وخصم ثاني (اختياري).
+                    السعر الأساسي: {basePrice.toLocaleString("ar-EG")} ج.م
                 </Typography>
             </Grid>
 
-            {/* =============== INPUT FORM =============== */}
             <Grid item xs={12}>
                 <Form
                     initialValues={{
-                        basePrice: 5000000,
-                        firstDiscountPct: 0.05,   // 5%
-                        secondDiscountPct: 0,     // 0% by default → optional
+                        firstDiscountPct: 0.05,
+                        secondDiscountPct: 0,
                     }}
                     onSubmitClick={handleSubmit}
                     render={(formRenderProps: FormRenderProps) => (
                         <FormElement>
                             <fieldset className="k-form-fieldset">
                                 <Grid container spacing={2}>
-                                    <Grid item xs={12} md={4}>
-                                        <Field
-                                            id="basePrice"
-                                            name="basePrice"
-                                            label="سعر الشقة الأساسي (ج.م)"
-                                            component={FormNumericTextBox}
-                                            format="n0"
-                                            validator={requiredValidator}
-                                        />
-                                    </Grid>
-
-                                    <Grid item xs={12} md={4}>
+                                    <Grid item xs={12} md={6}>
                                         <Field
                                             id="firstDiscountPct"
                                             name="firstDiscountPct"
@@ -89,8 +85,7 @@ const ApartmentPriceCalculatorModal: React.FC<{ onClose: () => void }> = ({ onCl
                                         />
                                     </Grid>
 
-                                    {/* REFACTOR: Removed requiredValidator and added hint */}
-                                    <Grid item xs={12} md={4}>
+                                    <Grid item xs={12} md={6}>
                                         <Field
                                             id="secondDiscountPct"
                                             name="secondDiscountPct"
@@ -100,7 +95,6 @@ const ApartmentPriceCalculatorModal: React.FC<{ onClose: () => void }> = ({ onCl
                                             format="p2"
                                             min={0}
                                             max={1}
-                                            // No requiredValidator → optional
                                         />
                                     </Grid>
 
@@ -126,7 +120,6 @@ const ApartmentPriceCalculatorModal: React.FC<{ onClose: () => void }> = ({ onCl
                 />
             </Grid>
 
-            {/* ==================== RESULTS ==================== */}
             {result && (
                 <>
                     <Grid item xs={12}>
@@ -136,7 +129,7 @@ const ApartmentPriceCalculatorModal: React.FC<{ onClose: () => void }> = ({ onCl
                     </Grid>
 
                     <Grid container spacing={3}>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid item xs={12} sm={6}>
                             <Box bgcolor="#f5f5f5" p={2} borderRadius={2}>
                                 <Typography variant="caption" color="text.secondary">
                                     السعر بعد الخصم الأول
@@ -147,7 +140,7 @@ const ApartmentPriceCalculatorModal: React.FC<{ onClose: () => void }> = ({ onCl
                             </Box>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid item xs={12} sm={6}>
                             <Box bgcolor="#e8f5e8" p={2} borderRadius={2}>
                                 <Typography variant="caption" color="text.secondary">
                                     السعر النهائي
@@ -155,6 +148,22 @@ const ApartmentPriceCalculatorModal: React.FC<{ onClose: () => void }> = ({ onCl
                                 <Typography variant="h5" color="success.main" fontWeight="bold">
                                     {result.finalPrice.toLocaleString("ar-EG")} ج.م
                                 </Typography>
+                            </Box>
+                        </Grid>
+
+                        <Grid item xs={12}>
+                            <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
+                                {/* REFACTOR: Apply button sends discount back to main form */}
+                                <Button
+                                    variant="contained"
+                                    color="success"
+                                    onClick={handleApply}
+                                >
+                                    تطبيق الخصم
+                                </Button>
+                                <Button variant="outlined" onClick={onClose}>
+                                    إلغاء
+                                </Button>
                             </Box>
                         </Grid>
                     </Grid>

@@ -42,6 +42,9 @@ public class CreateSalesRequest
         public decimal? GardenPricePerM2 { get; set; }
         public decimal ApartmentPricePerM2 { get; set; }
         public decimal? MaintenanceDeposit { get; set; }
+        public decimal? InstallmentAmount { get; set; }
+        public decimal? FirstInstallmentAmount { get; set; }
+        public decimal? RegularInstallmentAmount { get; set; }
 
         public string ApartmentStatusId { get; set; } = string.Empty;
         public string ApartmentStatusDescription { get; set; } = string.Empty;
@@ -152,6 +155,26 @@ public class CreateSalesRequest
             };
 
             _context.SalesRequests.Add(sr);
+            
+            if (dto.CustomInstallments != null && dto.CustomInstallments.Any())
+            {
+                var sorted = dto.CustomInstallments
+                    .OrderBy(i => i.DueDate)
+                    .ThenBy(i => i.InstallmentNumber)
+                    .ToList();
+
+                for (int i = 0; i < sorted.Count; i++)
+                {
+                    sr.Installments.Add(new SalesRequestInstallment
+                    {
+                        SalesRequestId = salesRequestId,
+                        InstallmentNumber = i + 1,
+                        DueDate = sorted[i].DueDate,
+                        Amount = sorted[i].Amount,
+                        IsAdvance = sorted[i].IsAdvance  // ← persist the flag
+                    });
+                }
+            }
 
             var apartment = await _context.Products
                 .FirstOrDefaultAsync(p => p.ProductId == dto.ProductId! && p.ProductTypeId == "APARTMENT", ct);

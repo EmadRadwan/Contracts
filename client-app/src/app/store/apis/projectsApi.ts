@@ -124,19 +124,28 @@ const projectsApi = createApi({
                 }),
                 invalidatesTags: ['ProjectCertificates']
             }),
+            // REFACTOR: Updated reviewCertificate mutation to accept optional comments
+// Purpose: Allow users to include review comments when marking certificate as Ready for Approval or Requires Editing
+// Improvement: Enhances audit trail and communication; keeps comments optional to maintain backward compatibility
+// Context: Backend expects 'comments' as an optional string field in the POST body
             reviewCertificate: builder.mutation<
-                { success: boolean; certificate?: any }, // adjust return type to match your DTO
-                { workEffortId: string; status: CertificateStatus }
+                { success: boolean; certificate?: any },
+                {
+                    workEffortId: string;
+                    status: CertificateStatus;
+                    comments?: string; // ← NEW: optional comments field
+                }
                 >({
-                query: ({ workEffortId, status }) => ({
+                query: ({ workEffortId, status, comments }) => ({
                     url: `project/review`,
                     method: "POST",
                     body: {
                         workEffortId,
-                        newStatusId: status, // backend expects the status string like 'WEPR_READY_FOR_APPROVAL'
+                        newStatusId: status,
+                        comments: comments?.trim() || undefined, // send only if provided and non-empty
                     },
                 }),
-                // Invalidate relevant caches so UI updates immediately
+                // Invalidate relevant caches to ensure UI refreshes with latest status and potential comment history
                 invalidatesTags: [
                     "ProjectCertificates",
                     "ProjectCertificate",

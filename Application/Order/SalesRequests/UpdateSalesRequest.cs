@@ -1,3 +1,4 @@
+using Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
@@ -38,12 +39,13 @@ public class UpdateSalesRequest
             // 1. Load existing entity (optimistic concurrency not needed now)
             // -----------------------------------------------------------------
             var sr = await _context.SalesRequests
-                .Include(s => s.Product) // eager load current apartment
+                .Include(s => s.Product) // current apartment
+                .Include(s => s.Installments) // REFACTOR: Load existing installments for deletion
                 .FirstOrDefaultAsync(x => x.SalesRequestId == dto.SalesRequestId, ct);
 
             if (sr == null)
                 return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure("Sales request not found");
-            
+
             var oldProductId = sr.ProductId;
             var newProductId = dto.ProductId!;
 
@@ -52,7 +54,7 @@ public class UpdateSalesRequest
             // 2. Transaction
             // -----------------------------------------------------------------
             await using var transaction = await _context.Database.BeginTransactionAsync(ct);
-            
+
             if (oldProductId != newProductId)
             {
                 // Release old apartment (if it was reserved)
@@ -82,7 +84,7 @@ public class UpdateSalesRequest
                 newApartment.ReservedBySalesRequestId = sr.SalesRequestId;
             }
 
-            
+
             try
             {
                 // -----------------------------------------------------------------
@@ -104,6 +106,46 @@ public class UpdateSalesRequest
                 sr.Comments = dto.Comments;
                 sr.LastUpdatedStamp = DateTime.UtcNow; // REFACTOR: keep audit trail
 
+                if (dto.CustomInstallments != null && dto.CustomInstallments.Any())
+                {
+                    // Delete all existing installments
+                    if (sr.Installments.Any())
+                    {
+                        _context.SalesRequestInstallments.RemoveRange(sr.Installments);
+                    }
+
+                    sr.Installments.Clear();
+                    await _context.SaveChangesAsync(ct);
+
+                    // Create new ones from DTO
+                    var sorted = dto.CustomInstallments
+                        .OrderBy(i => i.DueDate)
+                        .ThenBy(i => i.InstallmentNumber)
+                        .ToList();
+
+                    for (int i = 0; i < sorted.Count; i++)
+                    {
+                        var installment = new SalesRequestInstallment
+                        {
+                            SalesRequestId = sr.SalesRequestId,
+                            InstallmentNumber = i + 1,
+                            DueDate = sorted[i].DueDate,
+                            Amount = sorted[i].Amount,
+                            IsAdvance = sorted[i].IsAdvance
+                        };
+
+                        _context.SalesRequestInstallments.Add(installment);
+                    }
+                }
+                else
+                {
+                    // No custom plan provided → clear any existing installments
+                    if (sr.Installments.Any())
+                    {
+                        _context.SalesRequestInstallments.RemoveRange(sr.Installments);
+                    }
+                }
+
                 var saved = await _context.SaveChangesAsync(ct) > 0;
                 if (!saved)
                 {
@@ -120,7 +162,7 @@ public class UpdateSalesRequest
                     .Where(p => p.PartyId == dto.FromPartyId)
                     .Select(p => new { p.PartyId, p.Description, Phone = string.Empty })
                     .FirstOrDefaultAsync(ct);
-                
+
                 var employee = await _context.Parties
                     .Where(p => p.PartyId == dto.EmployeePartyId)
                     .Select(p => new { p.PartyId, p.Description })
@@ -170,7 +212,7 @@ public class UpdateSalesRequest
                     ApartmentPricePerM2 = apartment.ApartmentPricePerM2,
                     ApartmentStatusId = apartment.ApartmentStatusId,
                     ApartmentStatusDescription = apartment.ApartmentStatusDescription,
-                    
+
                     ApartmentReservedBySalesRequestId = apartment.ReservedBySalesRequestId,
 
 

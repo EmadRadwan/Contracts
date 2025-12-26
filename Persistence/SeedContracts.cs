@@ -2984,7 +2984,7 @@ public class SeedContracts
             {
                 "mhamdy@gmail.com", new[]
                 {
-                    "Projects_View", "ApproveCertificate"
+                    "Projects_View", "ApproveCertificate", "ReviewCertificate"
                 }
             },
             {

@@ -7,7 +7,11 @@ import {Box, Paper, Typography} from "@mui/material";
 import {toast} from "react-toastify";
 import {SalesRequest} from "../../../../../app/models/order/SalesRequest";
 import {requiredValidator} from "../../../../../app/common/form/Validators";
-import {useAddSalesRequestMutation, useUpdateSalesRequestMutation} from "../../../../../app/store/apis/salesRequestApi";
+import {
+    useAddSalesRequestMutation,
+    useGetSalesRequestInstallmentsQuery,
+    useUpdateSalesRequestMutation
+} from "../../../../../app/store/apis/salesRequestApi";
 import FormDatePicker from "../../../../../app/common/form/FormDatePicker";
 import LoadingComponent from "../../../../../app/layout/LoadingComponent";
 import FormNumericTextBox from "../../../../../app/common/form/FormNumericTextBox";
@@ -25,6 +29,7 @@ import {FormComboBoxVirtualPartyEmployee} from "../../../../../app/common/form/F
 import {FormComboBoxVirtualCustomer} from "../../../../../app/common/form/FormComboBoxVirtualCustomer";
 import DefaultPercentagesModal from "../dashboard/DefaultPercentagesModal";
 import {SalesRequestActionsMenu} from "../menu/SalesRequestActionsMenu";
+import ApartmentPriceCalculatorModal from "../dashboard/ApartmentPriceCalculatorModal";
 
 const APARTMENT_AVAILABLE = "APARTMENT_AVAILABLE";
 
@@ -53,6 +58,9 @@ function SalesRequestForm({
     const [showNewCustomer, setShowNewCustomer] = useState(false);
     const {getTranslatedLabel} = useTranslationHelper();
     const [showPaymentPlan, setShowPaymentPlan] = useState(false);
+    const [showCalculatorModal, setShowCalculatorModal] = useState(false);
+    const [currentBasePrice, setCurrentBasePrice] = useState<number | null>(null);
+    const [customInstallments, setCustomInstallments] = useState<Array<{ dueDate: string; amount: number }>>([]);
 
     const dispatch = useAppDispatch();
     const formRef = useRef<FormRenderProps | null>(null);
@@ -62,11 +70,23 @@ function SalesRequestForm({
     const [defaultMaintenancePercent, setDefaultMaintenancePercent] = useState(0.08);
     const [showDefaultsModal, setShowDefaultsModal] = useState(false);
     const {language} = useAppSelector((state) => state.localization);
+
+    const isEditMode = editMode === 2 || editMode === 3; // edit or approved view
+    const salesRequestId = salesRequest?.salesRequestId;
+
+    const {
+        data: savedInstallments = [],
+        isLoading: installmentsLoading,
+        isError: installmentsError,
+    } = useGetSalesRequestInstallmentsQuery(salesRequestId!, {
+        skip: !isEditMode || !salesRequestId,
+    });
+
     // -----------------------------------------------------------------
     // Internal ref for party input (no longer passed from parent)
     // -----------------------------------------------------------------
     const partyInputRef = useRef<HTMLInputElement>(null);
-    const canViewPaymentPlan = editMode === 2 || editMode === 3;
+    const canViewPaymentPlan = true;
 
     const normalizeNumeric = (value: any): number | null => {
         if (value === null || value === undefined || value === "") return null;
@@ -94,6 +114,21 @@ function SalesRequestForm({
     }, [defaultAdvancePercent, defaultMaintenancePercent]);
 
     useEffect(() => {
+        if (savedInstallments.length > 0) {
+            const mapped = savedInstallments.map(inst => ({
+                dueDate: inst.dueDate,
+                amount: inst.amount,
+                isAdvance: inst.isAdvance,
+            }));
+            setCustomInstallments(mapped);
+        } else if (isEditMode) {
+            // No saved installments → start with empty (user must create one)
+            setCustomInstallments([]);
+        }
+        // Create mode → already empty from initial state
+    }, [savedInstallments, isEditMode]);
+    
+    useEffect(() => {
         if (!formRef.current) return;
 
         const finalTotal = formRef.current.valueGetter("totalPrice");
@@ -103,19 +138,7 @@ function SalesRequestForm({
         // This runs only when user changes defaults via modal
         autoSetDerivedFields(formRef.current, finalTotal);
     }, [defaultAdvancePercent, defaultMaintenancePercent, autoSetDerivedFields]);
-
-    const viewPaymentPlanButton = (
-        <Grid item>
-            <Button
-                variant="outlined"
-                color="primary"
-                onClick={() => setShowPaymentPlan(true)}
-                disabled={!salesRequest?.salesRequestId} // optional: disable if no record
-            >
-                {getTranslatedLabel("salesRequest.form.viewPaymentPlan", "View Payment Plan")}
-            </Button>
-        </Grid>
-    );
+    
 
     const isoToDate = (iso: string | null | undefined): Date | null => {
         if (!iso) return null;
@@ -231,7 +254,7 @@ function SalesRequestForm({
             comments: sr.comments ?? null,
             statusId: sr.statusId ?? null,
             statusDescription: sr.statusDescription ?? null,
-        };
+            };
     }, [editMode, salesRequest]);
 
 
@@ -261,13 +284,89 @@ function SalesRequestForm({
         return copy;
     };
 
+    const handleApplyPaymentPlan = useCallback((
+        installments: Array<{ dueDate: string; amount: number; isAdvance: boolean }>  // ← updated type
+    ) => {
+        setCustomInstallments(installments);
+        setShowPaymentPlan(false);
+        toast.success(getTranslatedLabel("salesRequest.form.paymentPlanApplied", "Payment plan applied successfully"));
+    }, [getTranslatedLabel]);
+
+   
+
     // -----------------------------------------------------------------
 // Submit
 // -----------------------------------------------------------------
     async function handleSubmitData(data: any) {
-        console.log('data', data)
+        console.log('from submit')
         setButtonFlag(true);
         try {
+
+            const advance = Number(data.advancePayment ?? 0);
+            const total = Number(data.totalPrice ?? 0);
+
+            if (customInstallments.length > 0) {
+                const tolerance = 0.01;
+
+                // Extract advance and regular parts from custom plan
+                const advanceRows = customInstallments.filter(inst => inst.isAdvance);
+                const regularRows = customInstallments.filter(inst => !inst.isAdvance);
+
+                const advanceSum = advanceRows.reduce((sum, inst) => sum + inst.amount, 0);
+                const regularSum = regularRows.reduce((sum, inst) => sum + inst.amount, 0);
+                const grandTotal = advanceSum + regularSum;
+
+                // 1. Grand total must match totalPrice
+                if (Math.abs(grandTotal - total) > tolerance) {
+                    toast.error(
+                        getTranslatedLabel(
+                            "salesRequest.form.validation.planTotalMismatch",
+                            "The payment plan total does not match the sales total price. Please rebuild the plan."
+                        )
+                    );
+                    setButtonFlag(false);
+                    return;
+                }
+
+                // 2. Advance sum must match advancePayment
+                if (Math.abs(advanceSum - advance) > tolerance) {
+                    toast.error(
+                        getTranslatedLabel(
+                            "salesRequest.form.validation.planAdvanceMismatch",
+                            "The advance amount in the payment plan does not match the advance payment. Please rebuild the plan."
+                        )
+                    );
+                    setButtonFlag(false);
+                    return;
+                }
+
+                // 3. For partial payment: number of regular installments must match form field
+                if (advance < total && total > 0) {
+                    const expectedInstallments = data.numberOfInstallments ?? 0;
+                    if (regularRows.length !== expectedInstallments) {
+                        toast.error(
+                            getTranslatedLabel(
+                                "salesRequest.form.validation.installmentCountMismatch",
+                                `The payment plan has ${regularRows.length} regular installment(s), but ${expectedInstallments} were specified. Please rebuild the plan.`
+                            )
+                        );
+                        setButtonFlag(false);
+                        return;
+                    }
+                }
+            }
+
+            if (total > 0 && customInstallments.length === 0) {
+                toast.error(
+                    getTranslatedLabel(
+                        "salesRequest.form.validation.customPlanRequired",
+                        "You must create and apply a custom payment plan using the Payment Plan button."
+                    )
+                );
+                setButtonFlag(false);
+                return; // Block submission
+            }
+            
             // 1. Normalise numeric fields ("" → null)
             const normalize = (obj: any): any => {
                 const copy = {...obj};
@@ -291,8 +390,20 @@ function SalesRequestForm({
             const flattened = flattenComboValues(normalize(data));
 
             // 3. Wrap for the server (same pattern as CreateProduct)
-            const payload = {salesRequestDto: {...flattened}};
-
+            const payload = {
+                salesRequestDto: {
+                    ...flattened,
+                    ...(customInstallments.length > 0 && {
+                        customInstallments: customInstallments.map((inst, idx) => ({
+                            installmentNumber: idx + 1,
+                            dueDate: inst.dueDate,
+                            amount: inst.amount,
+                            isAdvance: inst.isAdvance,  // ← send the flag
+                        })),
+                    }),
+                },
+            };
+            
             if (editMode === 2) {
                 await updateSR(payload).unwrap();
                 toast.success(
@@ -488,17 +599,19 @@ function SalesRequestForm({
     ]);
 
     const salesRequestValidator = (values: any): KeyValue<string> | undefined => {
-        const t = getTranslatedLabel;                     // shortcut (defined later in render)
+        const t = getTranslatedLabel;
+        console.log('from validator')
 
+        // -----------------------------------------------------------------
+        // Existing apartment availability check (unchanged)
+        // -----------------------------------------------------------------
         const apt = values.productId;
-        const currentSalesRequestId = values.salesRequestId; // available in form values
+        const currentSalesRequestId = values.salesRequestId;
 
         const aptStatusId = typeof apt === "object" ? apt?.apartmentStatusId : null;
 
-        console.log('aptStatusId', aptStatusId)
         if (aptStatusId && aptStatusId !== APARTMENT_AVAILABLE) {
-            const reservedByThisRequest =
-                apt.reservedBySalesRequestId === currentSalesRequestId;
+            const reservedByThisRequest = apt.reservedBySalesRequestId === currentSalesRequestId;
 
             if (!reservedByThisRequest) {
                 return {
@@ -510,50 +623,121 @@ function SalesRequestForm({
             }
         }
 
-        const adv = Number(values.advancePayment ?? 0);
-        const tot = Number(values.totalPrice ?? 0);
-        const installments = values.numberOfInstallments;
-        const firstInstDate = values.dateOfFirstInstallment;
-        const duration = values.monthsBetweenInstallments;
+        const advance = Number(values.advancePayment ?? 0);
+        const total = Number(values.totalPrice ?? 0);
 
-        // ---- CASE A: full payment (advance === total) -----------------
-        if (adv === tot && tot > 0) {
-            if (installments != null ||
-                firstInstDate != null ||
-                duration != null) {
+        // -----------------------------------------------------------------
+        // Case 1: Partial payment (advance < total) → default fields AND custom plan required
+        // -----------------------------------------------------------------
+        if (advance < total && total > 0) {
+            const missingDefault: string[] = [];
+
+            if (!values.numberOfInstallments || values.numberOfInstallments <= 0) {
+                missingDefault.push(t("salesRequest.form.installments", "Number of Installments"));
+            }
+            if (!values.dateOfFirstInstallment) {
+                missingDefault.push(t("salesRequest.form.firstInstallmentDate", "First Installment Date"));
+            }
+            if (!values.monthsBetweenInstallments || values.monthsBetweenInstallments <= 0) {
+                missingDefault.push(t("salesRequest.form.duration", "Months Between Installments"));
+            }
+
+            if (missingDefault.length > 0) {
                 return {
                     VALIDATION_SUMMARY: t(
-                        "salesRequest.form.validation.fullPayment",
-                        "Full payment – installment fields must be empty."
+                        "salesRequest.form.validation.missingDefaultFields",
+                        "For partial payment, the following fields are required to generate the initial payment plan: {0}."
+                    ).replace("{0}", missingDefault.join(", "))
+                };
+            }
+
+            // Custom plan still mandatory – user must open modal and apply (even if just accepting defaults)
+            if (customInstallments.length === 0) {
+                return {
+                    VALIDATION_SUMMARY: t(
+                        "salesRequest.form.validation.customPlanRequired",
+                        "You must open the Payment Plan modal and apply a plan (even if you keep the defaults)."
                     )
                 };
             }
-            return; // OK
         }
 
-        // ---- CASE B: partial payment (advance < total) ---------------
-        if (adv < tot && tot > 0) {
-            const missing: string[] = [];
-
-            if (!installments) missing.push(t("salesRequest.form.installments", "Installments"));
-            if (!firstInstDate) missing.push(t("salesRequest.form.firstInstallmentDate", "First Installment Date"));
-            if (!duration) missing.push(t("salesRequest.form.duration", "Days Between Installments"));
-
-            if (missing.length) {
+        // -----------------------------------------------------------------
+        // Case 2: Full payment (advance >= total) → custom plan still required (for advance splitting)
+        // -----------------------------------------------------------------
+        if (advance >= total && total > 0) {
+            if (customInstallments.length === 0) {
                 return {
-                    VALIDATION_SUMMARY: `${t(
-                        "salesRequest.form.validation.missingInstallments",
-                        "The following fields are required when advance payment is less than total price:"
-                    )} ${missing.join(", ")}.`
+                    VALIDATION_SUMMARY: t(
+                        "salesRequest.form.validation.customPlanRequiredFull",
+                        "Even for full payment, you must create a custom payment plan (e.g., to split the advance payment)."
+                    )
                 };
             }
-            return; // OK
+
+            // Prevent leftover default fields in full payment scenario
+            if (
+                values.numberOfInstallments > 0 ||
+                values.dateOfFirstInstallment != null ||
+                values.monthsBetweenInstallments > 0
+            ) {
+                return {
+                    VALIDATION_SUMMARY: t(
+                        "salesRequest.form.validation.clearDefaultFieldsFull",
+                        "Full payment detected – please clear the installment fields (they are not used)."
+                    )
+                };
+            }
         }
 
-        // ---- No price information yet – let field validators handle required *
+        if (customInstallments.length > 0) {
+            const advance = Number(values.advancePayment ?? 0);
+            const total = Number(values.totalPrice ?? 0);
+            const tolerance = 0.01;
+
+            const advanceSum = customInstallments
+                .filter(i => i.isAdvance)
+                .reduce((s, i) => s + i.amount, 0);
+            const regularSum = customInstallments
+                .filter(i => !i.isAdvance)
+                .reduce((s, i) => s + i.amount, 0);
+
+            if (Math.abs(advanceSum + regularSum - total) > tolerance) {
+                return {
+                    VALIDATION_SUMMARY: t(
+                        "salesRequest.form.validation.planTotalMismatch",
+                        "Payment plan total does not match sales price. Reopen the plan to update."
+                    )
+                };
+            }
+
+            if (Math.abs(advanceSum - advance) > tolerance) {
+                return {
+                    VALIDATION_SUMMARY: t(
+                        "salesRequest.form.validation.planAdvanceMismatch",
+                        "Advance in payment plan does not match advance payment. Reopen to fix."
+                    )
+                };
+            }
+
+            if (advance < total && total > 0) {
+                const expected = values.numberOfInstallments ?? 0;
+                const actual = customInstallments.filter(i => !i.isAdvance).length;
+                if (actual !== expected) {
+                    return {
+                        VALIDATION_SUMMARY: t(
+                            "salesRequest.form.validation.installmentCountMismatch",
+                            `Payment plan has ${actual} regular installments, expected ${expected}. Reopen plan.`
+                        )
+                    };
+                }
+            }
+        }
+
+        // All good
         return;
     };
-
+    
     let apartmentForModal: { productName: string } | undefined = undefined;
 
     // This will be set inside the Form render callback
@@ -568,6 +752,31 @@ function SalesRequestForm({
             };
         }
     }
+
+    const openCalculator = useCallback((formRenderProps: FormRenderProps) => {
+        const total = formRenderProps.valueGetter("totalPrice");
+        if (total && total > 0) {
+            setCurrentBasePrice(total);
+            setShowCalculatorModal(true);
+        }
+    }, []);
+
+    const applyDiscountFromCalculator = useCallback((
+        formRenderProps: FormRenderProps,
+        totalDiscountAmount: number,
+        finalPrice: number
+    ) => {
+        // Set the calculated discount amount
+        formRenderProps.onChange("discount", { value: totalDiscountAmount });
+
+        // Update totalPrice to the final (after-discount) price
+        formRenderProps.onChange("totalPrice", { value: finalPrice });
+
+        // Recalculate derived fields (advance & maintenance) based on new total
+        autoSetDerivedFields(formRenderProps, finalPrice);
+
+        setShowCalculatorModal(false);
+    }, [autoSetDerivedFields]);
 
 
     return (
@@ -624,7 +833,29 @@ function SalesRequestForm({
                             saleDate: valueGetter("saleDate"),
                             // free text
                             comments: valueGetter("comments"),
-                        };
+                           };
+
+                        const canOpenPaymentPlan =
+                            !!valueGetter("totalPrice") &&
+                            valueGetter("advancePayment") < valueGetter("totalPrice") &&
+                            valueGetter("totalPrice") > 0;
+
+                        const viewPaymentPlanButton = canOpenPaymentPlan && (
+                            <Grid item>
+                                <Button
+                                    variant="outlined"
+                                    color="primary"
+                                    onClick={() => setShowPaymentPlan(true)}
+                                >
+                                    {customInstallments.length > 0
+                                        ? getTranslatedLabel("salesRequest.form.editPaymentPlan", "Edit Payment Plan")
+                                        : getTranslatedLabel("salesRequest.form.createPaymentPlan", "Create Payment Plan")
+                                    }
+                                </Button>
+                            </Grid>
+                        );
+
+                        
 
                         // -----------------------------------------------------------------
                         // 2. Apartment for the legacy prop
@@ -648,6 +879,8 @@ function SalesRequestForm({
                         }[statusId ?? ""] ?? "#757575";
 
 
+                        
+                        
                         return (
                             <>
                                 <Grid container spacing={2} alignItems="center" position="relative">
@@ -818,7 +1051,7 @@ function SalesRequestForm({
                                         </Grid>
 
 
-                                        <Grid container spacing={1}>
+                                        <Grid container spacing={1} alignItems={"flex-end"}>
                                             <Grid item xs={3}>
                                                 <Field
                                                     id="apartmentPricePerM2"
@@ -847,7 +1080,7 @@ function SalesRequestForm({
                                                     }}
                                                 />
                                             </Grid>
-                                            <Grid item xs={3}>
+                                            <Grid item xs={2}>
                                                 <Field
                                                     id="discount"
                                                     name="discount"
@@ -860,7 +1093,20 @@ function SalesRequestForm({
                                                     }}
                                                 />
                                             </Grid>
-                                            <Grid item xs={3}>
+                                            <Grid item xs={1}>
+                                                <Button
+                                                    size="small"
+                                                    variant="outlined"
+                                                    color="secondary"
+                                                    onClick={() => openCalculator(formRenderProps)}
+                                                    disabled={!formRenderProps.valueGetter("totalPrice")}
+                                                >
+                                                    +
+                                                </Button>
+                                            </Grid>
+                                            <Grid item xs={1}>
+                                            </Grid>
+                                            <Grid item xs={2}>
                                                 <Field
                                                     id="totalPrice"
                                                     name="totalPrice"
@@ -956,11 +1202,18 @@ function SalesRequestForm({
                                                         variant="contained"
                                                         type="submit"
                                                         color="success"
-                                                        disabled={buttonFlag || isCreating || isUpdating || editMode > 2}
+                                                        disabled={
+                                                            buttonFlag ||
+                                                            isCreating ||
+                                                            isUpdating ||
+                                                            editMode > 2 ||
+                                                            // REFACTOR: Disable submit until custom plan is applied
+                                                            // Purpose: Enforces new business rule – custom plan mandatory for any priced sales request.
+                                                            // Improves UX with immediate visual feedback.
+                                                            (valueGetter("totalPrice") > 0 && customInstallments.length === 0)
+                                                        }
                                                     >
-                                                        {editMode === 1
-                                                            ? getTranslatedLabel("general.create", "Create")
-                                                            : getTranslatedLabel("general.update", "Update")}
+                                                        {editMode === 1 ? getTranslatedLabel("general.create", "Create") : getTranslatedLabel("general.update", "Update")}
                                                     </Button>
                                                 </Grid>
                                                 <Grid item>
@@ -983,13 +1236,15 @@ function SalesRequestForm({
                                             />
                                         )}
 
-                                        {showPaymentPlan && canViewPaymentPlan && (
-                                            <ModalContainer show={showPaymentPlan}
-                                                            onClose={() => setShowPaymentPlan(false)} width={850}>
+                                        {showPaymentPlan && (
+                                            <ModalContainer show={showPaymentPlan} onClose={() => setShowPaymentPlan(false)} width={950}>
                                                 <PaymentPlanModal
                                                     onClose={() => setShowPaymentPlan(false)}
                                                     salesRequest={currentFormValues}
                                                     apartment={apartmentForModal}
+                                                    onApply={handleApplyPaymentPlan}
+                                                    isPreview={customInstallments.length > 0}
+                                                    initialInstallments={customInstallments}  // ← Key new prop for two-way sync
                                                 />
                                             </ModalContainer>
                                         )}
@@ -1008,6 +1263,21 @@ function SalesRequestForm({
                                         )}
                                     </fieldset>
                                 </FormElement>
+                                {showCalculatorModal && currentBasePrice && (
+                                    <ModalContainer
+                                        show={showCalculatorModal}
+                                        onClose={() => setShowCalculatorModal(false)}
+                                        width={700}
+                                    >
+                                        <ApartmentPriceCalculatorModal
+                                            basePrice={currentBasePrice}
+                                            onClose={() => setShowCalculatorModal(false)}
+                                            onApply={(totalDiscountAmount: number, finalPrice: number) => {
+                                                applyDiscountFromCalculator(formRenderProps, totalDiscountAmount, finalPrice);
+                                            }}
+                                        />
+                                    </ModalContainer>
+                                )}
                             </>
                         );
                     }}
@@ -1028,22 +1298,9 @@ function SalesRequestForm({
                         />
                     </ModalContainer>
                 )}
-
             </Paper>
         </>
     );
 }
-
-/* ------------------------------------------------------------------ */
-/* Memoisation – no partyInputRef in props                             */
-/* ------------------------------------------------------------------ */
-const arePropsEqual = (prev: Props, next: Props) => {
-    return (
-        prev.salesRequest?.salesRequestId === next.salesRequest?.salesRequestId &&
-        prev.editMode === next.editMode &&
-        prev.cancelEdit === next.cancelEdit &&
-        prev.onSalesRequestCreated === next.onSalesRequestCreated
-    );
-};
 
 export default React.memo(SalesRequestForm);

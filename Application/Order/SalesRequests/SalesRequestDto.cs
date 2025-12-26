@@ -13,6 +13,7 @@ public class SalesRequestDto
     public decimal? GardenPricePerM2 { get; set; }
     public decimal? Discount { get; set; }
     public decimal? TotalPrice { get; set; }
+   
 
     public decimal? AdvancePayment { get; set; }
     public decimal? MaintenanceDeposit { get; set; }
@@ -31,4 +32,6 @@ public class SalesRequestDto
     public decimal? GardenSpaceM2 { get; set; }
     public string? ApartmentStatusDescription { get; set; }
     public string? FromPartyName { get; set; }
+    
+    public List<SalesRequestInstallmentDto>? CustomInstallments { get; set; }
 }
