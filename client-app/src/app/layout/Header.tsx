@@ -90,7 +90,7 @@ export default function Header() {
             <Toolbar
                 sx={{
                     display: "flex",
-                    flexDirection: isRTL ? "row-reverse" : "row",
+                    // flexDirection: isRTL ? "row-reverse" : "row",
                     justifyContent: "space-between",
                     alignItems: "center",
                 }}
@@ -102,7 +102,7 @@ export default function Header() {
 
                 {/* Navigation Links - center */}
                 <Box display="flex" alignItems="center" sx={{ flexGrow: 1, justifyContent: "center" }}>
-                    <List sx={{ display: "flex", flexDirection: isRTL ? "row-reverse" : "row" }}>
+                    <List sx={{ display: "flex"}}>
                         {midLinks.map(({ title, path, icon, key }) => {
                             const requiredRole = moduleRoleMap[key];
 
