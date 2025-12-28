@@ -61,4 +61,11 @@ export const parseDate = (dateStr: string | Date | null | undefined): Date | nul
     return isNaN(parsed.getTime()) ? null : parsed;
 };
 
+// REFACTOR: Extracted from main component - used everywhere for consistency
+export const normalizeNumeric = (value: any): number | null => {
+    if (value === null || value === undefined || value === "") return null;
+    const num = Number(value);
+    return isNaN(num) ? null : num;
+};
+
 export {}

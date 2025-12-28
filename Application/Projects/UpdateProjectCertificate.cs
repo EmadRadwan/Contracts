@@ -403,7 +403,7 @@ namespace Application.Projects
                         await _context.SaveChangesAsync(cancellationToken);
 
                         // REFACTOR: Re-query fresh order data for approval (same pattern as Create)
-                        var orderHeader = await _context.OrderHeaders
+                        /*var orderHeader = await _context.OrderHeaders
                             .FirstOrDefaultAsync(oh => oh.OrderId == newOrderId, cancellationToken);
 
                         var freshItems = await _context.OrderItems
@@ -451,7 +451,7 @@ namespace Application.Projects
                             OrderAdjustments = freshAdjustments
                         };
 
-                        await _orderService.UpdateOrApprovePurchaseOrder(approveDto, "APPROVE");
+                        await _orderService.UpdateOrApprovePurchaseOrder(approveDto, "APPROVE");*/
                         await _context.SaveChangesAsync(cancellationToken);
                     }
 

@@ -14,6 +14,7 @@ public class AccountingTransactionEntryRecord
     public string? PartyId { get; set; }
     public string? PartyName { get; set; }
     public string? ProductId { get; set; }
+    public string ProductName { get; set; }
     public string? InvoiceId { get; set; }
     public string? PaymentId { get; set; }
     public string? ShipmentId { get; set; }

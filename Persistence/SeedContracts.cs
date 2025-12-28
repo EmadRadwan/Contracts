@@ -2575,7 +2575,7 @@ public class SeedContracts
 
 
         // accounting transaction
-        if (!context.AcctgTrans.Any())
+        /*if (!context.AcctgTrans.Any())
         {
             var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/acctg_trans.json");
             var jsonData = File.ReadAllText(path);
@@ -2583,7 +2583,7 @@ public class SeedContracts
             var acctgTrans = JsonConvert.DeserializeObject<List<AcctgTran>>(jsonData);
             await context.AcctgTrans.AddRangeAsync(acctgTrans);
             await context.SaveChangesAsync();
-        }
+        }*/
 
         // accounting transaction entries
         /*

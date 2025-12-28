@@ -1,0 +1,135 @@
+import React from "react";
+import {Field, FormRenderProps} from "@progress/kendo-react-form";
+import { Grid, Button, Typography } from "@mui/material";
+import { FormSimpleComboBoxVirtualApartment } from "../../../../../app/common/form/FormSimpleComboBoxVirtualApartment";
+import FormDatePicker from "../../../../../app/common/form/FormDatePicker";
+import { FormComboBoxVirtualCustomer } from "../../../../../app/common/form/FormComboBoxVirtualCustomer";
+import { FormComboBoxVirtualPartyEmployee } from "../../../../../app/common/form/FormComboBoxVirtualPartyEmployee";
+import { requiredValidator } from "../../../../../app/common/form/Validators";
+import { SalesRequest } from "../../../../../app/models/order/SalesRequest";
+
+const GROUND_FLOOR_ARABIC = "الطابق الأرضي";
+
+interface ApartmentHeaderSectionProps {
+    formRenderProps: FormRenderProps;
+    selectedApartment: SalesRequest | null;
+    onProductChange: (form: FormRenderProps, e: any) => void;
+    showNewCustomer: boolean;
+    setShowNewCustomer: (show: boolean) => void;
+    getTranslatedLabel: (key: string, fallback: string) => string;
+    partyInputRef: React.RefObject<HTMLInputElement>;
+    editMode: number;
+}
+
+export const ApartmentHeaderSection: React.FC<ApartmentHeaderSectionProps> = React.memo(({
+                                                                                             formRenderProps,
+                                                                                             selectedApartment,
+                                                                                             onProductChange,
+                                                                                             setShowNewCustomer,
+                                                                                             getTranslatedLabel,
+                                                                                             partyInputRef,
+                                                                                             editMode,
+                                                                                         }) => {
+    const apt = formRenderProps.valueGetter("productId");
+
+    const isGroundFloor = selectedApartment?.floorNumber === GROUND_FLOOR_ARABIC;
+
+    return (
+        <>
+            {/* Main Selection Row */}
+            <Grid container spacing={1} alignItems="flex-end"
+                  className={editMode > 2 ? "grid-disabled" : "grid-normal"}>
+                <Grid item xs={4}>
+                    <Field
+                        id="productId"
+                        name="productId"
+                        label={getTranslatedLabel("projects.certificate.items.list.product", "Product *")}
+                        component={FormSimpleComboBoxVirtualApartment}
+                        autoComplete="off"
+                        validator={requiredValidator}
+                        onChange={(e) => onProductChange(formRenderProps, e)}
+                    />
+                </Grid>
+                <Grid item xs={3}>
+                    <Field
+                        id="saleDate"
+                        name="saleDate"
+                        label={getTranslatedLabel("salesRequest.form.saleDate", "Sale Date *")}
+                        component={FormDatePicker}
+                        validator={requiredValidator}
+                    />
+                </Grid>
+                <Grid item xs={2.5}>
+                    <Field
+                        id="fromPartyId"
+                        name="fromPartyId"
+                        label={getTranslatedLabel("salesRequest.form.from", "From *")}
+                        component={FormComboBoxVirtualCustomer}
+                        autoComplete="off"
+                        validator={requiredValidator}
+                        inputRef={partyInputRef}
+                    />
+                </Grid>
+                <Grid item xs={0.5}>
+                    <Button
+                        size="small"
+                        color="secondary"
+                        onClick={() => setShowNewCustomer(true)}
+                        variant="outlined"
+                        sx={{ height: "100%", minWidth: 32, p: 0 }}
+                    >
+                        +
+                    </Button>
+                </Grid>
+                <Grid item xs={2}>
+                    <Field
+                        id="employeePartyId"
+                        name="employeePartyId"
+                        component={FormComboBoxVirtualPartyEmployee}
+                        label={getTranslatedLabel("salesRequest.form.employee", "Employee")}
+                        valueField="fromPartyId"
+                        textField="fromPartyName"
+                        validator={requiredValidator}
+                    />
+                </Grid>
+            </Grid>
+
+            {/* Read-only Info Row */}
+            <Grid container spacing={1} mt={0.5}>
+                <Grid item xs={3}>
+                    <Typography variant="caption" color="textSecondary">
+                        {getTranslatedLabel("salesRequest.form.project", "Project")}
+                    </Typography>
+                    <Typography>{apt?.projectName ?? "-"}</Typography>
+                </Grid>
+
+                <Grid item xs={2}>
+                    <Typography variant="caption" color="textSecondary">
+                        {getTranslatedLabel("salesRequest.form.apartmentM2", "Apt m²")}
+                    </Typography>
+                    <Typography>{apt?.apartmentSpaceM2 ?? "-"}</Typography>
+                </Grid>
+
+                <Grid item xs={2}>
+                    <Typography variant="caption" color="textSecondary">
+                        {getTranslatedLabel("salesRequest.form.gardenM2", "Garden m²")}
+                    </Typography>
+                    <Typography>
+                        {isGroundFloor ? (selectedApartment?.gardenSpaceM2 ?? "-") : "-"}
+                    </Typography>
+                </Grid>
+
+                <Grid item xs={3}>
+                    <Typography variant="caption" color="textSecondary">
+                        {getTranslatedLabel("salesRequest.form.status", "Status")}
+                    </Typography>
+                    <Typography>{apt?.apartmentStatusDescription ?? "-"}</Typography>
+                </Grid>
+
+                <Grid item xs={2} /> {/* spacer */}
+            </Grid>
+        </>
+    );
+});
+
+ApartmentHeaderSection.displayName = "ApartmentHeaderSection";

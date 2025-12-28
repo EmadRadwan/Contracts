@@ -229,9 +229,9 @@ export default function AccountingTransactionEntriesList() {
                                 "WorkEffort Id"
                             )} width={100}/>
 
-                            <Column field="shipmentId" title={getTranslatedLabel(
-                                "accounting.orgGL.accounting.summary.txns.shipmentId",
-                                "Shipment Id"
+                            <Column field="productName" title={getTranslatedLabel(
+                                "accounting.orgGL.accounting.summary.txns.productName",
+                                "Product Name"
                             )} width={100}/>
 
                             <Column field="isPosted" title={getTranslatedLabel(

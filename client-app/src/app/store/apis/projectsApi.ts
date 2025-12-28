@@ -89,6 +89,13 @@ const projectsApi = createApi({
                 }),
                 invalidatesTags: ["ProjectCertificates"],
             }),
+            approvePOForCertificate: builder.mutation<void, string>({
+                query: (workEffortId) => ({
+                    url: `/project/${workEffortId}/approve-po`,
+                    method: "POST",
+                }),
+                invalidatesTags: ["ProjectCertificates", "ProjectCertificate"], // Recommended: refresh list + detail
+            }),
             updateProjectCertificate: builder.mutation<ProjectCertificateRecord, Partial<ProjectCertificateRecord>>({
                 query: (certificate) => {
                     if (!certificate.WorkEffortId) {
@@ -167,7 +174,7 @@ export const {
     useGetCertificatesByPartyQuery,
     useProcessWorkEffortCertificateMutation,
     useIssueMaterialsForCertificateMutation,
-    useReviewCertificateMutation,
+    useReviewCertificateMutation, useApprovePOForCertificateMutation,
 } = projectsApi;
 export {projectsApi};
 

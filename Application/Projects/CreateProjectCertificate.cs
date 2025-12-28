@@ -350,6 +350,7 @@ public class CreateProjectCertificate
 
                 // this integrates backend approval directly behind the scenes, reusing the existing UpdateOrApprovePurchaseOrder method 
                 // without needing a frontend call, ensuring the order is immediately approved as per requirements while maintaining transaction integrity.
+                /*
                 if (generatedOrderId != null && poResult != null)
                 {
                     // queried from the database after SaveChanges; this populates all required fields (e.g., OrderId, GrandTotal, FromPartyId, OrderItems, OrderAdjustments) 
@@ -419,6 +420,7 @@ public class CreateProjectCertificate
                         return Result<ProjectCertificateDto>.Failure("Failed to approve purchase order");
                     }
                 }
+                */
 
                 if (ownsTransaction)
                     await transaction.CommitAsync(cancellationToken);

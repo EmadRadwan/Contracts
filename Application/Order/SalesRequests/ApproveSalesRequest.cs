@@ -134,7 +134,8 @@ public class ApproveSalesRequest
                     IsPosted = "Y",
                     Description = $"Apartment Sale - SR {sr.SalesRequestId} - {apartment.ApartmentName}",
                     GlFiscalTypeId = "ACTUAL",
-                    SalesRequestId = sr.SalesRequestId
+                    SalesRequestId = sr.SalesRequestId,
+                    PartyId = sr.FromPartyId
                 };
 
                 var acctgTransId = await _acctgTransService.CreateAcctgTrans(acctgTransParams);
@@ -154,6 +155,8 @@ public class ApproveSalesRequest
                     ReconcileStatusId = "AES_NOT_RECONCILED",
                     Description = $"Apartment sale receivable - {apartment.ApartmentName}",
                     OrganizationPartyId = companyPartyId,
+                    ProductId = sr.ProductId,
+                    PartyId = sr.FromPartyId,
                     CreatedStamp = stamp,
                     LastUpdatedStamp = stamp
                 };
@@ -171,6 +174,8 @@ public class ApproveSalesRequest
                     ReconcileStatusId = "AES_NOT_RECONCILED",
                     Description = $"Apartment sale revenue - {apartment.ApartmentName}",
                     OrganizationPartyId = companyPartyId,
+                    PartyId = sr.FromPartyId,
+                    ProductId = sr.ProductId,
                     CreatedStamp = stamp,
                     LastUpdatedStamp = stamp
                 };

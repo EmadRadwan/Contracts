@@ -153,6 +153,7 @@ import ChangePasswordPage from "../../features/account/ChangePasswordPage";
 import CRMDashboard from "../../features/CRM/dashboard/CRMDashboard";
 import LeadsDashboard from "../../features/CRM/leads/LeadsDashboard";
 import ContactsDashboard from "../../features/CRM/contacts/ContactsDashboard";
+import MultiAcctgTransEntryForm from "../../features/accounting/transaction/form/MultiAcctgTransEntryForm";
 
 const PartyFinancialHistoryWrapper = () => {
     const {partyId} = useParams<{ partyId: string }>();
@@ -285,7 +286,7 @@ export const routes: RouteObject[] = [
                             {path: "accountingTransaction", element: <AccountingTransactionsList/>},
                             {path: "accountingTransactionEntries", element: <AccountingTransactionEntriesList/>},
                             {path: "glQuickCreateAccountingTransaction", element: <QuickCreateAcctgTransForm/>},
-                            {path: "glCreateAccountingTransaction", element: <CreateAcctgTransForm/>},
+                            {path: "glCreateAccountingTransaction", element: <MultiAcctgTransEntryForm/>},
                             {path: "editAcctgTrans/:acctgTransId", element: <EditMultiAcctgTrans/>},
                             {path: "orgChartOfAccount", element: <ChartOfAccountAssignForm/>},
                             {path: "gLAccountDefaults", element: <GlAccountTypeDefaults/>},

@@ -30,6 +30,17 @@ public class ProjectController : BaseApiController
         return HandleResult(result);
     }
     
+    [HttpPost("{workEffortId}/approve-po", Name = "ApprovePOForCertificate")]
+    public async Task<ActionResult> ApprovePurchaseOrder(string workEffortId)
+    {
+        var result = await Mediator.Send(new ApprovePOForCertificate.Command 
+        { 
+            WorkEffortId = workEffortId 
+        });
+
+        return HandleResult(result);
+    }
+    
     [HttpPut("updateProjectCertificate/{workEffortId}", Name = "UpdateProjectCertificate")]
     public async Task<ActionResult<ProjectCertificateDto>> UpdateProjectCertificate(string workEffortId, [FromBody] ProjectCertificateDto certificate)
     {

@@ -1124,7 +1124,8 @@
             "acctgTransType": "نوع القيد المحاسبي",
             "description": "الوصف",
             "glFiscalType": "نوع السنة المالية",
-            "shipmentId": "كود الشحنة",
+            "partyName": "اسم الطرف",
+            "productName": "اسم المنتج",
             "isPosted": "تم الترحيل",
             "postedDate": "تاريخ الترحيل"
           },

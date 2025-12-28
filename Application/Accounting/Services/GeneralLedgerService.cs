@@ -3,6 +3,7 @@ using Application.Accounting.FinAccounts;
 using Application.Accounting.Services.Models;
 using Application.Catalog.Products.Services.Cost;
 using Application.Catalog.Products.Services.Inventory;
+using Application.Catalog.ProductStores;
 using Application.Common;
 using Application.Core;
 using Domain;
@@ -49,6 +50,7 @@ public interface IGeneralLedgerService
     Task CompleteAcctgTransEntries(string acctgTransId);
     Task<GeneralServiceResult<string>> CopyAcctgTransAndEntries(string fromAcctgTransId, bool revert);
     Task<List<string>> PostAcctgTrans(string acctgTransId, bool verifyOnly = false);
+    Task<string> CreateChequeClearanceAccountingTransaction(string paymentId);
 }
 
 public class GeneralLedgerService : IGeneralLedgerService
@@ -62,6 +64,7 @@ public class GeneralLedgerService : IGeneralLedgerService
     private readonly ILogger<GeneralLedgerService> _logger;
     private readonly IUtilityService _utilityService;
     private readonly ICommonService _commonService;
+    private readonly IProductStoreService _productStoreService;
     private readonly Lazy<IPaymentHelperService> _paymentHelperService;
     private readonly Lazy<IAcctgReportsService> _acctgReportsService;
 
@@ -72,7 +75,7 @@ public class GeneralLedgerService : IGeneralLedgerService
         IAcctgTransService acctgTransService,
         IAcctgMiscService acctgMiscService, ILogger<GeneralLedgerService> logger, ICostService costService,
         IInventoryService inventoryService, ICommonService commonService,
-        Lazy<IPaymentHelperService> paymentHelperService, Lazy<IAcctgReportsService> acctgReportsService)
+        Lazy<IPaymentHelperService> paymentHelperService, Lazy<IAcctgReportsService> acctgReportsService, IProductStoreService productStoreService)
     {
         _context = context;
         _utilityService = utilityService;
@@ -85,6 +88,7 @@ public class GeneralLedgerService : IGeneralLedgerService
         _commonService = commonService;
         _paymentHelperService = paymentHelperService;
         _acctgReportsService = acctgReportsService;
+        _productStoreService = productStoreService;
     }
 
     public async Task<string> CreateAcctgTransForShipmentReceipt(string receiptId)
@@ -310,13 +314,17 @@ public class GeneralLedgerService : IGeneralLedgerService
         {
             var workEffort = await _context.WorkEfforts
                 .Where(we => we.RelatedOrderId == shipmentReceipt.OrderId)
-                .Select(we => new { we.WorkEffortId, we.ProjectId })  // REFACTOR: Project both needed IDs in a single query for efficiency
+                .Select(we => new
+                {
+                    we.WorkEffortId, we.ProjectId
+                }) // REFACTOR: Project both needed IDs in a single query for efficiency
                 .FirstOrDefaultAsync();
 
             if (workEffort != null)
             {
                 workEffortId = workEffort.WorkEffortId;
-                projectId = workEffort.ProjectId;  // REFACTOR: Extract ProjectId alongside WorkEffortId to avoid multiple DB queries
+                projectId = workEffort
+                    .ProjectId; // REFACTOR: Extract ProjectId alongside WorkEffortId to avoid multiple DB queries
             }
         }
 
@@ -340,7 +348,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             LastUpdatedStamp = stamp
         };
         acctgTransEntries.Add(creditEntry);
-        
+
         // get project record from workefforts using workEffortId
         var project = await _context.WorkEfforts
             .FirstOrDefaultAsync(we => we.WorkEffortId == projectId);
@@ -472,7 +480,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 SalesRequestId = payment.SalesRequestId,
                 AcctgTransTypeId = "INCOMING_PAYMENT",
                 TransactionDate = payment.EffectiveDate,
-                
+
                 AcctgTransEntries = new List<AcctgTransEntry>
                 {
                     debitEntry,
@@ -2440,19 +2448,21 @@ public class GeneralLedgerService : IGeneralLedgerService
             // If ProductId varies per line, you may want to group by ProductId later
             string productId = certificateItems.First().ProductId;
             string contractorPartyId = invoice.PartyIdFrom;
-            
+
             var (workEffortId, projectGlAccountId) = await GetProjectInfoViaOrderItemBillingAsync(invoiceId);
 
             if (string.IsNullOrEmpty(projectGlAccountId))
             {
-                _logger.LogError("Failed to resolve Project GlAccountId for invoice {InvoiceId} via OrderItemBilling.", invoiceId);
+                _logger.LogError("Failed to resolve Project GlAccountId for invoice {InvoiceId} via OrderItemBilling.",
+                    invoiceId);
                 return null;
             }
 
             // Optional: Log if WorkEffortId is missing (but GlAccountId exists)
             if (string.IsNullOrEmpty(workEffortId))
             {
-                _logger.LogWarning("Project WorkEffortId not found for invoice {InvoiceId}, but GlAccountId was resolved.", invoiceId);
+                _logger.LogWarning(
+                    "Project WorkEffortId not found for invoice {InvoiceId}, but GlAccountId was resolved.", invoiceId);
             }
 
             // 1. Debit: Projects Under Construction – TOTAL deserved value (sum of all cert items)
@@ -2545,7 +2555,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 RoleTypeId = "BILL_FROM_VENDOR",
                 TransactionDate = invoice.InvoiceDate ?? DateTime.UtcNow,
                 AcctgTransEntries = acctgTransEntries,
-                WorkEffortId = workEffortId 
+                WorkEffortId = workEffortId
             };
 
             var acctgTransId = await CreateAcctgTransAndEntries(createParams);
@@ -2565,9 +2575,10 @@ public class GeneralLedgerService : IGeneralLedgerService
             throw;
         }
     }
-    
+
     // REFACTOR: Changed return type to a tuple containing both WorkEffortId (project) and GlAccountId
-    private async Task<(string? WorkEffortId, string? GlAccountId)> GetProjectInfoViaOrderItemBillingAsync(string invoiceId)
+    private async Task<(string? WorkEffortId, string? GlAccountId)> GetProjectInfoViaOrderItemBillingAsync(
+        string invoiceId)
     {
         var query = from oib in _context.OrderItemBillings
             where oib.InvoiceId == invoiceId
@@ -2596,6 +2607,7 @@ public class GeneralLedgerService : IGeneralLedgerService
         var result = results.Single();
         return (result.WorkEffortId, result.GlAccountId);
     }
+
     public async Task<string> CreateAcctgTransAndEntriesForCustomerRefundPaymentApplication(
         string paymentApplicationId)
     {
@@ -4541,10 +4553,10 @@ public class GeneralLedgerService : IGeneralLedgerService
                     w.WorkEffortId == workEffortId && w.WorkEffortTypeId == "PROJECT_CERTIFICATE");
             if (workEffort == null)
                 throw new Exception($"Certificate WorkEffort with ID {workEffortId} not found.");
-            
+
             // get projectId from workEffort
             var projectId = workEffort.ProjectId;
-            
+
             // get project work effort
             var projectWorkEffort = await _context.WorkEfforts
                 .FirstOrDefaultAsync(w =>
@@ -4989,6 +5001,91 @@ public class GeneralLedgerService : IGeneralLedgerService
                 fromAcctgTransId);
             return GeneralServiceResult<string>.Error(
                 "An unexpected error occurred while copying the accounting transaction.");
+        }
+    }
+
+    public async Task<string> CreateChequeClearanceAccountingTransaction(string paymentId)
+    {
+        try
+        {
+            var payment = await _context.Payments
+                .Include(p => p.PaymentMethod)
+                .FirstOrDefaultAsync(p => p.PaymentId == paymentId);
+
+            if (payment == null)
+                throw new Exception("Payment not found");
+            
+
+            var companyPartyId = await _productStoreService.GetProductStorePayToPartId();
+            var stamp = DateTime.UtcNow;
+
+            // Determine bank GL account from PaymentMethod (FinAccount → GlAccount)
+            // Or fallback to a default bank account for cheques
+            string bankGlAccountId = payment.PaymentMethod.GlAccountId;
+
+            var description =
+                $"Cheque clearance - Cheque #{payment.ChequeNumber} - Payment {payment.PaymentId} - SR {payment.SalesRequestId}";
+
+            var acctgTransParams = new CreateAcctgTransParams
+            {
+                AcctgTransTypeId = "INCOMING_PAYMENT",
+                TransactionDate = DateTime.UtcNow.Date,
+                IsPosted = "Y",
+                Description = description,
+                GlFiscalTypeId = "ACTUAL",
+                PaymentId = payment.PaymentId,
+                SalesRequestId = payment.SalesRequestId,
+                PartyId = payment.PartyIdFrom
+            };
+
+            var acctgTransId = await _acctgTransService.CreateAcctgTrans(acctgTransParams);
+
+            var seq = 0;
+
+            // Debit: Bank Account
+            var debitEntry = new AcctgTransEntry
+            {
+                AcctgTransId = acctgTransId,
+                AcctgTransEntrySeqId = (++seq).ToString().PadLeft(3, '0'),
+                GlAccountId = bankGlAccountId,
+                DebitCreditFlag = "D",
+                AcctgTransEntryTypeId = "_NA_",
+                Amount = payment.Amount,
+                ReconcileStatusId = "AES_NOT_RECONCILED",
+                Description = $"Bank deposit - Cleared cheque #{payment.ChequeNumber}",
+                OrganizationPartyId = companyPartyId,
+                PartyId = payment.PartyIdFrom,
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            };
+            await _acctgTransService.CreateAcctgTransEntry(debitEntry);
+
+            // Credit: Cheques Under Collection
+            var creditEntry = new AcctgTransEntry
+            {
+                AcctgTransId = acctgTransId,
+                AcctgTransEntrySeqId = (++seq).ToString().PadLeft(3, '0'),
+                GlAccountId = "124410",
+                DebitCreditFlag = "C",
+                AcctgTransEntryTypeId = "_NA_",
+                Amount = payment.Amount,
+                ReconcileStatusId = "AES_NOT_RECONCILED",
+                Description = $"Clearing cheques under collection - Cheque #{payment.ChequeNumber}",
+                OrganizationPartyId = companyPartyId,
+                PartyId = payment.PartyIdFrom,
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            };
+            await _acctgTransService.CreateAcctgTransEntry(creditEntry);
+
+            _logger.LogInformation("Cheque clearance transaction {AcctgTransId} created for payment {PaymentId}",
+                acctgTransId, paymentId);
+            return acctgTransId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create cheque clearance transaction for payment {PaymentId}", paymentId);
+            throw;
         }
     }
 }

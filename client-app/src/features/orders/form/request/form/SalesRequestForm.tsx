@@ -1,41 +1,30 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import Button from "@mui/material/Button";
-import Grid from "@mui/material/Grid";
-import {Field, Form, FormElement, FormRenderProps, KeyValue} from "@progress/kendo-react-form";
+import {Form, FormElement, FormRenderProps, KeyValue} from "@progress/kendo-react-form";
 
-import {Box, Paper, Typography} from "@mui/material";
+import {Paper} from "@mui/material";
 import {toast} from "react-toastify";
 import {SalesRequest} from "../../../../../app/models/order/SalesRequest";
-import {requiredValidator} from "../../../../../app/common/form/Validators";
 import {
     useAddSalesRequestMutation,
     useGetSalesRequestInstallmentsQuery,
     useUpdateSalesRequestMutation
 } from "../../../../../app/store/apis/salesRequestApi";
-import FormDatePicker from "../../../../../app/common/form/FormDatePicker";
-import LoadingComponent from "../../../../../app/layout/LoadingComponent";
-import FormNumericTextBox from "../../../../../app/common/form/FormNumericTextBox";
-import FormTextArea from "../../../../../app/common/form/FormTextArea";
 import {useTranslationHelper} from "../../../../../app/hooks/useTranslationHelper";
 import ModalContainer from "../../../../../app/common/modals/ModalContainer";
 import CreateCustomerModalForm from "../../../../parties/form/CreateCustomerModalForm";
 import {useAppDispatch, useAppSelector} from "../../../../../app/store/configureStore";
-import {FormSimpleComboBoxVirtualApartment} from "../../../../../app/common/form/FormSimpleComboBoxVirtualApartment";
 import SalesRequestMenu from "../menu/SalesRequestMenu";
-import {toNumber} from "lodash";
 import PaymentPlanModal from "../dashboard/PaymentPlanModal";
-import {Ribbon, RibbonContainer} from "react-ribbons";
-import {FormComboBoxVirtualPartyEmployee} from "../../../../../app/common/form/FormComboBoxVirtualPartyEmployee";
-import {FormComboBoxVirtualCustomer} from "../../../../../app/common/form/FormComboBoxVirtualCustomer";
 import DefaultPercentagesModal from "../dashboard/DefaultPercentagesModal";
-import {SalesRequestActionsMenu} from "../menu/SalesRequestActionsMenu";
-import ApartmentPriceCalculatorModal from "../dashboard/ApartmentPriceCalculatorModal";
+import {PricingSection} from "./PricingSection";
+import {normalizeNumeric} from "../../../../../app/util/utils";
+import {ApartmentHeaderSection} from "./ApartmentHeaderSection";
+import {PaymentFieldsSection} from "./PaymentFieldsSection";
+import {FormActionsSection} from "./FormActionsSection";
+import {SalesRequestHeader} from "./SalesRequestHeader";
+import {useSalesRequestCalculations} from "../hook/useSalesRequestCalculations";
 
 const APARTMENT_AVAILABLE = "APARTMENT_AVAILABLE";
-
-
-const GROUND_FLOOR_ARABIC = "الطابق الأرضي";
-
 
 interface Props {
     salesRequest?: SalesRequest;
@@ -59,7 +48,6 @@ function SalesRequestForm({
     const {getTranslatedLabel} = useTranslationHelper();
     const [showPaymentPlan, setShowPaymentPlan] = useState(false);
     const [showCalculatorModal, setShowCalculatorModal] = useState(false);
-    const [currentBasePrice, setCurrentBasePrice] = useState<number | null>(null);
     const [customInstallments, setCustomInstallments] = useState<Array<{ dueDate: string; amount: number }>>([]);
 
     const dispatch = useAppDispatch();
@@ -82,37 +70,22 @@ function SalesRequestForm({
         skip: !isEditMode || !salesRequestId,
     });
 
+    const {
+        autoSetDerivedFields,
+        handleProductChange,
+        handlePricePerM2Change,
+        handleDiscountChange,
+        handleAdvanceChange,
+    } = useSalesRequestCalculations({
+        defaultAdvancePercent,
+        defaultMaintenancePercent,
+    });
+
     // -----------------------------------------------------------------
     // Internal ref for party input (no longer passed from parent)
     // -----------------------------------------------------------------
     const partyInputRef = useRef<HTMLInputElement>(null);
-    const canViewPaymentPlan = true;
-
-    const normalizeNumeric = (value: any): number | null => {
-        if (value === null || value === undefined || value === "") return null;
-        const num = Number(value);
-        return isNaN(num) ? null : num;
-    };
-
-    const autoSetDerivedFields = useCallback((
-        formRenderProps: FormRenderProps,
-        finalTotal: number | null
-    ) => {
-        if (finalTotal === null) {
-            formRenderProps.onChange("advancePayment", {value: null});
-            formRenderProps.onChange("maintenanceDeposit", {value: null});
-            return;
-        }
-
-        // Always apply defaults — overrides user changes
-        formRenderProps.onChange("advancePayment", {
-            value: finalTotal * defaultAdvancePercent
-        });
-        formRenderProps.onChange("maintenanceDeposit", {
-            value: finalTotal * defaultMaintenancePercent
-        });
-    }, [defaultAdvancePercent, defaultMaintenancePercent]);
-
+   
     useEffect(() => {
         if (savedInstallments.length > 0) {
             const mapped = savedInstallments.map(inst => ({
@@ -127,7 +100,7 @@ function SalesRequestForm({
         }
         // Create mode → already empty from initial state
     }, [savedInstallments, isEditMode]);
-    
+
     useEffect(() => {
         if (!formRef.current) return;
 
@@ -138,7 +111,7 @@ function SalesRequestForm({
         // This runs only when user changes defaults via modal
         autoSetDerivedFields(formRef.current, finalTotal);
     }, [defaultAdvancePercent, defaultMaintenancePercent, autoSetDerivedFields]);
-    
+
 
     const isoToDate = (iso: string | null | undefined): Date | null => {
         if (!iso) return null;
@@ -254,7 +227,7 @@ function SalesRequestForm({
             comments: sr.comments ?? null,
             statusId: sr.statusId ?? null,
             statusDescription: sr.statusDescription ?? null,
-            };
+        };
     }, [editMode, salesRequest]);
 
 
@@ -292,7 +265,6 @@ function SalesRequestForm({
         toast.success(getTranslatedLabel("salesRequest.form.paymentPlanApplied", "Payment plan applied successfully"));
     }, [getTranslatedLabel]);
 
-   
 
     // -----------------------------------------------------------------
 // Submit
@@ -366,7 +338,7 @@ function SalesRequestForm({
                 setButtonFlag(false);
                 return; // Block submission
             }
-            
+
             // 1. Normalise numeric fields ("" → null)
             const normalize = (obj: any): any => {
                 const copy = {...obj};
@@ -403,7 +375,7 @@ function SalesRequestForm({
                     }),
                 },
             };
-            
+
             if (editMode === 2) {
                 await updateSR(payload).unwrap();
                 toast.success(
@@ -465,138 +437,6 @@ function SalesRequestForm({
         return apartmentTotal;
     }, []);
 
-    const calculateFinalTotal = useCallback((
-        baseTotal: number | null,
-        discount: number | null
-    ): number | null => {
-        if (baseTotal == null) return null;
-        return discount != null ? Math.max(0, baseTotal - discount) : baseTotal;
-    }, []);
-
-
-    const handleProductChange = useCallback((
-        formRenderProps: FormRenderProps,
-        e: any
-    ) => {
-        const apartment = e.value as any;
-        setSelectedApartment(apartment);
-
-
-        // Set prices
-        formRenderProps.onChange("apartmentPricePerM2", {
-            value: apartment?.apartmentPricePerM2 ?? null,
-        });
-
-        const isGroundFloor = apartment?.floorNumber === GROUND_FLOOR_ARABIC;
-        formRenderProps.onChange("gardenPricePerM2", {
-            value: isGroundFloor ? (apartment?.gardenPricePerM2 ?? null) : null,
-        });
-
-        formRenderProps.onChange("discount", {value: null});
-
-        // This will now work perfectly for both cases
-        const baseTotal = calculateBaseTotal(
-            toNumber(apartment?.apartmentSpaceM2),
-            toNumber(apartment?.apartmentPricePerM2),
-            isGroundFloor ? toNumber(apartment?.gardenSpaceM2) : null,
-            isGroundFloor ? toNumber(apartment?.gardenPricePerM2) : null
-        );
-
-        const finalTotal = calculateFinalTotal(baseTotal, null);
-        formRenderProps.onChange("totalPrice", {value: finalTotal});
-        autoSetDerivedFields(formRenderProps, finalTotal);
-    }, [calculateBaseTotal, calculateFinalTotal, autoSetDerivedFields]);
-
-    const handlePricePerM2Change = useCallback((
-        formRenderProps: FormRenderProps,
-        fieldName: "apartmentPricePerM2" | "gardenPricePerM2",
-        value: number | null
-    ) => {
-        formRenderProps.onChange(fieldName, {value});
-
-        const aptObj = formRenderProps.valueGetter("productId");
-        if (!aptObj) return;
-
-        const aptM2 = normalizeNumeric(aptObj.apartmentSpaceM2);
-        const aptPrice = fieldName === "apartmentPricePerM2"
-            ? value
-            : normalizeNumeric(formRenderProps.valueGetter("apartmentPricePerM2"));
-
-        const isGroundFloor = aptObj.floorNumber === GROUND_FLOOR_ARABIC;
-        const gardenM2 = isGroundFloor ? normalizeNumeric(aptObj.gardenSpaceM2) : 0;
-        const gardenPrice = fieldName === "gardenPricePerM2" && isGroundFloor
-            ? value
-            : normalizeNumeric(formRenderProps.valueGetter("gardenPricePerM2"));
-
-        const discount = normalizeNumeric(formRenderProps.valueGetter("discount")) ?? 0;
-
-        const baseTotal = calculateBaseTotal(aptM2, aptPrice, gardenM2, gardenPrice);
-        const finalTotal = calculateFinalTotal(baseTotal, discount);
-
-        formRenderProps.onChange("totalPrice", {value: finalTotal});
-        autoSetDerivedFields(formRenderProps, finalTotal);
-    }, [calculateBaseTotal, calculateFinalTotal, autoSetDerivedFields]);
-
-    // REFACTOR: Use current productId from form instead of selectedApartment
-    const handleDiscountChange = useCallback((
-        formRenderProps: FormRenderProps,
-        value: number | null
-    ) => {
-        formRenderProps.onChange("discount", {value});
-
-        const aptObj = formRenderProps.valueGetter("productId");
-        if (!aptObj) return;
-
-        const isGroundFloor = aptObj.floorNumber === GROUND_FLOOR_ARABIC;
-
-        const baseTotal = calculateBaseTotal(
-            normalizeNumeric(aptObj.apartmentSpaceM2),
-            normalizeNumeric(formRenderProps.valueGetter("apartmentPricePerM2")),
-            isGroundFloor ? normalizeNumeric(aptObj.gardenSpaceM2) : 0,
-            isGroundFloor ? normalizeNumeric(formRenderProps.valueGetter("gardenPricePerM2")) : null
-        );
-
-        const finalTotal = calculateFinalTotal(baseTotal, value);
-        formRenderProps.onChange("totalPrice", {value: finalTotal});
-        autoSetDerivedFields(formRenderProps, finalTotal);
-    }, [calculateBaseTotal, calculateFinalTotal, autoSetDerivedFields]);
-
-    const handleAdvanceChange = useCallback((
-        formRenderProps: FormRenderProps,
-        value: number | null
-    ) => {
-        // Update the advance payment field directly
-        formRenderProps.onChange("advancePayment", {value});
-
-        // -----------------------------------------------------------------
-        // Special case: If user sets advance higher than current total,
-        // automatically increase totalPrice to match the advance (common UX in sales forms)
-        // -----------------------------------------------------------------
-        if (value == null) return;
-
-        const selectedApartmentObj = formRenderProps.valueGetter("productId");
-        if (!selectedApartmentObj) return;
-
-        const isGroundFloor = selectedApartmentObj.floorNumber === GROUND_FLOOR_ARABIC;
-
-        const baseTotal = calculateBaseTotal(
-            normalizeNumeric(selectedApartmentObj.apartmentSpaceM2),
-            normalizeNumeric(formRenderProps.valueGetter("apartmentPricePerM2")),
-            isGroundFloor ? normalizeNumeric(selectedApartmentObj.gardenSpaceM2) : null,
-            isGroundFloor ? normalizeNumeric(formRenderProps.valueGetter("gardenPricePerM2")) : null
-        );
-
-        if (baseTotal == null) return;
-
-        const discount = toNumber(formRenderProps.valueGetter("discount")) || 0;
-        const currentTotal = Math.max(0, baseTotal - discount);
-
-        if (value > currentTotal) {
-            formRenderProps.onChange("totalPrice", {value});
-        }
-    }, [
-        calculateBaseTotal,
-    ]);
 
     const salesRequestValidator = (values: any): KeyValue<string> | undefined => {
         const t = getTranslatedLabel;
@@ -737,46 +577,6 @@ function SalesRequestForm({
         // All good
         return;
     };
-    
-    let apartmentForModal: { productName: string } | undefined = undefined;
-
-    // This will be set inside the Form render callback
-    if (formRef.current) {
-        const productIdObj = formRef.current.valueGetter("productId");
-        if (productIdObj && typeof productIdObj === "object") {
-            apartmentForModal = {
-                productName:
-                    productIdObj.apartmentName ??
-                    productIdObj.productName ??
-                    "Unknown Unit",
-            };
-        }
-    }
-
-    const openCalculator = useCallback((formRenderProps: FormRenderProps) => {
-        const total = formRenderProps.valueGetter("totalPrice");
-        if (total && total > 0) {
-            setCurrentBasePrice(total);
-            setShowCalculatorModal(true);
-        }
-    }, []);
-
-    const applyDiscountFromCalculator = useCallback((
-        formRenderProps: FormRenderProps,
-        totalDiscountAmount: number,
-        finalPrice: number
-    ) => {
-        // Set the calculated discount amount
-        formRenderProps.onChange("discount", { value: totalDiscountAmount });
-
-        // Update totalPrice to the final (after-discount) price
-        formRenderProps.onChange("totalPrice", { value: finalPrice });
-
-        // Recalculate derived fields (advance & maintenance) based on new total
-        autoSetDerivedFields(formRenderProps, finalPrice);
-
-        setShowCalculatorModal(false);
-    }, [autoSetDerivedFields]);
 
 
     return (
@@ -833,29 +633,13 @@ function SalesRequestForm({
                             saleDate: valueGetter("saleDate"),
                             // free text
                             comments: valueGetter("comments"),
-                           };
+                        };
 
                         const canOpenPaymentPlan =
                             !!valueGetter("totalPrice") &&
                             valueGetter("advancePayment") < valueGetter("totalPrice") &&
                             valueGetter("totalPrice") > 0;
 
-                        const viewPaymentPlanButton = canOpenPaymentPlan && (
-                            <Grid item>
-                                <Button
-                                    variant="outlined"
-                                    color="primary"
-                                    onClick={() => setShowPaymentPlan(true)}
-                                >
-                                    {customInstallments.length > 0
-                                        ? getTranslatedLabel("salesRequest.form.editPaymentPlan", "Edit Payment Plan")
-                                        : getTranslatedLabel("salesRequest.form.createPaymentPlan", "Create Payment Plan")
-                                    }
-                                </Button>
-                            </Grid>
-                        );
-
-                        
 
                         // -----------------------------------------------------------------
                         // 2. Apartment for the legacy prop
@@ -868,376 +652,67 @@ function SalesRequestForm({
                         const statusDescription = formRenderProps.valueGetter("statusDescription") as string | undefined;
 
 
-                        const ribbonLabel = statusDescription ?? {
-                            SALES_REQUEST_CREATED: "Created",
-                            SALES_REQUEST_APPROVED: "Approved",
-                        }[statusId ?? ""] ?? "Unknown";
-
-                        const ribbonBg = {
-                            SALES_REQUEST_CREATED: "#1976d2",
-                            SALES_REQUEST_APPROVED: "#4caf50",
-                        }[statusId ?? ""] ?? "#757575";
-
-
-                        
-                        
                         return (
                             <>
-                                <Grid container spacing={2} alignItems="center" position="relative">
-                                    <Grid item xs={11}>
-                                        <Box display="flex" justifyContent="space-between" sx={{p: 2}}>
-                                            <Typography
-                                                variant="h4"
-                                                color={salesRequest?.salesRequestId ? "text.primary" : "success.main"}
-                                                sx={{fontWeight: 500}}
-                                            >
-                                                {salesRequest?.salesRequestId
-                                                    ? (
-                                                        <>
-                                                            <Box component="span" sx={{opacity: 0.7, mr: 1}}>
-                                                                {getTranslatedLabel("salesRequest.form.new2", "Sales Request")}:
-                                                            </Box>
-                                                            <Box component="span" fontWeight="bold">
-                                                                {salesRequest.salesRequestId}
-                                                            </Box>
-                                                        </>
-                                                    )
-                                                    : getTranslatedLabel("salesRequest.form.new", "New Sales Request")
-                                                }
-                                            </Typography>
-
-                                            <Typography variant="caption" color="text.secondary">
-                                                Default Advance: {(defaultAdvancePercent * 100).toFixed(0)}% |
-                                                Maintenance Deposit: {(defaultMaintenancePercent * 100).toFixed(0)}%
-                                                {" "}(<a href="#" onClick={(e) => {
-                                                e.preventDefault();
-                                                setShowDefaultsModal(true);
-                                            }}>
-                                                change
-                                            </a>)
-                                            </Typography>
-
-                                            {(editMode === 2 || editMode === 3) && (
-                                                <SalesRequestActionsMenu
-                                                    salesRequestId={salesRequest?.salesRequestId}
-                                                    currentStatusId={salesRequest?.statusId}
-                                                    disabled={isCreating || isUpdating || buttonFlag}
-                                                    onSalesRequestUpdated={onSalesRequestUpdated}
-                                                    onSalesRequestDeleted={cancelEdit}
-                                                />
-                                            )}
-
-                                        </Box>
-                                    </Grid>
-
-                                    {(editMode === 2 || editMode === 3) && (
-                                        <Grid item xs={1}>
-                                            <RibbonContainer>
-                                                <Ribbon
-                                                    side={language === "ar" ? "left" : "right"}
-                                                    type="corner"
-                                                    size="large"
-                                                    backgroundColor={ribbonBg}
-                                                    color="#ffffff"
-                                                    fontFamily="sans-serif"
-                                                >
-                                                    {ribbonLabel}
-                                                </Ribbon>
-                                            </RibbonContainer>
-                                        </Grid>
-                                    )}
-                                </Grid>
+                               
+                                <SalesRequestHeader
+                                    salesRequest={salesRequest}
+                                    editMode={editMode}
+                                    defaultAdvancePercent={defaultAdvancePercent}
+                                    defaultMaintenancePercent={defaultMaintenancePercent}
+                                    onOpenDefaultsModal={() => setShowDefaultsModal(true)}
+                                    language={language}
+                                    getTranslatedLabel={getTranslatedLabel}
+                                    onSalesRequestUpdated={onSalesRequestUpdated}
+                                    onSalesRequestDeleted={cancelEdit}
+                                    disabledActions={isCreating || isUpdating || buttonFlag}
+                                />
                                 <FormElement>
                                     <fieldset className="k-form-fieldset">
-                                        <Grid container spacing={1} alignItems="flex-end"
-                                              className={editMode > 2 ? "grid-disabled" : "grid-normal"}>
-                                            <Grid item xs={4}>
-                                                <Field
-                                                    id="productId"
-                                                    name="productId"
-                                                    label={getTranslatedLabel("projects.certificate.items.list.product", "Product *")}
-                                                    component={FormSimpleComboBoxVirtualApartment}
-                                                    autoComplete="off"
-                                                    validator={requiredValidator}
-                                                    onChange={(e) => handleProductChange(formRenderProps, e)}
-                                                />
-                                            </Grid>
-                                            <Grid item xs={3}>
-                                                <Field
-                                                    id="saleDate"
-                                                    name="saleDate"
-                                                    label={getTranslatedLabel("salesRequest.form.saleDate", "Sale Date *")}
-                                                    component={FormDatePicker}
-                                                    validator={requiredValidator}
-                                                />
-                                            </Grid>
-                                            <Grid item xs={2.5}>
-                                                <Field
-                                                    id="fromPartyId"
-                                                    name="fromPartyId"
-                                                    label={getTranslatedLabel("salesRequest.form.from", "From *")}
-                                                    component={FormComboBoxVirtualCustomer}
-                                                    autoComplete="off"
-                                                    validator={requiredValidator}
-                                                    inputRef={partyInputRef}
-                                                />
-                                            </Grid>
-                                            <Grid item xs={0.5}>
-                                                <Button
-                                                    size="small"
-                                                    color="secondary"
-                                                    onClick={() => setShowNewCustomer(true)}
-                                                    variant="outlined"
-                                                    sx={{height: "100%", minWidth: 32, p: 0}}
-                                                >
-                                                    +
-                                                </Button>
-                                            </Grid>
-                                            <Grid item xs={2}>
-                                                <Field
-                                                    id="employeePartyId"
-                                                    name="employeePartyId"
-                                                    component={FormComboBoxVirtualPartyEmployee}
-                                                    label={getTranslatedLabel("salesRequest.form.employee", "mployee")}
-                                                    valueField="fromPartyId"
-                                                    textField="fromPartyName"
-                                                    validator={requiredValidator}
-                                                />
-                                            </Grid>
-                                        </Grid>
 
-                                        <Grid container spacing={1} mt={0.5}>
-                                            {/* Helper to safely read a nested field */}
-                                            {(() => {
-                                                const apt = formRenderProps.valueGetter("productId"); // full apartment object or null
-                                                return (
-                                                    <>
-                                                        <Grid item xs={3}>
-                                                            <Typography variant="caption" color="textSecondary">
-                                                                {getTranslatedLabel("salesRequest.form.project", "Project")}
-                                                            </Typography>
-                                                            <Typography>{apt?.projectName ?? "-"}</Typography>
-                                                        </Grid>
+                                        <ApartmentHeaderSection
+                                            formRenderProps={formRenderProps}
+                                            selectedApartment={selectedApartment}
+                                            onProductChange={(form, e) => handleProductChange(form, e, setSelectedApartment)}
+                                            showNewCustomer={showNewCustomer}
+                                            setShowNewCustomer={setShowNewCustomer}
+                                            getTranslatedLabel={getTranslatedLabel}
+                                            partyInputRef={partyInputRef}
+                                            editMode={editMode}
+                                        />
+                                        <PricingSection
+                                            formRenderProps={formRenderProps}
+                                            selectedApartment={selectedApartment}
+                                            onPricePerM2Change={handlePricePerM2Change}
+                                            onDiscountChange={handleDiscountChange}
+                                            autoSetDerivedFields={autoSetDerivedFields}
+                                            showCalculatorModal={showCalculatorModal}
+                                            setShowCalculatorModal={setShowCalculatorModal}
+                                            getTranslatedLabel={getTranslatedLabel}
+                                        />
+                                        <PaymentFieldsSection
+                                            formRenderProps={formRenderProps}
+                                            onAdvanceChange={handleAdvanceChange}
+                                            getTranslatedLabel={getTranslatedLabel}
+                                        />
 
-                                                        <Grid item xs={2}>
-                                                            <Typography variant="caption" color="textSecondary">
-                                                                {getTranslatedLabel("salesRequest.form.apartmentM2", "Apt m²")}
-                                                            </Typography>
-                                                            <Typography>{apt?.apartmentSpaceM2 ?? "-"}</Typography>
-                                                        </Grid>
+                                        <FormActionsSection
+                                            formRenderProps={formRenderProps}
+                                            customInstallmentsLength={customInstallments.length}
+                                            canOpenPaymentPlan={canOpenPaymentPlan}
+                                            onOpenPaymentPlan={() => setShowPaymentPlan(true)}
+                                            buttonFlag={buttonFlag}
+                                            isCreating={isCreating}
+                                            isUpdating={isUpdating}
+                                            editMode={editMode}
+                                            onCancel={cancelEdit}
+                                            getTranslatedLabel={getTranslatedLabel}
+                                        />
 
-                                                        <Grid item xs={2}>
-                                                            <Typography variant="caption" color="textSecondary">
-                                                                {getTranslatedLabel("salesRequest.form.gardenM2", "Garden m²")}
-                                                            </Typography>
-                                                            <Typography>
-                                                                {selectedApartment?.floorNumber === GROUND_FLOOR_ARABIC
-                                                                    ? (selectedApartment?.gardenSpaceM2 ?? "-")
-                                                                    : "-"}
-                                                            </Typography>
-                                                        </Grid>
-
-                                                        <Grid item xs={3}>
-                                                            <Typography variant="caption" color="textSecondary">
-                                                                {getTranslatedLabel("salesRequest.form.status", "Status")}
-                                                            </Typography>
-                                                            <Typography>{apt?.apartmentStatusDescription ?? "-"}</Typography>
-                                                        </Grid>
-
-                                                        <Grid item xs={2}/> {/* spacer */}
-                                                    </>
-                                                );
-                                            })()}
-                                        </Grid>
-
-
-                                        <Grid container spacing={1} alignItems={"flex-end"}>
-                                            <Grid item xs={3}>
-                                                <Field
-                                                    id="apartmentPricePerM2"
-                                                    name="apartmentPricePerM2"
-                                                    label={getTranslatedLabel("salesRequest.form.apartmentPriceM2", "Apt/m² *")}
-                                                    format="n2"
-                                                    min={0}
-                                                    component={FormNumericTextBox}
-                                                    validator={requiredValidator}
-                                                    onChange={(e: any) => {
-                                                        handlePricePerM2Change(formRenderProps, "apartmentPricePerM2", e.value);
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid item xs={3}>
-                                                <Field
-                                                    id="gardenPricePerM2"
-                                                    name="gardenPricePerM2"
-                                                    label={getTranslatedLabel("salesRequest.form.gardenPriceM2", "Garden/m²")}
-                                                    format="n2"
-                                                    min={0}
-                                                    component={FormNumericTextBox}
-                                                    disabled={!selectedApartment || selectedApartment?.floorNumber !== GROUND_FLOOR_ARABIC}
-                                                    onChange={(e: any) => {
-                                                        handlePricePerM2Change(formRenderProps, "gardenPricePerM2", e.value);
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid item xs={2}>
-                                                <Field
-                                                    id="discount"
-                                                    name="discount"
-                                                    label={getTranslatedLabel("salesRequest.form.discount", "Discount")}
-                                                    format="n2"
-                                                    min={0}
-                                                    component={FormNumericTextBox}
-                                                    onChange={(e: any) => {
-                                                        handleDiscountChange(formRenderProps, e.value);
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid item xs={1}>
-                                                <Button
-                                                    size="small"
-                                                    variant="outlined"
-                                                    color="secondary"
-                                                    onClick={() => openCalculator(formRenderProps)}
-                                                    disabled={!formRenderProps.valueGetter("totalPrice")}
-                                                >
-                                                    +
-                                                </Button>
-                                            </Grid>
-                                            <Grid item xs={1}>
-                                            </Grid>
-                                            <Grid item xs={2}>
-                                                <Field
-                                                    id="totalPrice"
-                                                    name="totalPrice"
-                                                    label={getTranslatedLabel("salesRequest.form.totalPrice", "Total")}
-                                                    format="n2"
-                                                    min={0}
-                                                    validator={requiredValidator}
-                                                    component={FormNumericTextBox}
-                                                    disabled={true}
-                                                />
-                                            </Grid>
-                                        </Grid>
-
-                                        <Grid container spacing={1}>
-                                            <Grid item xs={3}>
-                                                <Field
-                                                    id="advancePayment"
-                                                    name="advancePayment"
-                                                    label={getTranslatedLabel("salesRequest.form.advance", "Advance")}
-                                                    format="n2"
-                                                    min={0}
-                                                    validator={requiredValidator}
-                                                    component={FormNumericTextBox}
-                                                    onChange={(e: any) => {
-                                                        handleAdvanceChange(formRenderProps, e.value);
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid item xs={3}>
-                                                <Field
-                                                    id="numberOfInstallments"
-                                                    name="numberOfInstallments"
-                                                    label={getTranslatedLabel("salesRequest.form.installments", "Installments")}
-                                                    min={0}
-                                                    component={FormNumericTextBox}
-                                                />
-                                            </Grid>
-                                            <Grid item xs={2}>
-                                                <Field
-                                                    id="dateOfFirstInstallment"
-                                                    name="dateOfFirstInstallment"
-                                                    label={getTranslatedLabel("salesRequest.form.firstInstallmentDate", "First")}
-                                                    component={FormDatePicker}
-                                                />
-                                            </Grid>
-                                            <Grid item xs={2}>
-                                                <Field
-                                                    id="monthsBetweenInstallments"
-                                                    name="monthsBetweenInstallments"
-                                                    label={getTranslatedLabel("salesRequest.form.duration", "Months")}
-                                                    min={0}
-                                                    component={FormNumericTextBox}
-                                                />
-                                            </Grid>
-                                            <Grid item xs={2}>
-                                                <Field
-                                                    id="maintenanceDeposit"
-                                                    name="maintenanceDeposit"
-                                                    label={getTranslatedLabel("salesRequest.form.maintenanceDeposit", "Maintenance Deposit")}
-                                                    format="n2"
-                                                    min={0}
-                                                    component={FormNumericTextBox}
-                                                    onChange={(e: any) => {
-                                                        formRenderProps.onChange("maintenanceDeposit", {value: e.value});
-                                                    }}
-                                                />
-                                            </Grid>
-                                        </Grid>
-
-                                        <Grid item xs={12} mt={0.5}>
-                                            <Field
-                                                id="comments"
-                                                name="comments"
-                                                label={getTranslatedLabel("salesRequest.form.comments", "Comments")}
-                                                autoComplete="off"
-                                                rows={2}
-                                                component={FormTextArea}
-                                            />
-                                        </Grid>
-
-                                        <div className="k-form-buttons" style={{marginTop: 8}}>
-                                            <Grid container spacing={1}>
-                                                {visited && errors?.VALIDATION_SUMMARY && (
-                                                    <Grid item xs={12}>
-                                                        <div className="k-messagebox k-messagebox-error">
-                                                            {errors.VALIDATION_SUMMARY}
-                                                        </div>
-                                                    </Grid>
-                                                )}
-                                                <Grid item>
-                                                    <Button
-                                                        size="small"
-                                                        variant="contained"
-                                                        type="submit"
-                                                        color="success"
-                                                        disabled={
-                                                            buttonFlag ||
-                                                            isCreating ||
-                                                            isUpdating ||
-                                                            editMode > 2 ||
-                                                            // REFACTOR: Disable submit until custom plan is applied
-                                                            // Purpose: Enforces new business rule – custom plan mandatory for any priced sales request.
-                                                            // Improves UX with immediate visual feedback.
-                                                            (valueGetter("totalPrice") > 0 && customInstallments.length === 0)
-                                                        }
-                                                    >
-                                                        {editMode === 1 ? getTranslatedLabel("general.create", "Create") : getTranslatedLabel("general.update", "Update")}
-                                                    </Button>
-                                                </Grid>
-                                                <Grid item>
-                                                    <Button
-                                                        size="small"
-                                                        onClick={cancelEdit}
-                                                        color="error"
-                                                        variant="contained"
-                                                    >
-                                                        {getTranslatedLabel("general.cancel", "Cancel")}
-                                                    </Button>
-                                                </Grid>
-                                                {canViewPaymentPlan && viewPaymentPlanButton}
-                                            </Grid>
-                                        </div>
-
-                                        {(buttonFlag || isCreating || isUpdating) && (
-                                            <LoadingComponent
-                                                message={getTranslatedLabel("salesRequest.form.processing", "Processing...")}
-                                            />
-                                        )}
 
                                         {showPaymentPlan && (
-                                            <ModalContainer show={showPaymentPlan} onClose={() => setShowPaymentPlan(false)} width={950}>
+                                            <ModalContainer show={showPaymentPlan}
+                                                            onClose={() => setShowPaymentPlan(false)} width={950}>
                                                 <PaymentPlanModal
                                                     onClose={() => setShowPaymentPlan(false)}
                                                     salesRequest={currentFormValues}
@@ -1263,21 +738,7 @@ function SalesRequestForm({
                                         )}
                                     </fieldset>
                                 </FormElement>
-                                {showCalculatorModal && currentBasePrice && (
-                                    <ModalContainer
-                                        show={showCalculatorModal}
-                                        onClose={() => setShowCalculatorModal(false)}
-                                        width={700}
-                                    >
-                                        <ApartmentPriceCalculatorModal
-                                            basePrice={currentBasePrice}
-                                            onClose={() => setShowCalculatorModal(false)}
-                                            onApply={(totalDiscountAmount: number, finalPrice: number) => {
-                                                applyDiscountFromCalculator(formRenderProps, totalDiscountAmount, finalPrice);
-                                            }}
-                                        />
-                                    </ModalContainer>
-                                )}
+
                             </>
                         );
                     }}

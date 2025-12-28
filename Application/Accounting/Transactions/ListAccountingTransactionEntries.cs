@@ -63,6 +63,8 @@ public class ListAccountingTransactionEntries
                 from party in partyJoin.DefaultIfEmpty()
                 join we in _context.WorkEfforts on trans.WorkEffortId equals we.WorkEffortId into workEffortJoin
                 from workEffort in workEffortJoin.DefaultIfEmpty()
+                join prod in _context.Products on te.ProductId equals prod.ProductId into productJoin
+                from product in productJoin.DefaultIfEmpty()
 
                 where request.CompanyId == null ||
                       (glAccountOrg != null && glAccountOrg.OrganizationPartyId == request.CompanyId)
@@ -77,6 +79,7 @@ public class ListAccountingTransactionEntries
                     PartyId = te.PartyId,
                     PartyName = party != null ? party.Description : null,
                     ProductId = te.ProductId,
+                    ProductName = product.ProductName,
                     InvoiceId = trans.InvoiceId,
                     PaymentId = trans.PaymentId,
                     ShipmentId = trans.ShipmentId,

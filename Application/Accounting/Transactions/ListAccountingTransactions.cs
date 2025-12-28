@@ -55,6 +55,8 @@ public class ListAccountingTransactions
                          from certificate in certGroup.DefaultIfEmpty()
                          join project in _context.WorkEfforts on new { ProjectId = certificate != null ? certificate.ProjectId : transaction.WorkEffortId, Type = "PROJECT" } equals new { ProjectId = project.WorkEffortId, Type = project.WorkEffortTypeId } into projGroup
                          from project in projGroup.DefaultIfEmpty()
+                         join party in _context.Parties on transaction.PartyId equals party.PartyId into partyGroup
+                         from party in partyGroup.DefaultIfEmpty()
                          where glAccountOrg.OrganizationPartyId == request.CompanyId // Filter by companyId
                          select new AccountingTransactionRecord
                          {
@@ -62,6 +64,7 @@ public class ListAccountingTransactions
                              AcctgTransTypeId = transaction.AcctgTransTypeId,
                              AcctgTransTypeDescription = transactionType.Description,
                              PartyId = transaction.PartyId,
+                             PartyName = party != null ? party.Description : null,
                              PaymentId = transaction.PaymentId,
                              TransactionDate = transaction.TransactionDate,
                              IsPosted = transaction.IsPosted,

@@ -25,6 +25,7 @@ public class AccountingTransactionRecord
     public string ProjectNumber { get; set; }
     public string ProjectName { get; set; }
     public string? PartyId { get; set; }
+    public string PartyName { get; set; }
     public string? RoleTypeId { get; set; }
     public string? InvoiceId { get; set; }
     public string? PaymentId { get; set; }

@@ -99,10 +99,14 @@ public class GetSimpleApartmentsLov
                 // 4. Materialise products
                 // -----------------------------------------------------------------
                 var products = await baseQuery
-                    .OrderBy(p => p.ProductName)
+                    .OrderBy(p => p.ProductId) 
                     .Skip(request.Params.Skip)
                     .Take(request.Params.PageSize)
                     .ToListAsync(ct);
+                
+                products = products
+                    .OrderBy(p => p.ProductId, Comparer<string>.Create(NaturalCompare))
+                    .ToList();
 
                 // -----------------------------------------------------------------
                 // 5. Floor-number mapping (new)
@@ -163,6 +167,30 @@ public class GetSimpleApartmentsLov
                 return Result<ApartmentsEnvelope>.Failure("Failed to retrieve apartments.");
             }
         }
+    }
+    
+    static int NaturalCompare(string? a, string? b)
+    {
+        if (a == null && b == null) return 0;
+        if (a == null) return -1;
+        if (b == null) return 1;
+
+        var partsA = a.Split('-');
+        var partsB = b.Split('-');
+
+        int prefixCompare = string.Compare(partsA[0], partsB[0], StringComparison.OrdinalIgnoreCase);
+        if (prefixCompare != 0) return prefixCompare;
+
+        if (partsA.Length == 1 && partsB.Length == 1) return 0;
+        if (partsA.Length == 1) return -1;
+        if (partsB.Length == 1) return 1;
+
+        if (int.TryParse(partsA[1], out int numA) && int.TryParse(partsB[1], out int numB))
+        {
+            return numA.CompareTo(numB);
+        }
+
+        return string.Compare(partsA[1], partsB[1], StringComparison.OrdinalIgnoreCase);
     }
 }
 

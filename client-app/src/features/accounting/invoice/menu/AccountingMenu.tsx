@@ -41,9 +41,7 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
     const theme = useTheme();
     const normalizedSelectedMenuItem = normalizePath(selectedMenuItem || '');
     const { getTranslatedLabel } = useTranslationHelper();
-    /*const { user } = useAppSelector(state => state.account);
-    console.log('Current user roles:', user?.roles);
-*/
+    
     const FloatingLabelText = withFloatingLabelFlexible(({ children }: { children: string }) => (
         <Typography variant="body2" sx={{ marginLeft: '1px' }}>
             {children}

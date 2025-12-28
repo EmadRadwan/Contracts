@@ -361,13 +361,28 @@ public class PaymentHelperService : IPaymentHelperService
         {
             try
             {
-                if (oldStatusId != "PMNT_CONFIRMED")
+                // Special handling for apartment installment cheque payments
+                bool isChequeInstallmentWithEarlyTrans = !string.IsNullOrEmpty(payment.SalesRequestId) &&
+                                                         !string.IsNullOrEmpty(payment.ChequeNumber) &&
+                                                         await _context.AcctgTrans.AnyAsync(at => 
+                                                             at.PaymentId == paymentId && 
+                                                             at.AcctgTransEntries.Any(e => e.GlAccountId == "124410"));
+                if (isChequeInstallmentWithEarlyTrans)
                 {
-                    await _generalLedgerService.CreateAcctgTransAndEntriesForIncomingPayment(paymentId);
+                    // Special path: Cheque cleared → move from Cheques Under Collection to Bank
+                    await _generalLedgerService.CreateChequeClearanceAccountingTransaction(paymentId);
                 }
+                else
+                {
+                    // Normal path: Direct receipt (cash, transfer, or first-time cheque without early trans)
+                    if (oldStatusId != "PMNT_CONFIRMED")
+                    {
+                        await _generalLedgerService.CreateAcctgTransAndEntriesForIncomingPayment(paymentId);
+                    }
 
-                await _invoiceService.CheckPaymentInvoices(paymentId);
-                await CreateMatchingPaymentApplication(paymentId, null);
+                    await _invoiceService.CheckPaymentInvoices(paymentId);
+                    await CreateMatchingPaymentApplication(paymentId, null);
+                }
             }
             catch (Exception ex)
             {

@@ -100,18 +100,21 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
                 anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}
                 transformOrigin={{vertical: 'top', horizontal: 'right'}}
             >
-                <Can
-                    perform="ReviewCertificate"
-                    yes={() => [CertificateStatus.CREATED, CertificateStatus.REQUIRES_EDIT].includes(currentStatusId)}
-                >
-                    <>
+                <Can perform="ReviewCertificate">
+                    {/* Mark as Ready for Approval - only from Created or Requires Edit */}
+                    {currentStatusId && [CertificateStatus.CREATED, CertificateStatus.REQUIRES_EDIT].includes(currentStatusId) && (
                         <MenuItem onClick={() => handleStatusUpdate('MarkReadyForApproval')}>
                             {getTranslatedLabel('projects.certificate.markAsReadyForApproval', 'Mark as Ready for Approval')}
                         </MenuItem>
-                        <MenuItem onClick={() => handleStatusUpdate('MarkRequiresEdit')}>
-                            {getTranslatedLabel('projects.certificate.markAsRequiresEdit', 'Mark as Requires Editing')}
-                        </MenuItem>
-                    </>
+                    )}
+
+                    {/* Mark as Requires Editing - allowed from Created, Requires Edit, or Ready for Approval */}
+                    {currentStatusId &&
+                        [CertificateStatus.CREATED, CertificateStatus.REQUIRES_EDIT, CertificateStatus.READY_FOR_APPROVAL].includes(currentStatusId) && (
+                            <MenuItem onClick={() => handleStatusUpdate('MarkRequiresEdit')}>
+                                {getTranslatedLabel('projects.certificate.markAsRequiresEdit', 'Mark as Requires Editing')}
+                            </MenuItem>
+                        )}
                 </Can>
 
                 <Can perform="ApproveCertificate">

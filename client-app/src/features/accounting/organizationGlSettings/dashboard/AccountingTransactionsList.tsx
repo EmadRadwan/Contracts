@@ -318,9 +318,9 @@ export default function AccountingTransactionsList() {
                   )}
                   width={200}
                 />
-                <Column field="shipmentId" title={getTranslatedLabel(
-                    "accounting.orgGL.accounting.summary.txns.shipmentId",
-                    "Shipment Id"
+                <Column field="partyName" title={getTranslatedLabel(
+                    "accounting.orgGL.accounting.summary.txns.partyName",
+                    "Party Name"
                 )}
                         width={100} />
                 <Column field="isPosted" title={getTranslatedLabel(

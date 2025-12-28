@@ -3,7 +3,7 @@ import {toast} from "react-toastify";
 import {Certificate, CertificateStatus} from "../../../app/models/project/certificate";
 import {CertificateItem} from "../../../app/models/project/certificateItem";
 import {
-    useAddProjectCertificateMutation,
+    useAddProjectCertificateMutation, useApprovePOForCertificateMutation,
     useFetchProjectCertificatesQuery,
     useIssueMaterialsForCertificateMutation,
     useProcessWorkEffortCertificateMutation, useReviewCertificateMutation,
@@ -45,7 +45,8 @@ const useProjectCertificate = ({
     const [processWorkEffortCertificate, {isLoading: isProcessCertificateLoading}] = useProcessWorkEffortCertificateMutation();
     const [issueMaterialsForCertificate, {isLoading: isIssueMaterialsLoading}] = useIssueMaterialsForCertificateMutation(); // REFACTOR: Added mutation hook for issuing materials
     const [reviewCertificate, {isLoading: isReviewLoading}] = useReviewCertificateMutation();
-
+    const [approvePOForCertificate, { isLoading: isApprovingPO }] = useApprovePOForCertificateMutation();
+    
     const formEditMode = certificateFormEditMode;
     const setFormEditMode = useCallback((mode: number) => {
         dispatch(setCertificateFormEditMode(mode));
@@ -343,6 +344,13 @@ const useProjectCertificate = ({
                     if (!selectedCertificate?.workEffortId) {
                         toast.error("Work Effort ID is required for approving certificate");
                         return { success: false };
+                    }
+
+                    const hasPO = ["WORKMANSHIP_CONTRACTING_CERTIFICATE", "SUPPLY_PROCUREMENT_CERTIFICATE"].includes(currentCertificateType);
+
+                    if (hasPO && selectedCertificate.relatedOrderId) {
+                        await approvePOForCertificate(selectedCertificate.workEffortId).unwrap();
+                        toast.success("Purchase order approved");
                     }
 
                     let result;
