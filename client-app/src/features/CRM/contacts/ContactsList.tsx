@@ -163,15 +163,6 @@ const ContactsList: React.FC<ContactsListProps> = ({ onCreateNew, onEditContact 
                                 {getTranslatedLabel(`${localizationKey}.title`, 'Contacts')}
                             </Typography>
                         </Grid>
-                        <Grid item>
-                            <Button
-                                variant="outlined"
-                                color="secondary"
-                                onClick={onCreateNew}
-                            >
-                                {getTranslatedLabel(`${localizationKey}.createNew`, 'Create New Contact')}
-                            </Button>
-                        </Grid>
                     </Grid>
                 </GridToolbar>
 
@@ -186,7 +177,6 @@ const ContactsList: React.FC<ContactsListProps> = ({ onCreateNew, onEditContact 
                     field="email"
                     title={getTranslatedLabel(`${localizationKey}.email`, 'Email')}
                     cell={EmailCell}
-                    width={220}
                 />
                 <Column
                     field="phone"
@@ -204,11 +194,6 @@ const ContactsList: React.FC<ContactsListProps> = ({ onCreateNew, onEditContact 
                     field="statusDescription"
                     title={getTranslatedLabel(`${localizationKey}.status`, 'Status')}
                     cell={StatusCell}
-                    width={120}
-                />
-                <Column
-                    field="dataSourceId"
-                    title={getTranslatedLabel(`${localizationKey}.source`, 'Source')}
                     width={120}
                 />
                 <Column

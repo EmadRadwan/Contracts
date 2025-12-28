@@ -2693,6 +2693,7 @@ public class SeedContracts
             // Create roles
             var requiredRoles = new[]
             {
+                "Admin",
                 "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "viewCrm", "ReviewCertificate",
                 "Catalog_View",
                 "Facility_View",
@@ -3004,6 +3005,7 @@ public class SeedContracts
             {
                 "eradwan1967@gmail.com", new[]
                 {
+                    "Admin",
                     "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "DeleteSalesRequest", "viewCrm", "ReviewCertificate",
                     "Catalog_View", "Facility_View", "Party_View", "Accounting_View", "Projects_View", "Sales_View",
                     "Accounting_Invoices_View",

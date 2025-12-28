@@ -57,9 +57,9 @@ const CRMMenu = ({selectedMenuItem}: CRMMenuProps) => {
                             key={index}
                             sx={navStyles(path)}
                         >
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 {icon}
-                                <Typography variant="body1" sx={{ marginX: '4px' }}>
+                                <Typography variant="body1">
                                     {getTranslatedLabel(`crm.menu.${key}`, title)}
                                 </Typography>
                             </Box>

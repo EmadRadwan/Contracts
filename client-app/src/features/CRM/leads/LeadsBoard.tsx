@@ -246,7 +246,9 @@ const LeadsBoard: React.FC<LeadsBoardProps> = ({ onEditOpportunity }) => {
                                             <Tooltip title={opportunity.contacts.map(c => c.partyName).join(', ')}>
                                                 <Chip
                                                     icon={<PersonIcon />}
-                                                    label={`${opportunity.contacts.length} contact${opportunity.contacts.length > 1 ? 's' : ''}`}
+                                                    label={opportunity.contacts.length === 1
+                                                        ? getTranslatedLabel(`${localizationKey}.oneContact`, '1 contact')
+                                                        : getTranslatedLabel(`${localizationKey}.contacts`, `${opportunity.contacts.length} contacts`).replace('{0}', opportunity.contacts.length.toString())}
                                                     size="small"
                                                     variant="outlined"
                                                     sx={{ mt: 1, height: 22, fontSize: '0.7rem' }}

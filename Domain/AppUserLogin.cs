@@ -7,6 +7,7 @@ public class AppUserLogin : IdentityUser
     public string DisplayName { get; set; }
     public DateTime? LastUpdatedStamp { get; set; }
     public DateTime? CreatedStamp { get; set; }
+    public bool MustChangePassword { get; set; } = true;
     
     public string? PartyId { get; set; }
     public string? OrganizationPartyId { get; set; }

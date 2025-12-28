@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class AddedSalesIdToPayment : Migration
+    public partial class AddMustChangePassword : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -12457,6 +12457,7 @@ namespace Persistence.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     LastUpdatedStamp = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CreatedStamp = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    MustChangePassword = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     PartyId = table.Column<string>(type: "varchar(36)", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     OrganizationPartyId = table.Column<string>(type: "varchar(36)", nullable: true)

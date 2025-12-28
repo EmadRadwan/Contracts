@@ -85,12 +85,12 @@ const LeadsDashboard: React.FC = () => {
                             onChange={handleViewChange}
                             size="small"
                         >
-                            <ToggleButton value="board" aria-label="board view">
-                                <ViewKanbanIcon sx={{ mr: 0.5 }} />
+                            <ToggleButton value="board" aria-label="board view" sx={{ gap: 1}}>
+                                <ViewKanbanIcon />
                                 {getTranslatedLabel(`${localizationKey}.boardView`, 'Board')}
                             </ToggleButton>
-                            <ToggleButton value="list" aria-label="list view">
-                                <ViewListIcon sx={{ mr: 0.5 }} />
+                            <ToggleButton value="list" aria-label="list view" sx={{ gap: 1}}>
+                                <ViewListIcon />
                                 {getTranslatedLabel(`${localizationKey}.listView`, 'List')}
                             </ToggleButton>
                         </ToggleButtonGroup>
@@ -100,9 +100,10 @@ const LeadsDashboard: React.FC = () => {
                             <Button
                                 variant="contained"
                                 color="primary"
-                                startIcon={<AddIcon />}
+                                sx={{ gap: 1 }}
                                 onClick={handleCreateNew}
                             >
+                                <AddIcon />
                                 {getTranslatedLabel(`${localizationKey}.createNew`, 'New Opportunity')}
                             </Button>
                         )}

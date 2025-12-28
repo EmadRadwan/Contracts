@@ -154,6 +154,8 @@ import CRMDashboard from "../../features/CRM/dashboard/CRMDashboard";
 import LeadsDashboard from "../../features/CRM/leads/LeadsDashboard";
 import ContactsDashboard from "../../features/CRM/contacts/ContactsDashboard";
 import MultiAcctgTransEntryForm from "../../features/accounting/transaction/form/MultiAcctgTransEntryForm";
+import UsersList from "../../features/account/users/UsersList";
+import RolesList from "../../features/account/users/RolesList";
 
 const PartyFinancialHistoryWrapper = () => {
     const {partyId} = useParams<{ partyId: string }>();
@@ -188,6 +190,14 @@ export const routes: RouteObject[] = [
                         path: "change-password",
                         element: <ChangePasswordPage />
                     },
+                    {
+                        path: "users",
+                        element: <UsersList />
+                    },
+                    {
+                        path: "roles",
+                        element: <RolesList />
+                    },
                     // === Catalog Module ===
                     {
                         element: <RequireRole allowedRoles="Catalog_View"/>,
@@ -204,13 +214,20 @@ export const routes: RouteObject[] = [
                         ],
                     },
 
-                    // === Party / CRM Module ===
+                    // === Party Module ===
                     {
                         element: <RequireRole allowedRoles="Party_View"/>,
                         children: [
                             {path: "parties", element: <PartiesList/>},
                             {path: "partyContacts", element: <PartyContactsList/>},
                             {path: "party/:partyId/financial-history", element: <PartyFinancialHistoryWrapper/>},
+                        ],
+                    },
+
+                    // === CRM Module ===
+                    {
+                        element: <RequireRole allowedRoles="CRM_View"/>,
+                        children: [
                             {path: "leads", element: <LeadsDashboard/>},
                             {path: "contacts", element: <ContactsDashboard/>},
                             {path: "crm", element: <CRMDashboard/>},

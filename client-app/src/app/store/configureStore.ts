@@ -138,6 +138,7 @@ import {salesRequestApi} from "./apis/salesRequestApi";
 import {salesOpportunitiesApi} from "./apis/crm/salesOpportunitiesApi";
 import {contactsApi} from "./apis/crm/contactsApi";
 import {dataSourcesApi} from "./apis/crm/dataSourcesApi";
+import {usersApi} from "./apis/users/usersApi";
 
 
 // REFACTOR: Added logger middleware for debugging
@@ -324,6 +325,7 @@ export const store = configureStore({
         [finAccountStatusApi.reducerPath]: finAccountStatusApi.reducer,
         [paymentGroupsApi.reducerPath]: paymentGroupsApi.reducer,
         [paymentGroupTypesApi.reducerPath]: paymentGroupTypesApi.reducer,
+        [usersApi.reducerPath]: usersApi.reducer,
         [salesOpportunitiesApi.reducerPath]: salesOpportunitiesApi.reducer,
         [contactsApi.reducerPath]: contactsApi.reducer,
         [dataSourcesApi.reducerPath]: dataSourcesApi.reducer
@@ -426,6 +428,7 @@ export const store = configureStore({
             .concat(salesOpportunitiesApi.middleware)
             .concat(contactsApi.middleware)
             .concat(dataSourcesApi.middleware)
+            .concat(usersApi.middleware);
     },
     devTools: devToolsConfig,
 });
@@ -562,6 +565,8 @@ export {useFetchQuotePromoProductDiscountQuery} from "./apis/quote/quotePromoPro
 export {useFetchSalesOrderPromoProductDiscountQuery} from "./apis/salesOrderPromoProductDiscountApi";
 
 export * from "./apis/ordersApi";
+
+export * from "./apis/users/usersApi";
 
 export {
     useFetchJobOrdersQuery,
