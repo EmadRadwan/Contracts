@@ -78,6 +78,14 @@ export default function PaymentPlanModal({
     const [dateError, setDateError] = useState<string>("");
     const [amountError, setAmountError] = useState<string>("");
 
+    const advanceRows = rows.filter(r => r.isAdvance);
+    const regularRows = rows.filter(r => !r.isAdvance);
+    const advanceSum = advanceRows.reduce((s, r) => s + r.amount, 0);
+    const regularSum = regularRows.reduce((s, r) => s + r.amount, 0);
+    const grandTotal = advanceSum + regularSum;
+    const isValid = Math.abs(grandTotal - totalPrice) < 0.01;
+
+
     useEffect(() => {
         if (initialInstallments && initialInstallments.length > 0) {
             const mapped: InstallmentRow[] = initialInstallments.map((inst, idx) => ({
@@ -85,10 +93,9 @@ export default function PaymentPlanModal({
                 number: idx + 1,
                 dueDate: inst.dueDate,
                 amount: inst.amount,
-                isAdvance: inst.isAdvance,  // ← Use real saved value, don't guess!
+                isAdvance: inst.isAdvance,
             }));
 
-            // Optional: Derive advanceSplitCount from actual advance rows
             const advanceCount = mapped.filter(r => r.isAdvance).length;
             setAdvanceSplitCount(advanceCount > 0 ? advanceCount : 1);
 
@@ -96,14 +103,14 @@ export default function PaymentPlanModal({
             return;
         }
 
-        // Default generation (first open) – unchanged logic
-        const advanceRows: InstallmentRow[] = [];
-        const regularRows: InstallmentRow[] = [];
+        // Default generation
+        const advanceRowsLocal: InstallmentRow[] = [];
+        const regularRowsLocal: InstallmentRow[] = [];
 
         if (advancePayment > 0) {
             const singleAdvanceDate = new Date();
             singleAdvanceDate.setDate(singleAdvanceDate.getDate() + 7);
-            advanceRows.push({
+            advanceRowsLocal.push({
                 id: "adv-1",
                 number: 1,
                 dueDate: singleAdvanceDate.toISOString().split("T")[0],
@@ -112,14 +119,14 @@ export default function PaymentPlanModal({
             });
         }
 
-        if (remaining > 0 && numberOfInstallments > 0 && dateOfFirstInstallment) {
-            const installmentAmount = remaining / numberOfInstallments;
+        if ((totalPrice - advancePayment) > 0 && numberOfInstallments > 0 && dateOfFirstInstallment) {
+            const installmentAmount = (totalPrice - advancePayment) / numberOfInstallments;
             let currentDate = new Date(dateOfFirstInstallment);
 
             for (let i = 1; i <= numberOfInstallments; i++) {
-                regularRows.push({
+                regularRowsLocal.push({
                     id: `inst-${i}`,
-                    number: i,
+                    number: i + advanceRowsLocal.length,
                     dueDate: currentDate.toISOString().split("T")[0],
                     amount: installmentAmount,
                     isAdvance: false,
@@ -128,12 +135,12 @@ export default function PaymentPlanModal({
             }
         }
 
-        setRows([...advanceRows, ...regularRows]);
-        setAdvanceSplitCount(advanceRows.length);
+        setRows([...advanceRowsLocal, ...regularRowsLocal]);
+        setAdvanceSplitCount(advanceRowsLocal.length);
     }, [
         initialInstallments,
         advancePayment,
-        remaining,
+        totalPrice,
         numberOfInstallments,
         dateOfFirstInstallment,
         monthsBetweenInstallments,
@@ -221,16 +228,57 @@ export default function PaymentPlanModal({
         setDateError(dateError);
         setAmountError(amountError);
 
-        if (dateError || amountError) {
-            return; // Prevent save if invalid
-        }
+        if (dateError || amountError) return;
+
+        const oldRow = rows[editModal.index];
+        const isEditingAdvance = oldRow.isAdvance === true;
 
         setRows((prev) => {
             const newRows = [...prev];
-            newRows[editModal.index] = { ...editModal.row };
+            const updatedRow = { ...editModal.row };
+            newRows[editModal.index] = updatedRow;
+
+            if (isEditingAdvance) {
+                // Step 1: Calculate new total advance sum
+                const newAdvanceSum = newRows
+                    .filter(r => r.isAdvance)
+                    .reduce((sum, r) => sum + r.amount, 0);
+
+                // Step 2: Calculate new remaining for regulars
+                const newRemaining = totalPrice - newAdvanceSum;
+
+                // Step 3: Count regular installments
+                const regularCount = newRows.filter(r => !r.isAdvance).length;
+
+                if (regularCount > 0) {
+                    // Step 4: Make all regulars equal
+                    const equalRegularAmount = newRemaining / regularCount;
+
+                    // Apply rounded amount to all regular rows
+                    let accumulatedRoundingError = 0;
+                    newRows.forEach((row, idx) => {
+                        if (!row.isAdvance) {
+                            const rounded = Math.round(equalRegularAmount * 100) / 100;
+                            accumulatedRoundingError += (equalRegularAmount - rounded);
+                            newRows[idx].amount = rounded;
+                        }
+                    });
+
+                    // Step 5: Fix rounding error on last regular row
+                    if (Math.abs(accumulatedRoundingError) > 0.001) {
+                        const lastRegularIdx = newRows.findLastIndex(r => !r.isAdvance);
+                        if (lastRegularIdx !== -1) {
+                            newRows[lastRegularIdx].amount += accumulatedRoundingError;
+                            newRows[lastRegularIdx].amount =
+                                Math.round(newRows[lastRegularIdx].amount * 100) / 100;
+                        }
+                    }
+                }
+            }
+
             return newRows;
         });
-        
+
         setEditModal(null);
         setDateError("");
         setAmountError("");
@@ -266,15 +314,7 @@ export default function PaymentPlanModal({
         });
     };
 
-    // REFACTOR: Validation
-    const advanceRows = rows.filter((r) => r.isAdvance);
-    const regularRows = rows.filter((r) => !r.isAdvance);
-    const advanceSum = advanceRows.reduce((s, r) => s + r.amount, 0);
-    const regularSum = regularRows.reduce((s, r) => s + r.amount, 0);
-    const isAdvanceValid = Math.abs(advanceSum - advancePayment) < 0.01;
-    const isRegularValid = Math.abs(regularSum - remaining) < 0.01;
-    const isValid = isAdvanceValid && isRegularValid;
-
+    
     // REFACTOR: Custom cell with Edit button
     const CommandCell = (props: any) => {
         const { dataItem } = props;
@@ -354,11 +394,7 @@ export default function PaymentPlanModal({
                                 <AddIcon />
                             </IconButton>
                         )}
-                        {!isAdvanceValid && (
-                            <Typography color="error" variant="caption">
-                                Advance sum must equal {advancePayment.toLocaleString()}
-                            </Typography>
-                        )}
+                        
                     </Box>
                 </Grid>
             )}
@@ -400,21 +436,18 @@ export default function PaymentPlanModal({
                     <Box display="flex" justifyContent="space-between">
                         <Typography variant="body2">
                             Advance Total: {advanceSum.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                            {" "}{isAdvanceValid ? "✓" : "✗"}
-                            {!isAdvanceValid && <Typography component="span" color="error" variant="caption"> (expected {advancePayment.toLocaleString()})</Typography>}
                         </Typography>
                         <Typography variant="body2">
                             Installments Total: {regularSum.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                            {" "}{isRegularValid ? "✓" : "✗"}
-                            {!isRegularValid && <Typography component="span" color="error" variant="caption"> (expected {remaining.toLocaleString()})</Typography>}
                         </Typography>
                         <Typography variant="body2" fontWeight="bold">
-                            Grand Total: {(advanceSum + regularSum).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            Grand Total: {grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            {" "}{isValid ? "✓" : "✗"}
                         </Typography>
                     </Box>
                     {!isValid && (
                         <Alert severity="warning">
-                            Totals do not match expected amounts. Adjust installments to enable Apply.
+                            Grand total must equal apartment total ({totalPrice.toLocaleString()}). Adjust to enable Apply.
                         </Alert>
                     )}
                 </Box>

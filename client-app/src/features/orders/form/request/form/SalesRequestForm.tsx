@@ -258,9 +258,27 @@ function SalesRequestForm({
     };
 
     const handleApplyPaymentPlan = useCallback((
-        installments: Array<{ dueDate: string; amount: number; isAdvance: boolean }>  // ← updated type
+        installments: Array<{ dueDate: string; amount: number; isAdvance: boolean }>
     ) => {
+        // 1. Store installments
         setCustomInstallments(installments);
+
+        // 2. Calculate actual advance sum from the plan
+        const actualAdvanceSum = installments
+            .filter(inst => inst.isAdvance)
+            .reduce((sum, inst) => sum + inst.amount, 0);
+
+        // 3. Update the form field directly using formRef
+        if (formRef.current) {
+            formRef.current.onChange("advancePayment", {
+                value: actualAdvanceSum
+            });
+
+            // Optional: Also update maintenance deposit if you want it to follow new total logic
+            // But since totalPrice is fixed, it's usually unchanged
+        }
+
+        // 4. Close modal and notify
         setShowPaymentPlan(false);
         toast.success(getTranslatedLabel("salesRequest.form.paymentPlanApplied", "Payment plan applied successfully"));
     }, [getTranslatedLabel]);
@@ -418,24 +436,6 @@ function SalesRequestForm({
         },
         [dispatch]
     );
-
-    const calculateBaseTotal = useCallback((
-        aptM2: number | null,
-        aptPrice: number | null,
-        gardenM2: number | null,
-        gardenPrice: number | null
-    ): number | null => {
-        if (aptM2 == null || aptPrice == null) return null;
-
-        const apartmentTotal = aptM2 * aptPrice;
-
-        // Only add garden if both gardenM2 and gardenPrice exist and are positive
-        if (gardenM2 != null && gardenPrice != null && gardenM2 > 0 && gardenPrice > 0) {
-            return apartmentTotal + (gardenM2 * gardenPrice);
-        }
-
-        return apartmentTotal;
-    }, []);
 
 
     const salesRequestValidator = (values: any): KeyValue<string> | undefined => {
@@ -635,11 +635,30 @@ function SalesRequestForm({
                             comments: valueGetter("comments"),
                         };
 
-                        const canOpenPaymentPlan =
-                            !!valueGetter("totalPrice") &&
-                            valueGetter("advancePayment") < valueGetter("totalPrice") &&
-                            valueGetter("totalPrice") > 0;
+                        const totalPrice = valueGetter("totalPrice");
+                        const advancePayment = valueGetter("advancePayment");
+                        const numberOfInstallments = valueGetter("numberOfInstallments");
+                        const dateOfFirstInstallment = valueGetter("dateOfFirstInstallment");
+                        const monthsBetweenInstallments = valueGetter("monthsBetweenInstallments");
 
+                        // Determine if payment is partial or full
+                        const isPartialPayment =
+                            totalPrice > 0 &&
+                            advancePayment != null &&
+                            advancePayment < totalPrice;
+
+                        const areDefaultFieldsFilled =
+                            numberOfInstallments > 0 &&
+                            dateOfFirstInstallment != null &&
+                            monthsBetweenInstallments > 0;
+
+                        // Show button only when:
+                        // - Total and advance are set
+                        // - AND if partial payment → default fields are filled
+                        const canOpenPaymentPlan =
+                            totalPrice > 0 &&
+                            advancePayment != null &&
+                            (!isPartialPayment || areDefaultFieldsFilled);
 
                         // -----------------------------------------------------------------
                         // 2. Apartment for the legacy prop
@@ -648,10 +667,7 @@ function SalesRequestForm({
                             ? {productName: currentFormValues.apartmentName ?? "Unknown Unit"}
                             : undefined;
 
-                        const statusId = formRenderProps.valueGetter("statusId") as string | undefined;
-                        const statusDescription = formRenderProps.valueGetter("statusDescription") as string | undefined;
-
-
+                        
                         return (
                             <>
                                

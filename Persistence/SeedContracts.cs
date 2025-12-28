@@ -3022,7 +3022,7 @@ public class SeedContracts
             {
                 "aagiba@gmail.com", new[]
                 {
-                    "CreateCertificate", "ApproveCertificate", "CompleteCertificate","DeleteSalesRequest", "viewCrm", "ReviewCertificate",
+                    "CreateCertificate", "ApproveCertificate", "CompleteCertificate","DeleteSalesRequest", "ReviewCertificate",
                     "Catalog_View", "Facility_View", "Party_View", "Accounting_View", "Projects_View", "Sales_View",
                     "Accounting_Invoices_View",
                     "Accounting_Payments_View",
@@ -3036,7 +3036,7 @@ public class SeedContracts
             {
                 "ashrafa@gmail.com", new[]
                 {
-                    "CreateCertificate", "ApproveCertificate", "CompleteCertificate","DeleteSalesRequest", "viewCrm", "ReviewCertificate",
+                    "CreateCertificate", "ApproveCertificate", "CompleteCertificate","DeleteSalesRequest",  "ReviewCertificate",
                     "Catalog_View", "Facility_View", "Party_View", "Accounting_View", "Projects_View", "Sales_View",
                     "Accounting_Invoices_View",
                     "Accounting_Payments_View",
