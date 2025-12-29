@@ -21,6 +21,7 @@ public static class IdentityServiceExtensions
         var builder = services.AddIdentityCore<AppUserLogin>();
         var identityBuilder = new IdentityBuilder(builder.UserType, builder.Services);
         identityBuilder.AddRoles<ApplicationRole>();
+        identityBuilder.AddRoleManager<RoleManager<ApplicationRole>>();
         identityBuilder.AddEntityFrameworkStores<DataContext>();
         identityBuilder.AddSignInManager<SignInManager<AppUserLogin>>();
         identityBuilder.AddDefaultTokenProviders();

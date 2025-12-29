@@ -110,7 +110,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ opportunity, editMode, onClose, onS
             onClose();
         } catch (error: any) {
             console.error('Failed to save opportunity:', error);
-            setSubmitError(error?.data?.title || 'Failed to save opportunity');
+            setSubmitError(error?.data?.title || getTranslatedLabel(`${localizationKey}.saveError`, 'Failed to save opportunity'));
         }
     };
 

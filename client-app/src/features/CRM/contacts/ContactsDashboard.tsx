@@ -14,21 +14,21 @@ const ContactsDashboard: React.FC = () => {
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = 'crm.contacts';
 
-    const [editMode, setEditMode] = useState<EditMode>('none');
+    const [editMode, setEditMode] = useState<number>(0);
     const [selectedContact, setSelectedContact] = useState<Contact | undefined>();
 
     const handleCreateNew = useCallback(() => {
         setSelectedContact(undefined);
-        setEditMode('create');
+        setEditMode(1);
     }, []);
 
     const handleEditContact = useCallback((contact: Contact) => {
         setSelectedContact(contact);
-        setEditMode('edit');
+        setEditMode(2);
     }, []);
 
     const handleCloseForm = useCallback(() => {
-        setEditMode('none');
+        setEditMode(0);
         setSelectedContact(undefined);
     }, []);
 
@@ -60,20 +60,21 @@ const ContactsDashboard: React.FC = () => {
                         {getTranslatedLabel(`${localizationKey}.title`, 'People')}
                     </Typography>
 
-                    {editMode === 'none' && (
+                    {editMode === 0 && (
                         <Button
                             variant="contained"
                             color="primary"
-                            startIcon={<AddIcon />}
+                            sx={{ gap: 1 }}
                             onClick={handleCreateNew}
                         >
+                            <AddIcon />
                             {getTranslatedLabel(`${localizationKey}.createNew`, 'New Contact')}
                         </Button>
                     )}
                 </Box>
 
                 {/* Content */}
-                {editMode !== 'none' ? (
+                {editMode !== 0 ? (
                     <ContactForm
                         contact={selectedContact}
                         editMode={editMode}

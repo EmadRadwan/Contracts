@@ -1557,6 +1557,168 @@
       "leads": "العملاء المحتملون",
       "contacts": "جهات الاتصال",
       "accounts": "الحسابات"
+    },
+    "contactPicker": {
+      "label": "جهات الاتصال",
+      "placeholder": "ابحث عن جهات اتصال...",
+      "loading": "جاري التحميل...",
+      "noContacts": "لم يتم العثور على جهات اتصال"
+    },
+    "leads": {
+      "title": "خط المبيعات",
+      "boardView": "لوحة",
+      "listView": "قائمة",
+      "createNew": "فرصة جديدة",
+      "list": {
+        "loading": "جاري تحميل الفرص...",
+        "title": "فرص المبيعات",
+        "createNew": "إنشاء فرصة جديدة",
+        "createLead": "إنشاء عميل محتمل جديد",
+        "name": "الاسم",
+        "amount": "القيمة",
+        "stage": "المرحلة",
+        "probability": "الاحتمالية",
+        "owner": "المسؤول",
+        "closeDate": "تاريخ الإغلاق",
+        "contacts": "جهات الاتصال",
+        "created": "تاريخ الإنشاء",
+        "description": "الطرف",
+        "contactNumber": "رقم الاتصال",
+        "address": "العنوان",
+        "email": "البريد الإلكتروني",
+        "partyType": "نوع الطرف"
+      },
+      "board": {
+        "loading": "جاري تحميل خط المبيعات...",
+        "noDeals": "لا توجد صفقات",
+        "oneContact": "جهة اتصال واحدة",
+        "contacts": "{0} جهات اتصال"
+      },
+      "form": {
+        "loading": "جاري التحميل...",
+        "createTitle": "إنشاء فرصة جديدة",
+        "editTitle": "تعديل الفرصة",
+        "name": "اسم الفرصة *",
+        "stage": "المرحلة *",
+        "amount": "المبلغ المتوقع",
+        "currency": "العملة",
+        "probability": "الاحتمالية (%)",
+        "closeDate": "تاريخ الإغلاق المتوقع",
+        "source": "مصدر العميل",
+        "description": "الوصف",
+        "nextStep": "الخطوة التالية",
+        "nextStepDate": "تاريخ الخطوة التالية",
+        "linkedContacts": "جهات الاتصال المرتبطة",
+        "contacts": "جهات الاتصال",
+        "searchContacts": "ابحث وأضف جهات اتصال...",
+        "update": "تحديث",
+        "create": "إنشاء",
+        "cancel": "إلغاء",
+        "processing": "جاري المعالجة...",
+        "saveError": "فشل في حفظ الفرصة"
+      }
+    },
+    "contacts": {
+      "title": "الأشخاص",
+      "createNew": "جهة اتصال جديدة",
+      "list": {
+        "loading": "جاري تحميل جهات الاتصال...",
+        "title": "جهات الاتصال",
+        "createNew": "إنشاء جهة اتصال جديدة",
+        "name": "الاسم",
+        "email": "البريد الإلكتروني",
+        "phone": "الهاتف",
+        "address": "العنوان",
+        "status": "الحالة",
+        "source": "المصدر",
+        "created": "تاريخ الإنشاء"
+      },
+      "form": {
+        "loading": "جاري التحميل...",
+        "createTitle": "إنشاء جهة اتصال جديدة",
+        "editTitle": "تعديل جهة الاتصال",
+        "title": "اللقب",
+        "titlePlaceholder": "السيد/السيدة/د.",
+        "firstName": "الاسم الأول *",
+        "lastName": "اسم العائلة *",
+        "email": "البريد الإلكتروني",
+        "phone": "الهاتف",
+        "mobile": "الجوال",
+        "address1": "العنوان 1",
+        "address2": "العنوان 2",
+        "city": "المدينة",
+        "postalCode": "الرمز البريدي",
+        "country": "الدولة",
+        "source": "مصدر العميل",
+        "update": "تحديث",
+        "create": "إنشاء",
+        "cancel": "إلغاء",
+        "processing": "جاري المعالجة...",
+        "saveError": "فشل في حفظ جهة الاتصال"
+      }
+    }
+  },
+  "menu": {
+    "changePassword": "تغيير كلمة المرور",
+    "logout": "تسجيل الخروج",
+    "userManagement": "إدارة المستخدمين"
+  },
+  "users": {
+    "menu": {
+      "users": "المستخدمون",
+      "roles": "الأدوار"
+    },
+    "list": {
+      "loading": "جاري تحميل المستخدمين...",
+      "displayName": "الاسم",
+      "email": "البريد الإلكتروني",
+      "organization": "الشركة",
+      "createUser": "إنشاء مستخدم"
+    },
+    "form": {
+      "loading": "جاري التحميل...",
+      "createTitle": "إنشاء مستخدم جديد",
+      "editTitle": "تعديل المستخدم",
+      "userName": "اسم المستخدم",
+      "displayName": "الاسم",
+      "email": "البريد الإلكتروني",
+      "company": "الشركة",
+      "roles": "الأدوار",
+      "createRole": "إنشاء دور",
+      "selectRoles": "اختر الأدوار...",
+      "submit": "حفظ",
+      "cancel": "إلغاء",
+      "processing": "جاري المعالجة...",
+      "createSuccess": "تم إنشاء المستخدم بنجاح",
+      "updateSuccess": "تم تحديث المستخدم بنجاح",
+      "createError": "فشل إنشاء المستخدم",
+      "updateError": "فشل تحديث المستخدم"
+    }
+  },
+  "roles": {
+    "list": {
+      "loading": "جاري تحميل الأدوار...",
+      "title": "الأدوار",
+      "createRole": "إنشاء دور",
+      "noRoles": "لا توجد أدوار"
+    },
+    "form": {
+      "createTitle": "إنشاء دور جديد",
+      "roleName": "اسم الدور",
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "nameRequired": "اسم الدور مطلوب",
+      "createSuccess": "تم إنشاء الدور بنجاح",
+      "createError": "فشل إنشاء الدور"
+    },
+    "users": {
+      "title": "المستخدمون ذوو الدور",
+      "loading": "جاري تحميل المستخدمين...",
+      "displayName": "الاسم",
+      "userName": "اسم المستخدم",
+      "email": "البريد الإلكتروني",
+      "organization": "الشركة",
+      "selectRole": "اختر دوراً لعرض مستخدميه"
+    }
   }
-}
 }

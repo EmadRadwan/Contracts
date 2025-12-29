@@ -11,6 +11,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import { useFetchContactsLovQuery } from '../../../app/store/configureStore';
 import { ContactLov } from '../models/contact';
 import { SalesOpportunityContact } from '../models/salesOpportunity';
+import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
 
 interface ContactPickerProps {
     label?: string;
@@ -22,15 +23,19 @@ interface ContactPickerProps {
 }
 
 const ContactPicker: React.FC<ContactPickerProps> = ({
-    label = 'Contacts',
+    label,
     value,
     onChange,
     multiple = true,
-    placeholder = 'Search contacts...',
+    placeholder,
     disabled = false
 }) => {
+    const { getTranslatedLabel } = useTranslationHelper();
     const [inputValue, setInputValue] = useState('');
     const [open, setOpen] = useState(false);
+
+    const defaultLabel = label || getTranslatedLabel('crm.contactPicker.label', 'Contacts');
+    const defaultPlaceholder = placeholder || getTranslatedLabel('crm.contactPicker.placeholder', 'Search contacts...');
 
     // Fetch contacts - query runs when dropdown is open
     const { data: contacts, isLoading, isFetching } = useFetchContactsLovQuery(
@@ -101,12 +106,12 @@ const ContactPicker: React.FC<ContactPickerProps> = ({
             getOptionLabel={(option: ContactLov) => option.fullName || option.partyId || ''}
             isOptionEqualToValue={(option, val) => option.partyId === val.partyId}
             filterOptions={(x) => x} // Disable client-side filtering, server handles it
-            noOptionsText={loading ? "Loading..." : "No contacts found"}
+            noOptionsText={loading ? getTranslatedLabel('crm.contactPicker.loading', 'Loading...') : getTranslatedLabel('crm.contactPicker.noContacts', 'No contacts found')}
             renderInput={(params) => (
                 <TextField
                     {...params}
-                    label={label}
-                    placeholder={placeholder}
+                    label={defaultLabel}
+                    placeholder={defaultPlaceholder}
                     InputProps={{
                         ...params.InputProps,
                         endAdornment: (

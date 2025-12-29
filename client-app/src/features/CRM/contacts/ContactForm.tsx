@@ -18,7 +18,7 @@ import { requiredValidator } from '../../../app/common/form/Validators';
 
 interface ContactFormProps {
     contact?: Contact;
-    editMode: 'create' | 'edit';
+    editMode: 1 | 2;
     onClose: () => void;
     onSuccess: () => void;
 }
@@ -64,7 +64,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, editMode, onClose, o
         };
 
         try {
-            if (editMode === 'edit' && contact?.partyId) {
+            if (editMode === 2 && contact?.partyId) {
                 await updateContact({
                     id: contact.partyId,
                     contact: contactData
@@ -76,7 +76,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, editMode, onClose, o
             onClose();
         } catch (error: any) {
             console.error('Failed to save contact:', error);
-            setSubmitError(error?.data?.title || 'Failed to save contact');
+            setSubmitError(error?.data?.title || getTranslatedLabel(`${localizationKey}.saveError`, 'Failed to save contact'));
         }
     };
 
@@ -89,7 +89,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, editMode, onClose, o
             {/* Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Typography variant="h6">
-                    {editMode === 'edit'
+                    {editMode === 2
                         ? getTranslatedLabel(`${localizationKey}.editTitle`, 'Edit Contact')
                         : getTranslatedLabel(`${localizationKey}.createTitle`, 'Create New Contact')
                     }
@@ -113,7 +113,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, editMode, onClose, o
                                         name="personalTitle"
                                         label={getTranslatedLabel(`${localizationKey}.title`, 'Title')}
                                         component={FormInput}
-                                        placeholder="Mr/Mrs/Dr"
+                                        placeholder={getTranslatedLabel(`${localizationKey}.titlePlaceholder`, 'Mr/Mrs/Dr')}
                                     />
                                 </Grid>
                                 <Grid item xs={12} md={5}>
@@ -238,7 +238,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, editMode, onClose, o
                                     type="submit"
                                     disabled={!formRenderProps.allowSubmit || isProcessing}
                                 >
-                                    {editMode === 'edit'
+                                    {editMode === 2
                                         ? getTranslatedLabel(`${localizationKey}.update`, 'Update')
                                         : getTranslatedLabel(`${localizationKey}.create`, 'Create')
                                     }
