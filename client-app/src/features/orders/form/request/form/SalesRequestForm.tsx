@@ -105,13 +105,22 @@ function SalesRequestForm({
         if (!formRef.current) return;
 
         const finalTotal = formRef.current.valueGetter("totalPrice");
-        if (finalTotal == null) return;
+        if (finalTotal == null || finalTotal <= 0) return;
 
-        // REFACTOR: Recalculate derived fields whenever default % change
-        // This runs only when user changes defaults via modal
-        autoSetDerivedFields(formRef.current, finalTotal);
-    }, [defaultAdvancePercent, defaultMaintenancePercent, autoSetDerivedFields]);
+        const currentAdvance = formRef.current.valueGetter("advancePayment") || 0;
+        const expectedAdvance = finalTotal * defaultAdvancePercent;
 
+        const currentMaintenance = formRef.current.valueGetter("maintenanceDeposit") || 0;
+        const expectedMaintenance = finalTotal * defaultMaintenancePercent;
+
+        // Only update if values are significantly different
+        if (
+            Math.abs(currentAdvance - expectedAdvance) > 0.01 ||
+            Math.abs(currentMaintenance - expectedMaintenance) > 0.01
+        ) {
+            autoSetDerivedFields(formRef.current, finalTotal);
+        }
+    }, [defaultAdvancePercent, defaultMaintenancePercent]);
 
     const isoToDate = (iso: string | null | undefined): Date | null => {
         if (!iso) return null;
@@ -260,27 +269,22 @@ function SalesRequestForm({
     const handleApplyPaymentPlan = useCallback((
         installments: Array<{ dueDate: string; amount: number; isAdvance: boolean }>
     ) => {
-        // 1. Store installments
         setCustomInstallments(installments);
 
-        // 2. Calculate actual advance sum from the plan
         const actualAdvanceSum = installments
             .filter(inst => inst.isAdvance)
             .reduce((sum, inst) => sum + inst.amount, 0);
 
-        // 3. Update the form field directly using formRef
         if (formRef.current) {
-            formRef.current.onChange("advancePayment", {
-                value: actualAdvanceSum
-            });
-
-            // Optional: Also update maintenance deposit if you want it to follow new total logic
-            // But since totalPrice is fixed, it's usually unchanged
+            const currentAdvance = formRef.current.valueGetter("advancePayment");
+            // Only update if different (prevents re-render loop)
+            if (Math.abs(actualAdvanceSum - (currentAdvance || 0)) > 0.01) {
+                formRef.current.onChange("advancePayment", { value: actualAdvanceSum });
+            }
         }
 
-        // 4. Close modal and notify
         setShowPaymentPlan(false);
-        toast.success(getTranslatedLabel("salesRequest.form.paymentPlanApplied", "Payment plan applied successfully"));
+        toast.success("Payment plan applied and advance updated");
     }, [getTranslatedLabel]);
 
 
@@ -438,21 +442,15 @@ function SalesRequestForm({
     );
 
 
-    const salesRequestValidator = (values: any): KeyValue<string> | undefined => {
+    const salesRequestValidator = useCallback((values: any): KeyValue<string> | undefined => {
         const t = getTranslatedLabel;
-        console.log('from validator')
 
-        // -----------------------------------------------------------------
-        // Existing apartment availability check (unchanged)
-        // -----------------------------------------------------------------
         const apt = values.productId;
         const currentSalesRequestId = values.salesRequestId;
-
         const aptStatusId = typeof apt === "object" ? apt?.apartmentStatusId : null;
 
         if (aptStatusId && aptStatusId !== APARTMENT_AVAILABLE) {
             const reservedByThisRequest = apt.reservedBySalesRequestId === currentSalesRequestId;
-
             if (!reservedByThisRequest) {
                 return {
                     VALIDATION_SUMMARY: t(
@@ -463,120 +461,9 @@ function SalesRequestForm({
             }
         }
 
-        const advance = Number(values.advancePayment ?? 0);
-        const total = Number(values.totalPrice ?? 0);
-
-        // -----------------------------------------------------------------
-        // Case 1: Partial payment (advance < total) → default fields AND custom plan required
-        // -----------------------------------------------------------------
-        if (advance < total && total > 0) {
-            const missingDefault: string[] = [];
-
-            if (!values.numberOfInstallments || values.numberOfInstallments <= 0) {
-                missingDefault.push(t("salesRequest.form.installments", "Number of Installments"));
-            }
-            if (!values.dateOfFirstInstallment) {
-                missingDefault.push(t("salesRequest.form.firstInstallmentDate", "First Installment Date"));
-            }
-            if (!values.monthsBetweenInstallments || values.monthsBetweenInstallments <= 0) {
-                missingDefault.push(t("salesRequest.form.duration", "Months Between Installments"));
-            }
-
-            if (missingDefault.length > 0) {
-                return {
-                    VALIDATION_SUMMARY: t(
-                        "salesRequest.form.validation.missingDefaultFields",
-                        "For partial payment, the following fields are required to generate the initial payment plan: {0}."
-                    ).replace("{0}", missingDefault.join(", "))
-                };
-            }
-
-            // Custom plan still mandatory – user must open modal and apply (even if just accepting defaults)
-            if (customInstallments.length === 0) {
-                return {
-                    VALIDATION_SUMMARY: t(
-                        "salesRequest.form.validation.customPlanRequired",
-                        "You must open the Payment Plan modal and apply a plan (even if you keep the defaults)."
-                    )
-                };
-            }
-        }
-
-        // -----------------------------------------------------------------
-        // Case 2: Full payment (advance >= total) → custom plan still required (for advance splitting)
-        // -----------------------------------------------------------------
-        if (advance >= total && total > 0) {
-            if (customInstallments.length === 0) {
-                return {
-                    VALIDATION_SUMMARY: t(
-                        "salesRequest.form.validation.customPlanRequiredFull",
-                        "Even for full payment, you must create a custom payment plan (e.g., to split the advance payment)."
-                    )
-                };
-            }
-
-            // Prevent leftover default fields in full payment scenario
-            if (
-                values.numberOfInstallments > 0 ||
-                values.dateOfFirstInstallment != null ||
-                values.monthsBetweenInstallments > 0
-            ) {
-                return {
-                    VALIDATION_SUMMARY: t(
-                        "salesRequest.form.validation.clearDefaultFieldsFull",
-                        "Full payment detected – please clear the installment fields (they are not used)."
-                    )
-                };
-            }
-        }
-
-        if (customInstallments.length > 0) {
-            const advance = Number(values.advancePayment ?? 0);
-            const total = Number(values.totalPrice ?? 0);
-            const tolerance = 0.01;
-
-            const advanceSum = customInstallments
-                .filter(i => i.isAdvance)
-                .reduce((s, i) => s + i.amount, 0);
-            const regularSum = customInstallments
-                .filter(i => !i.isAdvance)
-                .reduce((s, i) => s + i.amount, 0);
-
-            if (Math.abs(advanceSum + regularSum - total) > tolerance) {
-                return {
-                    VALIDATION_SUMMARY: t(
-                        "salesRequest.form.validation.planTotalMismatch",
-                        "Payment plan total does not match sales price. Reopen the plan to update."
-                    )
-                };
-            }
-
-            if (Math.abs(advanceSum - advance) > tolerance) {
-                return {
-                    VALIDATION_SUMMARY: t(
-                        "salesRequest.form.validation.planAdvanceMismatch",
-                        "Advance in payment plan does not match advance payment. Reopen to fix."
-                    )
-                };
-            }
-
-            if (advance < total && total > 0) {
-                const expected = values.numberOfInstallments ?? 0;
-                const actual = customInstallments.filter(i => !i.isAdvance).length;
-                if (actual !== expected) {
-                    return {
-                        VALIDATION_SUMMARY: t(
-                            "salesRequest.form.validation.installmentCountMismatch",
-                            `Payment plan has ${actual} regular installments, expected ${expected}. Reopen plan.`
-                        )
-                    };
-                }
-            }
-        }
-
-        // All good
+        // All other validation (payment plan, advance match, etc.) moved to handleSubmitData
         return;
-    };
+    }, [getTranslatedLabel]);
 
 
     return (

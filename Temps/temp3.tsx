@@ -1,25 +1,22 @@
-const handleApplyPaymentPlan = useCallback((
-    installments: Array<{ dueDate: string; amount: number; isAdvance: boolean }>
-) => {
-    // 1. Store installments
-    setCustomInstallments(installments);
+const salesRequestValidator = useCallback((values: any): KeyValue<string> | undefined => {
+    const t = getTranslatedLabel;
 
-    // 2. Calculate actual advance sum from the plan
-    const actualAdvanceSum = installments
-        .filter(inst => inst.isAdvance)
-        .reduce((sum, inst) => sum + inst.amount, 0);
+    const apt = values.productId;
+    const currentSalesRequestId = values.salesRequestId;
+    const aptStatusId = typeof apt === "object" ? apt?.apartmentStatusId : null;
 
-    // 3. Update the form field directly using formRef
-    if (formRef.current) {
-        formRef.current.onChange("advancePayment", {
-            value: actualAdvanceSum
-        });
-
-        // Optional: Also update maintenance deposit if you want it to follow new total logic
-        // But since totalPrice is fixed, it's usually unchanged
+    if (aptStatusId && aptStatusId !== APARTMENT_AVAILABLE) {
+        const reservedByThisRequest = apt.reservedBySalesRequestId === currentSalesRequestId;
+        if (!reservedByThisRequest) {
+            return {
+                VALIDATION_SUMMARY: t(
+                    "salesRequest.form.validation.apartmentNotAvailable",
+                    "Cannot proceed: this apartment is already SOLD or RESERVED by another sales request."
+                )
+            };
+        }
     }
 
-    // 4. Close modal and notify
-    setShowPaymentPlan(false);
-    toast.success(getTranslatedLabel("salesRequest.form.paymentPlanApplied", "Payment plan applied successfully"));
-}, [getTranslatedLabel]);
+    // All other validation (payment plan, advance match, etc.) moved to handleSubmitData
+    return;
+}, [getTranslatedLabel]); // ← Removed autoSetDerivedFields from deps!
