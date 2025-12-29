@@ -67,6 +67,7 @@
       "totalPrice": "الإجمالي",
       "advance": "المقدم",
       "installments": "الأقساط",
+      "isChequesDelivered": "الشيكات مسلمة",
       "firstInstallmentDate": "تاريخ القسط الأول",
       "duration": "الشهور بين الأقساط",
       "comments": "التعليقات",

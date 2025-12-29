@@ -61,7 +61,7 @@ public class ApproveSalesRequest
                     return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure(
                         "Cannot approve: No payment plan defined. Please create and apply a custom payment plan.");
                 }
-                
+
                 // 2. Update status
                 sr.StatusId = "SALES_REQUEST_APPROVED";
                 sr.LastUpdatedStamp = DateTime.UtcNow;
@@ -92,12 +92,12 @@ public class ApproveSalesRequest
 
                     paymentsToCreate.Add(new CreatePaymentParam
                     {
-                        PartyIdFrom = sr.FromPartyId!,           // Customer
-                        PartyIdTo = companyPartyId,              // Company
+                        PartyIdFrom = sr.FromPartyId!, // Customer
+                        PartyIdTo = companyPartyId, // Company
                         Amount = inst.Amount,
-                        EffectiveDate = inst.DueDate,            // Use exact due date from plan
+                        EffectiveDate = inst.DueDate, // Use exact due date from plan
                         PaymentTypeId = paymentTypeId,
-                        StatusId = "PMNT_NOT_PAID",              // Unpaid by default
+                        StatusId = "PMNT_NOT_PAID", // Unpaid by default
                         Comments = comments,
                         SalesRequestId = sr.SalesRequestId,
                         PaymentMethodId = null,
@@ -167,7 +167,7 @@ public class ApproveSalesRequest
                 {
                     AcctgTransId = acctgTransId,
                     AcctgTransEntrySeqId = (++seq).ToString().PadLeft(3, '0'), // "002"
-                    GlAccountId = "250120", // Revenue - Apartment Sales
+                    GlAccountId = "250120", 
                     DebitCreditFlag = "C",
                     AcctgTransEntryTypeId = "_NA_",
                     Amount = totalPrice,
@@ -180,6 +180,62 @@ public class ApproveSalesRequest
                     LastUpdatedStamp = stamp
                 };
                 await _acctgTransService.CreateAcctgTransEntry(creditEntry);
+
+                if (sr.IsChequesDelivered == true)
+                {
+                    acctgTransParams = new CreateAcctgTransParams
+                    {
+                        AcctgTransTypeId = "APARTMENT_SALE", // or "APARTMENT_SALE" if you add it later
+                        TransactionDate = sr.SaleDate ?? DateTime.UtcNow.Date,
+                        IsPosted = "Y",
+                        Description = $"Apartment Sale - SR {sr.SalesRequestId} - {apartment.ApartmentName}",
+                        GlFiscalTypeId = "ACTUAL",
+                        SalesRequestId = sr.SalesRequestId,
+                        PartyId = sr.FromPartyId
+                    };
+
+                    acctgTransId = await _acctgTransService.CreateAcctgTrans(acctgTransParams);
+
+                    seq = 0;
+
+                    // Debit: Accounts Receivable - Customer owes full amount
+                    debitEntry = new AcctgTransEntry
+                    {
+                        AcctgTransId = acctgTransId,
+                        AcctgTransEntrySeqId = (++seq).ToString().PadLeft(3, '0'), // "001"
+                        GlAccountId = "124410", 
+                        DebitCreditFlag = "D",
+                        AcctgTransEntryTypeId = "_NA_",
+                        Amount = totalPrice,
+                        ReconcileStatusId = "AES_NOT_RECONCILED",
+                        Description = $"Apartment sale receivable - {apartment.ApartmentName}",
+                        OrganizationPartyId = companyPartyId,
+                        ProductId = sr.ProductId,
+                        PartyId = sr.FromPartyId,
+                        CreatedStamp = stamp,
+                        LastUpdatedStamp = stamp
+                    };
+                    await _acctgTransService.CreateAcctgTransEntry(debitEntry);
+
+                    // Credit: Revenue from Apartment Sales
+                    creditEntry = new AcctgTransEntry
+                    {
+                        AcctgTransId = acctgTransId,
+                        AcctgTransEntrySeqId = (++seq).ToString().PadLeft(3, '0'), // "002"
+                        GlAccountId = "121100", 
+                        DebitCreditFlag = "C",
+                        AcctgTransEntryTypeId = "_NA_",
+                        Amount = totalPrice,
+                        ReconcileStatusId = "AES_NOT_RECONCILED",
+                        Description = $"Apartment sale revenue - {apartment.ApartmentName}",
+                        OrganizationPartyId = companyPartyId,
+                        PartyId = sr.FromPartyId,
+                        ProductId = sr.ProductId,
+                        CreatedStamp = stamp,
+                        LastUpdatedStamp = stamp
+                    };
+                    await _acctgTransService.CreateAcctgTransEntry(creditEntry);
+                }
 
 
                 // 7. Save approval
@@ -213,7 +269,7 @@ public class ApproveSalesRequest
                 .Where(p => p.PartyId == sr.FromPartyId)
                 .Select(p => new { p.PartyId, p.Description, Phone = string.Empty })
                 .FirstOrDefaultAsync(ct);
-            
+
             var employee = await _context.Parties
                 .Where(p => p.PartyId == sr.EmployeePartyId)
                 .Select(p => new { p.PartyId, p.Description })

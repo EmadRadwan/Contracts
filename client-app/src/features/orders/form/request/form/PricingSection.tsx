@@ -6,6 +6,7 @@ import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHel
 import ApartmentPriceCalculatorModal from "../dashboard/ApartmentPriceCalculatorModal";
 import ModalContainer from "../../../../../app/common/modals/ModalContainer";
 import { SalesRequest } from "../../../../../app/models/order/SalesRequest";
+import {MemoizedFormCheckBox} from "../../../../../app/common/form/FormCheckBox";
 
 interface PricingSectionProps {
     formRenderProps: FormRenderProps;
@@ -95,7 +96,14 @@ export const PricingSection: React.FC<PricingSectionProps> = React.memo(({
                         +
                     </Button>
                 </Grid>
-                <Grid item xs={1} />
+                <Grid item xs={1}>
+                    <Field
+                        id={"isChequesDelivered"}
+                        name={"isChequesDelivered"}
+                        label={getTranslatedLabel("salesRequest.form.isChequesDelivered", "isChequesDelivered")}
+                        component={MemoizedFormCheckBox}
+                    />
+                </Grid>
                 <Grid item xs={2}>
                     <Field
                         name="totalPrice"

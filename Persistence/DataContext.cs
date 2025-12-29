@@ -28390,6 +28390,10 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                   .HasMaxLength(36)
                   .IsUnicode(false)
                   .HasColumnName("STATUS_ID");
+                  
+               entity.Property(e => e.IsChequesDelivered)
+                    .HasColumnName("IS_CHEQUES_DELIVERED")
+                    .HasColumnType("tinyint(1)");  // Recommended: matches common MySQL bool convention
 
             
                 // --------------------------------------------------------------

@@ -143,7 +143,7 @@ function SalesRequestForm({
                 productId: null,
                 advancePayment: null,
                 totalPrice: null,
-                // ... etc
+                isChequesDelivered: true,
             };
         }
 
@@ -236,6 +236,7 @@ function SalesRequestForm({
             comments: sr.comments ?? null,
             statusId: sr.statusId ?? null,
             statusDescription: sr.statusDescription ?? null,
+            isChequesDelivered: sr.isChequesDelivered ?? null,
         };
     }, [editMode, salesRequest]);
 
@@ -298,6 +299,33 @@ function SalesRequestForm({
 
             const advance = Number(data.advancePayment ?? 0);
             const total = Number(data.totalPrice ?? 0);
+
+            if (advance < total && total > 0) {
+                const numberOfInstallments = data.numberOfInstallments ?? 0;
+                const dateOfFirstInstallment = data.dateOfFirstInstallment;
+                const monthsBetweenInstallments = data.monthsBetweenInstallments ?? 0;
+
+                const missingFields: string[] = [];
+
+                if (!numberOfInstallments || numberOfInstallments <= 0) {
+                    missingFields.push("Number of Installments");
+                }
+                if (!dateOfFirstInstallment) {
+                    missingFields.push("Date of First Installment");
+                }
+                if (!monthsBetweenInstallments || monthsBetweenInstallments <= 0) {
+                    missingFields.push("Months Between Installments");
+                }
+
+                if (missingFields.length > 0) {
+                    toast.error(
+                        `For installment-based sales, please fill in: ${missingFields.join(", ")}.`
+                    );
+                    setButtonFlag(false);
+                    return;
+                }
+            }
+
 
             if (customInstallments.length > 0) {
                 const tolerance = 0.01;

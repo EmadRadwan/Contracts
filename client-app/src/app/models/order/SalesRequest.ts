@@ -5,6 +5,7 @@ export interface SalesRequest {
     apartmentName?: string | null;
     projectName?: string | null;
     floorNumber?: string | null;
+    isChequesDelivered?: string | null;
     apartmentSpaceM2?: number | null;
     gardenSpaceM2?: number | null;
     apartmentPricePerM2?: number | null;

@@ -33,6 +33,8 @@ public class SalesRequestRecord
     
     public decimal? MaintenanceDeposit { get; set; }
     public string StatusId { get; set; } = string.Empty;
+    public bool? IsChequesDelivered { get; set; }
+
     public string StatusDescription { get; set; } = string.Empty;
 
 

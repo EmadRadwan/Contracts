@@ -96,6 +96,7 @@ public class UpdateSalesRequest
                 sr.EmployeePartyId = dto.EmployeePartyId;
                 sr.ApartmentPricePerM2 = dto.ApartmentPricePerM2;
                 sr.GardenPricePerM2 = dto.GardenPricePerM2;
+                sr.IsChequesDelivered = dto.IsChequesDelivered;
                 sr.Discount = dto.Discount;
                 sr.TotalPrice = dto.TotalPrice;
                 sr.AdvancePayment = dto.AdvancePayment;
@@ -223,7 +224,7 @@ public class UpdateSalesRequest
                     DateOfFirstInstallment = dto.DateOfFirstInstallment,
                     MonthsBetweenInstallments = (int)dto.MonthsBetweenInstallments,
                     MaintenanceDeposit = dto.MaintenanceDeposit,
-
+                    IsChequesDelivered = dto.IsChequesDelivered,
 
                     SaleDate = dto.SaleDate!.Value,
                     Comments = dto.Comments,

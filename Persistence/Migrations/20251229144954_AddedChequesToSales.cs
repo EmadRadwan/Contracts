@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class AddMustChangePassword : Migration
+    public partial class AddedChequesToSales : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -28881,6 +28881,7 @@ namespace Persistence.Migrations
                     MONTHS_BETWEEN_INSTALLMENTS = table.Column<int>(type: "int", nullable: true),
                     STATUS_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    IS_CHEQUES_DELIVERED = table.Column<bool>(type: "tinyint(1)", nullable: true),
                     EMPLOYEE_PARTY_ID = table.Column<string>(type: "varchar(36)", unicode: false, maxLength: 36, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     LAST_UPDATED_STAMP = table.Column<DateTime>(type: "datetime", nullable: true),

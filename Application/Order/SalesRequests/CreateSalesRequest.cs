@@ -42,9 +42,8 @@ public class CreateSalesRequest
         public decimal? GardenPricePerM2 { get; set; }
         public decimal ApartmentPricePerM2 { get; set; }
         public decimal? MaintenanceDeposit { get; set; }
-        public decimal? InstallmentAmount { get; set; }
-        public decimal? FirstInstallmentAmount { get; set; }
-        public decimal? RegularInstallmentAmount { get; set; }
+        public bool? IsChequesDelivered { get; set; }
+
 
         public string ApartmentStatusId { get; set; } = string.Empty;
         public string ApartmentStatusDescription { get; set; } = string.Empty;
@@ -143,6 +142,7 @@ public class CreateSalesRequest
                 GardenPricePerM2 = dto.GardenPricePerM2,
                 Discount = dto.Discount,
                 TotalPrice = dto.TotalPrice,
+                IsChequesDelivered = dto.IsChequesDelivered,
                 AdvancePayment = dto.AdvancePayment,
                 NumberOfInstallments = dto.NumberOfInstallments,
                 DateOfFirstInstallment = dto.DateOfFirstInstallment,
@@ -286,6 +286,7 @@ public class CreateSalesRequest
                 SaleDate = dto.SaleDate!.Value,
                 Comments = dto.Comments,
                 StatusId = SalesRequestCreatedStatusId,
+                IsChequesDelivered = dto.IsChequesDelivered,
                 StatusDescription = statusDesc,
                 CreatedStamp = now,
                 LastUpdatedStamp = now

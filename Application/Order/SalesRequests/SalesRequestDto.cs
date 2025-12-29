@@ -20,6 +20,7 @@ public class SalesRequestDto
     public int? NumberOfInstallments { get; set; }
     public DateTime? DateOfFirstInstallment { get; set; }
     public int? MonthsBetweenInstallments { get; set; }
+    public bool? IsChequesDelivered { get; set; }
 
     public string? Comments { get; set; }
 

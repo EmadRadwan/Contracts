@@ -46148,6 +46148,10 @@ namespace Persistence.Migrations
                         .HasColumnType("numeric(18,4)")
                         .HasColumnName("GARDEN_PRICE_PER_M2");
 
+                    b.Property<bool?>("IsChequesDelivered")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("IS_CHEQUES_DELIVERED");
+
                     b.Property<DateTime?>("LastUpdatedStamp")
                         .HasColumnType("datetime")
                         .HasColumnName("LAST_UPDATED_STAMP");

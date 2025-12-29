@@ -40,6 +40,8 @@ class RawSalesRequest
     public string? PartyDescription { get; set; }
     public string? EmployeeDescription { get; set; }
     public string? StatusId { get; set; } 
+    public bool? IsChequesDelivered { get; set; }
+
     public string? StatusDescription { get; set; } 
     public decimal? MaintenanceDeposit { get; set; } 
 }
@@ -144,6 +146,7 @@ public class ListSalesRequestsQuery
                     EmployeeDescription = e != null ? e.Description : null,
 
                     StatusId = sr.StatusId,
+                    IsChequesDelivered = sr.IsChequesDelivered,
                     StatusDescription = sr.StatusId != null
                         ? statusGrp.Where(st => st.StatusId == sr.StatusId)
                             .Select(st => st.Description)
@@ -204,6 +207,7 @@ public class ListSalesRequestsQuery
                         : x.ApartmentStatusId ?? string.Empty,
 
                     MaintenanceDeposit = x.MaintenanceDeposit,
+                    IsChequesDelivered = x.IsChequesDelivered,
                     StatusId = x.StatusId ?? string.Empty,
                     StatusDescription = x.StatusId != null &&
                                         salesRequestStatusLookup.TryGetValue(x.StatusId, out var srd)

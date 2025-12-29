@@ -41,6 +41,7 @@ public class SalesRequest
     public DateTime? DateOfFirstInstallment { get; set; }
     public int? MonthsBetweenInstallments { get; set; }
     public string? StatusId { get; set; }
+    public bool? IsChequesDelivered { get; set; }
     public string? EmployeePartyId { get; set; }
 
 

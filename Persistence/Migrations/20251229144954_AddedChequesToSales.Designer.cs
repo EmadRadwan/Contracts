@@ -11,8 +11,8 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20251228132517_CreateDatabaseViews")]
-    partial class CreateDatabaseViews
+    [Migration("20251229144954_AddedChequesToSales")]
+    partial class AddedChequesToSales
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -46150,6 +46150,10 @@ namespace Persistence.Migrations
                     b.Property<decimal?>("GardenPricePerM2")
                         .HasColumnType("numeric(18,4)")
                         .HasColumnName("GARDEN_PRICE_PER_M2");
+
+                    b.Property<bool?>("IsChequesDelivered")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("IS_CHEQUES_DELIVERED");
 
                     b.Property<DateTime?>("LastUpdatedStamp")
                         .HasColumnType("datetime")
