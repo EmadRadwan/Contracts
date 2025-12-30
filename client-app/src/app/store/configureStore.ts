@@ -485,6 +485,8 @@ export {useFetchOrgGlSettingsQuery} from "./apis/accounting/orgGlSettingsApi";
 export {useFetchOrgChartOfAccountsLovQuery} from "./apis/accounting/orgChartOfAccountsLovApi";
 export {useAssignGlAccountToOrganizationMutation} from "./apis/accounting/organizationGlChartOfAccountsApi";
 export {useFetchOrganizationGlChartOfAccountsQuery} from "./apis/accounting/organizationGlChartOfAccountsApi";
+export {useLazyCheckGlAccountAssignedQuery} from "./apis/accounting/organizationGlChartOfAccountsApi";
+export {useRemoveGlAccountFromOrganizationMutation} from "./apis/accounting/organizationGlChartOfAccountsApi";
 
 export {
     useFetchVehicleContentsQuery,

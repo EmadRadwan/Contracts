@@ -548,4 +548,48 @@ public class OrganizationGlController : BaseApiController
         var result = await Mediator.Send(command);
         return HandleResults(result);
     }
+
+    /// <summary>
+    /// Checks if a GL Account is assigned to an Organization.
+    /// </summary>
+    /// <param name="companyId">The organization party identifier.</param>
+    /// <param name="glAccountId">The GL account identifier.</param>
+    /// <returns>True if the account is assigned, false otherwise.</returns>
+    [HttpGet("{companyId}/checkGlAccountAssigned/{glAccountId}")]
+    public async Task<IActionResult> CheckGlAccountAssignedToOrganization(string companyId, string glAccountId)
+    {
+        var query = new CheckGlAccountAssignedToOrganization.Query
+        {
+            CompanyId = companyId,
+            GlAccountId = glAccountId
+        };
+
+        var result = await Mediator.Send(query);
+        return HandleResults(result);
+    }
+
+    /// <summary>
+    /// Removes a GL Account from an Organization's chart of accounts.
+    /// </summary>
+    /// <param name="companyId">The organization party identifier.</param>
+    /// <param name="glAccountId">The GL account identifier.</param>
+    /// <returns>NoContent on success, or an error response.</returns>
+    [HttpDelete("{companyId}/removeGlAccountFromOrganization/{glAccountId}")]
+    public async Task<IActionResult> RemoveGlAccountFromOrganization(string companyId, string glAccountId)
+    {
+        var command = new RemoveGlAccountFromOrganization.Command
+        {
+            CompanyId = companyId,
+            GlAccountId = glAccountId
+        };
+
+        var result = await Mediator.Send(command);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result);
+        }
+
+        return NoContent();
+    }
 }

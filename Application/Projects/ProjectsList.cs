@@ -1,6 +1,7 @@
 #nullable enable
 using Application.Manufacturing;
 using AutoMapper;
+using FluentValidation.Resources;
 using MediatR;
 using Microsoft.AspNetCore.OData.Query;
 using Persistence;
@@ -12,6 +13,7 @@ public class ProjectsList
     public class Query : IRequest<IQueryable<WorkEffortRecord>>
     {
         public ODataQueryOptions<WorkEffortRecord> Options { get; set; }
+        public string Language { get; set; }
     }
 
     public class Handler : IRequestHandler<Query, IQueryable<WorkEffortRecord>>
@@ -29,6 +31,8 @@ public class ProjectsList
         {
             var query = from we in _context.WorkEfforts
                 join si in _context.StatusItems on we.CurrentStatusId equals si.StatusId into statusGroup
+                join ga in _context.GlAccounts on we.GlAccountId equals ga.GlAccountId into glAccountGroup
+                from ga in glAccountGroup.DefaultIfEmpty()
                 from si in statusGroup.DefaultIfEmpty()
                 where we.WorkEffortTypeId == "PROJECT"
                 select new WorkEffortRecord
@@ -39,7 +43,8 @@ public class ProjectsList
                     CurrentStatusDescription = si != null ? si.Description : null,
                     EstimatedStartDate = we.EstimatedStartDate,
                     EstimatedCompletionDate = we.EstimatedCompletionDate,
-                    GlAccountId = we.GlAccountId
+                    GlAccountId = we.GlAccountId,
+                    GlAccountName = ga != null ? $"{(request.Language == "ar" ? ga.AccountNameArabic : ga.AccountName)} - ({ga.AccountCode})" : null
                 };
 
             return query;

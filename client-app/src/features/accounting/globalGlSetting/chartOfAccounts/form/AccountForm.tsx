@@ -1,5 +1,5 @@
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
     Form,
     FormElement,
@@ -30,8 +30,11 @@ import { useAppSelector } from "../../../../../app/store/configureStore";
 import { useAssignGlAccountToOrganizationMutation, useFetchGlAccountOrganizationHierarchyLovQuery } from "../../../../../app/store/apis";
 import { useFetchTopLevelGlobalGlAccountsQuery, useCreateGlAccountMutation, useUpdateGlAccountMutation } from "../../../../../app/store/apis/accounting/globalGlSettingsApi";
 import { FormDropDownTreeGlAccountWithChildren } from "../../../../../app/common/form/FormDropDownTreeGlAccountWithChildren";
-import {FormComboBoxVirtualGlAccountTypes} from "../../../../../app/common/form/FormComboBoxVirtualGlAccountTypes";
-import {FormComboBoxVirtualGlAccountClasses} from "../../../../../app/common/form/FormComboBoxVirtualGlAccountClasses";
+import { FormComboBoxVirtualGlAccountTypes } from "../../../../../app/common/form/FormComboBoxVirtualGlAccountTypes";
+import { FormComboBoxVirtualGlAccountClasses } from "../../../../../app/common/form/FormComboBoxVirtualGlAccountClasses";
+import GlSettingsMenu from "../../menu/GlSettingsMenu";
+import AccountingMenu from "../../../invoice/menu/AccountingMenu";
+import { useLazyCheckGlAccountAssignedQuery, useRemoveGlAccountFromOrganizationMutation } from "../../../../../app/store/apis/accounting/organizationGlChartOfAccountsApi";
 
 interface Props {
     account?: GlAccount;
@@ -46,6 +49,8 @@ const messages: Record<string, Record<string, string>> = {
         // Success messages
         GL_ACCOUNT_CREATED: "GL Account created successfully.",
         GL_ACCOUNT_UPDATED: "GL Account updated successfully.",
+        GL_ACCOUNT_ASSIGNED: "GL Account assigned successfully.",
+        GL_ACCOUNT_REMOVED: "GL Account removed from organization successfully.",
         // Error messages
         USER_NOT_FOUND: "Unauthorized: User not found.",
         GL_ACCOUNT_ID_REQUIRED: "GL Account ID is required.",
@@ -55,15 +60,17 @@ const messages: Record<string, Record<string, string>> = {
         GL_ACCOUNT_CREATE_FAILED: "Failed to create the GL Account.",
         ACCOUNT_CODE_GENERATION_FAILED: "Failed to generate a unique account code.",
         GL_ACCOUNT_INVALID_PARENT: "Cannot assign account as child to itself.",
+        NOT_ASSIGNED: "GL Account is not assigned to this organization.",
+        HAS_ASSIGNED_CHILDREN: "Cannot remove this account because it has child accounts assigned to the organization. Please remove child accounts first.",
         UNEXPECTED_ERROR: "An unexpected error occurred. Please try again.",
         DEFAULT: "An unexpected error occurred. Please try again.",
-        GL_ACCOUNT_ASSIGNED: "GL Account assigned successfully.",
     },
     ar: {
         // Success messages
         GL_ACCOUNT_CREATED: "تم إنشاء حساب دفتر الأستاذ بنجاح.",
         GL_ACCOUNT_UPDATED: "تم تحديث حساب دفتر الأستاذ بنجاح.",
         GL_ACCOUNT_ASSIGNED: "تم تعيين حساب دفتر الأستاذ بنجاح.",
+        GL_ACCOUNT_REMOVED: "تم إزالة حساب دفتر الأستاذ من المؤسسة بنجاح.",
         // Error messages
         USER_NOT_FOUND: "غير مصرح: المستخدم غير موجود.",
         GL_ACCOUNT_ID_REQUIRED: "معرف حساب دفتر الأستاذ مطلوب.",
@@ -72,8 +79,10 @@ const messages: Record<string, Record<string, string>> = {
         GL_ACCOUNT_UPDATE_FAILED: "فشل في تحديث حساب دفتر الأستاذ.",
         GL_ACCOUNT_CREATE_FAILED: "فشل في إنشاء حساب دفتر الأستاذ.",
         ACCOUNT_CODE_GENERATION_FAILED: "فشل في إنشاء رمز حساب فريد.",
-        UNEXPECTED_ERROR: "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
         GL_ACCOUNT_INVALID_PARENT: "لا يمكن تعيين الحساب كتابع لنفسه.",
+        NOT_ASSIGNED: "حساب دفتر الأستاذ غير معين لهذه المؤسسة.",
+        HAS_ASSIGNED_CHILDREN: "لا يمكن إزالة هذا الحساب لأنه يحتوي على حسابات فرعية معينة للمؤسسة. يرجى إزالة الحسابات الفرعية أولاً.",
+        UNEXPECTED_ERROR: "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
         DEFAULT: "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
     },
 };
@@ -140,11 +149,32 @@ const AccountForm: React.FC<Props> = ({
     const [createGlAccount, { isLoading: isCreating }] = useCreateGlAccountMutation();
     const [updateGlAccount, { isLoading: isUpdating }] = useUpdateGlAccountMutation();
     const [assignGlAccountToOrganization] = useAssignGlAccountToOrganizationMutation();
+    const [checkGlAccountAssigned] = useLazyCheckGlAccountAssignedQuery();
+    const [removeGlAccountFromOrganization] = useRemoveGlAccountFromOrganizationMutation();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [creationError, setCreationError] = useState<string | null>(null);
     const [justCreatedAccount, setJustCreatedAccount] = useState<GlAccount | null>(null);
     const [formKey, setFormKey] = useState(0);
+    const [isAccountAssigned, setIsAccountAssigned] = useState(false);
+
+    // Check if account is assigned when in edit mode
+    useEffect(() => {
+        const checkAssignment = async () => {
+            if (editMode === 2 && account?.glAccountId && companyId) {
+                try {
+                    const result = await checkGlAccountAssigned({
+                        companyId,
+                        glAccountId: account.glAccountId
+                    }).unwrap();
+                    setIsAccountAssigned(result.isAssigned);
+                } catch {
+                    setIsAccountAssigned(false);
+                }
+            }
+        };
+        checkAssignment();
+    }, [editMode, account?.glAccountId, companyId, checkGlAccountAssigned]);
     /* ------------------------------------------------------------------
        Initial values – empty on create (unless creating similar), populated on edit
        ------------------------------------------------------------------ */
@@ -281,153 +311,184 @@ const AccountForm: React.FC<Props> = ({
                 companyId: companyId,
             }).unwrap();
             toast.success(getMessage("GL_ACCOUNT_ASSIGNED"));
+            setIsAccountAssigned(true);
+        } catch (error) {
+            handleApiError(error, getMessage("DEFAULT"));
+        }
+    }
+
+    async function handleRemoveFromOrganization() {
+        try {
+            if (!companyId || !account?.glAccountId) return;
+            const result = await removeGlAccountFromOrganization({
+                companyId: companyId,
+                glAccountId: account.glAccountId,
+            }).unwrap();
+            toast.success(getMessage("GL_ACCOUNT_REMOVED"));
+            setIsAccountAssigned(false);
         } catch (error) {
             handleApiError(error, getMessage("DEFAULT"));
         }
     }
 
     return (
-        <Paper elevation={6} sx={{ p: 4, mt: 2, mx: 2 }}>
-            <Grid container spacing={2}>
-                <Grid item xs={11}>
-                    <Typography variant="h5" gutterBottom>
-                        {editMode === 1
-                            ? getTranslatedLabel("accounting.glAccount.form.new", "New GL Account")
-                            : `${getTranslatedLabel("accounting.glAccount.form.edit", "Edit GL Account")} – ${account?.glAccountId
-                            }`}
-                    </Typography>
-                </Grid>
-                <Grid item xs={1}>
-                    <Button
-                        onClick={() => handleAssign()}
-                        variant="contained"
-                        color='success'
-                    >
-                        {getTranslatedLabel("general.assign-to-org", "Assign to Organization")}
-                    </Button>
-                </Grid>
-            </Grid>
-
-            <Form
-                key={formKey}
-                initialValues={initialValues}
-                onSubmit={handleSubmit}
-                render={(formRenderProps: FormRenderProps) => (
-                    <FormElement>
-                        <Grid container spacing={3}>
-                            {/* Row 1 */}
-                            <Grid item xs={12}>
-                                <Field
-                                    name="accountName"
-                                    label={getTranslatedLabel("accounting.glAccount.form.accountName", "Account Name *")}
-                                    component={FormInput}
-                                    validator={requiredValidator}
-                                />
-                            </Grid>
-
-                            {/* Row 2 – Dropdowns */}
-                            <Grid item xs={12} sm={4}>
-                                <Field
-                                    id="glAccountTypeId"
-                                    name="glAccountTypeId"
-                                    label={getTranslatedLabel("accounting.glAccount.form.accountType", "Account Type *")}
-                                    component={FormComboBoxVirtualGlAccountTypes}
-                                    validator={requiredValidator}
-                                    textField="description"
-                                    dataItemKey="glAccountTypeId"
-                                    //disabled={editMode > 1}
-                                />
-                            </Grid>
-
-                            <Grid item xs={12} sm={4}>
-                                <Field
-                                    id="glAccountClassId"
-                                    name="glAccountClassId"
-                                    label={getTranslatedLabel("accounting.glAccount.form.accountClass", "Account Class")}
-                                    component={FormComboBoxVirtualGlAccountClasses}
-                                    validator={requiredValidator}
-                                    textField="description"
-                                    dataItemKey="glAccountClassId"
-                                    //disabled={editMode > 1}
-                                />
-                            </Grid>
-
-                            <Grid item xs={12} sm={4}>
-                                <Field
-                                    name="glResourceTypeId"
-                                    label={getTranslatedLabel("accounting.glAccount.form.resourceType", "Resource Type")}
-                                    component={FormDropDownList}
-                                    data={glResourceTypes}
-                                    textField="descriptionArabic" 
-                                    dataItemKey="glResourceTypeId"
-                                    //disabled={editMode > 1}
-                                />
-                            </Grid>
-
-                            {/* Parent Account – Tree dropdown */}
-                            <Grid item xs={12}>
-                                <Field
-                                    id="parentGlAccountId"
-                                    name="parentGlAccountId"
-                                    label={getTranslatedLabel("accounting.glAccount.form.parentAccount", "Parent Account")}
-                                    component={FormDropDownTreeGlAccountWithChildren}
-                                    dataItemKey="glAccountId"
-                                    textField="accountName"
-                                    subItemsField="children"
-                                    data={glAccounts || []}
-                                    selectField="selected"
-                                    expandField="expanded"
-                                    loading={isLoadingGlAccounts}
-                                    validator={requiredValidator}
-                                // you can pass filter={item => item.glAccountId !== data.glAccountId} to prevent self-parent if needed
-                                />
-                            </Grid>
-
-                            {/* Description */}
-                            <Grid item xs={12}>
-                                <Field
-                                    name="description"
-                                    label={getTranslatedLabel("accounting.glAccount.form.description", "Description")}
-                                    component={FormInput}
-                                    multiline
-                                    rows={3}
-                                />
-                            </Grid>
-
-                            {/* Buttons */}
-                            <Grid item xs={12}>
-                                <Box sx={{ mt: 2 }}>
-                                    <Button
-                                        variant="contained"
-                                        color="primary"
-                                        type="submit"
-                                        disabled={isSubmitting || isCreating || isUpdating || !formRenderProps.allowSubmit}
-                                        startIcon={(isCreating || isUpdating) ? <CircularProgress size={20} /> : null}
-                                    >
-                                        {isCreating
-                                            ? getTranslatedLabel("accounting.glAccount.form.creating", "Creating...")
-                                            : isUpdating
-                                                ? getTranslatedLabel("accounting.glAccount.form.updating", "Updating...")
-                                                : editMode === 1
-                                                    ? getTranslatedLabel("accounting.glAccount.form.createAccount", "Create Account")
-                                                    : getTranslatedLabel("accounting.glAccount.form.updateAccount", "Update Account")}
-                                    </Button>
-
-                                    <Button
-                                        variant="outlined"
-                                        onClick={cancelEdit}
-                                        sx={{ mx: 2 }}
-                                    >
-                                        {getTranslatedLabel("general.cancel", "Cancel")}
-                                    </Button>
-                                    
-                                </Box>
-                            </Grid>
+        <>
+        <AccountingMenu selectedMenuItem="/globalGL" />
+            <GlSettingsMenu selectedMenuItem="chartOfAccounts" />
+            <Paper elevation={6} sx={{ p: 4, mt: 2, mx: 2 }}>
+                <Grid container spacing={2}>
+                    <Grid item xs={10}>
+                        <Typography variant="h5" gutterBottom>
+                            {editMode === 1
+                                ? getTranslatedLabel("accounting.glAccount.form.new", "New GL Account")
+                                : `${getTranslatedLabel("accounting.glAccount.form.edit", "Edit GL Account")} – ${account?.glAccountId
+                                }`}
+                        </Typography>
+                    </Grid>
+                    <Grid item xs={1}>
+                        <Button
+                            onClick={() => handleAssign()}
+                            variant="contained"
+                            color='success'
+                            disabled={isAccountAssigned}
+                        >
+                            {getTranslatedLabel("general.assign-to-org", "Assign to Organization")}
+                        </Button>
+                    </Grid>
+                    {isAccountAssigned && (
+                        <Grid item xs={1}>
+                            <Button
+                                onClick={() => handleRemoveFromOrganization()}
+                                variant="contained"
+                                color='error'
+                            >
+                                {getTranslatedLabel("accounting.glAccount.form.removeFromOrg", "Remove from Organization")}
+                            </Button>
                         </Grid>
-                    </FormElement>
-                )}
-            />
-        </Paper>
+                    )}
+                </Grid>
+
+                <Form
+                    key={formKey}
+                    initialValues={initialValues}
+                    onSubmit={handleSubmit}
+                    render={(formRenderProps: FormRenderProps) => (
+                        <FormElement>
+                            <Grid container spacing={3}>
+                                {/* Row 1 */}
+                                <Grid item xs={12}>
+                                    <Field
+                                        name="accountName"
+                                        label={getTranslatedLabel("accounting.glAccount.form.accountName", "Account Name *")}
+                                        component={FormInput}
+                                        validator={requiredValidator}
+                                    />
+                                </Grid>
+
+                                {/* Row 2 – Dropdowns */}
+                                <Grid item xs={12} sm={4}>
+                                    <Field
+                                        id="glAccountTypeId"
+                                        name="glAccountTypeId"
+                                        label={getTranslatedLabel("accounting.glAccount.form.accountType", "Account Type *")}
+                                        component={FormComboBoxVirtualGlAccountTypes}
+                                        validator={requiredValidator}
+                                        textField="description"
+                                        dataItemKey="glAccountTypeId"
+                                    //disabled={editMode > 1}
+                                    />
+                                </Grid>
+
+                                <Grid item xs={12} sm={4}>
+                                    <Field
+                                        id="glAccountClassId"
+                                        name="glAccountClassId"
+                                        label={getTranslatedLabel("accounting.glAccount.form.accountClass", "Account Class")}
+                                        component={FormComboBoxVirtualGlAccountClasses}
+                                        validator={requiredValidator}
+                                        textField="description"
+                                        dataItemKey="glAccountClassId"
+                                    //disabled={editMode > 1}
+                                    />
+                                </Grid>
+
+                                <Grid item xs={12} sm={4}>
+                                    <Field
+                                        name="glResourceTypeId"
+                                        label={getTranslatedLabel("accounting.glAccount.form.resourceType", "Resource Type")}
+                                        component={FormDropDownList}
+                                        data={glResourceTypes}
+                                        textField="descriptionArabic"
+                                        dataItemKey="glResourceTypeId"
+                                    //disabled={editMode > 1}
+                                    />
+                                </Grid>
+
+                                {/* Parent Account – Tree dropdown */}
+                                <Grid item xs={12}>
+                                    <Field
+                                        id="parentGlAccountId"
+                                        name="parentGlAccountId"
+                                        label={getTranslatedLabel("accounting.glAccount.form.parentAccount", "Parent Account")}
+                                        component={FormDropDownTreeGlAccountWithChildren}
+                                        dataItemKey="glAccountId"
+                                        textField="accountName"
+                                        subItemsField="children"
+                                        data={glAccounts || []}
+                                        selectField="selected"
+                                        expandField="expanded"
+                                        loading={isLoadingGlAccounts}
+                                        validator={requiredValidator}
+                                    // you can pass filter={item => item.glAccountId !== data.glAccountId} to prevent self-parent if needed
+                                    />
+                                </Grid>
+
+                                {/* Description */}
+                                <Grid item xs={12}>
+                                    <Field
+                                        name="description"
+                                        label={getTranslatedLabel("accounting.glAccount.form.description", "Description")}
+                                        component={FormInput}
+                                        multiline
+                                        rows={3}
+                                    />
+                                </Grid>
+
+                                {/* Buttons */}
+                                <Grid item xs={12}>
+                                    <Box sx={{ mt: 2 }}>
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            type="submit"
+                                            disabled={isSubmitting || isCreating || isUpdating || !formRenderProps.allowSubmit}
+                                            startIcon={(isCreating || isUpdating) ? <CircularProgress size={20} /> : null}
+                                        >
+                                            {isCreating
+                                                ? getTranslatedLabel("accounting.glAccount.form.creating", "Creating...")
+                                                : isUpdating
+                                                    ? getTranslatedLabel("accounting.glAccount.form.updating", "Updating...")
+                                                    : editMode === 1
+                                                        ? getTranslatedLabel("accounting.glAccount.form.createAccount", "Create Account")
+                                                        : getTranslatedLabel("accounting.glAccount.form.updateAccount", "Update Account")}
+                                        </Button>
+
+                                        <Button
+                                            variant="outlined"
+                                            onClick={cancelEdit}
+                                            sx={{ mx: 2 }}
+                                        >
+                                            {getTranslatedLabel("general.cancel", "Cancel")}
+                                        </Button>
+
+                                    </Box>
+                                </Grid>
+                            </Grid>
+                        </FormElement>
+                    )}
+                />
+            </Paper>
+        </>
     );
 };
 

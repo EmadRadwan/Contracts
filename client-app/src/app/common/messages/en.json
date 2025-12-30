@@ -690,7 +690,8 @@
         "updating": "Updating...",
         "createSuccess": "GL Account created successfully",
         "updateSuccess": "GL Account updated successfully",
-        "saveFailed": "Failed to save GL Account"
+        "saveFailed": "Failed to save GL Account",
+        "removeFromOrg": "Remove from Organization"
       }
     },
     "glSettingsMenu": {
@@ -1023,6 +1024,39 @@
       "leads": "Leads",
       "contacts": "Contacts",
       "accounts": "Accounts"
+    }
+  },
+  "project": {
+    "projects": {
+      "create": "Create Project",
+      "list": {
+        "num": "Project Number",
+        "name": "Project Name",
+        "status": "Status",
+        "startDate": "Start Date",
+        "completionDate": "Completion Date",
+        "glAccount":"GL Account",
+        "loading": "Loading Projects..."
+      },
+      "form": {
+        "new": "New Project",
+        "editTitle": "Edit Project",
+        "name": "Project Name",
+        "startDate": "Start Date",
+        "completionDate": "Completion Date",
+        "status": "Status",
+        "submit": "Submit",
+        "cancel": "Cancel",
+        "processing": "Processing Project...",
+        "updateSuccess": "Project updated successfully",
+        "createSuccess": "Project created successfully",
+        "error": "Failed to process project",
+        "validation": {
+          "startDate": "Please enter a valid start date.",
+          "completionDate": "Please enter a valid completion date.",
+          "dateOrder": "Completion date cannot be earlier than start date."
+        }
+      }
     }
   }
 }

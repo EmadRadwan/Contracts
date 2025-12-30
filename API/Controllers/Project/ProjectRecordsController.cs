@@ -12,7 +12,8 @@ public class ProjectRecordsController : BaseODataController<WorkEffortRecord>
     [EnableQuery]
     public async Task<IActionResult> Get(ODataQueryOptions<WorkEffortRecord> options)
     {
-        var query = await Mediator.Send(new ProjectsList.Query { Options = options });
+        var language = GetLanguage();
+        var query = await Mediator.Send(new ProjectsList.Query { Options = options, Language = language });
         return await HandleODataQueryAsync(query, options);
     }
 }

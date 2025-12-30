@@ -122,6 +122,10 @@ export default function ProjectsList() {
                         width={300}
                     />
                     <Column
+                        field="glAccountName"
+                        title={getTranslatedLabel("project.projects.list.glAccount", "GL Account")}
+                    />
+                    <Column
                         field="currentStatusDescription"
                         title={getTranslatedLabel("project.projects.list.status", "Status")}
                         width={150}
@@ -139,7 +143,7 @@ export default function ProjectsList() {
                         width={150}
                     />
                 </KendoGrid>
-                {isFetching && <LoadingComponent message="Loading Projects..." />}
+                {isFetching && <LoadingComponent message={getTranslatedLabel("project.projects.list.loading", "Loading Projects...")} />}
             </Paper>
         </>
     );

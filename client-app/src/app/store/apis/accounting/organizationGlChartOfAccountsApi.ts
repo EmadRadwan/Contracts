@@ -111,6 +111,19 @@ const organizationGlChartOfAccountsApi = createApi({
                 }),
                 invalidatesTags: ["OrganizationGlChartOfAccounts"],
             }),
+            checkGlAccountAssigned: builder.query<{ isAssigned: boolean }, { companyId: string; glAccountId: string }>({
+                query: ({ companyId, glAccountId }) => ({
+                    url: `/organizationGl/${companyId}/checkGlAccountAssigned/${glAccountId}`,
+                    method: "GET",
+                }),
+            }),
+            removeGlAccountFromOrganization: builder.mutation<void, { companyId: string; glAccountId: string }>({
+                query: ({ companyId, glAccountId }) => ({
+                    url: `/organizationGl/${companyId}/removeGlAccountFromOrganization/${glAccountId}`,
+                    method: "DELETE",
+                }),
+                invalidatesTags: ["OrganizationGlChartOfAccounts"],
+            }),
         };
     },
 });
@@ -121,6 +134,9 @@ export const {
     useFetchOrganizationGlAccountsByTypeQuery,
     useFetchFullChartOfAccountsQuery,
     useAssignGlAccountToOrganizationMutation,
-    useCreateAndAssignGlAccountToOrganizationMutation
+    useCreateAndAssignGlAccountToOrganizationMutation,
+    useCheckGlAccountAssignedQuery,
+    useLazyCheckGlAccountAssignedQuery,
+    useRemoveGlAccountFromOrganizationMutation
 } = organizationGlChartOfAccountsApi;
 export {organizationGlChartOfAccountsApi};

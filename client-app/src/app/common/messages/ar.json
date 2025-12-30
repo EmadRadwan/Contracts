@@ -975,7 +975,8 @@
         "updating": "جاري التحديث...",
         "createSuccess": "تم إنشاء الحساب بنجاح",
         "updateSuccess": "تم تحديث الحساب بنجاح",
-        "saveFailed": "فشل في حفظ الحساب"
+        "saveFailed": "فشل في حفظ الحساب",
+        "removeFromOrg": "إزالة من المؤسسة"
       }
     },
     "glSettingsMenu": {
@@ -1720,6 +1721,40 @@
       "email": "البريد الإلكتروني",
       "organization": "الشركة",
       "selectRole": "اختر دوراً لعرض مستخدميه"
+    }
+  },
+  "project": {
+    "projects": {
+      "create": "إنشاء مشروع",
+      "list": {
+        "num": "رقم المشروع",
+        "name": "اسم المشروع",
+        "glAccount": "حساب دفتر الأستاذ",
+        "status": "الحالة",
+        "startDate": "تاريخ البدء",
+        "completionDate": "تاريخ الانتهاء",
+        "loading": "جاري تحميل المشاريع..."
+      },
+      "form": {
+        "new": "مشروع جديد",
+        "editTitle": "تعديل المشروع",
+        "name": "اسم المشروع",
+        "startDate": "تاريخ البدء",
+        "completionDate": "تاريخ الانتهاء",
+        "status": "الحالة",
+        "submit": "حفظ",
+        "cancel": "إلغاء",
+        "processing": "جاري معالجة المشروع...",
+        "updateSuccess": "تم تحديث المشروع بنجاح",
+        "createSuccess": "تم إنشاء المشروع بنجاح",
+        "error": "فشل في معالجة المشروع",
+        "glAccount": "حساب دفتر الأستاذ",
+        "validation": {
+          "startDate": "يرجى إدخال تاريخ بدء صحيح.",
+          "completionDate": "يرجى إدخال تاريخ انتهاء صحيح.",
+          "dateOrder": "لا يمكن أن يكون تاريخ الانتهاء قبل تاريخ البدء."
+        }
+      }
     }
   }
 }

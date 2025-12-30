@@ -15,6 +15,7 @@ import { useAddProjectMutation, useUpdateProjectMutation } from "../../../app/st
 import ProjectMenu from "../menu/ProjectMenu";
 import { FormDropDownTreeGlAccount2 } from "../../../app/common/form/FormDropDownTreeGlAccount2";
 import { useFetchGlAccountOrganizationHierarchyLovQuery } from "../../../app/store/apis";
+import { FormDropDownTreeGlAccountWithItems } from "../../../app/common/form/FormDropDownTreeGlAccountWithItems";
 
 interface Props {
     project?: WorkEffort;
@@ -122,7 +123,7 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
             <Paper elevation={5} className={`div-container-withBorderCurved`} style={{ padding: '16px' }}>
                 {editMode === 1 && (
                     <Typography variant="h4" color={"green"} sx={{ mb: 2 }}>
-                        New Project
+                        {getTranslatedLabel("project.projects.form.new", "New Project")}
                     </Typography>
                 )}
                 {editMode === 2 && project?.workEffortId && (
@@ -210,8 +211,8 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
                                             id="glAccountId"
                                             name="glAccountId"
                                             validator={requiredValidator}
-                                            label={getTranslatedLabel("glAccount.parent", "Parent Account")}
-                                            component={FormDropDownTreeGlAccount2}
+                                            label={getTranslatedLabel("project.projects.form.glAccount", "GL Account")}
+                                            component={FormDropDownTreeGlAccountWithItems}
                                             data={glAccounts || []}
                                             dataItemKey="glAccountId"
                                             textField="text"
@@ -229,12 +230,12 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
                                                 variant="contained"
                                                 disabled={!formRenderProps.allowSubmit || buttonFlag}
                                             >
-                                                Submit
+                                                {getTranslatedLabel("project.projects.form.submit", "Submit")}
                                             </Button>
                                         </Grid>
                                         <Grid item xs={2}>
                                             <Button onClick={cancelEdit} variant="contained" color="error">
-                                                Cancel
+                                                {getTranslatedLabel("project.projects.form.cancel", "Cancel")}
                                             </Button>
                                         </Grid>
                                     </Grid>
@@ -242,7 +243,7 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
                                 {buttonFlag && (
                                     <Grid container spacing={2}>
                                         <Grid item xs={4}>
-                                            <LoadingComponent message="Processing Project..." />
+                                            <LoadingComponent message={getTranslatedLabel("project.projects.form.processing", "Processing Project...")} />
                                         </Grid>
                                     </Grid>
                                 )}
