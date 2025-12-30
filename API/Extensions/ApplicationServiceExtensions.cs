@@ -21,6 +21,7 @@ using Application.WorkEfforts;
 using FluentValidation;
 using Infrastructure.Contents;
 using Infrastructure.Security;
+using Infrastructure.Pdf;
 using MediatR;
 using Serilog;
 
@@ -68,7 +69,7 @@ public static class ApplicationServiceExtensions
             options.JsonSerializerOptions.Converters.Add(new DateTimeConverter());
         });
 
-
+        services.AddScoped<IPdfGenerationService, PdfGenerationService>();
         services.AddScoped<IUserAccessor, UserAccessor>();
         services.AddScoped<ICommonService, CommonService>();
         services.AddScoped<IGeneralLedgerService, GeneralLedgerService>();

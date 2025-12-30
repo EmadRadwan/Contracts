@@ -39,6 +39,7 @@ const acctTransApi = createApi({
         "MultiTransactions",
         "GlAccounts"
     ],
+    refetchOnMountOrArgChange: true,
     endpoints(builder) {
         return {
             fetchAcctTrans: builder.query<ListResponse<AcctgTrans>, State>({

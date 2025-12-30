@@ -46,17 +46,10 @@ public class CreatePurchaseOrder
                 // create purchase order
                 var newPurchaseOrder = await _orderService.CreatePurchaseOrder(request.OrderDto);
 
-                // REFACTOR: Added try-catch around SaveChangesAsync to specifically handle database exceptions
-                // This isolates the database save operation, allowing specific error handling and transaction rollback
                 try
                 {
                     var result = await _context.SaveChangesAsync(cancellationToken) > 0;
-
-                    /*if (!result)
-                    {
-                        await transaction.RollbackAsync(cancellationToken);
-                        return Result<OrderDto>.Failure("Failed to create Purchase Order");
-                    }*/
+                    
 
                     await transaction.CommitAsync(cancellationToken);
                 }
@@ -82,8 +75,6 @@ public class CreatePurchaseOrder
             }
             catch (Exception ex)
             {
-                // REFACTOR: Catch all other unexpected exceptions
-                // Ensures the application doesn't crash and provides a user-friendly error message
                 return Result<OrderDto>.Failure($"An error occurred while creating purchase order: {ex.Message}");
             }
         }

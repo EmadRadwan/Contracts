@@ -362,15 +362,11 @@ public class PaymentHelperService : IPaymentHelperService
             try
             {
                 // Special handling for apartment installment cheque payments
-                bool isChequeInstallmentWithEarlyTrans = !string.IsNullOrEmpty(payment.SalesRequestId) &&
-                                                         !string.IsNullOrEmpty(payment.ChequeNumber) &&
-                                                         await _context.AcctgTrans.AnyAsync(at => 
-                                                             at.PaymentId == paymentId && 
-                                                             at.AcctgTransEntries.Any(e => e.GlAccountId == "124410"));
-                if (isChequeInstallmentWithEarlyTrans)
+                bool isRelatedToApartment = !string.IsNullOrEmpty(payment.SalesRequestId);
+                if (isRelatedToApartment)
                 {
                     // Special path: Cheque cleared → move from Cheques Under Collection to Bank
-                    await _generalLedgerService.CreateChequeClearanceAccountingTransaction(paymentId);
+                    await _generalLedgerService.CreateAccountingTransactionForApartmentIncomingPayment(paymentId);
                 }
                 else
                 {

@@ -1,4 +1,4 @@
-namespace Application.Projects;
+/*namespace Application.Projects;
 
 public class GenerateCertificatePdfHandler
 {
@@ -24,4 +24,4 @@ public class GenerateCertificatePdfHandler
             command.Subtotal,
             command.Translations);
     }
-}
+}*/

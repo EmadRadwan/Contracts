@@ -591,7 +591,7 @@ public class OrderService : BaseService, IOrderService
 
 
         // create order_status ITEM_CREATED
-        _utilityService.CreateOrderItemStatus(newItem, "ITEM_CREATED");
+        await _utilityService.CreateOrderItemStatus(newItem, "ITEM_CREATED");
         orderItem.OrderId = orderId;
 
         var isPhysicalProduct = await _productService.CheckIsPhysicalProduct(orderItem);

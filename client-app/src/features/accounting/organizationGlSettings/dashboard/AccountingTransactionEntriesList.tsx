@@ -32,7 +32,11 @@ import {useNavigate} from "react-router";
 export default function AccountingTransactionEntriesList() {
 
     const [accountingTransEntries, setAccountingTransEntries] = React.useState<DataResult>({data: [], total: 0});
-    const [dataState, setDataState] = React.useState<State>({take: 6, skip: 0});
+    const [dataState, setDataState] = React.useState<State>({
+        take: 6,
+        skip: 0,
+        sort: [{ field: "acctgTransId", dir: "desc" }], // Default sort: newest first
+    });
     const {user} = useAppSelector((state) => state.account);
     const companyId = user?.organizationPartyId || "";
 
@@ -57,21 +61,18 @@ export default function AccountingTransactionEntriesList() {
 
     useEffect(() => {
         if (location?.state?.glAccountId) {
-            setDataState({
-                "filter": {
-                    "logic": "and",
-                    "filters":
-                        [{
-                            "field": "glAccountId",
-                            "operator": "eq",
-                            "value": location?.state?.glAccountId
-                        }]
+            setDataState(prev => ({
+                ...prev,
+                filter: {
+                    logic: "and",
+                    filters: [{ field: "glAccountId", operator: "eq", value: location?.state?.glAccountId }]
                 },
-                take: 6,
-                skip: 0
-            })
+                skip: 0,
+                // Preserve the default sort when applying filter
+                sort: [{ field: "acctgTransId", dir: "desc" }]
+            }));
         }
-    }, [location?.state?.glAccountId])
+    }, [location?.state?.glAccountId]);
 
 
     const {getTranslatedLabel} = useTranslationHelper();
@@ -83,7 +84,6 @@ export default function AccountingTransactionEntriesList() {
 
 
     const queryArgs = {...dataState, companyId};
-    console.log("Query args sent to useFetchAcctTransEntriesQuery:", queryArgs);
     const {data, error, isFetching} = companyId
         ? useFetchAcctTransEntriesQuery(queryArgs)
         : {data: null, error: new Error("CompanyId is missing"), isFetching: false};

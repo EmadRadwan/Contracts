@@ -241,7 +241,7 @@ public class UpdatePayment
                 };
                 
                 // === NEW: Record accounting entry when conditions are met ===
-                if (!string.IsNullOrEmpty(payment.SalesRequestId) &&
+                /*if (!string.IsNullOrEmpty(payment.SalesRequestId) &&
                     !string.IsNullOrEmpty(dto.ChequeNumber) &&
                     dto.ChequeDate.HasValue)
                 {
@@ -266,7 +266,7 @@ public class UpdatePayment
                         // For now, we'll just log and continue (adjust as needed)
                         // _logger.Warning("Accounting entry failed for payment {PaymentId}: {Error}", payment.PaymentId, accountingResult.Error);
                     }
-                }
+                }*/
 
 
                 return Result<PaymentDto>.Success(paymentToReturn);

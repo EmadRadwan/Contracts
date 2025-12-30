@@ -313,19 +313,41 @@ export default function PaymentPlanModal({
             return [...updatedAdvance, ...prev.filter((r) => !r.isAdvance)];
         });
     };
-
     
-    // REFACTOR: Custom cell with Edit button
+
     const CommandCell = (props: any) => {
         const { dataItem } = props;
+
+        const handleEditClick = (e: React.MouseEvent) => {
+            e.stopPropagation();        // Prevents Kendo row click/selection
+            e.preventDefault();         // Extra safety
+            console.log("Edit clicked:", dataItem.id); // Remove later
+            openEditModal(dataItem);
+        };
+
+        const handleDeleteClick = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            deleteAdvanceRow(dataItem.id);
+        };
+
         return (
-            <td>
-                <Box display="flex" gap={1}>
-                    <IconButton size="small" onClick={() => openEditModal(dataItem)}>
+            <td style={{ position: "relative" }}>
+                <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+                    <IconButton
+                        size="small"
+                        onClick={handleEditClick}
+                        sx={{ zIndex: 1 }} // Ensures it's above any overlays
+                    >
                         <EditIcon fontSize="small" />
                     </IconButton>
+
                     {dataItem.isAdvance && advanceSplitCount > 1 && (
-                        <IconButton size="small" color="error" onClick={() => deleteAdvanceRow(dataItem.id)}>
+                        <IconButton
+                            size="small"
+                            color="error"
+                            onClick={handleDeleteClick}
+                            sx={{ zIndex: 1 }}
+                        >
                             <DeleteIcon fontSize="small" />
                         </IconButton>
                     )}

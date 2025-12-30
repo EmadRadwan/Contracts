@@ -1,11 +1,6 @@
-import {MemoizedFormCheckBox} from "../client-app/src/app/common/form/FormCheckBox";
-import {setAddTax} from "../client-app/src/features/orders/slice/sharedOrderUiSlice";
-import {Field} from "@progress/kendo-react-form";
-import React from "react";
-
-<Field
-    id={"isChequesDelivered"}
-    name={"isChequesDelivered"}
-    label={getTranslatedLabel(`${localizationKey}.isChequesDelivered`, "isChequesDelivered")}
-    component={MemoizedFormCheckBox}
+<Column
+    field="transactionDate"
+    title={getTranslatedLabel("accounting.orgGL.accounting.summary.txns.transactionDate", "Transaction Date")}
+    width={130}
+    format="{0: dd/MM/yyyy}"
 />

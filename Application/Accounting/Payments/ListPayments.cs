@@ -1,6 +1,4 @@
-using Application.Interfaces;
 using Application.Order.Orders;
-using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.OData.Query;
 using Persistence;

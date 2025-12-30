@@ -1,4 +1,4 @@
-namespace Application.Projects;
+/*namespace Application.Projects;
 
 public class GenerateCertificatePdfCommand
 {
@@ -7,4 +7,4 @@ public class GenerateCertificatePdfCommand
     public List<CertificateItem> Items { get; set; }
     public double Subtotal { get; set; }
     public Dictionary<string, string> Translations { get; set; }
-}
+}*/
