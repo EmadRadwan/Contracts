@@ -319,19 +319,21 @@ export default function PaymentPlanModal({
         const { dataItem } = props;
 
         const handleEditClick = (e: React.MouseEvent) => {
-            //e.stopPropagation();
-            //e.preventDefault();
-            console.log("Edit clicked:", dataItem.id); // Remove later
+            e.stopPropagation();
+            e.preventDefault();
+            console.log("EDIT CLICKED - ID:", dataItem.id);  // Keep for testing
             openEditModal(dataItem);
         };
 
         const handleDeleteClick = (e: React.MouseEvent) => {
-            //e.stopPropagation();
+            e.stopPropagation();
+            e.preventDefault();
+            console.log("DELETE CLICKED - ID:", dataItem.id);
             deleteAdvanceRow(dataItem.id);
         };
 
         return (
-            <td className="k-command-cell" style={{ textAlign: "center" }}>
+            <td className="k-command-cell" style={{ textAlign: "center", position: "relative", zIndex: 10 }}>
                 <KendoButton
                     svgIcon={pencilIcon}
                     fillMode="flat"
@@ -350,6 +352,7 @@ export default function PaymentPlanModal({
             </td>
         );
     };
+    
     const handleApply = () => {
         if (!isValid) return;
 
@@ -417,11 +420,12 @@ export default function PaymentPlanModal({
 
             {/* Kendo Grid */}
             <Grid item xs={12}>
-                <KendoGrid
-                    data={rows}
-                    style={{ height: 400 }}
-                    sortable
-                >
+                <div style={{ height: '400px', overflow: 'auto' }}>
+                    <KendoGrid
+                        data={rows}
+                        sortable
+                        scrollable={"scrollable"}
+                    >
                     <Column
                         field="number"
                         title="#"
@@ -444,6 +448,7 @@ export default function PaymentPlanModal({
                     />
                     <Column title="" width="120" cell={CommandCell} />
                 </KendoGrid>
+                </div>
             </Grid>
 
             {/* Summary */}

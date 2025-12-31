@@ -326,3 +326,15 @@ input, select, textarea, button {
     color: white;
     background-color: white;
 }
+
+/* Add this to your global CSS or component styles */
+.k-grid .k-grid-content,
+.k-grid .k-virtual-content {
+    pointer-events: none !important;  /* Disable any lingering overlay */
+}
+.k-grid td.k-command-cell,
+.k-grid td.k-command-cell * {
+    pointer-events: auto !important;  /* Force buttons clickable */
+    position: relative !important;
+    z-index: 9999 !important;
+}
