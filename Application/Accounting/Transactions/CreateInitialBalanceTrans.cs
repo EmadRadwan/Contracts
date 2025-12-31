@@ -95,7 +95,7 @@ namespace Application.Accounting.Transactions
         public string AcctgTransTypeId { get; set; }
         public DateTime TransactionDate { get; set; }
         public string OrganizationPartyId { get; set; }
-        public string HeaderDescription { get; set; }
+        public string? HeaderDescription { get; set; }
         public string GlFiscalTypeId { get; set; }
         public string IsPosted { get; set; }
     }
@@ -103,9 +103,9 @@ namespace Application.Accounting.Transactions
     public class InitialBalanceEntryParams
     {
         public string GlAccountId { get; set; }
-        public string PartyId { get; set; }
+        public string? PartyId { get; set; }
         public decimal Amount { get; set; }
-        public string Description { get; set; }
+        public string? Description { get; set; }
         public string DebitCreditFlag { get; set; } // "D" or "C"
     }
 
