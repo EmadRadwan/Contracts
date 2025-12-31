@@ -13,9 +13,7 @@ import {requiredValidator} from "../../../app/common/form/Validators";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import FormInput from "../../../app/common/form/FormInput";
-import {
-    FormComboBoxVirtualPartyEmployeeAdvancedPayment
-} from "../../../app/common/form/FormComboBoxVirtualPartyEmployeeAdvancedPayment";
+
 import {MemoizedFormComboBox2} from "../../../app/common/form/FormComboBox2";
 import {
     useFetchGlAccountOrganizationHierarchyLovQuery,

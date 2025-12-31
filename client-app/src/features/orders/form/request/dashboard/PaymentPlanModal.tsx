@@ -13,12 +13,12 @@ import {
     DialogContent,
     DialogActions, InputAdornment,
 } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
 import { Grid as KendoGrid, GridColumn as Column } from "@progress/kendo-react-grid";
 import { SalesRequest } from "../../../../../app/models/order/SalesRequest";
 import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHelper";
+import { Button as KendoButton } from "@progress/kendo-react-buttons";
+import { pencilIcon, trashIcon } from "@progress/kendo-svg-icons";
 
 interface InstallmentRow {
     id: string;
@@ -313,49 +313,43 @@ export default function PaymentPlanModal({
             return [...updatedAdvance, ...prev.filter((r) => !r.isAdvance)];
         });
     };
-    
+
 
     const CommandCell = (props: any) => {
         const { dataItem } = props;
 
         const handleEditClick = (e: React.MouseEvent) => {
-            e.stopPropagation();        // Prevents Kendo row click/selection
-            e.preventDefault();         // Extra safety
+            //e.stopPropagation();
+            //e.preventDefault();
             console.log("Edit clicked:", dataItem.id); // Remove later
             openEditModal(dataItem);
         };
 
         const handleDeleteClick = (e: React.MouseEvent) => {
-            e.stopPropagation();
+            //e.stopPropagation();
             deleteAdvanceRow(dataItem.id);
         };
 
         return (
-            <td style={{ position: "relative" }}>
-                <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
-                    <IconButton
-                        size="small"
-                        onClick={handleEditClick}
-                        sx={{ zIndex: 1 }} // Ensures it's above any overlays
-                    >
-                        <EditIcon fontSize="small" />
-                    </IconButton>
-
-                    {dataItem.isAdvance && advanceSplitCount > 1 && (
-                        <IconButton
-                            size="small"
-                            color="error"
-                            onClick={handleDeleteClick}
-                            sx={{ zIndex: 1 }}
-                        >
-                            <DeleteIcon fontSize="small" />
-                        </IconButton>
-                    )}
-                </Box>
+            <td className="k-command-cell" style={{ textAlign: "center" }}>
+                <KendoButton
+                    svgIcon={pencilIcon}
+                    fillMode="flat"
+                    title="Edit"
+                    onClick={handleEditClick}
+                />
+                {dataItem.isAdvance && advanceSplitCount > 1 && (
+                    <KendoButton
+                        svgIcon={trashIcon}
+                        fillMode="flat"
+                        themeColor="error"
+                        title="Delete"
+                        onClick={handleDeleteClick}
+                    />
+                )}
             </td>
         );
     };
-
     const handleApply = () => {
         if (!isValid) return;
 

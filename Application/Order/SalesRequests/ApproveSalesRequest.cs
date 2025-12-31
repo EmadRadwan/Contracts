@@ -65,6 +65,16 @@ public class ApproveSalesRequest
                 // 2. Update status
                 sr.StatusId = "SALES_REQUEST_APPROVED";
                 sr.LastUpdatedStamp = DateTime.UtcNow;
+                
+                // get Apartment record from Product table
+                var product = await _context.Products
+                    .FirstOrDefaultAsync(p => p.ProductId == sr.ProductId, ct);
+                
+                // mark apartment as sold
+                if (product != null)
+                {
+                    product.ApartmentStatusId = "APARTMENT_SOLD";
+                }
 
                 // 3. Get company PayTo PartyId (cached or from service)
                 var companyPartyId = await _productStoreService.GetProductStorePayToPartId();
@@ -306,6 +316,7 @@ public class ApproveSalesRequest
                 NumberOfInstallments = (int)sr.NumberOfInstallments,
                 DateOfFirstInstallment = sr.DateOfFirstInstallment,
                 MonthsBetweenInstallments = (int)sr.MonthsBetweenInstallments,
+                IsChequesDelivered = sr.IsChequesDelivered,
                 MaintenanceDeposit = sr.MaintenanceDeposit,
                 SaleDate = sr.SaleDate ?? DateTime.UtcNow,
                 Comments = sr.Comments,

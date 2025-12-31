@@ -1287,7 +1287,7 @@ public class SeedContracts
             foreach (var party in context.Parties.ToList())
             {
                 // Skip parties with MainRole 'EMPLOYEE' or '_NA_'
-                if (party.MainRole == "EMPLOYEE" || party.MainRole == "CARRIER" || party.MainRole == "_NA_")
+                if (party.MainRole == "EMPLOYEE" || party.MainRole == "CARRIER" || party.MainRole == "_NA_" || party.MainRole == "ADMIN")
                 {
                     continue;
                 }
