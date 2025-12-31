@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, {useMemo, useState} from "react";
 import { Button, Grid, Paper, Typography, Skeleton } from "@mui/material";
 import { Field, Form, FormElement } from "@progress/kendo-react-form";
 import { MemoizedFormDropDownList } from "../../../app/common/form/MemoizedFormDropDownList";
@@ -34,27 +34,50 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
     const { data: glAccounts, isLoading: isLoadingGlAccounts } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
         skip: companyId === undefined,
     });
+    
+    console.log('project', project)
 
     // REFACTOR: Updated initialValues to use workEffortId instead of ProjectNum and lowercase field names.
     // Ensures consistency with field naming convention and aligns with backend workEffortId usage.
-    const initialValues = editMode === 2 && project ? {
-        workEffortId: project.workEffortId,
-        projectName: project.projectName,
-        estimatedStartDate: project.estimatedStartDate,
-        estimatedCompletionDate: project.estimatedCompletionDate,
-        currentStatusId: project.currentStatusId,
-        glAccountId: project.glAccountId,
-    } : {
-        workEffortId: null, // Set to null in create mode as it’s backend-generated
-        projectName: "",
-        estimatedStartDate: null,
-        estimatedCompletionDate: null,
-        currentStatusId: "",
-        glAccountId: ""
-    };
+    // Add a loading guard or use useMemo with dependency
+    const initialValues = useMemo(() => {
+        if (editMode !== 2 || !project) {
+            return {
+                workEffortId: null,
+                projectName: "",
+                estimatedStartDate: null,
+                estimatedCompletionDate: null,
+                currentStatusId: "",
+                glAccountId: null,
+            };
+        }
+
+        if (isLoadingGlAccounts) {
+            // You can return empty or previous values while loading
+            return {
+                workEffortId: project.workEffortId,
+                projectName: project.projectName,
+                estimatedStartDate: project.estimatedStartDate ? new Date(project.estimatedStartDate) : null,
+                estimatedCompletionDate: project.estimatedCompletionDate ? new Date(project.estimatedCompletionDate) : null,
+                currentStatusId: project.currentStatusId,
+                glAccountId: null, // Will be updated when glAccounts loads
+            };
+        }
+
+        const selectedGlAccount = glAccounts?.find(acc => acc.glAccountId === project.glAccountId) || null;
+
+        return {
+            workEffortId: project.workEffortId,
+            projectName: project.projectName,
+            estimatedStartDate: project.estimatedStartDate ? new Date(project.estimatedStartDate) : null,
+            estimatedCompletionDate: project.estimatedCompletionDate ? new Date(project.estimatedCompletionDate) : null,
+            currentStatusId: project.currentStatusId,
+            glAccountId: project.glAccountId,
+        };
+    }, [editMode, project, glAccounts, isLoadingGlAccounts]);
 
     console.log('project', project);
-    console.log('editMode', editMode);
+    console.log('initialValues', initialValues);
 
     // REFACTOR: Updated formValidator to use lowercase field names for consistency.
     // Maintains date validation logic while aligning with new field naming convention.
@@ -204,21 +227,18 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
                                 {/* Parent Account – Tree dropdown */}
                                 <Grid container spacing={2}>
                                     <Grid item xs={8}>
-                                        {isLoadingGlAccounts ? (
-                                            <Skeleton variant="rounded" height={40}
-                                                sx={{ width: "100%", borderRadius: "4px" }} />
-                                        ) : (<Field
+                                        <Field
                                             id="glAccountId"
                                             name="glAccountId"
                                             validator={requiredValidator}
                                             label={getTranslatedLabel("project.projects.form.glAccount", "GL Account")}
-                                            component={FormDropDownTreeGlAccountWithItems}
+                                            component={FormDropDownTreeGlAccount2}
                                             data={glAccounts || []}
                                             dataItemKey="glAccountId"
                                             textField="text"
                                             selectField="selected"
                                             expandField="expanded"
-                                        />)}
+                                        />
                                     </Grid>
                                 </Grid>
                                 <div className="k-form-buttons">

@@ -508,7 +508,7 @@ function SalesRequestForm({
                 {/*  Form – attach ref so updateCustomerDropDown can reach it        */}
                 {/* --------------------------------------------------------------- */}
                 <Form
-                    key={editMode}
+                    //key={editMode}
                     initialValues={formInitialValues}
                     onSubmit={handleSubmitData}
                     validator={salesRequestValidator}

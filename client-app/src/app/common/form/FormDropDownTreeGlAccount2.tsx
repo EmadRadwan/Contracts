@@ -91,7 +91,20 @@ export const FormDropDownTreeGlAccount2 = (fieldRenderProps: FieldRenderProps & 
     return null;
   }
 
-  let selectedValue = data?.find(item => item[dataItemKey] === value);
+  const findItemByKey = (items: any[], key: string | number): any | null => {
+    for (const item of items) {
+      if (item[dataItemKey] === key) {
+        return item;
+      }
+      if (item.items?.length) {
+        const found = findItemByKey(item.items, key);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  let selectedValue = value ? findItemByKey(data || [], value) : null;
 
   if (value && level.length) {
     const element = filter.value && filter.value !== ""

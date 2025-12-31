@@ -221,6 +221,8 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
             costCenterId: payment.costCenterId || "",
         };
     }, [payment]);
+    
+    console.log('initialValues from editPaymentForm', initialValues)
 
     if (!payment) {
         return (
