@@ -17,8 +17,8 @@ import AddIcon from "@mui/icons-material/Add";
 import { Grid as KendoGrid, GridColumn as Column } from "@progress/kendo-react-grid";
 import { SalesRequest } from "../../../../../app/models/order/SalesRequest";
 import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHelper";
-import { Button as KendoButton } from "@progress/kendo-react-buttons";
-import { pencilIcon, trashIcon } from "@progress/kendo-svg-icons";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 interface InstallmentRow {
     id: string;
@@ -313,41 +313,30 @@ export default function PaymentPlanModal({
             return [...updatedAdvance, ...prev.filter((r) => !r.isAdvance)];
         });
     };
-
-
-    const CommandCell = (props: any) => {
+    
+    const ActionsCell = (props: any) => {
         const { dataItem } = props;
 
-        const handleEditClick = (e: React.MouseEvent) => {
-            e.stopPropagation();
-            e.preventDefault();
-            console.log("EDIT CLICKED - ID:", dataItem.id);  // Keep for testing
-            openEditModal(dataItem);
-        };
-
-        const handleDeleteClick = (e: React.MouseEvent) => {
-            e.stopPropagation();
-            e.preventDefault();
-            console.log("DELETE CLICKED - ID:", dataItem.id);
-            deleteAdvanceRow(dataItem.id);
-        };
-
         return (
-            <td className="k-command-cell" style={{ textAlign: "center", position: "relative", zIndex: 10 }}>
-                <KendoButton
-                    svgIcon={pencilIcon}
-                    fillMode="flat"
+            <td className="k-command-cell" style={{ textAlign: "center" }}>
+                <IconButton
+                    size="small"
+                    color="primary"
                     title="Edit"
-                    onClick={handleEditClick}
-                />
+                    onClick={() => openEditModal(dataItem)}
+                >
+                    <EditIcon fontSize="small" />
+                </IconButton>
+
                 {dataItem.isAdvance && advanceSplitCount > 1 && (
-                    <KendoButton
-                        svgIcon={trashIcon}
-                        fillMode="flat"
-                        themeColor="error"
+                    <IconButton
+                        size="small"
+                        color="error"
                         title="Delete"
-                        onClick={handleDeleteClick}
-                    />
+                        onClick={() => deleteAdvanceRow(dataItem.id)}
+                    >
+                        <DeleteIcon fontSize="small" />
+                    </IconButton>
                 )}
             </td>
         );
@@ -424,7 +413,7 @@ export default function PaymentPlanModal({
                     <KendoGrid
                         data={rows}
                         sortable
-                        scrollable={"scrollable"}
+                        scrollable={"none"}
                     >
                     <Column
                         field="number"
@@ -446,8 +435,9 @@ export default function PaymentPlanModal({
                         width="180"
                         format="{0:n2}"
                     />
-                    <Column title="" width="120" cell={CommandCell} />
-                </KendoGrid>
+                        <Column title="Actions" width="140" cell={ActionsCell} />
+
+                    </KendoGrid>
                 </div>
             </Grid>
 
