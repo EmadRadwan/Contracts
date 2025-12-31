@@ -282,20 +282,7 @@ input, select, textarea, button {
     text-transform: uppercase;
 }
 
-.mermaid svg {
-    max-width: 100%;
-    height: auto;
-}
 
-.mermaid {
-    overflow-x: auto;
-}
-
-.mermaid svg[width] {
-    width: auto !important;
-    max-width: 100% !important;
-    height: auto !important;
-}
 
 [dir="rtl"] span.k-column-title {
     font-size: larger;
