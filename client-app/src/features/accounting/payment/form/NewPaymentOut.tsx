@@ -387,7 +387,18 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                     </Grid>
                                 </Grid>
 
-
+                                <Grid container spacing={2} alignItems="flex-end">
+                                    <Grid item xs={2}>
+                                        <Field
+                                            id="paymentRefNum"
+                                            name="paymentRefNum"
+                                            label={getTranslatedLabel(`${localizationKey}.paymentRefNum`, "paymentRefNum")}
+                                            component={FormInput}
+                                            autoComplete="off"
+                                        />
+                                    </Grid>
+                                </Grid>
+                                
                                 {isAdvancePayment && hasPartyAndProject && (
                                     <Grid item xs={12}>
                                         <Box sx={{

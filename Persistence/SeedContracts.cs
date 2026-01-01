@@ -718,8 +718,8 @@ public class SeedContracts
                 "الصحراوى 3 فدان",
                 "الصحراوى 4 فدان",
                 "الثروة الخضراء - علاء العمدة",
-                "سعودى - الثروة الخضراء ",
-                "نسيم - الثروة الخضراء ",
+                "سعودى - الثروة الخضراء",
+                "نسيم - الثروة الخضراء",
                 "الثالث زايد",
                 "السابع زايد",
                 "التاسع زايد",
@@ -736,16 +736,16 @@ public class SeedContracts
 
             var glAccountMapping = new Dictionary<string, string>
             {
-                { "مول الصحراوى 2 فدان", "124424" },
+                { "قرية السدة 2 فدان", "124424" },
                 { "الصحراوى 10.5 فدان", "124425" },
                 { "الصحراوى 3 فدان", "124426" },
                 { "الصحراوى 4 فدان", "124427" },
                 { "الثروة الخضراء - علاء العمدة", "124428" },
-                { "الثروة الخضراء - سعودى", "124429" },
-                { "الثروة الخضراء - نسيم", "124430" },
-                { "الثالث زايد", "124431" },
-                { "السابع زايد", "124432" },
-                { "التاسع زايد", "124433" },
+                { "سعودى - الثروة الخضراء", "124429" },
+                { "نسيم - الثروة الخضراء", "124430" },
+                { "الثالث زايد", "140701" },
+                { "السابع زايد", "140702" },
+                { "التاسع زايد", "140703" },
                 { "بيت الوطن لادريس أكتوبر", "124422" },
                 { "بيت الوطن لادريس التجمع", "124421" }
             };
@@ -973,19 +973,6 @@ public class SeedContracts
             await context.SaveChangesAsync();
         }
 
-
-        // Seeding PartyGroups
-        /*
-        if (!context.PartyGroups.Any())
-        {
-            var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/party_groups.json");
-            var jsonData = File.ReadAllText(path);
-
-            var partyGroups = JsonConvert.DeserializeObject<List<PartyGroup>>(jsonData);
-            await context.PartyGroups.AddRangeAsync(partyGroups);
-            await context.SaveChangesAsync();
-        }
-        */
 
         // Seeding PartyRoles
         if (!context.PartyRoles.Any())
@@ -1287,7 +1274,8 @@ public class SeedContracts
             foreach (var party in context.Parties.ToList())
             {
                 // Skip parties with MainRole 'EMPLOYEE' or '_NA_'
-                if (party.MainRole == "EMPLOYEE" || party.MainRole == "CARRIER" || party.MainRole == "_NA_" || party.MainRole == "ADMIN")
+                if (party.MainRole == "EMPLOYEE" || party.MainRole == "CARRIER" || party.MainRole == "_NA_" ||
+                    party.MainRole == "ADMIN")
                 {
                     continue;
                 }
@@ -1590,12 +1578,135 @@ public class SeedContracts
         // gl account organization
         if (!context.GlAccountOrganizations.Any())
         {
+            // 1. Load and seed default GlAccountOrganization records
             var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/gl_account_organization.json");
             var jsonData = File.ReadAllText(path);
-
-            var glAccountOrganization = JsonConvert.DeserializeObject<List<GlAccountOrganization>>(jsonData);
-            await context.GlAccountOrganizations.AddRangeAsync(glAccountOrganization);
+            var defaultGlAccountOrganizations = JsonConvert.DeserializeObject<List<GlAccountOrganization>>(jsonData);
+            await context.GlAccountOrganizations.AddRangeAsync(defaultGlAccountOrganizations);
             await context.SaveChangesAsync();
+
+            // 2. Create sub-accounts for SUPPLIER/CONTRACTOR and CUSTOMER parties
+            const string OrganizationPartyId = "Company";
+            var now = DateTime.Now;
+            var txNow = now.AddSeconds(-5);
+
+            // Define the two parent accounts
+            var payableParent = await context.GlAccounts
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.GlAccountId == "210000");
+
+            var receivableParent = await context.GlAccounts
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.GlAccountId == "121100");
+
+            if (payableParent == null) throw new Exception("Parent GL Account 210000 (Accounts Payable) not found.");
+            if (receivableParent == null)
+                throw new Exception("Parent GL Account 121100 (Accounts Receivable) not found.");
+
+            // Load all existing child GL_ACCOUNT_IDs for both parents
+            var existingPayableIds = new HashSet<string>(await context.GlAccounts
+                .Where(a => a.GlAccountId.StartsWith("210") && a.GlAccountId.Length > 6)
+                .Select(a => a.GlAccountId)
+                .ToListAsync());
+
+            var existingReceivableIds = new HashSet<string>(await context.GlAccounts
+                .Where(a => a.GlAccountId.StartsWith("1211") && a.GlAccountId.Length > 6)
+                .Select(a => a.GlAccountId)
+                .ToListAsync());
+            
+            // Helper to generate unique child ID for a given prefix (210 or 1211)
+            string GenerateNextId(string prefix, HashSet<string> existingSet)
+            {
+                int seq = 1;
+                while (true)
+                {
+                    string candidate = $"{prefix}{seq:D3}"; // 210001, 121101, etc.
+                    if (!existingSet.Contains(candidate))
+                    {
+                        existingSet.Add(candidate);
+                        return candidate;
+                    }
+
+                    seq++;
+                }
+            }
+
+            // Get all relevant parties
+            var targetParties = await context.Parties
+                .Where(p => p.MainRole == "CONTRACTOR" ||
+                            p.MainRole == "SUPPLIER" ||
+                            p.MainRole == "CUSTOMER")
+                .Select(p => new { p.PartyId, p.Description, p.MainRole })
+                .ToListAsync();
+
+            var newGlAccounts = new List<GlAccount>();
+            var newGlAccountOrgs = new List<GlAccountOrganization>();
+
+            foreach (var party in targetParties)
+            {
+                bool isCustomer = party.MainRole == "CUSTOMER";
+                var parent = isCustomer ? receivableParent : payableParent;
+                var existingSet = isCustomer ? existingReceivableIds : existingPayableIds;
+                string prefix = isCustomer ? "1211" : "210";
+
+                string newGlId = GenerateNextId(prefix, existingSet);
+                string partyName = party.Description ?? $"Party {party.PartyId}";
+
+                string accountName = isCustomer
+                    ? $"ACCOUNTS RECEIVABLE - {partyName}"
+                    : $"ACCOUNTS PAYABLE - {partyName}";
+
+                string accountNameArabic = isCustomer
+                    ? $"مدينون - {partyName}"
+                    : $"الدائنون - {partyName}";
+
+                // Create new GlAccount
+                var newGlAccount = new GlAccount
+                {
+                    GlAccountId = newGlId,
+                    GlAccountTypeId = parent.GlAccountTypeId, // ACCOUNTS_PAYABLE or ACCOUNTS_RECEIVABLE
+                    GlAccountClassId = parent.GlAccountClassId, // CURRENT_LIABILITY or CURRENT_ASSET
+                    GlResourceTypeId = parent.GlResourceTypeId, // MONEY
+                    GlXbrlClassId = parent.GlXbrlClassId,
+                    ParentGlAccountId = parent.GlAccountId, // 210000 or 121100
+                    AccountCode = newGlId,
+                    AccountName = accountName,
+                    AccountNameArabic = accountNameArabic,
+                    Description = null,
+                    ProductId = null,
+                    ExternalId = party.PartyId, // Link back to party
+                    LastUpdatedStamp = now,
+                    LastUpdatedTxStamp = txNow,
+                    CreatedStamp = now,
+                    CreatedTxStamp = txNow
+                };
+
+                newGlAccounts.Add(newGlAccount);
+
+                // Create GlAccountOrganization for Company
+                var newGlOrg = new GlAccountOrganization
+                {
+                    GlAccountId = newGlId,
+                    OrganizationPartyId = OrganizationPartyId,
+                    RoleTypeId = null,
+                    FromDate = new DateTime(2001, 1, 1),
+                    ThruDate = null,
+                    LastUpdatedStamp = now,
+                    LastUpdatedTxStamp = txNow,
+                    CreatedStamp = now,
+                    CreatedTxStamp = txNow
+                };
+
+                newGlAccountOrgs.Add(newGlOrg);
+            }
+
+            // Bulk insert if any new accounts were created
+            if (newGlAccounts.Any())
+            {
+                await context.GlAccounts.AddRangeAsync(newGlAccounts);
+                await context.GlAccountOrganizations.AddRangeAsync(newGlAccountOrgs);
+                await context.SaveChangesAsync();
+            }
         }
 
         // accounting transaction entry types
@@ -3006,7 +3117,8 @@ public class SeedContracts
                 "eradwan1967@gmail.com", new[]
                 {
                     "Admin",
-                    "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "DeleteSalesRequest", "viewCrm", "ReviewCertificate",
+                    "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "DeleteSalesRequest", "viewCrm",
+                    "ReviewCertificate",
                     "Catalog_View", "Facility_View", "Party_View", "Accounting_View", "Projects_View", "Sales_View",
                     "Accounting_Invoices_View",
                     "Accounting_Payments_View",
@@ -3014,7 +3126,8 @@ public class SeedContracts
                     "Accounting_GLSettings_View",
                     "Accounting_Transactions_View",
                     "Accounting_BillingAccounts_View",
-                    "Accounting_MultiPaymentCertificates_View", "Process_Payment", "CreateReserveRequest", "CreateSalesRequest",
+                    "Accounting_MultiPaymentCertificates_View", "Process_Payment", "CreateReserveRequest",
+                    "CreateSalesRequest",
                     // CRM Roles
                     "CRM_View",
                     "CRM_Leads_View", "CRM_Leads_Create", "CRM_Leads_Edit", "CRM_Leads_Delete",
@@ -3024,7 +3137,8 @@ public class SeedContracts
             {
                 "aagiba@gmail.com", new[]
                 {
-                    "CreateCertificate", "ApproveCertificate", "CompleteCertificate","DeleteSalesRequest", "ReviewCertificate",
+                    "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "DeleteSalesRequest",
+                    "ReviewCertificate",
                     "Catalog_View", "Facility_View", "Party_View", "Accounting_View", "Projects_View", "Sales_View",
                     "Accounting_Invoices_View",
                     "Accounting_Payments_View",
@@ -3032,13 +3146,15 @@ public class SeedContracts
                     "Accounting_GLSettings_View",
                     "Accounting_Transactions_View",
                     "Accounting_BillingAccounts_View",
-                    "Accounting_MultiPaymentCertificates_View", "Process_Payment", "CreateReserveRequest", "CreateSalesRequest"
+                    "Accounting_MultiPaymentCertificates_View", "Process_Payment", "CreateReserveRequest",
+                    "CreateSalesRequest"
                 }
             },
             {
                 "ashrafa@gmail.com", new[]
                 {
-                    "CreateCertificate", "ApproveCertificate", "CompleteCertificate","DeleteSalesRequest",  "ReviewCertificate",
+                    "CreateCertificate", "ApproveCertificate", "CompleteCertificate", "DeleteSalesRequest",
+                    "ReviewCertificate",
                     "Catalog_View", "Facility_View", "Party_View", "Accounting_View", "Projects_View", "Sales_View",
                     "Accounting_Invoices_View",
                     "Accounting_Payments_View",
@@ -3046,7 +3162,8 @@ public class SeedContracts
                     "Accounting_GLSettings_View",
                     "Accounting_Transactions_View",
                     "Accounting_BillingAccounts_View",
-                    "Accounting_MultiPaymentCertificates_View", "Process_Payment", "CreateReserveRequest", "CreateSalesRequest"
+                    "Accounting_MultiPaymentCertificates_View", "Process_Payment", "CreateReserveRequest",
+                    "CreateSalesRequest"
                 }
             },
             {

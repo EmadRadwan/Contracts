@@ -50,14 +50,7 @@ export const ApartmentHeaderSection: React.FC<ApartmentHeaderSectionProps> = Rea
                 "This apartment is already sold and cannot be selected."
             );
         }
-
-        // Optional: also block other non-available statuses if desired
-        // if (apt?.apartmentStatusId && apt?.apartmentStatusId !== APARTMENT_AVAILABLE) {
-        //     return getTranslatedLabel(
-        //         "salesRequest.form.validation.apartmentNotAvailable",
-        //         "This apartment is not available for sale."
-        //     );
-        // }
+        
 
         return undefined; // valid
     };

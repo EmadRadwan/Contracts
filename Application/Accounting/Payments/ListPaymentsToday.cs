@@ -100,7 +100,7 @@ public class ListPaymentsDaily
                     ChequeDate = pyt.ChequeDate,
                     CertificateNumber = we != null ? we.CertificateNumber : null,
                     ProjectName = proj != null ? proj.ProjectName : null,
-                    CostCenterDescription = cc != null ? cc.Description : null
+                    CostCenterDescription = cc != null ? cc.Description : null,
                 };
 
             var data = await query.ToListAsync(ct);

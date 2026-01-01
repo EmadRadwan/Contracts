@@ -154,7 +154,8 @@ public class UpdatePayment
                         FinAccountTransId = finAccountTransId,
                         OverrideGlAccountId = request.PaymentDto.OverrideGlAccountId,
                         ProjectId = request.PaymentDto.ProjectId,
-                        CostCenterId =  request.PaymentDto.CostCenterId
+                        CostCenterId =  request.PaymentDto.CostCenterId,
+                        PaymentRefNum = request.PaymentDto.PaymentRefNum,
                     };
                     // update the payment itself
                     await _paymentHelperService.UpdatePayment(updatePaymentParam);
@@ -238,36 +239,9 @@ public class UpdatePayment
                     OverrideGlAccountId = payment.OverrideGlAccountId,
                     ChequeNumber = payment.ChequeNumber,
                     ChequeDate = payment.ChequeDate,
+                    PaymentRefNum = payment.PaymentRefNum
                 };
                 
-                // === NEW: Record accounting entry when conditions are met ===
-                /*if (!string.IsNullOrEmpty(payment.SalesRequestId) &&
-                    !string.IsNullOrEmpty(dto.ChequeNumber) &&
-                    dto.ChequeDate.HasValue)
-                {
-                    var accountingCommand = new RecordInstallmentPaymentAccounting.Command
-                    {
-                        PaymentId = payment.PaymentId,
-                        SalesRequestId = payment.SalesRequestId!,
-                        Amount = dto.Amount,
-                        EffectiveDate = (DateTime)effectiveDate,
-                        ChequeNumber = dto.ChequeNumber!,
-                        ChequeDate = dto.ChequeDate,
-                        PartyIdFrom = dto.PartyIdFrom,
-                        Comments = dto.Comments
-                    };
-
-                    var accountingResult = await _mediator.Send(accountingCommand, cancellationToken);
-
-                    if (!accountingResult.IsSuccess)
-                    {
-                        // Optional: log or handle failure, but don't fail the whole update?
-                        // Or re-throw/rollback if critical
-                        // For now, we'll just log and continue (adjust as needed)
-                        // _logger.Warning("Accounting entry failed for payment {PaymentId}: {Error}", payment.PaymentId, accountingResult.Error);
-                    }
-                }*/
-
 
                 return Result<PaymentDto>.Success(paymentToReturn);
             }

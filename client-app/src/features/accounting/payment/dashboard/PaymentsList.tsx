@@ -235,6 +235,7 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
                   filter={"date"}
                 />
                 <Column field="statusDescription" title={getTranslatedLabel(`${localizationKey}.status`,"Status")} width={100} />
+                <Column field="paymentRefNum" title={getTranslatedLabel(`${localizationKey}.paymentRefNum`,"paymentRefNum")} width={100} />
                 <Column field="amount" title={getTranslatedLabel(`${localizationKey}.amount`,"Amount")} width={130} filter={"numeric"}/>
                 <Column field="projectName" title={getTranslatedLabel(`${localizationKey}.projectName`,"Comments")} width={150} />
                 <Column field="costCenterDescription" title={getTranslatedLabel(`${localizationKey}.costCenterDescription`,"Comments")} width={150} />

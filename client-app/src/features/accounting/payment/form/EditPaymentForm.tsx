@@ -159,15 +159,6 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
         'PMNT_CANCELLED': 'Cancelled',
     }[payment?.statusId] || payment?.statusId), [payment?.statusId]);
 
-    // Memoize the mapped currencies to avoid recomputation on every render
-    const mappedCurrencies = useMemo(() => {
-        if (!currencies) return [];
-        return currencies.map((currency) => ({
-            actualCurrencyUomId: currency.currencyUomId,
-            description: currency.description,
-        }));
-    }, [currencies]);
-
 
     const paymentTypeDesc = useMemo(() => {
         if (!payment?.paymentTypeId) return "";
@@ -177,13 +168,6 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
             )?.description ?? payment.paymentTypeId
         );
     }, [filteredPaymentTypes, payment?.paymentTypeId]);
-
-    const getCostCenterDescription = useCallback((costCenterId: string | undefined) => {
-        if (!costCenterId) return "غير محدد";
-        return paymentCostCenters.find(cc => cc.costCenterId === costCenterId)?.description
-            ? paymentCostCenters.find(cc => cc.costCenterId === costCenterId).description
-            : costCenterId;
-    }, [paymentCostCenters]);
 
 
     // Initialize form with payment values
@@ -219,6 +203,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                 }
                 : null,
             costCenterId: payment.costCenterId || "",
+            paymentRefNum: payment.paymentRefNum || "",
         };
     }, [payment]);
     
@@ -345,6 +330,8 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                             if (!id) return "غير محدد";
                             return paymentCostCenters.find(cc => cc.costCenterId === id)?.description ?? id;
                         })(),
+
+                        paymentRefNum: valueGetter("paymentRefNum") ?? payment.paymentRefNum ?? "",
 
                         project: (() => {
                             const proj = valueGetter("projectId");
@@ -539,7 +526,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                     {/* Section 4: Metadata */}
                                     <Grid item xs={12}>
                                         <Grid container spacing={1} alignItems="flex-end">
-                                            <Grid item xs={4}>
+                                            <Grid item xs={2}>
                                                 <Field
                                                     id="effectiveDate"
                                                     name="effectiveDate"
@@ -548,8 +535,18 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                         "Effective Date *"
                                                     )}
                                                     component={FormDatePicker}
-                                                    format="yyyy-MM-dd HH:mm:ss"
+                                                    format="yyyy-MM-dd"
                                                     validator={requiredValidator}
+                                                />
+                                            </Grid>
+
+                                            <Grid item xs={2}>
+                                                <Field
+                                                    id="paymentRefNum"
+                                                    name="paymentRefNum"
+                                                    label={getTranslatedLabel(`${localizationKey}.paymentRefNum`, "paymentRefNum")}
+                                                    component={FormInput}
+                                                    autoComplete="off"
                                                 />
                                             </Grid>
 

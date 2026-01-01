@@ -186,6 +186,7 @@ export default function usePayment({
         overrideGlAccountId: newPayment.overrideGlAccountId,
         projectId: newPayment.projectId || null,
         costCenterId: newPayment.costCenterId || null,
+        paymentRefNum: newPayment.paymentRefNum || "",
       };
 
       const created = await createPaymentAndFinAccountTrans(request).unwrap();
@@ -280,6 +281,7 @@ const handleCreate = async (data: {
     projectId: values.projectId?.projectId || null,
     projectName: values.projectId?.projectName || null,
     costCenterId: values.costCenterId || null,
+    paymentRefNum: values.paymentRefNum || "",
   };
 
   await createPayment(newPayment);
@@ -306,6 +308,7 @@ const handleCreate = async (data: {
       overrideGlAccountId: data.values.overrideGlAccountId,
         projectId: data.values.projectId?.projectId,
         costCenterId: data.values.costCenterId || null,
+      paymentRefNum: data.values.paymentRefNum || payment.paymentRefNum || "",
     };
 
     await updatePaymentData(updated);

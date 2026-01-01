@@ -1,132 +1,130 @@
-// Infrastructure/Services/PdfGenerationService.cs (partial update)
-public byte[] GeneratePaymentReportPdf(PaymentReportDto data, string companyName = "Golden Land")
+if (!context.GlAccountOrganizations.Any())
 {
-    QuestPDF.Settings.License = LicenseType.Community;
+    // 1. Load and seed default GlAccountOrganization records
+    var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/gl_account_organization.json");
+    var jsonData = File.ReadAllText(path);
+    var defaultGlAccountOrganizations = JsonConvert.DeserializeObject<List<GlAccountOrganization>>(jsonData);
+    await context.GlAccountOrganizations.AddRangeAsync(defaultGlAccountOrganizations);
+    await context.SaveChangesAsync();
 
-    var document = Document.Create(container =>
+    // 2. Create sub-accounts for SUPPLIER/CONTRACTOR and CUSTOMER parties
+    const string OrganizationPartyId = "Company";
+    var now = DateTime.Now;
+    var txNow = now.AddSeconds(-5);
+
+    // Define the two parent accounts
+    var payableParent = await context.GlAccounts
+        .AsNoTracking()
+        .FirstOrDefaultAsync(a => a.GlAccountId == "210000");
+
+    var receivableParent = await context.GlAccounts
+        .AsNoTracking()
+        .FirstOrDefaultAsync(a => a.GlAccountId == "121100");
+
+    if (payableParent == null) throw new Exception("Parent GL Account 210000 (Accounts Payable) not found.");
+    if (receivableParent == null) throw new Exception("Parent GL Account 121100 (Accounts Receivable) not found.");
+
+    // Load all existing child GL_ACCOUNT_IDs for both parents
+    var existingPayableIds = await context.GlAccounts
+        .Where(a => a.GlAccountId.StartsWith("210") && a.GlAccountId.Length > 6)
+        .Select(a => a.GlAccountId)
+        .ToHashSetAsync();
+
+    var existingReceivableIds = await context.GlAccounts
+        .Where(a => a.GlAccountId.StartsWith("1211") && a.GlAccountId.Length > 6)
+        .Select(a => a.GlAccountId)
+        .ToHashSetAsync();
+
+    // Helper to generate unique child ID for a given prefix (210 or 1211)
+    string GenerateNextId(string prefix, HashSet<string> existingSet)
     {
-        container.Page(page =>
+        int seq = 1;
+        while (true)
         {
-            page.Size(PageSizes.A4);
-            page.Margin(40);
-            page.DefaultTextStyle(x => x.FontSize(11).FontFamily("Amiri"));
-            page.Content().DirectionRightToLeft();
-
-            page.Header().Height(90).AlignLeft().AlignMiddle()
-                .Image("wwwroot/goldenlandlogo.jpg").FitArea();
-
-            page.Content().PaddingTop(30).Column(col =>
+            string candidate = $"{prefix}{seq:D3}"; // 210001, 121101, etc.
+            if (!existingSet.Contains(candidate))
             {
-                col.Spacing(15);
+                existingSet.Add(candidate);
+                return candidate;
+            }
+            seq++;
+        }
+    }
 
-                col.Item().Text("بيان دفعة").FontSize(20).Bold().AlignCenter();
+    // Get all relevant parties
+    var targetParties = await context.Parties
+        .Where(p => p.MainRole == "CONTRACTOR" || 
+                    p.MainRole == "SUPPLIER" || 
+                    p.MainRole == "CUSTOMER")
+        .Select(p => new { p.PartyId, p.Description, p.MainRole })
+        .ToListAsync();
 
-                col.Item().Row(row =>
-                {
-                    row.RelativeItem(4).Text(data.PaymentId).FontSize(16).Bold();
-                    row.RelativeItem(5)
-                        .Background(Colors.Yellow.Lighten2)
-                        .PaddingVertical(8)
-                        .AlignCenter()
-                        .Text(data.StatusDescription)
-                        .FontSize(14).Bold();
-                });
+    var newGlAccounts = new List<GlAccount>();
+    var newGlAccountOrgs = new List<GlAccountOrganization>();
 
-                col.Item().PaddingVertical(10);
+    foreach (var party in targetParties)
+    {
+        bool isCustomer = party.MainRole == "CUSTOMER";
+        var parent = isCustomer ? receivableParent : payableParent;
+        var existingSet = isCustomer ? existingReceivableIds : existingPayableIds;
+        string prefix = isCustomer ? "1211" : "210";
 
-                // Parties
-                col.Item().Table(t =>
-                {
-                    t.ColumnsDefinition(c => { c.RelativeColumn(2); c.RelativeColumn(3); c.ConstantColumn(20); c.RelativeColumn(2); c.RelativeColumn(3); });
+        string newGlId = GenerateNextId(prefix, existingSet);
+        string partyName = party.Description ?? $"Party {party.PartyId}";
 
-                    t.Cell().ColumnSpan(2).Text("من").Bold();
-                    t.Cell().ColumnSpan(3).Text(data.FromPartyName).AlignRight();
+        string accountName = isCustomer 
+            ? $"ACCOUNTS RECEIVABLE - {partyName}"
+            : $"ACCOUNTS PAYABLE - {partyName}";
 
-                    t.Cell().Text("");
-                    t.Cell().ColumnSpan(2).Text("إلى").Bold();
-                    t.Cell().ColumnSpan(3).Text(data.ToPartyName).AlignRight();
-                });
+        string accountNameArabic = isCustomer 
+            ? $"مدينون - {partyName}"
+            : $"الدائنون - {partyName}";
 
-                // Type & Method
-                col.Item().Table(t =>
-                {
-                    t.ColumnsDefinition(c => { c.RelativeColumn(2); c.RelativeColumn(3); c.ConstantColumn(20); c.RelativeColumn(2); c.RelativeColumn(3); });
+        // Create new GlAccount
+        var newGlAccount = new GlAccount
+        {
+            GlAccountId = newGlId,
+            GlAccountTypeId = parent.GlAccountTypeId,       // ACCOUNTS_PAYABLE or ACCOUNTS_RECEIVABLE
+            GlAccountClassId = parent.GlAccountClassId,     // CURRENT_LIABILITY or CURRENT_ASSET
+            GlResourceTypeId = parent.GlResourceTypeId,     // MONEY
+            GlXbrlClassId = parent.GlXbrlClassId,
+            ParentGlAccountId = parent.GlAccountId,         // 210000 or 121100
+            AccountCode = newGlId,
+            AccountName = accountName,
+            AccountNameArabic = accountNameArabic,
+            Description = null,
+            ProductId = null,
+            ExternalId = party.PartyId,                     // Link back to party
+            LastUpdatedStamp = now,
+            LastUpdatedTxStamp = txNow,
+            CreatedStamp = now,
+            CreatedTxStamp = txNow
+        };
 
-                    t.Cell().ColumnSpan(2).Text("نوع الدفعة").Bold();
-                    t.Cell().ColumnSpan(3).Text(data.PaymentTypeDescription).AlignRight();
+        newGlAccounts.Add(newGlAccount);
 
-                    t.Cell().Text("");
-                    t.Cell().ColumnSpan(2).Text("طريقة الدفع").Bold();
-                    t.Cell().ColumnSpan(3).Text(data.PaymentMethodDescription).AlignRight();
-                });
+        // Create GlAccountOrganization for Company
+        var newGlOrg = new GlAccountOrganization
+        {
+            GlAccountId = newGlId,
+            OrganizationPartyId = OrganizationPartyId,
+            RoleTypeId = null,
+            FromDate = new DateTime(2001, 1, 1),
+            ThruDate = null,
+            LastUpdatedStamp = now,
+            LastUpdatedTxStamp = txNow,
+            CreatedStamp = now,
+            CreatedTxStamp = txNow
+        };
 
-                // Cheque
-                if (!string.IsNullOrEmpty(data.ChequeNumber))
-                {
-                    col.Item().Table(t =>
-                    {
-                        t.ColumnsDefinition(c => { c.RelativeColumn(2); c.RelativeColumn(3); c.ConstantColumn(20); c.RelativeColumn(2); c.RelativeColumn(3); });
+        newGlAccountOrgs.Add(newGlOrg);
+    }
 
-                        t.Cell().ColumnSpan(2).Text("رقم الشيك").Bold();
-                        t.Cell().ColumnSpan(3).Text(data.ChequeNumber).AlignRight();
-
-                        t.Cell().Text("");
-                        t.Cell().ColumnSpan(2).Text("تاريخ الشيك").Bold();
-                        t.Cell().ColumnSpan(3).Text(data.ChequeDate?.ToString("dd/MM/yyyy") ?? "").AlignRight();
-                    });
-                }
-
-                // Amount & Currency
-                col.Item().Table(t =>
-                {
-                    t.ColumnsDefinition(c => { c.RelativeColumn(2); c.RelativeColumn(3); c.ConstantColumn(20); c.RelativeColumn(2); c.RelativeColumn(3); });
-
-                    t.Cell().ColumnSpan(2).Text("المبلغ").Bold();
-                    t.Cell().ColumnSpan(3).Text(data.Amount.ToString("N2", new System.Globalization.CultureInfo("ar-EG")))
-                        .FontSize(14).Bold().AlignRight();
-
-                    t.Cell().Text("");
-                    t.Cell().ColumnSpan(2).Text("العملة").Bold();
-                    t.Cell().ColumnSpan(3).Text(data.CurrencyUomId).AlignRight();
-                });
-
-                // Cost Center & Project
-                col.Item().Table(t =>
-                {
-                    t.ColumnsDefinition(c => { c.RelativeColumn(2); c.RelativeColumn(3); c.ConstantColumn(20); c.RelativeColumn(2); c.RelativeColumn(3); });
-
-                    t.Cell().ColumnSpan(2).Text("مركز التكلفة").Bold();
-                    t.Cell().ColumnSpan(3).Text(data.CostCenterDescription).AlignRight();
-
-                    t.Cell().Text("");
-                    t.Cell().ColumnSpan(2).Text("المشروع").Bold();
-                    t.Cell().ColumnSpan(3).Text(data.ProjectName ?? "غير محدد").AlignRight();
-                });
-
-                // Effective Date
-                col.Item().Row(row =>
-                {
-                    row.RelativeItem(2).Text("تاريخ السريان").Bold();
-                    row.RelativeItem(3).Text(data.EffectiveDate.ToString("dd/MM/yyyy")).AlignRight();
-                });
-
-                // Comments
-                if (!string.IsNullOrEmpty(data.Comments))
-                {
-                    col.Item().PaddingTop(20);
-                    col.Item().Text("البيان").Bold();
-                    col.Item()
-                        .Background(Colors.Grey.Lighten3)
-                        .Padding(10)
-                        .Text(data.Comments)
-                        .FontSize(12)
-                        .LineHeight(1.5);
-                }
-            });
-
-            page.Footer().AlignCenter().Text(x => { x.Span("Page "); x.CurrentPageNumber(); });
-        });
-    });
-
-    return document.GeneratePdf();
+    // Bulk insert if any new accounts were created
+    if (newGlAccounts.Any())
+    {
+        await context.GlAccounts.AddRangeAsync(newGlAccounts);
+        await context.GlAccountOrganizations.AddRangeAsync(newGlAccountOrgs);
+        await context.SaveChangesAsync();
+    }
 }

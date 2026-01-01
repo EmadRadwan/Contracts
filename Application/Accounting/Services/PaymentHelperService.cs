@@ -124,6 +124,7 @@ public class PaymentHelperService : IPaymentHelperService
             WorkEffortId = parameters.ProjectId,
             CostCenterId = parameters.CostCenterId,
             SalesRequestId = parameters.SalesRequestId,
+            PaymentRefNum = parameters.PaymentRefNum,
             Comments = parameters.Comments,
             CreatedStamp = stamp,
             LastUpdatedStamp = stamp
@@ -1222,8 +1223,8 @@ public class PaymentHelperService : IPaymentHelperService
                 Comments = request.Comments,
                 OverrideGlAccountId = request.OverrideGlAccountId,
                 ProjectId = request.ProjectId,
-                CostCenterId =  request.CostCenterId
-                
+                CostCenterId =  request.CostCenterId,
+                PaymentRefNum = request.PaymentRefNum // Added
             };
 
             // If PaymentMethodId is provided, fetch PaymentMethod and set PaymentMethodTypeId
