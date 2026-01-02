@@ -38,6 +38,7 @@ import { useSelector } from "react-redux";
 import { router } from "../../../../app/router/Routes";
 import { useNavigate } from "react-router";
 import {useDeleteAcctgTransMutation} from "../../../../app/store/apis";
+import {Can} from "../../../account/Can";
 
 export default function AccountingTransactionsList() {
   const { user } = useAppSelector((state) => state.account);
@@ -99,18 +100,20 @@ export default function AccountingTransactionsList() {
             {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
             {...navigationAttributes}
         >
-          <Button
-              size="small"
-              color="error"
-              variant="outlined"
-              onClick={() => handleDeleteClick(props.dataItem.acctgTransId)}
-              disabled={isDeleting}
-          >
-            {getTranslatedLabel(
-                "accounting.orgGL.accounting.summary.txns.deleteButton",
-                "Delete"
-            )}
-          </Button>
+          <Can perform="deleteAcctgTrans">
+            <Button
+                size="small"
+                color="error"
+                variant="outlined"
+                onClick={() => handleDeleteClick(props.dataItem.acctgTransId)}
+                disabled={isDeleting}
+            >
+              {getTranslatedLabel(
+                  "accounting.orgGL.accounting.summary.txns.deleteButton",
+                  "Delete"
+              )}
+            </Button>
+          </Can>
         </td>
     );
   };
