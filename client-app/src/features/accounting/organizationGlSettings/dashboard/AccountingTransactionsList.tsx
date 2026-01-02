@@ -13,7 +13,11 @@ import { Grid, Paper } from "@mui/material";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import { MenuSelectEvent } from "@progress/kendo-react-layout";
 import { handleDatesArray } from "../../../../app/util/utils";
-
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
 import {
   RootState,
   useAppDispatch,
@@ -33,6 +37,7 @@ import AccountingSummaryMenu from "../menu/AccountingSummaryMenu";
 import { useSelector } from "react-redux";
 import { router } from "../../../../app/router/Routes";
 import { useNavigate } from "react-router";
+import {useDeleteAcctgTransMutation} from "../../../../app/store/apis";
 
 export default function AccountingTransactionsList() {
   const { user } = useAppSelector((state) => state.account);
@@ -52,7 +57,63 @@ export default function AccountingTransactionsList() {
     sort: [{ field: "transactionDate", dir: "desc" }],
   });
 
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [transToDelete, setTransToDelete] = useState<string | null>(null);
 
+  const [deleteAcctgTrans, { isLoading: isDeleting }] = useDeleteAcctgTransMutation();
+
+  const handleDeleteClick = (acctgTransId: string) => {
+    setTransToDelete(acctgTransId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!transToDelete) return;
+
+    try {
+      await deleteAcctgTrans(transToDelete).unwrap();
+      // Optional: show success toast/notification
+      setDeleteDialogOpen(false);
+      setTransToDelete(null);
+    } catch (err) {
+      console.error('Delete failed:', err);
+      // Optional: show error toast
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setTransToDelete(null);
+  };
+
+  const DeleteCell = (props: any) => {
+    const navigationAttributes = useTableKeyboardNavigation(props.id);
+    return (
+        <td
+            className={props.className}
+            style={{ ...props.style }}
+            colSpan={props.colSpan}
+            role="gridcell"
+            aria-colindex={props.ariaColumnIndex}
+            aria-selected={props.isSelected}
+            {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
+            {...navigationAttributes}
+        >
+          <Button
+              size="small"
+              color="error"
+              variant="outlined"
+              onClick={() => handleDeleteClick(props.dataItem.acctgTransId)}
+              disabled={isDeleting}
+          >
+            {getTranslatedLabel(
+                "accounting.orgGL.accounting.summary.txns.deleteButton",
+                "Delete"
+            )}
+          </Button>
+        </td>
+    );
+  };
 
   const dataStateChange = (e: GridDataStateChangeEvent) => {
     setDataState(e.dataState);
@@ -337,7 +398,56 @@ export default function AccountingTransactionsList() {
                   width={150}
                   format="{0: dd/MM/yyyy}"
                 />
+                <Column
+                    title="Actions"
+                    width={120}
+                    cell={DeleteCell}
+                    locked={true}
+                />
               </KendoGrid>
+              <Dialog
+                  open={deleteDialogOpen}
+                  onClose={handleCancelDelete}
+                  aria-labelledby="delete-dialog-title"
+                  aria-describedby="delete-dialog-description"
+              >
+                <DialogTitle id="delete-dialog-title">
+                  {getTranslatedLabel(
+                      "accounting.orgGL.accounting.summary.txns.deleteDialogTitle",
+                      "Confirm Deletion"
+                  )}
+                </DialogTitle>
+                <DialogContent>
+                  <DialogContentText id="delete-dialog-description">
+                    {getTranslatedLabel(
+                        "accounting.orgGL.accounting.summary.txns.deleteDialogMessage",
+                        "Are you sure you want to delete accounting transaction {0}? This action cannot be undone."
+                    ).replace("{0}", transToDelete || "")}
+                  </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={handleCancelDelete} disabled={isDeleting}>
+                    {getTranslatedLabel(
+                        "accounting.orgGL.accounting.summary.txns.deleteCancel",
+                        "Cancel"
+                    )}
+                  </Button>
+                  <Button
+                      onClick={handleConfirmDelete}
+                      color="error"
+                      variant="contained"
+                      disabled={isDeleting}
+                      autoFocus
+                  >
+                    {isDeleting
+                        ? getTranslatedLabel("global.deleting", "Deleting...")
+                        : getTranslatedLabel(
+                            "accounting.orgGL.accounting.summary.txns.deleteConfirm",
+                            "Delete"
+                        )}
+                  </Button>
+                </DialogActions>
+              </Dialog>
               {isFetching && (
                 <LoadingComponent message={getTranslatedLabel(
                     "accounting.orgGL.accounting.summary.loading",

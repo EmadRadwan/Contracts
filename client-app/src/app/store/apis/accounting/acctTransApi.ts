@@ -196,6 +196,14 @@ const acctTransApi = createApi({
                 invalidatesTags: ["MultiTransactions", "Transactions", "ITransactions"],
             }),
 
+            deleteAcctgTrans: builder.mutation<void, string>({
+                query: (acctgTransId) => ({
+                    url: `/transactions/deleteAcctgTrans/${acctgTransId}`,
+                    method: 'DELETE',
+                }),
+                invalidatesTags: ['Transactions'], // This will auto-refetch the list
+            }),
+
             createInitialBalanceTrans: builder.mutation<
                 CreateInitialBalanceTransResponse,
                 CreateInitialBalanceTransParams
@@ -223,7 +231,7 @@ export const {
     usePostAcctgTransMutation,
     useCreateMultiAcctgTransWithEntriesMutation,
     useUpdateMultiAcctgTransWithEntriesMutation,
-    useCreateInitialBalanceTransMutation
+    useCreateInitialBalanceTransMutation, useDeleteAcctgTransMutation
 } = acctTransApi;
 
 export {acctTransApi};

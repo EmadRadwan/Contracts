@@ -1132,7 +1132,12 @@
             "partyName": "اسم الطرف",
             "productName": "اسم المنتج",
             "isPosted": "تم الترحيل",
-            "postedDate": "تاريخ الترحيل"
+            "postedDate": "تاريخ الترحيل",
+            "deleteButton": "حذف",
+            "deleteDialogTitle": "تأكيد الحذف",
+            "deleteDialogMessage": "هل أنت متأكد من رغبتك في حذف القيد المحاسبي {0}؟ هذا الإجراء لا يمكن التراجع عنه.",
+            "deleteConfirm": "حذف",
+            "deleteCancel": "إلغاء"
           },
           "txnEntries": {
             "acctgTransEntrySeqId": "مسلسل",

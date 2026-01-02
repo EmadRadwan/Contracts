@@ -149,6 +149,15 @@ public class TransactionsController : BaseApiController
         var result = await Mediator.Send(command);
         return HandleResult(result);
     }
+    
+    [HttpDelete("deleteAcctgTrans/{acctgTransId}")]
+    public async Task<IActionResult> DeleteAcctgTrans(string acctgTransId)
+    {
+        return HandleResult(await Mediator.Send(new DeleteAcctgTrans.Command 
+        { 
+            AcctgTransId = acctgTransId 
+        }));
+    }
 
     [HttpPost("createMultiAcctgTransWithEntries")]
     public async Task<IActionResult> CreateMultiAcctgTransWithEntries(CreateMultiAcctgTransWithEntries.Command command)
