@@ -189,13 +189,17 @@ export const WorkmanshipCertificateExcel: React.FC<WorkmanshipCertificatePDFProp
                 getTranslatedLabel('projects.certificate.date', 'Date') + ': ' + new Date().toLocaleDateString('en-UK'),
             ]);
 
+            const contractorName = certificate.partyIdContractor?.fromPartyName
+                ?? certificate.partyIdContractor?.partyName
+                ?? 'N/A';
+
             worksheet.addRow([
                 getTranslatedLabel('projects.certificate.description', 'Description') +
                 ': ' +
                 sharedUtilsUpdated.safeString(certificate.description),
                 getTranslatedLabel('projects.certificate.form.contractor', 'Contractor') +
                 ': ' +
-                sharedUtilsUpdated.safeString(certificate.partyIdContractor),
+                sharedUtilsUpdated.safeString(contractorName),
             ]);
 
             worksheet.addRow([getTranslatedLabel('projects.certificate.total', 'Total') + ': ' + sharedUtilsUpdated.formatNumber(subtotal)]);

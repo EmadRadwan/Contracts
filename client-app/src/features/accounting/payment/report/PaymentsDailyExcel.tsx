@@ -94,6 +94,7 @@ export const PaymentsDailyExcel: React.FC<PaymentsDailyExcelProps> = ({
         const headerRowNum = startRow + 2;
         const headers = [
             getTranslatedLabel('accounting.payments.list.paymentId', 'Payment Number'),
+            getTranslatedLabel('accounting.payments.list.paymentRefNum', 'Reference Number'), // ← NEW
             getTranslatedLabel('accounting.payments.list.paymentType', 'Payment Type'),
             getTranslatedLabel('accounting.payments.list.orderId', 'Order ID'),
             getTranslatedLabel('accounting.payments.list.certificateNumber', 'Certificate Number'),
@@ -118,6 +119,7 @@ export const PaymentsDailyExcel: React.FC<PaymentsDailyExcelProps> = ({
         data.data.forEach((payment, idx) => {
             const row = ws.addRow([
                 utils.rtlEmbed(utils.safeString(payment.paymentId)),
+                utils.rtlEmbed(utils.safeString(payment.paymentRefNum ?? '')), // ← NEW
                 utils.rtlEmbed(utils.safeString(payment.paymentTypeDescription)),
                 utils.rtlEmbed(utils.safeString(payment.orderId ?? '')),
                 utils.rtlEmbed(utils.safeString(payment.certificateNumber ?? '')),
@@ -152,6 +154,7 @@ export const PaymentsDailyExcel: React.FC<PaymentsDailyExcelProps> = ({
         // === COLUMN WIDTHS ===
         ws.columns = [
             { width: 15 }, // Payment ID
+            { width: 20 }, // Reference Number ← NEW
             { width: 22 }, // Type
             { width: 15 }, // Order ID
             { width: 20 }, // Certificate

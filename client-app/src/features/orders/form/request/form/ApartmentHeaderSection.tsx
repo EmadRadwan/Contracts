@@ -64,7 +64,7 @@ export const ApartmentHeaderSection: React.FC<ApartmentHeaderSectionProps> = Rea
                     <Field
                         id="productId"
                         name="productId"
-                        label={getTranslatedLabel("projects.certificate.items.list.product", "Product *")}
+                        label={getTranslatedLabel("salesRequest.form.product", "Product *")}
                         component={FormSimpleComboBoxVirtualApartment}
                         autoComplete="off"
                         validator={(value) =>

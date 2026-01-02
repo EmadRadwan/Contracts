@@ -161,7 +161,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
     const [pendingReviewAction, setPendingReviewAction] = useState<string>("");
     const certificateItems = useAppSelector(displayCertificateItemsSelector);
     
-    console.log('certificateItems', certificateItems)
+    console.log('selectedCertificate', selectedCertificate)
 
     const [contractorId, setContractorId] = useState<string | undefined>(
         selectedCertificate?.partyIdContractor?.fromPartyId

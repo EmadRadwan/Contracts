@@ -168,9 +168,13 @@ export const SupplyCertificateExcel: React.FC<SupplyCertificatePDFProps> = ({
                 getTranslatedLabel('projects.certificate.type', 'Type') + ': ' + (sharedUtilsUpdated.certificateTypeTranslations[certificateType] || certificateType),
                 getTranslatedLabel('projects.certificate.date', 'Date') + ': ' + new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' }),
             ]);
+            const supplierName = certificate.partyIdSupplier?.fromPartyName
+                ?? certificate.partyIdSupplier?.partyName
+                ?? 'N/A';
+            
             worksheet.addRow([
                 getTranslatedLabel('projects.certificate.description', 'Description') + ': ' + sharedUtilsUpdated.safeString(certificate.description),
-                getTranslatedLabel('projects.certificate.form.supplier', 'Supplier') + ': ' + sharedUtilsUpdated.safeString(certificate.partyIdSupplier),
+                getTranslatedLabel('projects.certificate.form.supplier', 'Supplier') + ': ' + sharedUtilsUpdated.safeString(supplierName),
             ]);
             worksheet.addRow([
                 getTranslatedLabel('projects.certificate.total', 'Total') + ': ' + sharedUtilsUpdated.formatNumber(subtotal),
