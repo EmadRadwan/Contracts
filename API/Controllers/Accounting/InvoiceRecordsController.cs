@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.OData.Query;
 
 namespace API.Controllers.Accounting;
 
-public class InvoiceRecordsController : BaseODataController2<InvoiceView>
+public class InvoiceRecordsController : BaseODataController<InvoiceView>
 {
     [HttpGet]
     [EnableQuery]
