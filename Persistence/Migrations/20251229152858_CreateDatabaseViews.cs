@@ -256,7 +256,8 @@ LEFT JOIN PRODUCT_FACILITY_AGG PF_AGG ON P.PRODUCT_ID = PF_AGG.PRODUCT_ID
                                         AND INV_AG.FACILITY_ID = PF_AGG.FACILITY_ID;
 ");
 
-        
+           
+         
     }
 
     protected override void Down(MigrationBuilder migrationBuilder)
@@ -274,6 +275,8 @@ LEFT JOIN PRODUCT_FACILITY_AGG PF_AGG ON P.PRODUCT_ID = PF_AGG.PRODUCT_ID
         migrationBuilder.Sql(@"
                 DROP VIEW IF EXISTS FACILITY_INVENTORY_RECORD_VIEW;
             ");
+        
+        
 
     }
     }

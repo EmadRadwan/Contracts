@@ -27,6 +27,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
         public DbSet<InventoryItemDetailForSumView> InventoryItemDetailForSumView { get; set; }
         public DbSet<OrderView> OrderView { get; set; }
         public DbSet<FacilityInventoryRecordView> FacilityInventoryRecordViews { get; set; }
+        public DbSet<InvoiceView> InvoiceRecords { get; set; }
         public DbSet<Photo> Photos { get; set; }
         public DbSet<AccommodationClass> AccommodationClasses { get; set; } = null!;
         public DbSet<AccommodationMap> AccommodationMaps { get; set; } = null!;
@@ -65163,6 +65164,37 @@ entity.Property(e => e.BuildingNumber)
                             entity.Property(e => e.AvailableToPromiseMinusMinimumStock).HasColumnName("AVAILABLE_TO_PROMISE_MINUS_MINIMUM_STOCK");
                             entity.Property(e => e.QuantityOnHandMinusMinimumStock).HasColumnName("QUANTITY_ON_HAND_MINUS_MINIMUM_STOCK");
                         });
+                        
+                        modelBuilder.Entity<InvoiceView>(entity =>
+    {
+        entity.HasNoKey(); // View has no primary key
+        entity.ToView("InvoiceRecords");
+
+        // Explicit column mapping (recommended for clarity and safety)
+        entity.Property(e => e.InvoiceId).HasColumnName("InvoiceId");
+        entity.Property(e => e.InvoiceTypeId).HasColumnName("InvoiceTypeId");
+        entity.Property(e => e.InvoiceTypeDescription).HasColumnName("InvoiceTypeDescription");
+        entity.Property(e => e.InvoiceDate).HasColumnName("InvoiceDate");
+        entity.Property(e => e.DueDate).HasColumnName("DueDate");
+        entity.Property(e => e.PaidDate).HasColumnName("PaidDate");
+        entity.Property(e => e.StatusId).HasColumnName("StatusId");
+        entity.Property(e => e.StatusDescription).HasColumnName("StatusDescription");
+        entity.Property(e => e.Description).HasColumnName("Description");
+
+        entity.Property(e => e.FromPartyId).HasColumnName("PartyIdFrom_FromPartyId");
+        entity.Property(e => e.FromPartyName).HasColumnName("FromPartyName"); // or PartyIdFrom_FromPartyName
+
+        entity.Property(e => e.ToPartyId).HasColumnName("PartyId_FromPartyId");
+        entity.Property(e => e.ToPartyName).HasColumnName("ToPartyName"); // or PartyId_FromPartyName
+
+        entity.Property(e => e.BillingAccountId).HasColumnName("BillingAccountId");
+        entity.Property(e => e.BillingAccountName).HasColumnName("BillingAccountName");
+
+        entity.Property(e => e.Total).HasColumnName("Total");
+        entity.Property(e => e.OutstandingAmount).HasColumnName("OutstandingAmount");
+        entity.Property(e => e.OrderId).HasColumnName("OrderId");
+        entity.Property(e => e.CertificateNumber).HasColumnName("CertificateNumber");
+    });
 
                 modelBuilder.Entity<QualityStandard>(entity =>
             {

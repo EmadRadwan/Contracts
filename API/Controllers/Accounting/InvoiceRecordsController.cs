@@ -6,14 +6,14 @@ using Microsoft.AspNetCore.OData.Query;
 
 namespace API.Controllers.Accounting;
 
-public class InvoiceRecordsController : BaseODataController2<InvoiceRecord>
+public class InvoiceRecordsController : BaseODataController2<InvoiceView>
 {
     [HttpGet]
     [EnableQuery]
-    public async Task<IActionResult> Get(ODataQueryOptions<InvoiceRecord> options)
+    public async Task<IActionResult> Get(ODataQueryOptions<InvoiceView> options)
     {
         var language = GetLanguage(); // Assumes GetLanguage() retrieves language from headers, query params, or user settings
-        var query = await Mediator.Send(new ListInvoices.Query { Options = options, Language = language });
+        var query = await Mediator.Send(new ListInvoices.Query { Options = options });
         return await HandleODataQueryAsync(query, options);
     }
 }

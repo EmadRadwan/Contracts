@@ -11,7 +11,6 @@ import Button from "@mui/material/Button";
 import {Grid, Paper} from "@mui/material";
 
 import { Menu, MenuItem, MenuSelectEvent } from "@progress/kendo-react-layout";
-import { useLocation, useNavigate } from "react-router-dom";
 import {
     certificateUiSelectors,
     resetCertificateUi,

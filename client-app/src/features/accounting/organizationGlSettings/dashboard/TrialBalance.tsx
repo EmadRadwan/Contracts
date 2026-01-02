@@ -178,10 +178,10 @@ const TrialBalance = () => {
                   </GridToolbar>
                   <Column field="accountCode" title={getTranslatedLabel(`${localizationKey}.accountCode`, "Account Code")} cell={AccountCodeCell} />
                   <Column field="accountName" title={getTranslatedLabel(`${localizationKey}.accountName`, "Account Name")} />
-                  <Column field="openingBalance" title={getTranslatedLabel(`${localizationKey}.openingBalance`, "Opening Balance")} format="{0:c2}" />
-                  <Column field="postedDebits" title={getTranslatedLabel(`${localizationKey}.postedDebits`, "Debit")} format="{0:c2}" />
-                  <Column field="postedCredits" title={getTranslatedLabel(`${localizationKey}.postedCredits`, "Credit")} format="{0:c2}" />
-                  <Column field="endingBalance" title={getTranslatedLabel(`${localizationKey}.endingBalance`, "Ending Balance")} format="{0:c2}" />
+                  <Column field="openingBalance" title={getTranslatedLabel(`${localizationKey}.openingBalance`, "Opening Balance")} format="{0:n2}" />
+                  <Column field="postedDebits" title={getTranslatedLabel(`${localizationKey}.postedDebits`, "Debit")} format="{0:n2}" />
+                  <Column field="postedCredits" title={getTranslatedLabel(`${localizationKey}.postedCredits`, "Credit")} format="{0:n2}" />
+                  <Column field="endingBalance" title={getTranslatedLabel(`${localizationKey}.endingBalance`, "Ending Balance")} format="{0:n2}" />
                 </KendoGrid>
               </div>
             </Grid>
