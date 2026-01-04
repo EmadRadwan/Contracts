@@ -4,229 +4,362 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 
-namespace Infrastructure.Pdf 
+namespace Infrastructure.Pdf
 {
     public class PdfGenerationService : IPdfGenerationService
     {
         public PdfGenerationService()
         {
-            QuestPDF.Settings.License = LicenseType.Community; // Can be set once here
+            QuestPDF.Settings.License = LicenseType.Community;
         }
 
         public byte[] GeneratePaymentReportPdf(PaymentReportDto data, string companyName = "Golden Land")
         {
             QuestPDF.Settings.License = LicenseType.Community;
 
-            var backgroundPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "goldenland_voucher_template.jpg");
-    
-            if (!File.Exists(backgroundPath))
+            var logoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "goldenlandlogo.jpg");
+            byte[]? logoBytes = null;
+            if (File.Exists(logoPath))
             {
-                throw new FileNotFoundException($"Background template not found at: {backgroundPath}");
+                logoBytes = File.ReadAllBytes(logoPath);
             }
-    
-            var backgroundBytes = File.ReadAllBytes(backgroundPath);
-            
+
+            // Determine payment method type
+            var paymentMethod = data.PaymentMethodDescription?.ToUpperInvariant() ?? "";
+            bool isCash = paymentMethod.Contains("CASH") || paymentMethod.Contains("نقد");
+            bool isCheque = paymentMethod.Contains("CHEQUE") || paymentMethod.Contains("CHECK") || paymentMethod.Contains("شيك");
+            bool isBankTransfer = paymentMethod.Contains("BANK") || paymentMethod.Contains("TRANSFER") || paymentMethod.Contains("تحويل") || paymentMethod.Contains("بنك");
+
+            // Get currency suffix
+            string currencySuffix = GetCurrencySuffix(data.CurrencyUomId);
+            string amountInWords = ConvertAmountToArabicWords(data.Amount, currencySuffix);
+
             var document = Document.Create(container =>
             {
                 container.Page(page =>
                 {
-                    page.Background().Image(backgroundBytes).FitArea();
-                    page.Size(PageSizes.A4);
-                    page.Margin(40);
-                    page.DefaultTextStyle(x => x.FontSize(11).FontFamily("Amiri"));
+                    page.Size(PageSizes.A5.Landscape());
+                    page.Margin(15);
+                    page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Arial"));
 
-                    // Optional: fallback if Amiri not loaded
-                    page.DefaultTextStyle(x => x.Fallback(f => f.FontFamily("DejaVu Sans")));
-
-                    // Logo
-                    page.Header()
-                        .Height(90)
-                        .AlignLeft()
-                        .AlignMiddle()
-                        .Image("wwwroot/goldenlandlogo.jpg")
-                        .FitArea();
-
-                    page.Content().PaddingTop(30).Column(col =>
+                    page.Content().Column(mainCol =>
                     {
-                        col.Spacing(15);
-
-                        // Title
-                        col.Item().Text(Rtl("بيان دفعة"))
-                            .FontSize(20).Bold().AlignCenter();
-
-                        // Payment ID + Status
-                        col.Item().Row(row =>
+                        // ===== HEADER SECTION =====
+                        mainCol.Item().Row(headerRow =>
                         {
-                            row.RelativeItem(4).Text(Rtl(data.PaymentId)).FontSize(16).Bold();
-                            row.RelativeItem(5)
-                                .Background(Colors.Yellow.Lighten2)
-                                .Padding(10)
-                                .AlignCenter()
-                                .Text(Rtl(data.StatusDescription))
-                                .FontSize(14).Bold();
-                        });
-
-                        col.Item().PaddingVertical(10);
-
-                        // Parties
-                        col.Item().Table(t =>
-                        {
-                            t.ColumnsDefinition(c =>
+                            // Left: Logo
+                            headerRow.RelativeItem(2).AlignLeft().AlignMiddle().Column(logoCol =>
                             {
-                                c.RelativeColumn(2);
-                                c.RelativeColumn(3);
-                                c.ConstantColumn(20);
-                                c.RelativeColumn(2);
-                                c.RelativeColumn(3);
-                            });
-
-                            t.Cell().ColumnSpan(2).Text(Rtl("من")).Bold();
-                            t.Cell().ColumnSpan(3).Text(Rtl(data.FromPartyName)).AlignRight();
-
-                            t.Cell().Text("");
-                            t.Cell().ColumnSpan(2).Text(Rtl("إلى")).Bold();
-                            t.Cell().ColumnSpan(3).Text(Rtl(data.ToPartyName)).AlignRight();
-                        });
-
-                        // Type & Method
-                        col.Item().Table(t =>
-                        {
-                            t.ColumnsDefinition(c =>
-                            {
-                                c.RelativeColumn(2);
-                                c.RelativeColumn(3);
-                                c.ConstantColumn(20);
-                                c.RelativeColumn(2);
-                                c.RelativeColumn(3);
-                            });
-
-                            t.Cell().ColumnSpan(2).Text(Rtl("نوع الدفعة")).Bold();
-                            t.Cell().ColumnSpan(3).Text(Rtl(data.PaymentTypeDescription)).AlignRight();
-
-                            t.Cell().Text("");
-                            t.Cell().ColumnSpan(2).Text(Rtl("طريقة الدفع")).Bold();
-                            t.Cell().ColumnSpan(3).Text(Rtl(data.PaymentMethodDescription)).AlignRight();
-                        });
-
-                        // Cheque
-                        if (!string.IsNullOrEmpty(data.ChequeNumber))
-                        {
-                            col.Item().Table(t =>
-                            {
-                                t.ColumnsDefinition(c =>
+                                if (logoBytes != null)
                                 {
-                                    c.RelativeColumn(2);
-                                    c.RelativeColumn(3);
-                                    c.ConstantColumn(20);
-                                    c.RelativeColumn(2);
-                                    c.RelativeColumn(3);
+                                    logoCol.Item().Width(60).Image(logoBytes).FitWidth();
+                                }
+                            });
+
+                            // Center: Title
+                            headerRow.RelativeItem(3).AlignCenter().AlignMiddle().Column(titleCol =>
+                            {
+                                titleCol.Item().AlignCenter().Text("إيصال صرف").FontSize(16).Bold().FontFamily("Arial");
+                            });
+
+                            // Right: Company Name in Arabic
+                            headerRow.RelativeItem(2).AlignRight().AlignMiddle().Column(companyCol =>
+                            {
+                                companyCol.Item().AlignRight().Text("جولدن لاند").FontSize(12).Bold().FontFamily("Arial");
+                                companyCol.Item().AlignRight().Text("للتطوير العقارى").FontSize(9).FontFamily("Arial");
+                                companyCol.Item().AlignRight().Text("ش.م.م").FontSize(7).FontFamily("Arial");
+                            });
+                        });
+
+                        mainCol.Item().PaddingVertical(3).LineHorizontal(1).LineColor(Colors.Grey.Medium);
+
+                        // ===== PAYMENT METHOD CHECKBOXES =====
+                        mainCol.Item().PaddingTop(3).Row(methodRow =>
+                        {
+                            methodRow.RelativeItem().AlignCenter().Row(checkRow =>
+                            {
+                                // Bank Transfer checkbox
+                                checkRow.AutoItem().PaddingHorizontal(8).Row(r =>
+                                {
+                                    r.AutoItem().Border(1).Width(10).Height(10).AlignCenter().AlignMiddle()
+                                        .Text(isBankTransfer ? "X" : "").FontSize(8);
+                                    r.AutoItem().PaddingLeft(2).Text("تحويل بنكى").FontSize(8).FontFamily("Arial");
                                 });
 
-                                t.Cell().ColumnSpan(2).Text(Rtl("رقم الشيك")).Bold();
-                                t.Cell().ColumnSpan(3).Text(Rtl(data.ChequeNumber)).AlignRight();
+                                // Cheque checkbox
+                                checkRow.AutoItem().PaddingHorizontal(8).Row(r =>
+                                {
+                                    r.AutoItem().Border(1).Width(10).Height(10).AlignCenter().AlignMiddle()
+                                        .Text(isCheque ? "X" : "").FontSize(8);
+                                    r.AutoItem().PaddingLeft(2).Text("شيكات").FontSize(8).FontFamily("Arial");
+                                });
 
-                                t.Cell().Text("");
-                                t.Cell().ColumnSpan(2).Text(Rtl("تاريخ الشيك")).Bold();
-                                t.Cell().ColumnSpan(3).Text(data.ChequeDate?.ToString("dd/MM/yyyy") ?? "").AlignRight();
+                                // Cash checkbox
+                                checkRow.AutoItem().PaddingHorizontal(8).Row(r =>
+                                {
+                                    r.AutoItem().Border(1).Width(10).Height(10).AlignCenter().AlignMiddle()
+                                        .Text(isCash ? "X" : "").FontSize(8);
+                                    r.AutoItem().PaddingLeft(2).Text("نقدية").FontSize(8).FontFamily("Arial");
+                                });
                             });
-                        }
+                        });
 
-                        // Amount & Currency
-                        col.Item().Table(t =>
+                        // ===== DATE ROW =====
+                        mainCol.Item().PaddingTop(6).Row(dateRow =>
                         {
-                            t.ColumnsDefinition(c =>
+                            // Amount boxes (RTL: [amount box] جنيه [piasters box] قرش)
+                            dateRow.RelativeItem(3).AlignLeft().AlignMiddle().Row(r =>
                             {
-                                c.RelativeColumn(2);
-                                c.RelativeColumn(3);
-                                c.ConstantColumn(20);
-                                c.RelativeColumn(2);
-                                c.RelativeColumn(3);
+                                // قرش label then piasters box (far left)
+                                r.AutoItem().PaddingHorizontal(3).AlignMiddle().Text("قرش").FontSize(8).FontFamily("Arial");
+                                r.AutoItem().PaddingHorizontal(3).Border(1).BorderColor(Colors.Grey.Medium)
+                                    .Width(35).Height(14).AlignCenter().AlignMiddle()
+                                    .Text(ToArabicNumerals(((int)((data.Amount - (int)data.Amount) * 100)).ToString("00"))).FontSize(8);
+                                // جنيه label then amount box (right side)
+                                r.AutoItem().PaddingHorizontal(3).AlignMiddle().Text("جنيه").FontSize(8).FontFamily("Arial");
+                                r.AutoItem().PaddingHorizontal(3).Border(1).BorderColor(Colors.Grey.Medium)
+                                    .Width(60).Height(14).AlignCenter().AlignMiddle()
+                                    .Text(ToArabicNumerals(((int)data.Amount).ToString("N0"))).FontSize(8);
                             });
 
-                            t.Cell().ColumnSpan(2).Text(Rtl("المبلغ")).Bold();
-                            t.Cell().ColumnSpan(3)
-                                .Text(data.Amount.ToString("N2", new System.Globalization.CultureInfo("ar-EG")))
-                                .FontSize(14).Bold().AlignRight();
-
-                            t.Cell().Text("");
-                            t.Cell().ColumnSpan(2).Text(Rtl("العملة")).Bold();
-                            t.Cell().ColumnSpan(3).Text(Rtl(data.CurrencyUomId)).AlignRight();
-                        });
-
-                        // Cost Center & Project
-                        col.Item().Table(t =>
-                        {
-                            t.ColumnsDefinition(c =>
+                            // Date on right
+                            dateRow.RelativeItem(2).AlignRight().Row(r =>
                             {
-                                c.RelativeColumn(2);
-                                c.RelativeColumn(3);
-                                c.ConstantColumn(20);
-                                c.RelativeColumn(2);
-                                c.RelativeColumn(3);
+                                r.AutoItem().Text(FormatArabicDate(data.EffectiveDate)).FontSize(9);
+                                r.AutoItem().Text(": تحريراً فى").FontSize(9).FontFamily("Arial");
+                            });
+                        });
+
+                        // ===== RECIPIENT ROW =====
+                        mainCol.Item().PaddingTop(6).Row(r =>
+                        {
+                            r.RelativeItem().BorderBottom(1).BorderColor(Colors.Grey.Medium);
+                            r.AutoItem().AlignMiddle().BorderBottom(1).BorderColor(Colors.Grey.Medium)
+                                .Text(data.ToPartyName ?? "").FontSize(9).FontFamily("Arial");
+                            r.AutoItem().AlignMiddle().Text(" : صرفنا إلى السيد / السادة").FontSize(9).FontFamily("Arial");
+                        });
+
+                        // ===== AMOUNT IN WORDS ROW =====
+                        mainCol.Item().PaddingTop(6).Row(r =>
+                        {
+                            r.RelativeItem().BorderBottom(1).BorderColor(Colors.Grey.Medium);
+                            r.AutoItem().AlignMiddle().BorderBottom(1).BorderColor(Colors.Grey.Medium)
+                                .Text(amountInWords).FontSize(9).FontFamily("Arial");
+                            r.AutoItem().AlignMiddle().Text(" : فقط وقدره").FontSize(9).FontFamily("Arial");
+                        });
+
+                        // ===== CHEQUE DETAILS ROW =====
+                        mainCol.Item().PaddingTop(6).AlignRight().Row(r =>
+                        {
+                            // Date placeholder (show ٢٠  /  /  if no date)
+                            var chequeDateText = data.ChequeDate.HasValue
+                                ? FormatArabicDate(data.ChequeDate.Value)
+                                : "٢٠    /    /    ";
+                            r.AutoItem().PaddingHorizontal(2).Width(70)
+                                .AlignCenter().AlignMiddle().Text(chequeDateText).FontSize(8);
+                            r.AutoItem().AlignMiddle().Text(" حق").FontSize(8).FontFamily("Arial");
+
+                            // Cheque number
+                            r.AutoItem().PaddingHorizontal(2).Width(50).BorderBottom(1).BorderColor(Colors.Grey.Medium)
+                                .AlignCenter().AlignMiddle().Text(ToArabicNumerals(data.ChequeNumber ?? "")).FontSize(8).FontFamily("Arial");
+                            r.AutoItem().AlignMiddle().Text(" رقم").FontSize(8).FontFamily("Arial");
+
+                            // Bank name
+                            r.AutoItem().PaddingHorizontal(2).Width(80).BorderBottom(1).BorderColor(Colors.Grey.Medium)
+                                .AlignCenter().AlignMiddle().Text("").FontSize(8);
+                            r.AutoItem().AlignMiddle().Text(" مسحوب على بنك").FontSize(8).FontFamily("Arial");
+
+                            // Payment type
+                            r.AutoItem().PaddingHorizontal(2).Width(60).BorderBottom(1).BorderColor(Colors.Grey.Medium)
+                                .AlignCenter().AlignMiddle().Text(isCash ? "نقداً" : (isCheque ? "شيك" : "")).FontSize(8).FontFamily("Arial");
+                            r.AutoItem().AlignMiddle().Text(" : نقداً / بموجب").FontSize(8).FontFamily("Arial");
+                        });
+
+                        // ===== BANK TRANSFER ROW =====
+                        mainCol.Item().PaddingTop(6).Row(r =>
+                        {
+                            r.RelativeItem().BorderBottom(1).BorderColor(Colors.Grey.Medium);
+                            r.AutoItem().AlignMiddle().BorderBottom(1).BorderColor(Colors.Grey.Medium)
+                                .Text(isBankTransfer ? (data.PaymentMethodDescription ?? "") : "").FontSize(8).FontFamily("Arial");
+                            r.AutoItem().AlignMiddle().Text(" : تحويل ( بنكى ، اون لاين )").FontSize(8).FontFamily("Arial");
+                        });
+
+                        // ===== PURPOSE ROW =====
+                        mainCol.Item().PaddingTop(6).Row(r =>
+                        {
+                            r.RelativeItem().BorderBottom(1).BorderColor(Colors.Grey.Medium);
+                            r.AutoItem().AlignMiddle().BorderBottom(1).BorderColor(Colors.Grey.Medium)
+                                .Text(data.Comments ?? "").FontSize(9).FontFamily("Arial");
+                            r.AutoItem().AlignMiddle().Text(" : وذلك عن").FontSize(9).FontFamily("Arial");
+                        });
+
+                        // ===== SPACER =====
+                        mainCol.Item().PaddingVertical(15);
+
+                        // ===== SIGNATURE SECTION =====
+                        mainCol.Item().Row(sigRow =>
+                        {
+                            // Left: Approved
+                            sigRow.RelativeItem().AlignLeft().Column(c =>
+                            {
+                                c.Item().Text("...يعتمد").FontSize(9).FontFamily("Arial");
+                                c.Item().PaddingTop(20).BorderBottom(1).Width(70);
                             });
 
-                            t.Cell().ColumnSpan(2).Text(Rtl("مركز التكلفة")).Bold();
-                            t.Cell().ColumnSpan(3).Text(Rtl(data.CostCenterDescription ?? "غير محدد")).AlignRight();
+                            // Center: Accountant
+                            sigRow.RelativeItem().AlignCenter().Column(c =>
+                            {
+                                c.Item().AlignCenter().Text("المحاسب").FontSize(9).FontFamily("Arial");
+                                c.Item().PaddingTop(20).AlignCenter().BorderBottom(1).Width(70);
+                            });
 
-                            t.Cell().Text("");
-                            t.Cell().ColumnSpan(2).Text(Rtl("المشروع")).Bold();
-                            t.Cell().ColumnSpan(3).Text(Rtl(data.ProjectName ?? "غير محدد")).AlignRight();
+                            // Right: Recipient
+                            sigRow.RelativeItem().AlignRight().Column(c =>
+                            {
+                                c.Item().AlignRight().Text("المستلم").FontSize(9).FontFamily("Arial");
+                                c.Item().PaddingTop(8).AlignRight().Row(r =>
+                                {
+                                    r.AutoItem().BorderBottom(1).Width(80);
+                                    r.AutoItem().PaddingLeft(3).Text("الاسم").FontSize(8).FontFamily("Arial");
+                                });
+                                c.Item().PaddingTop(8).AlignRight().Row(r =>
+                                {
+                                    r.AutoItem().BorderBottom(1).Width(80);
+                                    r.AutoItem().PaddingLeft(3).Text("التوقيع").FontSize(8).FontFamily("Arial");
+                                });
+                            });
                         });
 
-                        // Effective Date
-                        col.Item().Row(row =>
-                        {
-                            row.RelativeItem(2).Text(Rtl("تاريخ السريان")).Bold();
-                            row.RelativeItem(3).Text(data.EffectiveDate.ToString("dd/MM/yyyy")).AlignRight();
-                        });
-
-                        // Comments
-                        if (!string.IsNullOrEmpty(data.Comments))
-                        {
-                            col.Item().PaddingTop(20);
-                            col.Item().Text(Rtl("البيان")).Bold();
-                            col.Item()
-                                .Background(Colors.Grey.Lighten3)
-                                .Padding(10)
-                                .Text(Rtl(data.Comments))
-                                .FontSize(12)
-                                .LineHeight((float?)1.5);
-                        }
+                        // ===== PAYMENT ID (small reference) =====
+                        mainCol.Item().PaddingTop(5).AlignLeft().Text($"مرجع: {ToArabicNumerals(data.PaymentId)}").FontSize(6).FontColor(Colors.Grey.Medium);
                     });
-
-                    page.Footer()
-                        .AlignCenter()
-                        .Text(x =>
-                        {
-                            x.Span("Page ");
-                            x.CurrentPageNumber();
-                        });
                 });
             });
 
             return document.GeneratePdf();
         }
 
-        // Helper methods inside the class
-        private string GetLabel(bool isArabic, string ar, string en) => isArabic ? ar : en;
-
-        private string FormatNumber(decimal? amount) =>
-            amount?.ToString("N2", new System.Globalization.CultureInfo("ar-EG")) ?? "0.00";
-
-        private string FormatDate(string? dateStr, bool isArabic)
+        private string GetCurrencySuffix(string? currencyCode)
         {
-            if (string.IsNullOrEmpty(dateStr)) return "غير محدد";
-            if (DateTime.TryParse(dateStr, out var date))
-                return date.ToString(isArabic ? "dd/MM/yyyy" : "yyyy-MM-dd");
-            return dateStr;
+            return currencyCode?.ToUpperInvariant() switch
+            {
+                "EGP" => "جنيه مصرى",
+                "USD" => "دولار أمريكى",
+                "EUR" => "يورو",
+                "SAR" => "ريال سعودى",
+                "AED" => "درهم إماراتى",
+                _ => "جنيه"
+            };
         }
 
-        private string Rtl(string text)
+        private string ConvertAmountToArabicWords(decimal amount, string currencySuffix)
         {
-            if (string.IsNullOrEmpty(text)) return text;
-            // \u202B = Right-to-Left Embedding (strong RTL direction)
-            // \u202C = Pop Directional Formatting (ends the embedding)
-            return $"\u202B{text}\u202C";
+            var intPart = (long)amount;
+            var decPart = (int)((amount - intPart) * 100);
+
+            var result = ConvertNumberToArabicWords(intPart) + " " + currencySuffix;
+
+            if (decPart > 0)
+            {
+                result += " و " + ConvertNumberToArabicWords(decPart) + " قرش";
+            }
+
+            result += " لا غير";
+            return result;
+        }
+
+        private string ToArabicNumerals(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+
+            var arabicDigits = new[] { '٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩' };
+            var result = new char[input.Length];
+
+            for (int i = 0; i < input.Length; i++)
+            {
+                if (char.IsDigit(input[i]))
+                    result[i] = arabicDigits[input[i] - '0'];
+                else
+                    result[i] = input[i];
+            }
+
+            return new string(result);
+        }
+
+        private string FormatArabicDate(DateTime date)
+        {
+            return ToArabicNumerals($"{date:yyyy/MM/dd}");
+        }
+
+        private string FormatArabicNumber(decimal number)
+        {
+            return ToArabicNumerals(((int)number).ToString("N0"));
+        }
+
+        private string ConvertNumberToArabicWords(long number)
+        {
+            if (number == 0) return "صفر";
+
+            string[] ones = { "", "واحد", "اثنان", "ثلاثة", "أربعة", "خمسة", "ستة", "سبعة", "ثمانية", "تسعة",
+                             "عشرة", "أحد عشر", "اثنا عشر", "ثلاثة عشر", "أربعة عشر", "خمسة عشر",
+                             "ستة عشر", "سبعة عشر", "ثمانية عشر", "تسعة عشر" };
+            string[] tens = { "", "", "عشرون", "ثلاثون", "أربعون", "خمسون", "ستون", "سبعون", "ثمانون", "تسعون" };
+            string[] hundreds = { "", "مائة", "مائتان", "ثلاثمائة", "أربعمائة", "خمسمائة", "ستمائة", "سبعمائة", "ثمانمائة", "تسعمائة" };
+
+            if (number < 0) return "سالب " + ConvertNumberToArabicWords(-number);
+            if (number < 20) return ones[number];
+            if (number < 100)
+            {
+                var remainder = number % 10;
+                var ten = number / 10;
+                if (remainder == 0) return tens[ten];
+                return ones[remainder] + " و " + tens[ten];
+            }
+            if (number < 1000)
+            {
+                var remainder = number % 100;
+                var hundred = number / 100;
+                if (remainder == 0) return hundreds[hundred];
+                return hundreds[hundred] + " و " + ConvertNumberToArabicWords(remainder);
+            }
+            if (number < 1000000)
+            {
+                var thousands = number / 1000;
+                var remainder = number % 1000;
+                string thousandWord;
+                if (thousands == 1) thousandWord = "ألف";
+                else if (thousands == 2) thousandWord = "ألفان";
+                else if (thousands >= 3 && thousands <= 10) thousandWord = ConvertNumberToArabicWords(thousands) + " آلاف";
+                else thousandWord = ConvertNumberToArabicWords(thousands) + " ألف";
+
+                if (remainder == 0) return thousandWord;
+                return thousandWord + " و " + ConvertNumberToArabicWords(remainder);
+            }
+            if (number < 1000000000)
+            {
+                var millions = number / 1000000;
+                var remainder = number % 1000000;
+                string millionWord;
+                if (millions == 1) millionWord = "مليون";
+                else if (millions == 2) millionWord = "مليونان";
+                else if (millions >= 3 && millions <= 10) millionWord = ConvertNumberToArabicWords(millions) + " ملايين";
+                else millionWord = ConvertNumberToArabicWords(millions) + " مليون";
+
+                if (remainder == 0) return millionWord;
+                return millionWord + " و " + ConvertNumberToArabicWords(remainder);
+            }
+
+            // For billions
+            var billions = number / 1000000000;
+            var billionRemainder = number % 1000000000;
+            string billionWord;
+            if (billions == 1) billionWord = "مليار";
+            else if (billions == 2) billionWord = "ملياران";
+            else if (billions >= 3 && billions <= 10) billionWord = ConvertNumberToArabicWords(billions) + " مليارات";
+            else billionWord = ConvertNumberToArabicWords(billions) + " مليار";
+
+            if (billionRemainder == 0) return billionWord;
+            return billionWord + " و " + ConvertNumberToArabicWords(billionRemainder);
         }
     }
 }
