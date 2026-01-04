@@ -1,45 +1,34 @@
-const DeleteCell = (props: any) => {
-    const navigationAttributes = useTableKeyboardNavigation(props.id);
-    const { getTranslatedLabel } = useTranslationHelper();
+container.Page(page =>
+{
+    page.Size(PageSizes.A4);
 
-    // Optional: Also disable if transaction is posted
-    const isPosted = props.dataItem.isPosted === "Y";
+    // Set the scanned form as background
+    page.Background().Image("wwwroot/goldenland_voucher_template.jpg");
+    // Or use a byte array if you load it dynamically:
+    // page.Background().Image(backgroundImageBytes);
 
-    return (
-        <td
-            className={props.className}
-            style={{ ...props.style }}
-            colSpan={props.colSpan}
-            role="gridcell"
-            aria-colindex={props.ariaColumnIndex}
-            aria-selected={props.isSelected}
-            {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
-            {...navigationAttributes}
-        >
-            <Can perform="deleteAcctgTrans">
-                <Button
-                    size="small"
-                    color="error"
-                    variant="outlined"
-                    onClick={() => handleDeleteClick(props.dataItem.acctgTransId)}
-                    disabled={isDeleting || isPosted}
-                >
-                    {getTranslatedLabel(
-                        "accounting.orgGL.accounting.summary.txns.deleteButton",
-                        "Delete"
-                    )}
-                </Button>
-            </Can>
+    page.Margin(40); // Adjust if needed to match the form's printable area
 
-            {/* Optional: Show visual indicator if posted and user has permission */}
-            {isPosted && (
-                <span style={{ marginLeft: 8, color: "gray", fontStyle: "italic" }}>
-          {getTranslatedLabel(
-              "accounting.orgGL.accounting.summary.txns.isPosted",
-              "Posted"
-          )}
-        </span>
-            )}
-        </td>
-    );
-};
+    // Keep your existing header, content, and footer
+    page.Header()
+        .Height(90)
+        .AlignLeft()
+        .AlignMiddle()
+        .Image("wwwroot/goldenlandlogo.jpg")
+        .FitArea();
+
+    page.Content()
+        .PaddingTop(30) // Fine-tune this to align text with form fields
+        .Column(col =>
+        {
+            // ... all your existing content code remains the same
+        });
+
+    page.Footer()
+        .AlignCenter()
+        .Text(x =>
+        {
+            x.Span("Page ");
+            x.CurrentPageNumber();
+        });
+});

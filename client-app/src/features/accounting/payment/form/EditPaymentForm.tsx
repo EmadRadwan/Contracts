@@ -17,7 +17,7 @@ import {
 import {
     useFetchGlAccountOrganizationHierarchyLovQuery,
     useFetchPaymentApplicationsForPaymentQuery,
-    useLazyFetchBalancesForVendorAndProjectQuery
+    useLazyFetchBalancesForVendorAndProjectQuery, useLazyGetPaymentReportPdfQuery
 } from "../../../../app/store/apis";
 import {FormDropDownTreeGlAccount2} from "../../../../app/common/form/FormDropDownTreeGlAccount2";
 import {PaymentExcelTechnical} from "../report/PaymentExcelTechnical";
@@ -61,6 +61,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
     const projectIdFromPayment = payment?.projectId ?? "";
     const [currentProjectId, setCurrentProjectId] = useState<string>("");
     const [showCreateCostCenter, setShowCreateCostCenter] = useState(false);
+    const [triggerPdf, { isFetching: isPdfFetching }] = useLazyGetPaymentReportPdfQuery();
 
     useEffect(() => {
         if (payment?.projectId) {
@@ -249,6 +250,33 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
 
         return;
     };
+
+    const handleDownloadPdf = async () => {
+        if (!payment?.paymentId) return;
+
+        try {
+            const arrayBuffer = await triggerPdf(payment.paymentId).unwrap();
+
+            const blob = new Blob([arrayBuffer], { type: "application/pdf" });
+
+            // Fixed: Use global URL instead of window.URL
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `${payment.paymentId}_بيان_دفعة.pdf`;
+            document.body.appendChild(link); // Needed for Firefox
+            link.click();
+            document.body.removeChild(link);
+
+            // Cleanup
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Failed to download PDF:", error);
+            alert("فشل تحميل بيان الدفعة. تأكد من الاتصال بالإنترنت وحاول مرة أخرى.");
+        }
+    };
+
 
 
     return (
@@ -677,6 +705,19 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                             isFetching={isExcelFetching}
                                         />
                                     </Grid>
+
+                                    <Grid item xs={2}>
+                                        <Button
+                                            variant="contained"
+                                            color="secondary"
+                                            onClick={handleDownloadPdf}
+                                            disabled={isPdfFetching || !payment?.paymentId}
+                                            sx={{ mt: 2, mr: 1 }}
+                                        >
+                                            {isPdfFetching ? "جاري التحميل..." : "طباعة بيان الدفعة (PDF)"}
+                                        </Button>
+                                    </Grid>
+                                    
                                     <Grid item xs={1}>
                                         <Button
                                             sx={{mt: 2}}

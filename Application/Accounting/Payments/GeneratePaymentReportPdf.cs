@@ -1,11 +1,10 @@
-// Application/Reports/GeneratePaymentReportPdf.cs
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 
 namespace Application.Reports;
 
-public class GeneratePaymentReportPdf
+public class GetPaymentForReport
 {
     public record Query(string PaymentId, string Language = "ar") : IRequest<PaymentReportDto>;
 

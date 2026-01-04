@@ -17,10 +17,20 @@ namespace Infrastructure.Pdf
         {
             QuestPDF.Settings.License = LicenseType.Community;
 
+            var backgroundPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "goldenland_voucher_template.jpg");
+    
+            if (!File.Exists(backgroundPath))
+            {
+                throw new FileNotFoundException($"Background template not found at: {backgroundPath}");
+            }
+    
+            var backgroundBytes = File.ReadAllBytes(backgroundPath);
+            
             var document = Document.Create(container =>
             {
                 container.Page(page =>
                 {
+                    page.Background().Image(backgroundBytes).FitArea();
                     page.Size(PageSizes.A4);
                     page.Margin(40);
                     page.DefaultTextStyle(x => x.FontSize(11).FontFamily("Amiri"));

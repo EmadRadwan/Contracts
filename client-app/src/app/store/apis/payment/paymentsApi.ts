@@ -258,6 +258,13 @@ const paymentsApi = createApi({
                 }),
                 providesTags: ['DailyPayments'],
             }),
+            getPaymentReportPdf: builder.query<ArrayBuffer, string>({
+                query: (paymentId) => ({
+                    url: `/paymentReports/payment-report/${paymentId}`,
+                    responseHandler: (response) => response.arrayBuffer(), // Important: get raw bytes
+                    cache: "no-cache",
+                }),
+            }),
         };
     },
 });
@@ -281,6 +288,7 @@ export const {
     useCalculatePaymentTotalsMutation,
     useRemovePaymentApplicationMutation,
     useCreatePaymentApplicationMutation,
-    useLazyFetchDailyPaymentsLazyQuery, useFetchPaymentsWithDueStatusQuery
+    useLazyFetchDailyPaymentsLazyQuery,
+    useFetchPaymentsWithDueStatusQuery, useLazyGetPaymentReportPdfQuery
 } = paymentsApi;
 export {paymentsApi};
