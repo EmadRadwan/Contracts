@@ -24,28 +24,26 @@ namespace Infrastructure.Pdf
             {
                 if (_fontsRegistered) return;
 
-                var fontsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "fonts");
+                var fontsPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "fonts"); // Better than GetCurrentDirectory() in Docker
 
-                // Register NotoSansArabic fonts
                 var regularFont = Path.Combine(fontsPath, "NotoSansArabic-Regular.ttf");
                 var boldFont = Path.Combine(fontsPath, "NotoSansArabic-Bold.ttf");
 
                 if (File.Exists(regularFont))
                 {
                     using var regularStream = File.OpenRead(regularFont);
-                    QuestPDF.Drawing.FontManager.RegisterFont(regularStream);
+                    QuestPDF.Drawing.FontManager.RegisterFontWithCustomName("NotoSansArabic", regularStream);
                 }
 
                 if (File.Exists(boldFont))
                 {
                     using var boldStream = File.OpenRead(boldFont);
-                    QuestPDF.Drawing.FontManager.RegisterFont(boldStream);
+                    QuestPDF.Drawing.FontManager.RegisterFontWithCustomName("NotoSansArabic Bold", boldStream);
                 }
 
                 _fontsRegistered = true;
             }
         }
-
         public byte[] GeneratePaymentReportPdf(PaymentReportDto data, string companyName = "Golden Land")
         {
             QuestPDF.Settings.License = LicenseType.Community;
@@ -73,8 +71,7 @@ namespace Infrastructure.Pdf
                 {
                     page.Size(PageSizes.A5.Landscape());
                     page.Margin(15);
-                    page.DefaultTextStyle(x => x.FontSize(9).FontFamily(ArabicFontFamily));
-
+                    page.DefaultTextStyle(x => x.FontFamily("NotoSansArabic").FontSize(9));
                     page.Content().Column(mainCol =>
                     {
                         // ===== HEADER SECTION =====
