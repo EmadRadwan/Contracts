@@ -71,7 +71,7 @@ namespace Infrastructure.Pdf
                             });
                         });
 
-                        /*mainCol.Item().PaddingVertical(3).LineHorizontal(1).LineColor(Colors.Grey.Medium);
+                        mainCol.Item().PaddingVertical(3).LineHorizontal(1).LineColor(Colors.Grey.Medium);
 
                         // ===== PAYMENT METHOD CHECKBOXES =====
                         mainCol.Item().PaddingTop(3).Row(methodRow =>
@@ -110,16 +110,36 @@ namespace Infrastructure.Pdf
                             // Amount boxes (RTL: [amount box] جنيه [piasters box] قرش)
                             dateRow.RelativeItem(3).AlignLeft().AlignMiddle().Row(r =>
                             {
-                                // قرش label then piasters box (far left)
-                                r.AutoItem().PaddingHorizontal(3).AlignMiddle().Text("قرش").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
-                                r.AutoItem().PaddingHorizontal(3).Border(1).BorderColor(Colors.Grey.Medium)
-                                    .Width(35).Height(14).AlignCenter().AlignMiddle()
-                                    .Text(ToArabicNumerals(((int)((data.Amount - (int)data.Amount) * 100)).ToString("00"))).FontSize(8);
-                                // جنيه label then amount box (right side)
-                                r.AutoItem().PaddingHorizontal(3).AlignMiddle().Text("جنيه").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
-                                r.AutoItem().PaddingHorizontal(3).Border(1).BorderColor(Colors.Grey.Medium)
-                                    .Width(60).Height(14).AlignCenter().AlignMiddle()
-                                    .Text(ToArabicNumerals(((int)data.Amount).ToString("N0"))).FontSize(8);
+                                r.ConstantItem(40).AlignMiddle().Text("قرش").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
+
+                                r.ConstantItem(6); // space between label and box
+
+                                r.AutoItem()
+                                    .Width(48)
+                                    .Height(18)
+                                    .Border(1)
+                                    .BorderColor(Colors.Grey.Medium)
+                                    .AlignCenter()
+                                    .AlignMiddle()
+                                    .Text(ToArabicNumerals(((int)((data.Amount - (int)data.Amount) * 100)).ToString("00")))
+                                    .FontSize(8);
+
+                                r.ConstantItem(18); // space between piasters and جنيه label
+
+                                r.ConstantItem(45).AlignMiddle().Text("جنيه").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
+
+                                r.ConstantItem(6); // space between label and box
+
+                                r.AutoItem()
+                                    .MinWidth(100)
+                                    .MaxWidth(220)
+                                    .Height(18)
+                                    .Border(1)
+                                    .BorderColor(Colors.Grey.Medium)
+                                    .AlignCenter()
+                                    .AlignMiddle()
+                                    .Text(ToArabicNumerals(((int)data.Amount).ToString("N0")))
+                                    .FontSize(8);
                             });
 
                             // Date on right
@@ -228,7 +248,7 @@ namespace Infrastructure.Pdf
                                     r.AutoItem().PaddingLeft(3).Text("التوقيع").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
                                 });
                             });
-                        });*/
+                        });
 
                         // ===== PAYMENT ID (small reference) =====
                         mainCol.Item().PaddingTop(5).AlignLeft().Text($"مرجع: {ToArabicNumerals(data.PaymentId)}").FontSize(6).FontColor(Colors.Grey.Medium);
