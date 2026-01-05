@@ -58,6 +58,9 @@ Log.Logger = new LoggerConfiguration()
 
 var builder = WebApplication.CreateBuilder(args);
 
+QuestPDF.Settings.CheckIfAllTextGlyphsAreAvailable = false;
+QuestPDF.Settings.UseEnvironmentFonts = false; // Critical: prevents relying on missing system fonts
+
 builder.Services.AddResponseCompression(options =>
 {
     options.EnableForHttps = true;

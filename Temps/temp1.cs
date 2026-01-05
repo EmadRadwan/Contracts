@@ -1,315 +1,448 @@
-using Application.Core;
-using Application.Order.Orders;
-using FluentValidation;
-using MediatR;
-using Persistence;
-using Domain;
 using Application.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using Application.Catalog.ProductStores;
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using Application.Reports;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
+using Microsoft.Extensions.Logging;
 
-namespace Application.Projects
+namespace Infrastructure.Pdf
 {
-    public class CreateProjectCertificate
+    public class PdfGenerationService : IPdfGenerationService
     {
-        public class Command : IRequest<Result<ProjectCertificateDto>>
+        private const string ArabicFontFamily = "Amiri-Regular";
+        private const string ArabicBoldFontFamily = "Amiri-Bold"; // Separate for bold
+        private static bool _fontsRegistered = false;
+        private static readonly object _fontLock = new object();
+
+        private readonly ILogger<PdfGenerationService> _logger;
+
+
+        public PdfGenerationService(ILogger<PdfGenerationService> logger)
         {
-            public ProjectCertificateDto? Certificate { get; set; }
+            _logger = logger;
+            QuestPDF.Settings.License = LicenseType.Community;
+            //QuestPDF.Settings.EnableDebugging = false;
+            // Critical for production stability
+            QuestPDF.Settings.UseEnvironmentFonts = false;
+            QuestPDF.Settings.CheckIfAllTextGlyphsAreAvailable = false; // Prevent crash, show ??? if font missing
+
+            RegisterFonts();
         }
 
-        public class CommandValidator : AbstractValidator<Command>
+        private static void RegisterFonts()
         {
-            public CommandValidator()
+            lock (_fontLock)
             {
-                RuleFor(x => x.Certificate!.CertificateItems)
-                    .Must(items => items != null && items.Any())
-                    .WithMessage("At least one certificate item is required");
-            }
-        }
+                if (_fontsRegistered) return;
 
-        public class Handler : IRequestHandler<Command, Result<ProjectCertificateDto>>
-        {
-            private readonly DataContext _context;
-            private readonly IUserAccessor _userAccessor;
-            private readonly IUtilityService _utilityService;
-            private readonly IOrderService _orderService;
-            private readonly IProductStoreService _productStoreService;
+                var basePath = AppContext.BaseDirectory; // Most reliable in Docker
+                var fontsPath = Path.Combine(basePath, "wwwroot", "fonts");
 
-            public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService, IOrderService orderService, IProductStoreService productStoreService)
-            {
-                _context = context;
-                _userAccessor = userAccessor;
-                _utilityService = utilityService;
-                _orderService = orderService;
-                _productStoreService = productStoreService;
-            }
+                Console.WriteLine($"[PDF Debug] Base path: {basePath}");
+                Console.WriteLine($"[PDF Debug] Fonts folder path: {fontsPath}");
+                Console.WriteLine($"[PDF Debug] Fonts folder exists: {Directory.Exists(fontsPath)}");
 
-            public async Task<Result<ProjectCertificateDto>> Handle(Command request, CancellationToken cancellationToken)
-            {
-                await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-                try
+                if (Directory.Exists(fontsPath))
                 {
-                    var stamp = DateTime.UtcNow;
-                    var certificate = request.Certificate!;
+                    var files = Directory.GetFiles(fontsPath);
+                    Console.WriteLine(
+                        $"[PDF Debug] Files in fonts folder: {string.Join(", ", files.Select(Path.GetFileName))}");
+                }
 
-                    // Purpose: Ensure consistent serial numbering based on party code; prioritize PartyIdContractor, fallback to PartyIdSupplier
-                    // Context: Replaces previous logic that only used party code for WORKMANSHIP_CONTRACTING_CERTIFICATE
-                    string? partyId = certificate.PartyIdContractor ?? certificate.PartyIdSupplier;
-                    if (string.IsNullOrEmpty(partyId))
+                var regularFont = Path.Combine(fontsPath, "NotoSansArabic-Regular.ttf");
+                var boldFont = Path.Combine(fontsPath, "NotoSansArabic-Bold.ttf");
+
+                Console.WriteLine($"[PDF Debug] Regular font exists: {File.Exists(regularFont)}");
+                Console.WriteLine($"[PDF Debug] Bold font exists: {File.Exists(boldFont)}");
+
+                if (File.Exists(regularFont))
+                {
+                    try
                     {
-                        await transaction.RollbackAsync(cancellationToken);
-                        return Result<ProjectCertificateDto>.Failure("No valid party ID (Contractor or Supplier) provided");
+                        using var regularStream = File.OpenRead(regularFont);
+                        QuestPDF.Drawing.FontManager.RegisterFontWithCustomName(ArabicFontFamily, regularStream);
+                        Console.WriteLine(
+                            "[PDF Debug] Successfully registered NotoSansArabic-Regular with custom name 'NotoSansArabic'");
                     }
-
-                    var certificateCount = await _context.WorkEfforts
-                        .CountAsync(we => (we.PartyIdContractor == partyId || we.PartyIdSupplier == partyId) && we.CertificateCategory == certificate.CertificateCategory, cancellationToken);
-                    var newWorkEffortSerial = await _utilityService.GetNextSequence("WorkEffort");
-                    var newProjectCertificateSerial = string.Format("{0}-{1:D4}", partyId, certificateCount + 1);
-
-                    // REFACTOR: Set CurrentStatusId to WEPR_CREATED
-                    // Purpose: Align with frontend and backend status definitions (WEPR_CREATED, WEPR_APPROVED, WEPR_COMPLETE)
-                    // Context: Ensures initial status matches editModeMap (WEPR_CREATED -> editMode: 2)
-                    var workEffort = new WorkEffort
+                    catch (Exception ex)
                     {
-                        WorkEffortId = newWorkEffortSerial,
-                        CertificateNumber = newProjectCertificateSerial,
-                        WorkEffortTypeId = "PROJECT_CERTIFICATE",
-                        CertificateCategory = certificate.CertificateCategory,
-                        PartyIdSupplier = certificate.PartyIdSupplier,
-                        PartyIdContractor = certificate.PartyIdContractor,
-                        ProjectId = certificate.ProjectId,
-                        Description = certificate.Description,
-                        EstimatedStartDate = certificate.EstimatedStartDate,
-                        EstimatedCompletionDate = certificate.EstimatedCompletionDate,
-                        CurrentStatusId = "WEPR_CREATED",
-                        CreatedDate = stamp,
-                        LastUpdatedStamp = stamp
-                    };
-
-                    _context.WorkEfforts.Add(workEffort);
-
-                    foreach (var item in certificate.CertificateItems!)
-                    {
-                        var itemWorkEffortSerial = await _utilityService.GetNextSequence("WorkEffort");
-                        // REFACTOR: Set CurrentStatusId to WEPR_CREATED for certificate items
-                        // Purpose: Ensure consistency with certificate status
-                        // Context: Matches frontend expectation for initial item status
-                        var itemWorkEffort = new WorkEffort
-                        {
-                            WorkEffortId = itemWorkEffortSerial,
-                            WorkEffortParentId = newWorkEffortSerial,
-                            WorkEffortTypeId = "CERTIFICATE_ITEM",
-                            ProductId = item.ProductId,
-                            Description = item.Description,
-                            Quantity = item.Quantity,
-                            Rate = item.UnitPrice,
-                            TotalAmount = item.TotalAmount,
-                            DiscountAmount = item.Discount ?? 0,
-                            InsuranceAmount = item.Insurance ?? 0,
-                            Deductions = item.Deductions ?? 0,
-                            CompletionPercentage = item.CompletionPercentage,
-                            Notes = item.Notes,
-                            ProcurementDate = item.ProcurementDate,
-                            FacilityId = string.IsNullOrWhiteSpace(item.FacilityId) ? null : item.FacilityId,
-                            TransportationExpenses = item.TransportationExpenses ?? 0,
-                            Gratuities = item.Gratuities ?? 0,
-                            CreatedDate = stamp,
-                            LastUpdatedStamp = stamp,
-                            CurrentStatusId = "WEPR_CREATED"
-                        };
-                        _context.WorkEfforts.Add(itemWorkEffort);
+                        Console.WriteLine($"[PDF Debug] FAILED to register regular font: {ex.Message}");
+                        Console.WriteLine($"[PDF Debug] Stack: {ex.StackTrace}");
                     }
+                }
+                else
+                {
+                    Console.WriteLine("[PDF Debug] Regular font file NOT FOUND!");
+                }
 
-                    string? generatedOrderId = null;
-                    if (certificate.CertificateCategory != "COMPANY_SUPPLY_SALE_CERTIFICATE")
+                if (File.Exists(boldFont))
+                {
+                    try
                     {
-                        var poItems = certificate.CertificateItems.ToList();
-                        if (poItems.Any())
+                        using var boldStream = File.OpenRead(boldFont);
+                        QuestPDF.Drawing.FontManager.RegisterFontWithCustomName(ArabicBoldFontFamily, boldStream);
+                        Console.WriteLine(
+                            "[PDF Debug] Successfully registered NotoSansArabic-Bold with custom name 'NotoSansArabic-Bold'");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[PDF Debug] FAILED to register bold font: {ex.Message}");
+                    }
+                }
+
+                _fontsRegistered = true;
+                Console.WriteLine("[PDF Debug] Font registration completed.");
+            }
+        }
+
+        public byte[] GeneratePaymentReportPdf(PaymentReportDto data, string companyName = "Golden Land")
+        {
+            try
+            {
+                QuestPDF.Settings.License = LicenseType.Community;
+
+                var logoPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "goldenlandlogo.jpg");
+                byte[]? logoBytes = null;
+                if (File.Exists(logoPath))
+                {
+                    logoBytes = File.ReadAllBytes(logoPath);
+                }
+
+                // Determine payment method type
+                var paymentMethod = data.PaymentMethodDescription?.ToUpperInvariant() ?? "";
+                bool isCash = paymentMethod.Contains("CASH") || paymentMethod.Contains("نقد");
+                bool isCheque = paymentMethod.Contains("CHEQUE") || paymentMethod.Contains("CHECK") ||
+                                paymentMethod.Contains("شيك");
+                bool isBankTransfer = paymentMethod.Contains("BANK") || paymentMethod.Contains("TRANSFER") ||
+                                      paymentMethod.Contains("تحويل") || paymentMethod.Contains("بنك");
+
+                string currencySuffix = GetCurrencySuffix(data.CurrencyUomId);
+                string amountInWords = ConvertAmountToArabicWords(data.Amount, currencySuffix);
+
+                var document = Document.Create(container =>
+                {
+                    container.Page(page =>
+                    {
+                        page.Size(PageSizes.A5.Landscape());
+                        page.Margin(20); // Slightly increased for safety
+                        page.DefaultTextStyle(x => x.FontFamily(ArabicFontFamily).FontSize(9));
+
+                        page.Content().Column(mainCol =>
                         {
-                            var fromPartyId = certificate.CertificateCategory is "SUPPLY_PROCUREMENT_CERTIFICATE" or "EXTERNAL_SUPPLY_SALE_CERTIFICATE"
-                                ? certificate.PartyIdSupplier
-                                : certificate.PartyIdContractor;
-
-                            var discountAdjustments = poItems
-                                .Select((item, index) => new { Item = item, Index = index })
-                                .Where(x => x.Item.Discount.HasValue && x.Item.Discount > 0)
-                                .Select(x => new OrderAdjustmentDto2
-                                {
-                                    OrderAdjustmentId = Guid.NewGuid().ToString(),
-                                    OrderAdjustmentTypeId = "DISCOUNT_ADJUSTMENT",
-                                    OrderAdjustmentTypeDescription = "خصم",
-                                    OrderId = null,
-                                    OrderItemSeqId = (x.Index + 1).ToString("D4"),
-                                    Amount = -x.Item.Discount.Value,
-                                    CorrespondingProductId = x.Item.ProductId,
-                                    CorrespondingProductName = x.Item.ProductName,
-                                    IsManual = "Y",
-                                    CreatedDate = stamp,
-                                    IsAdjustmentDeleted = false,
-                                    SourcePercentage = x.Item.TotalAmount > 0 ? (x.Item.Discount.Value / x.Item.TotalAmount) * 100 : 0
-                                });
-
-                            var shippingAdjustments = poItems
-                                .Select((item, index) => new { Item = item, Index = index })
-                                .Where(x => x.Item.TransportationExpenses.HasValue && x.Item.TransportationExpenses > 0)
-                                .Select(x => new OrderAdjustmentDto2
-                                {
-                                    OrderAdjustmentId = Guid.NewGuid().ToString(),
-                                    OrderAdjustmentTypeId = "SHIPPING_CHARGES",
-                                    OrderAdjustmentTypeDescription = "Transportation Expenses",
-                                    OrderId = null,
-                                    OrderItemSeqId = (x.Index + 1).ToString("D4"),
-                                    Amount = x.Item.TransportationExpenses.Value,
-                                    CorrespondingProductId = x.Item.ProductId,
-                                    CorrespondingProductName = x.Item.ProductName,
-                                    IsManual = "Y",
-                                    CreatedDate = stamp,
-                                    IsAdjustmentDeleted = false,
-                                    SourcePercentage = null
-                                });
-
-                            var gratuityAdjustments = poItems
-                                .Select((item, index) => new { Item = item, Index = index })
-                                .Where(x => x.Item.Gratuities.HasValue && x.Item.Gratuities > 0)
-                                .Select(x => new OrderAdjustmentDto2
-                                {
-                                    OrderAdjustmentId = Guid.NewGuid().ToString(),
-                                    OrderAdjustmentTypeId = "MISCELLANEOUS_CHARGE",
-                                    OrderAdjustmentTypeDescription = "Gratuities",
-                                    OrderId = null,
-                                    OrderItemSeqId = (x.Index + 1).ToString("D4"),
-                                    Amount = x.Item.Gratuities.Value,
-                                    CorrespondingProductId = x.Item.ProductId,
-                                    CorrespondingProductName = x.Item.ProductName,
-                                    IsManual = "Y",
-                                    CreatedDate = stamp,
-                                    IsAdjustmentDeleted = false,
-                                    SourcePercentage = null
-                                });
-
-                            var orderAdjustments = discountAdjustments
-                                .Concat(shippingAdjustments)
-                                .Concat(gratuityAdjustments)
-                                .ToList();
-
-                            var orderDto = new OrderDto
+                            // ===== HEADER SECTION =====
+                            mainCol.Item().Row(headerRow =>
                             {
-                                OrderTypeId = "PURCHASE_ORDER",
-                                FromPartyId = fromPartyId,
-                                CurrencyUomId = await _productStoreService.GetProductStoreDefaultCurrencyId(),
-                                OrderDate = stamp,
-                                StatusId = "ORDER_CREATED",
-                                StatusDescription = "Created",
-                                InternalRemarks = $"Auto-generated from Certificate {newProjectCertificateSerial}",
-                                GrandTotal = poItems.Sum(i => i.TotalAmount + (i.TransportationExpenses ?? 0) + (i.Gratuities ?? 0) - (i.Discount ?? 0)),
-                                OrderItems = poItems.Select((item, index) => new OrderItemDto2
+                                // Left: Logo - no fixed height
+                                headerRow.RelativeItem(2).AlignLeft().AlignMiddle().Element(block =>
                                 {
-                                    OrderItemSeqId = (index + 1).ToString("D4"),
-                                    ProductId = item.ProductId,
-                                    ProductName = item.ProductName,
-                                    Quantity = item.Quantity,
-                                    UnitPrice = item.UnitPrice,
-                                    SubTotal = item.TotalAmount,
-                                    FacilityId = item.FacilityId,
-                                    ItemDescription = item.Description,
-                                    OrderItemTypeId = "PRODUCT_ORDER_ITEM",
-                                    StatusId = "ITEM_CREATED",
-                                    CreatedStamp = stamp,
-                                    LastUpdatedStamp = stamp
-                                }).ToList(),
-                                OrderAdjustments = orderAdjustments
-                            };
+                                    if (logoBytes != null)
+                                    {
+                                        // Limit max height to prevent overflow, but allow natural scaling
+                                        block.Height(70).Image(logoBytes).FitArea();
+                                    }
+                                });
 
-                            var poResult = await _orderService.CreatePurchaseOrder(orderDto);
-                            if (poResult == null)
+                                // Center: Title
+                                headerRow.RelativeItem(4).AlignCenter().AlignMiddle().Text("إيصال صرف")
+                                    .FontSize(18).Bold();
+
+                                // Right: Company Name
+                                headerRow.RelativeItem(3).AlignRight().AlignMiddle().Column(col =>
+                                {
+                                    col.Item().Text("جولدن لاند").FontSize(14).Bold();
+                                    col.Item().Text("للتطوير العقارى").FontSize(10);
+                                    col.Item().Text("ش.م.م").FontSize(8);
+                                });
+                            });
+                            mainCol.Item().PaddingTop(8).LineHorizontal(1).LineColor(Colors.Grey.Medium);
+
+                            // ===== PAYMENT METHOD CHECKBOXES (SAFE & CENTERED) =====
+                            mainCol.Item().PaddingTop(20).Row(row =>
                             {
-                                await transaction.RollbackAsync(cancellationToken);
-                                return Result<ProjectCertificateDto>.Failure("Failed to create purchase order");
+                                // Center the whole group with equal flexible space on sides
+                                row.RelativeItem(1); // Left flexible spacer
+                                row.RelativeItem(1).AlignCenter().Row(bankRow =>
+                                {
+                                    bankRow.AutoItem().Width(14).Height(14).Border(1).AlignCenter().AlignMiddle()
+                                        .Text(isBankTransfer ? "X" : "").FontSize(11).Bold();
+                                    bankRow.AutoItem().PaddingLeft(8).Text("تحويل بنكى").FontSize(10);
+                                });
+
+                                row.RelativeItem(1).AlignCenter().Row(chequeRow =>
+                                {
+                                    chequeRow.AutoItem().Width(14).Height(14).Border(1).AlignCenter().AlignMiddle()
+                                        .Text(isCheque ? "X" : "").FontSize(11).Bold();
+                                    chequeRow.AutoItem().PaddingLeft(8).Text("شيكات").FontSize(10);
+                                });
+
+                                row.RelativeItem(1).AlignCenter().Row(cashRow =>
+                                {
+                                    cashRow.AutoItem().Width(14).Height(14).Border(1).AlignCenter().AlignMiddle()
+                                        .Text(isCash ? "X" : "").FontSize(11).Bold();
+                                    cashRow.AutoItem().PaddingLeft(8).Text("نقدية").FontSize(10);
+                                });
+
+                                row.RelativeItem(1); // Right flexible spacer
+                            });
+                            // ===== DATE & AMOUNT BOXES =====
+                            mainCol.Item().PaddingTop(12).Row(row =>
+                            {
+                                row.RelativeItem(3).AlignLeft().Row(amountRow =>
+                                {
+                                    amountRow.AutoItem().Text("قرش").FontSize(9);
+                                    amountRow.AutoItem().PaddingHorizontal(4).Border(1).Width(40).Height(16)
+                                        .AlignCenter()
+                                        .Text(ToArabicNumerals(
+                                            ((int)((data.Amount - (int)data.Amount) * 100)).ToString("00")));
+
+                                    amountRow.AutoItem().PaddingLeft(10).Text("جنيه").FontSize(9);
+                                    amountRow.AutoItem().PaddingHorizontal(4).Border(1).Width(80).Height(16)
+                                        .AlignCenter().Text(ToArabicNumerals(((int)data.Amount).ToString("N0")));
+                                });
+
+                                row.RelativeItem(2).AlignRight()
+                                    .Text($"{FormatArabicDate(data.EffectiveDate)} : تحريراً فى")
+                                    .FontSize(10);
+                            });
+
+                            // ===== RECIPIENT =====
+                            mainCol.Item().PaddingTop(12).Row(row =>
+                            {
+                                row.RelativeItem().BorderBottom(1).Text(data.ToPartyName ?? "").Bold();
+                                row.AutoItem().Text(" : صرفنا إلى السيد / السادة");
+                            });
+
+                            // ===== AMOUNT IN WORDS =====
+                            mainCol.Item().PaddingTop(10).Row(row =>
+                            {
+                                row.RelativeItem().BorderBottom(1).Text(amountInWords);
+                                row.AutoItem().Text(" : فقط وقدره");
+                            });
+
+                            // ===== CHEQUE / PAYMENT DETAILS =====
+                            mainCol.Item().PaddingTop(12).AlignRight().Row(row =>
+                            {
+                                var chequeDateText = data.ChequeDate.HasValue
+                                    ? FormatArabicDate(data.ChequeDate.Value)
+                                    : "٢٠    /    /    ";
+
+                                row.AutoItem().Width(80).AlignCenter().Text(chequeDateText);
+                                row.AutoItem().Text(" حق");
+
+                                row.AutoItem().PaddingHorizontal(8).Width(60).BorderBottom(1).AlignCenter()
+                                    .Text(ToArabicNumerals(data.ChequeNumber ?? ""));
+                                row.AutoItem().Text(" رقم");
+
+                                row.AutoItem().PaddingHorizontal(8).Width(100).BorderBottom(1).AlignCenter().Text("");
+                                row.AutoItem().Text(" مسحوب على بنك");
+
+                                row.AutoItem().PaddingHorizontal(8).Width(70).BorderBottom(1).AlignCenter()
+                                    .Text(isCash ? "نقداً" : isCheque ? "شيك" : "");
+                                row.AutoItem().Text(" : نقداً / بموجب");
+                            });
+
+                            // ===== BANK TRANSFER DETAILS =====
+                            if (isBankTransfer)
+                            {
+                                mainCol.Item().PaddingTop(8).Row(row =>
+                                {
+                                    row.RelativeItem().BorderBottom(1).Text(data.PaymentMethodDescription ?? "");
+                                    row.AutoItem().Text(" : تحويل ( بنكى ، اون لاين )");
+                                });
                             }
-                            generatedOrderId = poResult.OrderId;
-                        }
-                    }
 
-                    if (!string.IsNullOrEmpty(generatedOrderId))
-                    {
-                        workEffort.RelatedOrderId = generatedOrderId;
-                    }
+                            // ===== PURPOSE =====
+                            mainCol.Item().PaddingTop(12).Row(row =>
+                            {
+                                row.RelativeItem().BorderBottom(1).Text(data.Comments ?? "");
+                                row.AutoItem().Text(" : وذلك عن");
+                            });
 
-                    var result = await _context.SaveChangesAsync(cancellationToken) > 0;
-                    if (!result)
-                    {
-                        await transaction.RollbackAsync(cancellationToken);
-                        return Result<ProjectCertificateDto>.Failure("Failed to create certificate and items");
-                    }
+                            mainCol.Item().PaddingVertical(20);
 
-                    await transaction.CommitAsync(cancellationToken);
+                            // ===== SIGNATURES =====
+                            mainCol.Item().Row(sigRow =>
+                            {
+                                sigRow.RelativeItem().AlignLeft().Column(c =>
+                                {
+                                    c.Item().Text("...يعتمد");
+                                    c.Item().PaddingTop(30).BorderBottom(1).Width(100);
+                                });
 
-                    var project = await _context.WorkEfforts
-                        .Where(p => p.WorkEffortId == certificate.ProjectId)
-                        .Select(p => new { p.ProjectName })
-                        .FirstOrDefaultAsync(cancellationToken);
+                                sigRow.RelativeItem().AlignCenter().Column(c =>
+                                {
+                                    c.Item().Text("المحاسب");
+                                    c.Item().PaddingTop(30).AlignCenter().BorderBottom(1).Width(100);
+                                });
 
-                    var supplier = certificate.PartyIdSupplier != null
-                        ? await _context.Parties
-                            .Where(p => p.PartyId == certificate.PartyIdSupplier)
-                            .Select(p => new { p.Description })
-                            .FirstOrDefaultAsync(cancellationToken)
-                        : null;
+                                sigRow.RelativeItem().AlignRight().Column(c =>
+                                {
+                                    c.Item().Text("المستلم");
+                                    c.Item().PaddingTop(15).AlignRight().Row(r =>
+                                    {
+                                        r.AutoItem().BorderBottom(1).Width(120);
+                                        r.AutoItem().PaddingLeft(8).Text("الاسم");
+                                    });
+                                    c.Item().PaddingTop(10).AlignRight().Row(r =>
+                                    {
+                                        r.AutoItem().BorderBottom(1).Width(120);
+                                        r.AutoItem().PaddingLeft(8).Text("التوقيع");
+                                    });
+                                });
+                            });
 
-                    var contractor = certificate.PartyIdContractor != null
-                        ? await _context.Parties
-                            .Where(p => p.PartyId == certificate.PartyIdContractor)
-                            .Select(p => new { p.Description })
-                            .FirstOrDefaultAsync(cancellationToken)
-                        : null;
+                            // ===== REFERENCE =====
+                            mainCol.Item().PaddingTop(10).AlignLeft()
+                                .Text($"مرجع: {ToArabicNumerals(data.PaymentId)}")
+                                .FontSize(7).FontColor(Colors.Grey.Medium);
+                        });
+                    });
+                });
 
-                    // REFACTOR: Set StatusDescription and StatusDescriptionArabic based on CurrentStatusId
-                    // Purpose: Use backend status object descriptions for localization
-                    // Context: Aligns with frontend renderSwitchStatus and status objects
-                    var statusDescriptions = new Dictionary<string, (string English, string Arabic)>
-                    {
-                        { "WEPR_CREATED", ("Created", "تم الإنشاء") },
-                        { "WEPR_APPROVED", ("Approved", "تمت الموافقة") },
-                        { "WEPR_COMPLETE", ("Complete", "مكتمل") }
-                    };
+                Console.WriteLine("[PDF Debug] Document composed successfully. Generating PDF bytes...");
+                var pdfBytes = document.GeneratePdf();
+                Console.WriteLine($"[PDF Debug] PDF generated successfully! Size: {pdfBytes.Length} bytes");
 
-                    var (statusDescription, statusDescriptionArabic) = statusDescriptions.ContainsKey(workEffort.CurrentStatusId)
-                        ? statusDescriptions[workEffort.CurrentStatusId]
-                        : ("Unknown", "غير معروف");
-
-                    var resultDto = new ProjectCertificateDto
-                    {
-                        WorkEffortId = workEffort.WorkEffortId,
-                        CertificateNumber = workEffort.CertificateNumber,
-                        WorkEffortTypeId = workEffort.WorkEffortTypeId,
-                        ProjectId = workEffort.ProjectId,
-                        ProjectName = project?.ProjectName ?? "",
-                        PartyIdSupplier = workEffort.PartyIdSupplier,
-                        PartyNameSupplier = supplier?.Description,
-                        PartyIdContractor = workEffort.PartyIdContractor,
-                        PartyNameContractor = contractor?.Description,
-                        Description = workEffort.Description,
-                        EstimatedStartDate = workEffort.EstimatedStartDate,
-                        EstimatedCompletionDate = workEffort.EstimatedCompletionDate,
-                        StatusDescription = statusDescription,
-                        StatusDescriptionArabic = statusDescriptionArabic,
-                        CurrentStatusId = workEffort.CurrentStatusId,
-                        RelatedOrderId = workEffort.RelatedOrderId,
-                        CertificateItems = certificate.CertificateItems
-                    };
-
-                    return Result<ProjectCertificateDto>.Success(resultDto);
-                }
-                catch (Exception ex)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                    return Result<ProjectCertificateDto>.Failure($"Failed to create certificate: {ex.Message}");
-                }
+                return pdfBytes;
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[PDF Debug] EXCEPTION: {ex.Message}");
+                Console.WriteLine($"[PDF Debug] Stack: {ex.StackTrace}");
+                throw;
+            }
+        }
+
+        private string GetCurrencySuffix(string? currencyCode)
+        {
+            return currencyCode?.ToUpperInvariant() switch
+            {
+                "EGP" => "جنيه مصرى",
+                "USD" => "دولار أمريكى",
+                "EUR" => "يورو",
+                "SAR" => "ريال سعودى",
+                "AED" => "درهم إماراتى",
+                _ => "جنيه"
+            };
+        }
+
+        private string ConvertAmountToArabicWords(decimal amount, string currencySuffix)
+        {
+            var intPart = (long)amount;
+            var decPart = (int)((amount - intPart) * 100);
+
+            var result = ConvertNumberToArabicWords(intPart) + " " + currencySuffix;
+
+            if (decPart > 0)
+            {
+                result += " و " + ConvertNumberToArabicWords(decPart) + " قرش";
+            }
+
+            result += " لا غير";
+            return result;
+        }
+
+        private string ToArabicNumerals(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+
+            var arabicDigits = new[] { '٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩' };
+            var result = new char[input.Length];
+
+            for (int i = 0; i < input.Length; i++)
+            {
+                if (char.IsDigit(input[i]))
+                    result[i] = arabicDigits[input[i] - '0'];
+                else
+                    result[i] = input[i];
+            }
+
+            return new string(result);
+        }
+
+        private string FormatArabicDate(DateTime date)
+        {
+            return ToArabicNumerals($"{date:yyyy/MM/dd}");
+        }
+
+        private string FormatArabicNumber(decimal number)
+        {
+            return ToArabicNumerals(((int)number).ToString("N0"));
+        }
+
+        private string ConvertNumberToArabicWords(long number)
+        {
+            if (number == 0) return "صفر";
+
+            string[] ones =
+            {
+                "", "واحد", "اثنان", "ثلاثة", "أربعة", "خمسة", "ستة", "سبعة", "ثمانية", "تسعة",
+                "عشرة", "أحد عشر", "اثنا عشر", "ثلاثة عشر", "أربعة عشر", "خمسة عشر",
+                "ستة عشر", "سبعة عشر", "ثمانية عشر", "تسعة عشر"
+            };
+            string[] tens = { "", "", "عشرون", "ثلاثون", "أربعون", "خمسون", "ستون", "سبعون", "ثمانون", "تسعون" };
+            string[] hundreds =
+                { "", "مائة", "مائتان", "ثلاثمائة", "أربعمائة", "خمسمائة", "ستمائة", "سبعمائة", "ثمانمائة", "تسعمائة" };
+
+            if (number < 0) return "سالب " + ConvertNumberToArabicWords(-number);
+            if (number < 20) return ones[number];
+            if (number < 100)
+            {
+                var remainder = number % 10;
+                var ten = number / 10;
+                if (remainder == 0) return tens[ten];
+                return ones[remainder] + " و " + tens[ten];
+            }
+
+            if (number < 1000)
+            {
+                var remainder = number % 100;
+                var hundred = number / 100;
+                if (remainder == 0) return hundreds[hundred];
+                return hundreds[hundred] + " و " + ConvertNumberToArabicWords(remainder);
+            }
+
+            if (number < 1000000)
+            {
+                var thousands = number / 1000;
+                var remainder = number % 1000;
+                string thousandWord;
+                if (thousands == 1) thousandWord = "ألف";
+                else if (thousands == 2) thousandWord = "ألفان";
+                else if (thousands >= 3 && thousands <= 10)
+                    thousandWord = ConvertNumberToArabicWords(thousands) + " آلاف";
+                else thousandWord = ConvertNumberToArabicWords(thousands) + " ألف";
+
+                if (remainder == 0) return thousandWord;
+                return thousandWord + " و " + ConvertNumberToArabicWords(remainder);
+            }
+
+            if (number < 1000000000)
+            {
+                var millions = number / 1000000;
+                var remainder = number % 1000000;
+                string millionWord;
+                if (millions == 1) millionWord = "مليون";
+                else if (millions == 2) millionWord = "مليونان";
+                else if (millions >= 3 && millions <= 10)
+                    millionWord = ConvertNumberToArabicWords(millions) + " ملايين";
+                else millionWord = ConvertNumberToArabicWords(millions) + " مليون";
+
+                if (remainder == 0) return millionWord;
+                return millionWord + " و " + ConvertNumberToArabicWords(remainder);
+            }
+
+            // For billions
+            var billions = number / 1000000000;
+            var billionRemainder = number % 1000000000;
+            string billionWord;
+            if (billions == 1) billionWord = "مليار";
+            else if (billions == 2) billionWord = "ملياران";
+            else if (billions >= 3 && billions <= 10) billionWord = ConvertNumberToArabicWords(billions) + " مليارات";
+            else billionWord = ConvertNumberToArabicWords(billions) + " مليار";
+
+            if (billionRemainder == 0) return billionWord;
+            return billionWord + " و " + ConvertNumberToArabicWords(billionRemainder);
         }
     }
 }

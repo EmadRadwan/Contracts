@@ -37,6 +37,21 @@
         <Folder Include="logs" />
         <Folder Include="SignalR" />
     </ItemGroup>
+
+    <ItemGroup>
+        <Content Update="wwwroot\fonts\**\*.*">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+        </Content>
+    </ItemGroup>
+
+    <!-- Optional: also force-copy the logo -->
+    <ItemGroup>
+        <Content Update="wwwroot\goldenlandlogo.jpg">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+        </Content>
+    </ItemGroup>
     
 
 </Project>
