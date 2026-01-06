@@ -37,7 +37,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
-import { Worker, Viewer } from '@react-pdf-viewer/core';
+import {Worker, Viewer, SpecialZoomLevel} from '@react-pdf-viewer/core';
 import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
 import { version as pdfjsVersion } from 'pdfjs-dist/package.json';
 
@@ -815,6 +815,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                             <Viewer
                                                 fileUrl={pdfBlobUrl}
                                                 plugins={[defaultLayoutPluginInstance]}
+                                                defaultScale={SpecialZoomLevel.PageFit}
                                             />
                                         </Worker>
                                     ) : (

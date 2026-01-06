@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.OData.Query;
 using Microsoft.Extensions.Logging;
 using Persistence;
 
-namespace Application.Shipments.Transactions;
+namespace Application.Accounting.Transactions;
 
 public class ListAccountingTransactions
 {

@@ -29,8 +29,8 @@ public class GetPaymentForReport
                         join pty in _context.Parties on pyt.PartyIdFrom equals pty.PartyId
 
                         // LEFT JOINs (same as your ListPayments)
-                        join pmt in _context.PaymentMethodTypes 
-                            on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into pmtJoin
+                        join pmt in _context.PaymentMethods 
+                            on pyt.PaymentMethodId equals pmt.PaymentMethodId into pmtJoin
                         from pmt in pmtJoin.DefaultIfEmpty()
 
                         join ptyto in _context.Parties 
@@ -57,9 +57,7 @@ public class GetPaymentForReport
                             EffectiveDate = (DateTime)pyt.EffectiveDate,
                             Amount = pyt.Amount,
                             CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
-                            PaymentMethodDescription = pmt != null 
-                                ? (isArabic ? pmt.DescriptionArabic : pmt.Description) 
-                                : "CASH",
+                            PaymentMethodDescription = pmt.Description,
                             ChequeNumber = pyt.ChequeNumber,
                             ChequeDate = pyt.ChequeDate,
                             ProjectName = proj != null ? proj.ProjectName : null,

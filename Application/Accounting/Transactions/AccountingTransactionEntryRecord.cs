@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Application.Shipments.Transactions;
+namespace Application.Accounting.Transactions;
 
 public class AccountingTransactionEntryRecord
 {

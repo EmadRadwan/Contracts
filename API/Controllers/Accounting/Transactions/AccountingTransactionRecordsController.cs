@@ -1,4 +1,5 @@
 using API.Controllers.OData;
+using Application.Accounting.Transactions;
 using Application.Shipments.Transactions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Query;

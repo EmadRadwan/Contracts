@@ -12,8 +12,6 @@ public class AccountingTransactionEntryRecordsController : BaseODataController<A
     [EnableQuery]
     public async Task<IActionResult> Get(ODataQueryOptions<AccountingTransactionEntryRecord> options, [FromQuery] string companyId)
     {
-        // Log the received companyId for debugging
-        Console.WriteLine($"Received companyId in controller: {companyId}");
         var language = GetLanguage();
         var query = await Mediator.Send(new ListAccountingTransactionEntries.Query 
         { 

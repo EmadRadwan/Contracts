@@ -2,6 +2,7 @@
 using System.Text.Json.Serialization;
 using API.Controllers.Accounting.Transactions;
 using Application.Accounting.Payments;
+using Application.Accounting.Transactions;
 using Application.Shipments.Agreement;
 using Application.Shipments.BillingAccounts;
 using Application.Shipments.FinAccounts;
