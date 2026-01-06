@@ -22,6 +22,7 @@ import {toast} from "react-toastify";
 import useMultiAcctgTrans from "../hook/useMultiAcctgTrans";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
+import {FormComboBoxVirtualParty} from "../../../../app/common/form/FormComboBoxVirtualParty";
 
 interface TransEntry {
     id: string;
@@ -62,6 +63,7 @@ export default function MultiAcctgTransEntryForm() {
     const [headerValues, setHeaderValues] = useState({
         transactionDate: new Date(),
         headerDescription: "",
+        party: null as { fromPartyId: string; fromPartyName: string } | null,
     });
 
 
@@ -180,6 +182,7 @@ export default function MultiAcctgTransEntryForm() {
                         Description: transEntries[0]?.description || "",
                         IsPosted: "N",
                         GlFiscalTypeId: "ACTUAL",
+                        partyId: headerValues.party?.fromPartyId || undefined,
                     },
                     Entries: transEntries.map((entry) => ({
                         debitGlAccountId: entry.debitGlAccountId,
@@ -203,7 +206,11 @@ export default function MultiAcctgTransEntryForm() {
     const handleNewTransaction = useCallback(() => {
         setTransEntries([]);
         setFormResetCounter((prev) => prev + 1);
-        setHeaderValues({transactionDate: new Date(), headerDescription: ""});
+        setHeaderValues({
+            transactionDate: new Date(),
+            headerDescription: "",
+            partyId: "" 
+        });
         setTransactionId(null);
         setJustPosted(false);
     }, []);
@@ -283,7 +290,7 @@ export default function MultiAcctgTransEntryForm() {
                 });
             }
         } catch {
-            // error already toasted inside hook
+            
         }
     }, [transactionId, postTransaction]);
     
@@ -328,6 +335,19 @@ export default function MultiAcctgTransEntryForm() {
                             value={headerValues.headerDescription}
                             onChange={(e) => setHeaderValues((prev) => ({...prev, headerDescription: e.value}))}
                             autoComplete="off"
+                        />
+                    </Grid>
+                    <Grid item xs={3}>
+                        <FormComboBoxVirtualParty
+                            id="partyId"
+                            label={getTranslatedLabel(`${localizationKey}.party`, "Employee")}
+                            value={headerValues.party}  
+                            onChange={(e: any) => setHeaderValues((prev) => ({
+                                ...prev,
+                                party: e.value 
+                            }))}
+                            valueField="fromPartyId"
+                            textField="fromPartyName"
                         />
                     </Grid>
 

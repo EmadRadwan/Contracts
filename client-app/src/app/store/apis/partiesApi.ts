@@ -49,6 +49,12 @@ const partiesApi = createApi({
                     };
                 },
             }),
+            fetchEmployee: builder.query<Party, string>({
+                query: (partyId) => ({
+                    url: `/parties/${partyId}/getEmployee`,
+                    method: "GET",
+                }),
+            }),
             fetchSupplier: builder.query<Party, any>({
                 query: (partyId) => {
                     return {
@@ -90,6 +96,6 @@ export const {
     useFetchCustomerQuery,
     useFetchSupplierQuery,
     useFetchCompaniesQuery, useGetPartyFinancialHistoryQuery,
-    useFetchContractorQuery,
+    useFetchContractorQuery, useFetchEmployeeQuery,
 } = partiesApi;
 export {partiesApi};

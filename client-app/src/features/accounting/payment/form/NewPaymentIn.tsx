@@ -264,7 +264,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                 validator={requiredValidator}
                                             />
                                         </Grid>
-                                        <Grid item xs={2}>
+                                        <Grid item xs={4}>
                                             {isLoadingGlAccounts ? (
                                                 <Skeleton variant="rounded" height={56} />
                                             ) : (
@@ -281,7 +281,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                 />
                                             )}
                                         </Grid>
-                                        <Grid item xs={3}>
+                                        <Grid item xs={2}>
                                             <Field
                                                 id="projectId"
                                                 name="projectId"
@@ -289,7 +289,7 @@ const NewPaymentIn: React.FC<NewPaymentInProps> = ({
                                                 label={getTranslatedLabel("projects.certificate.form.project", "Project")}
                                             />
                                         </Grid>
-                                        <Grid item xs={3}>
+                                        <Grid item xs={2}>
                                             <Field
                                                 id="comments"
                                                 name="comments"

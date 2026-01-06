@@ -18,6 +18,7 @@ import {Party, PartyParams} from "../../../app/models/party/party";
 import {State} from "@progress/kendo-data-query";
 import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
 import CreateContractorForm from "../form/CreateContractorForm";
+import CreateEmployeeForm from "../form/CreateEmployeeForm";
 
 
 export default function PartiesList() {
@@ -94,6 +95,10 @@ export default function PartiesList() {
     }
     if (editMode > 0 && form === 'CONTRACTOR') {
         return <CreateContractorForm party={party} cancelEdit={cancelEdit} editMode={editMode}/>
+    }
+
+    if (editMode > 0 && form === 'EMPLOYEE') {
+        return <CreateEmployeeForm party={party} cancelEdit={cancelEdit} editMode={editMode} />; // ← NEW
     }
 
 

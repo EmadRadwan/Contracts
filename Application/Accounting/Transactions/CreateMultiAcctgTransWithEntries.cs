@@ -48,6 +48,7 @@ namespace Application.Accounting.Transactions
                         AcctgTransTypeId = request.CreateMultiAcctgTransParams.AcctgTransTypeId,
                         TransactionDate = request.CreateMultiAcctgTransParams.TransactionDate,
                         IsPosted = request.CreateMultiAcctgTransParams.IsPosted,
+                        PartyId = request.CreateMultiAcctgTransParams.PartyId,
                         Description = request.CreateMultiAcctgTransParams.HeaderDescription, // REFACTOR: Use HeaderDescription
                         GlFiscalTypeId = request.CreateMultiAcctgTransParams.GlFiscalTypeId,
                     };

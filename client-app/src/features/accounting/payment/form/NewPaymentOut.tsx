@@ -338,7 +338,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                 validator={(value) => requiredValidator(value) || amountValidator(value, valueGetter)}
                                             />
                                         </Grid>
-                                        <Grid item xs={2}>
+                                        <Grid item xs={4}>
                                             {isLoadingGlAccounts ? (
                                                 <Skeleton variant="rounded" height={56}/>
                                             ) : (
@@ -355,7 +355,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                 />
                                             )}
                                         </Grid>
-                                        <Grid item xs={3}>
+                                        <Grid item xs={2}>
                                             <Field
                                                 id="projectId"
                                                 name="projectId"
@@ -371,7 +371,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                 }}
                                             />
                                         </Grid>
-                                        <Grid item xs={3}>
+                                        <Grid item xs={2}>
                                             <Field
                                                 id="comments"
                                                 name="comments"

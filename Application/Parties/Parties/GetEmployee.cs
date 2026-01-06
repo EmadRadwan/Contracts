@@ -5,7 +5,7 @@ using Persistence;
 
 namespace Application.Parties.Parties;
 
-public class GetCustomer
+public class GetEmployee
 {
     public class Query : IRequest<Result<PartyDto>>
     {
@@ -34,7 +34,7 @@ public class GetCustomer
                 join st in _context.StatusItems on prty.StatusId equals st.StatusId into stGroup
                 from st in stGroup.DefaultIfEmpty()
                 join person in _context.Persons on prty.PartyId equals person.PartyId into personGroup
-                from person in personGroup.DefaultIfEmpty()               // Person may not exist for non-person parties
+                from person in personGroup.DefaultIfEmpty()
 
                 // === PHONE: Left join (PRIMARY_PHONE) ===
                 join phonePurpose in _context.PartyContactMechPurposes
@@ -92,9 +92,7 @@ public class GetCustomer
                     PartyId = prty.PartyId,
                     Description = prty.Description + " ( " + prty.MainRole + " )",
 
-                    // REFACTOR: Use Description as GroupName (no PartyGroup for customers either)
-                    // Purpose: UI expects GroupName for the name field
-                    // Improvement: Consistent with supplier and seeded data
+                    // REFACTOR: Use Description as GroupName (clean name for UI selects)
                     GroupName = prty.Description,
 
                     PartyTypeId = pt.PartyTypeId,
@@ -102,7 +100,7 @@ public class GetCustomer
                     StatusDescription = st != null ? st.Description : null,
                     MainRole = prty.MainRole,
 
-                    // Person fields (only for Person parties)
+                    // Person fields
                     FirstName = prty.Description,
 
                     // === PHONE ===
@@ -121,11 +119,9 @@ public class GetCustomer
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (result == null)
-                return Result<PartyDto>.Failure("Party not found");
+                return Result<PartyDto>.Failure("Employee not found");
 
-            // REFACTOR: Clean GroupName — remove " ( CUSTOMER )" suffix if present
-            // Purpose: UI displays a clean name in inputs/selects
-            // Improvement: Matches supplier behavior and form expectations
+            // REFACTOR: Clean GroupName — remove " ( EMPLOYEE )" suffix if present
             if (!string.IsNullOrEmpty(result.Description))
             {
                 var cleanName = result.Description.Split(" ( ").FirstOrDefault();

@@ -66,6 +66,12 @@ public class PartiesController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new GetCustomer.Query { PartyId = partyId }));
     }
+    
+    [HttpGet("{partyId}/getEmployee", Name = "GetEmployee")]
+    public async Task<IActionResult> GetEmployee(string partyId)
+    {
+        return HandleResult(await Mediator.Send(new GetEmployee.Query { PartyId = partyId }));
+    }
 
     [HttpGet("{partyId}/getSupplier", Name = "GetSupplier")]
     public async Task<IActionResult> GetSupplier(string partyId)
@@ -158,5 +164,17 @@ public class PartiesController : BaseApiController
         };
 
         return HandleResult(await Mediator.Send(query));
+    }
+    
+    [HttpPost("createEmployee", Name = "CreateEmployee")]
+    public async Task<IActionResult> CreateEmployee(PartyDto2 partyDto)
+    {
+        return HandleResult(await Mediator.Send(new CreateEmployee.Command { PartyDto = partyDto }));
+    }
+
+    [HttpPut("updateEmployee", Name = "UpdateEmployee")]
+    public async Task<IActionResult> UpdateEmployee(PartyDto2 partyDto)
+    {
+        return HandleResult(await Mediator.Send(new UpdateEmployee.Command { PartyDto = partyDto }));
     }
 }

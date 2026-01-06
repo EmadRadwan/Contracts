@@ -1,4 +1,4 @@
-namespace Application.Accounting.Services.Models
+namespace Application.Accounting.Transactions
 {
     public class CreateMultiAcctgTransParams
     {
@@ -8,6 +8,7 @@ namespace Application.Accounting.Services.Models
         public string HeaderDescription { get; set; } // REFACTOR: Added HeaderDescription for transaction header
         public string Description { get; set; } // REFACTOR: Retained for backward compatibility or alternative use
         public string IsPosted { get; set; }
+        public string? PartyId { get; set; }
         public string GlFiscalTypeId { get; set; }
     }
     

@@ -340,10 +340,14 @@ const Parties = {
             .then(responseBody),
     createCustomer: (customer: any) =>
         requests.post("/parties/createCustomer", customer),
+    createEmployee: (employee: any) =>
+        requests.post("/parties/createEmployee", employee),
     createParty: (customer: any) =>
         requests.post("/parties/createParty", customer),
     updateCustomer: (customer: any) =>
         requests.put(`/parties/updateCustomer`, customer),
+    updateEmployee: (employee: any) =>
+        requests.put(`/parties/updateemployee`, employee),
     createContractor: (contractor: any) =>
         requests.post("/parties/createContractor", contractor),
     updateContractor: (contractor: any) =>

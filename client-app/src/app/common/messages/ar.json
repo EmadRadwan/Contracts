@@ -190,6 +190,25 @@
         "processing": "جاري معالجة العميل..."
       }
     },
+    "employees": {
+      "form": {
+        "new": "موظف جديد",
+        "createTitle": "إنشاء موظف",
+        "editTitle": "تعديل موظف",
+        "firstName": "الاسم الأول *",
+        "lastName": "الاسم الأخير *",
+        "email": "البريد الإلكتروني (العمل)",
+        "countryCode": "البلد",
+        "mobile": "رقم الجوال *",
+        "officePhone": "هاتف المكتب",
+        "address1": "العنوان 1",
+        "address2": "العنوان 2",
+        "submit": "حفظ",
+        "cancel": "إلغاء",
+        "loading": "جاري تحميل الموظف...",
+        "processing": "جاري معالجة الموظف..."
+      }
+    },
     "suppliers": {
       "form": {
         "new": "مورد جديد",
@@ -1158,6 +1177,7 @@
             "debitGlAccount": "حساب المدين",
             "creditGlAccount": "حساب الدائن",
             "amount": "المبلغ *",
+            "party": "الطرف",
             "description": "الوصف",
             "entries": "إدخالات المعاملة",
             "glAccount": "حساب دفتر الأستاذ",

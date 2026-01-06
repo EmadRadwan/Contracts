@@ -25,11 +25,11 @@ namespace Infrastructure.Pdf
             }
 
             // Determine payment method type
+            var paymentMethodId = data.PaymentMethodId?.ToUpperInvariant() ?? "";
             var paymentMethod = data.PaymentMethodDescription?.ToUpperInvariant() ?? "";
-            bool isCash = paymentMethod.Contains("CASH") || paymentMethod.Contains("نقد");
-            bool isCheque = paymentMethod.Contains("CHEQUE") || paymentMethod.Contains("CHECK") || paymentMethod.Contains("شيك");
-            bool isBankTransfer = paymentMethod.Contains("BANK") || paymentMethod.Contains("TRANSFER") || paymentMethod.Contains("تحويل") || paymentMethod.Contains("بنك");
-
+            bool isCash = paymentMethodId.Contains("CASH") || paymentMethod.Contains("نقد");
+            bool isCheque = !isCash;
+            bool isBankTransfer = false;
             // Get currency suffix
             string currencySuffix = GetCurrencySuffix(data.CurrencyUomId);
             string amountInWords = ConvertAmountToArabicWords(data.Amount, currencySuffix);

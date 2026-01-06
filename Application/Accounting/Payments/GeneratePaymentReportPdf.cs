@@ -57,6 +57,7 @@ public class GetPaymentForReport
                             EffectiveDate = (DateTime)pyt.EffectiveDate,
                             Amount = pyt.Amount,
                             CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
+                            PaymentMethodId = pyt.PaymentMethodId,
                             PaymentMethodDescription = pmt.Description,
                             ChequeNumber = pyt.ChequeNumber,
                             ChequeDate = pyt.ChequeDate,
@@ -86,6 +87,7 @@ public class PaymentReportDto
     public DateTime EffectiveDate { get; set; }
     public decimal Amount { get; set; }
     public string CurrencyUomId { get; set; } = "EGP";
+    public string PaymentMethodId { get; set; } = string.Empty;
     public string PaymentMethodDescription { get; set; } = string.Empty;
     public string? ChequeNumber { get; set; }
     public DateTime? ChequeDate { get; set; }
