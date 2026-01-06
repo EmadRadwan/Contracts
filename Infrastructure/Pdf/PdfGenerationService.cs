@@ -60,7 +60,7 @@ namespace Infrastructure.Pdf
                             headerRow.RelativeItem(3).AlignCenter().AlignMiddle().Column(titleCol =>
                             {
                                 titleCol.Item().AlignCenter().Text("إيصال صرف").FontSize(16).Bold().FontFamily("Lato", "Noto Sans Arabic");
-                                titleCol.Item().AlignCenter().Text(ToArabicNumerals(data.PaymentId)).FontSize(16).Bold().FontFamily("Lato", "Noto Sans Arabic");
+                                titleCol.Item().AlignCenter().Text(data.PaymentId).FontSize(16).Bold();
                             });
 
                             // Right: Company Name in Arabic
@@ -227,7 +227,7 @@ namespace Infrastructure.Pdf
                         });
 
                         // ===== PAYMENT ID (small reference) =====
-                        mainCol.Item().PaddingTop(5).AlignLeft().Text($"مرجع: {ToArabicNumerals(data.PaymentId)}").FontSize(6).FontColor(Colors.Grey.Medium);
+                        mainCol.Item().PaddingTop(5).AlignLeft().Text($"مرجع: {data.PaymentId}").FontSize(6).FontColor(Colors.Grey.Medium);
                     });
                 });
             });

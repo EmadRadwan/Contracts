@@ -1048,6 +1048,7 @@
         "loading": "جاري معالجة الدفعة...",
         "chequeNumber": "رقم الشيك",
         "chequeDate": "تاريخ الشيك",
+        "effectiveDate": "التاريخ ",
         "currency": "العملة",
         "paymentRefNum": "رقم مرجع الدفعة",
         "costCenter": "مركز التكلفة",
