@@ -164,4 +164,25 @@ public class PaymentsController : BaseApiController
         var result = await Mediator.Send(query, ct);
         return Ok(result);
     }
+    
+    // Controller addition
+    [HttpGet("by-date-range")]
+    public async Task<ActionResult<PaymentsDailyResponse>> GetPaymentsByDateRange(
+        [FromQuery] string paymentType,
+        [FromQuery] string fromDate,
+        [FromQuery] string toDate,
+        CancellationToken ct = default)
+    {
+        var language = GetLanguage();
+        var query = new ListPaymentsByDateRange.Query
+        {
+            PaymentType = paymentType,
+            FromDate = DateTime.ParseExact(fromDate, "yyyy-MM-dd", null),
+            ToDate = DateTime.ParseExact(toDate, "yyyy-MM-dd", null).AddDays(1).AddTicks(-1), // end of day
+            Language = language
+        };
+
+        var result = await Mediator.Send(query, ct);
+        return Ok(result);
+    }
 }

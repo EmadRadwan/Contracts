@@ -25,7 +25,8 @@ import {useLocation, useNavigate} from "react-router";
 import {setSelectedPayment} from "../../slice/accountingSharedUiSlice";
 import {useSelector} from "react-redux";
 import {PaymentsDailyExcel} from "../report/PaymentsDailyExcel";
-import { skipToken } from '@reduxjs/toolkit/query/react';   // <-- add this import
+import { skipToken } from '@reduxjs/toolkit/query/react';
+import {PaymentsDateRangeExcel} from "../report/PaymentsDateRangeExcel";   // <-- add this import
 
 
 interface PaymentsListProps {
@@ -194,6 +195,11 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
                   </Button>
 
                   <PaymentsDailyExcel
+                      companyName={companyName}
+                      paymentType={paymentType}
+                      getTranslatedLabel={getTranslatedLabel}
+                  />
+                  <PaymentsDateRangeExcel
                       companyName={companyName}
                       paymentType={paymentType}
                       getTranslatedLabel={getTranslatedLabel}

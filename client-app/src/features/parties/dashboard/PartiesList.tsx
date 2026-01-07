@@ -8,17 +8,29 @@ import {
 } from "@progress/kendo-react-grid";
 
 import {useTableKeyboardNavigation} from "@progress/kendo-react-data-tools";
-import {Grid, Paper, Typography} from "@mui/material";
+import {
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    FormControl,
+    Grid,
+    InputLabel,
+    MenuItem,
+    Paper,
+    Select
+} from "@mui/material";
 import CreateCustomerForm from "../form/CreateCustomerForm";
 import CreateSupplierForm from "../form/CreateSupplierForm";
 import Button from "@mui/material/Button";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
-import {useFetchPartiesQuery} from "../../../app/store/apis";
-import {Party, PartyParams} from "../../../app/models/party/party";
+import {useFetchPartiesQuery, useUpdatePartyMainRoleMutation} from "../../../app/store/apis";
+import {Party} from "../../../app/models/party/party";
 import {State} from "@progress/kendo-data-query";
 import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
 import CreateContractorForm from "../form/CreateContractorForm";
 import CreateEmployeeForm from "../form/CreateEmployeeForm";
+import {toast} from "react-toastify";
 
 
 export default function PartiesList() {
@@ -32,12 +44,17 @@ export default function PartiesList() {
     const dataStateChange = (e: GridDataStateChangeEvent) => {
         setDataState(e.dataState);
     };
-    const { getTranslatedLabel } = useTranslationHelper();
+    const {getTranslatedLabel} = useTranslationHelper();
 
     const [party, setParty] = useState<Party | undefined>(undefined);
 
     const {data: parties, error, isFetching, isLoading} = useFetchPartiesQuery({...dataState});
-    
+    const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+    const [selectedPartyId, setSelectedPartyId] = useState<string | null>(null);
+    const [newRole, setNewRole] = useState<string>("");
+
+    const [updateMainRole, {isLoading: isUpdatingRole}] = useUpdatePartyMainRoleMutation();
+
     function handleSelectParty(partyId: string, formValue: string) {
         const selectedParty: Party | undefined = parties?.data.find((party: any) => party.partyId === partyId);
         console.log('selectedParty', selectedParty)
@@ -45,6 +62,28 @@ export default function PartiesList() {
         setEditMode(2);
     }
 
+    const ChangeRoleCell = (props: any) => {
+        const navigationAttributes = useTableKeyboardNavigation(props.id);
+
+        const handleOpenDialog = () => {
+            setSelectedPartyId(props.dataItem.partyId);
+            setNewRole(props.dataItem.mainRole || "");
+            setRoleDialogOpen(true);
+        };
+
+        return (
+            <td {...navigationAttributes}>
+                <Button
+                    size="small"
+                    variant="outlined"
+                    color="primary"
+                    onClick={handleOpenDialog}
+                >
+                    {getTranslatedLabel("party.parties.list.changeRole", "Change Role")}
+                </Button>
+            </td>
+        );
+    };
 
     function cancelEdit() {
         setEditMode(0);
@@ -84,7 +123,6 @@ export default function PartiesList() {
             </td>
         )
     }
-    
 
 
     if (editMode > 0 && form === 'CUSTOMER') {
@@ -98,7 +136,7 @@ export default function PartiesList() {
     }
 
     if (editMode > 0 && form === 'EMPLOYEE') {
-        return <CreateEmployeeForm party={party} cancelEdit={cancelEdit} editMode={editMode} />; // ← NEW
+        return <CreateEmployeeForm party={party} cancelEdit={cancelEdit} editMode={editMode}/>; // ← NEW
     }
 
 
@@ -110,87 +148,158 @@ export default function PartiesList() {
 
                         <Grid container>
                             <div className="div-container">
-                                    <KendoGrid
-                                        style={{height: "75vh", width: "94vw", flex: 1}}
-                                        resizable={true}
-                                        filterable={true}
-                                        sortable={true}
-                                        pageable={true}
-                                        {...dataState}
-                                        data={parties ? parties : {data: [], total: 77}}
-                                        onDataStateChange={dataStateChange}
-                                    >
-                                        <GridToolbar>
-                                            <Grid container>
-                                                
-                                                <Grid item xs={2}>
-                                                    <Button color={"secondary"} onClick={() => {
-                                                        setEditMode(1);
-                                                        setForm('CUSTOMER')
-                                                    }}
-                                                            variant="outlined">
-                                                        {getTranslatedLabel("party.parties.list.createCustomer", "Create Customer")}
-                                                    </Button>
-                                                </Grid>
-                                                <Grid item xs={2}>
-                                                    <Button color={"secondary"} onClick={() => {
-                                                        setEditMode(1);
-                                                        setForm('SUPPLIER')
-                                                    }}
-                                                            variant="outlined">
-                                                        {getTranslatedLabel("party.parties.list.createSupplier", "Create Supplier")}
-                                                    </Button>
-                                                </Grid>
-                                                <Grid item xs={2}>
-                                                    <Button color={"secondary"} onClick={() => {
-                                                        setEditMode(1);
-                                                        setForm('EMPLOYEE')
-                                                    }}
-                                                            variant="outlined">
-                                                        {getTranslatedLabel("party.parties.list.createEmployee", "Create Employee")}
-                                                    </Button>
-                                                </Grid>
-                                                <Grid item xs={2}>
-                                                    <Button color={"secondary"} onClick={() => {
-                                                        setEditMode(1);
-                                                        setForm('CONTRACTOR')
-                                                    }}
-                                                            variant="outlined">
-                                                        {getTranslatedLabel("party.parties.list.createContractor", "Create Contractor")}
-                                                    </Button>
-                                                </Grid>
+                                <KendoGrid
+                                    style={{height: "75vh", width: "94vw", flex: 1}}
+                                    resizable={true}
+                                    filterable={true}
+                                    sortable={true}
+                                    pageable={true}
+                                    {...dataState}
+                                    data={parties ? parties : {data: [], total: 77}}
+                                    onDataStateChange={dataStateChange}
+                                >
+                                    <GridToolbar>
+                                        <Grid container>
 
+                                            <Grid item xs={2}>
+                                                <Button color={"secondary"} onClick={() => {
+                                                    setEditMode(1);
+                                                    setForm('CUSTOMER')
+                                                }}
+                                                        variant="outlined">
+                                                    {getTranslatedLabel("party.parties.list.createCustomer", "Create Customer")}
+                                                </Button>
+                                            </Grid>
+                                            <Grid item xs={2}>
+                                                <Button color={"secondary"} onClick={() => {
+                                                    setEditMode(1);
+                                                    setForm('SUPPLIER')
+                                                }}
+                                                        variant="outlined">
+                                                    {getTranslatedLabel("party.parties.list.createSupplier", "Create Supplier")}
+                                                </Button>
+                                            </Grid>
+                                            <Grid item xs={2}>
+                                                <Button color={"secondary"} onClick={() => {
+                                                    setEditMode(1);
+                                                    setForm('EMPLOYEE')
+                                                }}
+                                                        variant="outlined">
+                                                    {getTranslatedLabel("party.parties.list.createEmployee", "Create Employee")}
+                                                </Button>
+                                            </Grid>
+                                            <Grid item xs={2}>
+                                                <Button color={"secondary"} onClick={() => {
+                                                    setEditMode(1);
+                                                    setForm('CONTRACTOR')
+                                                }}
+                                                        variant="outlined">
+                                                    {getTranslatedLabel("party.parties.list.createContractor", "Create Contractor")}
+                                                </Button>
                                             </Grid>
 
+                                        </Grid>
 
-                                        </GridToolbar>
-                                        <Column
-                                            field="description"
-                                            title={getTranslatedLabel("party.parties.list.description", "Party")}
-                                            cell={PartyDescriptionCell}
-                                            width={300}
-                                            locked={true}
-                                        />
-                                        <Column
-                                            field="mobileContactNumber"
-                                            title={getTranslatedLabel("party.parties.list.contactNumber", "Contact Number")}
-                                        />
-                                        <Column
-                                            field="address1"
-                                            title={getTranslatedLabel("party.parties.list.address", "Address")}
-                                        />
-                                        <Column
-                                            field="infoString"
-                                            title={getTranslatedLabel("party.parties.list.email", "Email")}
-                                        />
-                                        <Column
-                                            field="partyTypeDescription"
-                                            title={getTranslatedLabel("party.parties.list.partyType", "Party Type")}
-                                        />
-                                        {/* <Column field="partyId" title="Product ID" width={0} /> */}
 
-                                    </KendoGrid>
-                                {isFetching && <LoadingComponent message={getTranslatedLabel("party.parties.list.loading", "Loading Parties...")} />}
+                                    </GridToolbar>
+                                    <Column
+                                        field="description"
+                                        title={getTranslatedLabel("party.parties.list.description", "Party")}
+                                        cell={PartyDescriptionCell}
+                                        width={300}
+                                        locked={true}
+                                    />
+                                    <Column
+                                        field="mobileContactNumber"
+                                        title={getTranslatedLabel("party.parties.list.contactNumber", "Contact Number")}
+                                    />
+                                    <Column
+                                        field="address1"
+                                        title={getTranslatedLabel("party.parties.list.address", "Address")}
+                                    />
+                                    <Column
+                                        field="infoString"
+                                        title={getTranslatedLabel("party.parties.list.email", "Email")}
+                                    />
+                                    <Column
+                                        field="partyTypeDescription"
+                                        title={getTranslatedLabel("party.parties.list.partyType", "Party Type")}
+                                    />
+                                    <Column
+                                        title={getTranslatedLabel("party.parties.list.actions", "Actions")}
+                                        cell={ChangeRoleCell}
+                                        width={150}
+                                        filterable={false}
+                                        sortable={false}
+                                    />
+                                </KendoGrid>
+                                <Dialog open={roleDialogOpen} onClose={() => setRoleDialogOpen(false)} maxWidth="xs"
+                                        fullWidth>
+                                    <DialogTitle>
+                                        {getTranslatedLabel("party.parties.list.changeMainRoleTitle", "Change Main Role")}
+                                    </DialogTitle>
+                                    <DialogContent>
+                                        <FormControl fullWidth margin="normal">
+                                            <InputLabel>
+                                                {getTranslatedLabel("party.parties.list.newRole", "New Role")}
+                                            </InputLabel>
+                                            <Select
+                                                value={newRole}
+                                                label={getTranslatedLabel("party.parties.list.newRole", "New Role")}
+                                                onChange={(e) => setNewRole(e.target.value as string)}
+                                            >
+                                                <MenuItem value="CUSTOMER">
+                                                    {getTranslatedLabel("party.roles.customer", "Customer")}
+                                                </MenuItem>
+                                                <MenuItem value="SUPPLIER">
+                                                    {getTranslatedLabel("party.roles.supplier", "Supplier")}
+                                                </MenuItem>
+                                                <MenuItem value="EMPLOYEE">
+                                                    {getTranslatedLabel("party.roles.employee", "Employee")}
+                                                </MenuItem>
+                                                <MenuItem value="CONTRACTOR">
+                                                    {getTranslatedLabel("party.roles.contractor", "Contractor")}
+                                                </MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </DialogContent>
+                                    <DialogActions>
+                                        <Button onClick={() => setRoleDialogOpen(false)}>
+                                            {getTranslatedLabel("common.cancel", "Cancel")}
+                                        </Button>
+                                        <Button
+                                            onClick={async () => {
+                                                if (!selectedPartyId || !newRole) return;
+
+                                                try {
+                                                    await updateMainRole({
+                                                        partyId: selectedPartyId,
+                                                        mainRole: newRole,
+                                                    }).unwrap();
+
+                                                    toast.success(
+                                                        getTranslatedLabel("party.parties.list.roleUpdatedSuccess", "Role updated successfully")
+                                                    );
+                                                    setRoleDialogOpen(false);
+                                                    setSelectedPartyId(null);
+                                                    setNewRole("");
+                                                } catch (err) {
+                                                    toast.error(
+                                                        getTranslatedLabel("party.parties.list.roleUpdateFailed", "Failed to update role")
+                                                    );
+                                                }
+                                            }}
+                                            disabled={isUpdatingRole || !newRole}
+                                            variant="contained"
+                                            color="primary"
+                                        >
+                                            {isUpdatingRole
+                                                ? getTranslatedLabel("common.saving", "Saving...")
+                                                : getTranslatedLabel("common.save", "Save")}
+                                        </Button>
+                                    </DialogActions>
+                                </Dialog>{isFetching && <LoadingComponent
+                                message={getTranslatedLabel("party.parties.list.loading", "Loading Parties...")}/>}
                             </div>
 
                         </Grid>

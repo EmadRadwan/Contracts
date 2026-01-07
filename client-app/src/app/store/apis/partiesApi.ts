@@ -10,6 +10,7 @@ interface ListResponse<T> {
 
 const partiesApi = createApi({
     reducerPath: "parties",
+    tagTypes: ["Parties"],
     baseQuery: fetchBaseQuery({
         baseUrl: import.meta.env.VITE_API_URL,
         prepareHeaders: (headers, {getState}) => {
@@ -29,8 +30,11 @@ const partiesApi = createApi({
                     const url = `/odata/partyRecords?$count=true&${toODataString(queryArgs)}`;
                     return {url, method: "GET"};
                 },
+                providesTags: ["Parties"],
                 transformResponse: (response: any, meta, arg) => {
-
+                    console.log("Parties response meta:", meta);
+                    console.log("Parties response arg:", arg);
+                    console.log("Parties response data:", response);
                     const {totalCount} = JSON.parse(
                         meta!.response!.headers.get("count")!,
                     );
@@ -39,6 +43,14 @@ const partiesApi = createApi({
                         total: totalCount,
                     };
                 },
+            }),
+            updatePartyMainRole: builder.mutation<PartyDto, { partyId: string; mainRole: string }>({
+                query: ({ partyId, mainRole }) => ({
+                    url: `parties/updateMainRole/${partyId}`, // adjust to your actual route
+                    method: 'PUT',
+                    body: { mainRole },
+                }),
+                invalidatesTags: ['Parties'], // assuming you use tags; otherwise it will refetch via query invalidation
             }),
             fetchCustomer: builder.query<Party, any>({
                 query: (partyId) => {
@@ -96,6 +108,6 @@ export const {
     useFetchCustomerQuery,
     useFetchSupplierQuery,
     useFetchCompaniesQuery, useGetPartyFinancialHistoryQuery,
-    useFetchContractorQuery, useFetchEmployeeQuery,
+    useFetchContractorQuery, useFetchEmployeeQuery, useUpdatePartyMainRoleMutation
 } = partiesApi;
 export {partiesApi};

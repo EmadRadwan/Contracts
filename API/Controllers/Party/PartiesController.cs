@@ -84,6 +84,12 @@ public class PartiesController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new GetContractor.Query { PartyId = partyId }));
     }
+    
+    [HttpPut("updateMainRole/{partyId}")]
+    public async Task<IActionResult> UpdateMainRole(string partyId, [FromBody] UpdateMainRoleDto dto)
+    {
+        return HandleResult(await Mediator.Send(new UpdateMainRole.Command { PartyId = partyId, MainRole = dto.MainRole }));
+    }
 
     [HttpGet("getSuppliers", Name = "GetSuppliers")]
     public async Task<IActionResult> GetSuppliers()

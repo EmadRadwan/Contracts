@@ -49,6 +49,7 @@ public class GetPaymentForReport
                         {
                             PaymentId = pyt.PaymentId,
                             PaymentTypeDescription = isArabic ? ptt.DescriptionArabic : ptt.Description,
+                            PaymentParentTypeDescription = ptt.ParentTypeId,
                             FromPartyName = pty.Description ?? string.Empty,
                             ToPartyName = ptyto != null 
                                 ? ptyto.Description 
@@ -81,6 +82,7 @@ public class PaymentReportDto
 {
     public string PaymentId { get; set; } = string.Empty;
     public string PaymentTypeDescription { get; set; } = string.Empty;
+    public string PaymentParentTypeDescription { get; set; } = string.Empty;
     public string FromPartyName { get; set; } = string.Empty;
     public string ToPartyName { get; set; } = string.Empty;
     public string StatusDescription { get; set; } = string.Empty;

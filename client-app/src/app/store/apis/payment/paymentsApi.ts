@@ -265,6 +265,17 @@ const paymentsApi = createApi({
                     cache: "no-cache",
                 }),
             }),
+            fetchPaymentsByDateRange: builder.query<
+                { data: PaymentRecordDto[]; total: number },
+                { paymentType: 'incoming' | 'outgoing'; fromDate: string; toDate: string }
+                >({
+                query: ({ paymentType, fromDate, toDate }) => ({
+                    url: `/payments/by-date-range`,
+                    method: 'GET',
+                    params: { paymentType, fromDate, toDate },
+                }),
+                providesTags: ['PaymentsByDateRange'],
+            }),
         };
     },
 });
@@ -289,6 +300,6 @@ export const {
     useRemovePaymentApplicationMutation,
     useCreatePaymentApplicationMutation,
     useLazyFetchDailyPaymentsLazyQuery,
-    useFetchPaymentsWithDueStatusQuery, useLazyGetPaymentReportPdfQuery
+    useFetchPaymentsWithDueStatusQuery, useLazyGetPaymentReportPdfQuery, useLazyFetchPaymentsByDateRangeQuery
 } = paymentsApi;
 export {paymentsApi};

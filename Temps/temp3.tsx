@@ -1,56 +1,65 @@
-const handleSaveTransaction = useCallback(
-    async () => {
-        if (transEntries.length === 0) {
-            toast.error(getTranslatedLabel("general.error", "No entries to save"));
-            return;
-        }
+<Dialog open={roleDialogOpen} onClose={() => setRoleDialogOpen(false)} maxWidth="xs" fullWidth>
+    <DialogTitle>
+        {getTranslatedLabel("party.parties.list.changeMainRoleTitle", "Change Main Role")}
+    </DialogTitle>
+    <DialogContent>
+        <FormControl fullWidth margin="normal">
+            <InputLabel>
+                {getTranslatedLabel("party.parties.list.newRole", "New Role")}
+            </InputLabel>
+            <Select
+                value={newRole}
+                label={getTranslatedLabel("party.parties.list.newRole", "New Role")}
+                onChange={(e) => setNewRole(e.target.value as string)}
+            >
+                <MenuItem value="CUSTOMER">
+                    {getTranslatedLabel("party.roles.customer", "Customer")}
+                </MenuItem>
+                <MenuItem value="SUPPLIER">
+                    {getTranslatedLabel("party.roles.supplier", "Supplier")}
+                </MenuItem>
+                <MenuItem value="EMPLOYEE">
+                    {getTranslatedLabel("party.roles.employee", "Employee")}
+                </MenuItem>
+                <MenuItem value="CONTRACTOR">
+                    {getTranslatedLabel("party.roles.contractor", "Contractor")}
+                </MenuItem>
+            </Select>
+        </FormControl>
+    </DialogContent>
+    <DialogActions>
+        <Button onClick={() => setRoleDialogOpen(false)}>
+            {getTranslatedLabel("common.cancel", "Cancel")}
+        </Button>
+        <Button
+            onClick={async () => {
+                if (!selectedPartyId || !newRole) return;
 
-        // Optional: extra safety check (button already disables if unbalanced)
-        if (totalDebit !== totalCredit) {
-            toast.warn("Debits and credits must balance before saving.");
-            return;
-        }
+                try {
+                    await updateMainRole({
+                        partyId: selectedPartyId,
+                        mainRole: newRole,
+                    }).unwrap();
 
-        try {
-            const result = await saveMultiAcctgTransWithEntries({
-                CreateMultiAcctgTransParams: {
-                    AcctgTransTypeId: "_NA_",
-                    TransactionDate: headerValues.transactionDate,
-                    OrganizationPartyId: companyId,
-                    HeaderDescription: headerValues.headerDescription || "",
-                    Description: transEntries[0]?.description || headerValues.headerDescription || "",
-                    IsPosted: "N",
-                    GlFiscalTypeId: "ACTUAL",
-                    partyId: headerValues.party?.fromPartyId || undefined, // ← correctly extracted
-                },
-                Entries: transEntries.map((entry) => ({
-                    debitGlAccountId: entry.debitGlAccountId || undefined,
-                    creditGlAccountId: entry.creditGlAccountId || undefined,
-                    amount: entry.amount,
-                    description: entry.description || "",
-                    debitCreditFlag: entry.debitCreditFlag,
-                })),
-            });
-
-            setTransactionId(result.acctgTransId);
-            toast.success(
-                getTranslatedLabel("general.success", "Transaction saved successfully")
-            );
-
-            // Do NOT reset entries or header here — user can continue editing or post
-        } catch (error) {
-            // Error is typically already toasted in the hook
-            toast.error(getTranslatedLabel("general.error", "Failed to save transaction"));
-            console.error("Save transaction error:", error);
-        }
-    },
-    [
-        transEntries,
-        totalDebit,
-        totalCredit,
-        headerValues,
-        companyId,
-        saveMultiAcctgTransWithEntries,
-        getTranslatedLabel,
-    ]
-);
+                    toast.success(
+                        getTranslatedLabel("party.parties.list.roleUpdatedSuccess", "Role updated successfully")
+                    );
+                    setRoleDialogOpen(false);
+                    setSelectedPartyId(null);
+                    setNewRole("");
+                } catch (err) {
+                    toast.error(
+                        getTranslatedLabel("party.parties.list.roleUpdateFailed", "Failed to update role")
+                    );
+                }
+            }}
+            disabled={isUpdatingRole || !newRole}
+            variant="contained"
+            color="primary"
+        >
+            {isUpdatingRole
+                ? getTranslatedLabel("common.saving", "Saving...")
+                : getTranslatedLabel("common.save", "Save")}
+        </Button>
+    </DialogActions>
+</Dialog>

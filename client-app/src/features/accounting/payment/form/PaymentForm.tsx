@@ -54,6 +54,7 @@ const PAYMENT_TYPE_FILTERS = {
         "RECEIPT_MAINTENANCE_AMOUNT",
         "RECEIPT_PARTIAL_PAYMENT",
         "RECEIPT_RETURNED_CHECK",
+        "PROPERTY_RENTAL_INCOME"
     ],
     outgoing: [
         "TAX_PAYMENT",
@@ -103,6 +104,7 @@ const PAYMENT_TYPE_FILTERS = {
         "LOAN_INTEREST",
         "COMMUNICATIONS_INTERNET",
         "OFFICE_SUPPLIES",
+        "RENT_REVENUE_SHARE_SETTLEMENT"
     ],
 };
 

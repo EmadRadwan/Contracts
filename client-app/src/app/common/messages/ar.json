@@ -172,8 +172,20 @@
         "reportTitle": "تقرير الأفراد والشركات",
         "generatedOn": "تم إنشاؤه في",
         "noData": "لا توجد أطراف متاحة",
-        "loading": "جاري تحميل الأفراد والشركات..."
+        "loading": "جاري تحميل الأفراد والشركات...",
+        "actions": "الإجراءات",
+        "changeRole": "تغيير الدور",
+        "changeMainRoleTitle": "تغيير الدور الرئيسي",
+        "newRole": "الدور الجديد",
+        "roleUpdatedSuccess": "تم تحديث الدور بنجاح",
+        "roleUpdateFailed": "فشل تحديث الدور"
       }
+    },
+    "roles": {
+      "customer": "عميل",
+      "supplier": "مورد",
+      "employee": "موظف",
+      "contractor": "مقاول"
     },
     "customers": {
       "form": {

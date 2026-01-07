@@ -57,9 +57,20 @@ namespace Infrastructure.Pdf
                             });
 
                             // Center: Title
+                            // Center: Title
                             headerRow.RelativeItem(3).AlignCenter().AlignMiddle().Column(titleCol =>
                             {
-                                titleCol.Item().AlignCenter().Text("إيصال صرف").FontSize(16).Bold().FontFamily("Lato", "Noto Sans Arabic");
+                                string titleText;
+                                if (data.PaymentParentTypeDescription?.Trim().ToUpperInvariant() == "RECEIPT")
+                                {
+                                    titleText = "إيصال قبض";
+                                }
+                                else
+                                {
+                                    titleText = "إيصال صرف";
+                                }
+
+                                titleCol.Item().AlignCenter().Text(titleText).FontSize(16).Bold().FontFamily("Lato", "Noto Sans Arabic");
                                 titleCol.Item().AlignCenter().Text(data.PaymentId).FontSize(16).Bold();
                             });
 

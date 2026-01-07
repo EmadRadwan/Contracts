@@ -27,6 +27,7 @@ public class PartyRecord
     public string? FaxContactNumber { get; set; }
     public string? InfoString { get; set; }
     public string? Address1 { get; set; }
+    public string? OtherRoles { get; set; }
     public string? Address2 { get; set; }
     public string? City { get; set; }
     public string? GeoId { get; set; }
