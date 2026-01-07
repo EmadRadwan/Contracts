@@ -1,5 +1,5 @@
 import React, {useState, useCallback, useMemo, useEffect} from "react";
-import {Grid, Paper, Typography, Button, Skeleton, TextField, Chip} from "@mui/material";
+import {Grid, Paper, Typography, Button, Skeleton, TextField, Chip, Autocomplete} from "@mui/material";
 import {Form, FormElement, Field} from "@progress/kendo-react-form";
 import {
     Grid as KendoGrid,
@@ -10,7 +10,7 @@ import {
     GridCellProps,
 } from "@progress/kendo-react-grid";
 import {orderBy, SortDescriptor, State} from "@progress/kendo-data-query";
-import {RootState, useAppSelector} from "../../../../app/store/configureStore";
+import {RootState, useAppSelector, useFetchAcctgTransTypesQuery} from "../../../../app/store/configureStore";
 import {useFetchGlAccountOrganizationHierarchyLovQuery} from "../../../../app/store/apis";
 import {requiredValidator} from "../../../../app/common/form/Validators";
 import FormNumericTextBox from "../../../../app/common/form/FormNumericTextBox";
@@ -23,6 +23,7 @@ import useMultiAcctgTrans from "../hook/useMultiAcctgTrans";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import {FormComboBoxVirtualParty} from "../../../../app/common/form/FormComboBoxVirtualParty";
+import {MemoizedFormDropDownList} from "../../../../app/common/form/MemoizedFormDropDownList";
 
 interface TransEntry {
     id: string;
@@ -58,14 +59,17 @@ export default function MultiAcctgTransEntryForm() {
     const [page, setPage] = useState<State>({skip: 0, take: 10});
     const {isLoading, saveMultiAcctgTransWithEntries, postTransaction} = useMultiAcctgTrans();
     const [justPosted, setJustPosted] = useState(false);
+    const { data: acctgTransTypes, isLoading: isLoadingTransTypes } = useFetchAcctgTransTypesQuery(undefined);
 
     // REFACTOR: Manage header-level fields outside the form to persist across resets
     const [headerValues, setHeaderValues] = useState({
         transactionDate: new Date(),
         headerDescription: "",
         party: null as { fromPartyId: string; fromPartyName: string } | null,
+        acctgTransTypeId: null as string | null, // ← NEW
     });
 
+    console.log('headerValues', headerValues);
 
 
     // REFACTOR: Add state for transactionId to display after save
@@ -175,7 +179,7 @@ export default function MultiAcctgTransEntryForm() {
                 // REFACTOR: Capture transactionId from API response
                 const result = await saveMultiAcctgTransWithEntries({
                     CreateMultiAcctgTransParams: {
-                        AcctgTransTypeId: "_NA_",
+                        AcctgTransTypeId: headerValues.acctgTransTypeId || "_NA_",
                         TransactionDate: headerValues.transactionDate,
                         OrganizationPartyId: companyId,
                         HeaderDescription: headerValues.headerDescription,
@@ -209,7 +213,8 @@ export default function MultiAcctgTransEntryForm() {
         setHeaderValues({
             transactionDate: new Date(),
             headerDescription: "",
-            partyId: "" 
+            partyId: "" ,
+            acctgTransTypeId: null
         });
         setTransactionId(null);
         setJustPosted(false);
@@ -315,7 +320,7 @@ export default function MultiAcctgTransEntryForm() {
                     )}
                 </Typography>
                 {/* REFACTOR: Move header-level fields outside the Form to prevent resetting, add transactionId */}
-                <Grid container spacing={2} sx={{mb: 2}}>
+                <Grid container spacing={2} sx={{mb: 2}} alignItems={"flex-end"}>
                     <Grid item xs={3}>
                         <FormDatePicker
                             id="transactionDate"
@@ -327,6 +332,38 @@ export default function MultiAcctgTransEntryForm() {
                             }))}
                             validator={requiredValidator}
                         />
+                    </Grid>
+                    <Grid item xs={2}>
+                        {isLoadingTransTypes ? (
+                            <Skeleton variant="rounded" height={56} sx={{ borderRadius: "4px" }} />
+                        ) : (
+                            <Autocomplete
+                                options={acctgTransTypes || []}
+                                getOptionLabel={(option) => option.description || ""}
+                                value={acctgTransTypes?.find(t => t.acctgTransTypeId === headerValues.acctgTransTypeId) || null}
+                                onChange={(event, newValue) => {
+                                    setHeaderValues(prev => ({
+                                        ...prev,
+                                        acctgTransTypeId: newValue?.acctgTransTypeId || null
+                                    }));
+                                }}
+                                isOptionEqualToValue={(option, value) =>
+                                    option.acctgTransTypeId === value?.acctgTransTypeId
+                                }
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label={getTranslatedLabel(`${localizationKey}.acctgTransType`, "Acctg Trans Type *")}
+                                        required
+                                        variant="outlined"
+                                        size="small"
+                                    />
+                                )}
+                                loading={isLoadingTransTypes}
+                                fullWidth
+                                disableClearable={false}
+                            />
+                        )}
                     </Grid>
                     <Grid item xs={3}>
                         <FormInput

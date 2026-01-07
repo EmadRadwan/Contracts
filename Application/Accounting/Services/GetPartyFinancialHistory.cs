@@ -110,40 +110,40 @@ public class GetPartyFinancialHistory
 
                 bool actualCurrency = !string.IsNullOrEmpty(party.PreferredCurrencyUomId) &&
                                       party.PreferredCurrencyUomId != currencyUomId;
-                
+
                 var openingBalanceEntries = await _context.AcctgTransEntries
-                    .Where(ate => 
+                    .Where(ate =>
                         ate.AcctgTrans.AcctgTransTypeId == "OPENING_BALANCE" &&
                         ate.AcctgTrans.PartyId == request.PartyId &&
                         ate.AcctgTrans.IsPosted == "Y")
                     .Select(ate => new
                     {
                         ate.AcctgTrans.TransactionDate,
-                        ate.GlAccountTypeId,                    // Critical: tells us if it's AR or AP
-                        ate.DebitCreditFlag,                    // "D" = Debit, "C" = Credit
+                        ate.GlAccountTypeId, // Critical: tells us if it's AR or AP
+                        ate.DebitCreditFlag, // "D" = Debit, "C" = Credit
                         ate.Amount,
                         // Use actual currency if available, fallback to orig or default
-                        CurrencyUomId = !string.IsNullOrEmpty(ate.CurrencyUomId) 
-                            ? ate.CurrencyUomId 
-                            : (!string.IsNullOrEmpty(ate.OrigCurrencyUomId) 
-                                ? ate.OrigCurrencyUomId 
+                        CurrencyUomId = !string.IsNullOrEmpty(ate.CurrencyUomId)
+                            ? ate.CurrencyUomId
+                            : (!string.IsNullOrEmpty(ate.OrigCurrencyUomId)
+                                ? ate.OrigCurrencyUomId
                                 : currencyUomId)
                     })
                     .ToListAsync(cancellationToken);
-                
+
                 bool IsReceivableAccountType(string glAccountTypeId)
                 {
                     return glAccountTypeId switch
                     {
-                        "ACCOUNTS_RECEIVABLE"     => true,
-                        "ACCREC_UNAPPLIED"        => true,
-                        "MRCH_STLMNT_ACCOUNT"     => true,   // Merchant settlement is still receivable
-                        "INTRSTINC_RECEIVABLE"    => true,   // Interest receivable
-                        _ => false                           // Everything else (AP, deposits, etc.) = liability
+                        "ACCOUNTS_RECEIVABLE" => true,
+                        "ACCREC_UNAPPLIED" => true,
+                        "MRCH_STLMNT_ACCOUNT" => true, // Merchant settlement is still receivable
+                        "INTRSTINC_RECEIVABLE" => true, // Interest receivable
+                        _ => false // Everything else (AP, deposits, etc.) = liability
                     };
                 }
-                
-                decimal openingBalanceImpact = 0m;  // This will be added to final net amount
+
+                decimal openingBalanceImpact = 0m; // This will be added to final net amount
                 var openingBalanceDtos = new List<OpeningBalanceDto>();
 
                 foreach (var entry in openingBalanceEntries)
@@ -151,8 +151,8 @@ public class GetPartyFinancialHistory
                     // Standard accrual accounting:
                     // Debit to AR  → increases what customer owes us → positive
                     // Credit to AR → reduces receivable → negative
-                    decimal signedAmount = (decimal)(entry.DebitCreditFlag == "D" 
-                        ? entry.Amount 
+                    decimal signedAmount = (decimal)(entry.DebitCreditFlag == "D"
+                        ? entry.Amount
                         : -entry.Amount);
 
                     bool isReceivable = IsReceivableAccountType(entry.GlAccountTypeId);
@@ -160,8 +160,8 @@ public class GetPartyFinancialHistory
                     // Final impact on "how much customer owes us":
                     // - If posted to AR → use normal sign
                     // - If posted to AP or Customer Deposit → reverse the sign (liability)
-                    decimal impactOnCustomerBalance = isReceivable 
-                        ? signedAmount 
+                    decimal impactOnCustomerBalance = isReceivable
+                        ? signedAmount
                         : -signedAmount;
 
                     openingBalanceImpact += Math.Round(impactOnCustomerBalance, 2, MidpointRounding.AwayFromZero);
@@ -178,8 +178,66 @@ public class GetPartyFinancialHistory
                         Description = "Opening Balance"
                     });
                 }
-                
+
                 openingBalanceDtos = openingBalanceDtos
+                    .OrderBy(x => x.TransactionDate)
+                    .ToList();
+
+                // NEW: Retrieve Rental Property Postings
+// Business Purpose: Include periodic rental property postings (e.g., rent accruals, security deposits)
+// that affect the party's balance, similar to opening balances.
+// These are posted accounting transactions that should impact the net amount owed.
+
+                var rentalPropertyEntries = await _context.AcctgTransEntries
+                    .Where(ate =>
+                        ate.AcctgTrans.AcctgTransTypeId == "RENTAL_PROPERTY_POSTINGS" &&
+                        ate.AcctgTrans.PartyId == request.PartyId &&
+                        ate.AcctgTrans.IsPosted == "Y")
+                    .Select(ate => new
+                    {
+                        ate.AcctgTrans.TransactionDate,
+                        ate.GlAccountTypeId,
+                        ate.DebitCreditFlag,
+                        ate.Amount,
+                        CurrencyUomId = !string.IsNullOrEmpty(ate.CurrencyUomId)
+                            ? ate.CurrencyUomId
+                            : (!string.IsNullOrEmpty(ate.OrigCurrencyUomId)
+                                ? ate.OrigCurrencyUomId
+                                : currencyUomId)
+                    })
+                    .ToListAsync(cancellationToken);
+
+                decimal rentalPropertyImpact = 0m;
+                var rentalPropertyDtos = new List<RentalPropertyPostingDto>();
+
+                foreach (var entry in rentalPropertyEntries)
+                {
+                    decimal signedAmount = (decimal)(entry.DebitCreditFlag == "D"
+                        ? entry.Amount
+                        : -entry.Amount);
+
+                    bool isReceivable = IsReceivableAccountType(entry.GlAccountTypeId);
+
+                    // If posted to a receivable account (AR), normal sign applies
+                    // If posted to a liability (e.g., customer deposit), reverse the impact
+                    decimal impactOnCustomerBalance = isReceivable
+                        ? signedAmount
+                        : -signedAmount;
+
+                    rentalPropertyImpact += Math.Round(impactOnCustomerBalance, 2, MidpointRounding.AwayFromZero);
+
+                    rentalPropertyDtos.Add(new RentalPropertyPostingDto
+                    {
+                        TransactionDate = entry.TransactionDate,
+                        GlAccountTypeId = entry.GlAccountTypeId,
+                        Amount = (decimal)entry.Amount,
+                        DebitCreditFlag = entry.DebitCreditFlag,
+                        CurrencyUomId = entry.CurrencyUomId,
+                        ImpactOnBalance = Math.Round(impactOnCustomerBalance, 2, MidpointRounding.AwayFromZero)
+                    });
+                }
+
+                rentalPropertyDtos = rentalPropertyDtos
                     .OrderBy(x => x.TransactionDate)
                     .ToList();
 
@@ -455,7 +513,8 @@ public class GetPartyFinancialHistory
                 foreach (var inv in invoicesForSummary)
                 {
                     decimal total = await _invoiceUtilityService.GetInvoiceTotal(inv.InvoiceId, actualCurrency);
-                    decimal applied = await _invoiceUtilityService.GetInvoiceApplied(inv.InvoiceId, DateTime.UtcNow, actualCurrency);
+                    decimal applied =
+                        await _invoiceUtilityService.GetInvoiceApplied(inv.InvoiceId, DateTime.UtcNow, actualCurrency);
                     decimal notApplied = total - applied;
 
                     if (inv.InvoiceTypeId == "SALES_INVOICE")
@@ -469,7 +528,7 @@ public class GetPartyFinancialHistory
                         totalPurchaseNotApplied += Math.Round(notApplied, 2, MidpointRounding.AwayFromZero);
                     }
                 }
-                
+
                 // Business Purpose: Summarize payment data to distinguish between incoming and outgoing payments, both applied and unapplied.
                 // This provides a clear picture of cash flow related to the party.
 
@@ -525,22 +584,23 @@ public class GetPartyFinancialHistory
                                          - financialSummary.TotalPurchaseInvoice
                                          - financialSummary.TotalPaymentsIn
                                          + financialSummary.TotalPaymentsOut
-                                         + openingBalanceImpact;
+                                         + openingBalanceImpact
+                                         + rentalPropertyImpact;
 
                 if (transferAmount > 0)
                 {
                     financialSummary.TotalToBeReceived = Math.Round(transferAmount, 2, MidpointRounding.AwayFromZero);
-                    financialSummary.TotalToBePaid     = 0m;
+                    financialSummary.TotalToBePaid = 0m;
                 }
                 else if (transferAmount < 0)
                 {
-                    financialSummary.TotalToBePaid     = Math.Round(-transferAmount, 2, MidpointRounding.AwayFromZero);
+                    financialSummary.TotalToBePaid = Math.Round(-transferAmount, 2, MidpointRounding.AwayFromZero);
                     financialSummary.TotalToBeReceived = 0m;
                 }
                 else
                 {
                     financialSummary.TotalToBeReceived = 0m;
-                    financialSummary.TotalToBePaid     = 0m;
+                    financialSummary.TotalToBePaid = 0m;
                 }
 
                 // 9. Return result
@@ -556,7 +616,7 @@ public class GetPartyFinancialHistory
                     UnappliedPayments = unappliedPaymentsDtos,
                     BillingAccounts = billingAccountsDtos,
                     Returns = returns,
-                    // REFACTOR: Include opening balances in the final response
+                    RentalPropertyPostings = rentalPropertyDtos,
                     OpeningBalances = openingBalanceDtos,
                     FinancialSummary = financialSummary
                 });
@@ -568,7 +628,6 @@ public class GetPartyFinancialHistory
             }
         }
     }
-    
 }
 
 public class OpeningBalanceDto
@@ -580,4 +639,15 @@ public class OpeningBalanceDto
     public string CurrencyUomId { get; set; }
     public decimal ImpactOnBalance { get; set; } // Positive = customer owes us
     public string Description { get; set; }
+}
+
+public class RentalPropertyPostingDto
+{
+    public DateTime? TransactionDate { get; set; }
+    public string GlAccountTypeId { get; set; }
+    public decimal Amount { get; set; }
+    public string DebitCreditFlag { get; set; } // "D" or "C"
+    public string CurrencyUomId { get; set; }
+    public decimal ImpactOnBalance { get; set; } // Positive = customer owes us more
+    public string Description { get; set; } = "Rental Property Posting";
 }

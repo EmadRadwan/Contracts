@@ -1183,6 +1183,7 @@
         "trans": {
           "multi": {
             "title": "إنشاء معاملة محاسبية",
+            "acctgTransType": "نوع القيد المحاسبي",
             "editTitle": " معاملة محاسبية",
             "transactionDate": "تاريخ المعاملة *",
             "headerDescription": "ملاحظات",

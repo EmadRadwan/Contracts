@@ -93,46 +93,45 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
         if (!data) return [];
 
         const rows: LedgerRow[] = [];
-        let balance = 0; // + = vendor owes us (after more payments), - = we owe vendor
+        let balance = 0; // Positive = party owes us more, Negative = we owe party more
 
         const fmt = (d: string | null | undefined) => d ? new Date(d).toISOString().split('T')[0] : '';
 
-        // === 1. Opening Balances ===
-        const openingBalanceEntries = data.openingBalances || [];
-        if (openingBalanceEntries.length > 0) {
-            // impactOnBalance from backend: positive if we owe (original convention)
-            // We reverse it here to match new requirement
-            const openingTotalOriginal = openingBalanceEntries.reduce((sum, ob) => sum + ob.impactOnBalance, 0);
-            const openingTotal = -openingTotalOriginal; // reverse sign
+        // === 1. Opening Balance (only traditional opening entries) ===
+        const openingEntries = data.openingBalances || [];
+        const openingImpact = openingEntries.reduce((sum, ob) => sum + ob.impactOnBalance, 0);
 
-            if (openingTotal !== 0) {
-                balance += openingTotal;
-                rows.push({
-                    date: '',
-                    description: 'الرصيد الافتتاحي',
-                    invoiceNumber: undefined,
-                    paymentNumber: undefined,
-                    value: 0,
-                    toPay: openingTotalOriginal > 0 ? openingTotalOriginal : 0, // show in credit if we owed initially
-                    paid: openingTotalOriginal < 0 ? -openingTotalOriginal : 0,   // show in debit if vendor owed initially
-                    balance,
-                    notes: `${openingBalanceEntries.length} حركة افتتاحية`,
-                });
-            }
+        if (openingImpact !== 0) {
+            // Backend: positive impactOnBalance = customer owes us more
+            // Ledger convention here: we apply the opposite to start correctly
+            balance -= openingImpact;
+
+            rows.push({
+                date: '',
+                description: 'الرصيد الافتتاحي',
+                value: 0,
+                toPay: openingImpact > 0 ? openingImpact : 0,
+                paid: openingImpact < 0 ? -openingImpact : 0,
+                balance,
+                notes: openingEntries.length > 1 ? `${openingEntries.length} حركات افتتاحية` : 'حركة افتتاحية',
+            });
         }
 
-        // === 2. Collect and combine all transactions with date and type ===
+        // === 2. Unified transaction interface ===
         interface Transaction {
-            date: string;
-            type: 'invoice' | 'payment';
-            id: string;
-            amount: number;
-            isUnappliedPayment?: boolean;
+            date: string;           // ISO string for sorting
+            displayDate: string;    // Formatted YYYY-MM-DD
+            type: 'invoice' | 'payment' | 'rentalPosting';
+            id?: string;
+            description: string;
+            amount: number;         // Absolute amount for display
+            impact: number;         // Signed impact on balance (positive = customer owes more)
+            notes?: string;
         }
 
         const transactions: Transaction[] = [];
 
-        // Invoices (purchase invoices → credit → negative impact)
+        // Invoices
         const invoiceMap = new Map<string, { total: number; date: string }>();
         data.invoicesApplPayments?.forEach(i => {
             if (!invoiceMap.has(i.invoiceId)) {
@@ -144,16 +143,21 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
                 invoiceMap.set(i.invoiceId, { total: i.amount, date: i.invoiceDate! });
             }
         });
+
         invoiceMap.forEach((inv, id) => {
             transactions.push({
                 date: inv.date,
+                displayDate: fmt(inv.date),
                 type: 'invoice',
                 id,
+                description: `فاتورة شراء رقم ${id}`,
                 amount: inv.total,
+                impact: inv.total, // Invoice increases receivable
+                notes: undefined,
             });
         });
 
-        // Payments (vendor payments → debit → positive impact)
+        // Payments
         const paymentMap = new Map<string, { amount: number; date: string }>();
         data.invoicesApplPayments?.forEach(i => {
             if (i.paymentId) {
@@ -166,45 +170,74 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
         data.unappliedPayments?.forEach(p => {
             paymentMap.set(p.paymentId, { amount: p.amount, date: p.effectiveDate! });
         });
+
         paymentMap.forEach((pay, id) => {
+            const isUnapplied = data.unappliedPayments?.some(up => up.paymentId === id);
             transactions.push({
                 date: pay.date,
+                displayDate: fmt(pay.date),
                 type: 'payment',
                 id,
+                description: `دفعة رقم ${id}`,
                 amount: pay.amount,
-                isUnappliedPayment: data.unappliedPayments?.some(up => up.paymentId === id),
+                impact: -pay.amount, // Payment reduces receivable
+                notes: isUnapplied ? 'دفعة غير مطبقة' : undefined,
             });
         });
 
-        // === 3. Sort all transactions chronologically ===
+        // Rental Property Postings
+        const rentalEntries = data.rentalPropertyPostings || [];
+        rentalEntries.forEach(rp => {
+            if (!rp.transactionDate) return;
+
+            transactions.push({
+                date: rp.transactionDate,
+                displayDate: fmt(rp.transactionDate),
+                type: 'rentalPosting',
+                description: `تسجيل إيجاري - ${rp.glAccountTypeId || 'إيجار'}`,
+                amount: Math.abs(rp.impactOnBalance),
+                impact: rp.impactOnBalance, // Already correctly signed from backend
+                notes: rp.description || 'تسوية إيجارية',
+            });
+        });
+
+        // === 3. Sort chronologically ===
         transactions.sort((a, b) => a.date.localeCompare(b.date));
 
-        // === 4. Process transactions in order and build ledger rows ===
+        // === 4. Process all transactions and update balance ===
         transactions.forEach(t => {
+            balance -= t.impact; // Apply signed impact
+
             if (t.type === 'invoice') {
-                // Invoice → credit → reduce balance (make it more negative)
-                balance -= t.amount;
                 rows.push({
-                    date: fmt(t.date),
-                    description: `فاتورة شراء رقم ${t.id}`,
+                    date: t.displayDate,
+                    description: t.description,
                     invoiceNumber: t.id,
                     value: t.amount,
-                    toPay: t.amount,  // دائن
+                    toPay: t.amount,
                     paid: 0,
                     balance,
                 });
-            } else {
-                // Payment → debit → increase balance (make it more positive)
-                balance += t.amount;
+            } else if (t.type === 'payment') {
                 rows.push({
-                    date: fmt(t.date),
-                    description: `دفعة رقم ${t.id}`,
+                    date: t.displayDate,
+                    description: t.description,
                     paymentNumber: t.id,
                     value: 0,
                     toPay: 0,
-                    paid: t.amount,  // مدين
+                    paid: t.amount,
                     balance,
-                    notes: t.isUnappliedPayment ? 'دفعة غير مطبقة' : undefined,
+                    notes: t.notes,
+                });
+            } else if (t.type === 'rentalPosting') {
+                rows.push({
+                    date: t.displayDate,
+                    description: t.description,
+                    value: t.amount,
+                    toPay: t.impact > 0 ? t.amount : 0,
+                    paid: t.impact < 0 ? t.amount : 0,
+                    balance,
+                    notes: t.notes,
                 });
             }
         });
