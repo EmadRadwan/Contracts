@@ -22,18 +22,7 @@ public class ListAccountingTransactionTypes
 
         public async Task<Result<List<AcctgTransTypeDto>>> Handle(Query request, CancellationToken cancellationToken)
         {
-            var allowedAcctgTransTypes = new[]
-            {
-                "_NA_", "AMORTIZATION", "CAPITALIZATION", "CREDIT_LINE", "CREDIT_MEMO",
-                "CUST_RTN_INVOICE", "DEPRECIATION", "DISBURSEMENT", "EXTERNAL_ACCTG_TRANS",
-                "INCOMING_PAYMENT", "INTERNAL_ACCTG_TRANS", "INVENTORY", "INVENTORY_RETURN",
-                "ITEM_VARIANCE", "MANUFACTURING", "NOTE", "OBLIGATION_ACCTG_TRA", "OTHER_INTERNAL",
-                "OTHER_OBLIGATION", "OUTGOING_PAYMENT", "PAYMENT_ACCTG_TRANS", "PAYMENT_APPL",
-                "PERIOD_CLOSING", "PURCHASE_INVOICE", "RECEIPT", "SALES", "SALES_INVOICE",
-                "SALES_SHIPMENT", "SHIPMENT_RECEIPT", "TAX_DUE"
-            };
             var query = _context.AcctgTransTypes
-                .Where(z => allowedAcctgTransTypes.Contains(z.AcctgTransTypeId))
                 .OrderBy(x => x.Description)
                 .Select(x => new AcctgTransTypeDto
                 {

@@ -276,6 +276,14 @@ const paymentsApi = createApi({
                 }),
                 providesTags: ['PaymentsByDateRange'],
             }),
+            deletePayment: builder.mutation<void, string>({
+                query: (paymentId) => ({
+                    url: `/payments/${paymentId}`,
+                    method: 'DELETE',
+                }),
+                // Invalidate the payments list so the grid refreshes automatically
+                invalidatesTags: ['Payments'],
+            }),
         };
     },
 });
@@ -300,6 +308,9 @@ export const {
     useRemovePaymentApplicationMutation,
     useCreatePaymentApplicationMutation,
     useLazyFetchDailyPaymentsLazyQuery,
-    useFetchPaymentsWithDueStatusQuery, useLazyGetPaymentReportPdfQuery, useLazyFetchPaymentsByDateRangeQuery
+    useFetchPaymentsWithDueStatusQuery,
+    useLazyGetPaymentReportPdfQuery,
+    useLazyFetchPaymentsByDateRangeQuery,
+    useDeletePaymentMutation,
 } = paymentsApi;
 export {paymentsApi};

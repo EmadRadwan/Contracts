@@ -1,193 +1,24 @@
-[
-  
-  {
-    "PARTY_ID": "160",
-    "PARTY_TYPE_ID": "PERSON",
-    "MAIN_ROLE": "EMPLOYEE",
-    "DESCRIPTION": "الحاج محمد مختار",
-    "STATUS_ID": "PARTY_ENABLED",
-    "CREATED_DATE": "2024-07-31 06:03:42",
-    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
-    "CREATED_STAMP": "2024-07-31 06:03:42"
-  },
-  {
-    "PARTY_ID": "162",
-    "PARTY_TYPE_ID": "PERSON",
-    "MAIN_ROLE": "EMPLOYEE",
-    "DESCRIPTION": "بشوي نبيل ميلاد راغب",
-    "STATUS_ID": "PARTY_ENABLED",
-    "CREATED_DATE": "2024-07-31 06:03:42",
-    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
-    "CREATED_STAMP": "2024-07-31 06:03:42"
-  },
-  {
-    "PARTY_ID": "163",
-    "PARTY_TYPE_ID": "PERSON",
-    "MAIN_ROLE": "EMPLOYEE",
-    "DESCRIPTION": "علي احمد مرسي عبد الباقي",
-    "STATUS_ID": "PARTY_ENABLED",
-    "CREATED_DATE": "2024-07-31 06:03:42",
-    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
-    "CREATED_STAMP": "2024-07-31 06:03:42"
-  },
-  {
-    "PARTY_ID": "165",
-    "PARTY_TYPE_ID": "PERSON",
-    "MAIN_ROLE": "EMPLOYEE",
-    "DESCRIPTION": "محمد طه احمد عدلي",
-    "STATUS_ID": "PARTY_ENABLED",
-    "CREATED_DATE": "2024-07-31 06:03:42",
-    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
-    "CREATED_STAMP": "2024-07-31 06:03:42"
-  },
-  {
-    "PARTY_ID": "166",
-    "PARTY_TYPE_ID": "PERSON",
-    "MAIN_ROLE": "EMPLOYEE",
-    "DESCRIPTION": "عبد الرحمن وائل",
-    "STATUS_ID": "PARTY_ENABLED",
-    "CREATED_DATE": "2024-07-31 06:03:42",
-    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
-    "CREATED_STAMP": "2024-07-31 06:03:42"
-  },
-  {
-    "PARTY_ID": "167",
-    "PARTY_TYPE_ID": "PERSON",
-    "MAIN_ROLE": "EMPLOYEE",
-    "DESCRIPTION": "مختار عادل مختار قطب",
-    "STATUS_ID": "PARTY_ENABLED",
-    "CREATED_DATE": "2024-07-31 06:03:42",
-    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
-    "CREATED_STAMP": "2024-07-31 06:03:42"
-  },
-  {
-    "PARTY_ID": "168",
-    "PARTY_TYPE_ID": "PERSON",
-    "MAIN_ROLE": "EMPLOYEE",
-    "DESCRIPTION": "هيثم ادريس حسن محمد",
-    "STATUS_ID": "PARTY_ENABLED",
-    "CREATED_DATE": "2024-07-31 06:03:42",
-    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
-    "CREATED_STAMP": "2024-07-31 06:03:42"
-  },
-  {
-    "PARTY_ID": "169",
-    "PARTY_TYPE_ID": "PERSON",
-    "MAIN_ROLE": "EMPLOYEE",
-    "DESCRIPTION": "احمد عبد العال احمد",
-    "STATUS_ID": "PARTY_ENABLED",
-    "CREATED_DATE": "2024-07-31 06:03:42",
-    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
-    "CREATED_STAMP": "2024-07-31 06:03:42"
-  },
-  {
-    "PARTY_ID": "170",
-    "PARTY_TYPE_ID": "PERSON",
-    "MAIN_ROLE": "EMPLOYEE",
-    "DESCRIPTION": "مؤمن سعيد عبدالوهاب حامد",
-    "STATUS_ID": "PARTY_ENABLED",
-    "CREATED_DATE": "2024-07-31 06:03:42",
-    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
-    "CREATED_STAMP": "2024-07-31 06:03:42"
-  },
-  {
-    "PARTY_ID": "171",
-    "PARTY_TYPE_ID": "PERSON",
-    "MAIN_ROLE": "EMPLOYEE",
-    "DESCRIPTION": "محمود السيد محمود حسن",
-    "STATUS_ID": "PARTY_ENABLED",
-    "CREATED_DATE": "2024-07-31 06:03:42",
-    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
-    "CREATED_STAMP": "2024-07-31 06:03:42"
-  },
-  {
-    "PARTY_ID": "172",
-    "PARTY_TYPE_ID": "PERSON",
-    "MAIN_ROLE": "EMPLOYEE",
-    "DESCRIPTION": "امام عبد المنعم حسين امام عمار",
-    "STATUS_ID": "PARTY_ENABLED",
-    "CREATED_DATE": "2024-07-31 06:03:42",
-    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
-    "CREATED_STAMP": "2024-07-31 06:03:42"
-  },
-  {
-    "PARTY_ID": "173",
-    "PARTY_TYPE_ID": "PERSON",
-    "MAIN_ROLE": "EMPLOYEE",
-    "DESCRIPTION": "هبه عبد اللطيف عبد السلام",
-    "STATUS_ID": "PARTY_ENABLED",
-    "CREATED_DATE": "2024-07-31 06:03:42",
-    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
-    "CREATED_STAMP": "2024-07-31 06:03:42"
-  },
-  {
-    "PARTY_ID": "174",
-    "PARTY_TYPE_ID": "PERSON",
-    "MAIN_ROLE": "EMPLOYEE",
-    "DESCRIPTION": "عبد الله",
-    "STATUS_ID": "PARTY_ENABLED",
-    "CREATED_DATE": "2024-07-31 06:03:42",
-    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
-    "CREATED_STAMP": "2024-07-31 06:03:42"
-  },
-  {
-    "PARTY_ID": "175",
-    "PARTY_TYPE_ID": "PERSON",
-    "MAIN_ROLE": "EMPLOYEE",
-    "DESCRIPTION": "محمد اسامة",
-    "STATUS_ID": "PARTY_ENABLED",
-    "CREATED_DATE": "2024-07-31 06:03:42",
-    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
-    "CREATED_STAMP": "2024-07-31 06:03:42"
-  },
-  {
-    "PARTY_ID": "176",
-    "PARTY_TYPE_ID": "PERSON",
-    "MAIN_ROLE": "EMPLOYEE",
-    "DESCRIPTION": "صبحي",
-    "STATUS_ID": "PARTY_ENABLED",
-    "CREATED_DATE": "2024-07-31 06:03:42",
-    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
-    "CREATED_STAMP": "2024-07-31 06:03:42"
-  },
-  {
-    "PARTY_ID": "177",
-    "PARTY_TYPE_ID": "PERSON",
-    "MAIN_ROLE": "EMPLOYEE",
-    "DESCRIPTION": "محمد السيد ابو جابر",
-    "STATUS_ID": "PARTY_ENABLED",
-    "CREATED_DATE": "2024-07-31 06:03:42",
-    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
-    "CREATED_STAMP": "2024-07-31 06:03:42"
-  },
-  {
-    "PARTY_ID": "178",
-    "PARTY_TYPE_ID": "PERSON",
-    "MAIN_ROLE": "EMPLOYEE",
-    "DESCRIPTION": "صالح مبروك",
-    "STATUS_ID": "PARTY_ENABLED",
-    "CREATED_DATE": "2024-07-31 06:03:42",
-    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
-    "CREATED_STAMP": "2024-07-31 06:03:42"
-  },
-  {
-    "PARTY_ID": "179",
-    "PARTY_TYPE_ID": "PERSON",
-    "MAIN_ROLE": "EMPLOYEE",
-    "DESCRIPTION": "محمد اشليم",
-    "STATUS_ID": "PARTY_ENABLED",
-    "CREATED_DATE": "2024-07-31 06:03:42",
-    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
-    "CREATED_STAMP": "2024-07-31 06:03:42"
-  },
-  {
-    "PARTY_ID": "180",
-    "PARTY_TYPE_ID": "PERSON",
-    "MAIN_ROLE": "EMPLOYEE",
-    "DESCRIPTION": "عبده ابوكامل",
-    "STATUS_ID": "PARTY_ENABLED",
-    "CREATED_DATE": "2024-07-31 06:03:42",
-    "LAST_UPDATED_STAMP": "2024-07-31 06:03:42",
-    "CREATED_STAMP": "2024-07-31 06:03:42"
-  }
-]
+"list": {
+"actions": {
+"new": "سند",
+"incoming": " سند قبض جديد",
+"outgoing": "سند صرف جديد"
+},
+"paymentId": "رقم الدفعة",
+"paymentType": "نوع الدفعة",
+"from": "من الطرف",
+"to": "إلى الطرف",
+"date": "تاريخ الدفعة",
+"status": "الحالة",
+"dueStatus": "حالة الاستحقاق",
+"amount": "المبلغ",
+"outstanding": "المبلغ المستحق",
+"paymentRefNum": "رقم مرجع الدفعة",
+"projectName": "المشروع",
+"costCenterDescription": "مركز التكلفة",
+"comments": "التعليقات",
+"orderId": "رقم الطلب",
+"certificateNumber": "رقم المستخلص",
+"loading": "جاري تحميل الدفعات...",
+"deleteDialogMessage": "هل أنت متأكد من حذف الدفعة رقم {0}؟ هذا الإجراء لا يمكن التراجع عنه. إذا كانت هناك حركات محاسبية مرتبطة بهذه الدفعة، سيتم حذفها أيضاً."
+}

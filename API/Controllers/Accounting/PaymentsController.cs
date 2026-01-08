@@ -185,4 +185,23 @@ public class PaymentsController : BaseApiController
         var result = await Mediator.Send(query, ct);
         return Ok(result);
     }
+    
+    [HttpDelete("{paymentId}")]
+    public async Task<ActionResult> DeletePayment(string paymentId, CancellationToken ct = default)
+    {
+        var command = new DeletePayment.Command
+        {
+            PaymentId = paymentId
+        };
+
+        var result = await Mediator.Send(command, ct);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(new { error = result.Error });
+        }
+
+        // 204 No Content is standard for successful DELETE
+        return NoContent();
+    }
 }

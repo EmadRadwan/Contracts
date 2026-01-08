@@ -14,7 +14,7 @@ import {
 } from "@progress/kendo-react-grid";
 import { DataResult, State } from "@progress/kendo-data-query";
 import Button from "@mui/material/Button";
-import { Grid, Paper } from "@mui/material";
+import {Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, Paper} from "@mui/material";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import { handleDatesArray } from "../../../../app/util/utils";
@@ -26,7 +26,10 @@ import {setSelectedPayment} from "../../slice/accountingSharedUiSlice";
 import {useSelector} from "react-redux";
 import {PaymentsDailyExcel} from "../report/PaymentsDailyExcel";
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import {PaymentsDateRangeExcel} from "../report/PaymentsDateRangeExcel";   // <-- add this import
+import {PaymentsDateRangeExcel} from "../report/PaymentsDateRangeExcel";
+import {useDeletePaymentMutation} from "../../../../app/store/apis";
+import {Can} from "../../../account/Can";
+import {toast} from "react-toastify";   // <-- add this import
 
 
 interface PaymentsListProps {
@@ -59,6 +62,51 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
   });
 
   const formEditMode = useAppSelector((s) => s.paymentsUi.formEditMode);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
+
+  const [deletePayment, { isLoading: isDeleting }] = useDeletePaymentMutation();
+
+  const handleDeleteClick = (paymentId: string) => {
+    setPaymentToDelete(paymentId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!paymentToDelete) return;
+
+    try {
+      await deletePayment(paymentToDelete).unwrap();
+
+      // Success toast
+      toast.success(
+          getTranslatedLabel("accounting.payments.list.deleteSuccess", "تم حذف الدفعة بنجاح")
+      );
+    } catch (err: any) {
+      // Extract error message from API response
+      let errorMessage = getTranslatedLabel("accounting.payments.list.deleteFailed", "فشل حذف الدفعة");
+
+      if (err?.data?.error) {
+        errorMessage = err.data.error; // e.g., "لا يمكن حذف الدفعة لأنها مرتبطة بشهادة مشروع رقم: 98-0001"
+      } else if (typeof err?.data === "string") {
+        errorMessage = err.data;
+      }
+
+      // Error toast with Arabic message
+      toast.error(errorMessage);
+
+      console.error('Delete payment failed:', err);
+    } finally {
+      // Always close the dialog, whether success or failure
+      setDeleteDialogOpen(false);
+      setPaymentToDelete(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setPaymentToDelete(null);
+  };
 
 
 
@@ -144,7 +192,37 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
     );
   };
 
-  
+  const DeleteCell = (props: any) => {
+    const navigationAttributes = useTableKeyboardNavigation(props.id);
+    return (
+        <td
+            className={props.className}
+            style={{ ...props.style }}
+            colSpan={props.colSpan}
+            role="gridcell"
+            aria-colindex={props.ariaColumnIndex}
+            aria-selected={props.isSelected}
+            {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
+            {...navigationAttributes}
+        >
+          <Can perform="deletePayment">
+            <Button
+                size="small"
+                color="error"
+                variant="outlined"
+                onClick={() => handleDeleteClick(props.dataItem.paymentId)}
+                disabled={isDeleting}
+            >
+              {getTranslatedLabel(
+                  "accounting.payments.list.deleteButton",
+                  "Delete"
+              )}
+            </Button>
+          </Can>
+        </td>
+    );
+  };
+
   const handleNewPayment = () => {
     dispatch(setPaymentType(paymentType === "incoming" ? 1 : 2));
     dispatch(setSelectedPayment(undefined));
@@ -246,7 +324,50 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
                 <Column field="projectName" title={getTranslatedLabel(`${localizationKey}.projectName`,"Comments")} width={150} />
                 <Column field="costCenterDescription" title={getTranslatedLabel(`${localizationKey}.costCenterDescription`,"Comments")} width={150} />
                 <Column field="comments" title={getTranslatedLabel(`${localizationKey}.comments`,"Comments")} width={150} />
+                <Column
+                    title="Actions"
+                    width={120}
+                    cell={DeleteCell}
+                    locked={true}
+                />
               </KendoGrid>
+              <Dialog
+                  open={deleteDialogOpen}
+                  onClose={handleCancelDelete}
+                  aria-labelledby="delete-payment-dialog-title"
+                  aria-describedby="delete-payment-dialog-description"
+              >
+                <DialogTitle id="delete-payment-dialog-title">
+                  {getTranslatedLabel(
+                      "accounting.payments.list.deleteDialogTitle",
+                      "Confirm Deletion"
+                  )}
+                </DialogTitle>
+                <DialogContent>
+                  <DialogContentText id="delete-payment-dialog-description">
+                    {getTranslatedLabel(
+                        "accounting.payments.list.deleteDialogMessage",
+                        "Are you sure you want to delete payment {0}? This action cannot be undone."
+                    ).replace("{0}", paymentToDelete || "")}
+                  </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={handleCancelDelete} disabled={isDeleting}>
+                    {getTranslatedLabel("global.cancel", "Cancel")}
+                  </Button>
+                  <Button
+                      onClick={handleConfirmDelete}
+                      color="error"
+                      variant="contained"
+                      disabled={isDeleting}
+                      autoFocus
+                  >
+                    {isDeleting
+                        ? getTranslatedLabel("global.deleting", "Deleting...")
+                        : getTranslatedLabel("accounting.payments.list.deleteConfirm", "Delete")}
+                  </Button>
+                </DialogActions>
+              </Dialog>
               {isFetching && <LoadingComponent message={getTranslatedLabel(`${localizationKey}.loading`,"Loading Payments...")} />}
             </div>
           </Grid>

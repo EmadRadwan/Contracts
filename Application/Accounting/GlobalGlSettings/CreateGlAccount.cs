@@ -103,7 +103,7 @@ public class CreateGlAccount
             }
         }
 
-        private const int MaxCodeValue = 999999;
+        private const int MaxCodeValue = 9999999;
 
         private async Task<string?> GenerateNextAccountCode(string? parentGlAccountId, CancellationToken cancellationToken)
         {

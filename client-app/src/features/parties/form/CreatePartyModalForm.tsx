@@ -18,7 +18,7 @@ interface Props {
 
 const partyRoleOptions = [
     {mainRole: 'CUSTOMER', description: 'عميل'},
-    {mainRole: 'CONTRACTOR', description: 'متعهد'},
+    {mainRole: 'CONTRACTOR', description: 'مقاول'},
     {mainRole: 'EMPLOYEE', description: 'موظف'},
     {mainRole: 'SUPPLIER', description: 'مورد'},
 ];
