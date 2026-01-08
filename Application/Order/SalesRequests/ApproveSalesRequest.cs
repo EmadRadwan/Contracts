@@ -127,6 +127,33 @@ public class ApproveSalesRequest
                             "Failed to create one or more payments");
                     }
                 }
+                
+                if (sr.MaintenanceDeposit > 0)
+                {
+                    var maintenanceDueDate = (sr.SaleDate ?? DateTime.UtcNow.Date).AddYears(2);
+
+                    var maintenancePaymentParam = new CreatePaymentParam
+                    {
+                        PartyIdFrom = sr.FromPartyId!, // Customer
+                        PartyIdTo = companyPartyId, // Company
+                        Amount = sr.MaintenanceDeposit.Value, // It's nullable, but we checked > 0
+                        EffectiveDate = maintenanceDueDate,
+                        PaymentTypeId = "RECEIPT_MAINTENANCE_AMOUNT",
+                        StatusId = "PMNT_NOT_PAID",
+                        Comments = $"Maintenance deposit - Due {maintenanceDueDate:yyyy-MM-dd} - SR {sr.SalesRequestId}",
+                        SalesRequestId = sr.SalesRequestId,
+                        PaymentMethodId = null,
+                        PaymentMethodTypeId = null
+                    };
+
+                    var maintenancePayment = await _paymentHelperService.CreatePayment(maintenancePaymentParam);
+                    if (maintenancePayment == null)
+                    {
+                        await transaction.RollbackAsync(ct);
+                        return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure(
+                            "Failed to create maintenance deposit payment");
+                    }
+                }
 
                 var apartment = await CreateSalesRequest.Handler.GetApartmentLovProjection(_context, sr.ProductId!, ct)
                                 ?? new CreateSalesRequest.ApartmentLovProjection
