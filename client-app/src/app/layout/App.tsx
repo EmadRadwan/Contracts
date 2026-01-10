@@ -13,6 +13,8 @@ import { Slide, Zoom, Flip, Bounce } from 'react-toastify';
 import Rubik from "../fonts/Rubik/Rubik-Regular.ttf";
 import RubikBold from "../fonts/Rubik/Rubik-Bold.ttf";
 
+
+
 function App() {
     const location = useLocation();
     const language = useAppSelector((state) => state.localization.language);

@@ -2,14 +2,21 @@ namespace Application.Accounting.Services.Models;
 
 public class PartyFinancialHistoryDetails
 {
-    public string PartyId { get; set; }
-    public string PreferredCurrencyUomId { get; set; }
-    public List<InvoiceApplPaymentDto> InvoicesApplPayments { get; set; }
-    public List<UnappliedInvoiceDto> UnappliedInvoices { get; set; }
-    public List<UnappliedPaymentDto> UnappliedPayments { get; set; }
-    public List<BillingAccountDto> BillingAccounts { get; set; }
-    public List<ReturnDto> Returns { get; set; }
+    public string PartyId { get; set; } = string.Empty;
+    public string? PreferredCurrencyUomId { get; set; }
+
+    public List<InvoiceApplPaymentDto> InvoicesApplPayments { get; set; } = new();
+    public List<UnappliedInvoiceDto> UnappliedInvoices { get; set; } = new();
+    public List<UnappliedPaymentDto> UnappliedPayments { get; set; } = new();
+    public List<BillingAccountDto> BillingAccounts { get; set; } = new();
+    public List<ReturnDto> Returns { get; set; } = new();
+
+    // Already existing special transaction types
     public List<OpeningBalanceDto> OpeningBalances { get; set; } = new();
     public List<RentalPropertyPostingDto> RentalPropertyPostings { get; set; } = new();
-    public FinancialSummaryDto FinancialSummary { get; set; }
+
+    // NEW: Partner revenue accruals (credit side typically)
+    public List<PartnerAccrualPostingDto> PartnerAccrualPostings { get; set; } = new();
+
+    public FinancialSummaryDto FinancialSummary { get; set; } = new();
 }

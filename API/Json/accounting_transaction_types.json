@@ -13,11 +13,21 @@
     "ACCTG_TRANS_TYPE_ID": "RENTAL_PROPERTY_POSTINGS",
     "PARENT_TYPE_ID": null,
     "HAS_TABLE": "N",
-    "DESCRIPTION": "مشاركات ايجار عقارات",
+    "DESCRIPTION": "مشاركات ايجار عقارات من المستاجرين",
     "LAST_UPDATED_STAMP": "2026-01-07 13:42:32",
     "LAST_UPDATED_TX_STAMP": "2026-01-07 13:42:32",
     "CREATED_STAMP": "2026-01-07 13:42:32",
     "CREATED_TX_STAMP": "2026-01-07 13:42:32"
+  },
+  {
+    "ACCTG_TRANS_TYPE_ID": "RENTAL_PROPERTY_ACCRUAL_PARTNERS",
+    "PARENT_TYPE_ID": null,
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "استحقاق ايراد العقار للشركاء",
+    "LAST_UPDATED_STAMP": "2026-01-10 09:53:00",
+    "LAST_UPDATED_TX_STAMP": "2026-01-10 09:53:00",
+    "CREATED_STAMP": "2026-01-10 09:53:00",
+    "CREATED_TX_STAMP": "2026-01-10 09:53:00"
   },
   {
     "ACCTG_TRANS_TYPE_ID": "OPENING_BALANCE",

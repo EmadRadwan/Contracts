@@ -1,366 +1,157 @@
-import { RootState, useAppDispatch, useAppSelector, useFetchPaymentsQuery } from "../../../../app/store/configureStore";
-import React, { useEffect, useState } from "react";
-import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
-import {
-    Grid as KendoGrid,
-    GRID_COL_INDEX_ATTRIBUTE,
-    GridColumn as Column,
-    GridDataStateChangeEvent,
-    GridToolbar,
-} from "@progress/kendo-react-grid";
-import { DataResult, State } from "@progress/kendo-data-query";
-import Button from "@mui/material/Button";
-import { Grid, Paper } from "@mui/material";
-import LoadingComponent from "../../../../app/layout/LoadingComponent";
-import AccountingMenu from "../../invoice/menu/AccountingMenu";
-import { handleDatesArray } from "../../../../app/util/utils";
-import PaymentForm from "../form/PaymentForm";
-import { resetForm, setFormEditMode, setPaymentType } from "../slice/paymentsUiSlice";
-import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
-import { useLocation, useNavigate } from "react-router";
-import { setSelectedPayment } from "../../slice/accountingSharedUiSlice";
-import { useSelector } from "react-redux";
-import { PaymentsDailyExcel } from "../report/PaymentsDailyExcel";
-import { PaymentsDateRangeExcel } from "../report/PaymentsDateRangeExcel";
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
-import { useDeletePaymentMutation } from "../../../../app/store/apis"; // <-- Add this
-import { Can } from "../../../account/Can"; // <-- Add this if not already imported
+const ledgerItems = useMemo((): LedgerRow[] => {
+    if (!data) return [];
 
-interface PaymentsListProps {
-    paymentType: "incoming" | "outgoing";
-}
+    const rows: LedgerRow[] = [];
+    let balance = 0;
 
-export default function PaymentsList({ paymentType }: PaymentsListProps) {
-    const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = "accounting.payments.list";
+    const fmt = (d: string | null | undefined) =>
+        d ? new Date(d).toISOString().split('T')[0] : '';
 
-    const location = useLocation();
-    const navigate = useNavigate();
-    const dispatch = useAppDispatch();
-
-    const companyName = useSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
-
-    const [payments, setPayments] = useState<DataResult>({
-        data: [],
-        total: 0,
-    });
-
-    const [dataState, setDataState] = useState<State>({
-        sort: [{ field: "effectiveDate", dir: "asc" }],
-        skip: 0,
-        take: 6,
-    });
-
-    const formEditMode = useAppSelector((s) => s.paymentsUi.formEditMode);
-
-    // Deletion state
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
-
-    const [deletePayment, { isLoading: isDeleting }] = useDeletePaymentMutation();
-
-    const handleDeleteClick = (paymentId: string) => {
-        setPaymentToDelete(paymentId);
-        setDeleteDialogOpen(true);
-    };
-
-    const handleConfirmDelete = async () => {
-        if (!paymentToDelete) return;
-
-        try {
-            await deletePayment(paymentToDelete).unwrap();
-            setDeleteDialogOpen(false);
-            setPaymentToDelete(null);
-            // Success handled by RTK Query cache invalidation → list auto-refreshes
-        } catch (err) {
-            console.error('Delete payment failed:', err);
-            // You can add toast notification here later
-        }
-    };
-
-    const handleCancelDelete = () => {
-        setDeleteDialogOpen(false);
-        setPaymentToDelete(null);
-    };
-
-    useEffect(() => {
-        if (location.state?.resetPaymentForm) {
-            dispatch(resetForm());
-            navigate(location.pathname, { replace: true, state: {} });
-        }
-    }, [location.state, dispatch, navigate]);
-
-    const dataStateChange = (e: GridDataStateChangeEvent) => {
-        setDataState(e.dataState);
-    };
-
-    const { data, error, isFetching } = useFetchPaymentsQuery({
-        ...dataState,
-        paymentType,
-    });
-
-    const [show, setShow] = useState(false);
-
-    useEffect(() => {
-        if (data) {
-            const adjustedData = handleDatesArray(data.data);
-            setPayments({ data: adjustedData, total: data.total });
-        }
-    }, [data]);
-
-    const handleSelectPayment = (paymentId: string) => {
-        const pay = payments.data.find((p: any) => p.paymentId === paymentId);
-        if (!pay) return;
-
-        dispatch(setSelectedPayment(pay));
-        dispatch(setPaymentType(paymentType === "incoming" ? 1 : 2));
-
-        const statusMap: Record<string, number> = {
-            PMNT_NOT_PAID: 2,
-            PMNT_RECEIVED: 3,
-            PMNT_SENT: 4,
-            PMNT_CONFIRMED: 5,
-            PMNT_CANCELLED: 6,
-        };
-
-        const mode = statusMap[pay.statusId] ?? 2;
-        dispatch(setFormEditMode(mode));
-    };
-
-    const PaymentDescriptionCell = (props: any) => {
-        const navigationAttributes = useTableKeyboardNavigation(props.id);
-
-        return (
-            <td
-                className={props.className}
-                style={{ ...props.style, color: "blue" }}
-                colSpan={props.colSpan}
-                role="gridcell"
-                aria-colindex={props.ariaColumnIndex}
-                aria-selected={props.isSelected}
-                {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
-                {...navigationAttributes}
-            >
-                <Button onClick={() => handleSelectPayment(props.dataItem.paymentId)}>
-                    {props.dataItem.paymentId}
-                </Button>
-            </td>
-        );
-    };
-
-    // New Delete Cell
-    const DeleteCell = (props: any) => {
-        const navigationAttributes = useTableKeyboardNavigation(props.id);
-        return (
-            <td
-                className={props.className}
-                style={{ ...props.style }}
-                colSpan={props.colSpan}
-                role="gridcell"
-                aria-colindex={props.ariaColumnIndex}
-                aria-selected={props.isSelected}
-                {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
-                {...navigationAttributes}
-            >
-                <Can perform="deletePayment">
-                    <Button
-                        size="small"
-                        color="error"
-                        variant="outlined"
-                        onClick={() => handleDeleteClick(props.dataItem.paymentId)}
-                        disabled={isDeleting}
-                    >
-                        {getTranslatedLabel(
-                            "accounting.payments.list.deleteButton",
-                            "Delete"
-                        )}
-                    </Button>
-                </Can>
-            </td>
-        );
-    };
-
-    const handleNewPayment = () => {
-        dispatch(setPaymentType(paymentType === "incoming" ? 1 : 2));
-        dispatch(setSelectedPayment(undefined));
-        dispatch(setFormEditMode(1));
-    };
-
-    if (formEditMode > 0) {
-        return <PaymentForm editMode={formEditMode} cancelEdit={() => dispatch(resetForm())} />;
+    // 1. Opening Balance (same as before)
+    const openingEntries = data.openingBalances || [];
+    const openingImpact = openingEntries.reduce((sum, ob) => sum + ob.impactOnBalance, 0);
+    if (openingImpact !== 0) {
+        balance -= openingImpact;
+        rows.push({
+            date: '',
+            description: 'الرصيد الافتتاحي',
+            value: 0,
+            toPay: openingImpact > 0 ? openingImpact : 0,
+            paid: openingImpact < 0 ? -openingImpact : 0,
+            balance,
+            notes: openingEntries.length > 1 ? `${openingEntries.length} حركات افتتاحية` : 'حركة افتتاحية',
+        });
     }
 
-    return (
-        <>
-            <AccountingMenu selectedMenuItem="/payments" />
+    // 2. Collect all transactions
+    interface Transaction {
+        date: string;
+        displayDate: string;
+        type: 'invoice' | 'payment' | 'rentalPosting' | 'partnerAccrual';
+        id?: string;
+        description: string;
+        amount: number;
+        impact: number;           // signed: + = party owes more
+        notes?: string;
+    }
 
-            <Paper elevation={5} className="div-container-withBorderCurved">
-                <Grid container columnSpacing={1} alignItems="center">
-                    <Grid item xs={12}>
-                        <div className="div-container">
-                            <KendoGrid
-                                style={{ height: "65vh", flex: 1 }}
-                                data={payments || { data: [], total: 0 }}
-                                resizable={true}
-                                filterable={true}
-                                sortable={true}
-                                pageable={true}
-                                {...dataState}
-                                onDataStateChange={dataStateChange}
-                            >
-                                <GridToolbar>
-                                    <Button variant="contained" color="primary" onClick={handleNewPayment}>
-                                        {getTranslatedLabel(
-                                            `${localizationKey}.actions.${paymentType}`,
-                                            `New ${paymentType === "incoming" ? "Incoming" : "Outgoing"} Payment`
-                                        )}
-                                    </Button>
+    const transactions: Transaction[] = [];
 
-                                    <PaymentsDailyExcel
-                                        companyName={companyName}
-                                        paymentType={paymentType}
-                                        getTranslatedLabel={getTranslatedLabel}
-                                    />
+    // ── Invoices ──
+    const invoiceMap = new Map<string, { total: number; date: string }>();
+    data.invoicesApplPayments?.forEach(i => {
+        if (!invoiceMap.has(i.invoiceId)) {
+            invoiceMap.set(i.invoiceId, { total: i.total, date: i.invoiceDate! });
+        }
+    });
+    data.unappliedInvoices?.forEach(i => {
+        if (!invoiceMap.has(i.invoiceId)) {
+            invoiceMap.set(i.invoiceId, { total: i.amount, date: i.invoiceDate! });
+        }
+    });
 
-                                    <PaymentsDateRangeExcel
-                                        companyName={companyName}
-                                        paymentType={paymentType}
-                                        getTranslatedLabel={getTranslatedLabel}
-                                    />
-                                </GridToolbar>
+    invoiceMap.forEach((inv, id) => {
+        transactions.push({
+            date: inv.date,
+            displayDate: fmt(inv.date),
+            type: 'invoice',
+            id,
+            description: `فاتورة ${id}`,
+            amount: inv.total,
+            impact: inv.total,        // usually positive
+        });
+    });
 
-                                <Column
-                                    field="paymentId"
-                                    title={getTranslatedLabel(`${localizationKey}.paymentId`, "Payment Number")}
-                                    cell={PaymentDescriptionCell}
-                                    width={150}
-                                    locked={!show}
-                                />
-                                <Column
-                                    field="paymentTypeDescription"
-                                    title={getTranslatedLabel(`${localizationKey}.paymentType`, "Payment Type")}
-                                    width={150}
-                                />
-                                <Column
-                                    field="orderId"
-                                    title={getTranslatedLabel(`${localizationKey}.orderId`, "Order ID")}
-                                    width={150}
-                                />
-                                <Column
-                                    field="certificateNumber"
-                                    title={getTranslatedLabel(`${localizationKey}.certificateNumber`, "Certificate Number")}
-                                    width={150}
-                                />
-                                <Column
-                                    field="partyIdFromName"
-                                    title={getTranslatedLabel(`${localizationKey}.from`, "From Party")}
-                                    width={150}
-                                />
-                                <Column
-                                    field="partyIdToName"
-                                    title={getTranslatedLabel(`${localizationKey}.to`, "To Party")}
-                                    width={150}
-                                />
-                                <Column
-                                    field="effectiveDate"
-                                    title={getTranslatedLabel(`${localizationKey}.date`, "Payment Date")}
-                                    width={150}
-                                    format="{0: dd/MM/yyyy}"
-                                    filter="date"
-                                />
-                                <Column
-                                    field="statusDescription"
-                                    title={getTranslatedLabel(`${localizationKey}.status`, "Status")}
-                                    width={100}
-                                />
-                                <Column
-                                    field="paymentRefNum"
-                                    title={getTranslatedLabel(`${localizationKey}.paymentRefNum`, "Reference Number")}
-                                    width={130}
-                                />
-                                <Column
-                                    field="amount"
-                                    title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")}
-                                    width={130}
-                                    filter="numeric"
-                                />
-                                <Column
-                                    field="projectName"
-                                    title={getTranslatedLabel(`${localizationKey}.projectName`, "Project")}
-                                    width={150}
-                                />
-                                <Column
-                                    field="costCenterDescription"
-                                    title={getTranslatedLabel(`${localizationKey}.costCenterDescription`, "Cost Center")}
-                                    width={150}
-                                />
-                                <Column
-                                    field="comments"
-                                    title={getTranslatedLabel(`${localizationKey}.comments`, "Comments")}
-                                    width={150}
-                                />
+    // ── Payments ──
+    const paymentMap = new Map<string, { amount: number; date: string }>();
+    // ... (your existing payment collection logic remains the same)
 
-                                {/* Delete Column */}
-                                <Column
-                                    title="Actions"
-                                    width={120}
-                                    cell={DeleteCell}
-                                    locked={true}
-                                />
-                            </KendoGrid>
+    paymentMap.forEach((pay, id) => {
+        const isUnapplied = data.unappliedPayments?.some(up => up.paymentId === id);
+        transactions.push({
+            date: pay.date,
+            displayDate: fmt(pay.date),
+            type: 'payment',
+            id,
+            description: `دفعة ${id}`,
+            amount: pay.amount,
+            impact: -pay.amount,
+            notes: isUnapplied ? 'غير مطبقة' : undefined,
+        });
+    });
 
-                            {/* Delete Confirmation Dialog */}
-                            <Dialog
-                                open={deleteDialogOpen}
-                                onClose={handleCancelDelete}
-                                aria-labelledby="delete-payment-dialog-title"
-                                aria-describedby="delete-payment-dialog-description"
-                            >
-                                <DialogTitle id="delete-payment-dialog-title">
-                                    {getTranslatedLabel(
-                                        "accounting.payments.list.deleteDialogTitle",
-                                        "Confirm Deletion"
-                                    )}
-                                </DialogTitle>
-                                <DialogContent>
-                                    <DialogContentText id="delete-payment-dialog-description">
-                                        {getTranslatedLabel(
-                                            "accounting.payments.list.deleteDialogMessage",
-                                            "Are you sure you want to delete payment {0}? This action cannot be undone."
-                                        ).replace("{0}", paymentToDelete || "")}
-                                    </DialogContentText>
-                                </DialogContent>
-                                <DialogActions>
-                                    <Button onClick={handleCancelDelete} disabled={isDeleting}>
-                                        {getTranslatedLabel("global.cancel", "Cancel")}
-                                    </Button>
-                                    <Button
-                                        onClick={handleConfirmDelete}
-                                        color="error"
-                                        variant="contained"
-                                        disabled={isDeleting}
-                                        autoFocus
-                                    >
-                                        {isDeleting
-                                            ? getTranslatedLabel("global.deleting", "Deleting...")
-                                            : getTranslatedLabel("accounting.payments.list.deleteConfirm", "Delete")}
-                                    </Button>
-                                </DialogActions>
-                            </Dialog>
+    // ── Rental Property Postings (debits mostly) ──
+    data.rentalPropertyPostings?.forEach(rp => {
+        if (!rp.transactionDate) return;
+        transactions.push({
+            date: rp.transactionDate,
+            displayDate: fmt(rp.transactionDate),
+            type: 'rentalPosting',
+            description: `إيجار - ${rp.glAccountTypeId || 'عقاري'}`,
+            amount: Math.abs(rp.impactOnBalance),
+            impact: rp.impactOnBalance,
+            notes: rp.description || 'تسجيل إيجاري',
+        });
+    });
 
-                            {isFetching && (
-                                <LoadingComponent
-                                    message={getTranslatedLabel(`${localizationKey}.loading`, "Loading Payments...")}
-                                />
-                            )}
-                        </div>
-                    </Grid>
-                </Grid>
-            </Paper>
-        </>
-    );
-}
+    // ── NEW: Partner Accruals (usually credits → partner share) ──
+    const partnerAccruals = data.partnerAccrualPostings || []; // ← you need to add this field in PartyFinancialHistoryDetails
+    partnerAccruals.forEach(pa => {
+        if (!pa.transactionDate) return;
+        transactions.push({
+            date: pa.transactionDate,
+            displayDate: fmt(pa.transactionDate),
+            type: 'partnerAccrual',
+            description: `استحقاق شركاء - ${pa.glAccountTypeId || 'إيراد عقاري'}`,
+            amount: Math.abs(pa.impactOnBalance),
+            impact: pa.impactOnBalance,           // most likely negative
+            notes: pa.description || 'استحقاق للشركاء',
+        });
+    });
+
+    // 3. Sort all transactions chronologically
+    transactions.sort((a, b) => a.date.localeCompare(b.date));
+
+    // 4. Build ledger rows
+    transactions.forEach(t => {
+        balance -= t.impact; // ← very important: positive impact increases what party owes
+
+        if (t.type === 'invoice') {
+            rows.push({
+                date: t.displayDate,
+                description: t.description,
+                invoiceNumber: t.id,
+                value: t.amount,
+                toPay: t.amount,
+                paid: 0,
+                balance,
+                transactionType: t.type,
+            });
+        } else if (t.type === 'payment') {
+            rows.push({
+                date: t.displayDate,
+                description: t.description,
+                paymentNumber: t.id,
+                value: 0,
+                toPay: 0,
+                paid: t.amount,
+                balance,
+                notes: t.notes,
+                transactionType: t.type,
+            });
+        } else if (t.type === 'rentalPosting' || t.type === 'partnerAccrual') {
+            rows.push({
+                date: t.displayDate,
+                description: t.description,
+                value: t.amount,
+                toPay: t.impact > 0 ? t.amount : 0,
+                paid: t.impact < 0 ? Math.abs(t.impact) : 0,
+                balance,
+                notes: t.notes,
+                transactionType: t.type,
+            });
+        }
+    });
+
+    return rows;
+}, [data]);

@@ -184,15 +184,15 @@ public class GetPartyFinancialHistory
                     .ToList();
 
                 // NEW: Retrieve Rental Property Postings
-// Business Purpose: Include periodic rental property postings (e.g., rent accruals, security deposits)
-// that affect the party's balance, similar to opening balances.
-// These are posted accounting transactions that should impact the net amount owed.
+                // Business Purpose: Include periodic rental property postings (e.g., rent accruals, security deposits)
+                // that affect the party's balance, similar to opening balances.
+                // These are posted accounting transactions that should impact the net amount owed.
 
                 var rentalPropertyEntries = await _context.AcctgTransEntries
-                    .Where(ate =>
-                        ate.AcctgTrans.AcctgTransTypeId == "RENTAL_PROPERTY_POSTINGS" &&
-                        ate.AcctgTrans.PartyId == request.PartyId &&
-                        ate.AcctgTrans.IsPosted == "Y")
+                    .Where(ate => ate.AcctgTrans.AcctgTransTypeId == "RENTAL_PROPERTY_POSTINGS"
+                                  && ate.AcctgTrans.PartyId == request.PartyId
+                                  && ate.AcctgTrans.IsPosted == "Y"
+                                  && ate.DebitCreditFlag == "D") // ← Only debits
                     .Select(ate => new
                     {
                         ate.AcctgTrans.TransactionDate,
@@ -207,37 +207,89 @@ public class GetPartyFinancialHistory
                     })
                     .ToListAsync(cancellationToken);
 
-                decimal rentalPropertyImpact = 0m;
+                decimal rentalPropertyDebitImpact = 0m;
                 var rentalPropertyDtos = new List<RentalPropertyPostingDto>();
 
                 foreach (var entry in rentalPropertyEntries)
                 {
-                    decimal signedAmount = (decimal)(entry.DebitCreditFlag == "D"
-                        ? entry.Amount
-                        : -entry.Amount);
+                    decimal amount = (decimal)entry.Amount; // already debit → positive impact on receivable
+
+                    // Optional: you may still want to check account type, but since we filtered Debit only
+                    // most systems post debit to AR and credit to revenue/income
+                    bool isReceivable = IsReceivableAccountType(entry.GlAccountTypeId);
+
+                    // Usually true for debits in this transaction type, but keep logic for safety
+                    decimal impact = isReceivable ? amount : -amount;
+
+                    rentalPropertyDebitImpact += Math.Round(impact, 2, MidpointRounding.AwayFromZero);
+
+                    rentalPropertyDtos.Add(new RentalPropertyPostingDto
+                    {
+                        TransactionDate = entry.TransactionDate,
+                        GlAccountTypeId = entry.GlAccountTypeId,
+                        Amount = amount,
+                        DebitCreditFlag = entry.DebitCreditFlag,
+                        CurrencyUomId = entry.CurrencyUomId,
+                        ImpactOnBalance = Math.Round(impact, 2, MidpointRounding.AwayFromZero),
+                        Description = "Rental Posting (Debit)"
+                    });
+                }
+
+                rentalPropertyDtos = rentalPropertyDtos
+                    .OrderBy(x => x.TransactionDate)
+                    .ToList();
+
+                // ───────────────────────────────────────────────────────────────
+// 2. Rental Property Accruals for Partners – Credit side only
+//    (recognized revenue share belonging to partners)
+// ───────────────────────────────────────────────────────────────
+                var partnerAccrualEntries = await _context.AcctgTransEntries
+                    .Where(ate => ate.AcctgTrans.AcctgTransTypeId == "RENTAL_PROPERTY_ACCRUAL_PARTNERS"
+                                  && ate.AcctgTrans.PartyId == request.PartyId
+                                  && ate.AcctgTrans.IsPosted == "Y"
+                                  && ate.DebitCreditFlag == "C") // ← Only credits
+                    .Select(ate => new
+                    {
+                        ate.AcctgTrans.TransactionDate,
+                        ate.GlAccountTypeId,
+                        ate.DebitCreditFlag,
+                        ate.Amount,
+                        CurrencyUomId = !string.IsNullOrEmpty(ate.CurrencyUomId)
+                            ? ate.CurrencyUomId
+                            : (!string.IsNullOrEmpty(ate.OrigCurrencyUomId)
+                                ? ate.OrigCurrencyUomId
+                                : currencyUomId)
+                    })
+                    .ToListAsync(cancellationToken);
+
+                var partnerAccrualDtos = new List<PartnerAccrualPostingDto>(); // ← You'll need to define this DTO
+                decimal partnerAccrualCreditImpact = 0m;
+
+                foreach (var entry in partnerAccrualEntries)
+                {
+                    decimal signedAmount = (decimal)-entry.Amount; // Credit → negative from company perspective
 
                     bool isReceivable = IsReceivableAccountType(entry.GlAccountTypeId);
 
-                    // If posted to a receivable account (AR), normal sign applies
-                    // If posted to a liability (e.g., customer deposit), reverse the impact
-                    decimal impactOnCustomerBalance = isReceivable
-                        ? signedAmount
-                        : -signedAmount;
+                    // Most likely posted to liability/equity/partner account → not receivable
+                    // So we usually reverse sign again → becomes positive outflow/share to partners
+                    decimal impactOnCustomerBalance = isReceivable ? signedAmount : -signedAmount;
 
-                    rentalPropertyImpact += Math.Round(impactOnCustomerBalance, 2, MidpointRounding.AwayFromZero);
+                    partnerAccrualCreditImpact += Math.Round(impactOnCustomerBalance, 2, MidpointRounding.AwayFromZero);
 
-                    rentalPropertyDtos.Add(new RentalPropertyPostingDto
+                    partnerAccrualDtos.Add(new PartnerAccrualPostingDto
                     {
                         TransactionDate = entry.TransactionDate,
                         GlAccountTypeId = entry.GlAccountTypeId,
                         Amount = (decimal)entry.Amount,
                         DebitCreditFlag = entry.DebitCreditFlag,
                         CurrencyUomId = entry.CurrencyUomId,
-                        ImpactOnBalance = Math.Round(impactOnCustomerBalance, 2, MidpointRounding.AwayFromZero)
+                        ImpactOnBalance = Math.Round(impactOnCustomerBalance, 2, MidpointRounding.AwayFromZero),
+                        Description = "Partner Revenue Accrual (Credit)"
                     });
                 }
 
-                rentalPropertyDtos = rentalPropertyDtos
+                partnerAccrualDtos = partnerAccrualDtos
                     .OrderBy(x => x.TransactionDate)
                     .ToList();
 
@@ -584,8 +636,8 @@ public class GetPartyFinancialHistory
                                          - financialSummary.TotalPurchaseInvoice
                                          - financialSummary.TotalPaymentsIn
                                          + financialSummary.TotalPaymentsOut
-                                         + openingBalanceImpact
-                                         + rentalPropertyImpact;
+                                         + rentalPropertyDebitImpact 
+                                         - partnerAccrualCreditImpact;
 
                 if (transferAmount > 0)
                 {
@@ -617,6 +669,7 @@ public class GetPartyFinancialHistory
                     BillingAccounts = billingAccountsDtos,
                     Returns = returns,
                     RentalPropertyPostings = rentalPropertyDtos,
+                    PartnerAccrualPostings = partnerAccrualDtos, 
                     OpeningBalances = openingBalanceDtos,
                     FinancialSummary = financialSummary
                 });
@@ -650,4 +703,15 @@ public class RentalPropertyPostingDto
     public string CurrencyUomId { get; set; }
     public decimal ImpactOnBalance { get; set; } // Positive = customer owes us more
     public string Description { get; set; } = "Rental Property Posting";
+}
+
+public class PartnerAccrualPostingDto
+{
+    public DateTime? TransactionDate { get; set; }
+    public string? GlAccountTypeId { get; set; }
+    public decimal Amount { get; set; }
+    public string? DebitCreditFlag { get; set; }        // "C" in this case
+    public string? CurrencyUomId { get; set; }
+    public decimal ImpactOnBalance { get; set; }        // Usually negative (reduces net receivable)
+    public string Description { get; set; } = "استحقاق إيراد العقار للشركاء";
 }
