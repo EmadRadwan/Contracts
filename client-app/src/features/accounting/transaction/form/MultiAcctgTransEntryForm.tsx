@@ -23,7 +23,6 @@ import useMultiAcctgTrans from "../hook/useMultiAcctgTrans";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import {FormComboBoxVirtualParty} from "../../../../app/common/form/FormComboBoxVirtualParty";
-import {MemoizedFormDropDownList} from "../../../../app/common/form/MemoizedFormDropDownList";
 
 interface TransEntry {
     id: string;
@@ -53,6 +52,7 @@ export default function MultiAcctgTransEntryForm() {
     } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
         skip: !companyId,
     });
+    console.log("glAccounts", glAccounts);
     const [transEntries, setTransEntries] = useState<TransEntry[]>([]);
     const [formResetCounter, setFormResetCounter] = useState(0);
     const [sort, setSort] = useState<SortDescriptor[]>([{field: "id", dir: "asc"}]);
@@ -69,7 +69,7 @@ export default function MultiAcctgTransEntryForm() {
         acctgTransTypeId: null as string | null, // ← NEW
     });
 
-    console.log('headerValues', headerValues);
+    console.log("transEntries", transEntries);
 
 
     // REFACTOR: Add state for transactionId to display after save
@@ -240,11 +240,54 @@ export default function MultiAcctgTransEntryForm() {
         []
     );
 
+    // Add this near the top of your component
+    const accountMap = useMemo(() => {
+        const map = new Map<string, any>();
+
+        const traverse = (nodes: any[]) => {
+            for (const node of nodes) {
+                map.set(node.glAccountId, node);
+                if (node.items?.length) {
+                    traverse(node.items);
+                }
+            }
+        };
+
+        if (glAccounts) {
+            traverse(glAccounts);
+        }
+
+        return map;
+    }, [glAccounts]);
+
+
+// Then in your GlAccountCell:
+    const GlAccountCell = ({ dataItem }: GridCellProps) => {
+        const glAccountId = dataItem.debitGlAccountId || dataItem.creditGlAccountId;
+
+        const glAccount = accountMap.get(glAccountId);
+
+        const displayText = glAccount?.text
+            || glAccount?.accountName
+            || glAccountId
+            || "-";
+
+        return (
+            <td
+                style={{ cursor: "pointer", color: "#1976d2" }}
+                onClick={() => handleEditEntry(dataItem.id)}
+            >
+                {displayText}
+            </td>
+        );
+    };
+
     // REFACTOR: Custom cell for GL Account ID
-    const GlAccountCell = useCallback(
+   /* const GlAccountCell = useCallback(
         ({dataItem}: GridCellProps) => {
             const glAccountId = dataItem.debitGlAccountId || dataItem.creditGlAccountId;
             const glAccount = glAccounts?.find((acc) => acc.glAccountId === glAccountId);
+            console.log('glAccount?.text', glAccount?.text);
             return (
                 <td style={{cursor: "pointer", color: "#1976d2"}} onClick={() => handleEditEntry(dataItem.id)}>
                     {glAccount?.text || glAccountId || "-"}
@@ -252,7 +295,7 @@ export default function MultiAcctgTransEntryForm() {
             );
         },
         [glAccounts, handleEditEntry]
-    );
+    );*/
     // REFACTOR: Custom cell for remove action
     const RemoveCell = useCallback(
         ({dataItem}: GridCellProps) => (
