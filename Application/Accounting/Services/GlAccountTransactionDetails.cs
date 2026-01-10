@@ -54,7 +54,7 @@ public class GetGlAccountTransactionDetails
                     join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
                     join att in _context.AcctgTransTypes on act.AcctgTransTypeId equals att.AcctgTransTypeId into transTypes
                     from att in transTypes.DefaultIfEmpty()
-                    join p in _context.Parties on ate.PartyId equals p.PartyId into parties
+                    join p in _context.Parties on act.PartyId equals p.PartyId into parties
                     from p in parties.DefaultIfEmpty()
                     join prod in _context.Products on ate.ProductId equals prod.ProductId into products
                     from prod in products.DefaultIfEmpty()
@@ -76,7 +76,7 @@ public class GetGlAccountTransactionDetails
                         PaymentId = act.PaymentId,
                         WorkEffortId = act.WorkEffortId,
                         ShipmentId = act.ShipmentId,
-                        PartyId = ate.PartyId,
+                        PartyId = act.PartyId,
                         PartyName = p != null ? p.Description : null,
                         ProductId = ate.ProductId,
                         ProductName = prod != null ? prod.ProductName : null,

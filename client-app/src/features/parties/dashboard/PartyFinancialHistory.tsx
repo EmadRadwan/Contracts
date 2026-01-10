@@ -136,6 +136,7 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
                 invoiceMap.set(i.invoiceId, { total: i.total, date: i.invoiceDate! });
             }
         });
+        
         data.unappliedInvoices?.forEach(i => {
             if (!invoiceMap.has(i.invoiceId)) {
                 invoiceMap.set(i.invoiceId, { total: i.amount, date: i.invoiceDate! });
@@ -156,7 +157,30 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
 
         // ── Payments ──
         const paymentMap = new Map<string, { amount: number; date: string }>();
-        // ... (your existing payment collection logic remains the same)
+
+        // 1. Payments applied to invoices
+        data.invoicesApplPayments?.forEach(i => {
+            if (i.paymentId && i.paymentAmount && i.paymentEffectiveDate) {
+                // We take the last occurrence if multiple (or you could sum if needed)
+                paymentMap.set(i.paymentId, {
+                    amount: i.paymentAmount,
+                    date: i.paymentEffectiveDate,
+                });
+            }
+        });
+
+        // 2. Standalone / unapplied payments (your current case!)
+        data.unappliedPayments?.forEach(p => {
+            if (p.paymentId && p.amount && p.effectiveDate) {
+                // Only add if not already present from applied payments
+                if (!paymentMap.has(p.paymentId)) {
+                    paymentMap.set(p.paymentId, {
+                        amount: p.amount,
+                        date: p.effectiveDate,
+                    });
+                }
+            }
+        });
 
         paymentMap.forEach((pay, id) => {
             const isUnapplied = data.unappliedPayments?.some(up => up.paymentId === id);

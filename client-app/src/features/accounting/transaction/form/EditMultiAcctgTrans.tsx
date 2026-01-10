@@ -18,6 +18,7 @@ import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import { AcctgTransEntry } from "../../../../app/models/accounting/acctgTransEntry";
 import {useLocation, useParams} from "react-router-dom";
 import useMultiAcctgTrans from "../hook/useMultiAcctgTrans";
+import {FormComboBoxVirtualParty} from "../../../../app/common/form/FormComboBoxVirtualParty";
 
 interface TransEntry {
     id: string;
@@ -67,8 +68,13 @@ export default function EditMultiAcctgTrans() {
     const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
 
     const [headerValues, setHeaderValues] = useState({
-        transactionDate: selectedAcctgTrans?.transactionDate ? new Date(selectedAcctgTrans.transactionDate) : new Date(),
+        transactionDate: selectedAcctgTrans?.transactionDate
+            ? new Date(selectedAcctgTrans.transactionDate)
+            : new Date(),
         headerDescription: selectedAcctgTrans?.description || "",
+        party: selectedAcctgTrans?.partyId
+            ? { fromPartyId: selectedAcctgTrans.partyId, fromPartyName: selectedAcctgTrans.partyName || "" }
+            : null,
     });
 
     useEffect(() => {
@@ -184,6 +190,7 @@ export default function EditMultiAcctgTrans() {
                         Description: transEntries[0]?.description || "",
                         IsPosted: selectedAcctgTrans?.isPosted || "N",
                         GlFiscalTypeId: "ACTUAL",
+                        partyId: headerValues.party?.fromPartyId || undefined,
                     },
                     Entries: transEntries.map((entry) => ({
                         acctgTransEntrySeqId: entry.acctgTransEntrySeqId,
@@ -351,6 +358,21 @@ export default function EditMultiAcctgTrans() {
                             value={headerValues.headerDescription}
                             onChange={(e) => setHeaderValues((prev) => ({ ...prev, headerDescription: e.value }))}
                             autoComplete="off"
+                            disabled={selectedAcctgTrans?.isPosted === "Y"}
+                        />
+                    </Grid>
+
+                    <Grid item xs={3}>
+                        <FormComboBoxVirtualParty
+                            id="partyId"
+                            label={getTranslatedLabel(`${localizationKey}.party`, "Employee")}
+                            value={headerValues.party}
+                            onChange={(e: any) => setHeaderValues((prev) => ({
+                                ...prev,
+                                party: e.value
+                            }))}
+                            valueField="fromPartyId"
+                            textField="fromPartyName"
                             disabled={selectedAcctgTrans?.isPosted === "Y"}
                         />
                     </Grid>

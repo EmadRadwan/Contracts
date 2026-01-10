@@ -7,7 +7,7 @@ const ledgerItems = useMemo((): LedgerRow[] => {
     const fmt = (d: string | null | undefined) =>
         d ? new Date(d).toISOString().split('T')[0] : '';
 
-    // 1. Opening Balance (same as before)
+    // 1. Opening Balance
     const openingEntries = data.openingBalances || [];
     const openingImpact = openingEntries.reduce((sum, ob) => sum + ob.impactOnBalance, 0);
     if (openingImpact !== 0) {
@@ -31,7 +31,7 @@ const ledgerItems = useMemo((): LedgerRow[] => {
         id?: string;
         description: string;
         amount: number;
-        impact: number;           // signed: + = party owes more
+        impact: number;           // + = party owes more (debit), - = reduces debt (credit)
         notes?: string;
     }
 
@@ -39,11 +39,13 @@ const ledgerItems = useMemo((): LedgerRow[] => {
 
     // ── Invoices ──
     const invoiceMap = new Map<string, { total: number; date: string }>();
+
     data.invoicesApplPayments?.forEach(i => {
         if (!invoiceMap.has(i.invoiceId)) {
             invoiceMap.set(i.invoiceId, { total: i.total, date: i.invoiceDate! });
         }
     });
+
     data.unappliedInvoices?.forEach(i => {
         if (!invoiceMap.has(i.invoiceId)) {
             invoiceMap.set(i.invoiceId, { total: i.amount, date: i.invoiceDate! });
@@ -58,13 +60,36 @@ const ledgerItems = useMemo((): LedgerRow[] => {
             id,
             description: `فاتورة ${id}`,
             amount: inv.total,
-            impact: inv.total,        // usually positive
+            impact: inv.total,        // usually positive (debit)
         });
     });
 
-    // ── Payments ──
+    // ── Payments ──  ← FIXED & COMPLETE
     const paymentMap = new Map<string, { amount: number; date: string }>();
-    // ... (your existing payment collection logic remains the same)
+
+    // 1. Payments applied to invoices
+    data.invoicesApplPayments?.forEach(i => {
+        if (i.paymentId && i.paymentAmount && i.paymentEffectiveDate) {
+            // We take the last occurrence if multiple (or you could sum if needed)
+            paymentMap.set(i.paymentId, {
+                amount: i.paymentAmount,
+                date: i.paymentEffectiveDate,
+            });
+        }
+    });
+
+    // 2. Standalone / unapplied payments (your current case!)
+    data.unappliedPayments?.forEach(p => {
+        if (p.paymentId && p.amount && p.effectiveDate) {
+            // Only add if not already present from applied payments
+            if (!paymentMap.has(p.paymentId)) {
+                paymentMap.set(p.paymentId, {
+                    amount: p.amount,
+                    date: p.effectiveDate,
+                });
+            }
+        }
+    });
 
     paymentMap.forEach((pay, id) => {
         const isUnapplied = data.unappliedPayments?.some(up => up.paymentId === id);
@@ -75,12 +100,12 @@ const ledgerItems = useMemo((): LedgerRow[] => {
             id,
             description: `دفعة ${id}`,
             amount: pay.amount,
-            impact: -pay.amount,
+            impact: -pay.amount,               // credit → reduces what party owes
             notes: isUnapplied ? 'غير مطبقة' : undefined,
         });
     });
 
-    // ── Rental Property Postings (debits mostly) ──
+    // ── Rental Property Postings ──
     data.rentalPropertyPostings?.forEach(rp => {
         if (!rp.transactionDate) return;
         transactions.push({
@@ -94,8 +119,8 @@ const ledgerItems = useMemo((): LedgerRow[] => {
         });
     });
 
-    // ── NEW: Partner Accruals (usually credits → partner share) ──
-    const partnerAccruals = data.partnerAccrualPostings || []; // ← you need to add this field in PartyFinancialHistoryDetails
+    // ── Partner Accruals ──
+    const partnerAccruals = data.partnerAccrualPostings || [];
     partnerAccruals.forEach(pa => {
         if (!pa.transactionDate) return;
         transactions.push({
@@ -104,7 +129,7 @@ const ledgerItems = useMemo((): LedgerRow[] => {
             type: 'partnerAccrual',
             description: `استحقاق شركاء - ${pa.glAccountTypeId || 'إيراد عقاري'}`,
             amount: Math.abs(pa.impactOnBalance),
-            impact: pa.impactOnBalance,           // most likely negative
+            impact: pa.impactOnBalance,           // usually negative (credit)
             notes: pa.description || 'استحقاق للشركاء',
         });
     });
@@ -112,9 +137,9 @@ const ledgerItems = useMemo((): LedgerRow[] => {
     // 3. Sort all transactions chronologically
     transactions.sort((a, b) => a.date.localeCompare(b.date));
 
-    // 4. Build ledger rows
+    // 4. Build ledger rows from sorted transactions
     transactions.forEach(t => {
-        balance -= t.impact; // ← very important: positive impact increases what party owes
+        balance -= t.impact; // positive impact → party owes more
 
         if (t.type === 'invoice') {
             rows.push({
