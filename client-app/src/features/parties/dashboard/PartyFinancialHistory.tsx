@@ -190,8 +190,12 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
         });
 
         // Sort chronologically
-        transactions.sort((a, b) => a.date.localeCompare(b.date));
-
+        transactions.sort((a, b) => {
+            const dateA = a.date || '9999-12-31'; // push missing dates to the end
+            const dateB = b.date || '9999-12-31';
+            return dateA.localeCompare(dateB);
+        });
+        
         // Build rows
         transactions.forEach((t) => {
             let madin = 0; // مدين
