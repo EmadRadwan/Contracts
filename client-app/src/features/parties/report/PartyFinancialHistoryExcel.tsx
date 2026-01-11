@@ -38,6 +38,7 @@ export const PartyFinancialHistoryExcel: React.FC<PartyFinancialHistoryExcelProp
                                                                                           ledgerItems,
                                                                                           getTranslatedLabel,
                                                                                           isFetching = false,
+                                                                                            perspective,
                                                                                       }) => {
     // REFACTOR: Final version – fully aligned with new ledgerItems and Egyptian accounting standards
     // - "مدين" = payments we made (دفعنا له)

@@ -95,30 +95,36 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
     const ledgerItems = useMemo((): LedgerRow[] => {
         if (!data) return [];
 
+        const isExternalView = data.ledgerPerspective?.startsWith("External") ?? false;
+
         const rows: LedgerRow[] = [];
         let runningBalance = 0;
 
         const formatDate = (dateStr?: string | null) =>
-            dateStr ? new Date(dateStr).toISOString().split('T')[0] : '';
+            dateStr ? new Date(dateStr).toISOString().split("T")[0] : "";
 
         // 1. Opening Balance
-        const openingTotalImpact = (data.openingBalances || []).reduce((sum, ob) => sum + ob.ImpactOnBalance, 0);
+        const openingTotalImpact = (data.openingBalances || []).reduce(
+            (sum, ob) => sum + ob.ImpactOnBalance,
+            0
+        );
+
         if (openingTotalImpact !== 0) {
             const adjustedImpact = isExternalView ? -openingTotalImpact : openingTotalImpact;
             runningBalance += adjustedImpact;
 
             rows.push({
-                date: '',
-                description: getTranslatedLabel('openingBalance', 'الرصيد الإفتتاحي'),
+                date: "",
+                description: getTranslatedLabel("openingBalance", "الرصيد الإفتتاحي"),
                 value: 0,
-                toPay: adjustedImpact > 0 ? adjustedImpact : 0,
-                paid: adjustedImpact < 0 ? -adjustedImpact : 0,
-                balance: runningBalance,
-                notes: data.openingBalances?.length ? `${data.openingBalances.length} حركات` : '',
+                toPay: adjustedImpact > 0 ? adjustedImpact : 0,    // دائن
+                paid: adjustedImpact < 0 ? -adjustedImpact : 0,    // مدين
+                balance: Math.round(runningBalance * 100) / 100,
+                notes: data.openingBalances?.length ? `${data.openingBalances.length} حركات` : "",
             });
         }
 
-        // 2. All transactions
+        // 2. Collect all valid transactions
         interface UnifiedTransaction {
             date: string;
             type: "invoice" | "payment" | "rental" | "partnerAccrual";
@@ -135,15 +141,20 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
 
         const transactions: UnifiedTransaction[] = [];
 
-        // Invoices
+        // A. Invoices – safe version
         [...(data.invoicesApplPayments || []), ...(data.unappliedInvoices || [])].forEach((inv) => {
-            const isSales = inv.InvoiceTypeId?.startsWith('SALES') || false;
-            if (!transactions.some(t => t.id === inv.InvoiceId)) {
+            if (!inv.InvoiceDate || !inv.InvoiceId) return; // skip invalid
+
+            const isSales = inv.InvoiceTypeId?.startsWith("SALES") || false;
+
+            if (!transactions.some((t) => t.id === inv.InvoiceId)) {
                 transactions.push({
-                    date: inv.InvoiceDate!,
-                    type: 'invoice',
+                    date: inv.InvoiceDate,
+                    type: "invoice",
                     id: inv.InvoiceId,
-                    description: `فاتورة ${inv.InvoiceId} ${inv.InvoiceTypeId || ''}${inv.UnappliedAmount ? ' (غير مطبقة)' : ''}`,
+                    description: `فاتورة ${inv.InvoiceId} ${inv.InvoiceTypeId || ""}${
+                        inv.unappliedAmount ? " (غير مطبقة)" : ""
+                    }`,
                     grossAmount: inv.Total ?? inv.Amount ?? 0,
                     isSalesInvoice: isSales,
                     isPurchaseInvoice: !isSales,
@@ -151,89 +162,100 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
             }
         });
 
-        // Payments
+        // B. Payments – safe & correct field names
         (data.unappliedPayments || []).forEach((pmt) => {
-            const isReceipt = pmt.PaymentParentTypeId === 'RECEIPT';
+            if (!pmt.effectiveDate || !pmt.paymentId) return; // skip invalid
+
+            const isReceipt = pmt.paymentParentTypeId === "RECEIPT";
+
             transactions.push({
-                date: pmt.EffectiveDate!,
-                type: 'payment',
-                id: pmt.PaymentId,
-                description: `دفعة ${pmt.PaymentId} - ${pmt.PaymentTypeDescription}`,
-                grossAmount: pmt.Amount,
+                date: pmt.effectiveDate,
+                type: "payment",
+                id: pmt.paymentId,
+                description: `دفعة ${pmt.paymentId} - ${pmt.paymentTypeDescription || "غير معروف"}`,
+                grossAmount: pmt.amount || 0,
                 isReceiptFromParty: isReceipt,
                 isDisbursementToParty: !isReceipt,
             });
         });
 
-        // Rental postings
+        // C. Rental Property Postings – already safe
         (data.rentalPropertyPostings || []).forEach((rp) => {
-            if (!rp.TransactionDate) return;
+            if (!rp.transactionDate) return;
+
             transactions.push({
-                date: rp.TransactionDate,
-                type: 'rental',
-                description: rp.Description || `تسجيل إيجاري ${rp.GlAccountTypeId || ''}`,
-                grossAmount: Math.abs(rp.ImpactOnBalance),
-                isRentalDebit: rp.ImpactOnBalance > 0,
+                date: rp.transactionDate,
+                type: "rental",
+                description: rp.description || `تسجيل إيجاري ${rp.glAccountTypeId || ""}`,
+                grossAmount: Math.abs(rp.impactOnBalance || 0),
+                isRentalDebit: (rp.impactOnBalance || 0) > 0,
             });
         });
 
-        // Partner accruals
+        // D. Partner Accrual Postings – already safe
         (data.partnerAccrualPostings || []).forEach((pa) => {
-            if (!pa.TransactionDate) return;
+            if (!pa.transactionDate) return;
+
             transactions.push({
-                date: pa.TransactionDate,
-                type: 'partnerAccrual',
-                description: pa.Description || 'استحقاق شركاء',
-                grossAmount: Math.abs(pa.ImpactOnBalance),
-                isPartnerCredit: pa.ImpactOnBalance > 0,
+                date: pa.transactionDate,
+                type: "partnerAccrual",
+                description: pa.description || "استحقاق شركاء",
+                grossAmount: Math.abs(pa.impactOnBalance || 0),
+                isPartnerCredit: (pa.impactOnBalance || 0) > 0,
             });
         });
 
-        // Sort chronologically
+        // 3. Sort chronologically – safe version
         transactions.sort((a, b) => {
-            const dateA = a.date || '9999-12-31'; // push missing dates to the end
-            const dateB = b.date || '9999-12-31';
+            const dateA = a.date || "9999-12-31";
+            const dateB = b.date || "9999-12-31";
             return dateA.localeCompare(dateB);
         });
-        
-        // Build rows
+
+        // 4. Build rows with correct signs
         transactions.forEach((t) => {
             let madin = 0; // مدين
             let dain = 0;  // دائن
 
-            if (t.type === 'invoice') {
+            if (t.type === "invoice") {
                 if (t.isSalesInvoice) {
-                    dain = t.grossAmount; // they owe us / I owe them (same column!)
+                    // We invoiced them / they owe us → دائن in both views (standard for sales)
+                    dain = t.grossAmount;
                 } else if (t.isPurchaseInvoice) {
                     isExternalView ? dain = t.grossAmount : madin = t.grossAmount;
                 }
-            } else if (t.type === 'payment') {
+            } else if (t.type === "payment") {
                 if (t.isReceiptFromParty) {
+                    // They paid us
                     isExternalView ? dain = t.grossAmount : madin = t.grossAmount;
                 } else if (t.isDisbursementToParty) {
+                    // We paid them
                     isExternalView ? madin = t.grossAmount : dain = t.grossAmount;
                 }
-            } else if (t.type === 'rental' && t.isRentalDebit) {
+            } else if (t.type === "rental" && t.isRentalDebit) {
+                // Rental debit → increases what they owe us → دائن
                 dain = t.grossAmount;
-            } else if (t.type === 'partnerAccrual' && t.isPartnerCredit) {
-                isExternalView ? madin = t.grossAmount : dain = t.grossAmount;
+            } else if (t.type === "partnerAccrual" && t.isPartnerCredit) {
+                // Partner accrual → increases what we owe → مدين in external view
+                 dain = t.grossAmount;
             }
 
             const periodChange = isExternalView ? (dain - madin) : (madin - dain);
             runningBalance += periodChange;
 
-            const notes = t.type === 'payment' && data.unappliedPayments?.some(p => p.PaymentId === t.id)
-                ? 'غير مطبقة'
-                : undefined;
+            const notes =
+                t.type === "payment" && data.unappliedPayments?.some((p) => p.paymentId === t.id)
+                    ? "غير مطبقة"
+                    : undefined;
 
             rows.push({
                 date: formatDate(t.date),
                 description: t.description,
-                invoiceNumber: t.type === 'invoice' ? t.id : undefined,
-                paymentNumber: t.type === 'payment' ? t.id : undefined,
+                invoiceNumber: t.type === "invoice" ? t.id : undefined,
+                paymentNumber: t.type === "payment" ? t.id : undefined,
                 value: t.grossAmount,
-                toPay: dain,
-                paid: madin,
+                toPay: dain,   // دائن
+                paid: madin,   // مدين
                 balance: Math.round(runningBalance * 100) / 100,
                 notes,
                 transactionType: t.type,
@@ -242,7 +264,7 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
 
         return rows;
     }, [data, isExternalView, getTranslatedLabel]);
-
+    
     const processedData = useMemo(() => {
         if (!data) {
             return {
@@ -330,22 +352,7 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
         skip: page.skip,
         take: page.take,
     };
-/*
-    const renderExcelButton = () => {
-        if (ledgerItems.length === 0) return null;
 
-        return (
-            <PartyFinancialHistoryExcel
-                party={{
-                    partyId,
-                    partyName: displayName,
-                }}
-                ledgerItems={ledgerItems}
-                getTranslatedLabel={getTranslatedLabel}
-                isFetching={isLoading}
-            />
-        );
-    };*/
     
     console.log('ledgerItems:', ledgerItems)
     console.log('data:', data)

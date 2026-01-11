@@ -665,6 +665,7 @@ public class GetPartyFinancialHistory
                 {
                     PartyId = request.PartyId,
                     MainRole = party.MainRole,
+                    LedgerPerspective = perspective,
                     PreferredCurrencyUomId = party.PreferredCurrencyUomId ?? request.DefaultCurrencyUomId,
                     InvoicesApplPayments = invoicesApplPaymentsDtos,
                     UnappliedInvoices = unappliedInvoicesDtos,

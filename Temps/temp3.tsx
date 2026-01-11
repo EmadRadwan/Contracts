@@ -1,171 +1,172 @@
-import React, { useCallback } from 'react';
-import ExcelJS from 'exceljs';
-import { saveAs } from 'file-saver';
-import { Button } from '@mui/material';
+const ledgerItems = useMemo((): LedgerRow[] => {
+    if (!data) return [];
 
-interface LedgerRow {
-    date: string;
-    description: string;
-    invoiceNumber?: string;
-    paymentNumber?: string;
-    value: number;
-    toPay: number;   // دائن
-    paid: number;    // مدين
-    balance: number;
-    notes?: string;
-}
+    const isExternalView = data.LedgerPerspective?.startsWith("External") ?? false;
 
-interface Props {
-    party: { partyId: string; partyName: string };
-    ledgerItems: LedgerRow[];
-    getTranslatedLabel: (key: string, defaultValue: string) => string;
-    isFetching?: boolean;
-    perspective: string;
-}
+    const rows: LedgerRow[] = [];
+    let runningBalance = 0;
 
-const sharedUtils = {
-    safeString: (value: any): string => (value == null || typeof value === 'object') ? 'N/A' : String(value),
-    rtlEmbed: (text: string): string => /\p{Script=Arabic}/u.test(text) ? `\u202B${text}` : text,
-};
+    const formatDate = (dateStr?: string | null) =>
+        dateStr ? new Date(dateStr).toISOString().split("T")[0] : "";
 
-export const PartyFinancialHistoryExcel: React.FC<Props> = ({
-                                                                party,
-                                                                ledgerItems,
-                                                                getTranslatedLabel,
-                                                                isFetching = false,
-                                                                perspective,
-                                                            }) => {
-    const isExternalView = perspective.startsWith('External');
+    // 1. Opening Balance
+    const openingTotalImpact = (data.openingBalances || []).reduce(
+        (sum, ob) => sum + ob.ImpactOnBalance,
+        0
+    );
 
-    const generateExcel = useCallback(async () => {
-        const workbook = new ExcelJS.Workbook();
-        workbook.creator = 'Golden Land System';
-        workbook.created = new Date();
+    if (openingTotalImpact !== 0) {
+        const adjustedImpact = isExternalView ? -openingTotalImpact : openingTotalImpact;
+        runningBalance += adjustedImpact;
 
-        if (!ledgerItems?.length || isFetching) return null;
+        rows.push({
+            date: "",
+            description: getTranslatedLabel("openingBalance", "الرصيد الإفتتاحي"),
+            value: 0,
+            toPay: adjustedImpact > 0 ? adjustedImpact : 0,    // دائن
+            paid: adjustedImpact < 0 ? -adjustedImpact : 0,    // مدين
+            balance: Math.round(runningBalance * 100) / 100,
+            notes: data.openingBalances?.length ? `${data.openingBalances.length} حركات` : "",
+        });
+    }
 
-        // Optional logo
-        let logoImageId: number | null = null;
-        try {
-            const response = await fetch('/goldenlandlogo.jpg');
-            if (response.ok) {
-                const buffer = await (await response.blob()).arrayBuffer();
-                logoImageId = workbook.addImage({ buffer, extension: 'jpeg' });
+    // 2. Collect all valid transactions
+    interface UnifiedTransaction {
+        date: string;
+        type: "invoice" | "payment" | "rental" | "partnerAccrual";
+        id?: string;
+        description: string;
+        grossAmount: number;
+        isSalesInvoice?: boolean;
+        isPurchaseInvoice?: boolean;
+        isReceiptFromParty?: boolean;
+        isDisbursementToParty?: boolean;
+        isRentalDebit?: boolean;
+        isPartnerCredit?: boolean;
+    }
+
+    const transactions: UnifiedTransaction[] = [];
+
+    // A. Invoices – safe version
+    [...(data.invoicesApplPayments || []), ...(data.unappliedInvoices || [])].forEach((inv) => {
+        if (!inv.InvoiceDate || !inv.InvoiceId) return; // skip invalid
+
+        const isSales = inv.InvoiceTypeId?.startsWith("SALES") || false;
+
+        if (!transactions.some((t) => t.id === inv.InvoiceId)) {
+            transactions.push({
+                date: inv.InvoiceDate,
+                type: "invoice",
+                id: inv.InvoiceId,
+                description: `فاتورة ${inv.InvoiceId} ${inv.InvoiceTypeId || ""}${
+                    inv.unappliedAmount ? " (غير مطبقة)" : ""
+                }`,
+                grossAmount: inv.Total ?? inv.Amount ?? 0,
+                isSalesInvoice: isSales,
+                isPurchaseInvoice: !isSales,
+            });
+        }
+    });
+
+    // B. Payments – safe & correct field names
+    (data.unappliedPayments || []).forEach((pmt) => {
+        if (!pmt.effectiveDate || !pmt.paymentId) return; // skip invalid
+
+        const isReceipt = pmt.paymentParentTypeId === "RECEIPT";
+
+        transactions.push({
+            date: pmt.effectiveDate,
+            type: "payment",
+            id: pmt.paymentId,
+            description: `دفعة ${pmt.paymentId} - ${pmt.paymentTypeDescription || "غير معروف"}`,
+            grossAmount: pmt.amount || 0,
+            isReceiptFromParty: isReceipt,
+            isDisbursementToParty: !isReceipt,
+        });
+    });
+
+    // C. Rental Property Postings – already safe
+    (data.rentalPropertyPostings || []).forEach((rp) => {
+        if (!rp.transactionDate) return;
+
+        transactions.push({
+            date: rp.transactionDate,
+            type: "rental",
+            description: rp.description || `تسجيل إيجاري ${rp.glAccountTypeId || ""}`,
+            grossAmount: Math.abs(rp.impactOnBalance || 0),
+            isRentalDebit: (rp.impactOnBalance || 0) > 0,
+        });
+    });
+
+    // D. Partner Accrual Postings – already safe
+    (data.partnerAccrualPostings || []).forEach((pa) => {
+        if (!pa.transactionDate) return;
+
+        transactions.push({
+            date: pa.transactionDate,
+            type: "partnerAccrual",
+            description: pa.description || "استحقاق شركاء",
+            grossAmount: Math.abs(pa.impactOnBalance || 0),
+            isPartnerCredit: (pa.impactOnBalance || 0) > 0,
+        });
+    });
+
+    // 3. Sort chronologically – safe version
+    transactions.sort((a, b) => {
+        const dateA = a.date || "9999-12-31";
+        const dateB = b.date || "9999-12-31";
+        return dateA.localeCompare(dateB);
+    });
+
+    // 4. Build rows with correct signs
+    transactions.forEach((t) => {
+        let madin = 0; // مدين
+        let dain = 0;  // دائن
+
+        if (t.type === "invoice") {
+            if (t.isSalesInvoice) {
+                // We invoiced them / they owe us → دائن in both views (standard for sales)
+                dain = t.grossAmount;
+            } else if (t.isPurchaseInvoice) {
+                isExternalView ? dain = t.grossAmount : madin = t.grossAmount;
             }
-        } catch {}
-
-        const ws = workbook.addWorksheet(
-            party.partyName?.length > 28 ? party.partyName.substring(0, 28) + '...' : party.partyName || 'كشف حساب',
-            { views: [{ rightToLeft: true }], pageSetup: { orientation: 'landscape', fitToPage: true } }
-        );
-
-        // Logo
-        if (logoImageId) {
-            ws.addImage(logoImageId, { tl: { col: 0, row: 0 }, ext: { width: 110, height: 110 } });
-            ws.getRow(1).height = 82;
-            ws.addRow([]); ws.addRow([]);
+        } else if (t.type === "payment") {
+            if (t.isReceiptFromParty) {
+                // They paid us
+                isExternalView ? dain = t.grossAmount : madin = t.grossAmount;
+            } else if (t.isDisbursementToParty) {
+                // We paid them
+                isExternalView ? madin = t.grossAmount : dain = t.grossAmount;
+            }
+        } else if (t.type === "rental" && t.isRentalDebit) {
+            // Rental debit → increases what they owe us → دائن
+            dain = t.grossAmount;
+        } else if (t.type === "partnerAccrual" && t.isPartnerCredit) {
+            // Partner accrual → increases what we owe → مدين in external view
+            isExternalView ? madin = t.grossAmount : dain = t.grossAmount;
         }
 
-        const titleRow = logoImageId ? 4 : 1;
-        ws.addRow([`${getTranslatedLabel('party.financial.history.excel.title', 'كشف حساب')} : ${sharedUtils.rtlEmbed(party.partyName)}`]);
-        ws.mergeCells(`A${titleRow}:I${titleRow}`);
-        ws.getRow(titleRow).font = { name: 'Amiri', size: 18, bold: true };
-        ws.getRow(titleRow).alignment = { horizontal: 'center', vertical: 'middle' };
-        ws.addRow([]); ws.addRow([]);
+        const periodChange = isExternalView ? (dain - madin) : (madin - dain);
+        runningBalance += periodChange;
 
-        // Headers
-        const headers = [
-            'التاريخ', 'البيان', 'رقم الفاتورة', 'رقم الدفعة',
-            'إجمالي الفاتورة', 'مدين', 'دائن', 'الرصيد', 'ملاحظات'
-        ];
-        const headerRow = ws.addRow(headers);
-        headerRow.font = { name: 'Amiri', size: 12, bold: true };
-        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE3F2FD' } };
-        headerRow.alignment = { horizontal: 'center' };
+        const notes =
+            t.type === "payment" && data.unappliedPayments?.some((p) => p.paymentId === t.id)
+                ? "غير مطبقة"
+                : undefined;
 
-        ws.columns = [
-            { width: 12 }, { width: 45 }, { width: 16 }, { width: 16 },
-            { width: 16 }, { width: 14 }, { width: 14 }, { width: 16 }, { width: 28 }
-        ];
-
-        [5,6,7,8].forEach(col => ws.getColumn(col).numFmt = '#,##0.00 "ج.م"');
-
-        // Data
-        ledgerItems.forEach(item => {
-            const row = ws.addRow([
-                item.date,
-                sharedUtils.rtlEmbed(item.description),
-                item.invoiceNumber || '',
-                item.paymentNumber || '',
-                item.value || 0,
-                item.paid,      // مدين
-                item.toPay,     // دائن
-                item.balance,
-                sharedUtils.rtlEmbed(item.notes || ''),
-            ]);
-
-            row.alignment = { horizontal: 'right', vertical: 'middle' };
-            row.font = { name: 'Amiri', size: 10 };
-
-            const balanceCell = row.getCell(8);
-            if (item.balance !== 0) {
-                balanceCell.font = {
-                    color: { argb: item.balance > 0 ? 'FF006400' : 'FF8B0000' },
-                    bold: true
-                };
-            }
+        rows.push({
+            date: formatDate(t.date),
+            description: t.description,
+            invoiceNumber: t.type === "invoice" ? t.id : undefined,
+            paymentNumber: t.type === "payment" ? t.id : undefined,
+            value: t.grossAmount,
+            toPay: dain,   // دائن
+            paid: madin,   // مدين
+            balance: Math.round(runningBalance * 100) / 100,
+            notes,
+            transactionType: t.type,
         });
+    });
 
-        // Final summary
-        const finalBalance = ledgerItems[ledgerItems.length - 1]?.balance || 0;
-
-        ws.addRow([]);
-        const finalRow = ws.addRow(['', 'الرصيد النهائي', '', '', '', '', '', finalBalance, '']);
-        finalRow.font = { name: 'Amiri', size: 13, bold: true };
-        finalRow.getCell(8).font = {
-            color: { argb: finalBalance > 0 ? 'FF006400' : finalBalance < 0 ? 'FF8B0000' : 'FF000000' }
-        };
-
-        const clarityText = isExternalView
-            ? finalBalance > 0
-                ? '← لنا عليهم (دائنون لنا)'
-                : finalBalance < 0
-                    ? '← علينا للطرف (مدينون له)'
-                    : 'لا يوجد رصيد متبقي'
-            : finalBalance > 0
-                ? '← للطرف عندنا (دائنون لنا)'
-                : finalBalance < 0
-                    ? '← علينا للطرف (مدينون له)'
-                    : 'لا يوجد رصيد متبقي';
-
-        const clarityRow = ws.addRow(['', clarityText, '', '', '', '', '', Math.abs(finalBalance), '']);
-        clarityRow.font = { name: 'Amiri', size: 14, bold: true, color: { argb: 'FF000080' } };
-
-        ws.addRow([]);
-        ws.addRow([
-            `تاريخ الطباعة: ${new Date().toLocaleDateString('ar-EG')}`,
-            `الوقت: ${new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}`
-        ]);
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const safeName = (party.partyName || party.partyId).replace(/[/\\?%*:|"<>]/g, '_');
-        saveAs(blob, `كشف_حساب_${safeName}_${new Date().toISOString().slice(0,10)}.xlsx`);
-    }, [ledgerItems, party, getTranslatedLabel, isFetching, perspective]);
-
-    const handleDownload = useCallback(async () => {
-        await generateExcel();
-    }, [generateExcel]);
-
-    return (
-        <Button
-            variant="contained"
-            color="success"
-            disabled={isFetching || !ledgerItems.length}
-            onClick={handleDownload}
-            sx={{ fontWeight: 'bold' }}
-        >
-            تصدير كشف الحساب Excel
-        </Button>
-    );
-};
+    return rows;
+}, [data, isExternalView, getTranslatedLabel]);
