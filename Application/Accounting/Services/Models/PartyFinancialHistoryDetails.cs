@@ -3,6 +3,8 @@ namespace Application.Accounting.Services.Models;
 public class PartyFinancialHistoryDetails
 {
     public string PartyId { get; set; } = string.Empty;
+    public string? MainRole { get; set; } 
+    public string? LedgerPerspective { get; set; } 
     public string? PreferredCurrencyUomId { get; set; }
 
     public List<InvoiceApplPaymentDto> InvoicesApplPayments { get; set; } = new();

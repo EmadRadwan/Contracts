@@ -51,9 +51,9 @@ public class ListAccountingTransactionEntries
             var query = (from te in _context.AcctgTransEntries
                 join t in _context.AcctgTrans on te.AcctgTransId equals t.AcctgTransId into transJoin
                 from trans in transJoin.DefaultIfEmpty()
-                join a in _context.AcctgTransTypes on trans.AcctgTransTypeId equals a.AcctgTransTypeId into
-                    transTypeJoin
-                from transType in transTypeJoin.DefaultIfEmpty()
+                join tt in _context.AcctgTransTypes 
+                    on trans.AcctgTransTypeId equals tt.AcctgTransTypeId into typeJoin
+                from acctType in typeJoin.DefaultIfEmpty()
                 join g in _context.GlAccounts on te.GlAccountId equals g.GlAccountId into glAccountJoin
                 from glAccount in glAccountJoin.DefaultIfEmpty()
                 join go in _context.GlAccountOrganizations on glAccount != null ? glAccount.GlAccountId : null equals
@@ -92,7 +92,8 @@ public class ListAccountingTransactionEntries
                     IsPosted = trans.IsPosted,
                     PostedDate = trans.PostedDate,
                     TransactionDate = trans.TransactionDate,
-                    GlFiscalTypeId = trans.GlFiscalTypeId
+                    GlFiscalTypeId = trans.GlFiscalTypeId,
+                    AcctgTransactionTypeDescription = acctType.Description,
                 }).AsQueryable();
 
             return query;

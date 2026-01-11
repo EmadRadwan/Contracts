@@ -60,6 +60,8 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
     const pageChange = (event: GridPageChangeEvent) => setPage(event.page);
     const sortChange = (event: GridSortChangeEvent) => setSort(event.sort);
 
+    const isExternalView = useMemo(() => data?.LedgerPerspective?.startsWith('External') ?? false, [data]);
+
     const formatCurrency = useMemo(() => {
         return (value: number, currency?: string) => {
             const curr = currency || 'EGP';
@@ -94,184 +96,149 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
         if (!data) return [];
 
         const rows: LedgerRow[] = [];
-        let balance = 0;
+        let runningBalance = 0;
 
-        const fmt = (d: string | null | undefined) =>
-            d ? new Date(d).toISOString().split('T')[0] : '';
+        const formatDate = (dateStr?: string | null) =>
+            dateStr ? new Date(dateStr).toISOString().split('T')[0] : '';
 
-        // 1. Opening Balance (same as before)
-        const openingEntries = data.openingBalances || [];
-        const openingImpact = openingEntries.reduce((sum, ob) => sum + ob.impactOnBalance, 0);
-        if (openingImpact !== 0) {
-            balance -= openingImpact;
+        // 1. Opening Balance
+        const openingTotalImpact = (data.openingBalances || []).reduce((sum, ob) => sum + ob.ImpactOnBalance, 0);
+        if (openingTotalImpact !== 0) {
+            const adjustedImpact = isExternalView ? -openingTotalImpact : openingTotalImpact;
+            runningBalance += adjustedImpact;
+
             rows.push({
                 date: '',
-                description: 'الرصيد الافتتاحي',
+                description: getTranslatedLabel('openingBalance', 'الرصيد الإفتتاحي'),
                 value: 0,
-                toPay: openingImpact > 0 ? openingImpact : 0,
-                paid: openingImpact < 0 ? -openingImpact : 0,
-                balance,
-                notes: openingEntries.length > 1 ? `${openingEntries.length} حركات افتتاحية` : 'حركة افتتاحية',
+                toPay: adjustedImpact > 0 ? adjustedImpact : 0,
+                paid: adjustedImpact < 0 ? -adjustedImpact : 0,
+                balance: runningBalance,
+                notes: data.openingBalances?.length ? `${data.openingBalances.length} حركات` : '',
             });
         }
 
-        // 2. Collect all transactions
-        interface Transaction {
+        // 2. All transactions
+        interface UnifiedTransaction {
             date: string;
-            displayDate: string;
-            type: 'invoice' | 'payment' | 'rentalPosting' | 'partnerAccrual';
+            type: "invoice" | "payment" | "rental" | "partnerAccrual";
             id?: string;
             description: string;
-            amount: number;
-            impact: number;           // signed: + = party owes more
-            notes?: string;
+            grossAmount: number;
+            isSalesInvoice?: boolean;
+            isPurchaseInvoice?: boolean;
+            isReceiptFromParty?: boolean;
+            isDisbursementToParty?: boolean;
+            isRentalDebit?: boolean;
+            isPartnerCredit?: boolean;
         }
 
-        const transactions: Transaction[] = [];
+        const transactions: UnifiedTransaction[] = [];
 
-        // ── Invoices ──
-        const invoiceMap = new Map<string, { total: number; date: string }>();
-        data.invoicesApplPayments?.forEach(i => {
-            if (!invoiceMap.has(i.invoiceId)) {
-                invoiceMap.set(i.invoiceId, { total: i.total, date: i.invoiceDate! });
-            }
-        });
-        
-        data.unappliedInvoices?.forEach(i => {
-            if (!invoiceMap.has(i.invoiceId)) {
-                invoiceMap.set(i.invoiceId, { total: i.amount, date: i.invoiceDate! });
-            }
-        });
-
-        invoiceMap.forEach((inv, id) => {
-            transactions.push({
-                date: inv.date,
-                displayDate: fmt(inv.date),
-                type: 'invoice',
-                id,
-                description: `فاتورة ${id}`,
-                amount: inv.total,
-                impact: inv.total,        // usually positive
-            });
-        });
-
-        // ── Payments ──
-        const paymentMap = new Map<string, { amount: number; date: string }>();
-
-        // 1. Payments applied to invoices
-        data.invoicesApplPayments?.forEach(i => {
-            if (i.paymentId && i.paymentAmount && i.paymentEffectiveDate) {
-                // We take the last occurrence if multiple (or you could sum if needed)
-                paymentMap.set(i.paymentId, {
-                    amount: i.paymentAmount,
-                    date: i.paymentEffectiveDate,
+        // Invoices
+        [...(data.invoicesApplPayments || []), ...(data.unappliedInvoices || [])].forEach((inv) => {
+            const isSales = inv.InvoiceTypeId?.startsWith('SALES') || false;
+            if (!transactions.some(t => t.id === inv.InvoiceId)) {
+                transactions.push({
+                    date: inv.InvoiceDate!,
+                    type: 'invoice',
+                    id: inv.InvoiceId,
+                    description: `فاتورة ${inv.InvoiceId} ${inv.InvoiceTypeId || ''}${inv.UnappliedAmount ? ' (غير مطبقة)' : ''}`,
+                    grossAmount: inv.Total ?? inv.Amount ?? 0,
+                    isSalesInvoice: isSales,
+                    isPurchaseInvoice: !isSales,
                 });
             }
         });
 
-        // 2. Standalone / unapplied payments (your current case!)
-        data.unappliedPayments?.forEach(p => {
-            if (p.paymentId && p.amount && p.effectiveDate) {
-                // Only add if not already present from applied payments
-                if (!paymentMap.has(p.paymentId)) {
-                    paymentMap.set(p.paymentId, {
-                        amount: p.amount,
-                        date: p.effectiveDate,
-                    });
-                }
-            }
-        });
-
-        paymentMap.forEach((pay, id) => {
-            const isUnapplied = data.unappliedPayments?.some(up => up.paymentId === id);
+        // Payments
+        (data.unappliedPayments || []).forEach((pmt) => {
+            const isReceipt = pmt.PaymentParentTypeId === 'RECEIPT';
             transactions.push({
-                date: pay.date,
-                displayDate: fmt(pay.date),
+                date: pmt.EffectiveDate!,
                 type: 'payment',
-                id,
-                description: `دفعة ${id}`,
-                amount: pay.amount,
-                impact: -pay.amount,
-                notes: isUnapplied ? 'غير مطبقة' : undefined,
+                id: pmt.PaymentId,
+                description: `دفعة ${pmt.PaymentId} - ${pmt.PaymentTypeDescription}`,
+                grossAmount: pmt.Amount,
+                isReceiptFromParty: isReceipt,
+                isDisbursementToParty: !isReceipt,
             });
         });
 
-        // ── Rental Property Postings (debits mostly) ──
-        data.rentalPropertyPostings?.forEach(rp => {
-            if (!rp.transactionDate) return;
+        // Rental postings
+        (data.rentalPropertyPostings || []).forEach((rp) => {
+            if (!rp.TransactionDate) return;
             transactions.push({
-                date: rp.transactionDate,
-                displayDate: fmt(rp.transactionDate),
-                type: 'rentalPosting',
-                description: `إيجار - ${rp.glAccountTypeId || 'عقاري'}`,
-                amount: Math.abs(rp.impactOnBalance),
-                impact: rp.impactOnBalance,
-                notes: rp.description || 'تسجيل إيجاري',
+                date: rp.TransactionDate,
+                type: 'rental',
+                description: rp.Description || `تسجيل إيجاري ${rp.GlAccountTypeId || ''}`,
+                grossAmount: Math.abs(rp.ImpactOnBalance),
+                isRentalDebit: rp.ImpactOnBalance > 0,
             });
         });
 
-        // ── NEW: Partner Accruals (usually credits → partner share) ──
-        const partnerAccruals = data.partnerAccrualPostings || []; // ← you need to add this field in PartyFinancialHistoryDetails
-        partnerAccruals.forEach(pa => {
-            if (!pa.transactionDate) return;
+        // Partner accruals
+        (data.partnerAccrualPostings || []).forEach((pa) => {
+            if (!pa.TransactionDate) return;
             transactions.push({
-                date: pa.transactionDate,
-                displayDate: fmt(pa.transactionDate),
+                date: pa.TransactionDate,
                 type: 'partnerAccrual',
-                description: `استحقاق شركاء - ${pa.glAccountTypeId || 'إيراد عقاري'}`,
-                amount: Math.abs(pa.impactOnBalance),
-                impact: pa.impactOnBalance,           // most likely negative
-                notes: pa.description || 'استحقاق للشركاء',
+                description: pa.Description || 'استحقاق شركاء',
+                grossAmount: Math.abs(pa.ImpactOnBalance),
+                isPartnerCredit: pa.ImpactOnBalance > 0,
             });
         });
 
-        // 3. Sort all transactions chronologically
+        // Sort chronologically
         transactions.sort((a, b) => a.date.localeCompare(b.date));
 
-        // 4. Build ledger rows
-        transactions.forEach(t => {
-            balance -= t.impact; // ← very important: positive impact increases what party owes
+        // Build rows
+        transactions.forEach((t) => {
+            let madin = 0; // مدين
+            let dain = 0;  // دائن
 
             if (t.type === 'invoice') {
-                rows.push({
-                    date: t.displayDate,
-                    description: t.description,
-                    invoiceNumber: t.id,
-                    value: t.amount,
-                    toPay: t.amount,
-                    paid: 0,
-                    balance,
-                    transactionType: t.type,
-                });
+                if (t.isSalesInvoice) {
+                    dain = t.grossAmount; // they owe us / I owe them (same column!)
+                } else if (t.isPurchaseInvoice) {
+                    isExternalView ? dain = t.grossAmount : madin = t.grossAmount;
+                }
             } else if (t.type === 'payment') {
-                rows.push({
-                    date: t.displayDate,
-                    description: t.description,
-                    paymentNumber: t.id,
-                    value: 0,
-                    toPay: 0,
-                    paid: t.amount,
-                    balance,
-                    notes: t.notes,
-                    transactionType: t.type,
-                });
-            } else if (t.type === 'rentalPosting' || t.type === 'partnerAccrual') {
-                rows.push({
-                    date: t.displayDate,
-                    description: t.description,
-                    value: t.amount,
-                    toPay: t.impact > 0 ? t.amount : 0,
-                    paid: t.impact < 0 ? Math.abs(t.impact) : 0,
-                    balance,
-                    notes: t.notes,
-                    transactionType: t.type,
-                });
+                if (t.isReceiptFromParty) {
+                    isExternalView ? dain = t.grossAmount : madin = t.grossAmount;
+                } else if (t.isDisbursementToParty) {
+                    isExternalView ? madin = t.grossAmount : dain = t.grossAmount;
+                }
+            } else if (t.type === 'rental' && t.isRentalDebit) {
+                dain = t.grossAmount;
+            } else if (t.type === 'partnerAccrual' && t.isPartnerCredit) {
+                isExternalView ? madin = t.grossAmount : dain = t.grossAmount;
             }
+
+            const periodChange = isExternalView ? (dain - madin) : (madin - dain);
+            runningBalance += periodChange;
+
+            const notes = t.type === 'payment' && data.unappliedPayments?.some(p => p.PaymentId === t.id)
+                ? 'غير مطبقة'
+                : undefined;
+
+            rows.push({
+                date: formatDate(t.date),
+                description: t.description,
+                invoiceNumber: t.type === 'invoice' ? t.id : undefined,
+                paymentNumber: t.type === 'payment' ? t.id : undefined,
+                value: t.grossAmount,
+                toPay: dain,
+                paid: madin,
+                balance: Math.round(runningBalance * 100) / 100,
+                notes,
+                transactionType: t.type,
+            });
         });
 
         return rows;
-    }, [data]);
-    
+    }, [data, isExternalView, getTranslatedLabel]);
+
     const processedData = useMemo(() => {
         if (!data) {
             return {
@@ -359,7 +326,7 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
         skip: page.skip,
         take: page.take,
     };
-
+/*
     const renderExcelButton = () => {
         if (ledgerItems.length === 0) return null;
 
@@ -374,7 +341,7 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
                 isFetching={isLoading}
             />
         );
-    };
+    };*/
     
     console.log('ledgerItems:', ledgerItems)
     console.log('data:', data)
@@ -397,8 +364,16 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
                             {getTranslatedLabel(`${localizationKey}.title`, 'Financial History for')} {displayName}
                         </Typography>
                     </Grid>
-                    <Grid item xs={12} >
-                        {renderExcelButton()}
+                    <Grid item xs={12} md={4} sx={{ textAlign: { md: 'right' } }}>
+                        {ledgerItems.length > 0 && (
+                            <PartyFinancialHistoryExcel
+                                party={{ partyId, partyName: displayName }}
+                                ledgerItems={ledgerItems}
+                                getTranslatedLabel={getTranslatedLabel}
+                                isFetching={isLoading}
+                                perspective={data.LedgerPerspective || 'Company'}
+                            />
+                        )}
                     </Grid>
                 </Grid>
                 <Grid container spacing={3}>

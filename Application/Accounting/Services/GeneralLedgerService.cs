@@ -438,6 +438,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 OrigCurrencyUomId = origCurrencyUomId,
                 OrganizationPartyId = payment.PartyIdTo, // Payment is incoming -> 'partyIdTo' is the org
                 ReconcileStatusId = "AES_NOT_RECONCILED",
+                Description = payment.Comments,
                 CreatedStamp = stamp,
                 LastUpdatedStamp = stamp
             };
@@ -466,6 +467,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 GlAccountTypeId = creditGlAccountTypeId, // Derived above
                 OrganizationPartyId = payment.PartyIdTo,
                 ReconcileStatusId = "AES_NOT_RECONCILED",
+                Description = payment.Comments,
                 CreatedStamp = stamp,
                 LastUpdatedStamp = stamp
             };
@@ -477,6 +479,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 GlFiscalTypeId = "ACTUAL",
                 PartyId = payment.PartyIdFrom, // The “from” party is the customer for a receipt
                 RoleTypeId = "BILL_TO_CUSTOMER",
+                Description = payment.Comments,
                 PaymentId = payment.PaymentId,
                 SalesRequestId = payment.SalesRequestId,
                 AcctgTransTypeId = "INCOMING_PAYMENT",
@@ -1747,6 +1750,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             AcctgTransTypeId = parameters.AcctgTransTypeId,
             InvoiceId = parameters.InvoiceId,
             PaymentId = parameters.PaymentId,
+            Description = parameters.Description,
             PartyId = parameters.PartyId,
             RoleTypeId = parameters.RoleTypeId,
             TransactionDate = parameters.TransactionDate, // might set later if null
@@ -3282,6 +3286,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 PartyId = partyId,
                 RoleTypeId = roleTypeId,
                 ReconcileStatusId = "AES_NOT_RECONCILED",
+                Description = payment.Comments,
                 CreatedStamp = stamp,
                 LastUpdatedStamp = stamp
             };
@@ -3310,6 +3315,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                     GlAccountTypeId = "ACCOUNTS_PAYABLE", // Default GL account type
                     OrganizationPartyId = organizationPartyId,
                     ReconcileStatusId = "AES_NOT_RECONCILED",
+                    Description = payment.Comments,
                     CreatedStamp = stamp,
                     LastUpdatedStamp = stamp
                 };
@@ -3355,6 +3361,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                     GlAccountTypeId = debitGlAccountTypeId,
                     OrganizationPartyId = organizationPartyId,
                     ReconcileStatusId = "AES_NOT_RECONCILED",
+                    Description = payment.Comments,
                     CreatedStamp = stamp,
                     LastUpdatedStamp = stamp
                 };
@@ -3370,6 +3377,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 AcctgTransTypeId = "OUTGOING_PAYMENT",
                 PartyId = partyId,
                 PaymentId = payment.PaymentId,
+                Description = payment.Comments,
                 AcctgTransEntries = acctgTransEntries
             };
 

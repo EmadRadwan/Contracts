@@ -240,9 +240,9 @@ public class GetPartyFinancialHistory
                     .ToList();
 
                 // ───────────────────────────────────────────────────────────────
-// 2. Rental Property Accruals for Partners – Credit side only
-//    (recognized revenue share belonging to partners)
-// ───────────────────────────────────────────────────────────────
+                // 2. Rental Property Accruals for Partners – Credit side only
+                //    (recognized revenue share belonging to partners)
+                // ───────────────────────────────────────────────────────────────
                 var partnerAccrualEntries = await _context.AcctgTransEntries
                     .Where(ate => ate.AcctgTrans.AcctgTransTypeId == "RENTAL_PROPERTY_ACCRUAL_PARTNERS"
                                   && ate.AcctgTrans.PartyId == request.PartyId
@@ -659,9 +659,12 @@ public class GetPartyFinancialHistory
                 // Business Purpose: Compile all retrieved data into a single response object for the client.
                 // This provides a comprehensive view of the party's financial history, including invoices, payments, billing accounts, returns, and summary.
 
+                var perspective = DetermineLedgerPerspective(party.MainRole);
+
                 return Result<PartyFinancialHistoryDetails>.Success(new PartyFinancialHistoryDetails
                 {
                     PartyId = request.PartyId,
+                    MainRole = party.MainRole,
                     PreferredCurrencyUomId = party.PreferredCurrencyUomId ?? request.DefaultCurrencyUomId,
                     InvoicesApplPayments = invoicesApplPaymentsDtos,
                     UnappliedInvoices = unappliedInvoicesDtos,
@@ -680,6 +683,21 @@ public class GetPartyFinancialHistory
                     $"Error retrieving party financial history: {ex.Message}");
             }
         }
+    }
+    
+    private static string DetermineLedgerPerspective(string? mainRole)
+    {
+        if (string.IsNullOrWhiteSpace(mainRole))
+            return "Company";
+
+        return mainRole.ToUpperInvariant() switch
+        {
+            "CUSTOMER"    => "ExternalCustomer",
+            "SUPPLIER"    => "ExternalSupplier",
+            "CONTRACTOR"  => "ExternalContractor",
+            "PARTNER"     => "ExternalPartner",
+            _             => "Company"
+        };
     }
 }
 
@@ -715,3 +733,4 @@ public class PartnerAccrualPostingDto
     public decimal ImpactOnBalance { get; set; }        // Usually negative (reduces net receivable)
     public string Description { get; set; } = "استحقاق إيراد العقار للشركاء";
 }
+

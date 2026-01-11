@@ -1,182 +1,171 @@
-const ledgerItems = useMemo((): LedgerRow[] => {
-    if (!data) return [];
+import React, { useCallback } from 'react';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
+import { Button } from '@mui/material';
 
-    const rows: LedgerRow[] = [];
-    let balance = 0;
+interface LedgerRow {
+    date: string;
+    description: string;
+    invoiceNumber?: string;
+    paymentNumber?: string;
+    value: number;
+    toPay: number;   // دائن
+    paid: number;    // مدين
+    balance: number;
+    notes?: string;
+}
 
-    const fmt = (d: string | null | undefined) =>
-        d ? new Date(d).toISOString().split('T')[0] : '';
+interface Props {
+    party: { partyId: string; partyName: string };
+    ledgerItems: LedgerRow[];
+    getTranslatedLabel: (key: string, defaultValue: string) => string;
+    isFetching?: boolean;
+    perspective: string;
+}
 
-    // 1. Opening Balance
-    const openingEntries = data.openingBalances || [];
-    const openingImpact = openingEntries.reduce((sum, ob) => sum + ob.impactOnBalance, 0);
-    if (openingImpact !== 0) {
-        balance -= openingImpact;
-        rows.push({
-            date: '',
-            description: 'الرصيد الافتتاحي',
-            value: 0,
-            toPay: openingImpact > 0 ? openingImpact : 0,
-            paid: openingImpact < 0 ? -openingImpact : 0,
-            balance,
-            notes: openingEntries.length > 1 ? `${openingEntries.length} حركات افتتاحية` : 'حركة افتتاحية',
-        });
-    }
+const sharedUtils = {
+    safeString: (value: any): string => (value == null || typeof value === 'object') ? 'N/A' : String(value),
+    rtlEmbed: (text: string): string => /\p{Script=Arabic}/u.test(text) ? `\u202B${text}` : text,
+};
 
-    // 2. Collect all transactions
-    interface Transaction {
-        date: string;
-        displayDate: string;
-        type: 'invoice' | 'payment' | 'rentalPosting' | 'partnerAccrual';
-        id?: string;
-        description: string;
-        amount: number;
-        impact: number;           // + = party owes more (debit), - = reduces debt (credit)
-        notes?: string;
-    }
+export const PartyFinancialHistoryExcel: React.FC<Props> = ({
+                                                                party,
+                                                                ledgerItems,
+                                                                getTranslatedLabel,
+                                                                isFetching = false,
+                                                                perspective,
+                                                            }) => {
+    const isExternalView = perspective.startsWith('External');
 
-    const transactions: Transaction[] = [];
+    const generateExcel = useCallback(async () => {
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'Golden Land System';
+        workbook.created = new Date();
 
-    // ── Invoices ──
-    const invoiceMap = new Map<string, { total: number; date: string }>();
+        if (!ledgerItems?.length || isFetching) return null;
 
-    data.invoicesApplPayments?.forEach(i => {
-        if (!invoiceMap.has(i.invoiceId)) {
-            invoiceMap.set(i.invoiceId, { total: i.total, date: i.invoiceDate! });
-        }
-    });
-
-    data.unappliedInvoices?.forEach(i => {
-        if (!invoiceMap.has(i.invoiceId)) {
-            invoiceMap.set(i.invoiceId, { total: i.amount, date: i.invoiceDate! });
-        }
-    });
-
-    invoiceMap.forEach((inv, id) => {
-        transactions.push({
-            date: inv.date,
-            displayDate: fmt(inv.date),
-            type: 'invoice',
-            id,
-            description: `فاتورة ${id}`,
-            amount: inv.total,
-            impact: inv.total,        // usually positive (debit)
-        });
-    });
-
-    // ── Payments ──  ← FIXED & COMPLETE
-    const paymentMap = new Map<string, { amount: number; date: string }>();
-
-    // 1. Payments applied to invoices
-    data.invoicesApplPayments?.forEach(i => {
-        if (i.paymentId && i.paymentAmount && i.paymentEffectiveDate) {
-            // We take the last occurrence if multiple (or you could sum if needed)
-            paymentMap.set(i.paymentId, {
-                amount: i.paymentAmount,
-                date: i.paymentEffectiveDate,
-            });
-        }
-    });
-
-    // 2. Standalone / unapplied payments (your current case!)
-    data.unappliedPayments?.forEach(p => {
-        if (p.paymentId && p.amount && p.effectiveDate) {
-            // Only add if not already present from applied payments
-            if (!paymentMap.has(p.paymentId)) {
-                paymentMap.set(p.paymentId, {
-                    amount: p.amount,
-                    date: p.effectiveDate,
-                });
+        // Optional logo
+        let logoImageId: number | null = null;
+        try {
+            const response = await fetch('/goldenlandlogo.jpg');
+            if (response.ok) {
+                const buffer = await (await response.blob()).arrayBuffer();
+                logoImageId = workbook.addImage({ buffer, extension: 'jpeg' });
             }
+        } catch {}
+
+        const ws = workbook.addWorksheet(
+            party.partyName?.length > 28 ? party.partyName.substring(0, 28) + '...' : party.partyName || 'كشف حساب',
+            { views: [{ rightToLeft: true }], pageSetup: { orientation: 'landscape', fitToPage: true } }
+        );
+
+        // Logo
+        if (logoImageId) {
+            ws.addImage(logoImageId, { tl: { col: 0, row: 0 }, ext: { width: 110, height: 110 } });
+            ws.getRow(1).height = 82;
+            ws.addRow([]); ws.addRow([]);
         }
-    });
 
-    paymentMap.forEach((pay, id) => {
-        const isUnapplied = data.unappliedPayments?.some(up => up.paymentId === id);
-        transactions.push({
-            date: pay.date,
-            displayDate: fmt(pay.date),
-            type: 'payment',
-            id,
-            description: `دفعة ${id}`,
-            amount: pay.amount,
-            impact: -pay.amount,               // credit → reduces what party owes
-            notes: isUnapplied ? 'غير مطبقة' : undefined,
+        const titleRow = logoImageId ? 4 : 1;
+        ws.addRow([`${getTranslatedLabel('party.financial.history.excel.title', 'كشف حساب')} : ${sharedUtils.rtlEmbed(party.partyName)}`]);
+        ws.mergeCells(`A${titleRow}:I${titleRow}`);
+        ws.getRow(titleRow).font = { name: 'Amiri', size: 18, bold: true };
+        ws.getRow(titleRow).alignment = { horizontal: 'center', vertical: 'middle' };
+        ws.addRow([]); ws.addRow([]);
+
+        // Headers
+        const headers = [
+            'التاريخ', 'البيان', 'رقم الفاتورة', 'رقم الدفعة',
+            'إجمالي الفاتورة', 'مدين', 'دائن', 'الرصيد', 'ملاحظات'
+        ];
+        const headerRow = ws.addRow(headers);
+        headerRow.font = { name: 'Amiri', size: 12, bold: true };
+        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE3F2FD' } };
+        headerRow.alignment = { horizontal: 'center' };
+
+        ws.columns = [
+            { width: 12 }, { width: 45 }, { width: 16 }, { width: 16 },
+            { width: 16 }, { width: 14 }, { width: 14 }, { width: 16 }, { width: 28 }
+        ];
+
+        [5,6,7,8].forEach(col => ws.getColumn(col).numFmt = '#,##0.00 "ج.م"');
+
+        // Data
+        ledgerItems.forEach(item => {
+            const row = ws.addRow([
+                item.date,
+                sharedUtils.rtlEmbed(item.description),
+                item.invoiceNumber || '',
+                item.paymentNumber || '',
+                item.value || 0,
+                item.paid,      // مدين
+                item.toPay,     // دائن
+                item.balance,
+                sharedUtils.rtlEmbed(item.notes || ''),
+            ]);
+
+            row.alignment = { horizontal: 'right', vertical: 'middle' };
+            row.font = { name: 'Amiri', size: 10 };
+
+            const balanceCell = row.getCell(8);
+            if (item.balance !== 0) {
+                balanceCell.font = {
+                    color: { argb: item.balance > 0 ? 'FF006400' : 'FF8B0000' },
+                    bold: true
+                };
+            }
         });
-    });
 
-    // ── Rental Property Postings ──
-    data.rentalPropertyPostings?.forEach(rp => {
-        if (!rp.transactionDate) return;
-        transactions.push({
-            date: rp.transactionDate,
-            displayDate: fmt(rp.transactionDate),
-            type: 'rentalPosting',
-            description: `إيجار - ${rp.glAccountTypeId || 'عقاري'}`,
-            amount: Math.abs(rp.impactOnBalance),
-            impact: rp.impactOnBalance,
-            notes: rp.description || 'تسجيل إيجاري',
-        });
-    });
+        // Final summary
+        const finalBalance = ledgerItems[ledgerItems.length - 1]?.balance || 0;
 
-    // ── Partner Accruals ──
-    const partnerAccruals = data.partnerAccrualPostings || [];
-    partnerAccruals.forEach(pa => {
-        if (!pa.transactionDate) return;
-        transactions.push({
-            date: pa.transactionDate,
-            displayDate: fmt(pa.transactionDate),
-            type: 'partnerAccrual',
-            description: `استحقاق شركاء - ${pa.glAccountTypeId || 'إيراد عقاري'}`,
-            amount: Math.abs(pa.impactOnBalance),
-            impact: pa.impactOnBalance,           // usually negative (credit)
-            notes: pa.description || 'استحقاق للشركاء',
-        });
-    });
+        ws.addRow([]);
+        const finalRow = ws.addRow(['', 'الرصيد النهائي', '', '', '', '', '', finalBalance, '']);
+        finalRow.font = { name: 'Amiri', size: 13, bold: true };
+        finalRow.getCell(8).font = {
+            color: { argb: finalBalance > 0 ? 'FF006400' : finalBalance < 0 ? 'FF8B0000' : 'FF000000' }
+        };
 
-    // 3. Sort all transactions chronologically
-    transactions.sort((a, b) => a.date.localeCompare(b.date));
+        const clarityText = isExternalView
+            ? finalBalance > 0
+                ? '← لنا عليهم (دائنون لنا)'
+                : finalBalance < 0
+                    ? '← علينا للطرف (مدينون له)'
+                    : 'لا يوجد رصيد متبقي'
+            : finalBalance > 0
+                ? '← للطرف عندنا (دائنون لنا)'
+                : finalBalance < 0
+                    ? '← علينا للطرف (مدينون له)'
+                    : 'لا يوجد رصيد متبقي';
 
-    // 4. Build ledger rows from sorted transactions
-    transactions.forEach(t => {
-        balance -= t.impact; // positive impact → party owes more
+        const clarityRow = ws.addRow(['', clarityText, '', '', '', '', '', Math.abs(finalBalance), '']);
+        clarityRow.font = { name: 'Amiri', size: 14, bold: true, color: { argb: 'FF000080' } };
 
-        if (t.type === 'invoice') {
-            rows.push({
-                date: t.displayDate,
-                description: t.description,
-                invoiceNumber: t.id,
-                value: t.amount,
-                toPay: t.amount,
-                paid: 0,
-                balance,
-                transactionType: t.type,
-            });
-        } else if (t.type === 'payment') {
-            rows.push({
-                date: t.displayDate,
-                description: t.description,
-                paymentNumber: t.id,
-                value: 0,
-                toPay: 0,
-                paid: t.amount,
-                balance,
-                notes: t.notes,
-                transactionType: t.type,
-            });
-        } else if (t.type === 'rentalPosting' || t.type === 'partnerAccrual') {
-            rows.push({
-                date: t.displayDate,
-                description: t.description,
-                value: t.amount,
-                toPay: t.impact > 0 ? t.amount : 0,
-                paid: t.impact < 0 ? Math.abs(t.impact) : 0,
-                balance,
-                notes: t.notes,
-                transactionType: t.type,
-            });
-        }
-    });
+        ws.addRow([]);
+        ws.addRow([
+            `تاريخ الطباعة: ${new Date().toLocaleDateString('ar-EG')}`,
+            `الوقت: ${new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}`
+        ]);
 
-    return rows;
-}, [data]);
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const safeName = (party.partyName || party.partyId).replace(/[/\\?%*:|"<>]/g, '_');
+        saveAs(blob, `كشف_حساب_${safeName}_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }, [ledgerItems, party, getTranslatedLabel, isFetching, perspective]);
+
+    const handleDownload = useCallback(async () => {
+        await generateExcel();
+    }, [generateExcel]);
+
+    return (
+        <Button
+            variant="contained"
+            color="success"
+            disabled={isFetching || !ledgerItems.length}
+            onClick={handleDownload}
+            sx={{ fontWeight: 'bold' }}
+        >
+            تصدير كشف الحساب Excel
+        </Button>
+    );
+};
