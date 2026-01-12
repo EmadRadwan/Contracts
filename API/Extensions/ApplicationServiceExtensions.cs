@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Application.Accounting.Services;
 using Application.Catalog.Products;
 using Application.Catalog.Products.Services.Cost;
@@ -66,7 +68,11 @@ public static class ApplicationServiceExtensions
 
         services.AddMvc().AddJsonOptions(options =>
         {
-            options.JsonSerializerOptions.Converters.Add(new DateTimeConverter());
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+            // No need for custom DateTime converter if you do this:
+            options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            // System.Text.Json already handles ISO 8601 with Z correctly by default
         });
 
         services.AddScoped<IPdfGenerationService, PdfGenerationService>();

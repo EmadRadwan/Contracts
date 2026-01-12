@@ -187,7 +187,7 @@ namespace Infrastructure.Pdf
                         {
                             r.RelativeItem().BorderBottom(1).BorderColor(Colors.Grey.Medium);
                             r.AutoItem().AlignMiddle().BorderBottom(1).BorderColor(Colors.Grey.Medium)
-                                .Text(isBankTransfer ? (data.PaymentMethodDescription ?? "") : "").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
+                                .Text(isCheque ? (data.PaymentMethodDescription ?? "") : "").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
                             r.AutoItem().AlignMiddle().Text(" : تحويل ( بنكى ، اون لاين )").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
                         });
 
