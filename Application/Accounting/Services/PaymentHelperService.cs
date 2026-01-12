@@ -401,17 +401,33 @@ public class PaymentHelperService : IPaymentHelperService
         {
             try
             {
-                if (oldStatusId != "PMNT_CONFIRMED")
-                {
-                    await _generalLedgerService.CreateAcctgTransAndEntriesForOutgoingPayment(paymentId);
-                }
+                // ───────────────────────────────────────────────
+                // Fetch required data once (avoid multiple queries)
+                // ───────────────────────────────────────────────
+                var paymentType = await _context.PaymentTypes
+                    .FirstOrDefaultAsync(pt => pt.PaymentTypeId == payment.PaymentTypeId);
 
-                //await _invoiceService.CheckPaymentInvoices(paymentId);
-                //await CreateMatchingPaymentApplication(paymentId, null);
+                bool isPostDatedCheque = 
+                    !string.IsNullOrEmpty(payment.OverrideGlAccountId) &&
+                    paymentType?.ParentTypeId == "DISBURSEMENT" &&
+                    (!string.IsNullOrEmpty(payment.ChequeNumber) || payment.ChequeDate.HasValue);
+
+                if (isPostDatedCheque)
+                {
+                    // Special accounting: debit POSTDATED CHECKS ISSUED, credit Bank
+                    await _generalLedgerService.CreatePostdatedChequeIssuedAccountingTransaction(payment.PaymentId);
+                }
+                else
+                {
+                    // Normal outgoing payment accounting
+                    if (oldStatusId != "PMNT_CONFIRMED")
+                    {
+                        await _generalLedgerService.CreateAcctgTransAndEntriesForOutgoingPayment(payment.PaymentId);
+                    }
+                }
             }
             catch (Exception ex)
             {
-                // REFACTOR: Catch and return specific error for ECA logic failure
                 return new PaymentStatusChangeResult
                 {
                     Success = false,
@@ -420,7 +436,6 @@ public class PaymentHelperService : IPaymentHelperService
                 };
             }
         }
-
 
         return new PaymentStatusChangeResult
         {
@@ -1245,6 +1260,28 @@ public class PaymentHelperService : IPaymentHelperService
             // 2) Create Payment
             var payment = await CreatePayment(createPaymentMap);
             var paymentId = payment.PaymentId;
+            
+            // Create accounting entry for postdated cheques when applicable
+            
+            // get payment type
+            var paymentType = await _context.PaymentTypes
+                .FirstOrDefaultAsync(pt => pt.PaymentTypeId == request.PaymentTypeId);
+
+            if (
+                !string.IsNullOrEmpty(request.OverrideGlAccountId) && paymentType.ParentTypeId == "DISBURSEMENT" &&
+                (!string.IsNullOrEmpty(request.ChequeNumber) || request.ChequeDate.HasValue))
+            {
+                try
+                {
+                    var acctgTransId = await _generalLedgerService.CreatePostdatedChequeAccountingTransaction(paymentId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to create accounting transaction for postdated cheque");
+                    // Decide whether to fail the whole operation or just log
+                }
+            }
+            
             string finAccountTransId = null;
 
             // 3) Handle Financial Account Transaction if FinAccountId exists

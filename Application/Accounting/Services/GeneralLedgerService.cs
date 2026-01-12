@@ -51,6 +51,8 @@ public interface IGeneralLedgerService
     Task<GeneralServiceResult<string>> CopyAcctgTransAndEntries(string fromAcctgTransId, bool revert);
     Task<List<string>> PostAcctgTrans(string acctgTransId, bool verifyOnly = false);
     Task<string> CreateAccountingTransactionForApartmentIncomingPayment(string paymentId);
+    Task<string> CreatePostdatedChequeAccountingTransaction(string paymentId);
+    Task<string> CreatePostdatedChequeIssuedAccountingTransaction(string paymentId);
 }
 
 public class GeneralLedgerService : IGeneralLedgerService
@@ -5124,6 +5126,238 @@ public class GeneralLedgerService : IGeneralLedgerService
             _logger.LogError(ex, "Failed to create accounting transaction for apartment incoming payment {PaymentId}",
                 paymentId);
             throw;
+        }
+    }
+
+    public async Task<string> CreatePostdatedChequeAccountingTransaction(string paymentId)
+    {
+        try
+        {
+            // 1. Fetch the payment with necessary includes
+            var payment = await _context.Payments
+                .FindAsync(paymentId);
+
+            if (payment == null)
+                throw new Exception("Payment not found");
+
+            // 2. Early validation – ensure it's an outgoing payment with cheque & override GL account
+            if (string.IsNullOrEmpty(payment.OverrideGlAccountId))
+                throw new InvalidOperationException("OverrideGlAccountId is required for postdated cheque accounting.");
+
+            if (string.IsNullOrEmpty(payment.ChequeNumber) && payment.ChequeDate == null)
+                throw new InvalidOperationException("This method is only for cheque payments.");
+
+            // Assuming outgoing payments have PartyIdFrom = company (or adjust logic as per your model)
+            var companyPartyId =
+                await _productStoreService.GetProductStorePayToPartId(); // or however you get company party
+
+            if (payment.PartyIdFrom != companyPartyId)
+            {
+                // Optional: log or throw if not outgoing – depends on your business rules
+                _logger.LogWarning("Payment {PaymentId} is not an outgoing payment from company", paymentId);
+            }
+
+            var stamp = DateTime.UtcNow;
+            
+            var chequeInfo = !string.IsNullOrEmpty(payment.ChequeNumber)
+                ? $"Cheque #{payment.ChequeNumber}"
+                : $"dated {payment.ChequeDate?.ToString("yyyy-MM-dd")}";
+
+
+            var description = 
+                $"Postdated cheque issuance - {chequeInfo} - " +
+                $"- Payment {payment.PaymentId} - {payment.Amount:N2}";
+
+            // 3. Create accounting transaction
+            var acctgTransParams = new CreateAcctgTransParams
+            {
+                AcctgTransTypeId = "OUTGOING_PAYMENT", // or "CHECK_ISSUED", adjust as per your system
+                TransactionDate = payment.EffectiveDate?.Date ?? DateTime.UtcNow.Date,
+                IsPosted = "Y",
+                GlFiscalTypeId = "ACTUAL",
+                Description = description,
+                PaymentId = payment.PaymentId,
+                PartyId = payment.PartyIdTo // the recipient
+            };
+
+            var acctgTransId = await _acctgTransService.CreateAcctgTrans(acctgTransParams);
+
+            var seq = 0;
+
+            // Debit: Override GL Account (usually the expense/liability account you selected)
+            var debitEntry = new AcctgTransEntry
+            {
+                AcctgTransId = acctgTransId,
+                AcctgTransEntrySeqId = (++seq).ToString().PadLeft(3, '0'),
+                GlAccountId = payment.OverrideGlAccountId,
+                DebitCreditFlag = "D",
+                AcctgTransEntryTypeId = "_NA_",
+                Amount = payment.Amount,
+                ReconcileStatusId = "AES_NOT_RECONCILED",
+                Description = $"Debit expense/liability - Postdated cheque #{payment.ChequeNumber}",
+                OrganizationPartyId = companyPartyId,
+                PartyId = payment.PartyIdTo, // the recipient
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            };
+            await _acctgTransService.CreateAcctgTransEntry(debitEntry);
+
+            // Credit: Postdated Checks Issued (250100)
+            var creditEntry = new AcctgTransEntry
+            {
+                AcctgTransId = acctgTransId,
+                AcctgTransEntrySeqId = (++seq).ToString().PadLeft(3, '0'),
+                GlAccountId = "250100", // POSTDATED CHECKS ISSUED
+                DebitCreditFlag = "C",
+                AcctgTransEntryTypeId = "_NA_",
+                Amount = payment.Amount,
+                ReconcileStatusId = "AES_NOT_RECONCILED",
+                Description = $"Credit postdated cheques issued - Cheque #{payment.ChequeNumber}",
+                OrganizationPartyId = companyPartyId,
+                PartyId = payment.PartyIdFrom, // usually the company itself
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            };
+            await _acctgTransService.CreateAcctgTransEntry(creditEntry);
+
+            _logger.LogInformation(
+                "Postdated cheque issuance accounting transaction {AcctgTransId} created for payment {PaymentId}",
+                acctgTransId, paymentId);
+
+            return acctgTransId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create postdated cheque accounting transaction for payment {PaymentId}",
+                paymentId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Creates an accounting transaction when a post-dated cheque is issued (status → PMNT_SENT).
+    /// 
+    /// Accounting effect:
+    ///   Debit  → OverrideGlAccountId     (usually expense or liability account chosen by user)
+    ///   Credit → 250100                  (POSTDATED CHECKS ISSUED – شيكات صادرة مؤجلة)
+    /// </summary>
+    /// <param name="paymentId">The ID of the payment that was just marked as sent</param>
+    /// <returns>The created AcctgTransId</returns>
+    public async Task<string> CreatePostdatedChequeIssuedAccountingTransaction(string paymentId)
+    {
+        try
+        {
+            // 1. Load the payment with needed relations
+            var payment = await _context.Payments
+                .Include(p => p.PaymentMethod)
+                .FirstOrDefaultAsync(p => p.PaymentId == paymentId);
+
+            if (payment == null)
+            {
+                throw new Exception($"Payment not found: {paymentId}");
+            }
+
+            // 2. Defensive validation (should already be checked before calling, but keep safety)
+            if (string.IsNullOrEmpty(payment.OverrideGlAccountId))
+            {
+                throw new InvalidOperationException(
+                    $"Cannot create post-dated cheque transaction: OverrideGlAccountId is missing (Payment {paymentId})");
+            }
+
+            if (string.IsNullOrEmpty(payment.ChequeNumber) && !payment.ChequeDate.HasValue)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot create post-dated cheque transaction: No cheque information (Payment {paymentId})");
+            }
+
+            if (payment.Amount <= 0)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot create post-dated cheque transaction: Invalid amount (Payment {paymentId})");
+            }
+
+            var companyPartyId = await _productStoreService.GetProductStorePayToPartId();
+
+            var stamp = DateTime.UtcNow;
+
+            // Build meaningful description
+            var chequeInfo = !string.IsNullOrEmpty(payment.ChequeNumber)
+                ? $"Cheque #{payment.ChequeNumber}"
+                : $"dated {payment.ChequeDate?.ToString("yyyy-MM-dd")}";
+
+            var description = $"Post-dated cheque issued - {chequeInfo} - " +
+                              $"Payment {payment.PaymentId} - {payment.Amount:N2}";
+
+            // 3. Create the accounting transaction header
+            var acctgTransParams = new CreateAcctgTransParams
+            {
+                AcctgTransTypeId = "OUTGOING_PAYMENT", // ← use a specific type if your system has it
+                TransactionDate =  DateTime.UtcNow.Date,
+                IsPosted = "Y",
+                Description = description,
+                GlFiscalTypeId = "ACTUAL",
+                PaymentId = payment.PaymentId,
+                PartyId = payment.PartyIdTo, // usually the supplier/vendor
+            };
+
+            var acctgTransId = await _acctgTransService.CreateAcctgTrans(acctgTransParams);
+
+            int seq = 0;
+
+            // 4. Debit entry – the override GL account (expense / liability / cost center account)
+            var debitEntry = new AcctgTransEntry
+            {
+                AcctgTransId = acctgTransId,
+                AcctgTransEntrySeqId = (++seq).ToString().PadLeft(3, '0'),
+                GlAccountId = "250100",
+                DebitCreditFlag = "D",
+                AcctgTransEntryTypeId = "_NA_",
+                Amount = payment.Amount,
+                ReconcileStatusId = "AES_NOT_RECONCILED",
+                Description = $"Debit – {chequeInfo} – post-dated cheque issued",
+                OrganizationPartyId = companyPartyId,
+                PartyId = payment.PartyIdTo, // supplier / payee
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            };
+            await _acctgTransService.CreateAcctgTransEntry(debitEntry);
+            
+            // get payment method
+            var bankGlAccountId = payment.PaymentMethod?.GlAccountId
+                                   ?? throw new Exception("Payment method GL account is not configured");
+
+            // 5. Credit entry – Postdated Checks Issued (liability account)
+            var creditEntry = new AcctgTransEntry
+            {
+                AcctgTransId = acctgTransId,
+                AcctgTransEntrySeqId = (++seq).ToString().PadLeft(3, '0'),
+                GlAccountId = bankGlAccountId,
+                DebitCreditFlag = "C",
+                AcctgTransEntryTypeId = "_NA_",
+                Amount = payment.Amount,
+                ReconcileStatusId = "AES_NOT_RECONCILED",
+                Description = $"Credit – {chequeInfo} – to postdated cheques issued",
+                OrganizationPartyId = companyPartyId,
+                PartyId = payment.PartyIdFrom, // usually your company
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            };
+            await _acctgTransService.CreateAcctgTransEntry(creditEntry);
+
+            _logger.LogInformation(
+                "Post-dated cheque issuance accounting transaction created: {AcctgTransId} for payment {PaymentId} " +
+                "(debit {DebitGl} ← credit 250100)",
+                acctgTransId, paymentId, payment.OverrideGlAccountId);
+
+            return acctgTransId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to create post-dated cheque issuance accounting transaction for payment {PaymentId}",
+                paymentId);
+
+            throw; // or return Result<string>.Failure(...) depending on your error handling pattern
         }
     }
 }

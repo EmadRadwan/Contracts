@@ -1,51 +1,42 @@
-// Add to your DTO (PartyFinancialHistoryDetails)
-public class PartyFinancialHistoryDetails
+if (statusId == "PMNT_SENT" && oldStatusId != "PMNT_SENT")
 {
-    public string PartyId { get; set; }
-    public string MainRole { get; set; }                     // ← already added
-    public string LedgerPerspective { get; set; }            // ← new field: "Company" or "External"
-    public string? PreferredCurrencyUomId { get; set; }
-    // ... all other existing properties
-    // ...
-}
-
-// Then in the handler, after retrieving the party, add this logic:
-
-// 9. Return result
-var perspective = DetermineLedgerPerspective(party.MainRole);
-
-return Result<PartyFinancialHistoryDetails>.Success(new PartyFinancialHistoryDetails
-{
-    PartyId = request.PartyId,
-    MainRole = party.MainRole,
-    LedgerPerspective = perspective,                       // ← added
-    PreferredCurrencyUomId = party.PreferredCurrencyUomId ?? request.DefaultCurrencyUomId,
-    InvoicesApplPayments = invoicesApplPaymentsDtos,
-    UnappliedInvoices = unappliedInvoicesDtos,
-    UnappliedPayments = unappliedPaymentsDtos,
-    BillingAccounts = billingAccountsDtos,
-    Returns = returns,
-    RentalPropertyPostings = rentalPropertyDtos,
-    PartnerAccrualPostings = partnerAccrualDtos,
-    OpeningBalances = openingBalanceDtos,
-    FinancialSummary = financialSummary
-});
-
-// Helper method (can be private inside Handler or in a static utility class)
-private static string DetermineLedgerPerspective(string? mainRole)
-{
-    if (string.IsNullOrWhiteSpace(mainRole))
-        return "Company"; // fallback
-
-    var role = mainRole.Trim().ToUpperInvariant();
-
-    return role switch
+    try
     {
-        "CUSTOMER"    => "External",
-        "SUPPLIER"    => "External",
-        "CONTRACTOR"  => "External",
-        "PARTNER"     => "External",      // revenue share partners usually want their view
-        "VENDOR"      => "External",
-        _             => "Company"        // employees, internal, unknown roles → company view
-    };
+        // ───────────────────────────────────────────────
+        // Fetch required data once (avoid multiple queries)
+        // ───────────────────────────────────────────────
+        var paymentType = await _context.PaymentTypes
+            .FirstOrDefaultAsync(pt => pt.PaymentTypeId == payment.PaymentTypeId);
+
+        bool isPostDatedCheque = 
+            !string.IsNullOrEmpty(payment.OverrideGlAccountId) &&
+            paymentType?.ParentTypeId == "DISBURSEMENT" &&
+            (!string.IsNullOrEmpty(payment.ChequeNumber) || payment.ChequeDate.HasValue);
+
+        if (isPostDatedCheque)
+        {
+            // Special accounting: debit POSTDATED CHECKS ISSUED, credit Bank
+            await _generalLedgerService.CreatePostdatedChequeIssuedAccountingTransaction(payment.PaymentId);
+        }
+        else
+        {
+            // Normal outgoing payment accounting
+            if (oldStatusId != "PMNT_CONFIRMED")
+            {
+                await _generalLedgerService.CreateAcctgTransAndEntriesForOutgoingPayment(payment.PaymentId);
+            }
+        }
+
+        //await _invoiceService.CheckPaymentInvoices(paymentId);
+        //await CreateMatchingPaymentApplication(paymentId, null);
+    }
+    catch (Exception ex)
+    {
+        return new PaymentStatusChangeResult
+        {
+            Success = false,
+            ErrorCode = "ECA_LOGIC_FAILED",
+            ErrorMessage = $"Failed to process accounting transactions: {ex.Message}"
+        };
+    }
 }
