@@ -285,7 +285,7 @@ public class GetPartyFinancialHistory
                         DebitCreditFlag = entry.DebitCreditFlag,
                         CurrencyUomId = entry.CurrencyUomId,
                         ImpactOnBalance = Math.Round(impactOnCustomerBalance, 2, MidpointRounding.AwayFromZero),
-                        Description = "Partner Revenue Accrual (Credit)"
+                        Description = "استحقاق إيرادات الشريك (دائن)"
                     });
                 }
 
@@ -421,7 +421,7 @@ public class GetPartyFinancialHistory
                         pmt.PaymentId,
                         pmt.EffectiveDate,
                         pmt.PaymentTypeId,
-                        PaymentTypeDescription = pt.Description,
+                        PaymentTypeDescription = pmt.Comments,
                         pmt.ActualCurrencyAmount,
                         pmt.ActualCurrencyUomId,
                         pmt.Amount,

@@ -103,32 +103,43 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
         const formatDate = (dateStr?: string | null) =>
             dateStr ? new Date(dateStr).toISOString().split("T")[0] : "";
 
-        // ───────────────────────────────────────────────────────────────
-        // 1. Opening Balance – flip sign in external view
-        // ───────────────────────────────────────────────────────────────
-        const openingTotalImpact = (data.openingBalances || []).reduce((sum, ob) => {
-            return sum + (Number(ob?.impactOnBalance) || 0);
-        }, 0);
+        // 1. Opening Balance – fixed columns based on debitCreditFlag
+        const openingEntries = data.openingBalances || [];
 
-        if (openingTotalImpact !== 0) {
-            // In external view: positive impact (they owe us) becomes negative balance (we owe them)
-            const rawImpact = isExternalView ? -openingTotalImpact : openingTotalImpact;
-            runningBalance += rawImpact;
+        if (openingEntries.length > 0) {
+            let totalMadin = 0;
+            let totalDain = 0;
+            let netImpact = 0;
+            let transactionDate = "";
+
+            openingEntries.forEach((ob) => {
+                const rawAmount = Number(ob?.amount || 0);
+                const flag = (ob?.debitCreditFlag || "").trim().toUpperCase();
+                transactionDate = ob.transactionDate || transactionDate;
+                if (flag === "D") {
+                    totalMadin += rawAmount;
+                    netImpact += rawAmount;     // Debit → increases receivable
+                } else if (flag === "C") {
+                    totalDain += rawAmount;
+                    netImpact -= rawAmount;     // Credit → increases payable
+                }
+            });
+
+            // Flip net balance sign for external view (we owe = negative)
+            const viewAdjustedNet = netImpact;
+            runningBalance += viewAdjustedNet;
 
             rows.push({
-                date: "",
+                date: formatDate(transactionDate),
                 description: getTranslatedLabel("openingBalance", "الرصيد الإفتتاحي"),
                 value: 0,
-                toPay: rawImpact > 0 ? rawImpact : 0,
-                paid: rawImpact < 0 ? -rawImpact : 0,
-                balance: Math.round(runningBalance * 100) / 100,
-                notes: data.openingBalances?.length ? `${data.openingBalances.length} حركات` : "",
+                toPay: totalDain,          // دائن = total credits (fixed)
+                paid: totalMadin,          // مدين = total debits (fixed)
+                balance: Math.round(runningBalance * 100) / 100
             });
         }
 
-        // ───────────────────────────────────────────────────────────────
-        // 2. Collect all valid transactions (unchanged – already safe)
-        // ───────────────────────────────────────────────────────────────
+        // 2. Transactions – fixed column placement (no isExternalView here)
         interface UnifiedTransaction {
             date: string;
             type: "invoice" | "payment" | "rental" | "partnerAccrual";
@@ -141,15 +152,16 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
             isDisbursementToParty?: boolean;
             isRentalDebit?: boolean;
             isPartnerCredit?: boolean;
+            debitCreditFlag?: string;
         }
-
         const transactions: UnifiedTransaction[] = [];
 
-        // A. Invoices
+        // Invoices (fixed: sales → دائن, purchase → مدين)
         [...(data.invoicesApplPayments || []), ...(data.unappliedInvoices || [])].forEach((inv) => {
             if (!inv.invoiceDate || !inv.invoiceId) return;
             const isSales = inv.invoiceTypeId?.startsWith("SALES") || false;
-            if (!transactions.some((t) => t.id === inv.invoiceId)) {
+
+            if (!transactions.some(t => t.id === inv.invoiceId)) {
                 transactions.push({
                     date: inv.invoiceDate,
                     type: "invoice",
@@ -162,10 +174,11 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
             }
         });
 
-        // B. Payments
+        // Payments (fixed: receipt → دائن, disbursement → مدين)
         (data.unappliedPayments || []).forEach((pmt) => {
             if (!pmt.effectiveDate || !pmt.paymentId) return;
             const isReceipt = pmt.paymentParentTypeId === "RECEIPT";
+
             transactions.push({
                 date: pmt.effectiveDate,
                 type: "payment",
@@ -177,92 +190,107 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
             });
         });
 
-        // C. Rental postings
+        // C. Rental Property Postings – now use debitCreditFlag
         (data.rentalPropertyPostings || []).forEach((rp) => {
             if (!rp.transactionDate) return;
-            const impact = Number(rp.impactOnBalance || 0);
+
+            const rawAmount = Number(rp.amount || 0);
+            const flag = (rp.debitCreditFlag || "").trim().toUpperCase();
+
+            if (rawAmount === 0) return; // skip zero amounts
+
             transactions.push({
                 date: rp.transactionDate,
                 type: "rental",
                 description: rp.description || `تسجيل إيجاري ${rp.glAccountTypeId || ""}`,
-                grossAmount: Math.abs(impact),
-                isRentalDebit: impact > 0,
+                grossAmount: rawAmount,
+                debitCreditFlag: rp.debitCreditFlag,
             });
         });
 
-        // D. Partner accruals
+
+        // D. Partner Accrual Postings – now use debitCreditFlag
         (data.partnerAccrualPostings || []).forEach((pa) => {
             if (!pa.transactionDate) return;
-            const impact = Number(pa.impactOnBalance || 0);
+
+            const rawAmount = Number(pa.amount || 0);
+            const flag = (pa.debitCreditFlag || "").trim().toUpperCase();
+
+            if (rawAmount === 0) return;
+
             transactions.push({
                 date: pa.transactionDate,
                 type: "partnerAccrual",
                 description: pa.description || "استحقاق شركاء",
-                grossAmount: Math.abs(impact),
-                isPartnerCredit: impact > 0,
+                grossAmount: rawAmount,
+                debitCreditFlag: pa.debitCreditFlag,
             });
         });
 
-        // 3. Sort – safe
+        // 3. Sort (unchanged)
         transactions.sort((a, b) => {
             const dateA = a.date || "9999-12-31";
             const dateB = b.date || "9999-12-31";
             return dateA.localeCompare(dateB);
         });
 
-// 4. Build rows – correct sign inversion for external view
+        // 4. Build rows – explicit periodChange per transaction type
         transactions.forEach((t) => {
             let madin = 0; // مدين
             let dain = 0;  // دائن
+            let periodChange = 0;
 
             if (t.type === "invoice") {
                 if (t.isSalesInvoice) {
-                    // Sales: they owe us more → in external view = we owe them less → dain increases balance
-                    dain = t.grossAmount;
+                    dain = t.grossAmount;      // sales → party owes us more → balance increases
+                    periodChange = +t.grossAmount;  // positive
                 } else if (t.isPurchaseInvoice) {
-                    // Purchase: we owe them → dain (external) or madin (company)
-                    isExternalView ? (dain = t.grossAmount) : (madin = t.grossAmount);
+                    madin = t.grossAmount;     // purchase → we owe more → balance decreases
+                    periodChange = -t.grossAmount;  // negative
                 }
             } else if (t.type === "payment") {
                 if (t.isReceiptFromParty) {
-                    // They paid us → we owe them more → balance decreases
-                    isExternalView ? (dain = t.grossAmount) : (madin = t.grossAmount);
+                    dain = t.grossAmount;      // party paid us → we owe more → balance decreases
+                    periodChange = -t.grossAmount;  // negative
                 } else if (t.isDisbursementToParty) {
-                    // We paid them → we owe them less → balance increases
-                    isExternalView ? (madin = t.grossAmount) : (dain = t.grossAmount);
+                    madin = t.grossAmount;     // we paid party → owe less → balance increases
+                    periodChange = +t.grossAmount;  // positive
                 }
-            } else if (t.type === "rental" && t.isRentalDebit) {
-                // Rental debit: they owe us more → dain
-                dain = t.grossAmount;
-            } else if (t.type === "partnerAccrual" && t.isPartnerCredit) {
-                // Partner accrual: we owe them more → balance decreases → dain in external
-                isExternalView ? (dain = t.grossAmount) : (madin = t.grossAmount);
+            } else if (t.type === "rental") {
+                const flag = (t.debitCreditFlag || "").trim().toUpperCase();
+                if (flag === "D") {
+                    madin = t.grossAmount;
+                    periodChange = +t.grossAmount;  // rental debit → owe more → negative
+                } else if (flag === "C") {
+                    dain = t.grossAmount;
+                    periodChange = -t.grossAmount;  // rental credit → owe less → positive
+                }
+            } else if (t.type === "partnerAccrual") {
+                const flag = (t.debitCreditFlag || "").trim().toUpperCase();
+                if (flag === "D") {
+                    madin = t.grossAmount;
+                    periodChange = +t.grossAmount;  // accrual debit → owe less → positive
+                } else if (flag === "C") {
+                    dain = t.grossAmount;
+                    periodChange = -t.grossAmount;  // accrual credit → owe more → negative
+                }
             }
 
-            // Critical: in external view, credit (dain) means we owe more → subtract from balance
-            // in company view, credit (dain) means they owe more → add to balance
-            const periodChange = isExternalView ? (madin - dain) : (dain - madin);
             runningBalance += periodChange;
-
-            const notes =
-                t.type === "payment" && data.unappliedPayments?.some((p) => p.paymentId === t.id)
-                    ? "غير مطبقة"
-                    : undefined;
-
+            
             rows.push({
                 date: formatDate(t.date),
                 description: t.description,
                 invoiceNumber: t.type === "invoice" ? t.id : undefined,
                 paymentNumber: t.type === "payment" ? t.id : undefined,
                 value: t.grossAmount,
-                toPay: dain,   // دائن column
-                paid: madin,   // مدين column
+                toPay: dain,
+                paid: madin,
                 balance: Math.round(runningBalance * 100) / 100,
-                notes,
                 transactionType: t.type,
             });
         });
-
+        
         return rows;
     }, [data, isExternalView, getTranslatedLabel]);
     
