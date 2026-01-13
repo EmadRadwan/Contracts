@@ -1036,6 +1036,8 @@
         "outstanding": "المبلغ المستحق",
         "paymentRefNum": "رقم مرجع الدفعة",
         "projectName": " المشروع",
+        "bankName": "اسم البنك",
+        "chequeNumber": "رقم الشيك",
         "costCenterDescription":  "مركز التكلفة",
         "comments": "التعليقات",
         "orderId": "رقم الطلب",

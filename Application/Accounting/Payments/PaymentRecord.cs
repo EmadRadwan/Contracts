@@ -10,6 +10,7 @@ public class PaymentRecord
     public string PaymentTypeId { get; set; }
     public string PaymentTypeDescription { get; set; }
     public string PaymentMethodId { get; set; }
+    public string BankName { get; set; }
     public string PaymentMethodTypeId { get; set; }
     public string CertificateNumber { get; set; }
     public string PaymentMethodTypeDescription { get; set; }

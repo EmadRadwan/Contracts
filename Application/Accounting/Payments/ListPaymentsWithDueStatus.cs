@@ -45,6 +45,10 @@ public class ListPaymentsWithDueStatus
                     on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into pmtJoin
                 from pmt in pmtJoin.DefaultIfEmpty()
 
+                join pm in _context.PaymentMethods
+                    on pyt.PaymentMethodId equals pm.PaymentMethodId into pmJoin
+                from pm in pmJoin.DefaultIfEmpty()
+                
                 // LEFT JOIN – PartyIdTo may be "Company" or missing
                 join ptyto in _context.Parties
                     on pyt.PartyIdTo equals ptyto.PartyId into ptytoJoin
@@ -73,6 +77,7 @@ public class ListPaymentsWithDueStatus
                     PaymentTypeDescription = isArabic ? ptt.DescriptionArabic : ptt.Description,
 
                     PaymentMethodId = pyt.PaymentMethodId,
+                    BankName = pm != null ? pm.Description : null,
                     PaymentMethodTypeId = pyt.PaymentMethodTypeId,
                     PaymentMethodTypeDescription = pmt != null
                         ? (isArabic ? pmt.DescriptionArabic : pmt.Description)

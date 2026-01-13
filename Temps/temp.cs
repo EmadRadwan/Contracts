@@ -1,42 +1,160 @@
-if (statusId == "PMNT_SENT" && oldStatusId != "PMNT_SENT")
+using Application.Order.Orders;
+using MediatR;
+using Microsoft.AspNetCore.OData.Query;
+using Microsoft.EntityFrameworkCore;
+using Persistence;
+
+namespace Application.Accounting.Payments;
+
+public class ListPaymentsWithDueStatus
 {
-    try
+    public class Query : IRequest<IQueryable<PaymentRecord>>
     {
-        // ───────────────────────────────────────────────
-        // Fetch required data once (avoid multiple queries)
-        // ───────────────────────────────────────────────
-        var paymentType = await _context.PaymentTypes
-            .FirstOrDefaultAsync(pt => pt.PaymentTypeId == payment.PaymentTypeId);
-
-        bool isPostDatedCheque = 
-            !string.IsNullOrEmpty(payment.OverrideGlAccountId) &&
-            paymentType?.ParentTypeId == "DISBURSEMENT" &&
-            (!string.IsNullOrEmpty(payment.ChequeNumber) || payment.ChequeDate.HasValue);
-
-        if (isPostDatedCheque)
-        {
-            // Special accounting: debit POSTDATED CHECKS ISSUED, credit Bank
-            await _generalLedgerService.CreatePostdatedChequeIssuedAccountingTransaction(payment.PaymentId);
-        }
-        else
-        {
-            // Normal outgoing payment accounting
-            if (oldStatusId != "PMNT_CONFIRMED")
-            {
-                await _generalLedgerService.CreateAcctgTransAndEntriesForOutgoingPayment(payment.PaymentId);
-            }
-        }
-
-        //await _invoiceService.CheckPaymentInvoices(paymentId);
-        //await CreateMatchingPaymentApplication(paymentId, null);
+        public ODataQueryOptions<PaymentRecord> Options { get; set; } = null!;
+        public string Language { get; set; } = "en";
     }
-    catch (Exception ex)
+
+    public class Handler : IRequestHandler<Query, IQueryable<PaymentRecord>>
     {
-        return new PaymentStatusChangeResult
+        private readonly DataContext _context;
+        private static readonly DateTime Today = DateTime.Today;
+
+        public Handler(DataContext context)
         {
-            Success = false,
-            ErrorCode = "ECA_LOGIC_FAILED",
-            ErrorMessage = $"Failed to process accounting transactions: {ex.Message}"
-        };
+            _context = context;
+        }
+
+        public async Task<IQueryable<PaymentRecord>> Handle(Query request, CancellationToken cancellationToken)
+        {
+            var language = request.Language?.ToLower() ?? "en";
+            var isArabic = language == "ar";
+
+            var query = (
+                from pyt in _context.Payments
+
+                // Required joins (inner)
+                join ptt in _context.PaymentTypes
+                    on pyt.PaymentTypeId equals ptt.PaymentTypeId
+                join sts in _context.StatusItems
+                    on pyt.StatusId equals sts.StatusId
+                join pty in _context.Parties
+                    on pyt.PartyIdFrom equals pty.PartyId
+
+                // LEFT JOIN – PaymentMethodTypeId is often NULL
+                join pmt in _context.PaymentMethodTypes
+                    on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into pmtJoin
+                from pmt in pmtJoin.DefaultIfEmpty()
+
+                // ────────────────────────────────────────────────
+                // NEW: LEFT JOIN to PaymentMethods
+                join pm in _context.PaymentMethods
+                    on pyt.PaymentMethodId equals pm.PaymentMethodId into pmJoin
+                from pm in pmJoin.DefaultIfEmpty()
+                // ────────────────────────────────────────────────
+
+                // LEFT JOIN – PartyIdTo may be "Company" or missing
+                join ptyto in _context.Parties
+                    on pyt.PartyIdTo equals ptyto.PartyId into ptytoJoin
+                from ptyto in ptytoJoin.DefaultIfEmpty()
+
+                join opp in _context.OrderPaymentPreferences
+                    on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId into oppJoin
+                from opp in oppJoin.DefaultIfEmpty()
+
+                join ord in _context.OrderHeaders
+                    on opp.OrderId equals ord.OrderId into ordJoin
+                from ord in ordJoin.DefaultIfEmpty()
+
+                join we in _context.WorkEfforts
+                    on ord.OrderId equals we.RelatedOrderId into weJoin
+                from we in weJoin.DefaultIfEmpty()
+
+                // LEFT JOIN for CostCenter
+                join cc in _context.CostCenters 
+                    on pyt.CostCenterId equals cc.CostCenterId into ccJoin
+                from cc in ccJoin.DefaultIfEmpty()
+
+                // LEFT JOIN for Project (WorkEffort)
+                join proj in _context.WorkEfforts 
+                    on pyt.WorkEffortId equals proj.WorkEffortId into projJoin
+                from proj in projJoin.DefaultIfEmpty()
+
+                select new PaymentRecord
+                {
+                    PaymentId               = pyt.PaymentId,
+                    PaymentTypeId           = pyt.PaymentTypeId,
+                    PaymentTypeDescription  = isArabic ? ptt.DescriptionArabic : ptt.Description,
+
+                    PaymentMethodId         = pyt.PaymentMethodId,
+                    PaymentMethodTypeId     = pyt.PaymentMethodTypeId,
+
+                    // ────────────────────────────────────────────────
+                    // NEW fields from PaymentMethods
+                    PaymentMethodCode       = pm != null ? pm.Code       : null,
+                    PaymentMethodName       = pm != null ? (isArabic ? pm.DescriptionArabic : pm.Description) : null,
+                    PaymentMethodNameEnglish= pm != null ? pm.Description : null,
+                    // You can add more fields like IsActive, Icon, etc. if they exist
+                    // ────────────────────────────────────────────────
+
+                    PaymentMethodTypeDescription = pmt != null
+                        ? (isArabic ? pmt.DescriptionArabic : pmt.Description)
+                        : null,
+
+                    PartyIdFrom             = pyt.PartyIdFrom,
+                    PartyIdFromName         = pty.Description ?? string.Empty,
+
+                    PartyIdTo               = pyt.PartyIdTo,
+                    PartyIdToName = ptyto != null
+                        ? ptyto.Description
+                        : (pyt.PartyIdTo == "Company" ? "Company" : pyt.PartyIdTo ?? "Unknown"),
+
+                    StatusId                = pyt.StatusId,
+                    StatusDescription       = isArabic ? sts.DescriptionArabic : sts.Description,
+                    StatusDescriptionEnglish= sts.Description,
+
+                    EffectiveDate           = (DateTime)pyt.EffectiveDate,
+                    Comments                = pyt.Comments,
+                    PaymentRefNum           = pyt.PaymentRefNum,
+                    PaymentPreferenceId     = pyt.PaymentPreferenceId,
+
+                    Amount                  = pyt.Amount,
+                    ActualCurrencyAmount    = pyt.ActualCurrencyAmount ?? pyt.Amount,
+                    CurrencyUomId           = pyt.CurrencyUomId ?? "EGP",
+
+                    FinAccountTransId       = pyt.FinAccountTransId,
+                    OverrideGlAccountId     = pyt.OverrideGlAccountId,
+
+                    FromPartyId = new OrderPartyDto
+                    {
+                        FromPartyId   = pty.PartyId,
+                        FromPartyName = pty.Description ?? string.Empty
+                    },
+
+                    IsDisbursement          = ptt.ParentTypeId == "DISBURSEMENT",
+                    OrganizationPartyId     = ptt.ParentTypeId == "DISBURSEMENT" ? pyt.PartyIdFrom : pyt.PartyIdTo,
+
+                    OrderId                 = ord != null ? ord.OrderId : null,
+                    CertificateNumber       = we != null ? we.CertificateNumber : null,
+
+                    ChequeNumber            = pyt.ChequeNumber,
+                    ChequeDate              = pyt.ChequeDate,
+                    ProjectId               = pyt.WorkEffortId,
+                    ProjectName             = proj != null ? proj.ProjectName : null,
+                    CostCenterId            = pyt.CostCenterId,
+                    CostCenterDescription   = cc != null ? cc.Description : null,
+
+                    DaysUntilDue = EF.Functions.DateDiffDay(Today, (DateTime)pyt.EffectiveDate),
+                }
+            ).AsQueryable();
+
+            // Apply OData options
+            if (request.Options.Filter != null)
+                query = request.Options.Filter.ApplyTo(query, new ODataQuerySettings()) as IQueryable<PaymentRecord>;
+
+            if (request.Options.OrderBy != null)
+                query = request.Options.OrderBy.ApplyTo(query, new ODataQuerySettings()) as IQueryable<PaymentRecord>;
+
+            return await Task.FromResult(query);
+        }
     }
 }
