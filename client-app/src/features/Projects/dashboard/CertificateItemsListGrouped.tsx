@@ -202,9 +202,9 @@ export default function CertificateItemsListGrouped({
                 width: 280,
             },
             { field: "description", title: getTranslatedLabel(`${localizationKey}.description`, "Description"), width: 280 },
-            { field: "quantity", title: getTranslatedLabel(`${localizationKey}.quantity`, "Quantity"), width: 100 },
-            { field: "materialPrice", title: getTranslatedLabel(`${localizationKey}.materialPrice`, "Material Price"), format: "{0:n2}", width: 150 },
-            { field: "laborPrice", title: getTranslatedLabel(`${localizationKey}.laborPrice`, "Labor Price"), format: "{0:n2}", width: 150 },
+            { field: "quantity", title: getTranslatedLabel(`${localizationKey}.quantity`, "Quantity"), width: 100, format: "{0:n3}" },
+            { field: "materialPrice", title: getTranslatedLabel(`${localizationKey}.materialPrice`, "Material Price"), format: "{0:n3}", width: 150 },
+            { field: "laborPrice", title: getTranslatedLabel(`${localizationKey}.laborPrice`, "Labor Price"), format: "{0:n3}", width: 150 },
             { field: "displayTotal", title: getTranslatedLabel(`${localizationKey}.totalAmount`, "Total Amount"), format: "{0:n2}", width: 130 },
             { field: "deductions", title: getTranslatedLabel(`${localizationKey}.deductions`, "Deductions"), format: "{0:n2}", width: 120 },
             {
@@ -217,7 +217,7 @@ export default function CertificateItemsListGrouped({
             { field: "insurance", title: getTranslatedLabel(`${localizationKey}.insurance`, "Insurance"), format: "{0:n2}", width: 120 },
             { field: "additionalInsurance", title: getTranslatedLabel(`${localizationKey}.additionalInsurance`, "Additional Insurance"), format: "{0:n2}", width: 140 },
             { field: "net", title: getTranslatedLabel(`${localizationKey}.net`, "Net"), format: "{0:n2}", width: 120 },
-            { field: "achievementPercentage", title: getTranslatedLabel(`${localizationKey}.achievementPercentage`, "Achievement %"), format: "{0:n0}", width: 140 },
+            { field: "achievementPercentage", title: getTranslatedLabel(`${localizationKey}.achievementPercentage`, "Achievement %"), format: "{0:n9}", width: 140 },
             { cell: CommandCell, width: 100 },
         ],
         [editMode, getTranslatedLabel, localizationKey, handleSelect, remove]

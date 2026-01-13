@@ -209,17 +209,18 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
             field: "quantity",
             title: getTranslatedLabel(`${localizationKey}.quantity`, "Quantity"),
             width: 100,
+            format: "{0:n3}",
         },
         {
             field: "unitPrice",
             title: getTranslatedLabel(`${localizationKey}.unitPrice`, "Unit Price"),
-            format: "{0:n2}",
+            format: "{0:n3}",
             width: 120,
         },
         {
             field: "displayTotal",
             title: getTranslatedLabel(`${localizationKey}.totalAmount`, "Total Amount"),
-            format: "{0:n2}",
+            format: "{0:n3}",
             width: 130,
         },
         ...(isSupplyWithDiscount

@@ -63,10 +63,12 @@ const useProjectCertificate = ({
             description: item.description || "",
             deductionDescription: item.deductionDescription || "", // Include deductionDescription
             procurementDate: item.procurementDate ? new Date(item.procurementDate).toISOString() : undefined,
-            achievementPercentage:
-                typeof item.achievementPercentage === "string"
-                    ? Math.round(parseFloat(item.achievementPercentage.replace("%", "")) || 0)
-                    : Math.round(item.achievementPercentage || 0),
+            // In certificateItemsFlat or wherever you prepare items
+            achievementPercentage: Number(
+                String(item.achievementPercentage || 0)
+                    .replace("%", "")
+                    .trim()
+            ) || 0,
         }));
     }, [nonDeletedCertificateItems]);
 
