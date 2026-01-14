@@ -242,10 +242,10 @@ const PartyFinancialHistory: React.FC<Props> = ({ partyId , partyName}) => {
 
             if (t.type === "invoice") {
                 if (t.isSalesInvoice) {
-                    dain = t.grossAmount;      // sales → party owes us more → balance increases
+                    madin = t.grossAmount;      // sales → party owes us more → balance increases
                     periodChange = +t.grossAmount;  // positive
                 } else if (t.isPurchaseInvoice) {
-                    madin = t.grossAmount;     // purchase → we owe more → balance decreases
+                    dain = -t.grossAmount;     // purchase → we owe more → balance decreases
                     periodChange = -t.grossAmount;  // negative
                 }
             } else if (t.type === "payment") {
