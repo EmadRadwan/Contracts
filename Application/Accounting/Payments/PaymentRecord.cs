@@ -22,6 +22,7 @@ public class PaymentRecord
     public string StatusDescription { get; set; }
     public string StatusDescriptionEnglish { get; set; }
     public DateTime EffectiveDate { get; set; }
+    public DateTime CreatedStamp { get; set; }
     public string Comments { get; set; }
     public string PaymentRefNum { get; set; }
     public string PaymentPreferenceId { get; set; }

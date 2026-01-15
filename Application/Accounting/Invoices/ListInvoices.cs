@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.OData.Query;
-using Persistence; // or wherever your DataContext is
-using Domain; // or wherever InvoiceView is defined
+using Persistence;
+using Domain;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;

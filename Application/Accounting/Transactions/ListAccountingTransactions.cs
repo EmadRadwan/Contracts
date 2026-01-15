@@ -75,7 +75,8 @@ public class ListAccountingTransactions
                              ShipmentId = transaction.ShipmentId,
                              CertificateNumber = certificate != null ? certificate.CertificateNumber : null,
                              ProjectNumber = project != null ? project.WorkEffortId : null,
-                             ProjectName = project != null ? project.ProjectName : null
+                             ProjectName = project != null ? project.ProjectName : null,
+                             CreatedStamp = transaction.CreatedStamp
                          }).Distinct().AsQueryable();
 
             return await Task.FromResult(query);

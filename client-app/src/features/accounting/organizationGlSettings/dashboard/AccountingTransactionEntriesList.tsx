@@ -33,9 +33,9 @@ export default function AccountingTransactionEntriesList() {
 
     const [accountingTransEntries, setAccountingTransEntries] = React.useState<DataResult>({data: [], total: 0});
     const [dataState, setDataState] = React.useState<State>({
-        take: 6,
+        take: 25,
         skip: 0,
-        sort: [{ field: "acctgTransId", dir: "desc" }], // Default sort: newest first
+        sort: [{ field: "createdStamp", dir: "desc" }], // Default sort: newest first
     });
     const {user} = useAppSelector((state) => state.account);
     const companyId = user?.organizationPartyId || "";

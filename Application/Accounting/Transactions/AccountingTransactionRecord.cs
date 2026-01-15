@@ -16,7 +16,7 @@ public class AccountingTransactionRecord
     public string? GlJournalId { get; set; }
     public string? GlFiscalTypeId { get; set; }
     public string? VoucherRef { get; set; }
-    public DateTime? VoucherDate { get; set; }
+    public DateTime? CreatedStamp { get; set; }
     public string? GroupStatusId { get; set; }
     public string? FixedAssetId { get; set; }
     public string? InventoryItemId { get; set; }

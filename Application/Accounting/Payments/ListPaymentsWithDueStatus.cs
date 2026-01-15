@@ -125,7 +125,7 @@ public class ListPaymentsWithDueStatus
                     ProjectName = proj != null ? proj.ProjectName : null,
                     CostCenterId = pyt.CostCenterId,
                     CostCenterDescription = cc != null ? cc.Description : null,
-
+                    CreatedStamp = (DateTime)pyt.CreatedStamp,
                     DaysUntilDue = EF.Functions.DateDiffDay(Today, (DateTime)pyt.EffectiveDate), // Positive = future, 0 = today, negative = overdue
                 }
             ).AsQueryable();

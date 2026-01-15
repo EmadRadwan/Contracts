@@ -35,9 +35,9 @@ export default function PaymentsWithDueAmountsList() {
 
     const [payments, setPayments] = React.useState<DataResult>({ data: [], total: 0 });
     const [dataState, setDataState] = React.useState<State>({
-        sort: [{ field: "effectiveDate", dir: "asc" }],
+        sort: [{ field: "createdStamp", dir: "desc" }],
         skip: 0,
-        take: 20,
+        take: 25,
     });
 
     const formEditMode = useAppSelector((s) => s.paymentsUi.formEditMode);
@@ -191,7 +191,7 @@ export default function PaymentsWithDueAmountsList() {
                     <Grid item xs={12}>
                         <div className="div-container">
                             <KendoGrid
-                                style={{ height: "65vh", flex: 1 }}
+                                style={{ flex: 1 }}
                                 data={payments || { data: [], total: 0 }}
                                 resizable={true}
                                 filterable={true}

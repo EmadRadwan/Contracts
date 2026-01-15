@@ -58,7 +58,16 @@ interface ProjectCertificate {
 
 export default function ProjectCertificatesList() {
     const [certificates, setCertificates] = useState<DataResult>({ data: [], total: 0 });
-    const [dataState, setDataState] = useState<State>({ take: 6, skip: 0 });
+    const [dataState, setDataState] = React.useState<State>({
+        sort: [
+            {
+                field: "createdStamp",
+                dir: "desc",
+            },
+        ],
+        skip: 0,
+        take: 25,
+    });
     const { selectedCertificate, certificateFormEditMode } = useAppSelector(certificateUiSelectors.selectCertificateUi);
     const { getTranslatedLabel } = useTranslationHelper();
     const dispatch = useAppDispatch();
@@ -526,7 +535,7 @@ export default function ProjectCertificatesList() {
                     </Grid>
                     <Grid item xs={12}>
                         <KendoGrid
-                            style={{ height: "65vh" }}
+                            //style={{ height: "65vh" }}
                             scrollable="scrollable" // REFACTOR: Add scrollable prop
                             // Purpose: Explicitly enables horizontal and vertical scrolling
                             // Context: Matches CertificateItemsList* configuration

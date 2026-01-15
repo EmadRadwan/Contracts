@@ -53,9 +53,9 @@ export default function AccountingTransactionsList() {
   });
 
   const [dataState, setDataState] = useState<State>({
-    take: 6,
+    take: 25,
     skip: 0,
-    sort: [{ field: "transactionDate", dir: "desc" }],
+    sort: [{ field: "createdStamp", dir: "desc" }],
   });
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

@@ -24,7 +24,7 @@ export default function InvoicesList() {
     const [invoices, setInvoices] = useState<DataResult>({data: [], total: 0});
     const navigate = useNavigate();
 
-    const initialDataState = {take: 6, skip: 0,
+    const initialDataState = {take: 25, skip: 0,
         sort: [{ field: "invoiceDate", dir: "desc" }],};
     const [dataState, setDataState] = React.useState<State>(initialDataState);
 
@@ -84,7 +84,7 @@ export default function InvoicesList() {
                     <Grid item xs={12}>
                         <div className="div-container">
                             <KendoGrid
-                                style={{height: "65vh", flex: 1}}
+                                style={{flex: 1}}
                                 data={invoices ? invoices : {data: [], total: 0}}
                                 resizable={true}
                                 filterable={true}

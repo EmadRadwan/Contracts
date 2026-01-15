@@ -94,6 +94,7 @@ public class ListAccountingTransactionEntries
                     TransactionDate = trans.TransactionDate,
                     GlFiscalTypeId = trans.GlFiscalTypeId,
                     AcctgTransactionTypeDescription = acctType.Description,
+                    CreatedStamp = te.CreatedStamp
                 }).AsQueryable();
 
             return query;

@@ -26,6 +26,7 @@ public class AccountingTransactionEntryRecord
     public decimal? Amount { get; set; }
     public string? DebitCreditFlag { get; set; }
     public DateTime? TransactionDate { get; set; }
+    public DateTime? CreatedStamp { get; set; }
     public string? IsPosted { get; set; }
     public DateTime? PostedDate { get; set; }
     public string? GlFiscalTypeId { get; set; }

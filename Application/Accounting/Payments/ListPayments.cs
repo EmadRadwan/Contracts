@@ -120,7 +120,8 @@ public class ListPayments
                     ProjectId = pyt.WorkEffortId,
                     ProjectName = proj != null ? proj.ProjectName : null,
                     CostCenterId = pyt.CostCenterId,
-                    CostCenterDescription = cc.Description
+                    CostCenterDescription = cc.Description,
+                    CreatedStamp = (DateTime)pyt.CreatedStamp,
                 }
             ).AsQueryable();
 
