@@ -49,6 +49,22 @@ public class ProjectController : BaseApiController
         return HandleResult(result);
     }
     
+    [HttpDelete("deleteProjectCertificate/{workEffortId}", Name = "DeleteProjectCertificate")]
+    public async Task<ActionResult> DeleteProjectCertificate(string workEffortId)
+    {
+        var result = await Mediator.Send(new DeleteProjectCertificate.Command 
+        { 
+            WorkEffortId = workEffortId 
+        });
+
+        if (result.IsSuccess)
+        {
+            return Ok(new { message = "Certificate and related artifacts deleted successfully" });
+        }
+
+        return HandleResult(result); // Assuming you have a method like this
+    }
+    
     [HttpGet("{workEffortId}/getCertificateItems")]
     public async Task<IActionResult> GetCertificateItems(string workEffortId)
     {

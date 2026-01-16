@@ -36,7 +36,7 @@ const TrialBalance = () => {
     { field: "accountCode", dir: "asc" },
   ];
   const [sort, setSort] = useState(initialSort);
-  const initialDataState: State = { skip: 0, take: 6 };
+  const initialDataState: State = { skip: 0, take: 25 };
   const [page, setPage] = useState<any>(initialDataState);
   const pageChange = (event: GridPageChangeEvent) => {
     setPage(event.page);
@@ -140,7 +140,7 @@ const TrialBalance = () => {
               <div className="div-container">
                 <KendoGrid
                   className="main-grid"
-                  style={{ height: "300px" }}
+                  //style={{ height: "300px" }}
                   data={orderBy(data?.accountBalances ?? [], sort).slice(
                     page.skip,
                     page.take + page.skip

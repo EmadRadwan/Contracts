@@ -1,6 +1,9 @@
 import {useCallback, useEffect, useState} from "react";
 import {FormComboBoxVirtualParty} from "../../../../app/common/form/FormComboBoxVirtualParty";
-import {chequeValidator, requiredValidator} from "../../../../app/common/form/Validators";
+import {
+    createBankTransferAllowedValidator, createChequeFieldsValidator,
+    requiredValidator
+} from "../../../../app/common/form/Validators";
 import {Field, Form, FormElement, FormRenderProps} from "@progress/kendo-react-form";
 import {MemoizedFormDropDownList} from "../../../../app/common/form/MemoizedFormDropDownList";
 import {Alert, Box, Button, Grid, Skeleton, Typography} from "@mui/material";
@@ -18,6 +21,7 @@ import {FormDropDownTreeGlAccount2} from "../../../../app/common/form/FormDropDo
 import {FormComboBoxVirtualProject} from "../../../../app/common/form/FormComboBoxVirtualProject";
 import {MemoizedFormComboBox2} from "../../../../app/common/form/FormComboBox2";
 import CreateCostCenterModal from "./CreateCostCenterModal";
+import {MemoizedFormCheckBox} from "../../../../app/common/form/FormCheckBox";
 
 interface NewPaymentOutProps {
     partyInputRef: React.RefObject<HTMLInputElement>;
@@ -36,8 +40,8 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                          partyInputRef,
                                                          companies,
                                                          filteredPaymentTypes,
-                                                         paymentMethods,
-                                                         getTranslatedLabel,
+                                                         paymentMethods = [],
+                                                            getTranslatedLabel,
                                                          setShowNewCustomer,
                                                          onCreate,
                                                          handleCancelForm,
@@ -67,6 +71,8 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
 
     // REFACTOR: Added state to control the Create Cost Center modal (mirrors EditPaymentForm behavior)
     const [showCreateCostCenter, setShowCreateCostCenter] = useState(false);
+    const bankTransferValidator = createBankTransferAllowedValidator(paymentMethods);
+    const chequeValidator = createChequeFieldsValidator(paymentMethods);
 
     const stableTrigger = useCallback(
         (partyId: string, projectId: string) => {
@@ -142,6 +148,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                 isDepositWithDrawPayment: "Y",
                 finAccountTransTypeId: "WITHDRAWAL",
                 isDisbursement: true,
+                isBankTransfer: false,
                 chequeNumber: "",
                 chequeDate: null,
                 projectId: "",
@@ -286,7 +293,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                 }}
                                             />
                                         </Grid>
-                                        <Grid item xs={3}>
+                                        <Grid item xs={2}>
                                             <Field
                                                 id="paymentMethodId"
                                                 name="paymentMethodId"
@@ -301,6 +308,19 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                 validator={requiredValidator}
                                             />
                                         </Grid>
+                                        <Grid item xs={1}>
+                                            <Field
+                                                id="isBankTransfer"
+                                                name="isBankTransfer"
+                                                label={getTranslatedLabel(
+                                                    "accounting.payments.form.isBankTransfer",
+                                                    "Bank Transfer"
+                                                )}
+                                                component={MemoizedFormCheckBox}
+                                                validator={bankTransferValidator}
+
+                                            />
+                                        </Grid>
                                         <Grid item xs={2}>
                                             <Field
                                                 id="chequeNumber"
@@ -308,7 +328,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                 label={getTranslatedLabel(`${localizationKey}.chequeNumber`, "Cheque Number")}
                                                 component={FormInput}
                                                 autoComplete="off"
-                                                validator={(value, getter) => chequeValidator(value, getter, undefined, formRenderProps)}
+                                                validator={chequeValidator}
 
                                             />
                                         </Grid>
@@ -319,7 +339,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                 label={getTranslatedLabel(`${localizationKey}.chequeDate`, "Cheque Date")}
                                                 component={FormDatePicker}
                                                 format="yyyy-MM-dd"
-                                                validator={(value, getter) => chequeValidator(value, getter, undefined, formRenderProps)}
+                                                validator={chequeValidator}
                                             />
                                         </Grid>
                                         <Grid item xs={1}>

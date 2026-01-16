@@ -96,15 +96,97 @@ export const percentageValidator = (value) => {
     }
 };
 
-export const chequeValidator = (value, getter, _, formRenderProps) => {
-    // `getter` gives us the value of any other field in the form
-    const paymentMethodId = getter?.("paymentMethodId") as string | undefined;
-    const CASH_METHOD_ID = "CASH";
+// Validator for the "Bank Transfer" checkbox
+// Only allows checking it when the selected payment method has paymentMethodTypeId === 'COMPANY_CHECK'
+export const createBankTransferAllowedValidator = (paymentMethods: any[] = []) => {
+    return (value: boolean | undefined, getter: (field: string) => any): string | undefined => {
+        // Only validate when someone tries to check it
+        if (value !== true) {
+            return undefined;
+        }
 
-    // If method is CASH → cheque fields are optional
-    if (paymentMethodId === CASH_METHOD_ID) return undefined;
+        const paymentMethodId = getter('paymentMethodId') as string | undefined;
 
-    // Otherwise the field must have a non-empty value
-    return value ? undefined : "Required when payment method is not Cash";
+        if (!paymentMethodId) {
+            return "Please select a payment method first";
+        }
+
+        if (paymentMethods.length === 0) {
+            return "Payment methods data not available";
+        }
+
+        const selectedMethod = paymentMethods.find(
+            (m) => m.paymentMethodId === paymentMethodId
+        );
+
+        if (!selectedMethod) {
+            return "Selected payment method not found";
+        }
+
+        if (selectedMethod.paymentMethodTypeId !== 'COMPANY_CHECK') {
+            return "Bank Transfer is only allowed for bank cheque payment methods (COMPANY_CHECK)";
+        }
+
+        return undefined;
+    };
+};
+
+// Validator for chequeNumber and chequeDate fields
+// Enforces:
+// - Must be empty when isBankTransfer = true (and it's a COMPANY_CHECK method)
+// - Must be filled when isBankTransfer = false (for COMPANY_CHECK methods)
+// - Not applicable / should be empty for other methods
+export const createChequeFieldsValidator = (paymentMethods: any[] = []) => {
+    return (value: any, getter: (field: string) => any): string | undefined => {
+        const isBankTransfer = !!getter('isBankTransfer');
+        const paymentMethodId = getter('paymentMethodId') as string | undefined;
+
+        // If no method selected yet → no error here (let requiredValidator handle it)
+        if (!paymentMethodId) {
+            return undefined;
+        }
+
+        // If no payment methods loaded → skip for now
+        if (paymentMethods.length === 0) {
+            return undefined;
+        }
+
+        const method = paymentMethods.find((m) => m.paymentMethodId === paymentMethodId);
+
+        // Invalid method → no strong opinion here
+        if (!method) {
+            return undefined;
+        }
+
+        const isCompanyCheck = method.paymentMethodTypeId === 'COMPANY_CHECK';
+        const isCash = paymentMethodId === 'CASH';
+
+        // For non-COMPANY_CHECK methods → cheque fields should not be used
+        if (!isCompanyCheck) {
+            if (value) {
+                return "Cheque number/date not applicable for this payment method";
+            }
+            return undefined;
+        }
+
+        // ────────────────────────
+        // COMPANY_CHECK method cases
+        // ────────────────────────
+
+        if (isBankTransfer) {
+            // Bank transfer → cheque should be EMPTY
+            if (value) {
+                return "Cheque number/date must be empty when Bank Transfer is selected";
+            }
+            return undefined;
+        }
+
+        // Classic cheque payment (not bank transfer) → required
+        if (!value) {
+            return "Cheque number/date is required for COMPANY_CHECK payments unless using Bank Transfer";
+        }
+
+        return undefined;
+    };
 };
 

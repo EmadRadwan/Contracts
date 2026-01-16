@@ -34,6 +34,8 @@ import {WorkmanshipCertificateExcel} from "../report/WorkmanshipCertificateExcel
 import {SupplyCertificateExcel} from "../report/SupplyCertificateExcel";
 import {Can} from "../../account/Can";
 import {ReviewCommentsDialog} from "./ReviewCommentsDialog";
+import {useDeleteProjectCertificateMutation} from "../../../app/store/apis/projectsApi";
+import {ConfirmDialog} from "./ConfirmDialog";
 
 interface ProjectCertificateFormProps {
     editMode: number; // 0: view, 1: create, 2: edit (CREATED), 3: edit (APPROVED), 4: edit (COMPLETED)
@@ -57,6 +59,10 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
     const {user} = useAppSelector((state) => state.account);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleteLoading, setDeleteLoading] = useState(false);
+    const [deleteCertificate] = useDeleteProjectCertificateMutation();
+    const dispatch = useAppDispatch();
     const {getTranslatedLabel} = useTranslationHelper();
 
 
@@ -82,6 +88,40 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
     const isApproveDisabled = !workEffortId || currentStatusId === CertificateStatus.APPROVED || currentStatusId === CertificateStatus.COMPLETE;
     const isCompleteDisabled = !workEffortId || currentStatusId === CertificateStatus.COMPLETE;
 
+    const handleDeleteClick = () => {
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!workEffortId) return;
+
+        setDeleteLoading(true);
+        try {
+            await deleteCertificate(workEffortId).unwrap();
+            toast.success(getTranslatedLabel(
+                'projects.certificate.deleted',
+                'Certificate deleted successfully'
+            ));
+
+            // Reset UI and go back to list
+            dispatch(resetCertificateUi());
+            dispatch(setCertificateFormEditMode(0));
+            dispatch(resetUiCertificateItems());
+
+            // Optional: refetch list if needed
+            // refetchCertificates();
+
+            setDeleteDialogOpen(false);
+        } catch (err: any) {
+            toast.error(
+                err?.data?.message ||
+                getTranslatedLabel('projects.certificate.deleteFailed', 'Failed to delete certificate')
+            );
+        } finally {
+            setDeleteLoading(false);
+        }
+    };
+    
     return (
         <>
             <Button
@@ -122,8 +162,35 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
                         {getTranslatedLabel('projects.certificate.approve', 'Approve Certificate')}
                     </MenuItem>
                 </Can>
+
+                {/*<Can perform="DeleteCertificate">   ← Add permission if you use CASL or similar 
+                        <MenuItem
+                            onClick={() => {
+                                handleClose();
+                                handleDeleteClick();
+                            }}
+                            sx={{ color: 'error.main' }}
+                        >
+                            {getTranslatedLabel('projects.certificate.delete', 'Delete Certificate')}
+                        </MenuItem>
+                </Can>*/}
                
             </Menu>
+
+            <ConfirmDialog
+                open={deleteDialogOpen}
+                title={getTranslatedLabel('projects.certificate.confirmDeleteTitle', 'Delete Certificate')}
+                message={getTranslatedLabel(
+                    'projects.certificate.confirmDeleteMessage',
+                    'Are you sure you want to delete this certificate and all related data (items, purchase order, etc.)? This action cannot be undone.'
+                )}
+                confirmText={getTranslatedLabel('common.delete', 'Delete')}
+                cancelText={getTranslatedLabel('common.cancel', 'Cancel')}
+                onConfirm={handleDeleteConfirm}
+                onCancel={() => setDeleteDialogOpen(false)}
+                loading={deleteLoading}
+                danger
+            />
         </>
     );
 };

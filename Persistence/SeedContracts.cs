@@ -2787,6 +2787,50 @@ public class SeedContracts
             await context.CostCenters.AddRangeAsync(costCenters);
             await context.SaveChangesAsync();
         }
+        
+        // 1. Deduction Types
+        if (!context.DeductionTypes.Any())
+        {
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/deduction_types.json");
+            var jsonData = File.ReadAllText(path);
+
+            var deductionTypes = JsonConvert.DeserializeObject<List<DeductionType>>(jsonData);
+            await context.DeductionTypes.AddRangeAsync(deductionTypes);
+            await context.SaveChangesAsync();
+        }
+        
+        // 3. Employee Position Types
+        if (!context.EmplPositionTypes.Any())
+        {
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/empl_position_types.json");
+            var jsonData = File.ReadAllText(path);
+
+            var positionTypes = JsonConvert.DeserializeObject<List<EmplPositionType>>(jsonData);
+            await context.EmplPositionTypes.AddRangeAsync(positionTypes);
+            await context.SaveChangesAsync();
+        }
+
+        // 2. Employee Positions
+        if (!context.EmplPositions.Any())
+        {
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/empl_positions.json");
+            var jsonData = File.ReadAllText(path);
+
+            var emplPositions = JsonConvert.DeserializeObject<List<EmplPosition>>(jsonData);
+            await context.EmplPositions.AddRangeAsync(emplPositions);
+            await context.SaveChangesAsync();
+        }
+
+        // 4. Rate Types
+        if (!context.RateTypes.Any())
+        {
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/rate_types.json");
+            var jsonData = File.ReadAllText(path);
+
+            var rateTypes = JsonConvert.DeserializeObject<List<RateType>>(jsonData);
+            await context.RateTypes.AddRangeAsync(rateTypes);
+            await context.SaveChangesAsync();
+        }
 
         /*if (!context.SupplierProducts.Any())
         {

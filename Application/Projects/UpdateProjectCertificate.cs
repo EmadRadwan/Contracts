@@ -401,57 +401,7 @@ namespace Application.Projects
 
                         // REFACTOR: Save now so RelatedOrderId is persisted before approval query
                         await _context.SaveChangesAsync(cancellationToken);
-
-                        // REFACTOR: Re-query fresh order data for approval (same pattern as Create)
-                        /*var orderHeader = await _context.OrderHeaders
-                            .FirstOrDefaultAsync(oh => oh.OrderId == newOrderId, cancellationToken);
-
-                        var freshItems = await _context.OrderItems
-                            .Where(oi => oi.OrderId == newOrderId)
-                            .Select(oi => new OrderItemDto2
-                            {
-                                OrderId = oi.OrderId,
-                                OrderItemSeqId = oi.OrderItemSeqId,
-                                ProductId = oi.ProductId,
-                                Quantity = oi.Quantity,
-                                UnitPrice = oi.UnitPrice,
-                                UomId = oi.UomId,
-                                ItemDescription = oi.ItemDescription,
-                                OrderItemTypeId = oi.OrderItemTypeId,
-                                StatusId = oi.StatusId,
-                                CreatedStamp = oi.CreatedStamp,
-                                LastUpdatedStamp = oi.LastUpdatedStamp
-                            }).ToListAsync(cancellationToken);
-
-                        var freshAdjustments = await _context.OrderAdjustments
-                            .Where(oa => oa.OrderId == newOrderId)
-                            .Select(oa => new OrderAdjustmentDto2
-                            {
-                                OrderAdjustmentId = oa.OrderAdjustmentId,
-                                OrderAdjustmentTypeId = oa.OrderAdjustmentTypeId,
-                                OrderId = oa.OrderId,
-                                OrderItemSeqId = oa.OrderItemSeqId,
-                                Amount = oa.Amount,
-                                CorrespondingProductId = oa.CorrespondingProductId,
-                                IsManual = oa.IsManual,
-                                CreatedDate = oa.CreatedDate,
-                                SourcePercentage = oa.SourcePercentage,
-                                IsAdjustmentDeleted = false
-                            }).ToListAsync(cancellationToken);
-
-                        var approveDto = new OrderDto
-                        {
-                            OrderId = newOrderId,
-                            FromPartyId = fromPartyId,
-                            GrandTotal = orderHeader!.GrandTotal,
-                            OrderDate = stamp,
-                            CurrencyUomId = await _productStoreService.GetProductStoreDefaultCurrencyId(),
-                            StatusId = "ORDER_APPROVED",
-                            OrderItems = freshItems,
-                            OrderAdjustments = freshAdjustments
-                        };
-
-                        await _orderService.UpdateOrApprovePurchaseOrder(approveDto, "APPROVE");*/
+                        
                         await _context.SaveChangesAsync(cancellationToken);
                     }
 

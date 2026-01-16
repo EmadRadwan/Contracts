@@ -131,10 +131,13 @@ const projectsApi = createApi({
                 }),
                 invalidatesTags: ['ProjectCertificates']
             }),
-            // REFACTOR: Updated reviewCertificate mutation to accept optional comments
-// Purpose: Allow users to include review comments when marking certificate as Ready for Approval or Requires Editing
-// Improvement: Enhances audit trail and communication; keeps comments optional to maintain backward compatibility
-// Context: Backend expects 'comments' as an optional string field in the POST body
+            deleteProjectCertificate: builder.mutation<void, string>({
+                query: (workEffortId) => ({
+                    url: `/project/deleteProjectCertificate/${workEffortId}`,
+                    method: 'DELETE',
+                }),
+                invalidatesTags: ['ProjectCertificates'], // or whatever tag you use for list invalidation
+            }),
             reviewCertificate: builder.mutation<
                 { success: boolean; certificate?: any },
                 {
@@ -161,6 +164,7 @@ const projectsApi = createApi({
                 ],
             }),
         };
+        
     },
 });
 
@@ -174,7 +178,9 @@ export const {
     useGetCertificatesByPartyQuery,
     useProcessWorkEffortCertificateMutation,
     useIssueMaterialsForCertificateMutation,
-    useReviewCertificateMutation, useApprovePOForCertificateMutation,
+    useReviewCertificateMutation,
+    useApprovePOForCertificateMutation,
+    useDeleteProjectCertificateMutation,
 } = projectsApi;
 export {projectsApi};
 

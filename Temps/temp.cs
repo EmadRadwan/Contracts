@@ -1,160 +1,212 @@
-using Application.Order.Orders;
-using MediatR;
-using Microsoft.AspNetCore.OData.Query;
-using Microsoft.EntityFrameworkCore;
-using Persistence;
+-- MySQL delete script - CertificateNumber = '83-0001'
+-- Tables named in OFBiz / uppercase_with_underscores style
 
-namespace Application.Accounting.Payments;
+    -- Step 1: Set variable with comma-separated payment IDs
+SET @payment_ids = (
+    SELECT GROUP_CONCAT(DISTINCT p.PAYMENT_ID SEPARATOR ',')
+FROM PAYMENT p
+    INNER JOIN ORDER_PAYMENT_PREFERENCE opp ON p.PAYMENT_PREFERENCE_ID = opp.ORDER_PAYMENT_PREFERENCE_ID
+INNER JOIN ORDER_HEADER oh ON opp.ORDER_ID = oh.ORDER_ID
+INNER JOIN WORK_EFFORT we ON oh.ORDER_ID = we.RELATED_ORDER_ID
+WHERE we.CERTIFICATE_NUMBER = '83-0001'
+    );
 
-public class ListPaymentsWithDueStatus
-{
-    public class Query : IRequest<IQueryable<PaymentRecord>>
-    {
-        public ODataQueryOptions<PaymentRecord> Options { get; set; } = null!;
-        public string Language { get; set; } = "en";
-    }
+-- Step 2: Delete entries
+DELETE ate
+FROM ACCTG_TRANS_ENTRY ate
+    INNER JOIN ACCTG_TRANS at ON ate.ACCT_TRANS_ID = at.ACCT_TRANS_ID
+WHERE FIND_IN_SET(at.PAYMENT_ID, @payment_ids);
 
-    public class Handler : IRequestHandler<Query, IQueryable<PaymentRecord>>
-    {
-        private readonly DataContext _context;
-        private static readonly DateTime Today = DateTime.Today;
+-- Step 3: Delete transactions
+DELETE at
+FROM ACCTG_TRANS at
+    WHERE FIND_IN_SET(at.PAYMENT_ID, @payment_ids);
 
-        public Handler(DataContext context)
-        {
-            _context = context;
-        }
+-- Then continue with payment deletion as before
+ 
+UPDATE FIN_ACCOUNT_TRANS
+SET PAYMENT_ID = NULL
+WHERE FIN_ACCOUNT_TRANS_ID = '10042'
+AND PAYMENT_ID IS NOT NULL; 
 
-        public async Task<IQueryable<PaymentRecord>> Handle(Query request, CancellationToken cancellationToken)
-        {
-            var language = request.Language?.ToLower() ?? "en";
-            var isArabic = language == "ar";
+-- 1. Payments (linked through ORDER_PAYMENT_PREFERENCE)
+DELETE p
+FROM PAYMENT p
+    INNER JOIN ORDER_PAYMENT_PREFERENCE opp 
+    ON p.PAYMENT_PREFERENCE_ID = opp.ORDER_PAYMENT_PREFERENCE_ID
+INNER JOIN ORDER_HEADER oh 
+ON opp.ORDER_ID = oh.ORDER_ID
+INNER JOIN WORK_EFFORT we 
+ON oh.ORDER_ID = we.RELATED_ORDER_ID
+WHERE we.CERTIFICATE_NUMBER = '83-0001';
+    
+-- 14. Financial Account Transactions (delete after accounting trans, before payments)
+DELETE fat
+FROM FIN_ACCOUNT_TRANS fat
+    INNER JOIN PAYMENT p 
+    ON fat.PAYMENT_ID = p.PAYMENT_ID
+INNER JOIN ORDER_PAYMENT_PREFERENCE opp 
+ON p.PAYMENT_PREFERENCE_ID = opp.ORDER_PAYMENT_PREFERENCE_ID
+INNER JOIN ORDER_HEADER oh 
+ON opp.ORDER_ID = oh.ORDER_ID
+INNER JOIN WORK_EFFORT we 
+ON oh.ORDER_ID = we.RELATED_ORDER_ID
+WHERE we.CERTIFICATE_NUMBER = '83-0001';
 
-            var query = (
-                from pyt in _context.Payments
 
-                // Required joins (inner)
-                join ptt in _context.PaymentTypes
-                    on pyt.PaymentTypeId equals ptt.PaymentTypeId
-                join sts in _context.StatusItems
-                    on pyt.StatusId equals sts.StatusId
-                join pty in _context.Parties
-                    on pyt.PartyIdFrom equals pty.PartyId
 
-                // LEFT JOIN – PaymentMethodTypeId is often NULL
-                join pmt in _context.PaymentMethodTypes
-                    on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into pmtJoin
-                from pmt in pmtJoin.DefaultIfEmpty()
 
-                // ────────────────────────────────────────────────
-                // NEW: LEFT JOIN to PaymentMethods
-                join pm in _context.PaymentMethods
-                    on pyt.PaymentMethodId equals pm.PaymentMethodId into pmJoin
-                from pm in pmJoin.DefaultIfEmpty()
-                // ────────────────────────────────────────────────
+-- 2. Order Payment Preferences
+DELETE opp
+FROM ORDER_PAYMENT_PREFERENCE opp
+INNER JOIN ORDER_HEADER oh 
+    ON opp.ORDER_ID = oh.ORDER_ID
+INNER JOIN WORK_EFFORT we 
+    ON oh.ORDER_ID = we.RELATED_ORDER_ID
+WHERE we.CERTIFICATE_NUMBER = '83-0001';
 
-                // LEFT JOIN – PartyIdTo may be "Company" or missing
-                join ptyto in _context.Parties
-                    on pyt.PartyIdTo equals ptyto.PartyId into ptytoJoin
-                from ptyto in ptytoJoin.DefaultIfEmpty()
 
-                join opp in _context.OrderPaymentPreferences
-                    on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId into oppJoin
-                from opp in oppJoin.DefaultIfEmpty()
+-- 3. Order Roles
+DELETE FROM ORDER_ROLE
+WHERE ORDER_ID IN (
+    SELECT oh.ORDER_ID
+    FROM ORDER_HEADER oh
+    INNER JOIN WORK_EFFORT we ON oh.ORDER_ID = we.RELATED_ORDER_ID
+    WHERE we.CERTIFICATE_NUMBER = '83-0001'
+);
 
-                join ord in _context.OrderHeaders
-                    on opp.OrderId equals ord.OrderId into ordJoin
-                from ord in ordJoin.DefaultIfEmpty()
 
-                join we in _context.WorkEfforts
-                    on ord.OrderId equals we.RelatedOrderId into weJoin
-                from we in weJoin.DefaultIfEmpty()
+-- 4. Order Statuses
+DELETE FROM ORDER_STATUS
+WHERE ORDER_ID IN (
+    SELECT oh.ORDER_ID
+    FROM ORDER_HEADER oh
+    INNER JOIN WORK_EFFORT we ON oh.ORDER_ID = we.RELATED_ORDER_ID
+    WHERE we.CERTIFICATE_NUMBER = '83-0001'
+);
 
-                // LEFT JOIN for CostCenter
-                join cc in _context.CostCenters 
-                    on pyt.CostCenterId equals cc.CostCenterId into ccJoin
-                from cc in ccJoin.DefaultIfEmpty()
 
-                // LEFT JOIN for Project (WorkEffort)
-                join proj in _context.WorkEfforts 
-                    on pyt.WorkEffortId equals proj.WorkEffortId into projJoin
-                from proj in projJoin.DefaultIfEmpty()
+-- 5. Order Adjustments
+DELETE FROM ORDER_ADJUSTMENT
+WHERE ORDER_ID IN (
+    SELECT oh.ORDER_ID
+    FROM ORDER_HEADER oh
+    INNER JOIN WORK_EFFORT we ON oh.ORDER_ID = we.RELATED_ORDER_ID
+    WHERE we.CERTIFICATE_NUMBER = '83-0001'
+);
 
-                select new PaymentRecord
-                {
-                    PaymentId               = pyt.PaymentId,
-                    PaymentTypeId           = pyt.PaymentTypeId,
-                    PaymentTypeDescription  = isArabic ? ptt.DescriptionArabic : ptt.Description,
+DELETE FROM ORDER_ITEM_SHIP_GROUP_ASSOC
+    WHERE ORDER_ID IN (
+    SELECT oh.ORDER_ID
+    FROM ORDER_HEADER oh
+INNER JOIN WORK_EFFORT we
+ON oh.ORDER_ID = we.RELATED_ORDER_ID
+WHERE we.CERTIFICATE_NUMBER = '83-0001'
+    );
 
-                    PaymentMethodId         = pyt.PaymentMethodId,
-                    PaymentMethodTypeId     = pyt.PaymentMethodTypeId,
+DELETE FROM ORDER_ITEM_BILLING
+    WHERE ORDER_ID IN (
+    SELECT oh.ORDER_ID
+    FROM ORDER_HEADER oh
+INNER JOIN WORK_EFFORT we ON oh.ORDER_ID = we.RELATED_ORDER_ID
+WHERE we.CERTIFICATE_NUMBER = '83-0001'
+    );
 
-                    // ────────────────────────────────────────────────
-                    // NEW fields from PaymentMethods
-                    PaymentMethodCode       = pm != null ? pm.Code       : null,
-                    PaymentMethodName       = pm != null ? (isArabic ? pm.DescriptionArabic : pm.Description) : null,
-                    PaymentMethodNameEnglish= pm != null ? pm.Description : null,
-                    // You can add more fields like IsActive, Icon, etc. if they exist
-                    // ────────────────────────────────────────────────
+DELETE sr
+FROM SHIPMENT_RECEIPT sr
+    INNER JOIN ORDER_ITEM oi 
+    ON sr.ORDER_ID = oi.ORDER_ID
+AND sr.ORDER_ITEM_SEQ_ID = oi.ORDER_ITEM_SEQ_ID
+INNER JOIN ORDER_HEADER oh 
+ON oi.ORDER_ID = oh.ORDER_ID
+INNER JOIN WORK_EFFORT we 
+ON oh.ORDER_ID = we.RELATED_ORDER_ID
+WHERE we.CERTIFICATE_NUMBER = '83-0001';
 
-                    PaymentMethodTypeDescription = pmt != null
-                        ? (isArabic ? pmt.DescriptionArabic : pmt.Description)
-                        : null,
+-- 6. Order Items (critical - many child tables reference this)
+DELETE FROM ORDER_ITEM
+WHERE ORDER_ID IN (
+    SELECT oh.ORDER_ID
+    FROM ORDER_HEADER oh
+    INNER JOIN WORK_EFFORT we ON oh.ORDER_ID = we.RELATED_ORDER_ID
+    WHERE we.CERTIFICATE_NUMBER = '83-0001'
+);
 
-                    PartyIdFrom             = pyt.PartyIdFrom,
-                    PartyIdFromName         = pty.Description ?? string.Empty,
 
-                    PartyIdTo               = pyt.PartyIdTo,
-                    PartyIdToName = ptyto != null
-                        ? ptyto.Description
-                        : (pyt.PartyIdTo == "Company" ? "Company" : pyt.PartyIdTo ?? "Unknown"),
+-- 7. Order Item Ship Groups
+DELETE FROM ORDER_ITEM_SHIP_GROUP
+WHERE ORDER_ID IN (
+    SELECT oh.ORDER_ID
+    FROM ORDER_HEADER oh
+    INNER JOIN WORK_EFFORT we ON oh.ORDER_ID = we.RELATED_ORDER_ID
+    WHERE we.CERTIFICATE_NUMBER = '83-0001'
+);
 
-                    StatusId                = pyt.StatusId,
-                    StatusDescription       = isArabic ? sts.DescriptionArabic : sts.Description,
-                    StatusDescriptionEnglish= sts.Description,
+DELETE os
+FROM ORDER_SHIPMENT os
+    INNER JOIN ORDER_HEADER oh 
+    ON os.ORDER_ID = oh.ORDER_ID
+INNER JOIN WORK_EFFORT we 
+ON oh.ORDER_ID = we.RELATED_ORDER_ID
+WHERE we.CERTIFICATE_NUMBER = '83-0001';
 
-                    EffectiveDate           = (DateTime)pyt.EffectiveDate,
-                    Comments                = pyt.Comments,
-                    PaymentRefNum           = pyt.PaymentRefNum,
-                    PaymentPreferenceId     = pyt.PaymentPreferenceId,
+DELETE FROM ACCTG_TRANS_ENTRY
+    WHERE ACCTG_TRANS_ID IN (
+    SELECT ACCTG_TRANS_ID
+FROM ACCTG_TRANS
+WHERE SHIPMENT_ID = '10519'
+    );
 
-                    Amount                  = pyt.Amount,
-                    ActualCurrencyAmount    = pyt.ActualCurrencyAmount ?? pyt.Amount,
-                    CurrencyUomId           = pyt.CurrencyUomId ?? "EGP",
+DELETE FROM ACCTG_TRANS
+WHERE SHIPMENT_ID = '10519';
 
-                    FinAccountTransId       = pyt.FinAccountTransId,
-                    OverrideGlAccountId     = pyt.OverrideGlAccountId,
+DELETE FROM SHIPMENT_ITEM s
+WHERE s.SHIPMENT_ID = '10519';
 
-                    FromPartyId = new OrderPartyDto
-                    {
-                        FromPartyId   = pty.PartyId,
-                        FromPartyName = pty.Description ?? string.Empty
-                    },
+DELETE FROM SHIPMENT_STATUS s
+WHERE s.SHIPMENT_ID = '10519';
 
-                    IsDisbursement          = ptt.ParentTypeId == "DISBURSEMENT",
-                    OrganizationPartyId     = ptt.ParentTypeId == "DISBURSEMENT" ? pyt.PartyIdFrom : pyt.PartyIdTo,
+DELETE FROM SHIPMENT_ROUTE_SEGMENT s
+WHERE s.SHIPMENT_ID = '10519';
 
-                    OrderId                 = ord != null ? ord.OrderId : null,
-                    CertificateNumber       = we != null ? we.CertificateNumber : null,
+DELETE FROM SHIPMENT s
+WHERE s.PRIMARY_ORDER_ID = 'PO10699';
 
-                    ChequeNumber            = pyt.ChequeNumber,
-                    ChequeDate              = pyt.ChequeDate,
-                    ProjectId               = pyt.WorkEffortId,
-                    ProjectName             = proj != null ? proj.ProjectName : null,
-                    CostCenterId            = pyt.CostCenterId,
-                    CostCenterDescription   = cc != null ? cc.Description : null,
+UPDATE WORK_EFFORT
+SET RELATED_ORDER_ID = NULL
+WHERE CERTIFICATE_NUMBER = '83-0001'; 
 
-                    DaysUntilDue = EF.Functions.DateDiffDay(Today, (DateTime)pyt.EffectiveDate),
-                }
-            ).AsQueryable();
+-- 9. Order Header (after all its children)
+DELETE oh
+FROM ORDER_HEADER oh
+INNER JOIN WORK_EFFORT we 
+    ON oh.ORDER_ID = we.RELATED_ORDER_ID
+WHERE we.CERTIFICATE_NUMBER = '83-0001';
 
-            // Apply OData options
-            if (request.Options.Filter != null)
-                query = request.Options.Filter.ApplyTo(query, new ODataQuerySettings()) as IQueryable<PaymentRecord>;
 
-            if (request.Options.OrderBy != null)
-                query = request.Options.OrderBy.ApplyTo(query, new ODataQuerySettings()) as IQueryable<PaymentRecord>;
+-- 10. Certificate line items (child WorkEfforts)
+DELETE FROM WORK_EFFORT
+WHERE WORK_EFFORT_PARENT_ID IN (
+    SELECT WORK_EFFORT_ID
+    FROM WORK_EFFORT
+    WHERE CERTIFICATE_NUMBER = '83-0001'
+);
 
-            return await Task.FromResult(query);
-        }
-    }
-}
+DELETE FROM INVENTORY_ITEM_DETAIL
+    WHERE INVENTORY_ITEM_ID IN (
+    SELECT t.INVENTORY_ITEM_ID
+    FROM (
+        SELECT INVENTORY_ITEM_ID
+FROM INVENTORY_ITEM_DETAIL
+WHERE WORK_EFFORT_ID = '10120'
+    ) AS t
+    );
+
+
+DELETE FROM INVENTORY_ITEM
+WHERE INVENTORY_ITEM_ID = '10260';
+
+
+-- 11. Certificate header
+DELETE FROM WORK_EFFORT
+WHERE CERTIFICATE_NUMBER = '83-0001';

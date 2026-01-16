@@ -1,4 +1,8 @@
-import {chequeValidator, requiredValidator} from "../../../../app/common/form/Validators";
+import {
+    createBankTransferAllowedValidator,
+    createChequeFieldsValidator,
+    requiredValidator
+} from "../../../../app/common/form/Validators";
 import {Field, Form, FormElement, FormRenderProps,} from "@progress/kendo-react-form";
 import {MemoizedFormDropDownList} from "../../../../app/common/form/MemoizedFormDropDownList";
 import {Alert, Box, Button, Grid, Skeleton, Typography} from "@mui/material";
@@ -7,7 +11,7 @@ import FormTextArea from "../../../../app/common/form/FormTextArea";
 import {Payment} from "../../../../app/models/accounting/payment";
 import FormInput from "../../../../app/common/form/FormInput";
 import FormDatePicker from "../../../../app/common/form/FormDatePicker";
-import React, {useCallback, useEffect, useMemo, useState} from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import {
     RootState,
     useAppSelector,
@@ -40,6 +44,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import {Worker, Viewer, SpecialZoomLevel} from '@react-pdf-viewer/core';
 import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
 import { version as pdfjsVersion } from 'pdfjs-dist/package.json';
+import {MemoizedFormCheckBox} from "../../../../app/common/form/FormCheckBox";
 
 interface EditPaymentFormProps {
     onValidityChange?: (valid: boolean) => void;
@@ -57,7 +62,7 @@ interface EditPaymentFormProps {
 
 const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                              filteredPaymentTypes,
-                                                             paymentMethods,
+                                                             paymentMethods = [],
                                                              getTranslatedLabel,
                                                              onUpdate,
                                                              payment,
@@ -81,6 +86,10 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
     const [showPdfViewer, setShowPdfViewer] = useState(false);
     const [previewLoading, setPreviewLoading] = useState(false);
 
+    const bankTransferValidator = createBankTransferAllowedValidator(paymentMethods);
+    const chequeValidator = createChequeFieldsValidator(paymentMethods);
+
+    
     const handlePreviewPdf = async () => {
         if (!payment?.paymentId) return;
 
@@ -485,7 +494,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     <strong style={{color: "blue"}}>{paymentTypeDesc}</strong>
                                                 </Typography>
                                             </Grid>
-                                            <Grid item xs={3}>
+                                            <Grid item xs={2}>
                                                 <Field
                                                     id="paymentMethodId"
                                                     name="paymentMethodId"
@@ -501,6 +510,19 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     onChange={handlePaymentMethodChange}
                                                 />
                                             </Grid>
+                                            <Grid item xs={1}>
+                                                <Field
+                                                    id="isBankTransfer"
+                                                    name="isBankTransfer"
+                                                    label={getTranslatedLabel(
+                                                        "accounting.payments.form.isBankTransfer",
+                                                        "Bank Transfer"
+                                                    )}
+                                                    component={MemoizedFormCheckBox}
+                                                    validator={bankTransferValidator}
+
+                                                />
+                                            </Grid>
                                             <Grid item xs={2}>
                                                 <Field
                                                     id="chequeNumber"
@@ -508,7 +530,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     label={getTranslatedLabel(`${localizationKey}.chequeNumber`, "Cheque Number")}
                                                     component={FormInput}
                                                     autoComplete="off"
-                                                    validator={(value, getter) => chequeValidator(value, getter, undefined, formRenderProps)}
+                                                    validator={chequeValidator}
                                                 />
                                             </Grid>
                                             <Grid item xs={3}>
@@ -518,7 +540,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     label={getTranslatedLabel(`${localizationKey}.chequeDate`, "Cheque Date")}
                                                     component={FormDatePicker}
                                                     format="yyyy-MM-dd"
-                                                    validator={(value, getter) => chequeValidator(value, getter, undefined, formRenderProps)}
+                                                    validator={chequeValidator}
                                                 />
                                             </Grid>
                                         </Grid>

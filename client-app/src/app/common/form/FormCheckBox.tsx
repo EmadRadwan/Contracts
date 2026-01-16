@@ -23,14 +23,14 @@ const FormCheckbox = (fieldRenderProps: FieldRenderProps) => {
                 disabled={disabled}
                 {...others}
             />
-            {
+            {/*{
                 showHint &&
                 <Hint id={hindId}>{hint}</Hint>
             }
             {
                 showValidationMessage &&
                 <Error id={errorId}>{validationMessage}</Error>
-            }
+            }*/}
         </FieldWrapper>
     );
 };

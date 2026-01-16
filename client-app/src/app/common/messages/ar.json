@@ -1083,6 +1083,7 @@
         "chequeNumber": "رقم الشيك",
         "chequeDate": "تاريخ الشيك",
         "effectiveDate": "التاريخ ",
+        "isBankTransfer": "تحويل بنكي",
         "currency": "العملة",
         "paymentRefNum": "رقم مرجع الدفعة",
         "costCenter": "مركز التكلفة",
