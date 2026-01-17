@@ -88,11 +88,12 @@ const invoiceItemsApi = createApi({
             updateInvoiceItems: builder.mutation({
                 query: (invoiceItems) => {
                     return {
-                        url: "/invoices/updateOrApproveInvoiceItems",
+                        url: "/invoices/updateInvoiceItem",
                         method: "PUT",
                         body: {...invoiceItems},
                     };
                 },
+                invalidatesTags: ["InvoiceItems"],
             }),
             approveInvoiceItems: builder.mutation({
                 query: (invoiceItems) => {

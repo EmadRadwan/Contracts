@@ -32,9 +32,6 @@ const useInvoice = (invoiceId: UseInvoiceProps) => {
 
 
   const [invoice, setInvoice] = useState<Invoice | undefined>(undefined);
-console.log("useInvoice hook initialized with invoiceId:", invoiceId);
-  // Purpose: Retrieves invoice for display in InvoiceDisplayForm
-  // Improvement: Ensures data is fetched based on invoiceId from route
   const {
     data: fetchedInvoice,
     isLoading: isInvoiceFetchLoading,

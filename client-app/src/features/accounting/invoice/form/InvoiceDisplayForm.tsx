@@ -58,12 +58,12 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
         outstandingAmount: iOutstanding,
         isLoading: isTotalLoading,
         error: totalError,
-        isSuccess: isTotalSuccess
-    } = useInvoiceTotal(invoice?.invoiceId);
+        isSuccess: isTotalSuccess, refreshTotal
+    } = useInvoiceTotal(effectiveInvoiceId);
 
+    
     const invoiceSource = useMemo(() => selectedInvoice || invoice, [selectedInvoice, invoice]);
     const invoiceType = useMemo(() => invoiceSource?.invoiceTypeId, [invoiceSource]);
-    console.log('invoiceType:', invoiceType);
     useEffect(() => {
         if (selectedInvoice) {
             setInvoice(selectedInvoice);
@@ -99,7 +99,6 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
         };
     }, [invoiceSource]);
 
-    console.log('permissions:', permissions);
 
     const handleChangeInvoiceStatus = useCallback(
         async (statusId: string) => {
@@ -209,7 +208,6 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                 }
                 break;
             case "update":
-                console.log("Invoice:", invoice, "Status:", invoice?.statusId);
                 if (invoice?.statusId === "INVOICE_IN_PROCESS") {
                     navigate(`/invoices/${invoice?.invoiceId}/edit`);
                 } else {
@@ -304,7 +302,8 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
         };
     };
 
-    console.log('iTotal:', iTotal)
+    console.log("Invoice:", invoice, "Status:", invoice?.statusId);
+
 
     return (
         <>
@@ -408,9 +407,9 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                             </Menu>
                         </Grid>
                         <Grid item xs={1}>
-                            {invoice?.statusId !== "INVOICE_IN_PROCESS" && (
+                            {invoice?.statusId && invoice.statusId !== "UNKNOWN" && (
                                 <Ribbon
-                                    side="right"
+                                    side="left"
                                     type="corner"
                                     size="large"
                                     backgroundColor={status.backgroundColor}
@@ -514,6 +513,7 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                             <InvoiceItemsList
                                 invoiceId={invoice?.invoiceId}
                                 canEdit={permissions.canEditInvoiceItems}
+                                refreshTotal={refreshTotal}
                             />
                         </Grid>
                         <Grid item xs={2}>

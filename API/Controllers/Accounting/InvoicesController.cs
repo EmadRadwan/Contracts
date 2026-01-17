@@ -76,6 +76,26 @@ public class InvoicesController : BaseApiController
 
         return Ok(result.Data);
     }
+    
+    // In your InvoiceController (or wherever you keep invoice-related endpoints)
+
+    [HttpPut("updateInvoiceItem")]   // or [HttpPut("invoice-items")] – choose your preferred style
+    public async Task<IActionResult> UpdateInvoiceItem([FromBody] InvoiceItemParameters parameters)
+    {
+        var command = new UpdateInvoiceItem.Command
+        {
+            Parameters = parameters
+        };
+
+        var result = await Mediator.Send(command);
+
+        if (result.IsError)
+        {
+            return BadRequest(result.ErrorMessage);
+        }
+
+        return Ok(result.Data);   // typically returns { invoiceId, invoiceItemSeqId }
+    }
 
     [HttpGet("{invoiceId}")]
     public async Task<IActionResult> GetInvoiceById(string invoiceId)

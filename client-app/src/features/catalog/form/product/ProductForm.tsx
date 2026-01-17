@@ -85,7 +85,7 @@ function ProductForm({
       return {
         ...base,
         projectId: {
-          workEffortId: base.projectId,          // the ID the API expects
+          projectId: base.projectId,          // the ID the API expects
           projectName: base.projectName,      // the text shown in the dropdown
           // any other fields the combo-box uses can be added here if needed
         },

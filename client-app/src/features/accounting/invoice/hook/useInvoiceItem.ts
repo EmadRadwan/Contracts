@@ -54,7 +54,6 @@ const useInvoiceItem = ({ editMode, invoiceItem, invoiceId, setIsLoading }: Prop
                 result = await updateInvoiceItem(formattedData).unwrap();
                 toast.success('Invoice item updated successfully');
             }
-
             return result;
         } catch (e) {
             // REFACTOR: Improved error handling with toast notification

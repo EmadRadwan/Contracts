@@ -19,25 +19,23 @@ import { InvoiceItem } from "../../../../app/models/accounting/invoiceItem";
 import {
     useFetchInvoiceItemTypesByInvoiceIdQuery
 } from "../../../../app/store/apis/invoice/invoiceItemsApi";
+import {useInvoiceTotal} from "../hook/useInvoiceTotal";
 
 interface Props {
     invoiceItem?: InvoiceItem;
     editMode: number; // 1 for create, 2 for edit
     onClose: () => void;
     invoiceId: string | undefined;
+    refreshTotal?: () => Promise<void>;
 }
 
-const EditInvoiceItem: React.FC<Props> = ({ invoiceItem, editMode, onClose, invoiceId }) => {
+const EditInvoiceItem: React.FC<Props> = ({ invoiceItem, editMode, onClose, invoiceId, refreshTotal }) => {
     const formRef = React.useRef<any>();
     const { user } = useAppSelector((state) => state.account);
     const [isLoading, setIsLoading] = useState(false);
     const [showProductField, setShowProductField] = useState(false);
     const companyId = user?.organizationPartyId || "";
     const { data: unitsOfMeasure, isFetching: isUoMsFetching } = useFetchProductUOMsQuery(undefined);
-
-    // REFACTOR: Removed console.log for unitsOfMeasure
-    // Purpose: Eliminates unnecessary logging for production
-    // Improvement: Reduces clutter and improves performance
     const uomData = unitsOfMeasure?.map((uom: any) => ({
         uomId: uom.quantityUomId,
         description: uom.description
@@ -85,6 +83,7 @@ const EditInvoiceItem: React.FC<Props> = ({ invoiceItem, editMode, onClose, invo
         try {
             setIsLoading(true);
             await handleCreate(data); // Let useInvoiceItem handle productId and invoiceId
+            refreshTotal?.();
             onClose();
         } catch (e) {
             console.error(e);

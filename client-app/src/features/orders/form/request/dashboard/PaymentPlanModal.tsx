@@ -164,9 +164,9 @@ export default function PaymentPlanModal({
             const selected = new Date(row.dueDate);
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            if (selected < today) {
+            /*if (selected < today) {
                 dateError = "Due date cannot be in the past";
-            }
+            }*/
         }
 
         if (!row.amount || row.amount <= 0) {

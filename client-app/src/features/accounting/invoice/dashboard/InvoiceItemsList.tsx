@@ -19,11 +19,12 @@ import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
 
 interface Props {
-    invoiceId: string | undefined
-    canEdit: boolean
+    invoiceId: string | undefined;
+    canEdit: boolean;
+    refreshTotal?: () => Promise<void>;   // ← add this (optional for safety)
 }
 
-export default function InvoiceItemsList({invoiceId, canEdit}: Props) {
+export default function InvoiceItemsList({invoiceId, canEdit, refreshTotal}: Props) {
     const initialSort: Array<SortDescriptor> = [
         {field: "invoiceItemSeqId", dir: "desc"},
     ];    
@@ -108,6 +109,7 @@ export default function InvoiceItemsList({invoiceId, canEdit}: Props) {
                 editMode={editMode}
                 onClose={handleCloseModal}
                 invoiceId={invoiceId}
+                refreshTotal={refreshTotal}
             />
             </ModalContainer>)}
             <Grid container columnSpacing={1} direction={"column"} alignItems="flex-start">
