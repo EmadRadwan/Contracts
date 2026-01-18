@@ -32047,6 +32047,10 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
 
                 entity.Property(e => e.ChequeDate)
                     .HasColumnType("datetime");
+                    
+                    entity.Property(p => p.IsBankTransfer)
+                        .HasColumnName("IS_BANK_TRANSFER")
+                        .HasDefaultValue(false);
 
                 entity.HasOne(d => d.ActualCurrencyUom)
                     .WithMany(p => p.PaymentActualCurrencyUoms)

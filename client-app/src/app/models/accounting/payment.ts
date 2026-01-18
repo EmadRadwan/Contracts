@@ -13,6 +13,7 @@ export interface Payment {
   partyIdFrom?: any;
   partyIdTo?: any;
   partyIdToName?: string;
+  isBankTransfer?: boolean;
   isDepositWithDrawPayment?: string;
   roleTypeIdTo?: any;
   statusId?: string;

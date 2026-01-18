@@ -1,42 +1,57 @@
-[
-  {
-    "DEDUCTION_TYPE_ID": "ADVANCE",
-    "PARENT_TYPE_ID": null,
-    "HAS_TABLE": null,
-    "DESCRIPTION": "السلف",
-    "LAST_UPDATED_STAMP": "2026-01-14 13:38:00.000000000",
-    "LAST_UPDATED_TX_STAMP": "2026-01-14 13:38:00.000000000",
-    "CREATED_STAMP": "2026-01-14 13:38:00.000000000",
-    "CREATED_TX_STAMP": "2026-01-14 13:38:00.000000000"
-  },
-  {
-    "DEDUCTION_TYPE_ID": "ABSENCE",
-    "PARENT_TYPE_ID": null,
-    "HAS_TABLE": null,
-    "DESCRIPTION": "الغياب",
-    "LAST_UPDATED_STAMP": "2026-01-14 13:38:00.000000000",
-    "LAST_UPDATED_TX_STAMP": "2026-01-14 13:38:00.000000000",
-    "CREATED_STAMP": "2026-01-14 13:38:00.000000000",
-    "CREATED_TX_STAMP": "2026-01-14 13:38:00.000000000"
-  },
-  {
-    "DEDUCTION_TYPE_ID": "SETTLEMENT",
-    "PARENT_TYPE_ID": null,
-    "HAS_TABLE": null,
-    "DESCRIPTION": "خصومات / تسوية",
-    "LAST_UPDATED_STAMP": "2026-01-14 13:38:00.000000000",
-    "LAST_UPDATED_TX_STAMP": "2026-01-14 13:38:00.000000000",
-    "CREATED_STAMP": "2026-01-14 13:38:00.000000000",
-    "CREATED_TX_STAMP": "2026-01-14 13:38:00.000000000"
-  },
-  {
-    "DEDUCTION_TYPE_ID": "TARDINESS",
-    "PARENT_TYPE_ID": null,
-    "HAS_TABLE": null,
-    "DESCRIPTION": "تأخير",
-    "LAST_UPDATED_STAMP": "2026-01-14 13:38:00.000000000",
-    "LAST_UPDATED_TX_STAMP": "2026-01-14 13:38:00.000000000",
-    "CREATED_STAMP": "2026-01-14 13:38:00.000000000",
-    "CREATED_TX_STAMP": "2026-01-14 13:38:00.000000000"
-  }
-]
+"form": {
+"invoice-no": "رقم الفاتورة",
+"invoice-type": "نوع الفاتورة",
+"from-party": "الطرف المُصدر",
+"invoice-date": "تاريخ الفاتورة",
+"total": "الإجمالي",
+"remaining-amount": "المبلغ المتبقي",
+"outstanding-amount": "المبلغ المستحق",           // optional synonym – more common in accounting
+"billing-account": "حساب الفوترة",
+"invoice-status": "حالة الفاتورة",
+"to-party": "الطرف المُستلم",
+"due-date": "تاريخ الاستحقاق",
+"paid-date": "تاريخ السداد",
+"fully-paid": "مدفوعة بالكامل",
+"no-items": "لا توجد أصناف",
+"empty-invoice": "فاتورة فارغة",
+
+"back": "رجوع",
+"edit-invoice": "تعديل الفاتورة",
+"loading": "جاري تحميل بيانات الفاتورة...",
+"processing": "جاري معالجة الفاتورة...",
+"error": "حدث خطأ",
+"status-changed": "تم تغيير الحالة إلى {0} بنجاح",
+
+"actions": {
+"new": "إنشاء فاتورة جديدة",
+"update": "تعديل الفاتورة",
+"approve": "اعتماد الفاتورة",
+"ready": "جعل الفاتورة جاهزة",
+"paid": "تسجيل كمدفوعة",
+"writeoff": "شطب الفاتورة",
+"cancel": "إلغاء الفاتورة",
+"transactions": "القيود المحاسبية",
+"payment-applications": "تطبيقات الدفع",
+"add-item": "إضافة صنف إلى الفاتورة"
+},
+
+"status": {
+"new": "جديدة",
+"in-process": "تحت المعالجة",
+"approved": "معتمدة",
+"ready": "جاهزة للإصدار",
+"received": "مستلمة",
+"paid": "مدفوعة",
+"writeoff": "مشطوبة",
+"cancelled": "ملغاة",
+"unknown": "غير معروفة"
+},
+
+"columns": {
+"product": "المنتج / الخدمة",
+"item-type-desc": "وصف نوع الصنف",
+"amount": "المبلغ",
+"quantity": "الكمية",
+"description": "الوصف"
+}
+}

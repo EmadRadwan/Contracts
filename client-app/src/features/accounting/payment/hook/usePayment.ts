@@ -120,6 +120,7 @@ export default function usePayment({
     overrideGlAccountId: undefined,
     projectId: null,
     costCenterId: null,
+    isBankTransfer: false,
   }), [companies]);
 
   // Replace the entire useEffect with this:
@@ -186,6 +187,7 @@ export default function usePayment({
         overrideGlAccountId: newPayment.overrideGlAccountId,
         projectId: newPayment.projectId || null,
         costCenterId: newPayment.costCenterId || null,
+        isBankTransfer: newPayment.isBankTransfer || false,
         paymentRefNum: newPayment.paymentRefNum || "",
       };
 
@@ -281,6 +283,7 @@ const handleCreate = async (data: {
     projectId: values.projectId?.projectId || null,
     projectName: values.projectId?.projectName || null,
     costCenterId: values.costCenterId || null,
+    isBankTransfer: values.isBankTransfer || false,
     paymentRefNum: values.paymentRefNum || "",
   };
 
@@ -308,6 +311,7 @@ const handleCreate = async (data: {
       overrideGlAccountId: data.values.overrideGlAccountId,
         projectId: data.values.projectId?.projectId,
         costCenterId: data.values.costCenterId || null,
+      isBankTransfer: data.values.isBankTransfer || payment.isBankTransfer || false,
       paymentRefNum: data.values.paymentRefNum || payment.paymentRefNum || "",
     };
 

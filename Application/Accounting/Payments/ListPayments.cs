@@ -94,7 +94,7 @@ public class ListPayments
                     Comments = pyt.Comments,
                     PaymentRefNum = pyt.PaymentRefNum,
                     PaymentPreferenceId = pyt.PaymentPreferenceId,
-
+                    IsBankTransfer = pyt.IsBankTransfer,
                     Amount = pyt.Amount,
                     ActualCurrencyAmount = pyt.ActualCurrencyAmount ?? pyt.Amount,
                     CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
@@ -120,6 +120,7 @@ public class ListPayments
                     ProjectId = pyt.WorkEffortId,
                     ProjectName = proj != null ? proj.ProjectName : null,
                     CostCenterId = pyt.CostCenterId,
+                    SalesRequestId = pyt.SalesRequestId,
                     CostCenterDescription = cc.Description,
                     CreatedStamp = (DateTime)pyt.CreatedStamp,
                 }

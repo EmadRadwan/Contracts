@@ -153,6 +153,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                 chequeDate: null,
                 projectId: "",
                 costCenterId: "",
+                effectiveDate: null,
             }}
             onSubmit={handleSubmit}
             render={(formRenderProps: FormRenderProps) => {
@@ -358,6 +359,19 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                 validator={(value) => requiredValidator(value) || amountValidator(value, valueGetter)}
                                             />
                                         </Grid>
+                                        <Grid item xs={2}>
+                                            <Field
+                                                id="effectiveDate"
+                                                name="effectiveDate"
+                                                label={getTranslatedLabel(
+                                                    `${localizationKey}.effectiveDate`,
+                                                    "Effective Date *"
+                                                )}
+                                                component={FormDatePicker}
+                                                format="yyyy-MM-dd"
+                                                validator={requiredValidator}
+                                            />
+                                        </Grid>
                                         <Grid item xs={4}>
                                             {isLoadingGlAccounts ? (
                                                 <Skeleton variant="rounded" height={56}/>
@@ -391,19 +405,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                 }}
                                             />
                                         </Grid>
-                                        <Grid item xs={2}>
-                                            <Field
-                                                id="comments"
-                                                name="comments"
-                                                label={getTranslatedLabel(
-                                                    `${localizationKey}.comments`,
-                                                    "Comments"
-                                                )}
-                                                component={FormTextArea}
-                                                autoComplete="off"
-                                                validator={requiredValidator}
-                                            />
-                                        </Grid>
+                                        
                                     </Grid>
                                 </Grid>
 
@@ -415,6 +417,19 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                             label={getTranslatedLabel(`${localizationKey}.paymentRefNum`, "paymentRefNum")}
                                             component={FormInput}
                                             autoComplete="off"
+                                        />
+                                    </Grid>
+                                    <Grid item xs={8}>
+                                        <Field
+                                            id="comments"
+                                            name="comments"
+                                            label={getTranslatedLabel(
+                                                `${localizationKey}.comments`,
+                                                "Comments"
+                                            )}
+                                            component={FormInput}
+                                            autoComplete="off"
+                                            validator={requiredValidator}
                                         />
                                     </Grid>
                                 </Grid>

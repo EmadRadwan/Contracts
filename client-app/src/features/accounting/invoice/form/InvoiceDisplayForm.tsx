@@ -61,6 +61,12 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
         isSuccess: isTotalSuccess, refreshTotal
     } = useInvoiceTotal(effectiveInvoiceId);
 
+    // Add near the top, after your other hooks
+    const isEmptyInvoice = useMemo(() => {
+        // Most reliable: check if total is exactly 0 (or still loading → treat as not empty yet)
+        if (isTotalLoading) return false;
+        return iTotal === 0 || iTotal === null;
+    }, [iTotal, isTotalLoading]);
     
     const invoiceSource = useMemo(() => selectedInvoice || invoice, [selectedInvoice, invoice]);
     const invoiceType = useMemo(() => invoiceSource?.invoiceTypeId, [invoiceSource]);
@@ -353,6 +359,8 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                                         text={getTranslatedLabel(`${localizationKey}.actions.new`, "Create New Invoice")}
                                         data="new"
                                     />
+                                    {!isEmptyInvoice && (
+                                        <>
                                     {invoice?.statusId === "INVOICE_IN_PROCESS" && (
                                         <MenuItem
                                             text={getTranslatedLabel(`${localizationKey}.actions.update`, "Edit")}
@@ -403,6 +411,8 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                                             data="cancel"
                                         />
                                     )}*/}
+                                        </>
+                                    )}
                                 </MenuItem>
                             </Menu>
                         </Grid>
@@ -445,28 +455,39 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
     {isTotalLoading ? "..." : iTotal !== null ? iTotal.toFixed(2) : "—"}
   </span>
                             </Typography>
+
                             <Typography variant="h6" sx={{ pl: 2, mt: 1 }}>
                                 {getTranslatedLabel(`${localizationKey}.remaining-amount`, "Outstanding Amount:")}{" "}
-                                <span style={{
-                                    fontWeight: "bold",
-                                    color:
-                                        isTotalLoading ? "inherit" :
-                                            iOutstanding === 0 ? "green" :
-                                                iOutstanding === iTotal ? "red" : "orange",
-                                    marginLeft: "10px"
-                                }}>
-    {isTotalLoading
-        ? "..."
-        : iOutstanding !== null
-            ? iOutstanding.toFixed(2)
-            : "—"
-    }
-                                    {iOutstanding === 0 && !isTotalLoading && (
-                                        <strong style={{ color: "green", marginLeft: "8px" }}>
-                                            ({getTranslatedLabel(`${localizationKey}.fully-paid`, "Fully Paid")})
-                                        </strong>
-                                    )}
-  </span>
+
+                                {!isTotalLoading ? (
+                                    <>
+      <span style={{
+          fontWeight: "bold",
+          color:
+              iTotal === 0 ? "gray" :
+                  iOutstanding === 0 ? "green" :
+                      iOutstanding === iTotal ? "red" :
+                          "orange",
+          marginLeft: "10px"
+      }}>
+        {iOutstanding?.toFixed(2) ?? "—"}
+      </span>
+
+                                        {iTotal === 0 && (
+                                            <span style={{ color: "gray", marginLeft: "12px", fontStyle: "italic" }}>
+          ({getTranslatedLabel(`${localizationKey}.empty-invoice`, "Empty invoice")})
+        </span>
+                                        )}
+
+                                        {iOutstanding === 0 && iTotal > 0 && (
+                                            <strong style={{ color: "green", marginLeft: "12px" }}>
+                                                ({getTranslatedLabel(`${localizationKey}.fully-paid`, "Fully Paid")})
+                                            </strong>
+                                        )}
+                                    </>
+                                ) : (
+                                    "..."
+                                )}
                             </Typography>
                             
                             {invoice?.billingAccountId && (
@@ -489,7 +510,7 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                                 {getTranslatedLabel(`${localizationKey}.to-party`, "Party To:")}{" "}
                                 <strong>{invoice?.toPartyName || "N/A"}</strong>
                             </Typography>
-                            <Typography variant="h6">
+                            {/*<Typography variant="h6">
                                 {getTranslatedLabel(`${localizationKey}.due-date`, "Due Date:")}{" "}
                                 <strong>
                                     {invoice?.dueDate
@@ -504,7 +525,7 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                                         ? new Date(invoice.paidDate).toLocaleDateString(isArabic ? "ar-EG" : "en-GB")
                                         : "N/A"}
                                 </strong>
-                            </Typography>
+                            </Typography>*/}
                         </Grid>
                     </Grid>
 

@@ -212,7 +212,12 @@ export default function AccountingTransactionEntriesList() {
                             <Column field="description" title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txns.description",
                                 "Description"
-                            )} width={230}/>
+                            )} width={230}/> 
+                            
+                            <Column field="salesRequestId" title={getTranslatedLabel(
+                                "accounting.orgGL.accounting.summary.txns.salesRequestId",
+                                "Sales Request Id"
+                            )} width={100}/>
 
                             <Column field="invoiceId" title={getTranslatedLabel(
                                 "accounting.invoices.list.invoiceId",

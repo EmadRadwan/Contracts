@@ -124,6 +124,7 @@ public class PaymentHelperService : IPaymentHelperService
             WorkEffortId = parameters.ProjectId,
             CostCenterId = parameters.CostCenterId,
             SalesRequestId = parameters.SalesRequestId,
+            IsBankTransfer = parameters.IsBankTransfer,
             PaymentRefNum = parameters.PaymentRefNum,
             Comments = parameters.Comments,
             CreatedStamp = stamp,
@@ -200,6 +201,7 @@ public class PaymentHelperService : IPaymentHelperService
         payment.PaymentRefNum = param.PaymentRefNum;
         payment.FinAccountTransId = param.FinAccountTransId;
         payment.EffectiveDate = param.EffectiveDate;
+        payment.IsBankTransfer = param.IsBankTransfer;
         payment.PaymentPreferenceId = param.PaymentPreferenceId ?? payment.PaymentPreferenceId;
         payment.Amount = param.Amount ?? payment.Amount;
         payment.ActualCurrencyAmount = param.ActualCurrencyAmount ?? payment.ActualCurrencyAmount;
@@ -1236,6 +1238,7 @@ public class PaymentHelperService : IPaymentHelperService
                 ChequeNumber = request.ChequeNumber, // Added
                 ChequeDate = request.ChequeDate, // Added
                 Comments = request.Comments,
+                IsBankTransfer = request.IsBankTransfer,
                 OverrideGlAccountId = request.OverrideGlAccountId,
                 ProjectId = request.ProjectId,
                 CostCenterId =  request.CostCenterId,
@@ -1316,7 +1319,10 @@ public class PaymentHelperService : IPaymentHelperService
                     }
 
                     // If IsDepositWithDrawPayment is "Y", create FinAccountTrans
-                    if ("Y".Equals(request.IsDepositWithDrawPayment, StringComparison.OrdinalIgnoreCase))
+                    if (
+                        (!string.IsNullOrEmpty(request.ChequeNumber) && 
+                         request.ChequeDate != null && 
+                         request.IsBankTransfer == false))
                     {
                         // Map parameters to createFinAccountTrans
                         var createFinAccountTransMap = new CreateFinAccountTransParam
@@ -1356,6 +1362,7 @@ public class PaymentHelperService : IPaymentHelperService
                             PaymentMethodId = createPaymentMap.PaymentMethodId,
                             PaymentMethodTypeId = createPaymentMap.PaymentMethodTypeId,
                             FinAccountTransId = finAccountTransId,
+                            IsBankTransfer = createPaymentMap.IsBankTransfer,
                             PaymentRefNum = payment.PaymentRefNum // preserve any server-generated ref
                         };
 

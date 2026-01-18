@@ -19,8 +19,6 @@ namespace Application.Accounting.Invoices
             public CommandValidator()
             {
                 RuleFor(x => x.Parameters).NotNull();
-                // You can add additional validation rules here if needed,
-                // e.g., RuleFor(x => x.Parameters.InvoiceId).NotEmpty();
             }
         }
 

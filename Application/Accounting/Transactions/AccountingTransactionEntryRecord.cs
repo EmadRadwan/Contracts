@@ -30,4 +30,5 @@ public class AccountingTransactionEntryRecord
     public string? IsPosted { get; set; }
     public DateTime? PostedDate { get; set; }
     public string? GlFiscalTypeId { get; set; }
+    public string? SalesRequestId { get; set; }
 }

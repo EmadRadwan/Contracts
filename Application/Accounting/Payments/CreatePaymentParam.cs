@@ -9,6 +9,8 @@ public class CreatePaymentParam
     public string? PartyIdFrom { get; set; }
     public string? PartyIdTo { get; set; }
     public string? StatusId { get; set; }
+    public bool? IsBankTransfer { get; set; }
+
     public string? PaymentMethodId { get; set; }
     public string? PaymentMethodTypeId { get; set; }
     public string? FinAccountTransId { get; set; }

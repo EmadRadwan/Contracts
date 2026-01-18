@@ -83,15 +83,32 @@ export default function InvoiceItemsList({invoiceId, canEdit, refreshTotal}: Pro
     );
 
     const invoiceItemCell = (props: any) => {
-        // Purpose: Prevents editing of invoice items when not allowed
-        // Improvement: Provides consistent UX with Add Invoice Item button
+        const { dataItem } = props;
+        const hasProduct = !!dataItem.productName || !!dataItem.productId || !!dataItem.invoiceItemProduct;
+
+        const displayText = hasProduct
+            ? dataItem.productName || "Unnamed Product"
+            : "— Service / Fee —";   // or "No product", "Manual item", ""
+
         return (
-            <td>
+            <td style={{ padding: "4px 8px" }}>
                 <Button
-                    onClick={() => handleSelectInvoiceItem(props.dataItem)}
+                    variant="text"
+                    size="small"
+                    onClick={() => handleSelectInvoiceItem(dataItem)}
                     disabled={!canEdit}
+                    sx={{
+                        minWidth: "auto",
+                        padding: "2px 6px",
+                        textTransform: "none",
+                        fontWeight: hasProduct ? 500 : 400,
+                        color: hasProduct ? "inherit" : "text.secondary",
+                        justifyContent: "flex-start",
+                        width: "100%",
+                        textAlign: "left",
+                    }}
                 >
-                    {props.dataItem.productName}
+                    {displayText}
                 </Button>
             </td>
         );
@@ -148,14 +165,41 @@ export default function InvoiceItemsList({invoiceId, canEdit, refreshTotal}: Pro
                         </Grid>
                     </GridToolbar>
 
-                    <Column field="productName" title="Product" cell={invoiceItemCell} width={250}/>
-                    <Column field="invoiceId" title="invoiceId" width={0}/>
-                    <Column field="invoiceItemSeqId" title="invoiceItemSeqId" width={0}/>
-                    <Column field="invoiceItemTypeDescription" title="Item Type Description" width={230}/>
-                    <Column field="amount" title="Amount" width={100}/>
-                    <Column field="quantity" title="Quantity" width={100}/>
-                    <Column field="description" title="Description" width={200}/>
+                    <Column
+                        field="productName"
+                        title={getTranslatedLabel(`${localizationKey}.columns.product`, "Product")}
+                        cell={invoiceItemCell}
+                        width={250}
+                    />
 
+                    <Column
+                        field="invoiceItemTypeDescription"
+                        title={getTranslatedLabel(`${localizationKey}.columns.item-type-desc`, "Item Type Description")}
+                        width={230}
+                    />
+
+                    <Column
+                        field="amount"
+                        title={getTranslatedLabel(`${localizationKey}.columns.amount`, "Amount")}
+                        width={100}
+                    />
+
+                    <Column
+                        field="quantity"
+                        title={getTranslatedLabel(`${localizationKey}.columns.quantity`, "Quantity")}
+                        width={100}
+                    />
+                    <Column
+                        field="overrideGlAccountId"
+                        title={getTranslatedLabel(`${localizationKey}.columns.overrideGlAccountId`, "overrideGlAccountId")}
+                        width={100}
+                    />
+
+                    <Column
+                        field="description"
+                        title={getTranslatedLabel(`${localizationKey}.columns.description`, "Description")}
+                        width={200}
+                    />
                 </KendoGrid>
                 {isLoading && <LoadingComponent
                     message={getTranslatedLabel(`${localizationKey}.loading`, "Loading Invoice Items...")}

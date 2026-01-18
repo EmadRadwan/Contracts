@@ -29,7 +29,9 @@ import { skipToken } from '@reduxjs/toolkit/query/react';
 import {PaymentsDateRangeExcel} from "../report/PaymentsDateRangeExcel";
 import {useDeletePaymentMutation} from "../../../../app/store/apis";
 import {Can} from "../../../account/Can";
-import {toast} from "react-toastify";   // <-- add this import
+import {toast} from "react-toastify";
+import ModalContainer from "../../../../app/common/modals/ModalContainer";
+import PaymentTransactionsList from "../../transaction/dashboard/PaymentTransactionsList";   // <-- add this import
 
 
 interface PaymentsListProps {
@@ -44,7 +46,8 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
   const dispatch = useAppDispatch();
   const companyName = useSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
   const [dailyQueryArg, setDailyQueryArg] = React.useState<typeof skipToken | { paymentType: 'incoming' | 'outgoing' }>(skipToken);
-
+// near other useState declarations
+  const [selectedPaymentIdForTransactions, setSelectedPaymentIdForTransactions] = useState<string | null>(null);
   const [payments, setPayments] = React.useState<DataResult>({
     data: [],
     total: 0,
@@ -239,7 +242,57 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
     );
   }
 
+  const handleShowTransactions = (paymentId: string) => {
+    // Optional: select the payment in global state (if you want consistency with edit flow)
+    const payment = payments.data.find((p: any) => p.paymentId === paymentId);
+    if (payment) {
+      dispatch(setSelectedPayment(payment));
+      dispatch(setPaymentType(paymentType === "incoming" ? 1 : 2));
+    }
 
+    setSelectedPaymentIdForTransactions(paymentId);
+  };
+
+  const ActionsCell = (props: any) => {
+    const navigationAttributes = useTableKeyboardNavigation(props.id);
+
+    return (
+        <td
+            className={props.className}
+            style={{ ...props.style, textAlign: "center" }}
+            colSpan={props.colSpan}
+            role="gridcell"
+            aria-colindex={props.ariaColumnIndex}
+            aria-selected={props.isSelected}
+            {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
+            {...navigationAttributes}
+        >
+          <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+            {/* View Transactions Button */}
+            <Button
+                size="small"
+                color="info"
+                variant="outlined"
+                onClick={() => handleShowTransactions(props.dataItem.paymentId)}
+            >
+              {getTranslatedLabel("accounting.payments.list.transactions", "Transactions")}
+            </Button>
+            {/* Delete Button - already existing */}
+            <Can perform="deletePayment">
+              <Button
+                  size="small"
+                  color="error"
+                  variant="outlined"
+                  onClick={() => handleDeleteClick(props.dataItem.paymentId)}
+                  disabled={isDeleting}
+              >
+                {getTranslatedLabel("accounting.payments.list.deleteButton", "Delete")}
+              </Button>
+            </Can>
+          </div>
+        </td>
+    );
+  };
 
 
   return (
@@ -322,12 +375,13 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
                 <Column field="paymentRefNum" title={getTranslatedLabel(`${localizationKey}.paymentRefNum`,"paymentRefNum")} width={100} />
                 <Column field="amount" title={getTranslatedLabel(`${localizationKey}.amount`,"Amount")} width={130} filter={"numeric"}/>
                 <Column field="projectName" title={getTranslatedLabel(`${localizationKey}.projectName`,"Comments")} width={150} />
-                <Column field="costCenterDescription" title={getTranslatedLabel(`${localizationKey}.costCenterDescription`,"Comments")} width={150} />
+                <Column field="costCenterDescription" title={getTranslatedLabel(`${localizationKey}.costCenterDescription`,"costCenterDescription")} width={150} />
+                <Column field="salesRequestId" title={getTranslatedLabel(`${localizationKey}.salesRequestId`,"salesRequestId")} width={150} />
                 <Column field="comments" title={getTranslatedLabel(`${localizationKey}.comments`,"Comments")} width={150} />
                 <Column
-                    title="Actions"
-                    width={120}
-                    cell={DeleteCell}
+                    title={getTranslatedLabel(`${localizationKey}.actions`, "Actions")}
+                    width={220}   // ← increased width
+                    cell={ActionsCell}
                     locked={true}
                 />
               </KendoGrid>
@@ -368,6 +422,18 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
                   </Button>
                 </DialogActions>
               </Dialog>
+              {selectedPaymentIdForTransactions && (
+                  <ModalContainer
+                      show={!!selectedPaymentIdForTransactions}
+                      onClose={() => setSelectedPaymentIdForTransactions(null)}
+                      width={950}
+                  >
+                    <PaymentTransactionsList
+                        onClose={() => setSelectedPaymentIdForTransactions(null)}
+                        paymentId={selectedPaymentIdForTransactions}
+                    />
+                  </ModalContainer>
+              )}
               {isFetching && <LoadingComponent message={getTranslatedLabel(`${localizationKey}.loading`,"Loading Payments...")} />}
             </div>
           </Grid>

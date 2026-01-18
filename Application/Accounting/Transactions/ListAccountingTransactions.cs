@@ -76,6 +76,7 @@ public class ListAccountingTransactions
                              CertificateNumber = certificate != null ? certificate.CertificateNumber : null,
                              ProjectNumber = project != null ? project.WorkEffortId : null,
                              ProjectName = project != null ? project.ProjectName : null,
+                             SalesRequestId = transaction.SalesRequestId,
                              CreatedStamp = transaction.CreatedStamp
                          }).Distinct().AsQueryable();
 

@@ -261,6 +261,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                 : null,
             costCenterId: payment.costCenterId || "",
             paymentRefNum: payment.paymentRefNum || "",
+            isBankTransfer: payment.isBankTransfer || false,
         };
     }, [payment]);
     

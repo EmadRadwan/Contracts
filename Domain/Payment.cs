@@ -37,6 +37,7 @@ public class Payment
     public string? FinAccountTransId { get; set; }
     public string? OverrideGlAccountId { get; set; }
     public decimal? ActualCurrencyAmount { get; set; }
+    public bool? IsBankTransfer { get; set; }
     public string? ActualCurrencyUomId { get; set; }
     public string? ChequeNumber { get; set; }
     public DateTime? ChequeDate { get; set; }

@@ -7,6 +7,7 @@ public class PaymentDto
     public string? PaymentTypeId { get; set; }
     public string? PaymentMethodTypeId { get; set; }
     public string? PaymentTypeDescription { get; set; }
+    public bool? IsBankTransfer { get; set; }
 
     public string? PartyIdFrom { get; set; }
     public string? PartyIdFromName { get; set; }

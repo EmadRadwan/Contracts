@@ -43,6 +43,7 @@ public class ListInvoiceItems
                     InvoiceItemTypeId = itm.InvoiceItemTypeId,
                     InvoiceItemTypeDescription = language == "ar" ? invit.DescriptionArabic : invit.Description,
                     ProductName = prd.ProductName,
+                    OverrideGlAccountId = itm.OverrideGlAccountId,
                     Amount = itm.Amount,
                     Quantity = itm.Quantity
                 }).ToListAsync(cancellationToken: cancellationToken);

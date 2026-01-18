@@ -6,6 +6,7 @@ public class CreatePaymentAndFinAccountTransRequest
     public string IsDepositWithDrawPayment { get; set; }
     public string FinAccountTransTypeId { get; set; }
     public string? PaymentTypeId { get; set; }
+    public bool? IsBankTransfer { get; set; }
 
     public string? PartyIdFrom { get; set; }
     public string? PartyIdTo { get; set; }

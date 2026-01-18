@@ -1039,6 +1039,7 @@
         "bankName": "اسم البنك",
         "chequeNumber": "رقم الشيك",
         "costCenterDescription":  "مركز التكلفة",
+        "salesRequestId":  "طلب المبيعات",
         "comments": "التعليقات",
         "orderId": "رقم الطلب",
         "certificateNumber": "رقم المستخلص",
@@ -1167,6 +1168,7 @@
             "glFiscalType": "نوع السنة المالية",
             "partyName": "اسم الطرف",
             "productName": "اسم المنتج",
+            "salesRequestId": "رقم طلب المبيعات",
             "isPosted": "تم الترحيل",
             "postedDate": "تاريخ الترحيل",
             "deleteButton": "حذف",
@@ -1403,6 +1405,14 @@
             "writeoff": "مشطوبة",
             "cancelled": "ملغاة",
             "unknown": "غير معروف"
+          },
+          "columns": {
+            "product": "المنتج / الخدمة",
+            "item-type-desc": "وصف نوع الصنف",
+            "amount": "المبلغ",
+            "overrideGlAccountId": "حساب دفتر الأستاذ",
+            "quantity": "الكمية",
+            "description": "الوصف"
           }
         }
       }
