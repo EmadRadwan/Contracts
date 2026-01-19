@@ -1,134 +1,106 @@
-public async Task<ServiceResult> UpdateInvoiceItem(InvoiceItemParameters parameters)
+public async Task<string> CreatePostdatedChequeAccountingTransaction(string paymentId)
 {
-    // 1. Fetch the existing InvoiceItem
-    var invoiceItem = await _context.InvoiceItems
-        .FirstOrDefaultAsync(ii => ii.InvoiceId == parameters.InvoiceId 
-                                && ii.InvoiceItemSeqId == parameters.InvoiceItemSeqId);
-
-    if (invoiceItem == null)
+    try
     {
-        return new ServiceResult
+        // 1. Fetch payment with required data
+        var payment = await _context.Payments
+            .FirstOrDefaultAsync(p => p.PaymentId == paymentId);
+
+        if (payment == null)
+            throw new Exception($"Payment not found: {paymentId}");
+
+        // 2. Validation – this method is specifically for postdated outgoing cheques
+        if (string.IsNullOrEmpty(payment.OverrideGlAccountId))
+            throw new InvalidOperationException("OverrideGlAccountId is required for postdated cheque accounting.");
+
+        if (string.IsNullOrEmpty(payment.ChequeNumber) && payment.ChequeDate == null)
+            throw new InvalidOperationException("This method is only for cheque payments with ChequeNumber or ChequeDate.");
+
+        var companyPartyId = await _productStoreService.GetProductStorePayToPartId();
+
+        // Optional: warn if it doesn't look like an outgoing payment
+        if (payment.PartyIdFrom != companyPartyId)
         {
-            IsError = true,
-            ErrorMessage = "Invoice item not found."   // could use label/resource if you have localization
-            // In real OFBiz style: label('AccountingUiLabels', 'AccountingInvoiceItemNotFound', parameters)
+            _logger.LogWarning("Payment {PaymentId} has PartyIdFrom {PartyIdFrom} which differs from company party {CompanyPartyId}",
+                paymentId, payment.PartyIdFrom, companyPartyId);
+        }
+
+        var now = DateTime.UtcNow;
+        var transactionDate = payment.EffectiveDate?.Date ?? now.Date;
+
+        // Build cheque reference (prefer ChequeNumber when available)
+        string chequeRef = !string.IsNullOrEmpty(payment.ChequeNumber)
+            ? $"#{payment.ChequeNumber}"
+            : $"dated {payment.ChequeDate?.ToString("yyyy-MM-dd")}";
+
+        string description = $"Postdated cheque issuance – {chequeRef} – " +
+                             $"Payment {payment.PaymentId} – {payment.Amount:N2} EGP";
+
+        // 3. Create main accounting transaction
+        var acctgTransParams = new CreateAcctgTransParams
+        {
+            AcctgTransTypeId   = "OUTGOING_PAYMENT", // consider "POSTDATED_CHEQUE_ISSUED" if your system supports it
+            TransactionDate    = transactionDate,
+            IsPosted           = "Y",
+            GlFiscalTypeId     = "ACTUAL",
+            Description        = description,
+            PaymentId          = payment.PaymentId,
+            PartyId            = payment.PartyIdTo   // recipient / payee
         };
+
+        string acctgTransId = await _acctgTransService.CreateAcctgTrans(acctgTransParams);
+
+        int seq = 0;
+
+        // Debit entry – expense / liability / asset being paid (via override GL)
+        string debitDescription = $"Postdated cheque issuance – {chequeRef} – to {payment.PartyIdTo}";
+
+        var debitEntry = new AcctgTransEntry
+        {
+            AcctgTransId          = acctgTransId,
+            AcctgTransEntrySeqId  = (++seq).ToString("D3"),
+            GlAccountId           = payment.OverrideGlAccountId,
+            DebitCreditFlag       = "D",
+            AcctgTransEntryTypeId = "_NA_",
+            Amount                = payment.Amount,
+            ReconcileStatusId     = "AES_NOT_RECONCILED",
+            Description           = debitDescription,
+            OrganizationPartyId   = companyPartyId,
+            PartyId               = payment.PartyIdTo,    // payee receives the debit side
+            CreatedStamp          = now,
+            LastUpdatedStamp      = now
+        };
+        await _acctgTransService.CreateAcctgTransEntry(debitEntry);
+
+        // Credit entry – Postdated Cheques Issued (liability account)
+        string creditDescription = $"Postdated cheques issued – {chequeRef}";
+
+        var creditEntry = new AcctgTransEntry
+        {
+            AcctgTransId          = acctgTransId,
+            AcctgTransEntrySeqId  = (++seq).ToString("D3"),
+            GlAccountId           = "250100",             // POSTDATED CHECKS ISSUED
+            DebitCreditFlag       = "C",
+            AcctgTransEntryTypeId = "_NA_",
+            Amount                = payment.Amount,
+            ReconcileStatusId     = "AES_NOT_RECONCILED",
+            Description           = creditDescription,
+            OrganizationPartyId   = companyPartyId,
+            PartyId               = companyPartyId,       // company issues the cheque
+            CreatedStamp          = now,
+            LastUpdatedStamp      = now
+        };
+        await _acctgTransService.CreateAcctgTransEntry(creditEntry);
+
+        _logger.LogInformation(
+            "Postdated cheque accounting transaction {AcctgTransId} created for payment {PaymentId} – {ChequeRef} – {Amount:N2}",
+            acctgTransId, paymentId, chequeRef, payment.Amount);
+
+        return acctgTransId;
     }
-
-    // 2. Remember original values for change detection
-    var original = new InvoiceItem
+    catch (Exception ex)
     {
-        // copy only the fields we care about for comparison
-        ProductId = invoiceItem.ProductId,
-        // you can add more fields if needed for deeper comparison
-    };
-
-    // 3. Update non-PK fields from parameters (similar to setNonPKFields)
-    // We do this manually since we don't have GenericValue.setNonPKFields
-    if (!string.IsNullOrWhiteSpace(parameters.InvoiceItemTypeId))
-        invoiceItem.InvoiceItemTypeId = parameters.InvoiceItemTypeId;
-
-    if (!string.IsNullOrWhiteSpace(parameters.OverrideGlAccountId))
-        invoiceItem.OverrideGlAccountId = parameters.OverrideGlAccountId;
-
-    if (!string.IsNullOrWhiteSpace(parameters.Description))
-        invoiceItem.Description = parameters.Description;
-
-    if (parameters.Amount.HasValue)
-        invoiceItem.Amount = parameters.Amount;
-
-    if (!string.IsNullOrWhiteSpace(parameters.ProductId))
-        invoiceItem.ProductId = parameters.ProductId;
-
-    if (parameters.Quantity.HasValue)
-        invoiceItem.Quantity = parameters.Quantity.Value;
-
-    // add other updatable fields as needed...
-
-    // 4. If productId changed → fetch product, update description & price
-    bool productChanged = original.ProductId != invoiceItem.ProductId;
-
-    if (productChanged && !string.IsNullOrWhiteSpace(invoiceItem.ProductId))
-    {
-        var product = await _context.Products
-            .FirstOrDefaultAsync(p => p.ProductId == invoiceItem.ProductId);
-
-        if (product == null)
-        {
-            return new ServiceResult
-            {
-                IsError = true,
-                ErrorMessage = $"Product not found: {invoiceItem.ProductId}"
-            };
-        }
-
-        invoiceItem.Description = product.Description;
-
-        // Mimic run service: calculateProductPrice
-        // Adjust parameters according to your real _priceService interface
-        var priceResult = await _priceService.CalculateProductPrice(
-            product,
-            quantity: invoiceItem.Quantity,
-            // add user context, store, etc. if your real method needs them
-            null, null, null
-        );
-
-        invoiceItem.Amount = priceResult.Price;
-
-        if (!invoiceItem.Amount.HasValue)
-        {
-            return new ServiceResult
-            {
-                IsError = true,
-                ErrorMessage = "Invoice amount is mandatory."  
-                // matches: label('AccountingUiLabels', 'AccountingInvoiceAmountIsMandatory')
-            };
-        }
+        _logger.LogError(ex, "Failed to create postdated cheque accounting transaction for payment {PaymentId}", paymentId);
+        throw;
     }
-
-    // 5. Only save if something actually changed
-    bool hasChanges = productChanged ||
-                      original.ProductId != invoiceItem.ProductId ||
-                      // compare other updated fields as needed
-                      // or use EF change tracking: _context.Entry(invoiceItem).State == EntityState.Modified
-                      false; // placeholder — improve this
-
-    if (hasChanges)
-    {
-        invoiceItem.LastUpdatedStamp = DateTime.UtcNow;
-
-        try
-        {
-            // In real code: await _context.SaveChangesAsync();
-            // Here we simulate success
-            return new ServiceResult
-            {
-                IsError = false,
-                Data = new 
-                { 
-                    invoiceId = invoiceItem.InvoiceId, 
-                    invoiceItemSeqId = invoiceItem.InvoiceItemSeqId 
-                }
-            };
-        }
-        catch (Exception ex)
-        {
-            return new ServiceResult
-            {
-                IsError = true,
-                ErrorMessage = $"Error updating invoice item: {ex.Message}"
-            };
-        }
-    }
-
-    // No changes → success with same keys
-    return new ServiceResult
-    {
-        IsError = false,
-        Data = new 
-        { 
-            invoiceId = invoiceItem.InvoiceId, 
-            invoiceItemSeqId = invoiceItem.InvoiceItemSeqId 
-        }
-    };
 }

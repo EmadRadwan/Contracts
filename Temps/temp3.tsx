@@ -1,5 +1,4 @@
-initialValues={{
-    // ... existing fields ...
-    effectiveDate: null,           // ← add this
-    // or: new Date().toISOString().split('T')[0]   if you want today by default
-}},
+if (t.isSalesInvoice) {
+    dain = t.grossAmount;           // دائن = customer owes more
+    periodChange = +t.grossAmount;  // balance increases (he owes us)
+}

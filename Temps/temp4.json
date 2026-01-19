@@ -1,57 +1,31 @@
-"form": {
-"invoice-no": "رقم الفاتورة",
-"invoice-type": "نوع الفاتورة",
-"from-party": "الطرف المُصدر",
-"invoice-date": "تاريخ الفاتورة",
-"total": "الإجمالي",
-"remaining-amount": "المبلغ المتبقي",
-"outstanding-amount": "المبلغ المستحق",           // optional synonym – more common in accounting
-"billing-account": "حساب الفوترة",
-"invoice-status": "حالة الفاتورة",
-"to-party": "الطرف المُستلم",
-"due-date": "تاريخ الاستحقاق",
-"paid-date": "تاريخ السداد",
-"fully-paid": "مدفوعة بالكامل",
-"no-items": "لا توجد أصناف",
-"empty-invoice": "فاتورة فارغة",
+[
+  {
+    "ACCTG_TRANS_TYPE_ID": "APARTMENT_SALE_INSTALLMENT",
+    "PARENT_TYPE_ID": "APARTMENT_SALE",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Apartment Sale - Installment / Credit",
+    "LAST_UPDATED_STAMP": "2026-01-19 11:00:00.000",
+    "LAST_UPDATED_TX_STAMP": "2026-01-19 11:00:00.000",
+    "CREATED_STAMP": "2026-01-19 11:00:00.000",
+    "CREATED_TX_STAMP": "2026-01-19 11:00:00.000"
+  },
+  {
+    "ACCTG_TRANS_TYPE_ID": "APARTMENT_SALE_CHEQUE",
+    "PARENT_TYPE_ID": "APARTMENT_SALE",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Apartment Sale - With Post-dated Cheques Delivered",
+    "LAST_UPDATED_STAMP": "2026-01-19 11:00:00.000",
+    "LAST_UPDATED_TX_STAMP": "2026-01-19 11:00:00.000",
+    "CREATED_STAMP": "2026-01-19 11:00:00.000",
+    "CREATED_TX_STAMP": "2026-01-19 11:00:00.000"
+  }
+]
 
-"back": "رجوع",
-"edit-invoice": "تعديل الفاتورة",
-"loading": "جاري تحميل بيانات الفاتورة...",
-"processing": "جاري معالجة الفاتورة...",
-"error": "حدث خطأ",
-"status-changed": "تم تغيير الحالة إلى {0} بنجاح",
-
-"actions": {
-"new": "إنشاء فاتورة جديدة",
-"update": "تعديل الفاتورة",
-"approve": "اعتماد الفاتورة",
-"ready": "جعل الفاتورة جاهزة",
-"paid": "تسجيل كمدفوعة",
-"writeoff": "شطب الفاتورة",
-"cancel": "إلغاء الفاتورة",
-"transactions": "القيود المحاسبية",
-"payment-applications": "تطبيقات الدفع",
-"add-item": "إضافة صنف إلى الفاتورة"
-},
-
-"status": {
-"new": "جديدة",
-"in-process": "تحت المعالجة",
-"approved": "معتمدة",
-"ready": "جاهزة للإصدار",
-"received": "مستلمة",
-"paid": "مدفوعة",
-"writeoff": "مشطوبة",
-"cancelled": "ملغاة",
-"unknown": "غير معروفة"
-},
-
-"columns": {
-"product": "المنتج / الخدمة",
-"item-type-desc": "وصف نوع الصنف",
-"amount": "المبلغ",
-"quantity": "الكمية",
-"description": "الوصف"
-}
+// Option 3 – keeps installment wording but fixes the feeling
+{
+  "ACCTG_TRANS_TYPE_ID": "APARTMENT_SALE_INSTALLMENTS",
+  "PARENT_TYPE_ID": "APARTMENT_SALE",
+  "HAS_TABLE": "N",
+  "DESCRIPTION": "Apartment Sale - Multi-Installment Plan",
+  ...
 }

@@ -293,6 +293,104 @@ public class GetPartyFinancialHistory
                     .OrderBy(x => x.TransactionDate)
                     .ToList();
 
+                // ───────────────────────────────────────────────────────────────
+// Apartment Sale Receivables & Related Entries
+// Business Purpose: 
+// - Normal installment sales: only debit (121100 AR → customer owes more)
+// - Cheque-delivered sales: both sides (124410 Cheques Rec debit + credit side)
+// ───────────────────────────────────────────────────────────────
+
+                var apartmentSaleEntries = await _context.AcctgTransEntries
+                    .Include(ate => ate.AcctgTrans)
+                    .Where(ate =>
+                        ate.AcctgTrans.PartyId == request.PartyId &&
+                        ate.AcctgTrans.IsPosted == "Y" &&
+                        (
+                            // For normal installments: only debit side
+                            (ate.AcctgTrans.AcctgTransTypeId == "APARTMENT_SALE_INSTALLMENTS" &&
+                             ate.DebitCreditFlag == "D") ||
+
+                            // For cheque type: both debit and credit sides
+                            ate.AcctgTrans.AcctgTransTypeId == "APARTMENT_SALE_CHEQUE"
+                        ) &&
+                        ate.Amount > 0)
+                    .Select(ate => new
+                    {
+                        ate.AcctgTrans.AcctgTransId,
+                        ate.AcctgTrans.AcctgTransTypeId,
+                        ate.AcctgTrans.TransactionDate,
+                        ate.AcctgTrans.Description,
+                        ate.AcctgTransEntrySeqId,
+                        ate.GlAccountId,
+                        ate.GlAccountTypeId,
+                        ate.Amount,
+                        ate.DebitCreditFlag,
+                        ate.CurrencyUomId,
+                        ate.OrigCurrencyUomId,
+                        SalesRequestId = ate.AcctgTrans.SalesRequestId
+                    })
+                    .OrderBy(x => x.TransactionDate)
+                    .ThenBy(x => x.AcctgTransId)
+                    .ThenBy(x => x.AcctgTransEntrySeqId)
+                    .ToListAsync(cancellationToken);
+
+// ───────────────────────────────────────────────────────────────
+// Transform + calculate impact from customer perspective
+// ───────────────────────────────────────────────────────────────
+
+                var apartmentSaleDtos = new List<ApartmentSalePostingDto>();
+                decimal apartmentSaleImpact = 0m;
+
+                foreach (var entry in apartmentSaleEntries)
+                {
+                    bool isDebit = entry.DebitCreditFlag == "D";
+
+                    // Base signed amount (positive = debit, negative = credit)
+                    decimal rawSigned = isDebit ? (decimal)entry.Amount : -(decimal)entry.Amount;
+
+                    // Customer perspective impact:
+                    //   - Debit to AR / Cheques Receivable → customer owes us more → +
+                    //   - Credit to AR / Cheques Receivable → reduces what customer owes → -
+                    //   - Credit to revenue (if somehow appears) → usually ignored or neutral for net balance
+                    decimal impact;
+
+                    if (IsReceivableAccountType(entry.GlAccountTypeId ?? ""))
+                    {
+                        // Normal receivable movement
+                        impact = rawSigned;
+                    }
+                    else
+                    {
+                        // Revenue or other account → typically no direct impact on customer receivable balance
+                        // (but we still show it for visibility when it's cheque type)
+                        impact = 0m;
+                    }
+
+                    string entryCurrency = !string.IsNullOrEmpty(entry.CurrencyUomId)
+                        ? entry.CurrencyUomId
+                        : (!string.IsNullOrEmpty(entry.OrigCurrencyUomId)
+                            ? entry.OrigCurrencyUomId
+                            : currencyUomId);
+
+                    apartmentSaleImpact += Math.Round(impact, 2, MidpointRounding.AwayFromZero);
+
+                    apartmentSaleDtos.Add(new ApartmentSalePostingDto
+                    {
+                        TransactionId = entry.AcctgTransId,
+                        TransactionTypeId = entry.AcctgTransTypeId,
+                        TransactionDate = entry.TransactionDate,
+                        Description = entry.Description ??
+                                      (isDebit ? "Apartment sale receivable" : "Apartment sale revenue/offset"),
+                        GlAccountId = entry.GlAccountId,
+                        GlAccountTypeId = entry.GlAccountTypeId,
+                        Amount = (decimal)entry.Amount,
+                        DebitCreditFlag = entry.DebitCreditFlag,
+                        CurrencyUomId = entryCurrency,
+                        SalesRequestId = entry.SalesRequestId,
+                        ImpactOnBalance = Math.Round(impact, 2, MidpointRounding.AwayFromZero)
+                    });
+                }
+
                 // 3. Retrieve Invoices and Applied Payments
                 // Benefit: Filters valid invoices and payments, ensuring only PMNT_RECEIVED payments are applied, preventing invalid applications (e.g., PMNT_NOT_PAID)
                 // Wisdom: Aligns with OFBiz's expectation of received payments for applications, ensuring accurate financial reporting
@@ -636,8 +734,9 @@ public class GetPartyFinancialHistory
                                          - financialSummary.TotalPurchaseInvoice
                                          - financialSummary.TotalPaymentsIn
                                          + financialSummary.TotalPaymentsOut
-                                         + rentalPropertyDebitImpact 
-                                         - partnerAccrualCreditImpact;
+                                         + rentalPropertyDebitImpact
+                                         - partnerAccrualCreditImpact
+                                         + apartmentSaleImpact;
 
                 if (transferAmount > 0)
                 {
@@ -673,7 +772,8 @@ public class GetPartyFinancialHistory
                     BillingAccounts = billingAccountsDtos,
                     Returns = returns,
                     RentalPropertyPostings = rentalPropertyDtos,
-                    PartnerAccrualPostings = partnerAccrualDtos, 
+                    PartnerAccrualPostings = partnerAccrualDtos,
+                    ApartmentSalePostings = apartmentSaleDtos,
                     OpeningBalances = openingBalanceDtos,
                     FinancialSummary = financialSummary
                 });
@@ -685,7 +785,7 @@ public class GetPartyFinancialHistory
             }
         }
     }
-    
+
     private static string DetermineLedgerPerspective(string? mainRole)
     {
         if (string.IsNullOrWhiteSpace(mainRole))
@@ -693,11 +793,11 @@ public class GetPartyFinancialHistory
 
         return mainRole.ToUpperInvariant() switch
         {
-            "CUSTOMER"    => "ExternalCustomer",
-            "SUPPLIER"    => "ExternalSupplier",
-            "CONTRACTOR"  => "ExternalContractor",
-            "PARTNER"     => "ExternalPartner",
-            _             => "Company"
+            "CUSTOMER" => "ExternalCustomer",
+            "SUPPLIER" => "ExternalSupplier",
+            "CONTRACTOR" => "ExternalContractor",
+            "PARTNER" => "ExternalPartner",
+            _ => "Company"
         };
     }
 }
@@ -729,9 +829,8 @@ public class PartnerAccrualPostingDto
     public DateTime? TransactionDate { get; set; }
     public string? GlAccountTypeId { get; set; }
     public decimal Amount { get; set; }
-    public string? DebitCreditFlag { get; set; }        // "C" in this case
+    public string? DebitCreditFlag { get; set; } // "C" in this case
     public string? CurrencyUomId { get; set; }
-    public decimal ImpactOnBalance { get; set; }        // Usually negative (reduces net receivable)
+    public decimal ImpactOnBalance { get; set; } // Usually negative (reduces net receivable)
     public string Description { get; set; } = "استحقاق إيراد العقار للشركاء";
 }
-

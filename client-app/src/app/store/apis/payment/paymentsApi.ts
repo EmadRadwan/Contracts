@@ -26,6 +26,7 @@ const paymentsApi = createApi({
         },
     }),
     tagTypes: ["Payments", "PaymentApplications", "NotAppliedInvoices"],
+    refetchOnMountOrArgChange: true,
     endpoints(builder) {
         return {
             fetchPayments: builder.query<ListResponse<Payment>, PaymentQueryArgs>({

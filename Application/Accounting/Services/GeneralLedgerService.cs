@@ -5037,18 +5037,37 @@ public class GeneralLedgerService : IGeneralLedgerService
             string bankOrCashGlAccountId = payment.PaymentMethod?.GlAccountId
                                            ?? throw new Exception("GL account not configured on payment method");
 
-            // Determine if this is a cheque payment or cash
-            bool isChequePayment = !string.IsNullOrEmpty(payment.ChequeNumber);
-            string paymentTypeDescription = isChequePayment ? "Cheque" : "Cash";
-            string chequeRef = isChequePayment ? $"#{payment.ChequeNumber}" : string.Empty;
+            // ────────────────────────────────────────────────
+            // Determine payment type & related strings
+            // ────────────────────────────────────────────────
+            string paymentType;
+            string paymentTypeDescription;
+            string chequeOrTransferRef = string.Empty;
 
+            if (payment.IsBankTransfer == true)
+            {
+                paymentType = "BankTransfer";
+                paymentTypeDescription = "Bank Transfer";
+            }
+            else if (!string.IsNullOrEmpty(payment.ChequeNumber))
+            {
+                paymentType = "Cheque";
+                paymentTypeDescription = "Cheque";
+                chequeOrTransferRef = $"#{payment.ChequeNumber}";
+            }
+            else
+            {
+                paymentType = "Cash";
+                paymentTypeDescription = "Cash";
+            }
+            
             // Determine credit GL account
             string creditGlAccountId = (bool)payment.SalesRequest.IsChequesDelivered
                 ? "124410" // Cheques Under Collection
                 : "121100"; // Accounts Receivable
 
             // Main transaction description
-            var description = $"Apartment incoming payment - {paymentTypeDescription} {chequeRef} - " +
+            var description = $"Apartment incoming payment - {paymentTypeDescription} {chequeOrTransferRef} - " +
                               $"Payment {payment.PaymentId} - SR {payment.SalesRequestId}";
 
             var acctgTransParams = new CreateAcctgTransParams
@@ -5067,10 +5086,15 @@ public class GeneralLedgerService : IGeneralLedgerService
 
             int seq = 0;
 
-            // Debit Entry Description - Bank or Cash receipt
-            string debitDescription = isChequePayment
-                ? $"Bank deposit - Cleared cheque {chequeRef}"
-                : "Cash receipt from customer";
+            // ────────────────────────────────────────────────
+            // Debit entry (incoming money → bank/cash)
+            // ────────────────────────────────────────────────
+            string debitDescription = paymentType switch
+            {
+                "BankTransfer" => $"Bank transfer received from customer {chequeOrTransferRef}",
+                "Cheque"       => $"Bank deposit - Cleared cheque {chequeOrTransferRef}",
+                _              => "Cash receipt from customer"
+            };
 
             var debitEntry = new AcctgTransEntry
             {
@@ -5089,12 +5113,17 @@ public class GeneralLedgerService : IGeneralLedgerService
             };
             await _acctgTransService.CreateAcctgTransEntry(debitEntry);
 
-            // Credit Entry Description
-            string creditDescription = (bool)payment.SalesRequest.IsChequesDelivered
-                ? isChequePayment
-                    ? $"Clearing cheques under collection {chequeRef}"
-                    : "Cash payment applied - reducing cheques under collection"
-                : $"Receipt against customer receivable {chequeRef}";
+            // ────────────────────────────────────────────────
+            // Credit entry (reducing receivable or cheques under collection)
+            // ────────────────────────────────────────────────
+            string creditDescription = payment.SalesRequest.IsChequesDelivered == true
+                ? paymentType switch
+                {
+                    "BankTransfer" => $"Bank transfer applied - reducing cheques under collection",
+                    "Cheque"       => $"Clearing cheques under collection {chequeOrTransferRef}",
+                    _              => $"Cash payment applied - reducing cheques under collection"
+                }
+                : $"Receipt against customer receivable {chequeOrTransferRef}";
 
             var creditEntry = new AcctgTransEntry
             {

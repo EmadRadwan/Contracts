@@ -225,12 +225,21 @@ sudo rm -rf erp-contracts
 scp ubuntu@129.146.22.240:/home/ubuntu/logs/contracts/\*.log .
 scp ubuntu@129.146.22.240:/home/ubuntu/logs/contracts/logfile20251007.log .
 
+MySQL production export:
+mkdir -p ~/mysql-backups/contracts
+cd ~/mysql-backups/contracts
+
+# Option A – using the default/fallback password
+docker exec erp-mysql-contracts \
+  sh -c 'exec mysqldump -uroot -p"Tmbtc202500" --databases erp_contracts --routines --triggers --events' \
+  > ~/mysql-backups/contracts-golden/erp_contracts_$(date +%Y-%m-%d_%H-%M-%S).sql
 
 Portainer.io:
 http://129.146.22.240:9000
 admin / Tmbtc202500))
 
 // Cloud link: https://console.us-phoenix-1.oraclecloud.com/identity/domains/my-profile?tenant=efathyradwan67&domain=Default
+Tmbtc2026))00
 
 
 Mysql root password: Tmbtc202500

@@ -16,6 +16,7 @@ public class PartyFinancialHistoryDetails
     // Already existing special transaction types
     public List<OpeningBalanceDto> OpeningBalances { get; set; } = new();
     public List<RentalPropertyPostingDto> RentalPropertyPostings { get; set; } = new();
+    public List<ApartmentSalePostingDto> ApartmentSalePostings { get; set; } = new();
 
     // NEW: Partner revenue accruals (credit side typically)
     public List<PartnerAccrualPostingDto> PartnerAccrualPostings { get; set; } = new();
