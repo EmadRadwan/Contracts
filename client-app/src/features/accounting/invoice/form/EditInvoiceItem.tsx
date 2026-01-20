@@ -19,7 +19,7 @@ import { InvoiceItem } from "../../../../app/models/accounting/invoiceItem";
 import {
     useFetchInvoiceItemTypesByInvoiceIdQuery
 } from "../../../../app/store/apis/invoice/invoiceItemsApi";
-import {useInvoiceTotal} from "../hook/useInvoiceTotal";
+import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
 
 interface Props {
     invoiceItem?: InvoiceItem;
@@ -35,6 +35,9 @@ const EditInvoiceItem: React.FC<Props> = ({ invoiceItem, editMode, onClose, invo
     const [isLoading, setIsLoading] = useState(false);
     const [showProductField, setShowProductField] = useState(false);
     const companyId = user?.organizationPartyId || "";
+    const { getTranslatedLabel } = useTranslationHelper();
+    const loc = "accounting.invoices.edit.item";
+
     const { data: unitsOfMeasure, isFetching: isUoMsFetching } = useFetchProductUOMsQuery(undefined);
     const uomData = unitsOfMeasure?.map((uom: any) => ({
         uomId: uom.quantityUomId,
@@ -51,6 +54,20 @@ const EditInvoiceItem: React.FC<Props> = ({ invoiceItem, editMode, onClose, invo
     const { data: glAccounts } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
         skip: companyId === undefined,
     });
+
+    const labels = {
+        invoiceItemType: getTranslatedLabel(`${loc}.invoiceItemType`, "Invoice Item Type") + " *",
+        product:        getTranslatedLabel(`${loc}.product`,        "Product"),
+        description:    getTranslatedLabel(`${loc}.description`,    "Description"),
+        quantity:       getTranslatedLabel(`${loc}.quantity`,       "Quantity") + " *",
+        amount:         getTranslatedLabel(`${loc}.amount`,         "Amount") + " *",
+        uom:            getTranslatedLabel(`${loc}.uom`,            "UOM"),
+        overrideGlAccount: getTranslatedLabel(`${loc}.overrideGlAccount`, "Override GL Account"),
+        add:            getTranslatedLabel(`${loc}.actions.add`,    "Add"),
+        update:         getTranslatedLabel(`${loc}.actions.update`, "Update"),
+        cancel:         getTranslatedLabel("general.cancel",        "Cancel"),
+    };
+
 
     // REFACTOR: Added logic to determine if Product field should be shown
     // Purpose: Conditionally display Product field based on invoiceItemTypeId
@@ -128,7 +145,7 @@ const EditInvoiceItem: React.FC<Props> = ({ invoiceItem, editMode, onClose, invo
                             <Field
                                 id="invoiceItemTypeId"
                                 name="invoiceItemTypeId"
-                                label="Invoice Item Type *"
+                                label={labels.invoiceItemType}
                                 component={MemoizedFormDropDownList}
                                 autoComplete="off"
                                 dataItemKey="invoiceItemTypeId"
@@ -138,57 +155,59 @@ const EditInvoiceItem: React.FC<Props> = ({ invoiceItem, editMode, onClose, invo
                                 disabled={editMode === 2}
                             />
                         </Grid>
-                        {/* REFACTOR: Made Product field conditional */}
-                        {/* Purpose: Only show Product field for relevant item types */}
-                        {/* Improvement: Simplifies form for non-product-related items */}
+
                         {showProductField && (
                             <Grid item xs={12}>
                                 <Field
                                     id="productId"
                                     name="productId"
-                                    label="Product"
+                                    label={labels.product}
                                     component={FormMultiColumnComboBoxVirtualFacilityProduct}
                                     autoComplete="off"
                                     columnWidth="500px"
                                 />
                             </Grid>
                         )}
+
                         <Grid item xs={12}>
                             <Field
                                 id="description"
                                 name="description"
-                                label="Description"
+                                label={labels.description}
                                 component={FormTextArea}
                                 autoComplete="off"
                             />
                         </Grid>
+
                         <Grid item xs={6} sm={4}>
                             <Field
                                 id="quantity"
                                 name="quantity"
-                                label="Quantity *"
+                                label={labels.quantity}
                                 format="n0"
                                 min={1}
                                 component={FormNumericTextBox}
                                 validator={requiredValidator}
                             />
                         </Grid>
+
                         <Grid item xs={6} sm={4}>
                             <Field
                                 id="amount"
                                 name="amount"
-                                label="Amount *"
+                                label={labels.amount}
                                 format="n2"
                                 min={0}
                                 component={FormNumericTextBox}
                                 validator={requiredValidator}
                             />
                         </Grid>
+
                         <Grid item xs={6} sm={4}>
                             <Field
                                 id="uomId"
                                 name="uomId"
-                                label="UOM"
+                                label={labels.uom}
                                 component={MemoizedFormDropDownList}
                                 autoComplete="off"
                                 dataItemKey="uomId"
@@ -197,11 +216,12 @@ const EditInvoiceItem: React.FC<Props> = ({ invoiceItem, editMode, onClose, invo
                                 disabled={isUoMsFetching}
                             />
                         </Grid>
+
                         <Grid item xs={12}>
                             <Field
                                 id="overrideGlAccountId"
                                 name="overrideGlAccountId"
-                                label="Override GL Account Id"
+                                label={labels.overrideGlAccount}
                                 data={glAccounts || []}
                                 component={FormDropDownTreeGlAccount2}
                                 dataItemKey="glAccountId"
@@ -210,6 +230,7 @@ const EditInvoiceItem: React.FC<Props> = ({ invoiceItem, editMode, onClose, invo
                                 expandField="expanded"
                             />
                         </Grid>
+
                         <Grid item xs={12}>
                             <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
                                 <LoadingButton
@@ -220,7 +241,7 @@ const EditInvoiceItem: React.FC<Props> = ({ invoiceItem, editMode, onClose, invo
                                     disabled={!formRenderProps.allowSubmit}
                                     sx={{ minWidth: 120 }}
                                 >
-                                    {editMode === 2 ? "Update" : "Add"}
+                                    {editMode === 2 ? labels.update : labels.add}
                                 </LoadingButton>
                                 <Button
                                     onClick={onClose}
@@ -229,7 +250,7 @@ const EditInvoiceItem: React.FC<Props> = ({ invoiceItem, editMode, onClose, invo
                                     variant="outlined"
                                     sx={{ minWidth: 120 }}
                                 >
-                                    Cancel
+                                    {labels.cancel}
                                 </Button>
                             </Box>
                         </Grid>

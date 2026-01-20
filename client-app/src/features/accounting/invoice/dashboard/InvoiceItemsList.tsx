@@ -17,6 +17,15 @@ import ModalContainer from "../../../../app/common/modals/ModalContainer";
 import EditInvoiceItem from "../form/EditInvoiceItem";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
+import {useDeleteInvoiceItemMutation} from "../../../../app/store/apis/invoice/invoiceItemsApi";
+import {toast} from "react-toastify";
+import {
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+} from "@mui/material";
 
 interface Props {
     invoiceId: string | undefined;
@@ -41,9 +50,61 @@ export default function InvoiceItemsList({invoiceId, canEdit, refreshTotal}: Pro
     const [editMode, setEditMode] = useState(0)
     const [show, setShow] = useState(false)
     const {getTranslatedLabel} = useTranslationHelper()
+    const [deleteInvoiceItem, { isLoading: isDeleting }] = useDeleteInvoiceItemMutation();
 
     const {data: invoiceItemsData, error, isLoading} = useFetchInvoiceItemsQuery(invoiceId,
         {skip: invoiceId === undefined});
+
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [invoiceItemToDelete, setInvoiceItemToDelete] = useState<{
+        invoiceId: string;
+        invoiceItemSeqId: string;
+    } | null>(null);
+
+    const handleDeleteClick = useCallback((invoiceId: string, invoiceItemSeqId: string) => {
+        setInvoiceItemToDelete({ invoiceId, invoiceItemSeqId });
+        setDeleteDialogOpen(true);
+    }, []);
+
+    const handleConfirmDelete = useCallback(async () => {
+        if (!invoiceItemToDelete) return;
+
+        try {
+            await deleteInvoiceItem({
+                invoiceId: invoiceItemToDelete.invoiceId,
+                invoiceItemSeqId: invoiceItemToDelete.invoiceItemSeqId,
+            }).unwrap();
+
+            toast.success(
+                getTranslatedLabel(
+                    "accounting.invoices.display.form.deleteSuccess",
+                    "تم حذف الصنف بنجاح"
+                )
+            );
+        } catch (err: any) {
+            // Try to get a nice message from backend
+            const errorMsg =
+                err?.data?.error ||
+                err?.data?.message ||
+                "Failed to delete invoice item";
+            toast.error(
+                err?.data?.error ||
+                getTranslatedLabel(
+                    "accounting.invoices.display.form.deleteFailed",
+                    "فشل حذف الصنف"
+                )
+            );
+        } finally {
+            // Always clean up
+            setDeleteDialogOpen(false);
+            setInvoiceItemToDelete(null);
+        }
+    }, [deleteInvoiceItem, invoiceItemToDelete]);
+
+    const handleCancelDelete = useCallback(() => {
+        setDeleteDialogOpen(false);
+        setInvoiceItemToDelete(null);
+    }, []);
 
     const handleSelectInvoiceItem = useCallback(
         (dataItem: InvoiceItem) => {
@@ -113,6 +174,31 @@ export default function InvoiceItemsList({invoiceId, canEdit, refreshTotal}: Pro
             </td>
         );
     };
+
+    const actionCell = (props: any) => {
+        const { dataItem } = props;
+
+        return (
+            <td style={{ padding: "4px 8px", textAlign: "center" }}>
+                {canEdit && (
+                    <Button
+                        size="small"
+                        color="error"
+                        variant="text"
+                        onClick={() => handleDeleteClick(dataItem.invoiceId, dataItem.invoiceItemSeqId)}
+                        disabled={isDeleting}
+                        sx={{ minWidth: "auto", p: "2px 6px" }}
+                    >
+                        {isDeleting
+                            ? getTranslatedLabel("general.deleting", "جارٍ الحذف...")
+                            : getTranslatedLabel("accounting.invoices.display.form.actions.deleteItem", "حذف الصنف")
+                        }
+                    </Button>
+                )}
+            </td>
+        );
+    };
+
 
     if (!invoiceId) {
         return <div>No invoice selected</div>;
@@ -200,7 +286,55 @@ export default function InvoiceItemsList({invoiceId, canEdit, refreshTotal}: Pro
                         title={getTranslatedLabel(`${localizationKey}.columns.description`, "Description")}
                         width={200}
                     />
+                    <Column
+                        title=" "
+                        width={110}
+                        cell={actionCell}
+                        filterable={false}
+                        sortable={false}
+                    />
                 </KendoGrid>
+                <Dialog
+                    open={deleteDialogOpen}
+                    onClose={handleCancelDelete}
+                    aria-labelledby="delete-invoice-item-title"
+                >
+                    <DialogTitle id="delete-invoice-item-title">
+                        {getTranslatedLabel(
+                            "accounting.invoices.display.form.deleteDialogTitle",
+                            "تأكيد الحذف"
+                        )}
+                    </DialogTitle>
+
+                    <DialogContent>
+                        <DialogContentText>
+                            {getTranslatedLabel(
+                                "accounting.invoices.display.form.deleteDialogMessage",
+                                "هل أنت متأكد من حذف هذا الصنف من الفاتورة؟ لا يمكن التراجع عن هذا الإجراء."
+                            )}
+                        </DialogContentText>
+                    </DialogContent>
+
+                    <DialogActions>
+                        <Button onClick={handleCancelDelete} disabled={isDeleting} color="inherit">
+                            {getTranslatedLabel("general.cancel", "إلغاء")}
+                        </Button>
+
+                        <Button
+                            onClick={handleConfirmDelete}
+                            color="error"
+                            variant="contained"
+                            disabled={isDeleting}
+                            autoFocus
+                        >
+                            {isDeleting
+                                ? getTranslatedLabel("general.deleting", "جارٍ الحذف...")
+                                : getTranslatedLabel("accounting.invoices.display.form.deleteConfirm", "حذف")
+                            }
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+
                 {isLoading && <LoadingComponent
                     message={getTranslatedLabel(`${localizationKey}.loading`, "Loading Invoice Items...")}
                 />}

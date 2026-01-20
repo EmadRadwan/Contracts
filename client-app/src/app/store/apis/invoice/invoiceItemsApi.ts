@@ -95,6 +95,16 @@ const invoiceItemsApi = createApi({
                 },
                 invalidatesTags: ["InvoiceItems"],
             }),
+            deleteInvoiceItem: builder.mutation<
+                void,                                 // we don't really need the returned data on success
+                { invoiceId: string; invoiceItemSeqId: string }
+                >({
+                query: ({ invoiceId, invoiceItemSeqId }) => ({
+                    url: `invoices/invoice-item/${invoiceId}/${invoiceItemSeqId}`,
+                    method: 'DELETE',
+                }),
+                invalidatesTags: ["InvoiceItems"],
+            }),
             approveInvoiceItems: builder.mutation({
                 query: (invoiceItems) => {
                     return {
@@ -148,6 +158,7 @@ export const {
     useFetchInvoiceItemProductQuery,
     useAddInvoiceItemMutation,
     useUpdateInvoiceItemsMutation,
-    useApproveInvoiceItemsMutation, useFetchInvoiceItemTypesQuery, useFetchInvoiceItemTypesByInvoiceIdQuery
+    useApproveInvoiceItemsMutation, useFetchInvoiceItemTypesQuery,
+    useFetchInvoiceItemTypesByInvoiceIdQuery, useDeleteInvoiceItemMutation
 } = invoiceItemsApi;
 export {invoiceItemsApi};

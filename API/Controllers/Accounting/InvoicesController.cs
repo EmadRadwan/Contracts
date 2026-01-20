@@ -96,6 +96,33 @@ public class InvoicesController : BaseApiController
 
         return Ok(result.Data);   // typically returns { invoiceId, invoiceItemSeqId }
     }
+    
+    // In your InvoiceItemsController.cs (or wherever you have invoice endpoints)
+
+    [HttpDelete("invoice-item/{invoiceId}/{invoiceItemSeqId}")]
+    public async Task<IActionResult> DeleteInvoiceItem(
+        [FromRoute] string invoiceId,
+        [FromRoute] string invoiceItemSeqId)
+    {
+        var command = new DeleteInvoiceItem.Command
+        {
+            InvoiceId = invoiceId,
+            InvoiceItemSeqId = invoiceItemSeqId
+        };
+
+        var result = await Mediator.Send(command);
+
+        if (result.IsError)
+        {
+            return BadRequest(new
+            {
+                error = result.ErrorMessage   // frontend expects { error: "..." }
+            });
+        }
+
+        return Ok();   // 200 OK — success, no body needed
+        // Alternative: return NoContent();  // 204 — even cleaner for DELETE
+    }
 
     [HttpGet("{invoiceId}")]
     public async Task<IActionResult> GetInvoiceById(string invoiceId)

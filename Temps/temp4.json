@@ -1,31 +1,13 @@
-[
-  {
-    "ACCTG_TRANS_TYPE_ID": "APARTMENT_SALE_INSTALLMENT",
-    "PARENT_TYPE_ID": "APARTMENT_SALE",
-    "HAS_TABLE": "N",
-    "DESCRIPTION": "Apartment Sale - Installment / Credit",
-    "LAST_UPDATED_STAMP": "2026-01-19 11:00:00.000",
-    "LAST_UPDATED_TX_STAMP": "2026-01-19 11:00:00.000",
-    "CREATED_STAMP": "2026-01-19 11:00:00.000",
-    "CREATED_TX_STAMP": "2026-01-19 11:00:00.000"
-  },
-  {
-    "ACCTG_TRANS_TYPE_ID": "APARTMENT_SALE_CHEQUE",
-    "PARENT_TYPE_ID": "APARTMENT_SALE",
-    "HAS_TABLE": "N",
-    "DESCRIPTION": "Apartment Sale - With Post-dated Cheques Delivered",
-    "LAST_UPDATED_STAMP": "2026-01-19 11:00:00.000",
-    "LAST_UPDATED_TX_STAMP": "2026-01-19 11:00:00.000",
-    "CREATED_STAMP": "2026-01-19 11:00:00.000",
-    "CREATED_TX_STAMP": "2026-01-19 11:00:00.000"
-  }
-]
-
-// Option 3 – keeps installment wording but fixes the feeling
-{
-  "ACCTG_TRANS_TYPE_ID": "APARTMENT_SALE_INSTALLMENTS",
-  "PARENT_TYPE_ID": "APARTMENT_SALE",
-  "HAS_TABLE": "N",
-  "DESCRIPTION": "Apartment Sale - Multi-Installment Plan",
-  ...
+<Button
+size="small"
+color="error"
+variant="text"
+onClick={() => handleDeleteClick(dataItem.invoiceId, dataItem.invoiceItemSeqId)}
+disabled={isDeleting}
+sx={{ minWidth: "auto", p: "2px 6px" }}
+>
+{isDeleting
+? getTranslatedLabel("general.deleting", "جارٍ الحذف...")
+: getTranslatedLabel("accounting.invoices.display.form.actions.deleteItem", "حذف الصنف")
 }
+</Button>

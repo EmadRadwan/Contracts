@@ -310,64 +310,8 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
         };
     };
 
-    // ────────────────────────────────────────────────────────────────
-// Top-right Actions Menu – using items array (recommended pattern)
-// ────────────────────────────────────────────────────────────────
+    console.log("Invoice:", invoice, "Status:", invoice?.statusId);
 
-    const menuItems = [
-        {
-            text: getTranslatedLabel("general.actions", "Actions"),
-            items: [
-                {
-                    text: getTranslatedLabel(`${localizationKey}.actions.new`, "Create New Invoice"),
-                    data: "new",
-                },
-                // ────────────────────────────────────────────────
-                // Only show edit & status changes when invoice is not empty
-                // ────────────────────────────────────────────────
-                ...(!isEmptyInvoice
-                    ? [
-                        // Edit – only when in process
-                        ...(invoice?.statusId === "INVOICE_IN_PROCESS"
-                            ? [
-                                {
-                                    text: getTranslatedLabel(`${localizationKey}.actions.update`, "Edit"),
-                                    data: "update",
-                                },
-                            ]
-                            : []),
-
-                        // Approve – from In Process
-                        ...(getAvailableStatusTransitions().toApproved
-                            ? [
-                                {
-                                    text: getTranslatedLabel(
-                                        `${localizationKey}.actions.approve`,
-                                        "Status to 'Approved'"
-                                    ),
-                                    data: "approve",
-                                },
-                            ]
-                            : []),
-
-                        // Ready – from In Process or Approved
-                        ...(getAvailableStatusTransitions().toReady
-                            ? [
-                                {
-                                    text: getTranslatedLabel(
-                                        `${localizationKey}.actions.ready`,
-                                        "Status to 'Ready'"
-                                    ),
-                                    data: "ready",
-                                },
-                            ]
-                            : []),
-                    ]
-                    : []),
-            ],
-        },
-    ];
-    
 
     return (
         <>
@@ -411,14 +355,68 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                             </Typography>
                         </Grid>
                         <Grid item xs={2}>
-                            <Menu
-                                items={menuItems}
-                                onSelect={handleMenuSelect}
-                                // Recommended in RTL + horizontal menus
-                                openOnClick={true}
-                                // Optional: helps with popup positioning in complex layouts
-                                popupSettings={{ animate: true }}
-                            />
+                            <Menu onSelect={handleMenuSelect}>
+                                <MenuItem text={getTranslatedLabel("general.actions", "Actions")}>
+                                    <MenuItem
+                                        text={getTranslatedLabel(`${localizationKey}.actions.new`, "Create New Invoice")}
+                                        data="new"
+                                    />
+                                    {!isEmptyInvoice && (
+                                        <>
+                                    {invoice?.statusId === "INVOICE_IN_PROCESS" && (
+                                        <MenuItem
+                                            text={getTranslatedLabel(`${localizationKey}.actions.update`, "Edit")}
+                                            data="update"
+                                        />
+                                    )}
+                                    {getAvailableStatusTransitions().toApproved && (
+                                        <MenuItem
+                                            text={getTranslatedLabel(
+                                                `${localizationKey}.actions.approve`,
+                                                "Status to 'Approved'"
+                                            )}
+                                            data="approve"
+                                        />
+                                    )}
+                                    {getAvailableStatusTransitions().toReady && (
+                                        <MenuItem
+                                            text={getTranslatedLabel(`${localizationKey}.actions.ready`, "Status to 'Ready'")}
+                                            data="ready"
+                                        />
+                                    )}
+                                    {/*{getAvailableStatusTransitions().toPaid && (
+                                        <MenuItem
+                                            text={getTranslatedLabel(
+                                                `${localizationKey}.actions.paid`,
+                                                "Status to 'Paid'"
+                                            )}
+                                            data="paid"
+                                            // REFACTOR: Removed redundant disabled prop, as the toPaid condition in getAvailableStatusTransitions now handles disabling when iTotal > 0, ensuring consistency and reducing conditional logic in the JSX.
+                                            disabled={isTotalLoading || !!totalError}
+                                        />
+                                    )}*/}
+                                    {/*{getAvailableStatusTransitions().toWriteoff && (
+                                        <MenuItem
+                                            text={getTranslatedLabel(
+                                                `${localizationKey}.actions.writeoff`,
+                                                "Status to 'Writeoff'"
+                                            )}
+                                            data="writeoff"
+                                        />
+                                    )}
+                                    {getAvailableStatusTransitions().toCancelled && (
+                                        <MenuItem
+                                            text={getTranslatedLabel(
+                                                `${localizationKey}.actions.cancel`,
+                                                "Status to 'Cancelled'"
+                                            )}
+                                            data="cancel"
+                                        />
+                                    )}*/}
+                                        </>
+                                    )}
+                                </MenuItem>
+                            </Menu>
                         </Grid>
                         <Grid item xs={1}>
                             {invoice?.statusId && invoice.statusId !== "UNKNOWN" && (

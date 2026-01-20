@@ -15,7 +15,7 @@ import {
   GridPageChangeEvent,
   GridSortChangeEvent,
   GridToolbar,
-  GRID_COL_INDEX_ATTRIBUTE,
+  GRID_COL_INDEX_ATTRIBUTE, GridFilterChangeEvent
 } from "@progress/kendo-react-grid";
 import {useEffect, useMemo, useState} from "react";
 import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
@@ -25,12 +25,17 @@ import { formatCurrency } from "../../../../app/util/utils";
 import ModalContainer from "../../../../app/common/modals/ModalContainer";
 import GlAccountTransactionsModal from "./GlAccountTransactionsModal";
 import {TrialBalanceExcel} from "../report/TrialBalanceExcel";
+import {
+  filterBy,
+  CompositeFilterDescriptor,
+} from "@progress/kendo-data-query";
 
 const TrialBalance = () => {
   const { getTranslatedLabel } = useTranslationHelper();
   const localizationKey = "accounting.orgGL.reports.trial-balance"
   const [showTransactionsModal, setShowTransactionsModal] = useState(false);
   const [selectedGlAccountId, setSelectedGlAccountId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<CompositeFilterDescriptor | undefined>(undefined);
 
   const initialSort: Array<SortDescriptor> = [
     { field: "accountCode", dir: "asc" },
@@ -41,6 +46,12 @@ const TrialBalance = () => {
   const pageChange = (event: GridPageChangeEvent) => {
     setPage(event.page);
   };
+
+  const onFilterChange = (event: GridFilterChangeEvent) => {
+    setFilter(event.filter);
+  };
+
+
   const {
     seletedCustomTimePeriodId,
   } = useAppSelector((state) => state.accountingSharedUi);
@@ -64,6 +75,19 @@ const TrialBalance = () => {
         skip: !seletedCustomTimePeriodId || !companyId,
       }
     );
+
+  // Then compute the filtered + sorted + paged data
+  const processedData = useMemo(() => {
+    const filtered = filterBy(data?.accountBalances ?? [], filter);
+
+    const sorted = orderBy(filtered, sort);
+
+    return sorted.slice(page.skip, page.skip + page.take);
+  }, [data?.accountBalances, filter, sort, page.skip, page.take]);
+
+// Also update total for correct pager
+  const total = filter ? filterBy(data?.accountBalances ?? [], filter).length : data?.accountBalances?.length ?? 0;
+
 
   useEffect(() => {
     return () => {
@@ -139,23 +163,22 @@ const TrialBalance = () => {
             <Grid container>
               <div className="div-container">
                 <KendoGrid
-                  className="main-grid"
-                  //style={{ height: "300px" }}
-                  data={orderBy(data?.accountBalances ?? [], sort).slice(
-                    page.skip,
-                    page.take + page.skip
-                  )}
-                  sortable={true}
-                  resizable={true}
-                  sort={sort}
-                  onSortChange={(e: GridSortChangeEvent) => {
-                    setSort(e.sort);
-                  }}
-                  skip={page.skip}
-                  take={page.take}
-                  total={data?.accountBalances.length ?? 0}
-                  pageable={true}
-                  onPageChange={pageChange}
+                    className="main-grid"
+                    data={processedData}           // ← now use processedData
+                    sortable={true}
+                    resizable={true}
+                    sort={sort}
+                    onSortChange={(e) => setSort(e.sort)}
+
+                    filterable={true}              // ← enable filter row
+                    filter={filter}                // ← controlled filter
+                    onFilterChange={onFilterChange}
+
+                    skip={page.skip}
+                    take={page.take}
+                    total={total}                  // ← important!
+                    pageable={true}
+                    onPageChange={pageChange}
                 >
                   <GridToolbar>
                     <Typography variant="body1">

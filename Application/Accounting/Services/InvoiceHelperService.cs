@@ -20,7 +20,7 @@ public interface IInvoiceHelperService
     Task<InvoiceDto3> UpdateInvoice(InvoiceDto3 invoice);
     Task<ServiceResult> CreateInvoiceItem(InvoiceItemParameters parameters);
     Task<ServiceResult> UpdateInvoiceItem(InvoiceItemParameters parameters);
-
+    Task<ServiceResult> DeleteInvoiceItem(string invoiceId, string seqId);
 
     Task<CreateInvoicesFromShipmentsResponse> CreateInvoicesFromShipments(
         List<string> shipmentIds,
@@ -2244,5 +2244,33 @@ public class InvoiceHelperService : IInvoiceHelperService
         // Business: Indicates that the shipment's invoices have been successfully updated to "READY".
         // -------------------------------
         return SetInvoicesToReadyFromShipmentResult.ReturnSuccess();
+    }
+    
+    public async Task<ServiceResult> DeleteInvoiceItem(string invoiceId, string seqId)
+    {
+        var item = await _context.InvoiceItems
+            .FirstOrDefaultAsync(i =>
+                i.InvoiceId == invoiceId &&
+                i.InvoiceItemSeqId == seqId );
+
+        if (item == null)
+        {
+            return new ServiceResult
+            {
+                IsError = true,
+                ErrorMessage = "Invoice item not found or already deleted.",
+                Data = null
+            };
+        }
+        
+        _context.InvoiceItems.Remove(item);
+
+        return new ServiceResult
+        {
+            IsError = false,
+            ErrorMessage = null,
+            Data = null                     // ← or new { Deleted = true } if frontend wants it
+            // Data = new { InvoiceId = invoiceId }   // example alternative
+        };
     }
 }

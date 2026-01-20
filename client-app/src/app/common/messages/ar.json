@@ -1393,8 +1393,14 @@
             "in-process": "تغيير الحالة إلى 'قيد المعالجة'",
             "cancel": "تغيير الحالة إلى 'ملغاة'",
             "transactions": "القيود المحاسبية",
-            "payment-applications": "تطبيقات الدفع"
+            "payment-applications": "تطبيقات الدفع",
+            "deleteItem": "حذف الصنف"
           },
+          "deleteDialogTitle": "تأكيد الحذف",
+          "deleteDialogMessage": "هل أنت متأكد من حذف هذا الصنف من الفاتورة؟ لا يمكن التراجع عن هذا الإجراء.",
+          "deleteConfirm": "حذف",
+          "deleteSuccess": "تم حذف الصنف بنجاح",
+          "deleteFailed": "فشل حذف الصنف",
           "status": {
             "new": "جديد",
             "in-process": "قيد المعالجة",
@@ -1414,6 +1420,22 @@
             "quantity": "الكمية",
             "description": "الوصف"
           }
+        }
+      },
+      "edit": {
+        "item": {
+          "invoiceItemType": "نوع بند الفاتورة",
+          "product": "المنتج",
+          "description": "الوصف",
+          "quantity": "الكمية",
+          "amount": "المبلغ",
+          "uom": "وحدة القياس",
+          "overrideGlAccount": "تجاوز حساب دفتر الأستاذ",
+          "actions": {
+            "add": "إضافة",
+            "update": "تحديث"
+          },
+          "loadingTypes": "جاري تحميل أنواع بنود الفاتورة..."
         }
       }
     },

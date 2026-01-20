@@ -145,7 +145,13 @@ export const FormDropDownTreeGlAccount2 = (fieldRenderProps: FieldRenderProps & 
 
   const popupSettings = {
     width: "400px",
-    height: "200px",
+    // Remove or comment out the fixed small height — it was limiting scrolling
+    // height: "200px",
+
+    // ─── This is the important change ────────────────────────────────
+    popupClass: "scrollable-dropdown-tree-popup",
+    // Optional: you can also add adaptive: true for mobile-friendly full-screen popup
+    // adaptive: true,
   };
 
   return (

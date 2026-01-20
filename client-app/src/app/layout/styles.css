@@ -317,7 +317,6 @@ input, select, textarea, button {
     }
 }
 
-/* style.css */
 .k-input.k-input-md {
     /* REFACTOR: Increased specificity from (0,1,0) to (0,2,0) by combining .k-input and .k-input-md to override Kendo's default font size */
     font-size: 1.5rem;
@@ -327,6 +326,27 @@ input, select, textarea, button {
 .net-value {
     color: white;
     background-color: white;
+}
+
+/* Targets the popup wrapper */
+.scrollable-dropdown-tree-popup {
+    max-height: 65vh !important;          /* or 500px, 420px — adjust to taste */
+    overflow: hidden !important;          /* prevents double scrollbars */
+}
+
+/* Most important — makes the TREE scrollable */
+.scrollable-dropdown-tree-popup .k-treeview {
+    max-height: 60vh !important;          /* slightly smaller than wrapper */
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+/* Sometimes helps — target the inner list container */
+.scrollable-dropdown-tree-popup .k-list,
+.scrollable-dropdown-tree-popup .k-list-ul,
+.scrollable-dropdown-tree-popup .k-group {
+    max-height: inherit !important;
+    overflow-y: auto !important;
 }
 
 

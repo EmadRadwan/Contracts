@@ -42,10 +42,16 @@ interface ModalContainerProps {
     onClose: () => void;
     children: ReactNode;
     width?: number;
+    dir?: 'rtl' | 'ltr';     // now optional
+    lang?: string;           // now optional
 }
 
 
-const ModalContainer: React.FC<ModalContainerProps> = ({show, onClose, children, width}) => {
+const ModalContainer: React.FC<ModalContainerProps> = ({show, onClose, children, width,
+                                                           dir = 'rtl',             // ← default is now RTL
+                                                           lang,  }) => {
+
+    const effectiveLang = lang || (dir === 'rtl' ? 'ar' : 'en');
 
     const style = {
         position: 'absolute' as 'absolute',
@@ -57,6 +63,8 @@ const ModalContainer: React.FC<ModalContainerProps> = ({show, onClose, children,
         border: '2px solid #000',
         boxShadow: 24,
         p: 4,
+        direction: dir,
+        textAlign: dir === 'rtl' ? 'right' : 'left',
     };
 
     return (
@@ -75,7 +83,13 @@ const ModalContainer: React.FC<ModalContainerProps> = ({show, onClose, children,
             sx={{zIndex: 99}}
         >
             <Fade in={show}>
-                <Box sx={style}>{children}</Box>
+                <Box
+                    sx={style}
+                    dir={dir}
+                    lang={effectiveLang}
+                >
+                    {children}
+                </Box>
             </Fade>
         </Modal>
     );

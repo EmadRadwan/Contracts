@@ -1,5 +1,4 @@
 using Application.Accounting.Services;
-using Application.Accounting.Services.Models;
 using Application.Shipments.Invoices;
 using FluentValidation;
 using MediatR;
