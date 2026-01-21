@@ -20,6 +20,7 @@ public class PartyFinancialHistoryDetails
 
     // NEW: Partner revenue accruals (credit side typically)
     public List<PartnerAccrualPostingDto> PartnerAccrualPostings { get; set; } = new();
+    public List<ChequeIssuedPostingDto> ChequeIssuedPostings { get; set; } = new();
 
     public FinancialSummaryDto FinancialSummary { get; set; } = new();
 }

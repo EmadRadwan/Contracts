@@ -28,6 +28,7 @@ const invoicesApi = createApi({
   }),
 
   tagTypes: ["invoices", "NotAppliedInvoices"],
+  refetchOnMountOrArgChange: true,
   endpoints(builder) {
     return {
       fetchInvoices: builder.query<ListResponse<Invoice>, State>({

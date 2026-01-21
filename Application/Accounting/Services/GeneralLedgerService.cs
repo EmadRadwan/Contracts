@@ -2087,6 +2087,38 @@ public class GeneralLedgerService : IGeneralLedgerService
             throw new Exception($"Error creating accounting transaction: {ex.Message}", ex);
         }
     }
+    
+    private async Task<List<string>> GetOrderIdsForInvoiceAsync(string invoiceId)
+    {
+        // 1. Look in change tracker first (includes Added, Modified, sometimes Unchanged)
+        var trackerOrderIds = _context.ChangeTracker
+            .Entries<OrderItemBilling>()
+            .Where(e =>
+                (e.State == EntityState.Added ||
+                 e.State == EntityState.Modified ||
+                 e.State == EntityState.Unchanged) &&
+                e.Entity.InvoiceId == invoiceId
+            )
+            .Select(e => e.Entity.OrderId)
+            .Distinct()
+            .ToList();   // synchronous – change tracker is in-memory
+
+        // 2. If nothing found in tracker → ask database (or always ask and union)
+        var dbOrderIds = await _context.OrderItemBillings
+            .Where(ob => ob.InvoiceId == invoiceId)
+            .Select(ob => ob.OrderId)
+            .Distinct()
+            .ToListAsync();
+
+        // 3. Combine & remove duplicates
+        var allOrderIds = trackerOrderIds
+            .Concat(dbOrderIds)
+            .Distinct(StringComparer.Ordinal)   // or OrdinalIgnoreCase if needed
+            .Where(id => !string.IsNullOrEmpty(id))
+            .ToList();
+
+        return allOrderIds;
+    }
 
     public async Task<string> CreateAcctgTransForPurchaseInvoice(string invoiceId)
     {
@@ -2125,8 +2157,8 @@ public class GeneralLedgerService : IGeneralLedgerService
 
             var acctgTransEntries = new List<AcctgTransEntry>();
             int seqNum = 1; // Initialize sequence number for AcctgTransEntrySeqId
-
-
+            
+            
             foreach (var invoiceItem in invoiceItems)
             {
                 decimal amountFromOrder = 0;
@@ -2456,7 +2488,41 @@ public class GeneralLedgerService : IGeneralLedgerService
             string productId = certificateItems.First().ProductId;
             string contractorPartyId = invoice.PartyIdFrom;
 
-            var (workEffortId, projectGlAccountId) = await GetProjectInfoViaOrderItemBillingAsync(invoiceId);
+            //var (workEffortId, projectGlAccountId) = await GetProjectInfoViaOrderItemBillingAsync(invoiceId);
+            
+            var orderIds = await _context.OrderItemBillings
+                .Where(ob => ob.InvoiceId == invoiceId)
+                .Select(ob => ob.OrderId)
+                .Distinct()
+                .ToListAsync();
+            string? workEffortId = null;
+            string? projectGlAccountId = null;
+
+            if (orderIds.Any())
+            {
+                // Prefer the most specific match: SUPPLY_PROCUREMENT_CERTIFICATE + RelatedOrderId
+                var workEffort = await _context.WorkEfforts
+                    .Where(w => orderIds.Contains(w.RelatedOrderId!))   // RelatedOrderId is usually string
+                    .OrderByDescending(w => w.LastStatusUpdate)         // most recent if somehow multiple
+                    .FirstOrDefaultAsync();
+
+                if (workEffort != null)
+                {
+                    workEffortId = workEffort.WorkEffortId;
+                    var project = await _context.WorkEfforts.FindAsync(workEffort.ProjectId);
+                    projectGlAccountId = project.GlAccountId;
+                }
+                else
+                {
+                    _logger.LogInformation(
+                        "No matching WorkEffort found for invoice {InvoiceId} with RelatedOrderId in {OrderIds}",
+                        invoiceId, string.Join(", ", orderIds));
+                }
+            }
+            else
+            {
+                _logger.LogDebug("No OrderItemBillings found for invoice {InvoiceId}", invoiceId);
+            }
 
             if (string.IsNullOrEmpty(projectGlAccountId))
             {
@@ -3256,6 +3322,32 @@ public class GeneralLedgerService : IGeneralLedgerService
             var organizationPartyId = payment.PartyIdFrom;
             var partyId = payment.PartyIdTo;
             var roleTypeId = "BILL_FROM_VENDOR";
+            
+            // ── Get WorkEffortId ────────────────────────────────────────────────
+            string? workEffortId = null;
+
+            // Option A: Directly from Payment (if you already keep it there)
+            if (!string.IsNullOrEmpty(payment.WorkEffortId))
+            {
+                workEffortId = payment.WorkEffortId;
+            }
+            // Option B: From related Order → WorkEffort (most common pattern)
+            else
+            {
+                workEffortId = await (
+                    from pyt in _context.Payments
+                    where pyt.PaymentId == paymentId
+                    join opp in _context.OrderPaymentPreferences 
+                        on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId
+                    join ord in _context.OrderHeaders 
+                        on opp.OrderId equals ord.OrderId
+                    join we in _context.WorkEfforts 
+                        on ord.OrderId equals we.RelatedOrderId into weGroup
+                    from we in weGroup.DefaultIfEmpty()
+                    select we.WorkEffortId
+                ).FirstOrDefaultAsync();
+            }
+
 
             // Retrieve PaymentGlAccountTypeMap
             var paymentGlAccountTypeMap = await _context.PaymentGlAccountTypeMaps
@@ -3379,6 +3471,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 AcctgTransTypeId = "OUTGOING_PAYMENT",
                 PartyId = partyId,
                 PaymentId = payment.PaymentId,
+                WorkEffortId = workEffortId,
                 Description = payment.Comments,
                 AcctgTransEntries = acctgTransEntries
             };
@@ -5200,7 +5293,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             // 3. Create accounting transaction
             var acctgTransParams = new CreateAcctgTransParams
             {
-                AcctgTransTypeId = "OUTGOING_PAYMENT", // or "CHECK_ISSUED", adjust as per your system
+                AcctgTransTypeId = "CHECK_ISSUED", // or "CHECK_ISSUED", adjust as per your system
                 TransactionDate = payment.EffectiveDate?.Date ?? DateTime.UtcNow.Date,
                 IsPosted = "Y",
                 GlFiscalTypeId = "ACTUAL",

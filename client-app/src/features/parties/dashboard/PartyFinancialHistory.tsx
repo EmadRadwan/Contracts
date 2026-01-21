@@ -64,9 +64,7 @@ const PartyFinancialHistory: React.FC<Props> = ({partyId, partyName}) => {
 
     const pageChange = (event: GridPageChangeEvent) => setPage(event.page);
     const sortChange = (event: GridSortChangeEvent) => setSort(event.sort);
-
-    const isExternalView = useMemo(() => data?.LedgerPerspective?.startsWith('External') ?? false, [data]);
-
+    
     const formatCurrency = useMemo(() => {
         return (value: number, currency?: string) => {
             const curr = currency || 'EGP';
@@ -145,7 +143,7 @@ const PartyFinancialHistory: React.FC<Props> = ({partyId, partyName}) => {
         // 2. Transactions – fixed column placement (no isExternalView here)
         interface UnifiedTransaction {
             date: string;
-            type: 'invoice' | 'payment' | 'rentalPosting' | 'partnerAccrual' | 'apartmentSale';
+            type: 'invoice' | 'payment' | 'rentalPosting' | 'partnerAccrual' | 'apartmentSale' | 'chequeIssued';
             id?: string;
             description: string;
             grossAmount: number;
@@ -259,6 +257,25 @@ const PartyFinancialHistory: React.FC<Props> = ({partyId, partyName}) => {
             });
         });
 
+        (data.chequeIssuedPostings || []).forEach((ch) => {
+            if (!ch.transactionDate || ch.amount <= 0) return;
+
+            const flag = (ch.debitCreditFlag || "").trim().toUpperCase();
+            if (flag !== "D") return; // we only included debits anyway, but safety
+
+            transactions.push({
+                date: ch.transactionDate,
+                type: "chequeIssued",
+                id: ch.transactionId,
+                description:
+                    ch.description ||
+                    `إصدار شيك مؤجل - ${ch.glAccountId || "غير معروف"} - دفعة ${ch.transactionId}`,
+                grossAmount: Number(ch.amount || 0),
+                debitCreditFlag: ch.debitCreditFlag,
+                transactionTypeId: ch.transactionTypeId,
+            });
+        });
+
         // 3. Sort (unchanged)
         transactions.sort((a, b) => {
             const dateA = a.date || "9999-12-31";
@@ -315,6 +332,16 @@ const PartyFinancialHistory: React.FC<Props> = ({partyId, partyName}) => {
                 } else if (flag === "C") {
                     dain = t.grossAmount;
                     periodChange = -t.grossAmount;    // receivable decrease
+                }
+            }
+            else if (t.type === "chequeIssued") {
+                const flag = (t.debitCreditFlag || "").trim().toUpperCase();
+                if (flag === "D") {
+                    madin = t.grossAmount;
+                    periodChange = +t.grossAmount;     // ← increases what contractor owes us
+                } else if (flag === "C") {
+                    dain = t.grossAmount;
+                    periodChange = -t.grossAmount;
                 }
             }
 

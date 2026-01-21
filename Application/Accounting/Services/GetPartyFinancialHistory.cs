@@ -391,6 +391,85 @@ public class GetPartyFinancialHistory
                     });
                 }
 
+                // ───────────────────────────────────────────────────────────────
+// Post-dated Cheque Issued – Debit side only (increases receivable)
+// Business Purpose: When the company issues a post-dated cheque to the party,
+// it is effectively extending credit → customer owes more (positive impact)
+// We only take the DEBIT leg (usually to expense/liability or AR-related account)
+// ───────────────────────────────────────────────────────────────
+
+                var chequeIssuedEntries = await _context.AcctgTransEntries
+                    .Include(ate => ate.AcctgTrans)
+                    .Where(ate =>
+                        ate.AcctgTrans.AcctgTransTypeId == "CHECK_ISSUED" &&
+                        ate.AcctgTrans.PartyId == request.PartyId &&
+                        ate.AcctgTrans.IsPosted == "Y" &&
+                        ate.DebitCreditFlag == "D" && // ← Only debit side
+                        ate.Amount > 0)
+                    .Select(ate => new
+                    {
+                        ate.AcctgTrans.AcctgTransId,
+                        ate.AcctgTrans.AcctgTransTypeId,
+                        ate.AcctgTrans.TransactionDate,
+                        ate.AcctgTrans.Description,
+                        ate.AcctgTransEntrySeqId,
+                        ate.GlAccountId,
+                        ate.GlAccountTypeId,
+                        ate.Amount,
+                        ate.DebitCreditFlag,
+                        ate.CurrencyUomId,
+                        ate.OrigCurrencyUomId
+                    })
+                    .OrderBy(x => x.TransactionDate)
+                    .ThenBy(x => x.AcctgTransId)
+                    .ThenBy(x => x.AcctgTransEntrySeqId)
+                    .ToListAsync(cancellationToken);
+
+// ───────────────────────────────────────────────────────────────
+// Transform + calculate impact from customer perspective
+// ───────────────────────────────────────────────────────────────
+
+                var chequeIssuedDtos = new List<ChequeIssuedPostingDto>();
+                decimal chequeIssuedImpact = 0m;
+
+                foreach (var entry in chequeIssuedEntries)
+                {
+                    // Debit → always positive raw amount from accounting perspective
+                    decimal rawSigned = (decimal)entry.Amount;
+
+                    // Customer perspective:
+                    //   Issuing post-dated cheque usually increases what customer owes us
+                    //   (we are giving more time/credit)
+                    // → almost always treat as +impact (regardless of exact GL account)
+                    //   You can keep IsReceivableAccountType() check if you want stricter logic
+                    bool isReceivableLike = IsReceivableAccountType(entry.GlAccountTypeId ?? "")
+                                            || entry.GlAccountId?.StartsWith("900") == true; // your example 900000
+
+                    decimal impact = isReceivableLike ? rawSigned : -rawSigned; // fallback safety
+
+                    string entryCurrency = !string.IsNullOrEmpty(entry.CurrencyUomId)
+                        ? entry.CurrencyUomId
+                        : (!string.IsNullOrEmpty(entry.OrigCurrencyUomId)
+                            ? entry.OrigCurrencyUomId
+                            : currencyUomId);
+
+                    chequeIssuedImpact += Math.Round(impact, 2, MidpointRounding.AwayFromZero);
+
+                    chequeIssuedDtos.Add(new ChequeIssuedPostingDto
+                    {
+                        TransactionId = entry.AcctgTransId,
+                        TransactionTypeId = entry.AcctgTransTypeId,
+                        TransactionDate = entry.TransactionDate,
+                        Description = entry.Description ?? "Postdated cheque issued (debit side)",
+                        GlAccountId = entry.GlAccountId,
+                        GlAccountTypeId = entry.GlAccountTypeId,
+                        Amount = (decimal)entry.Amount,
+                        DebitCreditFlag = entry.DebitCreditFlag,
+                        CurrencyUomId = entryCurrency,
+                        ImpactOnBalance = Math.Round(impact, 2, MidpointRounding.AwayFromZero)
+                    });
+                }
+
                 // 3. Retrieve Invoices and Applied Payments
                 // Benefit: Filters valid invoices and payments, ensuring only PMNT_RECEIVED payments are applied, preventing invalid applications (e.g., PMNT_NOT_PAID)
                 // Wisdom: Aligns with OFBiz's expectation of received payments for applications, ensuring accurate financial reporting
@@ -736,7 +815,8 @@ public class GetPartyFinancialHistory
                                          + financialSummary.TotalPaymentsOut
                                          + rentalPropertyDebitImpact
                                          - partnerAccrualCreditImpact
-                                         + apartmentSaleImpact;
+                                         + apartmentSaleImpact
+                                         + chequeIssuedImpact;
 
                 if (transferAmount > 0)
                 {
@@ -775,6 +855,7 @@ public class GetPartyFinancialHistory
                     PartnerAccrualPostings = partnerAccrualDtos,
                     ApartmentSalePostings = apartmentSaleDtos,
                     OpeningBalances = openingBalanceDtos,
+                    ChequeIssuedPostings    = chequeIssuedDtos,
                     FinancialSummary = financialSummary
                 });
             }
