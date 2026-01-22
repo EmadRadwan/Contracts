@@ -1,58 +1,48 @@
-TableName: Payment | PKValues: PaymentId: 10607 | Operation: Added
-TableName: OrderStatus | PKValues: OrderStatusId: a3355a3a-0210-4ca6-8ae9-06846f8241f7 | Operation: Added
-TableName: OrderStatus | PKValues: OrderStatusId: 3042ab8b-ba7c-427e-b264-4aa0a829dad3 | Operation: Added
-TableName: OrderPaymentPreference | PKValues: OrderPaymentPreferenceId: 10723 | Operation: Added
-TableName: OrderRole | PKValues: OrderId: PO10673, PartyId: 22, RoleTypeId: BILL_FROM_VENDOR | Operation: Modified
-TableName: OrderRole | PKValues: OrderId: PO10673, PartyId: 22, RoleTypeId: SHIP_FROM_VENDOR | Operation: Modified
-TableName: OrderRole | PKValues: OrderId: PO10673, PartyId: 22, RoleTypeId: SUPPLIER_AGENT | Operation: Modified
-TableName: OrderItem | PKValues: OrderId: PO10673, OrderItemSeqId: 0001 | Operation: Modified
-TableName: OrderHeader | PKValues: OrderId: PO10673 | Operation: Modified
-TableName: SequenceValueItem | PKValues: SeqName: Payment | Operation: Modified
-TableName: SequenceValueItem | PKValues: SeqName: OrderPaymentPreference | Operation: Modified
+INV4
+INV5
+INV6
+INV7
+INV8
+INV9
+INV10
+INV11
+INV12
+INV21
+INV22
+INV23
+INV24
+INV25
+INV26
+INV27
+INV28
+INV34
+INV35
+INV39
 
-OrderItemShipGroup
-OrderItemShipGroupAssocs
-OrderItemShipGroupAssoc
-
-[
-  {
-    "ORDER_ID": "PO10671",
-    "SHIP_GROUP_SEQ_ID": "01",
-    "SHIPMENT_METHOD_TYPE_ID": null,
-    "SUPPLIER_PARTY_ID": null,
-    "SUPPLIER_AGREEMENT_ID": null,
-    "VENDOR_PARTY_ID": null,
-    "CARRIER_PARTY_ID": null,
-    "CARRIER_ROLE_TYPE_ID": null,
-    "FACILITY_ID": null,
-    "CONTACT_MECH_ID": null,
-    "TELECOM_CONTACT_MECH_ID": null,
-    "TRACKING_NUMBER": null,
-    "SHIPPING_INSTRUCTIONS": null,
-    "MAY_SPLIT": null,
-    "GIFT_MESSAGE": null,
-    "IS_GIFT": null,
-    "SHIP_AFTER_DATE": null,
-    "SHIP_BY_DATE": null,
-    "ESTIMATED_SHIP_DATE": null,
-    "ESTIMATED_DELIVERY_DATE": null,
-    "LAST_UPDATED_STAMP": "2025-11-19 16:03:46",
-    "LAST_UPDATED_TX_STAMP": null,
-    "CREATED_STAMP": "2025-11-19 16:03:46",
-    "CREATED_TX_STAMP": null
-  }
-]
-
-[
-  {
-    "ORDER_ID": "PO10671",
-    "ORDER_ITEM_SEQ_ID": "0001",
-    "SHIP_GROUP_SEQ_ID": "01",
-    "QUANTITY": 1.000000,
-    "CANCEL_QUANTITY": null,
-    "LAST_UPDATED_STAMP": "2025-11-19 16:03:47",
-    "LAST_UPDATED_TX_STAMP": null,
-    "CREATED_STAMP": "2025-11-19 16:03:47",
-    "CREATED_TX_STAMP": null
-  }
-]
+10602
+10604
+10606
+10608
+10614
+10610
+10616
+10618
+10612
+10620
+10622
+10624
+10626
+10628
+10652
+10650
+10666
+10734
+10684
+10676
+10678
+10664
+10674
+10680
+10682
+10671
+10669

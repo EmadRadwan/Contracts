@@ -2496,12 +2496,13 @@ public class GeneralLedgerService : IGeneralLedgerService
                 .Distinct()
                 .ToListAsync();
             string? workEffortId = null;
+            WorkEffort? workEffort = null;
             string? projectGlAccountId = null;
 
             if (orderIds.Any())
             {
                 // Prefer the most specific match: SUPPLY_PROCUREMENT_CERTIFICATE + RelatedOrderId
-                var workEffort = await _context.WorkEfforts
+                workEffort = await _context.WorkEfforts
                     .Where(w => orderIds.Contains(w.RelatedOrderId!))   // RelatedOrderId is usually string
                     .OrderByDescending(w => w.LastStatusUpdate)         // most recent if somehow multiple
                     .FirstOrDefaultAsync();
@@ -2628,6 +2629,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 RoleTypeId = "BILL_FROM_VENDOR",
                 TransactionDate = invoice.InvoiceDate ?? DateTime.UtcNow,
                 AcctgTransEntries = acctgTransEntries,
+                Description = workEffort?.Description,
                 WorkEffortId = workEffortId
             };
 

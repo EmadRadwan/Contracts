@@ -84,7 +84,7 @@ public class GetGlAccountTransactionDetails
                         PostedDate = act.PostedDate,
                         DebitCreditFlag = ate.DebitCreditFlag,
                         Amount = (decimal)ate.Amount,
-                        Description = ate.Description,
+                        Description = act.Description,
                         CurrencyUomId = ate.CurrencyUomId,
                         CertificateNumber = we != null ? we.CertificateNumber : null
                     };
