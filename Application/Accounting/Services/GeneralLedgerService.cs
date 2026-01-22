@@ -3328,28 +3328,18 @@ public class GeneralLedgerService : IGeneralLedgerService
             // ── Get WorkEffortId ────────────────────────────────────────────────
             string? workEffortId = null;
 
-            // Option A: Directly from Payment (if you already keep it there)
-            if (!string.IsNullOrEmpty(payment.WorkEffortId))
-            {
-                workEffortId = payment.WorkEffortId;
-            }
-            // Option B: From related Order → WorkEffort (most common pattern)
-            else
-            {
-                workEffortId = await (
-                    from pyt in _context.Payments
-                    where pyt.PaymentId == paymentId
-                    join opp in _context.OrderPaymentPreferences 
-                        on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId
-                    join ord in _context.OrderHeaders 
-                        on opp.OrderId equals ord.OrderId
-                    join we in _context.WorkEfforts 
-                        on ord.OrderId equals we.RelatedOrderId into weGroup
-                    from we in weGroup.DefaultIfEmpty()
-                    select we.WorkEffortId
-                ).FirstOrDefaultAsync();
-            }
-
+            workEffortId = await (
+                from pyt in _context.Payments
+                where pyt.PaymentId == paymentId
+                join opp in _context.OrderPaymentPreferences 
+                    on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId
+                join ord in _context.OrderHeaders 
+                    on opp.OrderId equals ord.OrderId
+                join we in _context.WorkEfforts 
+                    on ord.OrderId equals we.RelatedOrderId into weGroup
+                from we in weGroup.DefaultIfEmpty()
+                select we.WorkEffortId
+            ).FirstOrDefaultAsync();
 
             // Retrieve PaymentGlAccountTypeMap
             var paymentGlAccountTypeMap = await _context.PaymentGlAccountTypeMaps
