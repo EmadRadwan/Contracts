@@ -64,8 +64,6 @@ export default function useMultiPaymentCertificate({
             const newItems = prev.map((item) =>
                 item.workEffortId === updatedItem.workEffortId ? { ...updatedItem } : item
             );
-            console.log('Updating item:', updatedItem);
-            console.log('New items array:', newItems);
             return newItems;
         });
     }, []);

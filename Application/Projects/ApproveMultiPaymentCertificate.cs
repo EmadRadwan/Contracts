@@ -144,19 +144,12 @@ namespace Application.Projects
                         };
                         _context.Invoices.Add(invoice);
 
-                        // REFACTOR: Create debit entry here to associate with InvoiceId and PartyId
-                        // This links the debit entry to the invoice and uses the item's PartyIdSupplier or PartyIdContractor
-                        var project = await _context.WorkEfforts
-                            .Where(p => p.WorkEffortId == item.ProjectId)
-                            .Select(p => new { p.GlAccountId })
-                            .FirstOrDefaultAsync(cancellationToken);
-
-                        if (project == null || string.IsNullOrEmpty(project.GlAccountId))
+                        if (string.IsNullOrEmpty(item.GlAccountId))
                         {
                             await transaction.RollbackAsync(cancellationToken);
-                            return Result<MultiPaymentCertificateDto>.Failure(
-                                $"Project or GL account not found for item {item.WorkEffortId}");
+                            return Result<MultiPaymentCertificateDto>.Failure("GL Account missing on certificate item " + item.WorkEffortId);
                         }
+                        
 
                         var debitEntry = new AcctgTransEntry
                         {
@@ -164,7 +157,7 @@ namespace Application.Projects
                             AcctgTransEntrySeqId = entrySeq.ToString("D5"),
                             AcctgTransEntryTypeId = "_NA_",
                             Description = item.Description,
-                            GlAccountId = project.GlAccountId,
+                            GlAccountId = item.GlAccountId,
                             PartyId = partyId,
                             OrganizationPartyId = request.CompanyId,
                             Amount = item.TotalAmount ?? 0,
@@ -272,16 +265,6 @@ namespace Application.Projects
                     var resultItems = new List<MultiPaymentItemDto>();
                     foreach (var item in items)
                     {
-                        var project = await _context.WorkEfforts
-                            .Where(p => p.WorkEffortId == item.ProjectId)
-                            .Select(p => new { p.ProjectName })
-                            .FirstOrDefaultAsync(cancellationToken);
-
-                        var subProject = await _context.WorkEfforts
-                            .Where(sp => sp.WorkEffortId == item.SubProjectId)
-                            .Select(sp => new { sp.SubProjectName })
-                            .FirstOrDefaultAsync(cancellationToken);
-
                         var supplier = item.PartyIdSupplier != null
                             ? await _context.Parties
                                 .Where(p => p.PartyId == item.PartyIdSupplier)
@@ -324,10 +307,7 @@ namespace Application.Projects
                         resultItems.Add(new MultiPaymentItemDto
                         {
                             WorkEffortId = item.WorkEffortId,
-                            ProjectId = item.ProjectId,
-                            ProjectName = project?.ProjectName ?? "",
-                            SubProjectId = item.SubProjectId,
-                            SubProjectName = subProject?.SubProjectName ?? "",
+                            GlAccountId = item.GlAccountId,
                             ItemType = item.CostType,
                             ItemTypeDescription = itemTypeDescription,
                             ServiceId = item.ServiceId,

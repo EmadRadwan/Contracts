@@ -43,7 +43,7 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
         setSelectedItem(undefined);
     };
 
-    const ProjectNameCell = (props: GridCellProps) => (
+    const ItemTypeCell = (props: GridCellProps) => (
         <td>
             <Typography
                 variant="body2"
@@ -51,7 +51,7 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
                 sx={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'underline' }}
                 onClick={() => handleEditClick(props.dataItem)}
             >
-                {props.dataItem.projectName}
+                {props.dataItem.itemTypeDescription}
             </Typography>
         </td>
     );
@@ -73,20 +73,10 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
     const columns = useMemo(
         () => [
             {
-                field: "projectName",
-                title: getTranslatedLabel(`${localizationKey}.project`, "Project"),
-                width: "150px",
-                cell: ProjectNameCell,
-            },
-            {
-                field: "subProjectName",
-                title: getTranslatedLabel(`${localizationKey}.subProject`, "Sub-Project"),
-                width: "150px",
-            },
-            {
                 field: "itemTypeDescription",
                 title: getTranslatedLabel(`${localizationKey}.itemType`, "Item Type"),
                 width: "120px",
+                cell: ItemTypeCell,
             },
             {
                 field: "serviceId",
@@ -152,8 +142,6 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
         [items]
     );
     
-    console.log('items', items)
-
     return (
         <>
             <Grid

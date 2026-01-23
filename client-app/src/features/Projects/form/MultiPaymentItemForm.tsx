@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useMemo, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
 import {Field, Form, FormElement, FormRenderProps, KeyValue} from "@progress/kendo-react-form";
 import { Button, FormControlLabel, Grid, Radio, RadioGroup } from "@mui/material";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
@@ -7,14 +7,14 @@ import { MultiPaymentItem } from "../../../app/models/project/MultiPaymentItem";
 import FormNumericTextBox from "../../../app/common/form/FormNumericTextBox";
 import { requiredValidator, percentageValidator } from "../../../app/common/form/Validators";
 import { MemoizedFormDropDownList } from "../../../app/common/form/MemoizedFormDropDownList";
-import { useFetchSubProjectsQuery } from "../../../app/store/apis/multiPaymentCertificateApi";
 import FormInput from "../../../app/common/form/FormInput";
 import { FormSimpleComboBoxRawMaterialVirtual } from "../../../app/common/form/FormSimpleComboBoxRawMaterialVirtual";
-import { MemoizedFormDropDownList2 } from "../../../app/common/form/MemoizedFormDropDownList2";
-import { ComboBoxChangeEvent } from "@progress/kendo-react-dropdowns";
 import {FormSimpleComboBoxServiceVirtual} from "../../../app/common/form/FormSimpleComboBoxServiceVirtual";
 import {FormComboBoxVirtualSupplierMultiColumn} from "../../../app/common/form/FormComboBoxVirtualSupplierMultiColumn";
 import {FormComboBoxVirtualContractor} from "../../../app/common/form/FormComboBoxVirtualContractor";
+import {FormDropDownTreeGlAccount2} from "../../../app/common/form/FormDropDownTreeGlAccount2";
+import { useAppSelector} from "../../../app/store/configureStore";
+import {useFetchGlAccountOrganizationHierarchyLovQuery} from "../../../app/store/apis";
 
 interface Props {
     multiPaymentItem?: MultiPaymentItem;
@@ -30,17 +30,18 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
 
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = "projects.multiPaymentCertificate.itemForm";
-    const [selectedProjectId, setSelectedProjectId] = useState<string>(
-        multiPaymentItem?.projectId && multiPaymentItem.projectId !== "" ? multiPaymentItem.projectId : ""
-    );
     const [formKey, setFormKey] = useState<number>(Math.random());
     const [discountMode, setDiscountMode] = useState<"value" | "percentage">(multiPaymentItem?.discountMode || "value");
 
-    const { data: subProjects, isLoading: subProjectsLoading } = useFetchSubProjectsQuery(
-        selectedProjectId || "",
-        { skip: !selectedProjectId }
-    );
     
+    const {user} = useAppSelector((state) => state.account);
+    const companyId = user?.organizationPartyId || "";
+    const {
+        data: glAccounts,
+        isLoading: isLoadingGlAccounts
+    } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
+        skip: !companyId,
+    });
 
     const itemTypes = useMemo(
         () => [
@@ -55,12 +56,8 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
     const initialValues = useMemo((): Partial<MultiPaymentItem> => {
         const values = {
             workEffortId: multiPaymentItem?.workEffortId || "",
+            glAccountId: multiPaymentItem?.glAccountId || "", // ← new
             workEffortIdParent: workEffortId || "",
-            projectId: multiPaymentItem?.projectId
-                ? { projectId: multiPaymentItem.projectId, projectName: multiPaymentItem.projectName || "" }
-                : null,
-            subProjectId: multiPaymentItem?.subProjectId || "",
-            subProjectName: multiPaymentItem?.subProjectName || "",
             itemType: multiPaymentItem?.itemType || "",
             serviceId: multiPaymentItem?.serviceId
                 ? { ProductId: multiPaymentItem.serviceId, ProductName: multiPaymentItem.serviceName || "" }
@@ -131,12 +128,6 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
 
     const handleSubmit = useCallback(
         (values: Partial<MultiPaymentItem>) => {
-
-            const selectedSubProject = subProjects?.find(
-                (subProject) => subProject.workEffortId === values.subProjectId
-            );
-            const subProjectName = selectedSubProject?.subProjectName || values.subProjectName || "";
-
             const selectedItemType = itemTypes.find(
                 (type) => type.itemType === values.itemType
             );
@@ -146,10 +137,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
             const serializedValues: MultiPaymentItem = {
                 workEffortId: editMode === 2 ? multiPaymentItem?.workEffortId || values.workEffortId || `temp-${Date.now()}` : `temp-${Date.now()}`,
                 workEffortIdParent: workEffortId || "",
-                projectId: (values.projectId as any)?.projectId || "",
-                projectName: (values.projectId as any)?.projectName || "",
-                subProjectId: values.subProjectId || "",
-                subProjectName: subProjectName || "",
+                glAccountId: values.glAccountId,
                 itemType: values.itemType || "",
                 itemTypeDescription: itemTypeDescription,
                 serviceId: values.serviceId.ProductId || "",
@@ -177,18 +165,9 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
             setFormKey(Math.random());
             onClose();
         },
-        [addItem, updateItem, editMode, workEffortId, discountMode, onClose, subProjects]
+        [addItem, updateItem, editMode, workEffortId, discountMode, onClose]
     );
-
-    const handleProjectChange = useCallback(
-        (e: ComboBoxChangeEvent, onChange: FormRenderProps["onChange"]) => {
-            const newProjectId = e.value?.projectId || "";
-            setSelectedProjectId(newProjectId);
-            onChange("projectId", { value: e.value });
-            onChange("subProjectId", { value: null });
-        },
-        []
-    );
+    
 
     useEffect(() => {
         setFormKey(Math.random());
@@ -218,7 +197,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                             format="n2"
                             min={0}
                             validator={requiredValidator}
-                            disabled={formEditMode > 3 || subProjectsLoading}
+                            disabled={formEditMode > 3 }
                             onChange={handleFieldChange("amount")}
                         />
                     </Grid>
@@ -232,7 +211,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                             min={0}
                             max={discountMode === "percentage" ? 100 : undefined}
                             validator={discountMode === "percentage" ? percentageValidator : undefined}
-                            disabled={formEditMode > 3 || subProjectsLoading}
+                            disabled={formEditMode > 3}
                             onChange={handleFieldChange("discount")}
                         />
                         <Grid
@@ -259,13 +238,13 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                             >
                                 <FormControlLabel
                                     value="value"
-                                    control={<Radio disabled={formEditMode > 3 || subProjectsLoading} />}
+                                    control={<Radio disabled={formEditMode > 3} />}
                                     label={getTranslatedLabel(`${localizationKey}.discountValue`, "Value")}
                                     sx={{ minWidth: '100px' }} // Ensure label has enough space
                                 />
                                 <FormControlLabel
                                     value="percentage"
-                                    control={<Radio disabled={formEditMode > 3 || subProjectsLoading} />}
+                                    control={<Radio disabled={formEditMode > 3} />}
                                     label={getTranslatedLabel(`${localizationKey}.discountPercentage`, "Percentage")}
                                     sx={{ minWidth: '100px' }} // Ensure label has enough space
                                 />
@@ -280,7 +259,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                             component={FormNumericTextBox}
                             format="n2"
                             min={0}
-                            disabled={formEditMode > 3 || subProjectsLoading}
+                            disabled={formEditMode > 3}
                             onChange={handleFieldChange("transportationExpenses")}
                         />
                     </Grid>
@@ -292,7 +271,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                             component={FormNumericTextBox}
                             format="n2"
                             min={0}
-                            disabled={formEditMode > 3 || subProjectsLoading}
+                            disabled={formEditMode > 3}
                             onChange={handleFieldChange("gratuities")}
                         />
                     </Grid>
@@ -301,7 +280,6 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
         );
     };
     
-    console.log('initialValues', initialValues);
 
     return (
         <Form
@@ -321,44 +299,25 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                                     {formRenderProps.errors.VALIDATION_SUMMARY}
                                 </div>
                             )}
-                        <fieldset className="k-form-fieldset" disabled={subProjectsLoading}>
+                        <fieldset className="k-form-fieldset">
                             <Grid container spacing={2}>
                                 <Field name="workEffortId" component="input" type="hidden" />
                                 <Field name="workEffortIdParent" component="input" type="hidden" />
-                                <Grid item xs={4}>
+                                <Grid item xs={6}>
                                     <Field
-                                        id="projectId"
-                                        name="projectId"
-                                        label={getTranslatedLabel(`${localizationKey}.project`, "Project *")}
-                                        component={FormComboBoxVirtualProject}
+                                        id="glAccountId"
+                                        name="glAccountId"
+                                        label={getTranslatedLabel(`${localizationKey}.overrideGlAccountId`, "Override GL Account")}
+                                        data={glAccounts || []}
+                                        component={FormDropDownTreeGlAccount2}
+                                        dataItemKey="glAccountId"
+                                        textField="text"
+                                        selectField="selected"
+                                        expandField="expanded"
                                         validator={requiredValidator}
-                                        textField="projectName"
-                                        dataItemKey="projectId"
-                                        disabled={formEditMode > 3 || subProjectsLoading}
-                                        value={formRenderProps.valueGetter("projectId")}
-                                        onChange={(e: ComboBoxChangeEvent) => handleProjectChange(e, formRenderProps.onChange, formRenderProps.valueGetter)}
                                     />
                                 </Grid>
-                                <Grid item xs={4}>
-                                    <Field
-                                        id="subProjectId"
-                                        name="subProjectId"
-                                        label={getTranslatedLabel(`${localizationKey}.subProject`, "Sub-Project *")}
-                                        component={MemoizedFormDropDownList2}
-                                        data={subProjects || []}
-                                        dataItemKey="workEffortId"
-                                        textField="subProjectName"
-                                        disabled={formEditMode > 3 || subProjectsLoading}
-                                        value={
-                                            formRenderProps.valueGetter("subProjectId")
-                                                ? {
-                                                    workEffortId: formRenderProps.valueGetter("subProjectId"),
-                                                    subProjectName: formRenderProps.valueGetter("subProjectName") || "",
-                                                }
-                                                : null
-                                        }
-                                    />
-                                </Grid>
+                               
                                 <Grid item xs={4}>
                                     <Field
                                         id="itemType"
@@ -369,7 +328,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                                         textField="description"
                                         data={itemTypes}
                                         validator={requiredValidator}
-                                        disabled={formEditMode > 3 || subProjectsLoading}
+                                        disabled={formEditMode > 3}
                                     />
                                 </Grid>
                                 <Grid item xs={6}>
@@ -381,7 +340,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                                         validator={requiredValidator}
                                         textField="productName"
                                         dataItemKey="productId"
-                                        disabled={formEditMode > 3 || subProjectsLoading}
+                                        disabled={formEditMode > 3}
                                     />
                                 </Grid>
                                 <Grid item xs={6}>
@@ -394,7 +353,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                                             validator={requiredValidator}
                                             textField="productName"
                                             dataItemKey="productId"
-                                            disabled={formEditMode > 3 || subProjectsLoading}
+                                            disabled={formEditMode > 3}
                                         />
                                     )}
                                 </Grid>
@@ -428,7 +387,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                                         label={getTranslatedLabel(`${localizationKey}.description`, "Description")}
                                         component={FormInput}
                                         validator={requiredValidator}
-                                        disabled={formEditMode > 3 || subProjectsLoading}
+                                        disabled={formEditMode > 3}
                                     />
                                 </Grid>
                                 <Grid item xs={6}>
@@ -449,7 +408,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                                         <Button
                                             type="submit"
                                             variant="contained"
-                                            disabled={!formRenderProps.valid || subProjectsLoading}
+                                            disabled={!formRenderProps.valid}
                                             sx={{ mt: 2, ml: 2 }}
                                         >
                                             {getTranslatedLabel(
@@ -464,7 +423,6 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                                             onClick={onClose}
                                             color="error"
                                             variant="contained"
-                                            disabled={subProjectsLoading}
                                         >
                                             {getTranslatedLabel("general.cancel", "Cancel")}
                                         </Button>

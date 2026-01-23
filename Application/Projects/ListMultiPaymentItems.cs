@@ -73,10 +73,7 @@ public class ListMultiPaymentItems
                     .SelectMany(x => x.contractors.DefaultIfEmpty(), (x, contractor) => new MultiPaymentItemDto
                     {
                         WorkEffortId = x.item.WorkEffortId,
-                        ProjectId = x.item.ProjectId,
-                        ProjectName = x.project != null ? x.project.ProjectName : "",
-                        SubProjectId = x.item.SubProjectId,
-                        SubProjectName = x.subProject != null ? x.subProject.SubProjectName : "",
+                        GlAccountId = x.item.GlAccountId,
                         ItemType = x.item.CostType,
                         ServiceId = x.item.ServiceId,
                         ServiceName = x.service != null ? x.service.ProductName : "",

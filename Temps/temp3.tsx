@@ -1,190 +1,85 @@
-const ledgerItems = useMemo((): LedgerRow[] => {
-    if (!data) return [];
-    const rows: LedgerRow[] = [];
-    let runningBalance = 0;
+// Remove these imports if no longer needed
+// import { FormComboBoxVirtualProject } from "...";
+// import { useFetchSubProjectsQuery } from "...";
+// import { MemoizedFormDropDownList2 } from "...";
 
-    const formatDate = (dateStr?: string | null) =>
-        dateStr ? new Date(dateStr).toISOString().split("T")[0] : "";
+// Keep or adjust these
+import { FormDropDownTreeGlAccount2 } from "../../../app/common/form/FormDropDownTreeGlAccount2"; // ← assume this exists
 
-    // ───────────────────────────────
-    // 1. Opening Balance (unchanged)
-    // ───────────────────────────────
-    const openingEntries = data.openingBalances || [];
-    if (openingEntries.length > 0) {
-        let totalMadin = 0;
-        let totalDain = 0;
-        let netImpact = 0;
-        let transactionDate = "";
+// ────────────────────────────────────────────────
 
-        openingEntries.forEach((ob) => {
-            const rawAmount = Number(ob?.amount || 0);
-            const flag = (ob?.debitCreditFlag || "").trim().toUpperCase();
-            transactionDate = ob.transactionDate || transactionDate;
+interface Props {
+    // ... same
+}
 
-            if (flag === "D") {
-                totalMadin += rawAmount;
-                netImpact += rawAmount;
-            } else if (flag === "C") {
-                totalDain += rawAmount;
-                netImpact -= rawAmount;
-            }
-        });
+// Inside component:
+export default function MultiPaymentItemForm({ ... }: Props) {
+    const { getTranslatedLabel } = useTranslationHelper();
+    const localizationKey = "projects.multiPaymentCertificate.itemForm";
 
-        const viewAdjustedNet = netImpact;
-        runningBalance += viewAdjustedNet;
+    // Remove:
+    // const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+    // const { data: subProjects, isLoading: subProjectsLoading } = useFetchSubProjectsQuery(...);
 
-        rows.push({
-            date: formatDate(transactionDate),
-            description: getTranslatedLabel("openingBalance", "الرصيد الإفتتاحي"),
-            value: 0,
-            toPay: totalDain,   // دائن
-            paid: totalMadin,   // مدين
-            balance: Math.round(runningBalance * 100) / 100,
-        });
-    }
+    // Keep or adjust initialValues
+    const initialValues = useMemo((): Partial<MultiPaymentItem> => ({
+        // Remove projectId, subProjectId, subProjectName
+        // workEffortId, workEffortIdParent, itemType, serviceId, productId, description, amounts...
+        overrideGlAccountId: multiPaymentItem?.overrideGlAccountId || "", // ← new
+        // ... rest
+    }), [multiPaymentItem]);
 
-    // ───────────────────────────────
-    // 2. Unified Transactions
-    // ───────────────────────────────
-    interface UnifiedTransaction {
-        date: string;
-        type:
-            | "invoice"
-            | "payment"
-            | "rentalPosting"
-            | "partnerAccrual"
-            | "apartmentSale"
-            | "chequeIssued";     // ← NEW
-        id?: string;
-        description: string;
-        grossAmount: number;
-        isSalesInvoice?: boolean;
-        isPurchaseInvoice?: boolean;
-        isReceiptFromParty?: boolean;
-        isDisbursementToParty?: boolean;
-        debitCreditFlag?: string;
-        transactionTypeId?: string;
-        salesRequestId?: string;
-    }
+    const handleSubmit = useCallback((values: Partial<MultiPaymentItem>) => {
+        const serializedValues: MultiPaymentItem = {
+            // Remove:
+            // projectId: ..., projectName: ..., subProjectId: ..., subProjectName: ...
 
-    const transactions: UnifiedTransaction[] = [];
+            // Add:
+            overrideGlAccountId: values.overrideGlAccountId || "",
 
-    // ... existing invoice collection ...
+            // Keep the rest (itemType, serviceId, productId, amounts, parties, etc.)
+            workEffortId: editMode === 2 ? multiPaymentItem?.workEffortId || ... : ...,
+        // ...
+    };
 
-    // ... existing payment collection ...
+        if (editMode === 1) addItem(serializedValues);
+        else updateItem(serializedValues);
 
-    // ... existing rentalPropertyPostings ...
+        onClose();
+    }, [...]);
 
-    // ... existing partnerAccrualPostings ...
+    // ────────────────────────────────────────────────
 
-    // ... existing apartmentSalePostings ...
+    return (
+        <Form
+            initialValues={initialValues}
+            onSubmit={handleSubmit}
+            validator={partyValidator}
+            render={(formRenderProps: FormRenderProps) => (
+                <FormElement>
+                    {/* Remove project & sub-project fields */}
 
-    // ───────────────────────────────────────────────
-    //  NEW: Cheque Issued Postings (only debit side)
-    // ───────────────────────────────────────────────
-    (data.chequeIssuedPostings || []).forEach((ch) => {
-        if (!ch.transactionDate || ch.amount <= 0) return;
+                    {/* Replace with: */}
+                    <Grid item xs={6}>  {/* or xs={12} depending on layout */}
+                        <Field
+                            id="overrideGlAccountId"
+                            name="overrideGlAccountId"
+                            label={getTranslatedLabel(`${localizationKey}.overrideGlAccountId`, "Override GL Account *")}
+                            component={FormDropDownTreeGlAccount2}
+                            data={glAccounts || []}           // ← you need to pass this prop – see note below
+                            dataItemKey="glAccountId"
+                            textField="text"
+                            selectField="selected"
+                            expandField="expanded"
+                            validator={requiredValidator}
+                            disabled={formEditMode > 3}
+                        />
+                    </Grid>
 
-        const flag = (ch.debitCreditFlag || "").trim().toUpperCase();
-        if (flag !== "D") return; // we only included debits anyway, but safety
-
-        transactions.push({
-            date: ch.transactionDate,
-            type: "chequeIssued",
-            id: ch.transactionId,
-            description:
-                ch.description ||
-                `إصدار شيك مؤجل - ${ch.glAccountId || "غير معروف"} - دفعة ${ch.transactionId}`,
-            grossAmount: Number(ch.amount || 0),
-            debitCreditFlag: ch.debitCreditFlag,
-            transactionTypeId: ch.transactionTypeId,
-        });
-    });
-
-    // 3. Sort all transactions by date
-    transactions.sort((a, b) => {
-        const dateA = a.date || "9999-12-31";
-        const dateB = b.date || "9999-12-31";
-        return dateA.localeCompare(dateB);
-    });
-
-    // 4. Build ledger rows
-    transactions.forEach((t) => {
-        let madin = 0;       // مدين
-        let dain = 0;        // دائن
-        let periodChange = 0;
-
-        if (t.type === "invoice") {
-            if (t.isSalesInvoice) {
-                madin = t.grossAmount;
-                periodChange = +t.grossAmount;
-            } else if (t.isPurchaseInvoice) {
-                dain = t.grossAmount;
-                periodChange = -t.grossAmount;
-            }
-        } else if (t.type === "payment") {
-            if (t.isReceiptFromParty) {
-                dain = t.grossAmount;
-                periodChange = -t.grossAmount;
-            } else if (t.isDisbursementToParty) {
-                madin = t.grossAmount;
-                periodChange = +t.grossAmount;
-            }
-        } else if (t.type === "rentalPosting") {
-            const flag = (t.debitCreditFlag || "").trim().toUpperCase();
-            if (flag === "D") {
-                madin = t.grossAmount;
-                periodChange = +t.grossAmount;
-            } else if (flag === "C") {
-                dain = t.grossAmount;
-                periodChange = -t.grossAmount;
-            }
-        } else if (t.type === "partnerAccrual") {
-            const flag = (t.debitCreditFlag || "").trim().toUpperCase();
-            if (flag === "D") {
-                madin = t.grossAmount;
-                periodChange = +t.grossAmount;
-            } else if (flag === "C") {
-                dain = t.grossAmount;
-                periodChange = -t.grossAmount;
-            }
-        } else if (t.type === "apartmentSale") {
-            const flag = (t.debitCreditFlag || "").trim().toUpperCase();
-            if (flag === "D") {
-                madin = t.grossAmount;
-                periodChange = +t.grossAmount;
-            } else if (flag === "C") {
-                dain = t.grossAmount;
-                periodChange = -t.grossAmount;
-            }
-        }
-        // ──────────────── NEW ────────────────
-        else if (t.type === "chequeIssued") {
-            const flag = (t.debitCreditFlag || "").trim().toUpperCase();
-            if (flag === "D") {
-                madin = t.grossAmount;
-                periodChange = +t.grossAmount;     // ← increases what contractor owes us
-            } else if (flag === "C") {
-                dain = t.grossAmount;
-                periodChange = -t.grossAmount;
-            }
-        }
-
-        runningBalance += periodChange;
-
-        rows.push({
-            date: formatDate(t.date),
-            description: t.description,
-            invoiceNumber: t.type === "invoice" ? t.id : undefined,
-            paymentNumber: t.type === "payment" ? t.id : undefined,
-            value: t.grossAmount,
-            toPay: dain,           // دائن
-            paid: madin,           // مدين
-            balance: Math.round(runningBalance * 100) / 100,
-            transactionType: t.type,
-            notes: t.transactionTypeId ? `(${t.transactionTypeId})` : undefined,
-        });
-    });
-
-    return rows;
-}, [data, getTranslatedLabel]);
+                    {/* Keep itemType, service/product, supplier/contractor, description, amounts... */}
+                    {/* ... */}
+                </FormElement>
+            )}
+        />
+    );
+}

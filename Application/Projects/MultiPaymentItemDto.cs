@@ -3,10 +3,7 @@ namespace Application.Projects;
 public class MultiPaymentItemDto
 {
     public string WorkEffortId { get; set; }
-    public string ProjectId { get; set; }
-    public string ProjectName { get; set; }
-    public string? SubProjectId { get; set; }
-    public string SubProjectName { get; set; }
+    public string GlAccountId { get; set; }
     public string ItemType { get; set; }
     public string ItemTypeDescription { get; set; }
     public string ServiceId { get; set; }

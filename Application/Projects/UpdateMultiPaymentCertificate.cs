@@ -89,8 +89,7 @@ namespace Application.Projects
                             WorkEffortId = item.WorkEffortId ?? itemWorkEffortSerial,
                             WorkEffortParentId = workEffortId,
                             WorkEffortTypeId = "PAYMENT_CERTIFICATE_ITEM",
-                            ProjectId = item.ProjectId,
-                            SubProjectId = !string.IsNullOrEmpty(item.SubProjectId) ? item.SubProjectId : null,
+                            GlAccountId = item.GlAccountId,
                             CostType = item.ItemType,
                             ServiceId = item.ServiceId,
                             ProductId = !string.IsNullOrEmpty(item.ProductId) ? item.ProductId : null,
@@ -160,16 +159,6 @@ namespace Application.Projects
                     var resultItems = new List<MultiPaymentItemDto>();
                     foreach (var item in certificate.Items)
                     {
-                        var project = await _context.WorkEfforts
-                            .Where(p => p.WorkEffortId == item.ProjectId)
-                            .Select(p => new { p.ProjectName })
-                            .FirstOrDefaultAsync(cancellationToken);
-
-                        var subProject = await _context.WorkEfforts
-                            .Where(sp => sp.WorkEffortId == item.SubProjectId)
-                            .Select(sp => new { sp.SubProjectName })
-                            .FirstOrDefaultAsync(cancellationToken);
-
                         var supplier = item.PartyIdSupplier != null
                             ? await _context.Parties
                                 .Where(p => p.PartyId == item.PartyIdSupplier)
@@ -212,10 +201,7 @@ namespace Application.Projects
                         resultItems.Add(new MultiPaymentItemDto
                         {
                             WorkEffortId = item.WorkEffortId,
-                            ProjectId = item.ProjectId,
-                            ProjectName = project?.ProjectName ?? "",
-                            SubProjectId = item.SubProjectId,
-                            SubProjectName = subProject?.SubProjectName ?? "",
+                            GlAccountId = item.GlAccountId,
                             ItemType = item.ItemType,
                             ItemTypeDescription = itemTypeDescription,
                             ServiceId = item.ServiceId,

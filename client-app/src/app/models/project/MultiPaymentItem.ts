@@ -1,9 +1,6 @@
 export interface MultiPaymentItem {
     workEffortId: string;
-    projectId: string;
-    projectName: string;
-    subProjectId: string;
-    subProjectName: string;
+    glAccountId: string;
     itemType: string;
     serviceId: string;
     serviceName: string;
