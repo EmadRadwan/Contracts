@@ -1,85 +1,51 @@
-// Remove these imports if no longer needed
-// import { FormComboBoxVirtualProject } from "...";
-// import { useFetchSubProjectsQuery } from "...";
-// import { MemoizedFormDropDownList2 } from "...";
-
-// Keep or adjust these
-import { FormDropDownTreeGlAccount2 } from "../../../app/common/form/FormDropDownTreeGlAccount2"; // ← assume this exists
-
-// ────────────────────────────────────────────────
-
-interface Props {
-    // ... same
-}
-
-// Inside component:
-export default function MultiPaymentItemForm({ ... }: Props) {
-    const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = "projects.multiPaymentCertificate.itemForm";
-
-    // Remove:
-    // const [selectedProjectId, setSelectedProjectId] = useState<string>("");
-    // const { data: subProjects, isLoading: subProjectsLoading } = useFetchSubProjectsQuery(...);
-
-    // Keep or adjust initialValues
-    const initialValues = useMemo((): Partial<MultiPaymentItem> => ({
-        // Remove projectId, subProjectId, subProjectName
-        // workEffortId, workEffortIdParent, itemType, serviceId, productId, description, amounts...
-        overrideGlAccountId: multiPaymentItem?.overrideGlAccountId || "", // ← new
-        // ... rest
-    }), [multiPaymentItem]);
-
-    const handleSubmit = useCallback((values: Partial<MultiPaymentItem>) => {
-        const serializedValues: MultiPaymentItem = {
-            // Remove:
-            // projectId: ..., projectName: ..., subProjectId: ..., subProjectName: ...
-
-            // Add:
-            overrideGlAccountId: values.overrideGlAccountId || "",
-
-            // Keep the rest (itemType, serviceId, productId, amounts, parties, etc.)
-            workEffortId: editMode === 2 ? multiPaymentItem?.workEffortId || ... : ...,
-        // ...
+const initialValues = useMemo((): Partial<MultiPaymentItem> => {
+    const base = {
+        workEffortId: multiPaymentItem?.workEffortId || "",
+        glAccountId: multiPaymentItem?.glAccountId || "",
+        workEffortIdParent: workEffortId || "",
+        itemType: multiPaymentItem?.itemType || "",
+        serviceId: multiPaymentItem?.serviceId
+            ? { ProductId: multiPaymentItem.serviceId, ProductName: multiPaymentItem.serviceName || "" }
+            : null,
+        productId: multiPaymentItem?.productId
+            ? { ProductId: multiPaymentItem.productId, ProductName: multiPaymentItem.productName || "" }
+            : null,
+        description: multiPaymentItem?.description || "",
+        amount: multiPaymentItem?.amount ?? 0,
+        discount: multiPaymentItem?.discount ?? 0,
+        discountMode: multiPaymentItem?.discountMode || "value",
+        transportationExpenses: multiPaymentItem?.transportationExpenses ?? 0,
+        gratuities: multiPaymentItem?.gratuities ?? 0,
+        total: multiPaymentItem?.total ?? 0,
     };
 
-        if (editMode === 1) addItem(serializedValues);
-        else updateItem(serializedValues);
+    // ── Add supplier & contractor ────────────────────────────────
+    let partyIdSupplier = null;
+    let partyIdContractor = null;
 
-        onClose();
-    }, [...]);
+    if (multiPaymentItem) {
+        if (multiPaymentItem.partyIdSupplier && multiPaymentItem.partyIdSupplierName) {
+            partyIdSupplier = {
+                fromPartyId: multiPaymentItem.partyIdSupplier,
+                fromPartyName: multiPaymentItem.partyIdSupplierName,
+                // If your ComboBox expects more fields, add them here with fallback empty strings
+                // e.g. partyCode: multiPaymentItem.partyCodeSupplier || "",
+                //      address:    multiPaymentItem.addressSupplier    || "",
+            };
+        }
 
-    // ────────────────────────────────────────────────
+        if (multiPaymentItem.partyIdContractor && multiPaymentItem.partyIdContractorName) {
+            partyIdContractor = {
+                fromPartyId: multiPaymentItem.partyIdContractor,
+                fromPartyName: multiPaymentItem.partyIdContractorName,
+                // same as above — add other fields if needed
+            };
+        }
+    }
 
-    return (
-        <Form
-            initialValues={initialValues}
-            onSubmit={handleSubmit}
-            validator={partyValidator}
-            render={(formRenderProps: FormRenderProps) => (
-                <FormElement>
-                    {/* Remove project & sub-project fields */}
-
-                    {/* Replace with: */}
-                    <Grid item xs={6}>  {/* or xs={12} depending on layout */}
-                        <Field
-                            id="overrideGlAccountId"
-                            name="overrideGlAccountId"
-                            label={getTranslatedLabel(`${localizationKey}.overrideGlAccountId`, "Override GL Account *")}
-                            component={FormDropDownTreeGlAccount2}
-                            data={glAccounts || []}           // ← you need to pass this prop – see note below
-                            dataItemKey="glAccountId"
-                            textField="text"
-                            selectField="selected"
-                            expandField="expanded"
-                            validator={requiredValidator}
-                            disabled={formEditMode > 3}
-                        />
-                    </Grid>
-
-                    {/* Keep itemType, service/product, supplier/contractor, description, amounts... */}
-                    {/* ... */}
-                </FormElement>
-            )}
-        />
-    );
-}
+    return {
+        ...base,
+        partyIdSupplier,
+        partyIdContractor,
+    };
+}, [multiPaymentItem, workEffortId]);

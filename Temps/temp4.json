@@ -1,13 +1,17 @@
-<Button
-size="small"
-color="error"
-variant="text"
-onClick={() => handleDeleteClick(dataItem.invoiceId, dataItem.invoiceItemSeqId)}
-disabled={isDeleting}
-sx={{ minWidth: "auto", p: "2px 6px" }}
->
-{isDeleting
-? getTranslatedLabel("general.deleting", "جارٍ الحذف...")
-: getTranslatedLabel("accounting.invoices.display.form.actions.deleteItem", "حذف الصنف")
-}
-</Button>
+[
+  {
+    "PROJECT_ID": "111"
+  },
+  {
+    "PROJECT_ID": "111"
+  },
+  {
+    "PROJECT_ID": "113"
+  },
+  {
+    "PROJECT_ID": "10067"
+  },
+  {
+    "PROJECT_ID": "113"
+  }
+]

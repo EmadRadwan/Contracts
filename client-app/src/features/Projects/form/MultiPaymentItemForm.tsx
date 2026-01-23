@@ -2,7 +2,6 @@ import React, {useCallback, useEffect, useMemo, useState} from "react";
 import {Field, Form, FormElement, FormRenderProps, KeyValue} from "@progress/kendo-react-form";
 import { Button, FormControlLabel, Grid, Radio, RadioGroup } from "@mui/material";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
-import { FormComboBoxVirtualProject } from "../../../app/common/form/FormComboBoxVirtualProject";
 import { MultiPaymentItem } from "../../../app/models/project/MultiPaymentItem";
 import FormNumericTextBox from "../../../app/common/form/FormNumericTextBox";
 import { requiredValidator, percentageValidator } from "../../../app/common/form/Validators";
@@ -54,9 +53,9 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
     );
 
     const initialValues = useMemo((): Partial<MultiPaymentItem> => {
-        const values = {
+        const base = {
             workEffortId: multiPaymentItem?.workEffortId || "",
-            glAccountId: multiPaymentItem?.glAccountId || "", // ← new
+            glAccountId: multiPaymentItem?.glAccountId || "",
             workEffortIdParent: workEffortId || "",
             itemType: multiPaymentItem?.itemType || "",
             serviceId: multiPaymentItem?.serviceId
@@ -66,14 +65,39 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                 ? { ProductId: multiPaymentItem.productId, ProductName: multiPaymentItem.productName || "" }
                 : null,
             description: multiPaymentItem?.description || "",
-            amount: multiPaymentItem?.amount ?? 0, // Explicitly use amount, with fallback to 0
+            amount: multiPaymentItem?.amount ?? 0,
             discount: multiPaymentItem?.discount ?? 0,
             discountMode: multiPaymentItem?.discountMode || "value",
             transportationExpenses: multiPaymentItem?.transportationExpenses ?? 0,
             gratuities: multiPaymentItem?.gratuities ?? 0,
-            total: multiPaymentItem?.total ?? 0, // Initialize total separately
+            total: multiPaymentItem?.total ?? 0,
         };
-        return values;
+
+        // ── Add supplier & contractor ────────────────────────────────
+        let partyIdSupplier = null;
+        let partyIdContractor = null;
+
+        if (multiPaymentItem) {
+            if (multiPaymentItem.partyIdSupplier && multiPaymentItem.partyIdSupplierName) {
+                partyIdSupplier = {
+                    fromPartyId: multiPaymentItem.partyIdSupplier,
+                    fromPartyName: multiPaymentItem.partyIdSupplierName,
+                };
+            }
+
+            if (multiPaymentItem.partyIdContractor && multiPaymentItem.partyIdContractorName) {
+                partyIdContractor = {
+                    fromPartyId: multiPaymentItem.partyIdContractor,
+                    fromPartyName: multiPaymentItem.partyIdContractorName,
+                };
+            }
+        }
+
+        return {
+            ...base,
+            partyIdSupplier,
+            partyIdContractor,
+        };
     }, [multiPaymentItem, workEffortId]);
 
     const partyValidator = (values: Partial<MultiPaymentItem>): KeyValue<string> | undefined => {
@@ -307,7 +331,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                                     <Field
                                         id="glAccountId"
                                         name="glAccountId"
-                                        label={getTranslatedLabel(`${localizationKey}.overrideGlAccountId`, "Override GL Account")}
+                                        label={getTranslatedLabel(`${localizationKey}.glAccountId`, "Override GL Account")}
                                         data={glAccounts || []}
                                         component={FormDropDownTreeGlAccount2}
                                         dataItemKey="glAccountId"

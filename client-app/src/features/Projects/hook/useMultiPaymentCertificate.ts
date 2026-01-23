@@ -36,6 +36,10 @@ export default function useMultiPaymentCertificate({
         certificate?.workEffortId || "",
         { skip: editMode !== 2 || !certificate?.workEffortId } // Skip query in add mode or without workEffortId
     );
+    
+    console.log('fetchedItems', fetchedItems);
+    console.log('editMode', editMode)
+    console.log('items', items)
 
     useEffect(() => {
         if (editMode === 2 && fetchedItems.length > 0) {
@@ -51,7 +55,8 @@ export default function useMultiPaymentCertificate({
             setItems([]);
         } else if (editMode === 2 && selectedCertificate) {
             setCertificate(selectedCertificate);
-            setItems(selectedCertificate.items || []);
+            //setItems(selectedCertificate.items || []);
+            setItems(fetchedItems);
         }
     }, [selectedCertificate, editMode]);
 

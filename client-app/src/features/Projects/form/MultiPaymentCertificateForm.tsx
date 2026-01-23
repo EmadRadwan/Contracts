@@ -4,7 +4,7 @@ import {Box, Button, Collapse, Grid, IconButton, Menu, MenuItem, Paper, Skeleton
 import {Ribbon, RibbonContainer} from "react-ribbons";
 import useMultiPaymentCertificate from "../hook/useMultiPaymentCertificate";
 import {FormInitialValues, MultiPaymentCertificate} from "../../../app/models/project/MultiPaymentCertificate";
-import {RootState, useAppSelector} from "../../../app/store/configureStore";
+import {useAppSelector} from "../../../app/store/configureStore";
 import MultiPaymentItemsList from "../dashboard/MultiPaymentItemsList";
 import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
 import AccountingMenu from "../../accounting/invoice/menu/AccountingMenu";
@@ -16,7 +16,6 @@ import FormInput from "../../../app/common/form/FormInput";
 
 import {MemoizedFormComboBox2} from "../../../app/common/form/FormComboBox2";
 import {
-    useFetchGlAccountOrganizationHierarchyLovQuery,
     useFetchGlAccountOrgCashOrEquivalentLovQuery
 } from "../../../app/store/apis";
 
@@ -152,6 +151,7 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
         return defaultValues;
     }, [certificate, selectedCertificate]);
 
+    console.log('certificate', certificate)
 
     const renderSwitchStatus = useCallback(() => {
         const status = certificate?.currentStatusId || "WEPR_CREATED";
@@ -239,7 +239,7 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
 
     const status = renderSwitchStatus();
     
-    
+    console.log('status', status);
 
     return (
         <>
@@ -265,7 +265,7 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
                         </Box>
                     </Grid>
                     <Grid item xs={1}>
-                        {editMode === 2 && (
+                        { (editMode === 2 || editMode === 3) && (
                             <RibbonContainer>
                                 <Ribbon
                                     side={language === "ar" ? "left" : "right"}

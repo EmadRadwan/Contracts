@@ -116,6 +116,8 @@ export default function MultiPaymentCertificatesList() {
         workEffortId: 150,
         date: 150,
         description: 350,
+        accountName: 250,
+        statusDescription: 120
     };
 
     return (
@@ -161,6 +163,16 @@ export default function MultiPaymentCertificatesList() {
                                 field="description"
                                 title={getTranslatedLabel(`${localizationKey}.description`, "Description")}
                                 width={columnWidths.description}
+                            />
+                            <Column
+                                field="accountName"
+                                title={getTranslatedLabel(`${localizationKey}.accountName`, "accountName")}
+                                width={columnWidths.accountName}
+                            />
+                            <Column
+                                field="statusDescription"
+                                title={getTranslatedLabel(`${localizationKey}.statusDescription`, "statusDescription")}
+                                width={columnWidths.statusDescription}
                             />
                            
                         </KendoGrid>

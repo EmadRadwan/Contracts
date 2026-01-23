@@ -1588,7 +1588,7 @@
         "update": "تحديث الشهادة"
       },
       "itemForm": {
-        "project": " اسم المشروع",
+        "glAccountId": "حساب دفتر الأستاذ *",
         "subProject": "بنود المشروع",
         "itemType": "تحليلى الاعمال",
         "product": "تحليلى المواد المباشرة",
@@ -1628,6 +1628,8 @@
         "createNew": "إنشاء مستند جديد",
         "workEffortId": "رقم المستند",
         "date": "التاريخ",
+        "accountName": "اسم الحساب",
+        "statusDescription": "الحالة",
         "description": "الوصف"
       }
     }
