@@ -17,6 +17,8 @@ import LoadingComponent from "../../../app/layout/LoadingComponent";
 import { useFetchMultiPaymentCertificatesQuery } from "../../../app/store/apis/multiPaymentCertificateApi";
 import AccountingMenu from "../../accounting/invoice/menu/AccountingMenu";
 import {handleDatesArray} from "../../../app/util/utils";
+import ModalContainer from "../../../app/common/modals/ModalContainer";
+import WorkEffortTransactionsList from "../../accounting/transaction/dashboard/WorkEffortTransactionsList";
 
 export default function MultiPaymentCertificatesList() {
     const [certificates, setCertificates] = useState<DataResult>({ data: [], total: 0 });
@@ -25,7 +27,7 @@ export default function MultiPaymentCertificatesList() {
     const [viewMode, setViewMode] = useState<"list" | "form">("list");
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = "projects.multiPaymentCertificate.HeaderList";
-
+    const [selectedWorkEffortIdForTransactions, setSelectedWorkEffortIdForTransactions] = useState<string | null>(null);
     const [paymentCertificate, setPaymentCertificate] = useState<MultiPaymentCertificate | null>(null);
     const dispatch = useAppDispatch();
     const { data, isFetching } = useFetchMultiPaymentCertificatesQuery({ ...dataState });
@@ -120,6 +122,36 @@ export default function MultiPaymentCertificatesList() {
         statusDescription: 120
     };
 
+    const handleShowTransactions = (workEffortId: string) => {
+        setSelectedWorkEffortIdForTransactions(workEffortId);
+    };
+
+    const ActionsCell = (props: any) => {
+        const navigationAttributes = useTableKeyboardNavigation(props.id);
+
+        return (
+            <td
+                className={props.className}
+                style={{ ...props.style, textAlign: "center" }}
+                colSpan={props.colSpan}
+                role="gridcell"
+                aria-colindex={props.ariaColumnIndex}
+                aria-selected={props.isSelected}
+                {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
+                {...navigationAttributes}
+            >
+                <Button
+                    size="small"
+                    color="info"
+                    variant="outlined"
+                    onClick={() => handleShowTransactions(props.dataItem.workEffortId)}
+                >
+                    {getTranslatedLabel("projects.multiPaymentCertificate.transactions", "Transactions")}
+                </Button>
+            </td>
+        );
+    };
+
     return (
         <>
             <AccountingMenu selectedMenuItem={"/multiPaymentCertificates"} />
@@ -174,6 +206,13 @@ export default function MultiPaymentCertificatesList() {
                                 title={getTranslatedLabel(`${localizationKey}.statusDescription`, "statusDescription")}
                                 width={columnWidths.statusDescription}
                             />
+
+                            <Column
+                                title={getTranslatedLabel(`${localizationKey}.actions`, "Actions")}
+                                width={160}
+                                cell={ActionsCell}
+                                locked={true}
+                            />
                            
                         </KendoGrid>
                         {isFetching && (
@@ -183,6 +222,22 @@ export default function MultiPaymentCertificatesList() {
                                     "Loading Certificates..."
                                 )}
                             />
+                        )}
+                        {selectedWorkEffortIdForTransactions && (
+                            <ModalContainer
+                                show={!!selectedWorkEffortIdForTransactions}
+                                onClose={() => setSelectedWorkEffortIdForTransactions(null)}
+                                width={950}           // same as your payment transactions modal
+                                title={getTranslatedLabel(
+                                    "projects.multiPaymentCertificate.transactionsModalTitle",
+                                    "Accounting Transactions for Certificate"
+                                )}
+                            >
+                                <WorkEffortTransactionsList
+                                    onClose={() => setSelectedWorkEffortIdForTransactions(null)}
+                                    workEffortId={selectedWorkEffortIdForTransactions}
+                                />
+                            </ModalContainer>
                         )}
                     </Grid>
                 </Grid>

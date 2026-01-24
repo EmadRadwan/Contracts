@@ -101,26 +101,18 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
     }, [multiPaymentItem, workEffortId]);
 
     const partyValidator = (values: Partial<MultiPaymentItem>): KeyValue<string> | undefined => {
-        const hasSupplier = values.partyIdSupplier && values.partyIdSupplier !== "";
-        const hasContractor = values.partyIdContractor && values.partyIdContractor !== "";
+        const hasSupplier   = !!values.partyIdSupplier   && values.partyIdSupplier !== "";
+        const hasContractor = !!values.partyIdContractor && values.partyIdContractor !== "";
 
         if (hasSupplier && hasContractor) {
             return {
                 VALIDATION_SUMMARY: getTranslatedLabel(
                     `${localizationKey}.validation.partyExclusive`,
-                    "Please select either a Supplier or a Contractor, not both."
+                    "Cannot select both Supplier and Contractor at the same time."
                 ),
             };
         }
-        // Optionally, require at least one to be filled
-        if (!hasSupplier && !hasContractor) {
-            return {
-                VALIDATION_SUMMARY: getTranslatedLabel(
-                    `${localizationKey}.validation.partyRequired`,
-                    "At least one of Supplier or Contractor must be selected."
-                ),
-            };
-        }
+
         return undefined;
     };
 

@@ -74,7 +74,7 @@ const multiPaymentCertificateApi = createApi({
                     method: 'POST',
                     body: { workEffortId, companyId }
                 }),
-                invalidatesTags: ['MultiPaymentCertificate', 'MultiPaymentItems'],
+                invalidatesTags: ['MultiPaymentCertificates', 'MultiPaymentItems'],
             }),
         };
     },

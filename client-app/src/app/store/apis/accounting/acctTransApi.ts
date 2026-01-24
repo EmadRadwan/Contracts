@@ -136,7 +136,13 @@ const acctTransApi = createApi({
                 }),
                 providesTags: ["PTransactions"],
             }),
-
+            fetchWorkEffortAcctTransEntries: builder.query<AcctgTransEntry[], string>({
+                query: (workEffortId) => ({
+                    url: `/transactions/workeffort/${workEffortId}/getAccountingEntries`,
+                    method: "GET",
+                }),
+                providesTags: ["WorkEffortTransactions"],
+            }),
             fetchGeneralAcctTransEntries: builder.query<AcctgTransEntry[], string>({
                 query: (acctgTransId) => ({
                     url: `/transactions/${acctgTransId}/getGeneralTransactions`,
@@ -225,7 +231,7 @@ export const {
     useUpdateAcctgTransMutation, useCreateAcctgTransEntryMutation,
     useUpdateAcctgTransEntryMutation, useDeleteAcctgTransEntryMutation,
     useFetchInvoiceAcctTransEntriesQuery,
-    useFetchPaymentAcctTransEntriesQuery,
+    useFetchPaymentAcctTransEntriesQuery, useFetchWorkEffortAcctTransEntriesQuery,
     useFetchAcctTransEntriesQuery,
     useFetchGeneralAcctTransEntriesQuery,
     usePostAcctgTransMutation,

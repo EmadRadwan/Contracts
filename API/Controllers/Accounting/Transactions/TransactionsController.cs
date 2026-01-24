@@ -32,6 +32,17 @@ public class TransactionsController : BaseApiController
             Language = language
         }));
     }
+    
+    [HttpGet("workeffort/{workEffortId}/getAccountingEntries")]
+    public async Task<IActionResult> GetWorkEffortAccountingEntries(string workEffortId)
+    {
+        var language = GetLanguage();
+        return HandleResult(await Mediator.Send(new GetWorkEffortTransactionEntries.Query
+        {
+            WorkEffortId = workEffortId,
+            Language     = language
+        }));
+    }
 
     [HttpGet("{acctgTransId}/getGeneralTransactions")]
     public async Task<IActionResult> GetGeneralTransactions(string acctgTransId)

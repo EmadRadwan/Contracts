@@ -91,6 +91,7 @@ namespace Application.Projects
                         AcctgTransTypeId = "DISBURSEMENT",
                         Description = $"مستند دفع متعدد {certificate.WorkEffortId}",
                         TransactionDate = DateTime.UtcNow,
+                        WorkEffortId = certificate.WorkEffortId,
                         IsPosted = "Y",
                         PostedDate = DateTime.UtcNow,
                         GlFiscalTypeId = "ACTUAL",
@@ -121,12 +122,7 @@ namespace Application.Projects
                     {
                         // Validate PartyIdSupplier or PartyIdContractor
                         var partyId = item.PartyIdSupplier ?? item.PartyIdContractor;
-                        if (string.IsNullOrEmpty(partyId))
-                        {
-                            await transaction.RollbackAsync(cancellationToken);
-                            return Result<MultiPaymentCertificateDto>.Failure(
-                                $"No Supplier or Contractor specified for item {item.WorkEffortId}");
-                        }
+                        
 
                         var invoiceId = await _utilityService.GetNextSequence("Invoice");
                         var invoice = new Invoice
