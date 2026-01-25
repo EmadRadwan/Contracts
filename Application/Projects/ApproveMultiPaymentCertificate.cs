@@ -1,4 +1,6 @@
+using Application.Accounting.Services;
 using Application.Core;
+using Application.Interfaces;
 using Domain;
 using FluentValidation;
 using MediatR;
@@ -30,11 +32,19 @@ namespace Application.Projects
         {
             private readonly DataContext _context;
             private readonly IUtilityService _utilityService;
+            private readonly IUserAccessor _userAccessor;
+            private readonly IAcctgMiscService _acctgMiscService;
+            private readonly IInvoiceUtilityService _invoiceUtilityService;
 
-            public Handler(DataContext context, IUtilityService utilityService)
+
+            public Handler(DataContext context, IUtilityService utilityService, IUserAccessor userAccessor,
+                IAcctgMiscService acctgMiscService, IInvoiceUtilityService invoiceUtilityService)
             {
                 _context = context;
                 _utilityService = utilityService;
+                _userAccessor = userAccessor;
+                _acctgMiscService = acctgMiscService;
+                _invoiceUtilityService = invoiceUtilityService;
             }
 
             public async Task<Result<MultiPaymentCertificateDto>> Handle(Command request,
@@ -75,7 +85,6 @@ namespace Application.Projects
 
                     var totalAmount = items.Sum(i => i.TotalAmount ?? 0);
 
-                    
 
                     var updateResult = await _context.SaveChangesAsync(cancellationToken);
                     if (updateResult <= 0)
@@ -122,12 +131,22 @@ namespace Application.Projects
                     {
                         // Validate PartyIdSupplier or PartyIdContractor
                         var partyId = item.PartyIdSupplier ?? item.PartyIdContractor;
-                        
 
-                        var invoiceId = await _utilityService.GetNextSequence("Invoice");
+                        var currentUsername = _userAccessor.GetUsername();
+                        var user = await _context.Users
+                            .FirstOrDefaultAsync(u => u.UserName == currentUsername, cancellationToken);
+
+
+                        var partyAcctgPreference =
+                            await _acctgMiscService.GetPartyAccountingPreferences(user.OrganizationPartyId);
+
+                        // Get next invoice number.
+                        var newInvoiceSequence = _invoiceUtilityService.GetNextInvoiceNumber(partyAcctgPreference);
+                        newInvoiceSequence = partyAcctgPreference.InvoiceIdPrefix + newInvoiceSequence;
+                        
                         var invoice = new Invoice
                         {
-                            InvoiceId = invoiceId,
+                            InvoiceId = newInvoiceSequence,
                             InvoiceTypeId = "PURCHASE_INVOICE",
                             PartyIdFrom = partyId,
                             PartyId = request.CompanyId,
@@ -143,9 +162,10 @@ namespace Application.Projects
                         if (string.IsNullOrEmpty(item.GlAccountId))
                         {
                             await transaction.RollbackAsync(cancellationToken);
-                            return Result<MultiPaymentCertificateDto>.Failure("GL Account missing on certificate item " + item.WorkEffortId);
+                            return Result<MultiPaymentCertificateDto>.Failure(
+                                "GL Account missing on certificate item " + item.WorkEffortId);
                         }
-                        
+
 
                         var debitEntry = new AcctgTransEntry
                         {
@@ -180,7 +200,7 @@ namespace Application.Projects
                         {
                             var baseAmountItem = new InvoiceItem
                             {
-                                InvoiceId = invoiceId,
+                                InvoiceId = newInvoiceSequence,
                                 InvoiceItemSeqId = invoiceItemSeq.ToString("D5"),
                                 InvoiceItemTypeId = "PINV_SPROD_ITEM",
                                 ProductId = item.ProductId,
@@ -198,7 +218,7 @@ namespace Application.Projects
                         {
                             var discountItem = new InvoiceItem
                             {
-                                InvoiceId = invoiceId,
+                                InvoiceId = newInvoiceSequence,
                                 InvoiceItemSeqId = invoiceItemSeq.ToString("D5"),
                                 InvoiceItemTypeId = "INVOICE_ITM_ADJ",
                                 ProductId = item.ProductId,
@@ -216,7 +236,7 @@ namespace Application.Projects
                         {
                             var transportItem = new InvoiceItem
                             {
-                                InvoiceId = invoiceId,
+                                InvoiceId = newInvoiceSequence,
                                 InvoiceItemSeqId = invoiceItemSeq.ToString("D5"),
                                 InvoiceItemTypeId = "INVOICE_ITM_ADJ",
                                 ProductId = item.ProductId,
@@ -234,7 +254,7 @@ namespace Application.Projects
                         {
                             var gratuityItem = new InvoiceItem
                             {
-                                InvoiceId = invoiceId,
+                                InvoiceId = newInvoiceSequence,
                                 InvoiceItemSeqId = invoiceItemSeq.ToString("D5"),
                                 InvoiceItemTypeId = "INVOICE_ITM_ADJ",
                                 ProductId = item.ProductId,

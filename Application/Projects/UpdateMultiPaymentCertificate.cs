@@ -91,7 +91,7 @@ namespace Application.Projects
                             WorkEffortTypeId = "PAYMENT_CERTIFICATE_ITEM",
                             GlAccountId = item.GlAccountId,
                             CostType = item.ItemType,
-                            ServiceId = item.ServiceId,
+                            ServiceId = !string.IsNullOrEmpty(item.ServiceId) ? item.ServiceId : null,
                             ProductId = !string.IsNullOrEmpty(item.ProductId) ? item.ProductId : null,
                             Description = item.Description,
                             Discount = item.Discount ?? 0,
@@ -108,7 +108,7 @@ namespace Application.Projects
                             LastUpdatedStamp = stamp
                         };
 
-                        if (string.IsNullOrEmpty(itemWorkEffort.ServiceId))
+                        /*if (string.IsNullOrEmpty(itemWorkEffort.ServiceId))
                         {
                             _logger.LogWarning("ServiceId is null for WorkEffortId={WorkEffortId}",
                                 itemWorkEffort.WorkEffortId);
@@ -138,7 +138,7 @@ namespace Application.Projects
                                 throw new InvalidOperationException(
                                     $"ProductId {itemWorkEffort.ProductId} does not exist");
                             }
-                        }
+                        }*/
 
                         _context.WorkEfforts.Add(itemWorkEffort);
                         _logger.LogInformation(

@@ -30,5 +30,6 @@ public class PartyDto2
     public string? GeoId { get; set; }
     public string? GeoName { get; set; }
     public string? ContactType { get; set; }
-    public DateTime? LastUpdatedStamp { get; set; }
+    public string? PositionTypeId { get; set; }
+    public decimal? MonthlyBaseSalary { get; set; } 
 }

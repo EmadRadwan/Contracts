@@ -82,7 +82,7 @@ namespace Application.Projects
                             WorkEffortTypeId = "PAYMENT_CERTIFICATE_ITEM",
                             GlAccountId = item.GlAccountId,
                             CostType = item.ItemType,
-                            ServiceId = item.ServiceId,
+                            ServiceId = !string.IsNullOrEmpty(item.ServiceId) ? item.ServiceId : null,
                             ProductId = !string.IsNullOrEmpty(item.ProductId) ? item.ProductId : null,
                             Description = item.Description,
                             Discount = item.Discount ?? 0,
@@ -99,16 +99,16 @@ namespace Application.Projects
                             LastUpdatedStamp = stamp
                         };
 
-                        if (string.IsNullOrEmpty(itemWorkEffort.ServiceId))
+                        /*if (string.IsNullOrEmpty(itemWorkEffort.ServiceId))
                         {
                             _logger.LogWarning(
                                 "ServiceId is null or empty for WorkEffortId={WorkEffortId}. ServiceId is mandatory.",
                                 itemWorkEffort.WorkEffortId);
                             throw new InvalidOperationException(
                                 $"ServiceId cannot be null or empty for WorkEffortId {itemWorkEffort.WorkEffortId}.");
-                        }
+                        }*/
 
-                        var serviceExists =
+                        /*var serviceExists =
                             await _context.Products.AnyAsync(p => p.ProductId == itemWorkEffort.ServiceId,
                                 cancellationToken);
                         if (!serviceExists)
@@ -122,9 +122,10 @@ namespace Application.Projects
 
                         _logger.LogInformation("Validated ServiceId={ServiceId} for WorkEffortId={WorkEffortId}",
                             itemWorkEffort.ServiceId, itemWorkEffort.WorkEffortId);
+                            */
 
                         // REFACTOR: Validate ProductId only if it's not null or empty, as it's optional
-                        if (!string.IsNullOrEmpty(itemWorkEffort.ProductId))
+                        /*if (!string.IsNullOrEmpty(itemWorkEffort.ProductId))
                         {
                             var productExists =
                                 await _context.Products.AnyAsync(p => p.ProductId == itemWorkEffort.ProductId,
@@ -146,7 +147,7 @@ namespace Application.Projects
                             _logger.LogInformation(
                                 "ProductId is null or empty for WorkEffortId={WorkEffortId}, skipping validation as it's optional",
                                 itemWorkEffort.WorkEffortId);
-                        }
+                        }*/
 
                         _context.WorkEfforts.Add(itemWorkEffort);
 

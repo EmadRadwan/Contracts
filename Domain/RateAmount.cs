@@ -10,7 +10,7 @@ public class RateAmount
     public string EmplPositionTypeId { get; set; } = null!;
     public DateTime FromDate { get; set; }
     public DateTime? ThruDate { get; set; }
-    public decimal? RateAmount1 { get; set; }
+    public decimal? Amount { get; set; }
     public DateTime? LastUpdatedStamp { get; set; }
     public DateTime? LastUpdatedTxStamp { get; set; }
     public DateTime? CreatedStamp { get; set; }

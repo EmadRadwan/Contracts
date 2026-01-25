@@ -140,7 +140,8 @@ public class CreateEmployee
                 _context.TelecomNumbers.Add(telecomNumber);
 
                 // REFACTOR: Use the EMPLOYEE role's PartyRole for contact mechanisms
-                var partyRoleEmployee = _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeEmployee);
+                var partyRoleEmployee =
+                    _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeEmployee);
 
                 var partyContactMech = new PartyContactMech
                 {
@@ -179,7 +180,8 @@ public class CreateEmployee
                 };
                 _context.ContactMeches.Add(contactMech);
 
-                var partyRoleEmployee = _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeEmployee);
+                var partyRoleEmployee =
+                    _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeEmployee);
 
                 var partyContactMech = new PartyContactMech
                 {
@@ -217,7 +219,8 @@ public class CreateEmployee
                 };
                 _context.ContactMeches.Add(contactMech);
 
-                var partyRoleEmployee = _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeEmployee);
+                var partyRoleEmployee =
+                    _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeEmployee);
 
                 var partyContactMech = new PartyContactMech
                 {
@@ -253,15 +256,90 @@ public class CreateEmployee
                 _context.PostalAddresses.Add(postalAddress);
             }
 
+            // ────────────────────────────────────────────────────────────────
+            // 2. NEW: Employment
+            // ────────────────────────────────────────────────────────────────
+            var employment = new Employment
+            {
+                PartyIdFrom = "Company",
+                PartyIdTo = newPartyId,
+                FromDate = stamp,
+                ThruDate = null,
+                RoleTypeIdFrom = "INTERNAL_ORGANIZATIO",
+                RoleTypeIdTo = "EMPLOYEE",
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            };
+            _context.Employments.Add(employment);
+
+            // ────────────────────────────────────────────────────────────────
+            // 3. NEW: Position Fulfillment
+            // ────────────────────────────────────────────────────────────────
+            string positionId;
+
+            if (string.IsNullOrEmpty(request.PartyDto.PositionTypeId))
+                return Result<PartyDto2>.Failure("PositionTypeId is required.");
+
+            // Validate type exists
+            var typeExists = await _context.EmplPositionTypes
+                .AnyAsync(t => t.EmplPositionTypeId == request.PartyDto.PositionTypeId, cancellationToken);
+            if (!typeExists)
+                return Result<PartyDto2>.Failure($"Position type {request.PartyDto.PositionTypeId} not found.");
+
+            positionId = await _utilityService.GetNextSequence("EmplPosition"); // or custom naming
+
+            var newPosition = new EmplPosition
+            {
+                EmplPositionId = positionId,
+                StatusId = "EMPL_POS_ACTIVE",
+                PartyId = "Company",
+                EmplPositionTypeId = request.PartyDto.PositionTypeId,
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            };
+            _context.EmplPositions.Add(newPosition);
+
+            var fulfillment = new EmplPositionFulfillment
+            {
+                EmplPositionId = positionId,
+                PartyId = newPartyId,
+                FromDate = stamp,
+                ThruDate = null,
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            };
+            _context.EmplPositionFulfillments.Add(fulfillment);
+
+            // ────────────────────────────────────────────────────────────────
+            // 4. NEW: Personal RateAmount (monthly override)
+            // ────────────────────────────────────────────────────────────────
+            if (request.PartyDto.MonthlyBaseSalary.HasValue && request.PartyDto.MonthlyBaseSalary > 0)
+            {
+                var rate = new RateAmount
+                {
+                    RateTypeId = "AVERAGE_PAY_RATE", // or your preferred type
+                    RateCurrencyUomId = "EGP",
+                    PeriodTypeId = "RATE_MONTH",
+                    WorkEffortId = "_NA_",
+                    PartyId = newPartyId, // personal
+                    EmplPositionTypeId = "_NA_",
+                    FromDate = stamp,
+                    Amount = request.PartyDto.MonthlyBaseSalary.Value,
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp
+                };
+                _context.RateAmounts.Add(rate);
+            }
+
             var result = await _context.SaveChangesAsync(cancellationToken) > 0;
 
             if (!result)
             {
-                transaction.Rollback();
+                await transaction.RollbackAsync(cancellationToken);
                 return Result<PartyDto2>.Failure("Failed to create Employee");
             }
 
-            transaction.Commit();
+            await transaction.CommitAsync(cancellationToken);
 
             var partyToReturn = new PartyDto2
             {

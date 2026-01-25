@@ -47132,9 +47132,9 @@ entity.Property(e => e.BuildingNumber)
                     .HasColumnType("datetime")
                     .HasColumnName("LAST_UPDATED_TX_STAMP");
 
-                entity.Property(e => e.RateAmount1)
+                entity.Property(e => e.Amount)
                     .HasColumnType("decimal(18,3)")
-                    .HasColumnName("RATE_AMOUNT");
+                    .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.ThruDate)
                     .HasColumnType("datetime")

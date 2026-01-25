@@ -99,6 +99,13 @@ const partiesApi = createApi({
                     method: 'GET',
                 }),
             }),
+            getEmplPositionTypes: builder.query<EmplPositionType[], void>({
+                query: () => ({
+                    url: '/EmplPositionTypes',
+                    method: 'GET',
+                }),
+                providesTags: ['EmplPositionTypes'], // useful if you later invalidate on create/update
+            }),
         };
     },
 });
@@ -108,6 +115,7 @@ export const {
     useFetchCustomerQuery,
     useFetchSupplierQuery,
     useFetchCompaniesQuery, useGetPartyFinancialHistoryQuery,
-    useFetchContractorQuery, useFetchEmployeeQuery, useUpdatePartyMainRoleMutation
+    useFetchContractorQuery, useFetchEmployeeQuery,
+    useUpdatePartyMainRoleMutation, useGetEmplPositionTypesQuery
 } = partiesApi;
 export {partiesApi};

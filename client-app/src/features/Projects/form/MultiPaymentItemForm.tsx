@@ -156,8 +156,8 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                 glAccountId: values.glAccountId,
                 itemType: values.itemType || "",
                 itemTypeDescription: itemTypeDescription,
-                serviceId: values.serviceId.ProductId || "",
-                serviceName: values.serviceId.ProductName || "",
+                serviceId: values.serviceId?.ProductId || "",
+                serviceName: values.serviceId?.ProductName || "",
                 productId: values.productId?.ProductId || "",
                 productName: values.productId?.ProductName || "",
                 description: values.description || "",
@@ -343,7 +343,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                                         dataItemKey="itemType"
                                         textField="description"
                                         data={itemTypes}
-                                        validator={requiredValidator}
+                                        //validator={requiredValidator}
                                         disabled={formEditMode > 3}
                                     />
                                 </Grid>
@@ -353,7 +353,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
                                         name="serviceId"
                                         label={getTranslatedLabel(`${localizationKey}.service`, "Service *")}
                                         component={FormSimpleComboBoxServiceVirtual}
-                                        validator={requiredValidator}
+                                        //validator={requiredValidator}
                                         textField="productName"
                                         dataItemKey="productId"
                                         disabled={formEditMode > 3}
