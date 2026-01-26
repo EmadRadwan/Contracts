@@ -41,6 +41,8 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
     } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
         skip: !companyId,
     });
+    
+    console.log('GL Accounts Data:', glAccounts);
 
     const itemTypes = useMemo(
         () => [
@@ -52,6 +54,8 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
         []
     );
 
+
+    
     const initialValues = useMemo((): Partial<MultiPaymentItem> => {
         const base = {
             workEffortId: multiPaymentItem?.workEffortId || "",
@@ -142,18 +146,43 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
         []
     );
 
+    const findGlAccountNameById = useCallback((glAccountId: string | undefined | null): string => {
+        if (!glAccountId || !Array.isArray(glAccounts) || glAccounts.length === 0) {
+            return "";
+        }
+
+        const search = (nodes: any[]): string => {
+            for (const node of nodes) {
+                if (String(node.glAccountId) === String(glAccountId)) {
+                    return node.text ?? node.accountName ?? "";
+                }
+                if (Array.isArray(node.items) && node.items.length > 0) {
+                    const found = search(node.items);
+                    if (found) return found;
+                }
+            }
+            return "";
+        };
+
+        return search(glAccounts) || "";
+    }, [glAccounts]);   // ← crucial
+
+
+
     const handleSubmit = useCallback(
         (values: Partial<MultiPaymentItem>) => {
             const selectedItemType = itemTypes.find(
                 (type) => type.itemType === values.itemType
             );
-            const itemTypeDescription = selectedItemType?.description || values.description || "";
+            const itemTypeDescription = selectedItemType?.description;
+            const glAccountName = findGlAccountNameById(values.glAccountId);
 
 
             const serializedValues: MultiPaymentItem = {
                 workEffortId: editMode === 2 ? multiPaymentItem?.workEffortId || values.workEffortId || `temp-${Date.now()}` : `temp-${Date.now()}`,
                 workEffortIdParent: workEffortId || "",
                 glAccountId: values.glAccountId,
+                glAccountName: glAccountName, 
                 itemType: values.itemType || "",
                 itemTypeDescription: itemTypeDescription,
                 serviceId: values.serviceId?.ProductId || "",
@@ -181,7 +210,7 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
             setFormKey(Math.random());
             onClose();
         },
-        [addItem, updateItem, editMode, workEffortId, discountMode, onClose]
+        [addItem, updateItem, editMode, workEffortId, discountMode, onClose, findGlAccountNameById]
     );
     
 
@@ -295,8 +324,8 @@ export default function MultiPaymentItemForm({ multiPaymentItem, editMode, onClo
             </>
         );
     };
-    
 
+    
     return (
         <Form
             initialValues={initialValues}

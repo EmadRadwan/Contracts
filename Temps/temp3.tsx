@@ -1,21 +1,24 @@
-const partyValidator = (values: Partial<MultiPaymentItem>): KeyValue<string> | undefined => {
-    const hasSupplier   = !!values.partyIdSupplier   && values.partyIdSupplier !== "";
-    const hasContractor = !!values.partyIdContractor && values.partyIdContractor !== "";
+<Form
+    initialValues={{ ...initialValues, _itemsVersion: 0 }}
+    onSubmit={handleSubmit}
+    render={(formRenderProps) => (
+        <>
+            {/* Hidden field that Kendo watches */}
+            <Field name="_itemsVersion" type="hidden" component="input" />
 
-    // ── Most important rule ───────────────────────────────────────
-    if (hasSupplier && hasContractor) {
-        return {
-            VALIDATION_SUMMARY: getTranslatedLabel(
-                `${localizationKey}.validation.partyExclusive`,
-                "Please select either a Supplier or a Contractor, not both."
-            ),
-        };
-    }
+            {/* rest of form ... */}
 
-    // No error if:
-    //   - both are empty   → allowed
-    //   - only supplier    → allowed
-    //   - only contractor  → allowed
-
-    return undefined;
-};
+            <Button
+                type="submit"
+                disabled={
+                    !formRenderProps.valid ||
+                    (!formRenderProps.modified && editMode !== 1) ||
+                    apiLoading ||
+                    items.length === 0
+                }
+            >
+                ...
+            </Button>
+        </>
+    )}
+/>

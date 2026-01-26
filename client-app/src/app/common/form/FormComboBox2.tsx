@@ -138,7 +138,7 @@ export const FormComboBox2: React.FC<FormComboBox2Props> = (fieldRenderProps) =>
             )}
 
             {/* Validation Error */}
-            {showValidationMessage && <Error id={errorId}>{validationMessage}</Error>}
+            {showValidationMessage }
         </FieldWrapper>
     );
 };

@@ -1,147 +1,112 @@
-public async Task<Result<PartyDto2>> Handle(Command request, CancellationToken cancellationToken)
+public async Task<Result<List<MultiPaymentItemDto>>> Handle(Query request, CancellationToken cancellationToken)
 {
-    var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-    var stamp = DateTime.UtcNow;
+    var validator = new QueryValidator();
+    var validationResult = await validator.ValidateAsync(request, cancellationToken);
+    if (!validationResult.IsValid)
+        return Result<List<MultiPaymentItemDto>>.Failure(
+            string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
 
     try
     {
-        // ────────────────────────────────────────────────────────────────
-        // 1. Your existing Party / Person / Role / Status / Contacts creation
-        //    (keep exactly as is — I'm only showing the additions below)
-        // ────────────────────────────────────────────────────────────────
+        var multiPaymentItems = await _context.WorkEfforts
+            .Where(item => item.WorkEffortParentId == request.WorkEffortId 
+                        && item.WorkEffortTypeId == "PAYMENT_CERTIFICATE_ITEM")
 
-        var newPartyId = await _utilityService.GetNextSequence("Party");
-        var party = new Party { /* ... your code ... */ };
-        _context.Parties.Add(party);
+            // ── Project ──
+            .GroupJoin(_context.WorkEfforts.Where(p => p.WorkEffortTypeId == "PROJECT"),
+                item => item.ProjectId,
+                project => project.WorkEffortId,
+                (item, projects) => new { item, projects })
+            .SelectMany(x => x.projects.DefaultIfEmpty(), (x, project) => new { x.item, project })
 
-        var person = new Person { /* ... */ };
-        _context.Persons.Add(person);
+            // ── SubProject ──
+            .GroupJoin(_context.WorkEfforts.Where(sp => sp.WorkEffortTypeId == "SUB_PROJECT"),
+                x => x.item.SubProjectId,
+                subProject => subProject.WorkEffortId,
+                (x, subProjects) => new { x.item, x.project, subProjects })
+            .SelectMany(x => x.subProjects.DefaultIfEmpty(), (x, subProject) => new { x.item, x.project, subProject })
 
-        var partyRole = new PartyRole { /* EMPLOYEE */ };
-        _context.PartyRoles.Add(partyRole);
+            // ── Service (Product) ──
+            .GroupJoin(_context.Products,
+                x => x.item.ServiceId,
+                service => service.ProductId,
+                (x, services) => new { x.item, x.project, x.subProject, services })
+            .SelectMany(x => x.services.DefaultIfEmpty(), (x, service) => new { x.item, x.project, x.subProject, service })
 
-        var partyStatus = new PartyStatus { /* ... */ };
-        _context.PartyStatuses.Add(partyStatus);
+            // ── Product ──
+            .GroupJoin(_context.Products,
+                x => x.item.ProductId,
+                product => product.ProductId,
+                (x, products) => new { x.item, x.project, x.subProject, x.service, products })
+            .SelectMany(x => x.products.DefaultIfEmpty(), (x, product) => new { x.item, x.project, x.subProject, x.service, product })
 
-        // contacts (mobile, email, address) — your existing code
+            // ── Supplier Party ──
+            .GroupJoin(_context.Parties,
+                x => x.item.PartyIdSupplier,
+                supplier => supplier.PartyId,
+                (x, suppliers) => new { x.item, x.project, x.subProject, x.service, x.product, suppliers })
+            .SelectMany(x => x.suppliers.DefaultIfEmpty(), (x, supplier) => new { x.item, x.project, x.subProject, x.service, x.product, supplier })
 
-        // ────────────────────────────────────────────────────────────────
-        // 2. NEW: Employment
-        // ────────────────────────────────────────────────────────────────
-        var employment = new Employment
-        {
-            PartyIdFrom = "Company",
-            PartyIdTo = newPartyId,
-            FromDate = request.PartyDto.EmploymentStartDate ?? stamp,
-            ThruDate = null,
-            RoleTypeIdFrom = "INTERNAL_ORGANIZATIO",
-            RoleTypeIdTo = "EMPLOYEE",
-            CreatedStamp = stamp,
-            LastUpdatedStamp = stamp
-        };
-        _context.Employments.Add(employment);
+            // ── Contractor Party ──
+            .GroupJoin(_context.Parties,
+                x => x.item.PartyIdContractor,
+                contractor => contractor.PartyId,
+                (x, contractors) => new { x.item, x.project, x.subProject, x.service, x.product, x.supplier, contractors })
+            .SelectMany(x => x.contractors.DefaultIfEmpty(), (x, contractor) => new { x.item, x.project, x.subProject, x.service, x.product, x.supplier, contractor })
 
-        // ────────────────────────────────────────────────────────────────
-        // 3. NEW: Position Fulfillment
-        // ────────────────────────────────────────────────────────────────
-        string positionId;
-
-        if (!string.IsNullOrEmpty(request.PartyDto.SpecificEmplPositionId))
-        {
-            // Use existing position
-            positionId = request.PartyDto.SpecificEmplPositionId;
-
-            // Optional: validate it exists
-            var posExists = await _context.EmplPositions
-                .AnyAsync(p => p.EmplPositionId == positionId, cancellationToken);
-            if (!posExists)
-                return Result<PartyDto2>.Failure($"Position {positionId} not found.");
-        }
-        else
-        {
-            // Auto-create simple position from type
-            if (string.IsNullOrEmpty(request.PartyDto.PositionTypeId))
-                return Result<PartyDto2>.Failure("PositionTypeId is required.");
-
-            // Validate type exists
-            var typeExists = await _context.EmplPositionTypes
-                .AnyAsync(t => t.EmplPositionTypeId == request.PartyDto.PositionTypeId, cancellationToken);
-            if (!typeExists)
-                return Result<PartyDto2>.Failure($"Position type {request.PartyDto.PositionTypeId} not found.");
-
-            positionId = await _utilityService.GetNextSequence("EmplPosition"); // or custom naming
-
-            var newPosition = new EmplPosition
+            // ── NEW: Left join to GlAccounts ────────────────────────────────
+            .GroupJoin(_context.GlAccounts,                              // ← assuming your DbSet is named GlAccounts
+                x => x.item.GlAccountId,
+                gl => gl.GlAccountId,                                    // ← adjust column name if different
+                (x, glAccounts) => new { x.item, x.project, x.subProject, x.service, x.product, x.supplier, x.contractor, glAccounts })
+            .SelectMany(x => x.glAccounts.DefaultIfEmpty(), (x, glAccount) => new MultiPaymentItemDto
             {
-                EmplPositionId = positionId,
-                StatusId = "EMPL_POS_ACTIVE",
-                PartyId = "Company",
-                EmplPositionTypeId = request.PartyDto.PositionTypeId,
-                SalaryFlag = request.PartyDto.SalaryFlag ?? "Y",
-                ExemptFlag = request.PartyDto.ExemptFlag ?? "Y",
-                FulltimeFlag = request.PartyDto.FulltimeFlag ?? "Y",
-                TemporaryFlag = request.PartyDto.TemporaryFlag ?? "N",
-                CreatedStamp = stamp,
-                LastUpdatedStamp = stamp
-            };
-            _context.EmplPositions.Add(newPosition);
-        }
+                WorkEffortId          = x.item.WorkEffortId,
+                GlAccountId           = x.item.GlAccountId,
+                GlAccountNameArabic   = glAccount != null ? glAccount.AccountNameArabic : null,   // ← added
+                // GlAccountNameEnglish  = glAccount?.AccountName ?? "",   // optional
 
-        var fulfillment = new EmplPositionFulfillment
+                ItemType              = x.item.CostType,
+                ServiceId             = x.item.ServiceId,
+                ServiceName           = x.service != null ? x.service.ProductName : "",
+                ProductId             = x.item.ProductId,
+                ProductName           = x.product != null ? x.product.ProductName : "",
+                Description           = x.item.Description,
+
+                Amount                = (decimal?)x.item.Amount,
+                Discount              = (decimal?)x.item.Discount,
+                TransportationExpenses= (decimal?)x.item.TransportationExpenses,
+                Gratuities            = (decimal?)x.item.Gratuities,
+                Total                 = (decimal?)x.item.TotalAmount,
+
+                PartyIdSupplier       = x.item.PartyIdSupplier,
+                PartyIdSupplierName   = x.supplier != null ? x.supplier.Description : "",
+                PartyIdContractor     = x.item.PartyIdContractor,
+                PartyIdContractorName = x.contractor != null ? x.contractor.Description : ""
+            })
+            .ToListAsync(cancellationToken);
+
+        var itemTypeDescriptions = new Dictionary<string, string>
         {
-            EmplPositionId = positionId,
-            PartyId = newPartyId,
-            FromDate = request.PartyDto.EmploymentStartDate ?? stamp,
-            ThruDate = null,
-            CreatedStamp = stamp,
-            LastUpdatedStamp = stamp
+            { "MATERIALS",  "المواد" },
+            { "LABOR",      "العمالة" },
+            { "EQUIPMENT",  "المعدات" },
+            { "EXPENSES",   "المصروفات" }
         };
-        _context.EmplPositionFulfillments.Add(fulfillment);
 
-        // ────────────────────────────────────────────────────────────────
-        // 4. NEW: Personal RateAmount (monthly override)
-        // ────────────────────────────────────────────────────────────────
-        if (request.PartyDto.MonthlyBaseSalary.HasValue && request.PartyDto.MonthlyBaseSalary > 0)
+        foreach (var item in multiPaymentItems)
         {
-            var rate = new RateAmount
-            {
-                RateTypeId = "AVERAGE_PAY_RATE",           // or your preferred type
-                RateCurrencyUomId = request.PartyDto.CurrencyUomId ?? "EGP",
-                PeriodTypeId = "RATE_MONTH",
-                WorkEffortId = "_NA_",
-                PartyId = newPartyId,                       // personal
-                EmplPositionTypeId = "_NA_",
-                FromDate = stamp,
-                RateAmount = request.PartyDto.MonthlyBaseSalary.Value,
-                CreatedStamp = stamp,
-                LastUpdatedStamp = stamp
-            };
-            _context.RateAmounts.Add(rate);
+            item.ItemTypeDescription = itemTypeDescriptions.GetValueOrDefault(item.ItemType ?? "", "");
+
+            item.DiscountMode = item.Discount > 0 
+                ? "value" 
+                : item.Discount < 0 ? "percentage" : null;   // ← improved a bit
         }
 
-        // ────────────────────────────────────────────────────────────────
-        // Save & Commit
-        // ────────────────────────────────────────────────────────────────
-        var success = await _context.SaveChangesAsync(cancellationToken) > 0;
-        if (!success)
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            return Result<PartyDto2>.Failure("Failed to save employee data");
-        }
-
-        await transaction.CommitAsync(cancellationToken);
-
-        // Return success
-        return Result<PartyDto2>.Success(new PartyDto2
-        {
-            PartyId = newPartyId,
-            Description = $"{request.PartyDto.FirstName} (EMPLOYEE)",
-            // ... fill other needed fields
-        });
+        return Result<List<MultiPaymentItemDto>>.Success(multiPaymentItems);
     }
     catch (Exception ex)
     {
-        await transaction.RollbackAsync(cancellationToken);
-        return Result<PartyDto2>.Failure(ex.Message);
+        return Result<List<MultiPaymentItemDto>>.Failure($"Failed to retrieve multi-payment items: {ex.Message}");
     }
 }

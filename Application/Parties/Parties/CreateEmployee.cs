@@ -277,14 +277,14 @@ public class CreateEmployee
             // ────────────────────────────────────────────────────────────────
             string positionId;
 
-            if (string.IsNullOrEmpty(request.PartyDto.PositionTypeId))
-                return Result<PartyDto2>.Failure("PositionTypeId is required.");
+            if (string.IsNullOrEmpty(request.PartyDto.EmplPositionTypeId))
+                return Result<PartyDto2>.Failure("EmplPositionTypeId is required.");
 
             // Validate type exists
             var typeExists = await _context.EmplPositionTypes
-                .AnyAsync(t => t.EmplPositionTypeId == request.PartyDto.PositionTypeId, cancellationToken);
+                .AnyAsync(t => t.EmplPositionTypeId == request.PartyDto.EmplPositionTypeId, cancellationToken);
             if (!typeExists)
-                return Result<PartyDto2>.Failure($"Position type {request.PartyDto.PositionTypeId} not found.");
+                return Result<PartyDto2>.Failure($"Position type {request.PartyDto.EmplPositionTypeId} not found.");
 
             positionId = await _utilityService.GetNextSequence("EmplPosition"); // or custom naming
 
@@ -293,7 +293,7 @@ public class CreateEmployee
                 EmplPositionId = positionId,
                 StatusId = "EMPL_POS_ACTIVE",
                 PartyId = "Company",
-                EmplPositionTypeId = request.PartyDto.PositionTypeId,
+                EmplPositionTypeId = request.PartyDto.EmplPositionTypeId,
                 CreatedStamp = stamp,
                 LastUpdatedStamp = stamp
             };

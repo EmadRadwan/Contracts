@@ -5,12 +5,13 @@ public class MultiPaymentItemDto
     public string WorkEffortId { get; set; }
     public string GlAccountId { get; set; }
     public string ItemType { get; set; }
-    public string ItemTypeDescription { get; set; }
-    public string ServiceId { get; set; }
-    public string ServiceName { get; set; }
+    public string? ItemTypeDescription { get; set; }
+    public string? ServiceId { get; set; }
+    public string? ServiceName { get; set; }
+    public string? GlAccountName { get; set; }
     public string? ProductId { get; set; }
-    public string ProductName { get; set; }
-    public string Description { get; set; }
+    public string? ProductName { get; set; }
+    public string? Description { get; set; }
     public decimal? Amount { get; set; }
     public decimal? Discount { get; set; }
     public string? DiscountMode { get; set; }

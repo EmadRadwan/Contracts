@@ -42,8 +42,8 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
         setItemEditMode(0);
         setSelectedItem(undefined);
     };
-
-    const ItemTypeCell = (props: GridCellProps) => (
+    
+    const GlAccountNameCell = (props: GridCellProps) => (
         <td>
             <Typography
                 variant="body2"
@@ -51,7 +51,7 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
                 sx={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'underline' }}
                 onClick={() => handleEditClick(props.dataItem)}
             >
-                {props.dataItem.itemTypeDescription}
+                {props.dataItem.glAccountName}
             </Typography>
         </td>
     );
@@ -73,10 +73,15 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
     const columns = useMemo(
         () => [
             {
+                field: "glAccountName",
+                title: getTranslatedLabel(`${localizationKey}.glAccountName`, "glAccountName"),
+                width: "200px",
+                cell: GlAccountNameCell,
+            },
+            {
                 field: "itemTypeDescription",
                 title: getTranslatedLabel(`${localizationKey}.itemType`, "Item Type"),
                 width: "120px",
-                cell: ItemTypeCell,
             },
             {
                 field: "serviceId",

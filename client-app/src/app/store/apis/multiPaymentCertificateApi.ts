@@ -11,7 +11,7 @@ interface ListResponse<T> {
 
 const multiPaymentCertificateApi = createApi({
     reducerPath: "multiPaymentCertificates",
-    tagTypes: ["MultiPaymentCertificates"],
+    tagTypes: ["MultiPaymentCertificates", "MultiPaymentItems"],
     baseQuery: fetchBaseQuery({
         baseUrl: import.meta.env.VITE_API_URL,
         prepareHeaders: (headers, { getState }) => {
@@ -47,6 +47,7 @@ const multiPaymentCertificateApi = createApi({
             }),
             getMultiPaymentItems: builder.query<MultiPaymentItem[], string>({
                 query: (certificateId) => `project/${certificateId}/items`,
+                providesTags: ["MultiPaymentItems"],
             }),
             fetchSubProjects: builder.query<ListResponse<SubProject>, string>({
                 query: (projectId) => `project/subProjects/${projectId}`,
@@ -66,7 +67,7 @@ const multiPaymentCertificateApi = createApi({
                     method: 'PUT',
                     body: certificate,
                 }),
-                invalidatesTags: ['MultiPaymentCertificates'],
+                invalidatesTags: ['MultiPaymentCertificates', 'MultiPaymentItems'],
             }),
             approveMultiPaymentCertificate: builder.mutation<MultiPaymentCertificate, { workEffortId: string; companyId: string }>({
                 query: ({ workEffortId, companyId }) => ({

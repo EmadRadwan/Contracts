@@ -7,14 +7,14 @@ namespace Application.Parties.Parties;
 
 public class ListEmplPositionTypes
 {
-    public class Query : IRequest<Result<List<EmplPositionType>>>
+    public class Query : IRequest<Result<List<EmplPositionTypeDto>>>
     {
         // You can add optional filters later, e.g.:
         // public string? ParentTypeId { get; set; }
         // public bool? ActiveOnly { get; set; } = true;
     }
 
-    public class Handler : IRequestHandler<Query, Result<List<EmplPositionType>>>
+    public class Handler : IRequestHandler<Query, Result<List<EmplPositionTypeDto>>>
     {
         private readonly DataContext _context;
 
@@ -23,23 +23,26 @@ public class ListEmplPositionTypes
             _context = context;
         }
 
-        public async Task<Result<List<EmplPositionType>>> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<Result<List<EmplPositionTypeDto>>> Handle(Query request, CancellationToken cancellationToken)
         {
-            var query = _context.EmplPositionTypes
-                .AsQueryable()
-                .OrderBy(x => x.Description ?? x.EmplPositionTypeId);  // sort by description, fallback to ID
-
-            // Optional: add filters here in the future
-            // if (!string.IsNullOrEmpty(request.ParentTypeId))
-            //     query = query.Where(x => x.ParentTypeId == request.ParentTypeId);
-            //
-            // if (request.ActiveOnly == true)
-            //     query = query.Where(x => x.StatusId != "EMPL_POS_INACTIVE"); // example
-
-            var positionTypes = await query
+            var positionTypes = await _context.EmplPositionTypes
+                .Where(x => x.EmplPositionTypeId != "_NA_")    
+                .OrderBy(x => x.Description ?? x.EmplPositionTypeId)
+                .Select(x => new EmplPositionTypeDto
+                {
+                    EmplPositionTypeId = x.EmplPositionTypeId,
+                    Description = x.Description
+                })
                 .ToListAsync(cancellationToken);
 
-            return Result<List<EmplPositionType>>.Success(positionTypes);
+
+            return Result<List<EmplPositionTypeDto>>.Success(positionTypes);
         }
     }
+}
+
+public class EmplPositionTypeDto
+{
+    public string EmplPositionTypeId { get; set; } = null!;
+    public string? Description { get; set; }
 }

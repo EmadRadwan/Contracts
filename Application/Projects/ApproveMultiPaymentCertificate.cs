@@ -85,7 +85,6 @@ namespace Application.Projects
 
                     var totalAmount = items.Sum(i => i.TotalAmount ?? 0);
 
-
                     var updateResult = await _context.SaveChangesAsync(cancellationToken);
                     if (updateResult <= 0)
                     {
@@ -124,48 +123,133 @@ namespace Application.Projects
                     };
                     _context.AcctgTransEntries.Add(creditEntry);
 
-                    // REFACTOR: Move debit entry creation to the invoice loop to associate InvoiceId
-                    // This ensures each debit entry can be linked to the corresponding invoice
-                    int entrySeq = 2; // Start from 00002 as 00001 is used for credit entry
+                    // ──────────────────────────────────────────────────────────────
+                    // Debit entries + optional invoices
+                    // ──────────────────────────────────────────────────────────────
+                    int entrySeq = 2; // 00002, 00003, ...
+
+                    var currentUsername = _userAccessor.GetUsername();
+                    var user = await _context.Users
+                        .FirstOrDefaultAsync(u => u.UserName == currentUsername, cancellationToken);
+
+                    var partyAcctgPreference = await _acctgMiscService.GetPartyAccountingPreferences(
+                        user?.OrganizationPartyId ?? "");
+
                     foreach (var item in items)
                     {
-                        // Validate PartyIdSupplier or PartyIdContractor
                         var partyId = item.PartyIdSupplier ?? item.PartyIdContractor;
+                        bool hasParty = !string.IsNullOrWhiteSpace(partyId);
 
-                        var currentUsername = _userAccessor.GetUsername();
-                        var user = await _context.Users
-                            .FirstOrDefaultAsync(u => u.UserName == currentUsername, cancellationToken);
+                        string invoiceId = null;
 
-
-                        var partyAcctgPreference =
-                            await _acctgMiscService.GetPartyAccountingPreferences(user.OrganizationPartyId);
-
-                        // Get next invoice number.
-                        var newInvoiceSequence = _invoiceUtilityService.GetNextInvoiceNumber(partyAcctgPreference);
-                        newInvoiceSequence = partyAcctgPreference.InvoiceIdPrefix + newInvoiceSequence;
-                        
-                        var invoice = new Invoice
+                        // ─── Create Invoice + Invoice Items only when there is a valid party ───
+                        if (hasParty)
                         {
-                            InvoiceId = newInvoiceSequence,
-                            InvoiceTypeId = "PURCHASE_INVOICE",
-                            PartyIdFrom = partyId,
-                            PartyId = request.CompanyId,
-                            StatusId = "INVOICE_PAID",
-                            InvoiceDate = DateTime.UtcNow,
-                            CurrencyUomId = "EGP",
-                            Description = $"مستند دفع متعدد {certificate.WorkEffortId}",
-                            CreatedStamp = DateTime.UtcNow,
-                            LastUpdatedStamp = DateTime.UtcNow
-                        };
-                        _context.Invoices.Add(invoice);
+                            var newInvoiceSequence = _invoiceUtilityService.GetNextInvoiceNumber(partyAcctgPreference);
+                            invoiceId = partyAcctgPreference.InvoiceIdPrefix + newInvoiceSequence;
 
+                            var invoice = new Invoice
+                            {
+                                InvoiceId = invoiceId,
+                                InvoiceTypeId = "PURCHASE_INVOICE",
+                                PartyIdFrom = partyId,
+                                PartyId = request.CompanyId,
+                                StatusId = "INVOICE_PAID",
+                                InvoiceDate = DateTime.UtcNow,
+                                CurrencyUomId = "EGP",
+                                Description = $"مستند دفع متعدد {certificate.WorkEffortId}",
+                                CreatedStamp = DateTime.UtcNow,
+                                LastUpdatedStamp = DateTime.UtcNow
+                            };
+                            _context.Invoices.Add(invoice);
+
+                            int invoiceItemSeq = 1;
+
+                            var adjustmentTypeDescriptions = new Dictionary<string, string>
+                            {
+                                { "BASE_AMOUNT", "المبلغ الأساسي" },
+                                { "DISCOUNT", "الخصم" },
+                                { "TRANSPORTATION", "مصاريف النقل" },
+                                { "GRATUITIES", "الإكراميات" }
+                            };
+
+                            if (item.Amount != null && item.Amount != 0)
+                            {
+                                var baseAmountItem = new InvoiceItem
+                                {
+                                    InvoiceId = invoiceId,
+                                    InvoiceItemSeqId = invoiceItemSeq++.ToString("D5"),
+                                    InvoiceItemTypeId = "PINV_SPROD_ITEM",
+                                    ProductId = item.ProductId,
+                                    Quantity = 1,
+                                    Amount = Math.Abs(item.Amount.Value),
+                                    Description = $"{item.Description} - {adjustmentTypeDescriptions["BASE_AMOUNT"]}",
+                                    CreatedStamp = DateTime.UtcNow,
+                                    LastUpdatedStamp = DateTime.UtcNow
+                                };
+                                _context.InvoiceItems.Add(baseAmountItem);
+                            }
+
+                            if (item.Discount != null && item.Discount != 0)
+                            {
+                                var discountItem = new InvoiceItem
+                                {
+                                    InvoiceId = invoiceId,
+                                    InvoiceItemSeqId = invoiceItemSeq++.ToString("D5"),
+                                    InvoiceItemTypeId = "INVOICE_ITM_ADJ",
+                                    ProductId = item.ProductId,
+                                    Quantity = 1,
+                                    Amount = -Math.Abs(item.Discount.Value),
+                                    Description = $"{item.Description} - {adjustmentTypeDescriptions["DISCOUNT"]}",
+                                    CreatedStamp = DateTime.UtcNow,
+                                    LastUpdatedStamp = DateTime.UtcNow
+                                };
+                                _context.InvoiceItems.Add(discountItem);
+                            }
+
+                            if (item.TransportationExpenses != null && item.TransportationExpenses != 0)
+                            {
+                                var transportItem = new InvoiceItem
+                                {
+                                    InvoiceId = invoiceId,
+                                    InvoiceItemSeqId = invoiceItemSeq++.ToString("D5"),
+                                    InvoiceItemTypeId = "INVOICE_ITM_ADJ",
+                                    ProductId = item.ProductId,
+                                    Quantity = 1,
+                                    Amount = Math.Abs(item.TransportationExpenses.Value),
+                                    Description =
+                                        $"{item.Description} - {adjustmentTypeDescriptions["TRANSPORTATION"]}",
+                                    CreatedStamp = DateTime.UtcNow,
+                                    LastUpdatedStamp = DateTime.UtcNow
+                                };
+                                _context.InvoiceItems.Add(transportItem);
+                            }
+
+                            if (item.Gratuities != null && item.Gratuities != 0)
+                            {
+                                var gratuityItem = new InvoiceItem
+                                {
+                                    InvoiceId = invoiceId,
+                                    InvoiceItemSeqId = invoiceItemSeq++.ToString("D5"),
+                                    InvoiceItemTypeId = "INVOICE_ITM_ADJ",
+                                    ProductId = item.ProductId,
+                                    Quantity = 1,
+                                    Amount = Math.Abs(item.Gratuities.Value),
+                                    Description = $"{item.Description} - {adjustmentTypeDescriptions["GRATUITIES"]}",
+                                    CreatedStamp = DateTime.UtcNow,
+                                    LastUpdatedStamp = DateTime.UtcNow
+                                };
+                                _context.InvoiceItems.Add(gratuityItem);
+                            }
+                        }
+
+                        // ─── Always create debit entry ───
                         if (string.IsNullOrEmpty(item.GlAccountId))
                         {
                             await transaction.RollbackAsync(cancellationToken);
                             return Result<MultiPaymentCertificateDto>.Failure(
-                                "GL Account missing on certificate item " + item.WorkEffortId);
+                                $"GL Account missing on certificate item {item.WorkEffortId}");
                         }
-
 
                         var debitEntry = new AcctgTransEntry
                         {
@@ -174,7 +258,7 @@ namespace Application.Projects
                             AcctgTransEntryTypeId = "_NA_",
                             Description = item.Description,
                             GlAccountId = item.GlAccountId,
-                            PartyId = partyId,
+                            PartyId = hasParty ? partyId : null, // ← null when no party
                             OrganizationPartyId = request.CompanyId,
                             Amount = item.TotalAmount ?? 0,
                             CurrencyUomId = "EGP",
@@ -184,89 +268,8 @@ namespace Application.Projects
                             ReconcileStatusId = "AES_NOT_RECONCILED"
                         };
                         _context.AcctgTransEntries.Add(debitEntry);
+
                         entrySeq++;
-
-                        int invoiceItemSeq = 1;
-
-                        var adjustmentTypeDescriptions = new Dictionary<string, string>
-                        {
-                            { "BASE_AMOUNT", "المبلغ الأساسي" },
-                            { "DISCOUNT", "الخصم" },
-                            { "TRANSPORTATION", "مصاريف النقل" },
-                            { "GRATUITIES", "الإكراميات" }
-                        };
-
-                        if (item.Amount != null && item.Amount != 0)
-                        {
-                            var baseAmountItem = new InvoiceItem
-                            {
-                                InvoiceId = newInvoiceSequence,
-                                InvoiceItemSeqId = invoiceItemSeq.ToString("D5"),
-                                InvoiceItemTypeId = "PINV_SPROD_ITEM",
-                                ProductId = item.ProductId,
-                                Quantity = 1,
-                                Amount = Math.Abs(item.Amount.Value),
-                                Description = $"{item.Description} - {adjustmentTypeDescriptions["BASE_AMOUNT"]}",
-                                CreatedStamp = DateTime.UtcNow,
-                                LastUpdatedStamp = DateTime.UtcNow
-                            };
-                            _context.InvoiceItems.Add(baseAmountItem);
-                            invoiceItemSeq++;
-                        }
-
-                        if (item.Discount != null && item.Discount != 0)
-                        {
-                            var discountItem = new InvoiceItem
-                            {
-                                InvoiceId = newInvoiceSequence,
-                                InvoiceItemSeqId = invoiceItemSeq.ToString("D5"),
-                                InvoiceItemTypeId = "INVOICE_ITM_ADJ",
-                                ProductId = item.ProductId,
-                                Quantity = 1,
-                                Amount = -Math.Abs(item.Discount.Value),
-                                Description = $"{item.Description} - {adjustmentTypeDescriptions["DISCOUNT"]}",
-                                CreatedStamp = DateTime.UtcNow,
-                                LastUpdatedStamp = DateTime.UtcNow
-                            };
-                            _context.InvoiceItems.Add(discountItem);
-                            invoiceItemSeq++;
-                        }
-
-                        if (item.TransportationExpenses != null && item.TransportationExpenses != 0)
-                        {
-                            var transportItem = new InvoiceItem
-                            {
-                                InvoiceId = newInvoiceSequence,
-                                InvoiceItemSeqId = invoiceItemSeq.ToString("D5"),
-                                InvoiceItemTypeId = "INVOICE_ITM_ADJ",
-                                ProductId = item.ProductId,
-                                Quantity = 1,
-                                Amount = Math.Abs(item.TransportationExpenses.Value),
-                                Description = $"{item.Description} - {adjustmentTypeDescriptions["TRANSPORTATION"]}",
-                                CreatedStamp = DateTime.UtcNow,
-                                LastUpdatedStamp = DateTime.UtcNow
-                            };
-                            _context.InvoiceItems.Add(transportItem);
-                            invoiceItemSeq++;
-                        }
-
-                        if (item.Gratuities != null && item.Gratuities != 0)
-                        {
-                            var gratuityItem = new InvoiceItem
-                            {
-                                InvoiceId = newInvoiceSequence,
-                                InvoiceItemSeqId = invoiceItemSeq.ToString("D5"),
-                                InvoiceItemTypeId = "INVOICE_ITM_ADJ",
-                                ProductId = item.ProductId,
-                                Quantity = 1,
-                                Amount = Math.Abs(item.Gratuities.Value),
-                                Description = $"{item.Description} - {adjustmentTypeDescriptions["GRATUITIES"]}",
-                                CreatedStamp = DateTime.UtcNow,
-                                LastUpdatedStamp = DateTime.UtcNow
-                            };
-                            _context.InvoiceItems.Add(gratuityItem);
-                            invoiceItemSeq++;
-                        }
                     }
 
                     var acctgSaveResult = await _context.SaveChangesAsync(cancellationToken);
@@ -278,6 +281,9 @@ namespace Application.Projects
 
                     await transaction.CommitAsync(cancellationToken);
 
+                    // ──────────────────────────────────────────────────────────────
+                    // Prepare result DTO (unchanged from original)
+                    // ──────────────────────────────────────────────────────────────
                     var resultItems = new List<MultiPaymentItemDto>();
                     foreach (var item in items)
                     {

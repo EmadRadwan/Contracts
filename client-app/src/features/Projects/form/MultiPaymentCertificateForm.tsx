@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {Field, Form, FormElement, FormRenderProps} from "@progress/kendo-react-form";
-import {Box, Button, Collapse, Grid, IconButton, Menu, MenuItem, Paper, Skeleton, Typography} from "@mui/material";
+import {Field, Form, FormElement} from "@progress/kendo-react-form";
+import {Box, Button, Collapse, Grid, IconButton, Menu, MenuItem, Paper, Typography} from "@mui/material";
 import {Ribbon, RibbonContainer} from "react-ribbons";
 import useMultiPaymentCertificate from "../hook/useMultiPaymentCertificate";
 import {FormInitialValues, MultiPaymentCertificate} from "../../../app/models/project/MultiPaymentCertificate";
@@ -15,9 +15,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import FormInput from "../../../app/common/form/FormInput";
 
 import {MemoizedFormComboBox2} from "../../../app/common/form/FormComboBox2";
-import {
-    useFetchGlAccountOrgCashOrEquivalentLovQuery
-} from "../../../app/store/apis";
+import {useFetchGlAccountOrgCashOrEquivalentLovQuery} from "../../../app/store/apis";
 
 
 interface CertificateActionsMenuProps {
@@ -83,10 +81,16 @@ interface Props {
     editMode: number; // 1: add, 2: edit
     cancelEdit: () => void;
     setEditMode: (mode: number) => void;
-    setParentCertificate: (certificate: MultiPaymentCertificate | null) => void; 
+    setParentCertificate: (certificate: MultiPaymentCertificate | null) => void;
 }
 
-export default function MultiPaymentCertificateForm({selectedCertificate, editMode, cancelEdit, setEditMode, setParentCertificate}: Props) {
+export default function MultiPaymentCertificateForm({
+                                                        selectedCertificate,
+                                                        editMode,
+                                                        cancelEdit,
+                                                        setEditMode,
+                                                        setParentCertificate
+                                                    }: Props) {
     const {getTranslatedLabel} = useTranslationHelper();
     const localizationKey = "projects.multiPaymentCertificate.form";
     const [isFormCollapsed, setIsFormCollapsed] = useState(false);
@@ -112,7 +116,7 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
         updateItem,
         deleteItem,
         handleCreate,
-        handleUpdate, setItems, handleApprove,
+        handleUpdate, setItems, handleApprove, itemsVersion,
         isLoading: apiLoading,
     } = useMultiPaymentCertificate({
         selectedCertificate,
@@ -120,6 +124,11 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
         setFormKey,
         setEditMode, setParentCertificate
     });
+
+    // Whenever items change → update hidden field
+    useEffect(() => {
+        formRef.current?.onChange("_itemsVersion", { value: itemsVersion });
+    }, [itemsVersion]);
 
     const initialValues = useMemo((): FormInitialValues => {
         // REFACTOR: Use a type guard to safely access properties of source
@@ -172,7 +181,7 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
             foreColor: "#ffffff",
         };
     }, [certificate, language]);
-    
+
 
     const handleCancelForm = useCallback(() => {
         setCertificate(undefined);
@@ -230,16 +239,14 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
         }).then((result) => {
             if (result.success && result.certificate) {
                 setEditMode(3); // Per your preference for post-approval
-                setParentCertificate(result.certificate); 
+                setParentCertificate(result.certificate);
             }
         });
     }, [certificate, handleApprove, items, setEditMode, setParentCertificate]);
 
 
-
     const status = renderSwitchStatus();
-    
-    console.log('status', status);
+
 
     return (
         <>
@@ -265,7 +272,7 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
                         </Box>
                     </Grid>
                     <Grid item xs={1}>
-                        { (editMode === 2 || editMode === 3) && (
+                        {(editMode === 2 || editMode === 3) && (
                             <RibbonContainer>
                                 <Ribbon
                                     side={language === "ar" ? "left" : "right"}
@@ -278,88 +285,94 @@ export default function MultiPaymentCertificateForm({selectedCertificate, editMo
                                     {status.label}
                                 </Ribbon>
                             </RibbonContainer>
-                            
+
                         )}
                     </Grid>
                 </Grid>
                 <Collapse in={!isFormCollapsed}>
                     <Form
                         ref={formRef}
-                        initialValues={initialValues}
+                        initialValues={{...initialValues, _itemsVersion: 0}}
                         key={formKey}
                         onSubmit={handleSubmit}
-                        render={(formRenderProps: FormRenderProps) => (
-                            <FormElement>
-                                <fieldset className="k-form-fieldset">
-                                    <Grid container spacing={2}
-                                          sx={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-                                        <Field name="workEffortId" component="input" type="hidden"/>
-                                        <Grid item xs={2}>
-                                            <Field
-                                                id="date"
-                                                name="date"
-                                                label={getTranslatedLabel(`${localizationKey}.date`, "Date *")}
-                                                component={FormDatePicker}
-                                                validator={requiredValidator}
-                                            />
-                                        </Grid>
-                                        
-                                        <Grid item xs={3}>
-                                            <Field
-                                                id="glAccountId"
-                                                name="glAccountId"
-                                                label={getTranslatedLabel(`${localizationKey}.glAccount`, "Cost Center")}
-                                                component={MemoizedFormComboBox2}
-                                                data={glAccounts || []}
-                                                dataItemKey="glAccountId"
-                                                textField="accountName"
-                                                validator={requiredValidator}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={3}>
-                                            <Field
-                                                id="description"
-                                                name="description"
-                                                label={getTranslatedLabel(`${localizationKey}.description`, "Description")}
-                                                component={FormInput}
-                                            />
-                                        </Grid>
-                                        
-                                        <Grid container item spacing={2} sx={{
-                                            display: 'flex',
-                                            flexDirection: 'row',
-                                            justifyContent: 'flex-start',
-                                            mt: 2
-                                        }}>
-                                            {(editMode === 1 || (editMode === 2 && certificate?.currentStatusId !== "WEPR_APPROVED")) && (
+                        render={(formRenderProps) => (
+                            <>
+                                {/* Hidden field that Kendo watches */}
+                                <Field name="_itemsVersion" type="hidden" component="input"/>
+
+                                <FormElement>
+                                    <fieldset className="k-form-fieldset">
+                                        <Grid container spacing={2}
+                                              sx={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
+                                            <Field name="workEffortId" component="input" type="hidden"/>
+                                            <Grid item xs={2}>
+                                                <Field
+                                                    id="date"
+                                                    name="date"
+                                                    label={getTranslatedLabel(`${localizationKey}.date`, "Date *")}
+                                                    component={FormDatePicker}
+                                                    validator={requiredValidator}
+                                                />
+                                            </Grid>
+
+                                            <Grid item xs={3}>
+                                                <Field
+                                                    id="glAccountId"
+                                                    name="glAccountId"
+                                                    label={getTranslatedLabel(`${localizationKey}.glAccount`, "Cost Center")}
+                                                    component={MemoizedFormComboBox2}
+                                                    data={glAccounts || []}
+                                                    dataItemKey="glAccountId"
+                                                    textField="accountName"
+                                                    validator={requiredValidator}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={3}>
+                                                <Field
+                                                    id="description"
+                                                    name="description"
+                                                    label={getTranslatedLabel(`${localizationKey}.description`, "Description")}
+                                                    component={FormInput}
+                                                />
+                                            </Grid>
+
+                                            <Grid container item spacing={2} sx={{
+                                                display: 'flex',
+                                                flexDirection: 'row',
+                                                justifyContent: 'flex-start',
+                                                mt: 2
+                                            }}>
+                                                {(editMode === 1 || (editMode === 2 && certificate?.currentStatusId !== "WEPR_APPROVED")) && (
+                                                    <Grid item>
+                                                        <Button
+                                                            type="submit"
+                                                            variant="contained"
+                                                            disabled={!formRenderProps.valid || !formRenderProps.modified || apiLoading}
+                                                            sx={{mr: 2}}
+                                                        >
+                                                            {getTranslatedLabel(
+                                                                `${localizationKey}.${editMode === 1 ? "create" : "update"}`,
+                                                                editMode === 1 ? "Create Certificate" : "Update Certificate"
+                                                            )}
+                                                        </Button>
+                                                    </Grid>
+                                                )}
                                                 <Grid item>
                                                     <Button
-                                                        type="submit"
+                                                        onClick={handleCancelForm}
+                                                        color="error"
                                                         variant="contained"
-                                                        disabled={!formRenderProps.valid || !formRenderProps.modified || apiLoading}
-                                                        sx={{ mr: 2 }}
+                                                        disabled={apiLoading}
                                                     >
-                                                        {getTranslatedLabel(
-                                                            `${localizationKey}.${editMode === 1 ? "create" : "update"}`,
-                                                            editMode === 1 ? "Create Certificate" : "Update Certificate"
-                                                        )}
+                                                        {getTranslatedLabel("general.cancel", "Cancel")}
                                                     </Button>
                                                 </Grid>
-                                            )}
-                                            <Grid item>
-                                                <Button
-                                                    onClick={handleCancelForm}
-                                                    color="error"
-                                                    variant="contained"
-                                                    disabled={apiLoading}
-                                                >
-                                                    {getTranslatedLabel("general.cancel", "Cancel")}
-                                                </Button>
                                             </Grid>
                                         </Grid>
-                                    </Grid>
-                                </fieldset>
-                            </FormElement>
+                                    </fieldset>
+                                </FormElement>
+                                
+                            </>
                         )}
                     />
                 </Collapse>

@@ -17,7 +17,9 @@ import { setSingleParty } from '../slice/singlePartySlice';
 import { Box, Paper, Typography } from '@mui/material';
 import { phoneValidator, requiredValidator } from '../../../app/common/form/Validators';
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
-import {useFetchEmployeeQuery} from "../../../app/store/apis";
+import {useFetchEmployeeQuery, useGetEmplPositionTypesQuery} from "../../../app/store/apis";
+import {MemoizedFormComboBox2} from "../../../app/common/form/FormComboBox2";
+import FormNumericTextBox from "../../../app/common/form/FormNumericTextBox";
 
 interface Props {
     party?: Party;
@@ -32,6 +34,12 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
     const { data: employee, isFetching } = useFetchEmployeeQuery(party?.partyId, {
         skip: party?.partyId === undefined || editMode !== 2,
     });
+
+    const {
+        data: positionTypes = [],
+        isLoading: isPositionTypesLoading,
+        isError: positionTypesError,
+    } = useGetEmplPositionTypesQuery();
 
     const { getTranslatedLabel } = useTranslationHelper();
     const dispatch = useAppDispatch();
@@ -54,6 +62,8 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
             setButtonFlag(false);
         }
     }
+    
+    console.log('Position Types:', positionTypes)
 
     return (
         <Paper elevation={5} className={`div-container-withBorderCurved`} sx={{ mt: 5 }}>
@@ -84,7 +94,7 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
                     <FormElement>
                         <fieldset className={'k-form-fieldset'}>
                             <Grid container spacing={2}>
-                                <Grid item xs={6}>
+                                <Grid item xs={4}>
                                     <Field
                                         id={'firstName'}
                                         name={'firstName'}
@@ -94,7 +104,30 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
                                         validator={requiredValidator}
                                     />
                                 </Grid>
-                                <Grid item xs={6}>
+                                <Grid item xs={3}>
+                                    <Field
+                                        id="emplPositionTypeId"
+                                        name="emplPositionTypeId"
+                                        label={getTranslatedLabel("party.employees.form.emplPositionTypeId", "Employee Position")}
+                                        component={MemoizedFormComboBox2}
+                                        data={positionTypes || []}
+                                        dataItemKey="emplPositionTypeId"
+                                        textField="description"
+                                        validator={requiredValidator}
+                                    />
+                                </Grid>
+                                <Grid item xs={2}>
+                                    <Field
+                                        id="monthlyBaseSalary"
+                                        name="monthlyBaseSalary"
+                                        label="الراتب الأساسي الشهري (EGP)"
+                                        component={FormNumericTextBox}
+                                        format="n2"
+                                        min={0}
+                                        validator={requiredValidator}
+                                    />
+                                </Grid>
+                                <Grid item xs={3}>
                                     <Field
                                         id={'infoString'}
                                         name={'infoString'}
@@ -124,7 +157,7 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
                                         label={getTranslatedLabel("party.employees.form.mobile", "Mobile Phone *")}
                                         component={FormInput}
                                         autoComplete={'off'}
-                                        validator={phoneValidator}
+                                        //validator={phoneValidator}
                                     />
                                 </Grid>
                                 <Grid item xs={6}>

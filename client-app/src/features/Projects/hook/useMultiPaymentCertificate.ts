@@ -31,15 +31,13 @@ export default function useMultiPaymentCertificate({
     const [approveMultiPaymentCertificate, { isLoading: approveLoading }] = useApproveMultiPaymentCertificateMutation();
     const { user } = useAppSelector((state) => state.account);
     const companyId = user?.organizationPartyId || "";
+    const [itemsVersion, setItemsVersion] = useState(0);
 
     const { data: fetchedItems = [], isLoading: itemsLoading } = useGetMultiPaymentItemsQuery(
         certificate?.workEffortId || "",
         { skip: editMode !== 2 || !certificate?.workEffortId } // Skip query in add mode or without workEffortId
     );
     
-    console.log('fetchedItems', fetchedItems);
-    console.log('editMode', editMode)
-    console.log('items', items)
 
     useEffect(() => {
         if (editMode === 2 && fetchedItems.length > 0) {
@@ -62,6 +60,7 @@ export default function useMultiPaymentCertificate({
 
     const addItem = useCallback((item: MultiPaymentItem) => {
         setItems((prev) => [...prev, { ...item, workEffortId: item.workEffortId || `temp-${Date.now()}` }]);
+        setItemsVersion(v => v + 1);
     }, []);
 
     const updateItem = useCallback((updatedItem: MultiPaymentItem) => {
@@ -71,10 +70,12 @@ export default function useMultiPaymentCertificate({
             );
             return newItems;
         });
+        setItemsVersion(v => v + 1);
     }, []);
 
     const deleteItem = useCallback((workEffortId: string) => {
         setItems((prev) => prev.filter((item) => item.workEffortId !== workEffortId));
+        setItemsVersion(v => v + 1);
     }, []);
 
     const validateCertificate = useCallback((certificate: MultiPaymentCertificate, items: MultiPaymentItem[]) => {
@@ -215,7 +216,7 @@ export default function useMultiPaymentCertificate({
         handleCreate,
         handleUpdate,
         handleApprove,
-        setItems,
+        setItems, itemsVersion,
         isLoading: isLoading || itemsLoading || addLoading || approveLoading,
     };
 }
