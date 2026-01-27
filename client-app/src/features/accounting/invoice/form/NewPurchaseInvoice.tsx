@@ -11,6 +11,9 @@ import {
 import {requiredValidator} from "../../../../app/common/form/Validators";
 import useInvoice from "../hook/useInvoice";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
+import FormDatePicker from "../../../../app/common/form/FormDatePicker";
+import FormInput from "../../../../app/common/form/FormInput";
+import FormTextArea from "../../../../app/common/form/FormTextArea";
 
 interface Props {
     onClose: () => void;
@@ -19,16 +22,13 @@ interface Props {
 const NewPurchaseInvoice = ({ onClose }: Props) => {
     const formRef = useRef<Form | null>(null);
     const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = "accounting.invoices.form";
+    const localizationKey = "accounting.invoices.display.form";
     const { data: invoiceTypes } = useFetchInvoiceTypesQuery(undefined);
     const { data: companies } = useFetchCompaniesQuery(undefined);
     const [isLoading, setIsLoading] = useState(false);
 
 
-    const { handleCreate } = useInvoice({
-        editMode: 0, // New invoice, not editing
-        setIsLoading
-    });
+    const { handleCreate } = useInvoice(null);
 
     const purchaseInvoiceTypes = invoiceTypes?.filter(
         (type: any) => type.invoiceTypeId === "PURCHASE_INVOICE" || type.parentTypeId === "PURCHASE_INVOICE"
@@ -74,12 +74,12 @@ const NewPurchaseInvoice = ({ onClose }: Props) => {
                 ref={formRef}
                 render={(formRenderProps) => (
                     <FormElement>
-                        <Grid container spacing={2} flexDirection="column">
-                            <Grid item xs={4}>
+                        <Grid container spacing={2}>
+                            <Grid item xs={12} sm={6}>
                                 <Field
                                     name="invoiceTypeId"
                                     id="invoiceTypeId"
-                                    label={getTranslatedLabel(`${localizationKey}.invoiceType`, "Invoice Type")}
+                                    label={getTranslatedLabel(`${localizationKey}.invoice-type`, "Invoice Type")}
                                     component={MemoizedFormDropDownList}
                                     data={purchaseInvoiceTypes}
                                     dataItemKey="invoiceTypeId"
@@ -88,7 +88,7 @@ const NewPurchaseInvoice = ({ onClose }: Props) => {
                                     validator={requiredValidator}
                                 />
                             </Grid>
-                            <Grid item xs={4}>
+                            <Grid item xs={12} sm={6}>
                                 <Field
                                     name="organizationPartyId"
                                     id="organizationPartyId"
@@ -100,13 +100,43 @@ const NewPurchaseInvoice = ({ onClose }: Props) => {
                                     validator={requiredValidator}
                                 />
                             </Grid>
-                            <Grid item xs={4}>
+                            <Grid item xs={12} sm={6}>
                                 <Field
                                     name="partyIdFrom"
                                     id="partyIdFrom"
-                                    label={getTranslatedLabel(`${localizationKey}.partyIdFrom`, "From Party ID")}
+                                    label={getTranslatedLabel(`${localizationKey}.from-party`, "From Party ID")}
                                     component={FormComboBoxVirtualParty}
                                     validator={requiredValidator}
+                                />
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <Field
+                                    id="invoiceDate"
+                                    name="invoiceDate"
+                                    label={getTranslatedLabel(`${localizationKey}.invoice-date`, "Invoice Date")}
+                                    component={FormDatePicker}
+                                    format="dd MMM yyyy"
+                                    validator={requiredValidator}
+                                />
+                            </Grid>
+
+                            <Grid item xs={12} sm={6}>
+                                <Field
+                                    id="referenceNumber"
+                                    name="referenceNumber"
+                                    label={getTranslatedLabel(`${localizationKey}.referenceNumber`, "Reference / Invoice No")}
+                                    component={FormInput}
+                                />
+                            </Grid>
+
+                            <Grid item xs={12}>
+                                <Field
+                                    id="description"
+                                    name="description"
+                                    label={getTranslatedLabel(`${localizationKey}.description`, "Description / Notes")}
+                                    component={FormTextArea}   // ← you need to implement or import this
+                                    multiline
+                                    rows={3}
                                 />
                             </Grid>
                             <Field name="statusId" component="input" type="hidden" value="INVOICE_IN_PROCESS" />

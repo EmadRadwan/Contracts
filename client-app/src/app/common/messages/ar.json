@@ -1367,12 +1367,17 @@
       },
       "display": {
         "form": {
+          "newSalesInvoice": "فاتورة مبيعات جديدة",
+          "newPurchaseInvoice": "فاتورة شراء جديدة",
           "invoice-no": "رقم الفاتورة:",
           "invoice-type": "نوع الفاتورة:",
           "from-party": "من الطرف:",
           "invoice-date": "تاريخ الفاتورة:",
           "total": "الإجمالي:",
           "remaining-amount": "المبلغ المتبقي:",
+          "referenceNumber": "رقم الفاتورة المرجعي:",
+          "description": "الملاحظات:",
+          "organizationPartyId": "الشركة:",
           "billing-account": "حساب الفواتير:",
           "invoice-status": "الحالة:",
           "to-party": "إلى الطرف:",

@@ -12,6 +12,7 @@ namespace Application.Accounting.Invoices
         public string Status { get; set; }
         public string StatusDescription { get; set; }
         public string Description { get; set; }
+        public string ReferenceNumber { get; set; }
         public DateTime? DueDate { get; set; }
         public DateTime? PaidDate { get; set; }
         public InvoicePartyDto4 PartyId { get; set; }

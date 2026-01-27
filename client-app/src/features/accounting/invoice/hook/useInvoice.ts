@@ -10,10 +10,10 @@ import { useNavigate } from "react-router";
 import { setSelectedInvoice } from "../../slice/accountingSharedUiSlice";
 
 type UseInvoiceProps = {
-  invoiceId?: string;
+  invoiceId?: string | null;
 };
 
-const useInvoice = (invoiceId: UseInvoiceProps) => {
+const useInvoice = ( invoiceId: UseInvoiceProps) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -93,8 +93,9 @@ const useInvoice = (invoiceId: UseInvoiceProps) => {
       partyIdFrom,
       statusId: "INVOICE_IN_PROCESS",
       currencyUomId: values.currencyUomId || "EGP",
-      invoiceDate: new Date().toISOString(),
-      createdStamp: new Date().toISOString(),
+      invoiceDate: values.invoiceDate,
+      referenceNumber: values.referenceNumber,
+      description: values.description,
     };
 
     try {

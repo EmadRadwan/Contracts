@@ -711,6 +711,16 @@ public class SeedContracts
 
         if (!context.Facilities.Any() && !context.WorkEfforts.Any())
         {
+            var stamp = DateTime.UtcNow;
+
+            var dummyWorkEffort = new WorkEffort
+            {
+                WorkEffortId = "_NA_",
+                CreatedDate = stamp,
+                LastUpdatedStamp = stamp,
+            };
+            context.WorkEfforts.Add(dummyWorkEffort);
+            
             var projectNames = new List<string>
             {
                 "قرية السدة 2 فدان",
@@ -750,7 +760,6 @@ public class SeedContracts
                 { "بيت الوطن لادريس التجمع", "124421" }
             };
 
-            var stamp = DateTime.UtcNow;
             var counter = 100;
 
             foreach (var projectName in projectNames)

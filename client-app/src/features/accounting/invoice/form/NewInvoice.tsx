@@ -7,7 +7,7 @@ import NewPurchaseInvoice from "./NewPurchaseInvoice";
 
 const NewInvoice = () => {
     const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = "accounting.invoices.form";
+    const localizationKey = "accounting.invoices.display.form";
 
     return (
         <>
@@ -17,7 +17,7 @@ const NewInvoice = () => {
                     <Paper elevation={5} className="div-container-withBorderCurved">
                         <Typography variant="h4" sx={{ p: 2, color: "green" }}>
                             {getTranslatedLabel(
-                                `${localizationKey}.sales`,
+                                `${localizationKey}.newSalesInvoice`,
                                 "New Sales Invoice"
                             )}
                         </Typography>
@@ -28,7 +28,7 @@ const NewInvoice = () => {
                     <Paper elevation={5} className="div-container-withBorderCurved">
                         <Typography variant="h4" sx={{ p: 2, color: "green" }}>
                             {getTranslatedLabel(
-                                `${localizationKey}.purchase`,
+                                `${localizationKey}.newPurchaseInvoice`,
                                 "New Purchase Invoice"
                             )}
                         </Typography>

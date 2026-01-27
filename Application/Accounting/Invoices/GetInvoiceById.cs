@@ -43,7 +43,9 @@ namespace Application.Accounting.Invoices
                         Status = inv.StatusId,
                         StatusDescription = request.Language == "ar" ? sts.DescriptionArabic : sts.Description,
                         Description = inv.Description,
+                        ReferenceNumber = inv.ReferenceNumber,
                         DueDate = inv.DueDate,
+                        
                         PaidDate = inv.PaidDate,
                         PartyId = new InvoicePartyDto4
                         {

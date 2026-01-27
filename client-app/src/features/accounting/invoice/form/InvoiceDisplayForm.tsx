@@ -453,6 +453,14 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                                         : "N/A"}
                                 </strong>
                             </Typography>
+                            <Typography variant="h6" sx={{ pl: 2, mt: 1 }}>
+                                {getTranslatedLabel(`${localizationKey}.referenceNumber`, "Ref. No:")}{" "}
+                                <strong style={{ color: "#c62828" }}>
+                                    {invoice?.referenceNumber || "—"}
+                                </strong>
+                            </Typography>
+
+                            
                             <Typography variant="h6" sx={{ pl: 2 }}>
                                 {getTranslatedLabel(`${localizationKey}.total`, "Total:")}{" "}
                                 <span style={{ fontWeight: "bold", color: "red", marginLeft: "10px" }}>
@@ -514,6 +522,24 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                                 {getTranslatedLabel(`${localizationKey}.to-party`, "Party To:")}{" "}
                                 <strong>{invoice?.toPartyName || "N/A"}</strong>
                             </Typography>
+                            <Typography
+                                variant="h6"
+                                sx={{
+                                    pl: 2,
+                                    mt: 0.5,
+                                    maxHeight: 120,
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    display: "-webkit-box",
+                                    WebkitLineClamp: 3,
+                                    WebkitBoxOrient: "vertical",
+                                }}
+                            >
+                                {getTranslatedLabel(`${localizationKey}.description`, "Description:")}{" "}
+                                <span style={{ whiteSpace: "pre-wrap" }}>
+        {invoice?.description || "—"}
+    </span>
+                            </Typography>
                             {/*<Typography variant="h6">
                                 {getTranslatedLabel(`${localizationKey}.due-date`, "Due Date:")}{" "}
                                 <strong>
@@ -571,12 +597,7 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                                 </Button>
                             )}
                         </Grid>
-
-                        <Grid item xs={2}>
-                            <Button variant="contained" color="error" onClick={handleBackClick}>
-                                {getTranslatedLabel(`${localizationKey}.back`, "Back")}
-                            </Button>
-                        </Grid>
+                        
 
                     </Grid>
 
