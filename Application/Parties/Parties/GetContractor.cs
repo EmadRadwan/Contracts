@@ -87,6 +87,17 @@ public class GetContractor
                     join cmEmail in _context.ContactMeches
                         on pcmEmail.ContactMechId equals cmEmail.ContactMechId into cmEmailGroup
                     from cmEmail in cmEmailGroup.DefaultIfEmpty()
+                    join pgaAp in _context.PartyGlAccounts
+                        on new { Org = "Company", P = prty.PartyId, R = "BILL_FROM_VENDOR", T = "ACCOUNTS_PAYABLE" }
+                        equals new
+                        {
+                            Org = pgaAp.OrganizationPartyId, P = pgaAp.PartyId, R = pgaAp.RoleTypeId,
+                            T = pgaAp.GlAccountTypeId
+                        }
+                        into pgaApGroup
+                    from pgaAp in pgaApGroup.DefaultIfEmpty()
+                    join glaAp in _context.GlAccounts on pgaAp.GlAccountId equals glaAp.GlAccountId into glaApGroup
+                    from glaAp in glaApGroup.DefaultIfEmpty()
                     select new PartyDto
                     {
                         PartyId = prty.PartyId,
@@ -113,7 +124,12 @@ public class GetContractor
                         GeoName = addrPurpose != null ? geo.GeoName : null,
 
                         // === EMAIL ===
-                        InfoString = emailPurpose != null ? cmEmail.InfoString : null
+                        InfoString = emailPurpose != null ? cmEmail.InfoString : null,
+                        ApGlAccountId = pgaAp != null ? pgaAp.GlAccountId : null,
+                        ApGlAccountName = glaAp != null ? glaAp.AccountName : null,
+                        ApGlAccountNameArabic = glaAp != null ? glaAp.AccountNameArabic : null,
+                        ApGlAccountDescription = glaAp != null ? glaAp.Description : null,
+                        ApGlAccountCreatedStamp = glaAp != null ? (DateTime?)glaAp.CreatedStamp : null,
                     })
                 .FirstOrDefaultAsync(cancellationToken);
 

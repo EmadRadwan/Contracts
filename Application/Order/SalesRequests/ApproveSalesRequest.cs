@@ -35,6 +35,25 @@ public class ApproveSalesRequest
             _acctgTransService = acctgTransService;
         }
 
+        private async Task<string> GetReceivableGlAccountId(
+            string organizationPartyId,
+            string customerPartyId,
+            CancellationToken ct)
+        {
+            // Try to find party-specific override
+            var partyGlAccount = await _context.PartyGlAccounts
+                .Where(pga =>
+                    pga.OrganizationPartyId == organizationPartyId &&
+                    pga.PartyId == customerPartyId &&
+                    pga.RoleTypeId == "BILL_TO_CUSTOMER" && // most common for sales
+                    pga.GlAccountTypeId == "ACCOUNTS_RECEIVABLE")
+                .Select(pga => pga.GlAccountId)
+                .FirstOrDefaultAsync(ct);
+
+            // Fall back to default parent AR account
+            return partyGlAccount ?? "121100";
+        }
+
         public async Task<Result<CreateSalesRequest.SalesRequestResponseDto>> Handle(Command request,
             CancellationToken ct)
         {
@@ -65,11 +84,11 @@ public class ApproveSalesRequest
                 // 2. Update status
                 sr.StatusId = "SALES_REQUEST_APPROVED";
                 sr.LastUpdatedStamp = DateTime.UtcNow;
-                
+
                 // get Apartment record from Product table
                 var product = await _context.Products
                     .FirstOrDefaultAsync(p => p.ProductId == sr.ProductId, ct);
-                
+
                 // mark apartment as sold
                 if (product != null)
                 {
@@ -127,7 +146,7 @@ public class ApproveSalesRequest
                             "Failed to create one or more payments");
                     }
                 }
-                
+
                 if (sr.MaintenanceDeposit > 0)
                 {
                     var maintenanceDueDate = (sr.SaleDate ?? DateTime.UtcNow.Date).AddYears(2);
@@ -140,7 +159,8 @@ public class ApproveSalesRequest
                         EffectiveDate = maintenanceDueDate,
                         PaymentTypeId = "RECEIPT_MAINTENANCE_AMOUNT",
                         StatusId = "PMNT_NOT_PAID",
-                        Comments = $"Maintenance deposit - Due {maintenanceDueDate:yyyy-MM-dd} - SR {sr.SalesRequestId}",
+                        Comments =
+                            $"Maintenance deposit - Due {maintenanceDueDate:yyyy-MM-dd} - SR {sr.SalesRequestId}",
                         SalesRequestId = sr.SalesRequestId,
                         PaymentMethodId = null,
                         PaymentMethodTypeId = null
@@ -159,11 +179,15 @@ public class ApproveSalesRequest
                                 ?? new CreateSalesRequest.ApartmentLovProjection
                                     { ApartmentId = sr.ProductId!, ApartmentName = "Unknown Apartment" };
 
+
                 // 6. Create single accounting transaction for the full apartment sale amount
                 // Following your exact OFBiz-style pattern (no balance check, manual seq, etc.)
 
-                // Reuse the same service you already inject/instantiate elsewhere
-                // Assuming you have IAcctgTransService available — if not, add it to ctor
+                var receivableGlAccountId = await GetReceivableGlAccountId(
+                    companyPartyId,
+                    sr.FromPartyId!,
+                    ct);
+
                 var acctgTransParams = new CreateAcctgTransParams
                 {
                     AcctgTransTypeId = "APARTMENT_SALE_INSTALLMENTS", // or "APARTMENT_SALE" if you add it later
@@ -185,7 +209,7 @@ public class ApproveSalesRequest
                 {
                     AcctgTransId = acctgTransId,
                     AcctgTransEntrySeqId = (++seq).ToString().PadLeft(3, '0'), // "001"
-                    GlAccountId = "121100", // AR - Customers
+                    GlAccountId = receivableGlAccountId,
                     DebitCreditFlag = "D",
                     AcctgTransEntryTypeId = "_NA_",
                     Amount = totalPrice,
@@ -204,7 +228,7 @@ public class ApproveSalesRequest
                 {
                     AcctgTransId = acctgTransId,
                     AcctgTransEntrySeqId = (++seq).ToString().PadLeft(3, '0'), // "002"
-                    GlAccountId = "250120", 
+                    GlAccountId = "250120",
                     DebitCreditFlag = "C",
                     AcctgTransEntryTypeId = "_NA_",
                     Amount = totalPrice,
@@ -240,7 +264,7 @@ public class ApproveSalesRequest
                     {
                         AcctgTransId = acctgTransId,
                         AcctgTransEntrySeqId = (++seq).ToString().PadLeft(3, '0'), // "001"
-                        GlAccountId = "124410", 
+                        GlAccountId = "124410",
                         DebitCreditFlag = "D",
                         AcctgTransEntryTypeId = "_NA_",
                         Amount = totalPrice,
@@ -259,7 +283,7 @@ public class ApproveSalesRequest
                     {
                         AcctgTransId = acctgTransId,
                         AcctgTransEntrySeqId = (++seq).ToString().PadLeft(3, '0'), // "002"
-                        GlAccountId = "121100", 
+                        GlAccountId = receivableGlAccountId,
                         DebitCreditFlag = "C",
                         AcctgTransEntryTypeId = "_NA_",
                         Amount = totalPrice,

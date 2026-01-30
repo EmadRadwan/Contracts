@@ -8,6 +8,24 @@ public class PartyDto
     public string? GroupName { get; set; }
     public string? MainRole { get; set; }
     public string? PartyTypeId { get; set; }
+    public string? CreatedGlAccountId { get; set; }
+    public string? CreatedGlAccountName { get; set; }
+    public string? CreatedGlAccountArabicName { get; set; }
+    public string? GlAccountType { get; set; }
+    public string? ParentGlAccountId { get; set; }
+    public string? ArGlAccountId { get; set; }
+    public string? ArGlAccountName { get; set; }
+    public string? ArGlAccountNameArabic { get; set; }
+    public string? ArGlAccountDescription { get; set; }
+    public DateTime? ArGlAccountCreatedStamp { get; set; }
+    public string? ApGlAccountId { get; set; }
+    public string? ApGlAccountName { get; set; }
+    public string? ApGlAccountNameArabic { get; set; }
+    public string? ApGlAccountDescription { get; set; }
+    public DateTime? ApGlAccountCreatedStamp { get; set; }
+    public string? CreatedApGlAccountId { get; set; }
+    public string? CreatedApGlAccountName { get; set; }
+    public string? CreatedApGlAccountArabicName { get; set; }
     public string? PartyTypeDescription { get; set; }
     public string? CreatedByUserName { get; set; }
     public string? StatusDescription { get; set; }
@@ -28,6 +46,13 @@ public class PartyDto
     public string? City { get; set; }
     public string? GeoId { get; set; }
     public string? GeoName { get; set; }
+    public string? LoanGlAccountId { get; set; }
+    public string? LoanGlAccountName { get; set; }
+    public string? LoanGlAccountNameArabic { get; set; }
+
+    public string? AccruedGlAccountId { get; set; }
+    public string? AccruedGlAccountName { get; set; }
+    public string? AccruedGlAccountNameArabic { get; set; }
     public string? ContactType { get; set; }
     public DateTime? LastUpdatedStamp { get; set; }
 }

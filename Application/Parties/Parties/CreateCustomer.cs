@@ -14,7 +14,7 @@ public class CreateCustomer
     {
         public PartyDto2 PartyDto { get; set; }
     }
-    
+
 
     public class Handler : IRequestHandler<Command, Result<PartyDto2>>
     {
@@ -55,7 +55,10 @@ public class CreateCustomer
             // REFACTOR: Fetch all required customer role types to match the target party's roles
             // Purpose: Ensure the new party is assigned all roles (BILL_TO_CUSTOMER, CONTACT, CUSTOMER, END_USER_CUSTOMER, PLACING_CUSTOMER, SHIP_TO_CUSTOMER)
             // Improvement: Centralizes role fetching for efficiency and ensures all roles are available
-            var roleTypeIds = new[] { "BILL_TO_CUSTOMER", "CONTACT", "CUSTOMER", "END_USER_CUSTOMER", "PLACING_CUSTOMER", "SHIP_TO_CUSTOMER" };
+            var roleTypeIds = new[]
+            {
+                "BILL_TO_CUSTOMER", "CONTACT", "CUSTOMER", "END_USER_CUSTOMER", "PLACING_CUSTOMER", "SHIP_TO_CUSTOMER"
+            };
             var roleTypes = await _context.RoleTypes
                 .Where(x => roleTypeIds.Contains(x.RoleTypeId))
                 .ToListAsync(cancellationToken);
@@ -66,7 +69,8 @@ public class CreateCustomer
             if (roleTypes.Count != roleTypeIds.Length)
             {
                 transaction.Rollback();
-                return Result<PartyDto2>.Failure("One or more required customer role types are missing in the database.");
+                return Result<PartyDto2>.Failure(
+                    "One or more required customer role types are missing in the database.");
             }
 
             var roleTypeCustomer = roleTypes.SingleOrDefault(x => x.RoleTypeId == "CUSTOMER");
@@ -158,7 +162,8 @@ public class CreateCustomer
                 // REFACTOR: Use the CUSTOMER role's PartyRole for contact mechanisms
                 // Purpose: Ensure contact mechanisms are associated with the CUSTOMER role, consistent with the original logic
                 // Improvement: Maintains consistency with the primary role while supporting multiple role assignments
-                var partyRoleCustomer = _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeCustomer);
+                var partyRoleCustomer =
+                    _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeCustomer);
                 var partyContactMech = new PartyContactMech
                 {
                     FromDate = stamp,
@@ -199,7 +204,8 @@ public class CreateCustomer
                 // REFACTOR: Use the CUSTOMER role's PartyRole for contact mechanisms
                 // Purpose: Ensure email contact mechanism is associated with the CUSTOMER role
                 // Improvement: Consistent role usage across contact mechanisms
-                var partyRoleCustomer = _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeCustomer);
+                var partyRoleCustomer =
+                    _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeCustomer);
                 var partyContactMech = new PartyContactMech
                 {
                     FromDate = stamp,
@@ -239,7 +245,8 @@ public class CreateCustomer
                 // REFACTOR: Use the CUSTOMER role's PartyRole for contact mechanisms
                 // Purpose: Ensure address contact mechanism is associated with the CUSTOMER role
                 // Improvement: Maintains consistency with the primary role for contact mechanisms
-                var partyRoleCustomer = _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeCustomer);
+                var partyRoleCustomer =
+                    _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeCustomer);
                 var partyContactMech = new PartyContactMech
                 {
                     FromDate = stamp,
@@ -285,15 +292,100 @@ public class CreateCustomer
                 _context.PostalAddresses.Add(postalAddress);
             }
 
+            // === Automatic creation of per-customer AR sub-account ===
+
+            // 1. Generate unique GL Account ID
+            const string prefix = "12";
+            const int digits = 4; // controls zero-padding: D4 → 0001, D6 → 000001, etc.
+            const int maxAttempts = 900; // adjust higher if you expect many collisions
+            int suffix = 1;
+            string newGlAccountId = null;
+
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                string candidate = $"{prefix}{suffix.ToString().PadLeft(digits, '0')}";
+
+                bool exists = await _context.GlAccounts
+                    .AnyAsync(a => a.GlAccountId == candidate, cancellationToken);
+
+                if (!exists)
+                {
+                    newGlAccountId = candidate;
+                    break;
+                }
+
+                suffix++;
+            }
+
+            if (newGlAccountId == null)
+            {
+                transaction.Rollback();
+                return Result<PartyDto2>.Failure(
+                    $"Failed to generate unique GL account ID under {prefix} after {maxAttempts} attempts."
+                );
+            }
+
+            // 2. Create GlAccount
+            var newGlAccount = new GlAccount
+            {
+                GlAccountId = newGlAccountId,
+                GlAccountTypeId = "ACCOUNTS_RECEIVABLE",
+                GlAccountClassId = "CURRENT_ASSET",
+                GlResourceTypeId = "MONEY",
+                GlXbrlClassId = null,
+                ParentGlAccountId = "121100", // or "121100" — your choice
+                AccountCode = newGlAccountId,
+                AccountName = $"AR - {request.PartyDto.FirstName} ({newPartyId})",
+                AccountNameArabic = $"مدينون - {request.PartyDto.FirstName}",
+                Description = $"Accounts Receivable sub-ledger for customer {newPartyId}",
+                ProductId = null,
+                ExternalId = null,
+                CreatedStamp = stamp,
+                CreatedTxStamp = stamp,
+                LastUpdatedStamp = stamp,
+                LastUpdatedTxStamp = stamp
+            };
+            _context.GlAccounts.Add(newGlAccount);
+
+            // 3. Attach to organization
+            var glOrg = new GlAccountOrganization
+            {
+                GlAccountId = newGlAccountId,
+                OrganizationPartyId = "Company",
+                RoleTypeId = null,
+                FromDate = stamp, // or new DateTime(2001, 1, 1)
+                ThruDate = null,
+                CreatedStamp = stamp,
+                CreatedTxStamp = stamp,
+                LastUpdatedStamp = stamp,
+                LastUpdatedTxStamp = stamp
+            };
+            _context.GlAccountOrganizations.Add(glOrg);
+
+                // 4. Link in PartyGlAccount
+            var partyGl = new PartyGlAccount
+            {
+                OrganizationPartyId = "Company",
+                PartyId = newPartyId,
+                RoleTypeId = "BILL_TO_CUSTOMER",
+                GlAccountTypeId = "ACCOUNTS_RECEIVABLE",
+                GlAccountId = newGlAccountId,
+                CreatedStamp = stamp,
+                CreatedTxStamp = stamp,
+                LastUpdatedStamp = stamp,
+                LastUpdatedTxStamp = stamp
+            };
+            _context.PartyGlAccounts.Add(partyGl);
+
             var result = await _context.SaveChangesAsync(cancellationToken) > 0;
 
             if (!result)
             {
-                transaction.Rollback();
+                await transaction.RollbackAsync(cancellationToken);
                 return Result<PartyDto2>.Failure("Failed to create Customer");
             }
 
-            transaction.Commit();
+            await transaction.CommitAsync(cancellationToken);
 
             var partyToReturn = new PartyDto2
             {
@@ -304,7 +396,12 @@ public class CreateCustomer
                 {
                     FromPartyId = party.PartyId,
                     FromPartyName = party.Description
-                }
+                },
+                CreatedGlAccountId = newGlAccountId,                    // from the generation logic
+                CreatedGlAccountName = $"AR - {request.PartyDto.FirstName} ({newPartyId})",
+                CreatedGlAccountArabicName = $"مدينون - {request.PartyDto.FirstName}",
+                GlAccountType = "ACCOUNTS_RECEIVABLE",
+                ParentGlAccountId = "121100"
             };
             return Result<PartyDto2>.Success(partyToReturn);
         }

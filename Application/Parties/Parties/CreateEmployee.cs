@@ -331,6 +331,145 @@ public class CreateEmployee
                 _context.RateAmounts.Add(rate);
             }
 
+            // ────────────────────────────────────────────────────────────────
+            // CREATE TWO GL ACCOUNTS
+            // ────────────────────────────────────────────────────────────────
+
+            var glAccountsCreated =
+                new List<(string GlAccountId, string Type, string Name, string ArabicName, string Parent)>();
+
+            // Helper to generate unique ID
+            async Task<string?> GenerateUniqueGlId(string prefix, int digits = 4, int maxAttempts = 900)
+            {
+                int suffix = 1;
+                for (int i = 0; i < maxAttempts; i++)
+                {
+                    var candidate = $"{prefix}{suffix.ToString().PadLeft(digits, '0')}";
+                    if (!await _context.GlAccounts.AnyAsync(a => a.GlAccountId == candidate, cancellationToken))
+                        return candidate;
+                    suffix++;
+                }
+
+                return null;
+            }
+
+            // 1. Loans Receivable - Employees (Asset)
+            var loanPrefix = "12";
+            var loanId = await GenerateUniqueGlId(loanPrefix, 4);
+            if (loanId == null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return Result<PartyDto2>.Failure("Could not generate unique Loan Receivable GL ID.");
+            }
+
+            var loanAccount = new GlAccount
+            {
+                GlAccountId = loanId,
+                GlAccountTypeId = "ACCOUNTS_RECEIVABLE",
+                GlAccountClassId = "CURRENT_ASSET",
+                GlResourceTypeId = "MONEY",
+                ParentGlAccountId = "124100",
+                AccountCode = loanId,
+                AccountName = $"Loans Receivable - {request.PartyDto.FirstName} ({newPartyId})",
+                AccountNameArabic = $"ذمم الموظفين - {request.PartyDto.FirstName}",
+                Description = $"Employee loans receivable sub-ledger",
+                CreatedStamp = stamp,
+                CreatedTxStamp = stamp,
+                LastUpdatedStamp = stamp,
+                LastUpdatedTxStamp = stamp
+            };
+            _context.GlAccounts.Add(loanAccount);
+
+            var loanOrg = new GlAccountOrganization
+            {
+                GlAccountId = loanId,
+                OrganizationPartyId = "Company",
+                RoleTypeId = null,
+                FromDate = stamp,
+                ThruDate = null,
+                CreatedStamp = stamp,
+                CreatedTxStamp = stamp,
+                LastUpdatedStamp = stamp,
+                LastUpdatedTxStamp = stamp
+            };
+            _context.GlAccountOrganizations.Add(loanOrg);
+
+            var loanPartyGl = new PartyGlAccount
+            {
+                OrganizationPartyId = "Company",
+                PartyId = newPartyId,
+                RoleTypeId = "EMPLOYEE",
+                GlAccountTypeId = "ACCOUNTS_RECEIVABLE",
+                GlAccountId = loanId,
+                CreatedStamp = stamp,
+                CreatedTxStamp = stamp,
+                LastUpdatedStamp = stamp,
+                LastUpdatedTxStamp = stamp
+            };
+            _context.PartyGlAccounts.Add(loanPartyGl);
+
+            glAccountsCreated.Add((loanId, "Loans Receivable", loanAccount.AccountName, loanAccount.AccountNameArabic,
+                "124100"));
+
+            // 2. Accrued Expenses - Employees (Liability)
+            var accruedPrefix = "22";
+            var accruedId = await GenerateUniqueGlId(accruedPrefix);
+            if (accruedId == null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return Result<PartyDto2>.Failure("Could not generate unique Accrued Expenses GL ID.");
+            }
+
+            var accruedAccount = new GlAccount
+            {
+                GlAccountId = accruedId,
+                GlAccountTypeId = "ACCOUNTS_PAYABLE",
+                GlAccountClassId = "CURRENT_LIABILITY",
+                GlResourceTypeId = "MONEY",
+                ParentGlAccountId = "220000",
+                AccountCode = accruedId,
+                AccountName = $"Accrued Salaries - {request.PartyDto.FirstName} ({newPartyId})",
+                AccountNameArabic = $"مستحقات رواتب - {request.PartyDto.FirstName}",
+                Description = $"Employee accrued expenses / salaries payable",
+                CreatedStamp = stamp,
+                CreatedTxStamp = stamp,
+                LastUpdatedStamp = stamp,
+                LastUpdatedTxStamp = stamp
+            };
+            _context.GlAccounts.Add(accruedAccount);
+
+            var accruedOrg = new GlAccountOrganization
+            {
+                GlAccountId = accruedId,
+                OrganizationPartyId = "Company",
+                RoleTypeId = null,
+                FromDate = stamp,
+                ThruDate = null,
+                CreatedStamp = stamp,
+                CreatedTxStamp = stamp,
+                LastUpdatedStamp = stamp,
+                LastUpdatedTxStamp = stamp
+            };
+            _context.GlAccountOrganizations.Add(accruedOrg);
+
+            var accruedPartyGl = new PartyGlAccount
+            {
+                OrganizationPartyId = "Company",
+                PartyId = newPartyId,
+                RoleTypeId = "EMPLOYEE",
+                GlAccountTypeId = "ACCOUNTS_PAYABLE",
+                GlAccountId = accruedId,
+                CreatedStamp = stamp,
+                CreatedTxStamp = stamp,
+                LastUpdatedStamp = stamp,
+                LastUpdatedTxStamp = stamp
+            };
+            _context.PartyGlAccounts.Add(accruedPartyGl);
+
+            glAccountsCreated.Add((accruedId, "Accrued Expenses", accruedAccount.AccountName,
+                accruedAccount.AccountNameArabic, "220000"));
+
+
             var result = await _context.SaveChangesAsync(cancellationToken) > 0;
 
             if (!result)
@@ -350,7 +489,13 @@ public class CreateEmployee
                 {
                     FromPartyId = party.PartyId,
                     FromPartyName = party.Description
-                }
+                },
+                CreatedLoanGlAccountId = loanId,
+                CreatedAccruedGlAccountId = accruedId,
+                CreatedLoanGlAccountName = $"AP - {request.PartyDto.GroupName} ({newPartyId})",
+                CreatedLoanGlAccountArabicName = $"ذمم الموظفين - {request.PartyDto.FirstName}",
+                CreatedAccruedGlAccountName = $"AP - {request.PartyDto.GroupName} ({newPartyId})",
+                CreatedAccruedGlAccountArabicName = $"مستحقات رواتب - {request.PartyDto.FirstName}",
             };
 
             return Result<PartyDto2>.Success(partyToReturn);

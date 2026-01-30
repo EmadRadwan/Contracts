@@ -6,7 +6,7 @@ using Persistence;
 
 namespace Application.Parties.Parties;
 
-public class PartiesList
+public class ListParties
 {
     public class Query : IRequest<IQueryable<PartyRecord>>
     {

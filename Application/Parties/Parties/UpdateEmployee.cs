@@ -47,12 +47,13 @@ public class UpdateEmployee
 
             // Update mobile phone
             var telcomNumber = from prty in _context.Parties
-                               join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
-                               join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
-                               join tn in _context.TelecomNumbers on cm.ContactMechId equals tn.ContactMechId
-                               join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals new { pcmp.PartyId, pcmp.ContactMechId }
-                               where prty.PartyId == request.PartyDto.PartyId && pcmp.ContactMechPurposeTypeId == "PRIMARY_PHONE"
-                               select tn;
+                join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
+                join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
+                join tn in _context.TelecomNumbers on cm.ContactMechId equals tn.ContactMechId
+                join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals new
+                    { pcmp.PartyId, pcmp.ContactMechId }
+                where prty.PartyId == request.PartyDto.PartyId && pcmp.ContactMechPurposeTypeId == "PRIMARY_PHONE"
+                select tn;
 
             var primaryTelcomNumber = telcomNumber.SingleOrDefault();
             if (primaryTelcomNumber != null)
@@ -62,11 +63,12 @@ public class UpdateEmployee
 
             // Update email
             var currentContactMech = from prty in _context.Parties
-                                     join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
-                                     join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
-                                     join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals new { pcmp.PartyId, pcmp.ContactMechId }
-                                     where prty.PartyId == request.PartyDto.PartyId && pcmp.ContactMechPurposeTypeId == "PRIMARY_EMAIL"
-                                     select cm;
+                join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
+                join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
+                join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals new
+                    { pcmp.PartyId, pcmp.ContactMechId }
+                where prty.PartyId == request.PartyDto.PartyId && pcmp.ContactMechPurposeTypeId == "PRIMARY_EMAIL"
+                select cm;
 
             var primaryEmail = currentContactMech.SingleOrDefault();
             if (primaryEmail != null)
@@ -76,12 +78,13 @@ public class UpdateEmployee
 
             // Update address
             var currentPostalAddress = from prty in _context.Parties
-                                       join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
-                                       join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
-                                       join pa in _context.PostalAddresses on cm.ContactMechId equals pa.ContactMechId
-                                       join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals new { pcmp.PartyId, pcmp.ContactMechId }
-                                       where prty.PartyId == request.PartyDto.PartyId && pcmp.ContactMechPurposeTypeId == "GENERAL_LOCATION"
-                                       select pa;
+                join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
+                join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
+                join pa in _context.PostalAddresses on cm.ContactMechId equals pa.ContactMechId
+                join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals new
+                    { pcmp.PartyId, pcmp.ContactMechId }
+                where prty.PartyId == request.PartyDto.PartyId && pcmp.ContactMechPurposeTypeId == "GENERAL_LOCATION"
+                select pa;
 
             var generalLocation = currentPostalAddress.SingleOrDefault();
             if (generalLocation != null)
@@ -92,62 +95,208 @@ public class UpdateEmployee
                 generalLocation.CountryGeoId = request.PartyDto.GeoId;
             }
 
+            var createdAccounts = new List<(string Id, string Type, string Name, string Arabic)>();
+            bool apCreated = false;
+            var loanId = string.Empty;
+            var accruedId = string.Empty;
+
+            async Task<string?> GenerateUniqueGlId(string prefix, int digits = 4, int maxAttempts = 300)
+            {
+                int suffix = 1;
+                for (int i = 0; i < maxAttempts; i++)
+                {
+                    var candidate = $"{prefix}{suffix.ToString().PadLeft(digits, '0')}";
+                    if (!await _context.GlAccounts.AnyAsync(a => a.GlAccountId == candidate, cancellationToken))
+                        return candidate;
+                    suffix++;
+                }
+
+                return null;
+            }
+
+            if (!await _context.PartyGlAccounts.AnyAsync(p =>
+                    p.OrganizationPartyId == "Company" &&
+                    p.PartyId == request.PartyDto.PartyId &&
+                    p.RoleTypeId == "EMPLOYEE" &&
+                    p.GlAccountTypeId == "ACCOUNTS_RECEIVABLE", cancellationToken))
+            {
+                loanId = await GenerateUniqueGlId("1241",2);
+                if (loanId == null) throw new Exception("Cannot generate loan GL ID");
+
+                var loanAccount = new GlAccount
+                {
+                    GlAccountId = loanId,
+                    GlAccountTypeId = "ACCOUNTS_RECEIVABLE",
+                    GlAccountClassId = "CURRENT_ASSET",
+                    GlResourceTypeId = "MONEY",
+                    ParentGlAccountId = "124100",
+                    AccountCode = loanId,
+                    AccountName = $"Loans Receivable - {request.PartyDto.FirstName} ({party.PartyId})",
+                    AccountNameArabic = $"ذمم الموظفين - {request.PartyDto.FirstName}",
+                    Description = $"Employee loans receivable sub-ledger",
+                    CreatedStamp = stamp,
+                    CreatedTxStamp = stamp,
+                    LastUpdatedStamp = stamp,
+                    LastUpdatedTxStamp = stamp
+                };
+                _context.GlAccounts.Add(loanAccount);
+
+                var loanOrg = new GlAccountOrganization
+                {
+                    GlAccountId = loanId,
+                    OrganizationPartyId = "Company",
+                    RoleTypeId = null,
+                    FromDate = stamp,
+                    ThruDate = null,
+                    CreatedStamp = stamp,
+                    CreatedTxStamp = stamp,
+                    LastUpdatedStamp = stamp,
+                    LastUpdatedTxStamp = stamp
+                };
+                _context.GlAccountOrganizations.Add(loanOrg);
+
+                var loanPartyGl = new PartyGlAccount
+                {
+                    OrganizationPartyId = "Company",
+                    PartyId = party.PartyId,
+                    RoleTypeId = "EMPLOYEE",
+                    GlAccountTypeId = "ACCOUNTS_RECEIVABLE",
+                    GlAccountId = loanId,
+                    CreatedStamp = stamp,
+                    CreatedTxStamp = stamp,
+                    LastUpdatedStamp = stamp,
+                    LastUpdatedTxStamp = stamp
+                };
+                _context.PartyGlAccounts.Add(loanPartyGl);
+
+                apCreated = true;
+                createdAccounts.Add((loanId, "Loans Receivable",
+                    $"Loans Receivable - {request.PartyDto.FirstName} ({request.PartyDto.PartyId})",
+                    $"ذمم الموظفين - ..."));
+            }
+
+            // 2. Accrued Expenses
+            if (!await _context.PartyGlAccounts.AnyAsync(p =>
+                    p.OrganizationPartyId == "Company" &&
+                    p.PartyId == request.PartyDto.PartyId &&
+                    p.RoleTypeId == "EMPLOYEE" &&
+                    p.GlAccountTypeId == "ACCOUNTS_PAYABLE", cancellationToken))
+            {
+                accruedId = await GenerateUniqueGlId("22");
+                if (accruedId == null) throw new Exception("Cannot generate accrued GL ID");
+
+                var accruedAccount = new GlAccount
+                {
+                    GlAccountId = accruedId,
+                    GlAccountTypeId = "ACCOUNTS_PAYABLE",
+                    GlAccountClassId = "CURRENT_LIABILITY",
+                    GlResourceTypeId = "MONEY",
+                    ParentGlAccountId = "220000",
+                    AccountCode = accruedId,
+                    AccountName = $"Accrued Salaries - {request.PartyDto.FirstName} ({party.PartyId})",
+                    AccountNameArabic = $"مستحقات رواتب - {request.PartyDto.FirstName}",
+                    Description = $"Employee accrued expenses / salaries payable",
+                    CreatedStamp = stamp,
+                    CreatedTxStamp = stamp,
+                    LastUpdatedStamp = stamp,
+                    LastUpdatedTxStamp = stamp
+                };
+                _context.GlAccounts.Add(accruedAccount);
+
+                var accruedOrg = new GlAccountOrganization
+                {
+                    GlAccountId = accruedId,
+                    OrganizationPartyId = "Company",
+                    RoleTypeId = null,
+                    FromDate = stamp,
+                    ThruDate = null,
+                    CreatedStamp = stamp,
+                    CreatedTxStamp = stamp,
+                    LastUpdatedStamp = stamp,
+                    LastUpdatedTxStamp = stamp
+                };
+                _context.GlAccountOrganizations.Add(accruedOrg);
+
+                var accruedPartyGl = new PartyGlAccount
+                {
+                    OrganizationPartyId = "Company",
+                    PartyId = party.PartyId,
+                    RoleTypeId = "EMPLOYEE",
+                    GlAccountTypeId = "ACCOUNTS_PAYABLE",
+                    GlAccountId = accruedId,
+                    CreatedStamp = stamp,
+                    CreatedTxStamp = stamp,
+                    LastUpdatedStamp = stamp,
+                    LastUpdatedTxStamp = stamp
+                };
+                _context.PartyGlAccounts.Add(accruedPartyGl);
+
+                apCreated = true;
+
+                createdAccounts.Add((accruedId, "Accrued Expenses",
+                    $"Accrued Salaries - {request.PartyDto.FirstName} ({request.PartyDto.PartyId})",
+                    $"مستحقات رواتب - ..."));
+            }
+
             var result = await _context.SaveChangesAsync(cancellationToken) > 0;
 
             if (!result)
             {
-                transaction.Rollback();
+                await transaction.RollbackAsync(cancellationToken);
                 return Result<PartyDto2>.Failure("Failed to update Employee");
             }
 
-            transaction.Commit();
+            await transaction.CommitAsync(cancellationToken);
 
             // Re-query to build return DTO (mirroring your UpdateCustomer pattern)
             var query1 = from prty in _context.Parties
-                         join prs in _context.Persons on prty.PartyId equals prs.PartyId
-                         join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
-                         join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
-                         join tn in _context.TelecomNumbers on cm.ContactMechId equals tn.ContactMechId
-                         join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals new { pcmp.PartyId, pcmp.ContactMechId }
-                         where prty.PartyId == request.PartyDto.PartyId && pcmp.ContactMechPurposeTypeId == "PRIMARY_PHONE"
-                         select new PartyDto2
-                         {
-                             PartyId = prty.PartyId,
-                             Description = prty.Description + " ( EMPLOYEE )",
-                             FirstName = prs.FirstName,
-                             MobileContactNumber = tn.ContactNumber
-                         };
+                join prs in _context.Persons on prty.PartyId equals prs.PartyId
+                join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
+                join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
+                join tn in _context.TelecomNumbers on cm.ContactMechId equals tn.ContactMechId
+                join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals new
+                    { pcmp.PartyId, pcmp.ContactMechId }
+                where prty.PartyId == request.PartyDto.PartyId && pcmp.ContactMechPurposeTypeId == "PRIMARY_PHONE"
+                select new PartyDto2
+                {
+                    PartyId = prty.PartyId,
+                    Description = prty.Description + " ( EMPLOYEE )",
+                    FirstName = prs.FirstName,
+                    MobileContactNumber = tn.ContactNumber
+                };
 
             var query2 = from prty in _context.Parties
-                         join prs in _context.Persons on prty.PartyId equals prs.PartyId
-                         join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
-                         join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
-                         join pa in _context.PostalAddresses on cm.ContactMechId equals pa.ContactMechId
-                         join geo in _context.Geos on pa.CountryGeoId equals geo.GeoId
-                         join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals new { pcmp.PartyId, pcmp.ContactMechId }
-                         where prty.PartyId == request.PartyDto.PartyId && pcmp.ContactMechPurposeTypeId == "GENERAL_LOCATION"
-                         select new PartyDto2
-                         {
-                             PartyId = prty.PartyId,
-                             Description = prty.Description + " ( EMPLOYEE )",
-                             FirstName = prs.FirstName,
-                             Address1 = pa.Address1,
-                             Address2 = pa.Address2,
-                             GeoId = geo.GeoId,
-                             GeoName = geo.GeoName
-                         };
+                join prs in _context.Persons on prty.PartyId equals prs.PartyId
+                join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
+                join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
+                join pa in _context.PostalAddresses on cm.ContactMechId equals pa.ContactMechId
+                join geo in _context.Geos on pa.CountryGeoId equals geo.GeoId
+                join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals new
+                    { pcmp.PartyId, pcmp.ContactMechId }
+                where prty.PartyId == request.PartyDto.PartyId && pcmp.ContactMechPurposeTypeId == "GENERAL_LOCATION"
+                select new PartyDto2
+                {
+                    PartyId = prty.PartyId,
+                    Description = prty.Description + " ( EMPLOYEE )",
+                    FirstName = prs.FirstName,
+                    Address1 = pa.Address1,
+                    Address2 = pa.Address2,
+                    GeoId = geo.GeoId,
+                    GeoName = geo.GeoName
+                };
 
             var query3 = from prty in _context.Parties
-                         join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
-                         join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
-                         join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals new { pcmp.PartyId, pcmp.ContactMechId }
-                         where prty.PartyId == request.PartyDto.PartyId && pcmp.ContactMechPurposeTypeId == "PRIMARY_EMAIL"
-                         select new PartyDto2
-                         {
-                             PartyId = prty.PartyId,
-                             Description = prty.Description + " ( EMPLOYEE )",
-                             InfoString = cm.InfoString
-                         };
+                join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
+                join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
+                join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals new
+                    { pcmp.PartyId, pcmp.ContactMechId }
+                where prty.PartyId == request.PartyDto.PartyId && pcmp.ContactMechPurposeTypeId == "PRIMARY_EMAIL"
+                select new PartyDto2
+                {
+                    PartyId = prty.PartyId,
+                    Description = prty.Description + " ( EMPLOYEE )",
+                    InfoString = cm.InfoString
+                };
 
             var results1 = query1.ToList();
             var results2 = query2.ToList();
@@ -174,6 +323,16 @@ public class UpdateEmployee
             if (results3.Count > 0)
             {
                 partyToReturn.InfoString = results3[0].InfoString;
+            }
+
+            if (apCreated)
+            {
+                partyToReturn.CreatedLoanGlAccountId = loanId;
+                partyToReturn.CreatedAccruedGlAccountId = accruedId;
+                partyToReturn.CreatedLoanGlAccountName = $"AP - {request.PartyDto.GroupName} ({party.PartyId})";
+                partyToReturn.CreatedLoanGlAccountArabicName = $"ذمم الموظفين - {request.PartyDto.FirstName}";
+                partyToReturn.CreatedAccruedGlAccountName = $"AP - {request.PartyDto.GroupName} ({party.PartyId})";
+                partyToReturn.CreatedAccruedGlAccountArabicName = $"مستحقات رواتب - {request.PartyDto.FirstName}";
             }
 
             return Result<PartyDto2>.Success(partyToReturn);

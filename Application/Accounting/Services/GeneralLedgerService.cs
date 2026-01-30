@@ -387,7 +387,8 @@ public class GeneralLedgerService : IGeneralLedgerService
             PaymentId = null,
             PartyId = shipment.PartyIdFrom,
             TransactionDate = shipmentReceipt.CreatedStamp,
-            WorkEffortId = workEffortId
+            WorkEffortId = workEffortId,
+            RoleTypeId = "BILL_FROM_VENDOR"
         };
 
         var acctgTransId = await CreateAcctgTransAndEntries(createAcctgTransAndEntriesParams);

@@ -1,177 +1,411 @@
-import React, { useRef, useState } from "react";
-import { Form, FormElement, Field } from "@progress/kendo-react-form";
-import { Button, Grid } from "@mui/material";
-import { MemoizedFormDropDownList } from "../../../../app/common/form/MemoizedFormDropDownList";
-import { FormComboBoxVirtualCustomer } from "../../../../app/common/form/FormComboBoxVirtualCustomer";
-import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
-import { useFetchCompaniesQuery, useFetchInvoiceTypesQuery } from "../../../../app/store/configureStore";
-import { requiredValidator } from "../../../../app/common/form/Validators";
-import useInvoice from "../hook/useInvoice";
-import LoadingComponent from "../../../../app/layout/LoadingComponent";
-import FormDatePicker from "../../../../app/common/form/FormDatePicker";
-import FormInput from "../../../../app/common/form/FormInput";
-import FormTextArea from "../../../../app/common/form/FormTextArea";
+import React, { useState } from 'react';
+import Button from '@mui/material/Button';
+import Grid from '@mui/material/Grid';
+import FormTextArea from '../../../app/common/form/FormTextArea';
+import FormInput from '../../../app/common/form/FormInput';
+import { Field, Form, FormElement } from '@progress/kendo-react-form';
+import { FormComboBox } from '../../../app/common/form/FormComboBox';
+import { Party } from '../../../app/models/party/party';
+import { useAppDispatch } from '../../../app/store/configureStore';
+import agent from '../../../app/api/agent';
+import LoadingComponent from '../../../app/layout/LoadingComponent';
+import { setParty } from '../slice/partySlice';
+import { setSingleParty } from '../slice/singlePartySlice';
+import { Box, Paper, Typography } from '@mui/material';
+import { phoneValidator, requiredValidator } from '../../../app/common/form/Validators';
+import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
+import { useFetchCountriesQuery, useFetchEmployeeQuery, useGetEmplPositionTypesQuery } from "../../../app/store/apis";
+import { MemoizedFormComboBox2 } from "../../../app/common/form/FormComboBox2";
+import FormNumericTextBox from "../../../app/common/form/FormNumericTextBox";
 
 interface Props {
-    onClose: () => void;
+    party?: Party;
+    editMode: number; // 1 = create, 2 = edit
+    cancelEdit: () => void;
 }
 
-const NewSalesInvoice = ({ onClose }: Props) => {
-    const formRef = useRef<Form | null>(null);
+export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Props) {
+    const { data: countries, isSuccess: isCountriesLoaded } = useFetchCountriesQuery(undefined);
+    const [buttonFlag, setButtonFlag] = useState(false);
+
+    const { data: employee, isFetching, isLoading } = useFetchEmployeeQuery(party?.partyId, {
+        skip: party?.partyId === undefined || editMode !== 2,
+    });
+
+    const { data: positionTypes = [], isLoading: isPositionTypesLoading } = useGetEmplPositionTypesQuery();
+
     const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = "accounting.invoices.form"; // keep consistent or use .display.form if needed
+    const dispatch = useAppDispatch();
 
-    const { data: invoiceTypes } = useFetchInvoiceTypesQuery(undefined);
-    const { data: companies } = useFetchCompaniesQuery(undefined);
-    const [isLoading, setIsLoading] = useState(false);
+    // Success state - tracks newly created accounts
+    const [creationSuccess, setCreationSuccess] = useState<{
+        partyId: string;
+        createdLoanGlAccountId: string | null;
+        createdLoanGlAccountName: string | null;
+        createdLoanGlAccountArabic: string | null;
+        createdAccruedGlAccountId: string | null;
+        createdAccruedGlAccountName: string | null;
+        createdAccruedGlAccountArabic: string | null;
+    } | null>(null);
 
-    const { handleCreate } = useInvoice(null); // assuming hook accepts null for new
+    async function handleSubmitData(data: any) {
+        setButtonFlag(true);
+        setCreationSuccess(null);
 
-    const salesInvoiceTypes =
-        invoiceTypes?.filter(
-            (type: any) => type.invoiceTypeId === "SALES_INVOICE" || type.parentTypeId === "SALES_INVOICE"
-        ) || [];
-
-    const handleSubmit = async (values: any) => {
         try {
-            await handleCreate({ ...values, statusId: "INVOICE_IN_PROCESS" });
-            onClose();
-        } catch (e) {
-            console.error("Error creating sales invoice:", e);
+            let response: any;
+            if (editMode === 2) {
+                response = await agent.Parties.updateEmployee(data);
+            } else {
+                response = await agent.Parties.createEmployee(data);
+            }
+
+            // Capture newly created accounts from response (if backend returns them)
+            setCreationSuccess({
+                partyId: response.partyId || response.PartyId,
+                createdLoanGlAccountId: response.createdLoanGlAccountId || null,
+                createdLoanGlAccountName: response.createdLoanGlAccountName || null,
+                createdLoanGlAccountArabic: response.createdLoanGlAccountArabicName || null,
+                createdAccruedGlAccountId: response.createdAccruedGlAccountId || null,
+                createdAccruedGlAccountName: response.createdAccruedGlAccountName || null,
+                createdAccruedGlAccountArabic: response.createdAccruedGlAccountArabicName || null,
+            });
+
+            dispatch(setParty(response));
+            dispatch(setSingleParty(response));
+
+            // Do NOT auto-close → let user see success + accounts
+            // cancelEdit(); // ← comment out or move to "Done" button
+        } catch (error) {
+            console.error("Employee save error:", error);
+        } finally {
+            setButtonFlag(false);
         }
-    };
+    }
 
     return (
-        <>
-            {isLoading && (
-                <div
-                    style={{
-                        position: "fixed",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        height: "100%",
-                        backgroundColor: "rgba(0, 0, 0, 0.5)",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        zIndex: 1000,
-                    }}
-                >
-                    <LoadingComponent
-                        message={getTranslatedLabel(`${localizationKey}.loading`, "Processing Invoice...")}
-                    />
-                </div>
+        <Paper elevation={5} className={`div-container-withBorderCurved`} sx={{ mt: 5 }}>
+            {isFetching && (
+                <LoadingComponent message={getTranslatedLabel("party.employees.form.loading", "Loading Employee...")} />
             )}
 
-            <Form onSubmit={handleSubmit} ref={formRef} render={(formRenderProps) => (
-                <FormElement>
-                    <Grid container spacing={2}>
-                        {/* Invoice Type */}
-                        <Grid item xs={12} sm={6}>
-                            <Field
-                                name="invoiceTypeId"
-                                label={getTranslatedLabel(`${localizationKey}.invoice-type`, "Invoice Type")}
-                                component={MemoizedFormDropDownList}
-                                data={salesInvoiceTypes}
-                                dataItemKey="invoiceTypeId"
-                                textField="description"
-                                defaultValue="SALES_INVOICE"
-                                validator={requiredValidator}
-                            />
-                        </Grid>
+            {/* ──────────────────────────────────────────────── */}
+            {/* Success message after create/update */}
+            {creationSuccess && (
+                <Box sx={{ p: 3, mb: 3, bgcolor: '#e8f5e9', borderRadius: 2, border: '1px solid #81c784' }}>
+                    <Typography variant="h5" color="success.main" gutterBottom>
+                        {getTranslatedLabel("party.employees.form.success", "Employee Saved Successfully!")}
+                    </Typography>
 
-                        {/* Our Company (Organization) */}
-                        <Grid item xs={12} sm={6}>
-                            <Field
-                                name="organizationPartyId"
-                                label={getTranslatedLabel(`${localizationKey}.organizationPartyId`, "Our Company")}
-                                component={MemoizedFormDropDownList}
-                                data={companies || []}
-                                dataItemKey="organizationPartyId"
-                                textField="organizationPartyName"
-                                validator={requiredValidator}
-                            />
-                        </Grid>
+                    <Typography variant="body1" gutterBottom>
+                        {getTranslatedLabel("party.employees.form.employeeId", "Employee ID")}:{" "}
+                        <strong>{creationSuccess.partyId}</strong>
+                    </Typography>
 
-                        {/* Customer (To Party) */}
-                        <Grid item xs={12} sm={6}>
-                            <Field
-                                name="partyId"           // ← note: using partyId (to), not partyIdFrom
-                                label={getTranslatedLabel(`${localizationKey}.partyIdTo`, "Customer")}
-                                component={FormComboBoxVirtualCustomer}
-                                validator={requiredValidator}
-                            />
-                        </Grid>
-
-                        {/* Invoice Date */}
-                        <Grid item xs={12} sm={6}>
-                            <Field
-                                name="invoiceDate"
-                                label={getTranslatedLabel(`${localizationKey}.invoice-date`, "Invoice Date")}
-                                component={FormDatePicker}
-                                format="dd MMM yyyy"
-                                defaultValue={new Date()} // ← good to add default
-                                validator={requiredValidator}
-                            />
-                        </Grid>
-
-                        {/* Reference / PO Number – optional for sales */}
-                        <Grid item xs={12} sm={6}>
-                            <Field
-                                name="referenceNumber"
-                                label={getTranslatedLabel(`${localizationKey}.customerPoNumber`, "Customer PO / Ref No")} {/* ← changed label suggestion */}
-                                component={FormInput}
-                                // NO requiredValidator – keep optional
-                                helperText="Enter customer's Purchase Order number if provided"
-                            />
-                        </Grid>
-
-                        {/* Description / Notes – full width */}
-                        <Grid item xs={12}>
-                            <Field
-                                name="description"
-                                label={getTranslatedLabel(`${localizationKey}.description`, "Description / Notes")}
-                                component={FormTextArea}
-                                rows={3}
-                                placeholder="Order notes, terms, delivery instructions..."
-                            />
-                        </Grid>
-
-                        {/* Hidden fields */}
-                        <Field name="statusId" component="input" type="hidden" value="INVOICE_IN_PROCESS" />
-                        <Field name="currencyUomId" component="input" type="hidden" value="EGP" /> {/* ← suggest EGP for Egypt */}
-
-                        {/* Buttons */}
-                        <Grid item xs={12}>
-                            <Grid container spacing={2} justifyContent="flex-start">
-                                <Grid item>
-                                    <Button
-                                        variant="contained"
-                                        type="submit"
-                                        color="success"
-                                        disabled={!formRenderProps.allowSubmit || isLoading}
-                                    >
-                                        {getTranslatedLabel(`${localizationKey}.create`, "Create")}
-                                    </Button>
+                    {/* Loan Receivable - new */}
+                    {creationSuccess.createdLoanGlAccountId && (
+                        <Box sx={{ mt: 3 }}>
+                            <Typography variant="h6" color="primary">
+                                {getTranslatedLabel("party.employees.form.newLoanAccount", "New Loans Receivable Account Created")}
+                            </Typography>
+                            <Grid container spacing={2} sx={{ mt: 1 }}>
+                                <Grid item xs={12} sm={6}>
+                                    <Typography>
+                                        <strong>{getTranslatedLabel("party.employees.form.glAccountId", "GL Account ID")}:</strong>{" "}
+                                        {creationSuccess.createdLoanGlAccountId}
+                                    </Typography>
                                 </Grid>
-                                <Grid item>
-                                    <Button
-                                        variant="contained"
-                                        color="error"
-                                        onClick={onClose}
-                                        disabled={isLoading}
-                                    >
-                                        {getTranslatedLabel(`${localizationKey}.back`, "Back")}
-                                    </Button>
+                                <Grid item xs={12} sm={6}>
+                                    <Typography>
+                                        <strong>{getTranslatedLabel("party.employees.form.accountName", "Account Name")}:</strong>{" "}
+                                        {creationSuccess.createdLoanGlAccountName || "—"}
+                                    </Typography>
                                 </Grid>
+                                {creationSuccess.createdLoanGlAccountArabic && (
+                                    <Grid item xs={12}>
+                                        <Typography>
+                                            <strong>{getTranslatedLabel("party.employees.form.accountNameArabic", "Account Name (Arabic)")}:</strong>{" "}
+                                            {creationSuccess.createdLoanGlAccountArabic}
+                                        </Typography>
+                                    </Grid>
+                                )}
                             </Grid>
+                        </Box>
+                    )}
+
+                    {/* Accrued Expenses - new */}
+                    {creationSuccess.createdAccruedGlAccountId && (
+                        <Box sx={{ mt: 3 }}>
+                            <Typography variant="h6" color="primary">
+                                {getTranslatedLabel("party.employees.form.newAccruedAccount", "New Accrued Expenses Account Created")}
+                            </Typography>
+                            <Grid container spacing={2} sx={{ mt: 1 }}>
+                                <Grid item xs={12} sm={6}>
+                                    <Typography>
+                                        <strong>{getTranslatedLabel("party.employees.form.glAccountId", "GL Account ID")}:</strong>{" "}
+                                        {creationSuccess.createdAccruedGlAccountId}
+                                    </Typography>
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                    <Typography>
+                                        <strong>{getTranslatedLabel("party.employees.form.accountName", "Account Name")}:</strong>{" "}
+                                        {creationSuccess.createdAccruedGlAccountName || "—"}
+                                    </Typography>
+                                </Grid>
+                                {creationSuccess.createdAccruedGlAccountArabic && (
+                                    <Grid item xs={12}>
+                                        <Typography>
+                                            <strong>{getTranslatedLabel("party.employees.form.accountNameArabic", "Account Name (Arabic)")}:</strong>{" "}
+                                            {creationSuccess.createdAccruedGlAccountArabic}
+                                        </Typography>
+                                    </Grid>
+                                )}
+                            </Grid>
+                        </Box>
+                    )}
+
+                    <Box sx={{ mt: 4 }}>
+                        <Button variant="contained" color="primary" onClick={cancelEdit} sx={{ mr: 2 }}>
+                            {getTranslatedLabel("party.employees.form.done", "Done / Close")}
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            onClick={() => setCreationSuccess(null)}
+                        >
+                            {getTranslatedLabel("party.employees.form.createAnother", "Create Another Employee")}
+                        </Button>
+                    </Box>
+                </Box>
+            )}
+
+            {/* ──────────────────────────────────────────────── */}
+            {/* Main form - shown when no success message */}
+            {!creationSuccess && (
+                <>
+                    <Grid container spacing={2}>
+                        <Grid item xs={6}>
+                            <Box display="flex" justifyContent="space-between" paddingBottom={4}>
+                                <Typography sx={{ p: 2 }} variant="h4" color={editMode === 1 ? "green" : "black"}>
+                                    {editMode === 1
+                                        ? getTranslatedLabel("party.employees.form.createTitle", "Create Employee")
+                                        : getTranslatedLabel("party.employees.form.editTitle", "Edit Employee")}
+                                </Typography>
+                            </Box>
                         </Grid>
                     </Grid>
-                </FormElement>
-            )} />
-        </>
-    );
-};
 
-export default NewSalesInvoice;
+                    <Form
+                        initialValues={editMode === 2 ? employee : undefined}
+                        key={JSON.stringify(employee)}
+                        onSubmit={(values) => handleSubmitData(values)}
+                        render={(formRenderProps) => (
+                            <FormElement>
+                                <fieldset className={'k-form-fieldset'}>
+                                    <Grid container spacing={2}>
+                                        <Grid item xs={4}>
+                                            <Field
+                                                id={'firstName'}
+                                                name={'firstName'}
+                                                label={getTranslatedLabel("party.employees.form.firstName", "First Name *")}
+                                                component={FormInput}
+                                                autoComplete={'off'}
+                                                validator={requiredValidator}
+                                            />
+                                        </Grid>
+
+                                        <Grid item xs={3}>
+                                            <Field
+                                                id="emplPositionTypeId"
+                                                name="emplPositionTypeId"
+                                                label={getTranslatedLabel("party.employees.form.emplPositionTypeId", "Employee Position")}
+                                                component={MemoizedFormComboBox2}
+                                                data={positionTypes || []}
+                                                dataItemKey="emplPositionTypeId"
+                                                textField="description"
+                                                validator={requiredValidator}
+                                            />
+                                        </Grid>
+
+                                        <Grid item xs={2}>
+                                            <Field
+                                                id="monthlyBaseSalary"
+                                                name="monthlyBaseSalary"
+                                                label={getTranslatedLabel("party.employees.form.monthlyBaseSalary", "Monthly Base Salary (EGP)")}
+                                                component={FormNumericTextBox}
+                                                format="n2"
+                                                min={0}
+                                                validator={requiredValidator}
+                                            />
+                                        </Grid>
+
+                                        {/* Email, Country, Mobile, Address1, Address2 */}
+                                        <Grid item xs={3}>
+                                            <Field
+                                                id={'infoString'}
+                                                name={'infoString'}
+                                                label={getTranslatedLabel("party.employees.form.email", "Email Address (Work)")}
+                                                component={FormInput}
+                                                autoComplete={'off'}
+                                            />
+                                        </Grid>
+
+                                        <Grid item xs={6}>
+                                            {isCountriesLoaded && (
+                                                <Field
+                                                    id={'geoId'}
+                                                    name={'geoId'}
+                                                    label={getTranslatedLabel("party.employees.form.countryCode", "Country")}
+                                                    component={FormComboBox}
+                                                    dataItemKey={'geoId'}
+                                                    textField={'geoName'}
+                                                    autoComplete={'off'}
+                                                    data={countries}
+                                                />
+                                            )}
+                                        </Grid>
+
+                                        <Grid item xs={6}>
+                                            <Field
+                                                id={'mobileContactNumber'}
+                                                name={'mobileContactNumber'}
+                                                label={getTranslatedLabel("party.employees.form.mobile", "Mobile Phone *")}
+                                                component={FormInput}
+                                                autoComplete={'off'}
+                                                // validator={phoneValidator}
+                                            />
+                                        </Grid>
+
+                                        <Grid item xs={6}>
+                                            <Field
+                                                id={'address1'}
+                                                name={'address1'}
+                                                label={getTranslatedLabel("party.employees.form.address1", "Address 1")}
+                                                component={FormInput}
+                                                autoComplete={'off'}
+                                            />
+                                        </Grid>
+
+                                        <Grid item xs={6}>
+                                            <Field
+                                                id={'address2'}
+                                                name={'address2'}
+                                                label={getTranslatedLabel("party.employees.form.address2", "Address 2")}
+                                                component={FormTextArea}
+                                                rows={3}
+                                                autoComplete={'off'}
+                                            />
+                                        </Grid>
+
+                                        {/* ──────────────────────────────────────────────── */}
+                                        {/* Existing Loan Receivable Account */}
+                                        {employee?.loanGlAccountId && (
+                                            <Grid item xs={12} sx={{ mt: 4 }}>
+                                                <Box sx={{ p: 3, bgcolor: "#e3f2fd", borderRadius: 2, border: "1px solid #90caf9" }}>
+                                                    <Typography variant="h6" color="primary" gutterBottom>
+                                                        {getTranslatedLabel("party.employees.form.linkedLoanAccount", "Linked Loans Receivable Account")}
+                                                    </Typography>
+                                                    <Grid container spacing={2}>
+                                                        <Grid item xs={12} sm={6}>
+                                                            <Typography><strong>GL Account ID:</strong> {employee.loanGlAccountId}</Typography>
+                                                        </Grid>
+                                                        <Grid item xs={12} sm={6}>
+                                                            <Typography><strong>Account Name:</strong> {employee.loanGlAccountName || "—"}</Typography>
+                                                        </Grid>
+                                                        {employee.loanGlAccountNameArabic && (
+                                                            <Grid item xs={12}>
+                                                                <Typography><strong>اسم الحساب:</strong> {employee.loanGlAccountNameArabic}</Typography>
+                                                            </Grid>
+                                                        )}
+                                                    </Grid>
+                                                </Box>
+                                            </Grid>
+                                        )}
+
+                                        {/* Existing Accrued Expenses Account */}
+                                        {employee?.accruedGlAccountId && (
+                                            <Grid item xs={12} sx={{ mt: 3 }}>
+                                                <Box sx={{ p: 3, bgcolor: "#e8f5e9", borderRadius: 2, border: "1px solid #81c784" }}>
+                                                    <Typography variant="h6" color="success.main" gutterBottom>
+                                                        {getTranslatedLabel("party.employees.form.linkedAccruedAccount", "Linked Accrued Expenses Account")}
+                                                    </Typography>
+                                                    <Grid container spacing={2}>
+                                                        <Grid item xs={12} sm={6}>
+                                                            <Typography><strong>GL Account ID:</strong> {employee.accruedGlAccountId}</Typography>
+                                                        </Grid>
+                                                        <Grid item xs={12} sm={6}>
+                                                            <Typography><strong>Account Name:</strong> {employee.accruedGlAccountName || "—"}</Typography>
+                                                        </Grid>
+                                                        {employee.accruedGlAccountNameArabic && (
+                                                            <Grid item xs={12}>
+                                                                <Typography><strong>اسم الحساب:</strong> {employee.accruedGlAccountNameArabic}</Typography>
+                                                            </Grid>
+                                                        )}
+                                                    </Grid>
+                                                </Box>
+                                            </Grid>
+                                        )}
+
+                                        {/* Warnings when missing (edit mode) */}
+                                        {editMode === 2 && (
+                                            <>
+                                                {!employee?.loanGlAccountId && (
+                                                    <Grid item xs={12} sx={{ mt: 3 }}>
+                                                        <Box sx={{ p: 2, bgcolor: "#fff3e0", borderRadius: 2, border: "1px solid #ff9800" }}>
+                                                            <Typography color="warning.dark">
+                                                                {getTranslatedLabel(
+                                                                    "party.employees.form.noLoanAccount",
+                                                                    "No dedicated Loans Receivable account linked yet. Save to create automatically."
+                                                                )}
+                                                            </Typography>
+                                                        </Box>
+                                                    </Grid>
+                                                )}
+
+                                                {!employee?.accruedGlAccountId && (
+                                                    <Grid item xs={12} sx={{ mt: 2 }}>
+                                                        <Box sx={{ p: 2, bgcolor: "#fff3e0", borderRadius: 2, border: "1px solid #ff9800" }}>
+                                                            <Typography color="warning.dark">
+                                                                {getTranslatedLabel(
+                                                                    "party.employees.form.noAccruedAccount",
+                                                                    "No dedicated Accrued Expenses account linked yet. Save to create automatically."
+                                                                )}
+                                                            </Typography>
+                                                        </Box>
+                                                    </Grid>
+                                                )}
+                                            </>
+                                        )}
+                                    </Grid>
+
+                                    <div className="k-form-buttons">
+                                        <Grid container rowSpacing={2}>
+                                            <Grid item xs={1}>
+                                                <Button
+                                                    variant="contained"
+                                                    type="submit"
+                                                    color="success"
+                                                    disabled={!formRenderProps.allowSubmit || buttonFlag}
+                                                >
+                                                    {getTranslatedLabel("party.employees.form.submit", "Submit")}
+                                                </Button>
+                                            </Grid>
+                                            <Grid item xs={1}>
+                                                <Button onClick={cancelEdit} color="error" variant="contained">
+                                                    {getTranslatedLabel("party.employees.form.cancel", "Cancel")}
+                                                </Button>
+                                            </Grid>
+                                        </Grid>
+                                    </div>
+
+                                    {buttonFlag && (
+                                        <LoadingComponent message={getTranslatedLabel("party.employees.form.processing", "Processing Employee...")} />
+                                    )}
+                                </fieldset>
+                            </FormElement>
+                        )}
+                    />
+                </>
+            )}
+        </Paper>
+    );
+}

@@ -3,6 +3,7 @@ using AutoMapper;
 using Domain;
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Persistence;
 
 namespace Application.Parties.Parties;
@@ -13,7 +14,7 @@ public class UpdateCustomer
     {
         public PartyDto PartyDto { get; set; }
     }
-    
+
 
     public class Handler : IRequestHandler<Command, Result<PartyDto>>
     {
@@ -202,15 +203,110 @@ public class UpdateCustomer
                 }
             }
 
-            var result = await _context.SaveChangesAsync() > 0;
+            bool glCreated = false;
+            string? newGlAccountId = null;
+
+            var existingPartyGl = await _context.PartyGlAccounts
+                .AnyAsync(pga =>
+                        pga.OrganizationPartyId == "Company" &&
+                        pga.PartyId == request.PartyDto.PartyId &&
+                        pga.RoleTypeId == "BILL_TO_CUSTOMER" &&
+                        pga.GlAccountTypeId == "ACCOUNTS_RECEIVABLE",
+                    cancellationToken);
+
+            if (!existingPartyGl)
+            {
+                // Generate unique GL Account ID (same logic as in CreateCustomer)
+                const string prefix = "12";
+                const int digits = 4;
+                const int maxAttempts = 900;
+                int suffix = 1;
+                newGlAccountId = null;
+
+                for (int attempt = 0; attempt < maxAttempts; attempt++)
+                {
+                    string candidate = $"{prefix}{suffix.ToString().PadLeft(digits, '0')}";
+                    bool exists = await _context.GlAccounts
+                        .AnyAsync(a => a.GlAccountId == candidate, cancellationToken);
+
+                    if (!exists)
+                    {
+                        newGlAccountId = candidate;
+                        break;
+                    }
+
+                    suffix++;
+                }
+
+                if (newGlAccountId == null)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Result<PartyDto>.Failure(
+                        $"Could not generate unique GL account ID after {maxAttempts} attempts.");
+                }
+
+                // 1. Create GlAccount
+                var newGlAccount = new GlAccount
+                {
+                    GlAccountId = newGlAccountId,
+                    GlAccountTypeId = "ACCOUNTS_RECEIVABLE",
+                    GlAccountClassId = "CURRENT_ASSET",
+                    GlResourceTypeId = "MONEY",
+                    GlXbrlClassId = null,
+                    ParentGlAccountId = "121100",
+                    AccountCode = newGlAccountId,
+                    AccountName = $"AR - {request.PartyDto.FirstName} ({request.PartyDto.PartyId})",
+                    AccountNameArabic = $"مدينون - {request.PartyDto.FirstName}",
+                    Description = $"Accounts Receivable sub-ledger for customer {request.PartyDto.PartyId}",
+                    CreatedStamp = stamp,
+                    CreatedTxStamp = stamp,
+                    LastUpdatedStamp = stamp,
+                    LastUpdatedTxStamp = stamp
+                };
+                _context.GlAccounts.Add(newGlAccount);
+
+                // 2. GlAccountOrganization
+                var glOrg = new GlAccountOrganization
+                {
+                    GlAccountId = newGlAccountId,
+                    OrganizationPartyId = "Company",
+                    RoleTypeId = null,
+                    FromDate = stamp,
+                    ThruDate = null,
+                    CreatedStamp = stamp,
+                    CreatedTxStamp = stamp,
+                    LastUpdatedStamp = stamp,
+                    LastUpdatedTxStamp = stamp
+                };
+                _context.GlAccountOrganizations.Add(glOrg);
+
+                // 3. PartyGlAccount
+                var partyGl = new PartyGlAccount
+                {
+                    OrganizationPartyId = "Company",
+                    PartyId = request.PartyDto.PartyId,
+                    RoleTypeId = "BILL_TO_CUSTOMER",
+                    GlAccountTypeId = "ACCOUNTS_RECEIVABLE",
+                    GlAccountId = newGlAccountId,
+                    CreatedStamp = stamp,
+                    CreatedTxStamp = stamp,
+                    LastUpdatedStamp = stamp,
+                    LastUpdatedTxStamp = stamp
+                };
+                _context.PartyGlAccounts.Add(partyGl);
+
+                glCreated = true;
+            }
+
+            var result = await _context.SaveChangesAsync(cancellationToken) > 0;
 
             if (!result)
             {
-                transaction.Rollback();
+                await transaction.RollbackAsync(cancellationToken);
                 return Result<PartyDto>.Failure("Failed to update Customer");
             }
 
-            transaction.Commit();
+            await transaction.CommitAsync(cancellationToken);
 
 
             var query1 = from prty in _context.Parties
@@ -320,6 +416,13 @@ public class UpdateCustomer
             {
                 partyToReturn.InfoString = results3[0].InfoString;
                 partyToReturn.MainRole = results3[0].MainRole;
+            }
+            
+            if (glCreated && newGlAccountId != null)
+            {
+                partyToReturn.CreatedGlAccountId = newGlAccountId;
+                partyToReturn.CreatedGlAccountName = $"AR - {request.PartyDto.FirstName} ({request.PartyDto.PartyId})";
+                partyToReturn.CreatedGlAccountArabicName = $"مدينون - {request.PartyDto.FirstName}";
             }
 
             return Result<PartyDto>.Success(partyToReturn);

@@ -3,6 +3,7 @@ using AutoMapper;
 using Domain;
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Persistence;
 
 namespace Application.Parties.Parties;
@@ -13,14 +14,6 @@ public class UpdateContractor
     {
         public PartyDto PartyDto { get; set; }
     }
-
-    /*public class CommandValidator : AbstractValidator<Command>
-    {
-        public CommandValidator()
-        {
-            RuleFor(x => x.PartyDto).SetValidator(new PartyValidator());
-        }
-    }*/
 
     public class Handler : IRequestHandler<Command, Result<PartyDto>>
     {
@@ -49,12 +42,12 @@ public class UpdateContractor
             party.Description = request.PartyDto.GroupName;
 
 
-            var partyGroup = await _context.PartyGroups.FindAsync(request.PartyDto.PartyId);
+            /*var partyGroup = await _context.PartyGroups.FindAsync(request.PartyDto.PartyId);
 
             if (partyGroup == null) return null;
 
             partyGroup.GroupName = request.PartyDto.GroupName;
-            partyGroup.LastUpdatedStamp = stamp;
+            partyGroup.LastUpdatedStamp = stamp;*/
 
             var telcomNumber = from prty in _context.Parties
                 join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
@@ -209,15 +202,115 @@ public class UpdateContractor
                 }
             }
 
-            var result = await _context.SaveChangesAsync() > 0;
+            bool apCreated = false;
+            string? newApGlAccountId = null;
+
+            // Check if already has AP override
+            var hasApOverride = await _context.PartyGlAccounts
+                .AnyAsync(pga =>
+                        pga.OrganizationPartyId == "Company" &&
+                        pga.PartyId == request.PartyDto.PartyId &&
+                        pga.RoleTypeId == "BILL_FROM_VENDOR" &&
+                        pga.GlAccountTypeId == "ACCOUNTS_PAYABLE",
+                    cancellationToken);
+
+            if (!hasApOverride)
+            {
+                apCreated = false;
+                newApGlAccountId = null;
+
+                const string prefix = "21"; // ← choose your prefix: 2105, 2110, 2001 etc.210000
+                const int digits = 4;
+                const int maxAttempts = 900;
+                int suffix = 1;
+
+                for (int attempt = 0; attempt < maxAttempts; attempt++)
+                {
+                    string candidate = $"{prefix}{suffix.ToString().PadLeft(digits, '0')}";
+
+                    bool exists = await _context.GlAccounts
+                        .AnyAsync(a => a.GlAccountId == candidate, cancellationToken);
+
+                    if (!exists)
+                    {
+                        newApGlAccountId = candidate;
+                        break;
+                    }
+
+                    suffix++;
+                }
+
+                if (newApGlAccountId == null)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Result<PartyDto>.Failure(
+                        $"Could not generate unique AP GL account ID after {maxAttempts} attempts.");
+                }
+
+                // 1. Create GlAccount
+                var newApAccount = new GlAccount
+                {
+                    GlAccountId = newApGlAccountId,
+                    GlAccountTypeId = "ACCOUNTS_PAYABLE",
+                    GlAccountClassId = "CURRENT_LIABILITY", // or LIABILITY – check your chart
+                    GlResourceTypeId = "MONEY",
+                    ParentGlAccountId = "210000", // or "210000" – your AP parent
+                    AccountCode = newApGlAccountId,
+                    AccountName = $"AP - {request.PartyDto.GroupName} ({request.PartyDto.PartyId})",
+                    AccountNameArabic = $"المقاولون - {request.PartyDto.GroupName} ",
+                    Description =
+                        $"Accounts Payable sub-ledger for supplier {request.PartyDto.PartyId} - {request.PartyDto.GroupName}",
+                    CreatedStamp = stamp,
+                    CreatedTxStamp = stamp,
+                    LastUpdatedStamp = stamp,
+                    LastUpdatedTxStamp = stamp
+                };
+                _context.GlAccounts.Add(newApAccount);
+
+                // 2. GlAccountOrganization
+                var glOrgAp = new GlAccountOrganization
+                {
+                    GlAccountId = newApGlAccountId,
+                    OrganizationPartyId = "Company",
+                    RoleTypeId = null,
+                    FromDate = stamp,
+                    ThruDate = null,
+                    CreatedStamp = stamp,
+                    CreatedTxStamp = stamp,
+                    LastUpdatedStamp = stamp,
+                    LastUpdatedTxStamp = stamp
+                };
+                _context.GlAccountOrganizations.Add(glOrgAp);
+
+                // 3. PartyGlAccount
+                var partyGlAp = new PartyGlAccount
+                {
+                    OrganizationPartyId = "Company",
+                    PartyId = request.PartyDto.PartyId,
+                    RoleTypeId = "BILL_FROM_VENDOR",
+                    GlAccountTypeId = "ACCOUNTS_PAYABLE",
+                    GlAccountId = newApGlAccountId,
+                    CreatedStamp = stamp,
+                    CreatedTxStamp = stamp,
+                    LastUpdatedStamp = stamp,
+                    LastUpdatedTxStamp = stamp
+                };
+                _context.PartyGlAccounts.Add(partyGlAp);
+
+
+                apCreated = true;
+            }
+
+
+            var result = await _context.SaveChangesAsync(cancellationToken) > 0;
 
             if (!result)
             {
-                transaction.Rollback();
+                await transaction.RollbackAsync(cancellationToken);
                 return Result<PartyDto>.Failure("Failed to update Contractor");
             }
 
-            transaction.Commit();
+            await transaction.CommitAsync(cancellationToken);
 
 
             var query1 = from prty in _context.Parties
@@ -327,6 +420,16 @@ public class UpdateContractor
             {
                 partyToReturn.InfoString = results3[0].InfoString;
                 partyToReturn.MainRole = results3[0].MainRole;
+            }
+            
+            if (apCreated && newApGlAccountId != null)
+            {
+                partyToReturn.CreatedApGlAccountId = apCreated ? newApGlAccountId : null;
+                partyToReturn.CreatedApGlAccountName =
+                    apCreated ? $"AP - {request.PartyDto.GroupName} ({request.PartyDto.PartyId})" : null;
+                partyToReturn.CreatedApGlAccountArabicName = apCreated
+                    ? $"المقاولون - {request.PartyDto.GroupName}"
+                    : null;
             }
 
             return Result<PartyDto>.Success(partyToReturn);

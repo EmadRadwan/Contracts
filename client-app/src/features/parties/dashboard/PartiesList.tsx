@@ -210,6 +210,10 @@ export default function PartiesList() {
                                         locked={true}
                                     />
                                     <Column
+                                        field="partyId"
+                                        title={getTranslatedLabel("party.parties.list.partyId", "Party Id")}
+                                    />
+                                    <Column
                                         field="mobileContactNumber"
                                         title={getTranslatedLabel("party.parties.list.contactNumber", "Contact Number")}
                                     />

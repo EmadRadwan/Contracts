@@ -15,9 +15,6 @@ public class CreateContractor
         public PartyDto2 PartyDto { get; set; }
     }
 
-    /*public class CommandValidator : AbstractValidator<Command>
-    {
-    }*/
 
     public class Handler : IRequestHandler<Command, Result<PartyDto2>>
     {
@@ -57,7 +54,8 @@ public class CreateContractor
             // REFACTOR: Fetch all required role types for the party to match the first party's roles
             // Purpose: Ensure the new party is assigned all roles (ACCOUNT, BILL_FROM_VENDOR, SHIP_FROM_VENDOR, SUPPLIER, SUPPLIER_AGENT)
             // Improvement: Centralizes role fetching for consistency and prepares for adding multiple roles
-            var roleTypeIds = new[] { "CONTRACTOR", "ACCOUNT", "BILL_FROM_VENDOR", "SHIP_FROM_VENDOR", "SUPPLIER_AGENT" };
+            var roleTypeIds = new[]
+                { "CONTRACTOR", "ACCOUNT", "BILL_FROM_VENDOR", "SHIP_FROM_VENDOR", "SUPPLIER_AGENT" };
             var roleTypes = await _context.RoleTypes
                 .Where(x => roleTypeIds.Contains(x.RoleTypeId))
                 .ToListAsync(cancellationToken);
@@ -153,7 +151,8 @@ public class CreateContractor
                     CreatedStamp = stamp,
                     ContactMech = contactMech,
                     Party = party,
-                    PartyRole = _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeContractor), // Use CONTRACTOR role
+                    PartyRole = _context.PartyRoles.FirstOrDefault(pr =>
+                        pr.Party == party && pr.RoleType == roleTypeContractor), // Use CONTRACTOR role
                     RoleType = roleTypeContractor
                 };
                 _context.PartyContactMeches.Add(partyContactMech);
@@ -190,7 +189,8 @@ public class CreateContractor
                     CreatedStamp = stamp,
                     ContactMech = contactMech,
                     Party = party,
-                    PartyRole = _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeContractor), // Use Contractor role
+                    PartyRole = _context.PartyRoles.FirstOrDefault(pr =>
+                        pr.Party == party && pr.RoleType == roleTypeContractor), // Use Contractor role
                     RoleType = roleTypeContractor
                 };
                 _context.PartyContactMeches.Add(partyContactMech);
@@ -226,7 +226,8 @@ public class CreateContractor
                     CreatedStamp = stamp,
                     ContactMech = contactMech,
                     Party = party,
-                    PartyRole = _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeContractor), // Use Contractor role
+                    PartyRole = _context.PartyRoles.FirstOrDefault(pr =>
+                        pr.Party == party && pr.RoleType == roleTypeContractor), // Use Contractor role
                     RoleType = roleTypeContractor
                 };
                 _context.PartyContactMeches.Add(partyContactMech);
@@ -264,21 +265,108 @@ public class CreateContractor
                 _context.PostalAddresses.Add(postalAddress);
             }
 
-            var result = await _context.SaveChangesAsync() > 0;
+            bool apCreated = false;
+            string? newApGlAccountId = null;
+
+            const string prefix = "21"; // ← choose your prefix: 2105, 2110, 2001 etc.210000
+            const int digits = 4;
+            const int maxAttempts = 900;
+            int suffix = 1;
+
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                string candidate = $"{prefix}{suffix.ToString().PadLeft(digits, '0')}";
+
+                bool exists = await _context.GlAccounts
+                    .AnyAsync(a => a.GlAccountId == candidate, cancellationToken);
+
+                if (!exists)
+                {
+                    newApGlAccountId = candidate;
+                    break;
+                }
+
+                suffix++;
+            }
+
+            if (newApGlAccountId == null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return Result<PartyDto2>.Failure(
+                    $"Could not generate unique AP GL account ID after {maxAttempts} attempts.");
+            }
+
+            // 1. Create GlAccount
+            var newApAccount = new GlAccount
+            {
+                GlAccountId = newApGlAccountId,
+                GlAccountTypeId = "ACCOUNTS_PAYABLE",
+                GlAccountClassId = "CURRENT_LIABILITY", // or LIABILITY – check your chart
+                GlResourceTypeId = "MONEY",
+                ParentGlAccountId = "210000", // or "210000" – your AP parent
+                AccountCode = newApGlAccountId,
+                AccountName = $"AP - {request.PartyDto.GroupName} ({newPartyId})",
+                AccountNameArabic = $"المقاولون - {request.PartyDto.GroupName}",
+                Description =
+                    $"Accounts Payable sub-ledger for contractor {newPartyId} - {request.PartyDto.GroupName}",
+                CreatedStamp = stamp,
+                CreatedTxStamp = stamp,
+                LastUpdatedStamp = stamp,
+                LastUpdatedTxStamp = stamp
+            };
+            _context.GlAccounts.Add(newApAccount);
+
+            // 2. GlAccountOrganization
+            var glOrgAp = new GlAccountOrganization
+            {
+                GlAccountId = newApGlAccountId,
+                OrganizationPartyId = "Company",
+                RoleTypeId = null,
+                FromDate = stamp,
+                ThruDate = null,
+                CreatedStamp = stamp,
+                CreatedTxStamp = stamp,
+                LastUpdatedStamp = stamp,
+                LastUpdatedTxStamp = stamp
+            };
+            _context.GlAccountOrganizations.Add(glOrgAp);
+
+            // 3. PartyGlAccount
+            var partyGlAp = new PartyGlAccount
+            {
+                OrganizationPartyId = "Company",
+                PartyId = newPartyId,
+                RoleTypeId = "BILL_FROM_VENDOR",
+                GlAccountTypeId = "ACCOUNTS_PAYABLE",
+                GlAccountId = newApGlAccountId,
+                CreatedStamp = stamp,
+                CreatedTxStamp = stamp,
+                LastUpdatedStamp = stamp,
+                LastUpdatedTxStamp = stamp
+            };
+            _context.PartyGlAccounts.Add(partyGlAp);
+
+            apCreated = true;
+
+            var result = await _context.SaveChangesAsync(cancellationToken) > 0;
 
             if (!result)
             {
-                transaction.Rollback();
+                await transaction.RollbackAsync(cancellationToken);
                 return Result<PartyDto2>.Failure("Failed to create Contractor");
             }
 
-            transaction.Commit();
+            await transaction.CommitAsync(cancellationToken);
 
             var partyToReturn = new PartyDto2
             {
                 PartyId = newPartyId,
                 Description = request.PartyDto.FirstName + " ( " + roleTypeContractor?.RoleTypeId + " )",
-                PartyTypeDescription = partyStatus.PartyId
+                PartyTypeDescription = partyStatus.PartyId,
+                CreatedApGlAccountId = apCreated ? newApGlAccountId : null,
+                CreatedApGlAccountName = apCreated ? $"AP - {request.PartyDto.GroupName} ({newPartyId})" : null,
+                CreatedApGlAccountArabicName =
+                    apCreated ? $"المقاولون - {request.PartyDto.GroupName}" : null,
             };
             return Result<PartyDto2>.Success(partyToReturn);
         }
