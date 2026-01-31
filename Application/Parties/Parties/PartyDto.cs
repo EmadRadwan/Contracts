@@ -33,6 +33,7 @@ public class PartyDto
     public string? FirstName { get; set; }
     public string? MiddleName { get; set; }
     public string? PersonalTitle { get; set; }
+    
     public string? MobileContactNumber { get; set; }
     public string? WorkCountryCode { get; set; }
     public string? WorkAreaCode { get; set; }
