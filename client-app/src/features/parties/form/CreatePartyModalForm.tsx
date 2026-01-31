@@ -19,7 +19,6 @@ interface Props {
 const partyRoleOptions = [
     {mainRole: 'CUSTOMER', description: 'عميل'},
     {mainRole: 'CONTRACTOR', description: 'مقاول'},
-    {mainRole: 'EMPLOYEE', description: 'موظف'},
     {mainRole: 'SUPPLIER', description: 'مورد'},
 ];
 
@@ -71,7 +70,7 @@ export default function CreatePartyModalForm({
                         <Field
                             id={'firstName'}
                             name={'firstName'}
-                            label={'الاسم الأول *'}
+                            label={'الاسم'}
                             component={FormInput}
                             autoComplete={"off"}
                             validator={requiredValidator}

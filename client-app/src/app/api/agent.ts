@@ -347,11 +347,11 @@ const Parties = {
     updateCustomer: (customer: any) =>
         requests.put(`/parties/updateCustomer`, customer),
     updateEmployee: (employee: any) =>
-        requests.put(`/parties/updateemployee`, employee),
+        requests.put(`/parties/updateEmployee`, employee),
     createContractor: (contractor: any) =>
         requests.post("/parties/createContractor", contractor),
     updateContractor: (contractor: any) =>
-        requests.post("/parties/updateContractor", contractor),
+        requests.put("/parties/updateContractor", contractor),
     createSupplier: (supplier: any) =>
         requests.post("/parties/createSupplier", supplier),
     updateSupplier: (supplier: any) =>

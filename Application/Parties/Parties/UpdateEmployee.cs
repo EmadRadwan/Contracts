@@ -45,54 +45,207 @@ public class UpdateEmployee
             person.PersonalTitle = request.PartyDto.PersonalTitle;
             person.LastUpdatedStamp = stamp;
 
-            // Update mobile phone
-            var telcomNumber = from prty in _context.Parties
+var telcomNumberQuery = from prty in _context.Parties
                 join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
                 join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
                 join tn in _context.TelecomNumbers on cm.ContactMechId equals tn.ContactMechId
-                join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals new
-                    { pcmp.PartyId, pcmp.ContactMechId }
+                join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals
+                    new { pcmp.PartyId, pcmp.ContactMechId }
+                join cmpt in _context.ContactMechPurposeTypes on pcmp.ContactMechPurposeTypeId equals cmpt
+                    .ContactMechPurposeTypeId
                 where prty.PartyId == request.PartyDto.PartyId && pcmp.ContactMechPurposeTypeId == "PRIMARY_PHONE"
                 select tn;
 
-            var primaryTelcomNumber = telcomNumber.SingleOrDefault();
-            if (primaryTelcomNumber != null)
+
+            var primaryTelcomNumber = telcomNumberQuery.FirstOrDefault(); // changed to FirstOrDefault
+
+            if (!string.IsNullOrWhiteSpace(request.PartyDto.MobileContactNumber))
             {
-                primaryTelcomNumber.ContactNumber = request.PartyDto.MobileContactNumber;
+                if (primaryTelcomNumber != null)
+                {
+                    // update existing
+                    primaryTelcomNumber.ContactNumber = request.PartyDto.MobileContactNumber;
+                }
+                else
+                {
+                    // create new (copy pattern from CreateEMPLOYEE)
+                    var contactMech = new ContactMech
+                    {
+                        ContactMechId = Guid.NewGuid().ToString(),
+                        LastUpdatedStamp = stamp,
+                        CreatedStamp = stamp,
+                        ContactMechTypeId = "TELECOM_NUMBER"
+                    };
+                    _context.ContactMeches.Add(contactMech);
+
+                    var telecomNumber = new TelecomNumber
+                    {
+                        ContactMech = contactMech,
+                        ContactNumber = request.PartyDto.MobileContactNumber,
+                        LastUpdatedStamp = stamp,
+                        CreatedStamp = stamp
+                    };
+                    _context.TelecomNumbers.Add(telecomNumber);
+
+                    var partyContactMech = new PartyContactMech
+                    {
+                        FromDate = stamp,
+                        LastUpdatedStamp = stamp,
+                        CreatedStamp = stamp,
+                        ContactMech = contactMech,
+                        Party = party,
+                        RoleTypeId = "EMPLOYEE" // or whatever role you use consistently
+                    };
+                    _context.PartyContactMeches.Add(partyContactMech);
+
+                    var partyContactMechPurpose = new PartyContactMechPurpose
+                    {
+                        FromDate = stamp,
+                        LastUpdatedStamp = stamp,
+                        CreatedStamp = stamp,
+                        ContactMech = contactMech,
+                        ContactMechPurposeTypeId = "PRIMARY_PHONE",
+                        Party = party
+                    };
+                    _context.PartyContactMechPurposes.Add(partyContactMechPurpose);
+                }
             }
 
-            // Update email
-            var currentContactMech = from prty in _context.Parties
-                join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
-                join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
-                join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals new
-                    { pcmp.PartyId, pcmp.ContactMechId }
-                where prty.PartyId == request.PartyDto.PartyId && pcmp.ContactMechPurposeTypeId == "PRIMARY_EMAIL"
-                select cm;
-
-            var primaryEmail = currentContactMech.SingleOrDefault();
-            if (primaryEmail != null)
-            {
-                primaryEmail.InfoString = request.PartyDto.InfoString;
-            }
-
-            // Update address
-            var currentPostalAddress = from prty in _context.Parties
+            // ───────────────────────────────────────────────
+            // POSTAL ADDRESS (GENERAL_LOCATION)
+            // ───────────────────────────────────────────────
+            var currentPostalAddressQuery = from prty in _context.Parties
                 join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
                 join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
                 join pa in _context.PostalAddresses on cm.ContactMechId equals pa.ContactMechId
                 join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals new
                     { pcmp.PartyId, pcmp.ContactMechId }
-                where prty.PartyId == request.PartyDto.PartyId && pcmp.ContactMechPurposeTypeId == "GENERAL_LOCATION"
+                where prty.PartyId == request.PartyDto.PartyId
+                      && pcmp.ContactMechPurposeTypeId == "GENERAL_LOCATION"
                 select pa;
 
-            var generalLocation = currentPostalAddress.SingleOrDefault();
-            if (generalLocation != null)
+            var generalLocation = currentPostalAddressQuery.FirstOrDefault();
+
+            bool hasAddressData = !string.IsNullOrWhiteSpace(request.PartyDto.Address1) ||
+                                  !string.IsNullOrWhiteSpace(request.PartyDto.Address2) ||
+                                  !string.IsNullOrWhiteSpace(request.PartyDto.GeoId);
+
+            if (hasAddressData)
             {
-                generalLocation.Address1 = request.PartyDto.Address1;
-                generalLocation.Address2 = request.PartyDto.Address2;
-                generalLocation.ToName = request.PartyDto.FirstName;
-                generalLocation.CountryGeoId = request.PartyDto.GeoId;
+                if (generalLocation != null)
+                {
+                    generalLocation.Address1 = request.PartyDto.Address1 ?? generalLocation.Address1;
+                    generalLocation.Address2 = request.PartyDto.Address2 ?? generalLocation.Address2;
+                    generalLocation.ToName = request.PartyDto.FirstName ?? generalLocation.ToName;
+                    generalLocation.CountryGeoId = request.PartyDto.GeoId ?? generalLocation.CountryGeoId;
+                }
+                else if (!string.IsNullOrWhiteSpace(request.PartyDto.Address1)) // create only if meaningful data
+                {
+                    var contactMech = new ContactMech
+                    {
+                        ContactMechId = Guid.NewGuid().ToString(),
+                        LastUpdatedStamp = stamp,
+                        CreatedStamp = stamp,
+                        ContactMechTypeId = "POSTAL_ADDRESS"
+                    };
+                    _context.ContactMeches.Add(contactMech);
+
+                    var partyContactMech = new PartyContactMech
+                    {
+                        FromDate = stamp,
+                        LastUpdatedStamp = stamp,
+                        CreatedStamp = stamp,
+                        ContactMech = contactMech,
+                        Party = party,
+                        RoleTypeId = "EMPLOYEE"
+                    };
+                    _context.PartyContactMeches.Add(partyContactMech);
+
+                    var partyContactMechPurposeGeneral = new PartyContactMechPurpose
+                    {
+                        FromDate = stamp,
+                        LastUpdatedStamp = stamp,
+                        CreatedStamp = stamp,
+                        ContactMech = contactMech,
+                        ContactMechPurposeTypeId = "GENERAL_LOCATION",
+                        Party = party
+                    };
+                    _context.PartyContactMechPurposes.Add(partyContactMechPurposeGeneral);
+
+                    var partyContactMechPurposeShipping = new PartyContactMechPurpose
+                    {
+                        FromDate = stamp,
+                        LastUpdatedStamp = stamp,
+                        CreatedStamp = stamp,
+                        ContactMech = contactMech,
+                        ContactMechPurposeTypeId = "SHIPPING_LOCATION",
+                        Party = party
+                    };
+                    _context.PartyContactMechPurposes.Add(partyContactMechPurposeShipping);
+
+                    var postalAddress = new PostalAddress
+                    {
+                        ContactMech = contactMech,
+                        ToName = request.PartyDto.FirstName,
+                        Address1 = request.PartyDto.Address1,
+                        Address2 = request.PartyDto.Address2,
+                        CountryGeoId = request.PartyDto.GeoId
+                    };
+                    _context.PostalAddresses.Add(postalAddress);
+                }
+            }
+
+            var currentContactMechQuery = from prty in _context.Parties
+                join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
+                join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
+                join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals new
+                    { pcmp.PartyId, pcmp.ContactMechId }
+                where prty.PartyId == request.PartyDto.PartyId
+                      && pcmp.ContactMechPurposeTypeId == "PRIMARY_EMAIL"
+                select cm;
+
+            var primaryEmail = currentContactMechQuery.FirstOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(request.PartyDto.InfoString))
+            {
+                if (primaryEmail != null)
+                {
+                    primaryEmail.InfoString = request.PartyDto.InfoString;
+                }
+                else
+                {
+                    var contactMech = new ContactMech
+                    {
+                        ContactMechId = Guid.NewGuid().ToString(),
+                        LastUpdatedStamp = stamp,
+                        CreatedStamp = stamp,
+                        InfoString = request.PartyDto.InfoString,
+                        ContactMechTypeId = "EMAIL_ADDRESS"
+                    };
+                    _context.ContactMeches.Add(contactMech);
+
+                    var partyContactMech = new PartyContactMech
+                    {
+                        FromDate = stamp,
+                        LastUpdatedStamp = stamp,
+                        CreatedStamp = stamp,
+                        ContactMech = contactMech,
+                        Party = party,
+                        RoleTypeId = "EMPLOYEE"
+                    };
+                    _context.PartyContactMeches.Add(partyContactMech);
+
+                    var partyContactMechPurpose = new PartyContactMechPurpose
+                    {
+                        FromDate = stamp,
+                        LastUpdatedStamp = stamp,
+                        CreatedStamp = stamp,
+                        ContactMech = contactMech,
+                        ContactMechPurposeTypeId = "PRIMARY_EMAIL",
+                        Party = party
+                    };
+                    _context.PartyContactMechPurposes.Add(partyContactMechPurpose);
+                }
             }
 
             var createdAccounts = new List<(string Id, string Type, string Name, string Arabic)>();

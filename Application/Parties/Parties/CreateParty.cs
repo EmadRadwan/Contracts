@@ -29,8 +29,7 @@ public class CreateParty
 
         public async Task<Result<PartyDto2>> Handle(Command request, CancellationToken cancellationToken)
         {
-            var transaction = _context.Database.BeginTransaction();
-
+            var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             var user = await _context.Users.FirstOrDefaultAsync(x =>
                 x.UserName == _userAccessor.GetUsername(), cancellationToken);
 
@@ -39,16 +38,24 @@ public class CreateParty
 
             // REFACTOR: Dynamically determine PartyType based on MainRole
             // PERSON for CUSTOMER/EMPLOYEE, PARTY_GROUP for SUPPLIER/CONTRACTOR
-            var mainRole = request.PartyDto.MainRole?.Trim().ToUpper();
-            var isPerson = mainRole is "CUSTOMER" or "EMPLOYEE";
-            var partyTypeId = isPerson ? "PERSON" : "PARTY_GROUP";
+            var mainRole = request.PartyDto.MainRole?.Trim().ToUpperInvariant();
+
+            if (string.IsNullOrEmpty(mainRole) ||
+                !new[] { "CUSTOMER", "SUPPLIER", "CONTRACTOR" }.Contains(mainRole))
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return Result<PartyDto2>.Failure("Invalid or missing MainRole.");
+            }
+
+            bool isPerson = mainRole == "CUSTOMER";
+            string partyTypeId = isPerson ? "PERSON" : "PARTY_GROUP";
 
             var partyType = await _context.PartyTypes.SingleOrDefaultAsync(
                 x => x.PartyTypeId == partyTypeId, cancellationToken);
 
             if (partyType == null)
             {
-                transaction.Rollback();
+                await transaction.RollbackAsync(cancellationToken);
                 return Result<PartyDto2>.Failure($"PartyType {partyTypeId} not found.");
             }
 
@@ -61,23 +68,31 @@ public class CreateParty
             var contactMechTypePostalAddress = await _context.ContactMechTypes.SingleOrDefaultAsync(
                 x => x.ContactMechTypeId == "POSTAL_ADDRESS", cancellationToken);
 
-            // REFACTOR: Dynamic role assignment based on MainRole from frontend
-            // This replaces the hardcoded customer roles
+            // GL configuration per role
+            (string Prefix, string GlType, string RoleForLink, string AccountNamePrefix, string ArabicPrefix, string
+                ParentAccountId) glConfig = mainRole switch
+                {
+                    "CUSTOMER" => ("12", "ACCOUNTS_RECEIVABLE", "BILL_TO_CUSTOMER", "AR - ", "مدينون - ", "121100"),
+                    "SUPPLIER" => ("21", "ACCOUNTS_PAYABLE", "BILL_FROM_VENDOR", "AP - ", "الدائنون - ", "210000"),
+                    "CONTRACTOR" => ("21", "ACCOUNTS_PAYABLE", "BILL_FROM_VENDOR", "AP - ", "المقاولون - ", "210000"),
+                    _ => throw new InvalidOperationException("Unhandled mainRole")
+                };
+
+            // ───────────────────────────────────────────────
+            // Role assignment
+            // ───────────────────────────────────────────────
             string[] roleTypeIds = mainRole switch
             {
-                "CUSTOMER" => new[] { "CUSTOMER", "BILL_TO_CUSTOMER", "CONTACT", "END_USER_CUSTOMER", "PLACING_CUSTOMER", "SHIP_TO_CUSTOMER" },
-                "CONTRACTOR" => new[] { "CONTRACTOR", "ACCOUNT", "BILL_FROM_VENDOR", "SHIP_FROM_VENDOR", "SUPPLIER_AGENT" },
+                "CUSTOMER" => new[]
+                {
+                    "CUSTOMER", "BILL_TO_CUSTOMER", "CONTACT", "END_USER_CUSTOMER", "PLACING_CUSTOMER",
+                    "SHIP_TO_CUSTOMER"
+                },
                 "SUPPLIER" => new[] { "SUPPLIER", "ACCOUNT", "BILL_FROM_VENDOR", "SHIP_FROM_VENDOR", "SUPPLIER_AGENT" },
-                "EMPLOYEE" => new[] { "EMPLOYEE", "INTERNAL_ORGANIZATIO" }, // adjust if needed
+                "CONTRACTOR" => new[]
+                    { "CONTRACTOR", "ACCOUNT", "BILL_FROM_VENDOR", "SHIP_FROM_VENDOR", "SUPPLIER_AGENT" },
                 _ => Array.Empty<string>()
             };
-
-            if (roleTypeIds.Length == 0)
-            {
-                transaction.Rollback();
-                return Result<PartyDto2>.Failure("Invalid or unsupported MainRole.");
-            }
-
             var roleTypes = await _context.RoleTypes
                 .Where(x => roleTypeIds.Contains(x.RoleTypeId))
                 .ToListAsync(cancellationToken);
@@ -111,7 +126,7 @@ public class CreateParty
 
             if (string.IsNullOrEmpty(description))
             {
-                transaction.Rollback();
+                await transaction.RollbackAsync(cancellationToken);
                 return Result<PartyDto2>.Failure("Name is required.");
             }
 
@@ -168,7 +183,7 @@ public class CreateParty
             {
                 if (string.IsNullOrEmpty(request.PartyDto.FirstName))
                 {
-                    transaction.Rollback();
+                    await transaction.RollbackAsync(cancellationToken);
                     return Result<PartyDto2>.Failure("GroupName is required for Supplier/Contractor.");
                 }
 
@@ -325,15 +340,83 @@ public class CreateParty
                 _context.PostalAddresses.Add(postalAddress);
             }
 
+            // ───────────────────────────────────────────────
+            // Create sub-ledger account
+            // ───────────────────────────────────────────────
+            string? createdGlId = null;
+            string? createdGlName = null;
+            string? createdGlArabic = null;
+
+            string candidate = null;
+            const int maxAttempts = 900;
+            int suffix = 1;
+
+            for (int i = 0; i < maxAttempts; i++)
+            {
+                candidate = $"{glConfig.Prefix}{suffix.ToString().PadLeft(4, '0')}";
+                if (!await _context.GlAccounts.AnyAsync(a => a.GlAccountId == candidate, cancellationToken))
+                    break;
+                suffix++;
+            }
+
+            if (candidate == null || suffix > maxAttempts)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return Result<PartyDto2>.Failure($"Could not generate unique GL ID after {maxAttempts} attempts.");
+            }
+
+            var glAccount = new GlAccount
+            {
+                GlAccountId = candidate,
+                GlAccountTypeId = glConfig.GlType,
+                GlAccountClassId = mainRole == "CUSTOMER" ? "CURRENT_ASSET" : "CURRENT_LIABILITY",
+                GlResourceTypeId = "MONEY",
+                ParentGlAccountId = glConfig.ParentAccountId,
+                AccountCode = candidate,
+                AccountName = $"{glConfig.AccountNamePrefix}{description} ({newPartyId})",
+                AccountNameArabic = $"{glConfig.ArabicPrefix}{description}",
+                Description = $"{glConfig.GlType} sub-ledger for {mainRole.ToLower()} {newPartyId} - {description}",
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp,
+                CreatedTxStamp = stamp,
+                LastUpdatedTxStamp = stamp
+            };
+            _context.GlAccounts.Add(glAccount);
+
+            _context.GlAccountOrganizations.Add(new GlAccountOrganization
+            {
+                GlAccountId = candidate,
+                OrganizationPartyId = "Company",
+                FromDate = stamp,
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            });
+
+            _context.PartyGlAccounts.Add(new PartyGlAccount
+            {
+                OrganizationPartyId = "Company",
+                PartyId = newPartyId,
+                RoleTypeId = glConfig.RoleForLink,
+                GlAccountTypeId = glConfig.GlType,
+                GlAccountId = candidate,
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            });
+
+            createdGlId = candidate;
+            createdGlName = glAccount.AccountName;
+            createdGlArabic = glAccount.AccountNameArabic;
+
+
             var result = await _context.SaveChangesAsync(cancellationToken) > 0;
 
             if (!result)
             {
-                transaction.Rollback();
+                await transaction.RollbackAsync(cancellationToken);
                 return Result<PartyDto2>.Failure($"Failed to create {mainRole}.");
             }
 
-            transaction.Commit();
+            await transaction.CommitAsync(cancellationToken);
 
             var partyToReturn = new PartyDto2
             {

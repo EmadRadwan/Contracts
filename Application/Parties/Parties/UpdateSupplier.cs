@@ -43,15 +43,7 @@ public class UpdateSupplier
             party.Description = request.PartyDto.GroupName;
 
 
-            /*var partyGroup = await _context.PartyGroups.FindAsync(request.PartyDto.PartyId);
-
-            if (partyGroup == null) return null;
-
-            partyGroup.GroupName = request.PartyDto.GroupName;
-            partyGroup.LastUpdatedStamp = stamp;
-            */
-
-            var telcomNumber = from prty in _context.Parties
+            var telcomNumberQuery = from prty in _context.Parties
                 join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
                 join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
                 join tn in _context.TelecomNumbers on cm.ContactMechId equals tn.ContactMechId
@@ -63,36 +55,89 @@ public class UpdateSupplier
                 select tn;
 
 
-            var primaryTelcomNumber = telcomNumber.SingleOrDefault();
+            var primaryTelcomNumber = telcomNumberQuery.FirstOrDefault(); // changed to FirstOrDefault
 
-            primaryTelcomNumber.ContactNumber = request.PartyDto.MobileContactNumber;
+            if (!string.IsNullOrWhiteSpace(request.PartyDto.MobileContactNumber))
+            {
+                if (primaryTelcomNumber != null)
+                {
+                    // update existing
+                    primaryTelcomNumber.ContactNumber = request.PartyDto.MobileContactNumber;
+                }
+                else
+                {
+                    // create new (copy pattern from CreateSUPPLIER)
+                    var contactMech = new ContactMech
+                    {
+                        ContactMechId = Guid.NewGuid().ToString(),
+                        LastUpdatedStamp = stamp,
+                        CreatedStamp = stamp,
+                        ContactMechTypeId = "TELECOM_NUMBER"
+                    };
+                    _context.ContactMeches.Add(contactMech);
 
+                    var telecomNumber = new TelecomNumber
+                    {
+                        ContactMech = contactMech,
+                        ContactNumber = request.PartyDto.MobileContactNumber,
+                        LastUpdatedStamp = stamp,
+                        CreatedStamp = stamp
+                    };
+                    _context.TelecomNumbers.Add(telecomNumber);
 
-            var currentPostalAddress = from prty in _context.Parties
-                join pt in _context.PartyTypes on prty.PartyTypeId equals pt.PartyTypeId
+                    var partyContactMech = new PartyContactMech
+                    {
+                        FromDate = stamp,
+                        LastUpdatedStamp = stamp,
+                        CreatedStamp = stamp,
+                        ContactMech = contactMech,
+                        Party = party,
+                        RoleTypeId = "SUPPLIER" // or whatever role you use consistently
+                    };
+                    _context.PartyContactMeches.Add(partyContactMech);
+
+                    var partyContactMechPurpose = new PartyContactMechPurpose
+                    {
+                        FromDate = stamp,
+                        LastUpdatedStamp = stamp,
+                        CreatedStamp = stamp,
+                        ContactMech = contactMech,
+                        ContactMechPurposeTypeId = "PRIMARY_PHONE",
+                        Party = party
+                    };
+                    _context.PartyContactMechPurposes.Add(partyContactMechPurpose);
+                }
+            }
+
+            // ───────────────────────────────────────────────
+            // POSTAL ADDRESS (GENERAL_LOCATION)
+            // ───────────────────────────────────────────────
+            var currentPostalAddressQuery = from prty in _context.Parties
                 join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
                 join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
                 join pa in _context.PostalAddresses on cm.ContactMechId equals pa.ContactMechId
-                join geo in _context.Geos on pa.CountryGeoId equals geo.GeoId
-                join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals
-                    new { pcmp.PartyId, pcmp.ContactMechId }
-                join cmpt in _context.ContactMechPurposeTypes on pcmp.ContactMechPurposeTypeId equals cmpt
-                    .ContactMechPurposeTypeId
-                where prty.PartyId == request.PartyDto.PartyId &&
-                      pcmp.ContactMechPurposeTypeId == "GENERAL_LOCATION"
+                join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals new
+                    { pcmp.PartyId, pcmp.ContactMechId }
+                where prty.PartyId == request.PartyDto.PartyId
+                      && pcmp.ContactMechPurposeTypeId == "GENERAL_LOCATION"
                 select pa;
 
-            var generalLocation = currentPostalAddress.SingleOrDefault();
-            if (generalLocation != null)
+            var generalLocation = currentPostalAddressQuery.FirstOrDefault();
+
+            bool hasAddressData = !string.IsNullOrWhiteSpace(request.PartyDto.Address1) ||
+                                  !string.IsNullOrWhiteSpace(request.PartyDto.Address2) ||
+                                  !string.IsNullOrWhiteSpace(request.PartyDto.GeoId);
+
+            if (hasAddressData)
             {
-                generalLocation.Address1 = request.PartyDto.Address1;
-                generalLocation.Address2 = request.PartyDto.Address2;
-                generalLocation.ToName = request.PartyDto.FirstName;
-                generalLocation.CountryGeoId = request.PartyDto.GeoId;
-            }
-            else
-            {
-                if (!string.IsNullOrEmpty(request.PartyDto.Address1))
+                if (generalLocation != null)
+                {
+                    generalLocation.Address1 = request.PartyDto.Address1 ?? generalLocation.Address1;
+                    generalLocation.Address2 = request.PartyDto.Address2 ?? generalLocation.Address2;
+                    generalLocation.ToName = request.PartyDto.FirstName ?? generalLocation.ToName;
+                    generalLocation.CountryGeoId = request.PartyDto.GeoId ?? generalLocation.CountryGeoId;
+                }
+                else if (!string.IsNullOrWhiteSpace(request.PartyDto.Address1)) // create only if meaningful data
                 {
                     var contactMech = new ContactMech
                     {
@@ -114,7 +159,7 @@ public class UpdateSupplier
                     };
                     _context.PartyContactMeches.Add(partyContactMech);
 
-                    var partyContactMechPurposeGeneralLocation = new PartyContactMechPurpose
+                    var partyContactMechPurposeGeneral = new PartyContactMechPurpose
                     {
                         FromDate = stamp,
                         LastUpdatedStamp = stamp,
@@ -123,9 +168,9 @@ public class UpdateSupplier
                         ContactMechPurposeTypeId = "GENERAL_LOCATION",
                         Party = party
                     };
-                    _context.PartyContactMechPurposes.Add(partyContactMechPurposeGeneralLocation);
+                    _context.PartyContactMechPurposes.Add(partyContactMechPurposeGeneral);
 
-                    var partyContactMechPurposeShippingLocation = new PartyContactMechPurpose
+                    var partyContactMechPurposeShipping = new PartyContactMechPurpose
                     {
                         FromDate = stamp,
                         LastUpdatedStamp = stamp,
@@ -134,7 +179,7 @@ public class UpdateSupplier
                         ContactMechPurposeTypeId = "SHIPPING_LOCATION",
                         Party = party
                     };
-                    _context.PartyContactMechPurposes.Add(partyContactMechPurposeShippingLocation);
+                    _context.PartyContactMechPurposes.Add(partyContactMechPurposeShipping);
 
                     var postalAddress = new PostalAddress
                     {
@@ -148,26 +193,24 @@ public class UpdateSupplier
                 }
             }
 
-            var currentContactMech = from prty in _context.Parties
-                join pt in _context.PartyTypes on prty.PartyTypeId equals pt.PartyTypeId
-                join prs in _context.Persons on prty.PartyId equals prs.PartyId
+            var currentContactMechQuery = from prty in _context.Parties
                 join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
                 join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
-                join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals
-                    new { pcmp.PartyId, pcmp.ContactMechId }
-                join cmpt in _context.ContactMechPurposeTypes on pcmp.ContactMechPurposeTypeId equals cmpt
-                    .ContactMechPurposeTypeId
-                where prty.PartyId == request.PartyDto.PartyId && pcmp.ContactMechPurposeTypeId == "PRIMARY_EMAIL"
+                join pcmp in _context.PartyContactMechPurposes on new { pcm.PartyId, pcm.ContactMechId } equals new
+                    { pcmp.PartyId, pcmp.ContactMechId }
+                where prty.PartyId == request.PartyDto.PartyId
+                      && pcmp.ContactMechPurposeTypeId == "PRIMARY_EMAIL"
                 select cm;
 
-            var primaryEmail = currentContactMech.SingleOrDefault();
-            if (primaryEmail != null)
+            var primaryEmail = currentContactMechQuery.FirstOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(request.PartyDto.InfoString))
             {
-                primaryEmail.InfoString = request.PartyDto.InfoString;
-            }
-            else
-            {
-                if (!string.IsNullOrEmpty(request.PartyDto.Address1))
+                if (primaryEmail != null)
+                {
+                    primaryEmail.InfoString = request.PartyDto.InfoString;
+                }
+                else
                 {
                     var contactMech = new ContactMech
                     {
@@ -178,7 +221,6 @@ public class UpdateSupplier
                         ContactMechTypeId = "EMAIL_ADDRESS"
                     };
                     _context.ContactMeches.Add(contactMech);
-
 
                     var partyContactMech = new PartyContactMech
                     {
