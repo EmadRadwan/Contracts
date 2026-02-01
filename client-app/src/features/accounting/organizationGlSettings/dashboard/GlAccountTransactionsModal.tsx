@@ -29,7 +29,7 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
     // State
     const initialSort: SortDescriptor[] = [{ field: 'transactionDate', dir: 'asc' }, { field: 'acctgTransEntrySeqId', dir: 'asc' }];
     const [sort, setSort] = useState(initialSort);
-    const [includePrePeriod, setIncludePrePeriod] = useState(true);
+    const [includePrePeriod, setIncludePrePeriod] = useState(false);
     const [accountingTransEntries, setAccountingTransEntries] = useState<any[]>([]);
 
     // Data Fetching

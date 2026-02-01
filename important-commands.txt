@@ -230,9 +230,7 @@ mkdir -p ~/mysql-backups/contracts-golden
 cd ~/mysql-backups/contracts-golden
 
 # Option A – using the default/fallback password
-docker exec erp-mysql-contracts \
-  sh -c 'exec mysqldump -uroot -p"Tmbtc202500" --databases erp_contracts --routines --triggers --events' \
-  > ~/mysql-backups/contracts-golden/erp_contracts_$(date +%Y-%m-%d_%H-%M-%S).sql
+
   
   docker exec erp-mysql-contracts \
     mysqldump -uroot -p"Tmbtc202500" \
@@ -241,11 +239,11 @@ docker exec erp-mysql-contracts \
     | sed -E 's/DEFINER=`[^`]+`@`[^`]+` ?//g; s/DEFINER=[^ ]* ?//g' \
     > ~/mysql-backups/contracts-golden/erp_contracts_no_definer_$(date +%Y-%m-%d_%H-%M-%S).sql
 
-gzip ~/mysql-backups/contracts-golden/erp_contracts_2026-01-30_10-08-51.sql
-scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-01-30_13-09-08.sql ~/Desktop/
-gunzip ~/Desktop/erp_contracts_2026-01-30_10-08-51.sql.gz
+gzip ~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-02-01_11-35-20.sql
+scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-02-01_11-35-20.sql.gz ~/Desktop/
+gunzip ~/Desktop/erp_contracts_no_definer_2026-02-01_11-35-20.sql.gz
 
-mysql -u root -p erp_contracts < erp_contracts_no_definer_2026-01-30_13-09-08.sql
+mysql -u root -p erp_contracts < erp_contracts_no_definer_2026-02-01_11-35-20.sql
 
 
 
@@ -303,4 +301,5 @@ Summarize this entire conversation as a concise JSON or bullet-point outline, in
  
  ////////
  
- i want to extend this discussion as i need to include this functionality in my ofbiz clone. i want to start with the following. i need to have each customer/contractor/supplier to have his own PartyGlAccount from the time of Party creation - or update - so the following is the front and back code for a customer. what the client need is to by default create a GlAccount for the new customer. so here'r some details about what we need. to have a new glAccount in ofbiz we need to have a record in GlAccounts and also add a record in GlAccountOrganization, then we need to add the same in PartyGlAccounts. for the case of new customer we'll need to create his new GlAccounts record under the following GlAccount. {   "GL_ACCOUNT_ID": "121100",   "GL_ACCOUNT_TYPE_ID": "ACCOUNTS_RECEIVABLE",   "GL_ACCOUNT_CLASS_ID": "CURRENT_ASSET",   "GL_RESOURCE_TYPE_ID": "MONEY",   "GL_XBRL_CLASS_ID": null,   "PARENT_GL_ACCOUNT_ID": "120000",   "ACCOUNT_CODE": "121100",   "ACCOUNT_NAME": "ACCOUNTS RECEIVABLE - Projects Under Construction Clients",   "ACCOUNT_NAME_ARABIC": "عملاء مشاريع تحت التنفيذ",   "DESCRIPTION": null,   "PRODUCT_ID": null,   "EXTERNAL_ID": null,   "LAST_UPDATED_STAMP": "2022-05-27 12:24:25.423",   "LAST_UPDATED_TX_STAMP": "2022-05-27 12:24:25.310",   "CREATED_STAMP": "2022-05-27 12:24:25.423",   "CREATED_TX_STAMP": "2022-05-27 12:24:25.310" } then as mention we'll need to attach the new account to the compant in a similar record like this one: {   "GL_ACCOUNT_ID": "121100",   "ORGANIZATION_PARTY_ID": "Company",   "ROLE_TYPE_ID": null,   "FROM_DATE": "2001-01-01 00:00:00.000",   "THRU_DATE": null,   "LAST_UPDATED_STAMP": "2022-05-27 12:24:31.880",   "LAST_UPDATED_TX_STAMP": "2022-05-27 12:24:28.340",   "CREATED_STAMP": "2022-05-27 12:24:31.880",   "CREATED_TX_STAMP": "2022-05-27 12:24:28.340" }, and in PartyGlAccount 
+ CreateAcctgTransForCertificateIssuance
+ CreateAcctgTransForShipmentReceiptForProject

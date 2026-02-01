@@ -3466,6 +3466,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 PaymentId = payment.PaymentId,
                 WorkEffortId = workEffortId,
                 Description = payment.Comments,
+                TransactionDate = payment.EffectiveDate,
                 AcctgTransEntries = acctgTransEntries
             };
 
@@ -5118,7 +5119,7 @@ public class GeneralLedgerService : IGeneralLedgerService
 
             var companyPartyId = await _productStoreService.GetProductStorePayToPartId();
             var now = DateTime.UtcNow;
-            var transactionDate = now.Date;
+            var transactionDate = payment.EffectiveDate;
 
             string bankOrCashGlAccountId = payment.PaymentMethod?.GlAccountId
                                            ?? throw new Exception("GL account not configured on payment method");
