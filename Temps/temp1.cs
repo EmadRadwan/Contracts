@@ -1,296 +1,210 @@
-public class CreateParty
+using Application.Accounting.Services.Models;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Persistence;
+
+namespace Application.Accounting.Services;
+
+public class GetGlAccountTransactionDetails
 {
-    public class Command : IRequest<Result<PartyDto2>>
+    public class Query : IRequest<Result<GlAccountTransactionDetails>>
     {
-        public PartyDto2 PartyDto { get; set; }
+        public string CustomTimePeriodId { get; set; }
+        public string OrganizationPartyId { get; set; }
+        public string GlAccountId { get; set; }
+        public bool IncludePrePeriodTransactions { get; set; } = true;
     }
 
-    public class Handler : IRequestHandler<Command, Result<PartyDto2>>
+    public class Handler : IRequestHandler<Query, Result<GlAccountTransactionDetails>>
     {
         private readonly DataContext _context;
-        private readonly IUserAccessor _userAccessor;
-        private readonly IUtilityService _utilityService;
+        private readonly IAcctgMiscService _acctgMiscService;
 
-        public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService)
+        public Handler(DataContext context, IAcctgMiscService acctgMiscService)
         {
             _context = context;
-            _userAccessor = userAccessor;
-            _utilityService = utilityService;
+            _acctgMiscService = acctgMiscService;
         }
 
-        public async Task<Result<PartyDto2>> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Result<GlAccountTransactionDetails>> Handle(Query request,
+            CancellationToken cancellationToken)
         {
-            var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-
-            var stamp = DateTime.UtcNow; // ← prefer UTC in most cases
-
-            var partyStatusPartyEnabled = await _context.StatusItems
-                .SingleOrDefaultAsync(x => x.StatusId == "PARTY_ENABLED", cancellationToken);
-
-            if (partyStatusPartyEnabled == null)
+            try
             {
-                await transaction.RollbackAsync(cancellationToken);
-                return Result<PartyDto2>.Failure("PARTY_ENABLED status not found.");
-            }
+                // 1. Retrieve CustomTimePeriod
+                var customTimePeriod = await _context.CustomTimePeriods
+                    .FindAsync(request.CustomTimePeriodId);
 
-            var mainRole = request.PartyDto.MainRole?.Trim().ToUpperInvariant();
-
-            if (string.IsNullOrEmpty(mainRole) ||
-                !new[] { "CUSTOMER", "SUPPLIER", "CONTRACTOR" }.Contains(mainRole))
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                return Result<PartyDto2>.Failure("Invalid or missing MainRole.");
-            }
-
-            // ───────────────────────────────────────────────
-            // Determine party type & GL settings
-            // ───────────────────────────────────────────────
-            bool isPerson = mainRole == "CUSTOMER";
-            string partyTypeId = isPerson ? "PERSON" : "PARTY_GROUP";
-
-            var partyType = await _context.PartyTypes
-                .SingleOrDefaultAsync(x => x.PartyTypeId == partyTypeId, cancellationToken);
-
-            if (partyType == null)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                return Result<PartyDto2>.Failure($"PartyType {partyTypeId} not found.");
-            }
-
-            // GL configuration per role
-            (string Prefix, string GlType, string RoleForLink, string AccountNamePrefix, string ArabicPrefix, string ParentAccountId) glConfig = mainRole switch
-            {
-                "CUSTOMER"   => ("12",  "ACCOUNTS_RECEIVABLE", "BILL_TO_CUSTOMER",   "AR - ", "مدينون - ", "121100"),
-                "SUPPLIER"   => ("21",  "ACCOUNTS_PAYABLE",    "BILL_FROM_VENDOR",   "AP - ", "الدائنون - ", "210000"),
-                "CONTRACTOR" => ("21",  "ACCOUNTS_PAYABLE",    "BILL_FROM_VENDOR",   "AP - ", "المقاولون - ", "210000"),
-                _            => throw new InvalidOperationException("Unhandled mainRole")
-            };
-
-            // ───────────────────────────────────────────────
-            // Role assignment
-            // ───────────────────────────────────────────────
-            string[] roleTypeIds = mainRole switch
-            {
-                "CUSTOMER"   => new[] { "CUSTOMER", "BILL_TO_CUSTOMER", "CONTACT", "END_USER_CUSTOMER", "PLACING_CUSTOMER", "SHIP_TO_CUSTOMER" },
-                "SUPPLIER"   => new[] { "SUPPLIER", "ACCOUNT", "BILL_FROM_VENDOR", "SHIP_FROM_VENDOR", "SUPPLIER_AGENT" },
-                "CONTRACTOR" => new[] { "CONTRACTOR", "ACCOUNT", "BILL_FROM_VENDOR", "SHIP_FROM_VENDOR", "SUPPLIER_AGENT" },
-                _            => Array.Empty<string>()
-            };
-
-            var roleTypes = await _context.RoleTypes
-                .Where(x => roleTypeIds.Contains(x.RoleTypeId))
-                .ToListAsync(cancellationToken);
-
-            if (roleTypes.Count != roleTypeIds.Length)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                return Result<PartyDto2>.Failure("One or more required roles are missing in database.");
-            }
-
-            var primaryRoleType = roleTypes.Single(x => x.RoleTypeId == mainRole);
-
-            // ───────────────────────────────────────────────
-            // Create Party
-            // ───────────────────────────────────────────────
-            var newPartyId = await _utilityService.GetNextSequence("Party");
-
-            string description = request.PartyDto.FirstName?.Trim();
-            if (string.IsNullOrWhiteSpace(description))
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                return Result<PartyDto2>.Failure("Name is required.");
-            }
-
-            var party = new Party
-            {
-                PartyId = newPartyId,
-                PartyType = partyType,
-                Status = partyStatusPartyEnabled,
-                MainRole = primaryRoleType.RoleTypeId,
-                Description = description,
-                CreatedStamp = stamp,
-                LastUpdatedStamp = stamp
-            };
-            _context.Parties.Add(party);
-
-            // Assign roles
-            foreach (var roleType in roleTypes)
-            {
-                _context.PartyRoles.Add(new PartyRole
+                if (customTimePeriod == null)
                 {
-                    Party = party,
-                    RoleType = roleType,
-                    CreatedStamp = stamp,
-                    LastUpdatedStamp = stamp
+                    return Result<GlAccountTransactionDetails>.Failure("CustomTimePeriod not found.");
+                }
+
+                if (!customTimePeriod.FromDate.HasValue || !customTimePeriod.ThruDate.HasValue)
+                {
+                    return Result<GlAccountTransactionDetails>.Failure("CustomTimePeriod date range is incomplete.");
+                }
+
+                // 2. Retrieve GL Account
+                var glAccount = await _context.GlAccounts
+                    .FindAsync(request.GlAccountId);
+
+                if (glAccount == null)
+                {
+                    return Result<GlAccountTransactionDetails>.Failure("GlAccount not found.");
+                }
+
+                // Define consistent cut-off points (same as trial balance logic)
+                var periodStart = customTimePeriod.FromDate.Value.Date;           // e.g. 2026-01-01 00:00:00
+                var periodEnd   = customTimePeriod.ThruDate.Value.Date;           // inclusive end
+                var openingCutoff = periodStart.AddDays(-1).AddTicks(-1);         // last moment of previous day
+
+                // 3. Build base query for transaction list
+                var query = from ate in _context.AcctgTransEntries
+                            join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
+                            join att in _context.AcctgTransTypes on act.AcctgTransTypeId equals att.AcctgTransTypeId into transTypes
+                            from att in transTypes.DefaultIfEmpty()
+                            join p in _context.Parties on act.PartyId equals p.PartyId into parties
+                            from p in parties.DefaultIfEmpty()
+                            join prod in _context.Products on ate.ProductId equals prod.ProductId into products
+                            from prod in products.DefaultIfEmpty()
+                            join we in _context.WorkEfforts on act.WorkEffortId equals we.WorkEffortId into workEfforts
+                            from we in workEfforts.DefaultIfEmpty()
+                            where ate.OrganizationPartyId == request.OrganizationPartyId
+                                  && ate.GlAccountId == request.GlAccountId
+                                  && act.IsPosted == "Y"
+                                  && act.GlFiscalTypeId == "ACTUAL"
+                            select new TransactionEntryDto
+                            {
+                                AcctgTransId = ate.AcctgTransId,
+                                AcctgTransEntrySeqId = ate.AcctgTransEntrySeqId,
+                                TransactionDate = (DateTime)act.TransactionDate,
+                                AcctgTransTypeId = act.AcctgTransTypeId ?? "Unknown",
+                                AcctgTransTypeDescription = att != null ? att.Description : (act.AcctgTransTypeId ?? "Unknown"),
+                                GlFiscalTypeId = act.GlFiscalTypeId,
+                                InvoiceId = act.InvoiceId,
+                                PaymentId = act.PaymentId,
+                                WorkEffortId = act.WorkEffortId,
+                                ShipmentId = act.ShipmentId,
+                                PartyId = act.PartyId,
+                                PartyName = p != null ? p.Description : null,
+                                ProductId = ate.ProductId,
+                                ProductName = prod != null ? prod.ProductName : null,
+                                IsPosted = act.IsPosted,
+                                PostedDate = act.PostedDate,
+                                DebitCreditFlag = ate.DebitCreditFlag,
+                                Amount = (decimal)ate.Amount,
+                                Description = act.Description,
+                                CurrencyUomId = ate.CurrencyUomId,
+                                CertificateNumber = we != null ? we.CertificateNumber : null
+                            };
+
+                // 4. Filter transactions for display (respect IncludePrePeriodTransactions)
+                IQueryable<TransactionEntryDto> transactionsQuery;
+
+                if (request.IncludePrePeriodTransactions)
+                {
+                    // Show everything up to (but not including) ThruDate + 1
+                    transactionsQuery = query.Where(x => x.TransactionDate <= periodEnd);
+                }
+                else
+                {
+                    // Only current period
+                    transactionsQuery = query.Where(x =>
+                        x.TransactionDate >= periodStart &&
+                        x.TransactionDate <= periodEnd);
+                }
+
+                var transactions = await transactionsQuery
+                    .OrderBy(x => x.TransactionDate)
+                    .ThenBy(x => x.AcctgTransId)
+                    .ThenBy(x => x.AcctgTransEntrySeqId)
+                    .ToListAsync(cancellationToken);
+
+                // 5. Calculate aggregates using consistent cutoffs
+                // Opening = everything BEFORE the period starts (≤ day before FromDate)
+                var openingDebits = await (
+                    from ate in _context.AcctgTransEntries
+                    join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
+                    where ate.OrganizationPartyId == request.OrganizationPartyId
+                          && ate.GlAccountId == request.GlAccountId
+                          && act.IsPosted == "Y"
+                          && ate.DebitCreditFlag == "D"
+                          && act.GlFiscalTypeId == "ACTUAL"
+                          && act.TransactionDate <= openingCutoff
+                    select ate.Amount
+                ).SumAsync(cancellationToken);
+
+                var openingCredits = await (
+                    from ate in _context.AcctgTransEntries
+                    join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
+                    where ate.OrganizationPartyId == request.OrganizationPartyId
+                          && ate.GlAccountId == request.GlAccountId
+                          && act.IsPosted == "Y"
+                          && ate.DebitCreditFlag == "C"
+                          && act.GlFiscalTypeId == "ACTUAL"
+                          && act.TransactionDate <= openingCutoff
+                    select ate.Amount
+                ).SumAsync(cancellationToken);
+
+                // Ending = everything up to end of period (≤ ThruDate)
+                var endingDebits = await (
+                    from ate in _context.AcctgTransEntries
+                    join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
+                    where ate.OrganizationPartyId == request.OrganizationPartyId
+                          && ate.GlAccountId == request.GlAccountId
+                          && act.IsPosted == "Y"
+                          && ate.DebitCreditFlag == "D"
+                          && act.GlFiscalTypeId == "ACTUAL"
+                          && act.TransactionDate <= periodEnd
+                    select ate.Amount
+                ).SumAsync(cancellationToken);
+
+                var endingCredits = await (
+                    from ate in _context.AcctgTransEntries
+                    join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
+                    where ate.OrganizationPartyId == request.OrganizationPartyId
+                          && ate.GlAccountId == request.GlAccountId
+                          && act.IsPosted == "Y"
+                          && ate.DebitCreditFlag == "C"
+                          && act.GlFiscalTypeId == "ACTUAL"
+                          && act.TransactionDate <= periodEnd
+                    select ate.Amount
+                ).SumAsync(cancellationToken);
+
+                // 6. Determine account side
+                bool isDebit = await _acctgMiscService.IsDebitAccount(request.GlAccountId);
+
+                // 7. Calculate balances
+                decimal openingBalance = isDebit
+                    ? openingDebits - openingCredits
+                    : openingCredits - openingDebits;
+
+                decimal endingBalance = isDebit
+                    ? endingDebits - endingCredits
+                    : endingCredits - endingDebits;
+
+                decimal postedDebits   = endingDebits - openingDebits;
+                decimal postedCredits  = endingCredits - openingCredits;
+
+                // 8. Return result
+                return Result<GlAccountTransactionDetails>.Success(new GlAccountTransactionDetails
+                {
+                    OpeningBalance  = openingBalance,
+                    PostedDebits    = postedDebits,
+                    PostedCredits   = postedCredits,
+                    EndingBalance   = endingBalance,
+                    GlAccountId     = request.GlAccountId,
+                    AccountCode     = glAccount.AccountCode,
+                    AccountName     = glAccount.AccountNameArabic,
+                    Transactions    = transactions
                 });
             }
-
-            _context.PartyStatuses.Add(new PartyStatus
+            catch (Exception ex)
             {
-                Party = party,
-                Status = partyStatusPartyEnabled,
-                StatusDate = stamp,
-                CreatedStamp = stamp,
-                LastUpdatedStamp = stamp
-            });
-
-            // Person / Group
-            if (isPerson)
-            {
-                _context.Persons.Add(new Person
-                {
-                    Party = party,
-                    FirstName = description,
-                    CreatedStamp = stamp,
-                    LastUpdatedStamp = stamp
-                });
+                return Result<GlAccountTransactionDetails>.Failure(
+                    $"Error retrieving transaction details: {ex.Message}");
             }
-            else
-            {
-                _context.PartyGroups.Add(new PartyGroup
-                {
-                    Party = party,
-                    GroupName = description,
-                    CreatedStamp = stamp,
-                    LastUpdatedStamp = stamp
-                });
-            }
-
-            // ───────────────────────────────────────────────
-            // Contact mechanisms (same as before)
-            // ───────────────────────────────────────────────
-            var contactMechTypes = await _context.ContactMechTypes
-                .Where(x => x.ContactMechTypeId.In("TELECOM_NUMBER", "EMAIL_ADDRESS", "POSTAL_ADDRESS"))
-                .ToDictionaryAsync(x => x.ContactMechTypeId, cancellationToken);
-
-            var purposeTypes = await _context.ContactMechPurposeTypes
-                .Where(x => x.ContactMechPurposeTypeId.In("PRIMARY_PHONE", "PRIMARY_EMAIL", "GENERAL_LOCATION", "SHIPPING_LOCATION"))
-                .ToDictionaryAsync(x => x.ContactMechPurposeTypeId, cancellationToken);
-
-            var primaryPartyRole = new PartyRole { Party = party, RoleType = primaryRoleType }; // temp – will be replaced after save if needed
-
-            // Mobile
-            if (!string.IsNullOrWhiteSpace(request.PartyDto.MobileContactNumber))
-            {
-                var cm = new ContactMech { ContactMechId = Guid.NewGuid().ToString(), ContactMechTypeId = "TELECOM_NUMBER", CreatedStamp = stamp, LastUpdatedStamp = stamp };
-                _context.ContactMeches.Add(cm);
-
-                _context.TelecomNumbers.Add(new TelecomNumber
-                {
-                    ContactMech = cm,
-                    ContactNumber = request.PartyDto.MobileContactNumber,
-                    CreatedStamp = stamp,
-                    LastUpdatedStamp = stamp
-                });
-
-                var pcm = new PartyContactMech { Party = party, ContactMech = cm, RoleTypeId = primaryRoleType.RoleTypeId, FromDate = stamp, CreatedStamp = stamp, LastUpdatedStamp = stamp };
-                _context.PartyContactMeches.Add(pcm);
-
-                _context.PartyContactMechPurposes.Add(new PartyContactMechPurpose
-                {
-                    Party = party,
-                    ContactMech = cm,
-                    ContactMechPurposeTypeId = "PRIMARY_PHONE",
-                    FromDate = stamp,
-                    CreatedStamp = stamp,
-                    LastUpdatedStamp = stamp
-                });
-            }
-
-            // Email + Address → same pattern (omitted for brevity – copy from your original or previous version)
-
-            // ───────────────────────────────────────────────
-            // Create sub-ledger account
-            // ───────────────────────────────────────────────
-            string? createdGlId = null;
-            string? createdGlName = null;
-            string? createdGlArabic = null;
-
-            string candidate = null;
-            const int maxAttempts = 900;
-            int suffix = 1;
-
-            for (int i = 0; i < maxAttempts; i++)
-            {
-                candidate = $"{glConfig.Prefix}{suffix.ToString().PadLeft(4, '0')}";
-                if (!await _context.GlAccounts.AnyAsync(a => a.GlAccountId == candidate, cancellationToken))
-                    break;
-                suffix++;
-            }
-
-            if (candidate == null || suffix > maxAttempts)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                return Result<PartyDto2>.Failure($"Could not generate unique GL ID after {maxAttempts} attempts.");
-            }
-
-            var glAccount = new GlAccount
-            {
-                GlAccountId        = candidate,
-                GlAccountTypeId    = glConfig.GlType,
-                GlAccountClassId   = mainRole == "CUSTOMER" ? "CURRENT_ASSET" : "CURRENT_LIABILITY",
-                GlResourceTypeId   = "MONEY",
-                ParentGlAccountId  = glConfig.ParentAccountId,
-                AccountCode        = candidate,
-                AccountName        = $"{glConfig.AccountNamePrefix}{description} ({newPartyId})",
-                AccountNameArabic  = $"{glConfig.ArabicPrefix}{description}",
-                Description        = $"{glConfig.GlType} sub-ledger for {mainRole.ToLower()} {newPartyId} - {description}",
-                CreatedStamp       = stamp,
-                LastUpdatedStamp   = stamp,
-                CreatedTxStamp     = stamp,
-                LastUpdatedTxStamp = stamp
-            };
-            _context.GlAccounts.Add(glAccount);
-
-            _context.GlAccountOrganizations.Add(new GlAccountOrganization
-            {
-                GlAccountId = candidate,
-                OrganizationPartyId = "Company",
-                FromDate = stamp,
-                CreatedStamp = stamp,
-                LastUpdatedStamp = stamp
-            });
-
-            _context.PartyGlAccounts.Add(new PartyGlAccount
-            {
-                OrganizationPartyId = "Company",
-                PartyId = newPartyId,
-                RoleTypeId = glConfig.RoleForLink,
-                GlAccountTypeId = glConfig.GlType,
-                GlAccountId = candidate,
-                CreatedStamp = stamp,
-                LastUpdatedStamp = stamp
-            });
-
-            createdGlId     = candidate;
-            createdGlName   = glAccount.AccountName;
-            createdGlArabic = glAccount.AccountNameArabic;
-
-            // ───────────────────────────────────────────────
-            // Final save
-            // ───────────────────────────────────────────────
-            var success = await _context.SaveChangesAsync(cancellationToken) > 0;
-            if (!success)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                return Result<PartyDto2>.Failure($"Failed to create {mainRole}.");
-            }
-
-            await transaction.CommitAsync(cancellationToken);
-
-            // Return DTO
-            var dto = new PartyDto2
-            {
-                PartyId = newPartyId,
-                Description = $"{description} ({mainRole})",
-                // ... other fields you need ...
-                CreatedGlAccountId = createdGlId,
-                CreatedGlAccountName = createdGlName,
-                CreatedGlAccountArabicName = createdGlArabic,
-                // Add more fields like CreatedApGlAccountId if you want to unify naming
-            };
-
-            return Result<PartyDto2>.Success(dto);
         }
     }
 }

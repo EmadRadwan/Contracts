@@ -6,7 +6,7 @@ import {
     GridRowProps,
     GridToolbar,
 } from '@progress/kendo-react-grid';
-import {DataResult, orderBy, SortDescriptor} from '@progress/kendo-data-query';
+import {DataResult, orderBy, SortDescriptor, State} from '@progress/kendo-data-query';
 import { Box, Button, Checkbox, FormControlLabel, Grid, Typography } from '@mui/material';
 import ModalContainer from '../../../../app/common/modals/ModalContainer';
 import {formatCurrency, handleDatesArray} from '../../../../app/util/utils';
@@ -31,7 +31,12 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
     const [sort, setSort] = useState(initialSort);
     const [includePrePeriod, setIncludePrePeriod] = useState(false);
     const [accountingTransEntries, setAccountingTransEntries] = useState<any[]>([]);
+    const initialDataState: State = {skip: 0, take: 4};
+    const [page, setPage] = React.useState<any>(initialDataState);
 
+    const pageChange = (event: any) => {
+        setPage(event.page);
+    };
     // Data Fetching
     const { data, isLoading, isFetching } = useFetchGlAccountTransactionDetailsQuery(
         {
@@ -149,8 +154,12 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                         <Grid item xs={12}>
                             <KendoGrid
                                 style={{ height: '300px' }}
-                                data={orderBy(accountingTransEntries, sort)}
+                                data={orderBy(accountingTransEntries ?? [], sort).slice(page.skip, page.take + page.skip)}
                                 sortable
+                                skip={page.skip}
+                                take={page.take}
+                                total={accountingTransEntries ? accountingTransEntries.length : 0}
+                                onPageChange={pageChange}
                                 sort={sort}
                                 onSortChange={(e: GridSortChangeEvent) => setSort(e.sort)}
                                 pageable={true}
@@ -206,7 +215,7 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                 <Column
                                     field="amount"
                                     title={getTranslatedLabel(`${localizationKey}.amount`, 'Amount')}
-                                    width={120}
+                                    width={130}
                                     format="{0:c2}"
                                 />
                                 {/*<Column

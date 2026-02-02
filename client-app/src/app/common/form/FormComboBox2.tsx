@@ -45,10 +45,30 @@ export const FormComboBox2: React.FC<FormComboBox2Props> = (fieldRenderProps) =>
 
     const editorRef = React.useRef<any>(null);
     const [focused, setFocused] = React.useState(false);
+    const [filteredData, setFilteredData] = React.useState(data);
 
-    // REFACTOR: Memoized lookup of full selected item
-    // Purpose: ComboBox needs full object when using dataItemKey/textField
-    // Improvement: Avoids find() on every render
+    React.useEffect(() => {
+        setFilteredData(data);
+    }, [data]);
+
+    const handleFilterChange = React.useCallback((event: ComboBoxFilterChangeEvent) => {
+        const filterValue = event.filter.value?.trim() ?? "";
+
+        if (!filterValue) {
+            setFilteredData(data); // show all when cleared
+            return;
+        }
+
+        // Simple contains filter (demo uses similar logic; customize as needed)
+        const filtered = data.filter((item) =>
+            String(item[textField] ?? "")
+                .toLowerCase()
+                .includes(filterValue.toLowerCase())
+        );
+
+        setFilteredData(filtered);
+    }, [data, textField]);
+
     const selectedItem = React.useMemo(() => {
         if (value === null || value === undefined || value === "" || data.length === 0) {
             return null;
@@ -117,7 +137,8 @@ export const FormComboBox2: React.FC<FormComboBox2Props> = (fieldRenderProps) =>
                 valid={valid}
                 disabled={disabled}
                 value={selectedItem}
-                data={data}
+                data={filteredData}           // ← changed: use filtered instead of raw data
+                onFilterChange={handleFilterChange}
                 dataItemKey={dataItemKey}
                 textField={textField}
                 filterable={true}                    // Client-side search enabled

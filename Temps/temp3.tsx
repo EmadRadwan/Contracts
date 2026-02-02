@@ -1,143 +1,58 @@
-import React, { useState } from "react";
-import Button from "@mui/material/Button";
-import Grid from "@mui/material/Grid";
-import FormTextArea from "../../../app/common/form/FormTextArea";
-import FormInput from "../../../app/common/form/FormInput";
-import { Field, Form, FormElement } from "@progress/kendo-react-form";
-import { FormComboBox } from "../../../app/common/form/FormComboBox";
-import { useFetchCountriesQuery } from "../../../app/store/configureStore";
-import agent from "../../../app/api/agent";
-import LoadingComponent from "../../../app/layout/LoadingComponent";
-import { requiredValidator } from "../../../app/common/form/Validators";
+// Add these imports if missing
+import { ComboBoxFilterChangeEvent } from "@progress/kendo-react-dropdowns";
 
-interface Props {
-    onClose: () => void;
-    onPartyCreated?: (newParty: any) => void;
-    initialRole?: "CONTRACTOR" | "CUSTOMER" | "SUPPLIER";
-}
+// Inside your component:
+export const FormComboBox2: React.FC<FormComboBox2Props> = (fieldRenderProps) => {
+    const {
+        // ... your existing destructuring
+        data = [],
+        // ...
+    } = fieldRenderProps;
 
-const partyRoleOptions = [
-    { mainRole: "CUSTOMER",  description: "عميل"   },
-    { mainRole: "SUPPLIER",   description: "مورد"   },
-    { mainRole: "CONTRACTOR", description: "مقاول"  },
-];
+    // NEW: local state for the currently visible (filtered) items
+    const [filteredData, setFilteredData] = React.useState(data);
 
-export default function CreatePartyModalForm({
-                                                 onClose,
-                                                 onPartyCreated,
-                                                 initialRole,
-                                             }: Props) {
-    const { data: geoCountry } = useFetchCountriesQuery(undefined);
-    const [buttonFlag, setButtonFlag] = useState(false);
+    // NEW: sync filteredData when full data changes (initial load, data refresh)
+    React.useEffect(() => {
+        setFilteredData(data);
+    }, [data]);
 
-    async function handleSubmitData(data: any) {
-        setButtonFlag(true);
-        try {
-            const response = await agent.Parties.createParty({ ...data });
-            if (onPartyCreated) onPartyCreated(response);
-            onClose();
-        } catch (error) {
-            console.error("Error creating party:", error);
-        } finally {
-            setButtonFlag(false);
+    // NEW: the handler from the demo
+    const handleFilterChange = React.useCallback((event: ComboBoxFilterChangeEvent) => {
+        const filterValue = event.filter.value?.trim() ?? "";
+
+        if (!filterValue) {
+            setFilteredData(data); // show all when cleared
+            return;
         }
-    }
+
+        // Simple contains filter (demo uses similar logic; customize as needed)
+        const filtered = data.filter((item) =>
+            String(item[textField] ?? "")
+                .toLowerCase()
+                .includes(filterValue.toLowerCase())
+        );
+
+        setFilteredData(filtered);
+    }, [data, textField]);
+
+    // ... rest of your code ...
 
     return (
-        <Form
-            onSubmit={handleSubmitData}
-            initialValues={initialRole ? { mainRole: initialRole } : undefined}
-            render={(formRenderProps) => (
-                <FormElement>
-                    <fieldset className={"k-form-fieldset"}>
-                        <Field
-                            id={"mainRole"}
-                            name={"mainRole"}
-                            label={"دور الطرف *"}
-                            component={FormComboBox}
-                            data={partyRoleOptions}
-                            dataItemKey={"mainRole"}
-                            textField={"description"}
-                            validator={requiredValidator}
-                            filterable={false}
-                        />
+        <FieldWrapper ...>
+    {/* ... Label ... */}
 
-                        <Field
-                            id={"firstName"}
-                            name={"firstName"}
-                            label={"الاسم / اسم المجموعة *"}
-                            component={FormInput}
-                            autoComplete={"off"}
-                            validator={requiredValidator}
-                        />
+    <ComboBox
+        // ... your existing props
+        filterable={true}
+        data={filteredData}           // ← changed: use filtered instead of raw data
+        onFilterChange={handleFilterChange}  // ← this is what makes it match the demo
+        value={selectedItem}
+        onChange={handleChange}
+        // ... rest
+    />
 
-                        <Field
-                            id={"mobileContactNumber"}
-                            name={"mobileContactNumber"}
-                            label={"رقم الجوال"}
-                            component={FormInput}
-                            autoComplete={"off"}
-                        />
-
-                        <Field
-                            id={"infoString"}
-                            name={"infoString"}
-                            label={"البريد الإلكتروني"}
-                            component={FormInput}
-                            autoComplete={"off"}
-                        />
-
-                        <Field
-                            id={"address1"}
-                            name={"address1"}
-                            label={"العنوان 1"}
-                            component={FormInput}
-                            autoComplete={"off"}
-                        />
-
-                        <Field
-                            id={"address2"}
-                            name={"address2"}
-                            label={"العنوان 2"}
-                            component={FormTextArea}
-                            autoComplete={"off"}
-                        />
-
-                        <Field
-                            id={"geoId"}
-                            name={"geoId"}
-                            label={"الدولة"}
-                            component={FormComboBox}
-                            dataItemKey={"geoId"}
-                            textField={"geoName"}
-                            data={geoCountry ?? []}
-                            autoComplete={"off"}
-                        />
-
-                        <div className="k-form-buttons">
-                            <Grid container spacing={2} justifyContent="flex-start">
-                                <Grid item>
-                                    <Button
-                                        variant="contained"
-                                        type="submit"
-                                        disabled={!formRenderProps.allowSubmit || buttonFlag}
-                                        color="primary"
-                                    >
-                                        إنشاء
-                                    </Button>
-                                </Grid>
-                                <Grid item>
-                                    <Button onClick={onClose} variant="contained" color="inherit">
-                                        إلغاء
-                                    </Button>
-                                </Grid>
-                            </Grid>
-                        </div>
-
-                        {buttonFlag && <LoadingComponent message="جاري إنشاء الطرف..." />}
-                    </fieldset>
-                </FormElement>
-            )}
-        />
-    );
-}
+    {/* ... hint, error ... */}
+</FieldWrapper>
+);
+};

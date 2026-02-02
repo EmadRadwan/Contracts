@@ -48,6 +48,10 @@ public class GetGlAccountTransactionDetails
                 {
                     return Result<GlAccountTransactionDetails>.Failure("GlAccount not found.");
                 }
+                
+                var periodStart = customTimePeriod.FromDate.Value.Date;           // e.g. 2026-01-01 00:00:00
+                var periodEnd   = customTimePeriod.ThruDate.Value.Date;           // inclusive end
+                var openingCutoff = periodStart.AddTicks(-1); 
 
                 // 3. Build query for transactions
                 var query = from ate in _context.AcctgTransEntries
@@ -89,89 +93,105 @@ public class GetGlAccountTransactionDetails
                         CertificateNumber = we != null ? we.CertificateNumber : null
                     };
 
-                // 4. Filter transactions based on includePrePeriodTransactions
-                var transactionsQuery = request.IncludePrePeriodTransactions
-                    ? query.Where(x => x.TransactionDate < customTimePeriod.ThruDate)
-                    : query.Where(x => x.TransactionDate >= customTimePeriod.FromDate
-                                       && x.TransactionDate < customTimePeriod.ThruDate);
+                // 4. Filter transactions for display (respect IncludePrePeriodTransactions)
+                IQueryable<TransactionEntryDto> transactionsQuery;
 
-                // 5. Execute query and sort by date
+                if (request.IncludePrePeriodTransactions)
+                {
+                    // Show everything up to (but not including) ThruDate + 1
+                    transactionsQuery = query.Where(x => x.TransactionDate <= periodEnd);
+                }
+                else
+                {
+                    // Only current period
+                    transactionsQuery = query.Where(x =>
+                        x.TransactionDate >= periodStart &&
+                        x.TransactionDate <= periodEnd);
+                }
+
                 var transactions = await transactionsQuery
                     .OrderBy(x => x.TransactionDate)
+                    .ThenBy(x => x.AcctgTransId)
+                    .ThenBy(x => x.AcctgTransEntrySeqId)
                     .ToListAsync(cancellationToken);
 
-                // 6. Calculate balances
-                var openingDebits = request.IncludePrePeriodTransactions
-                    ? (decimal)await (from ate in _context.AcctgTransEntries
-                        join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
-                        where ate.OrganizationPartyId == request.OrganizationPartyId
-                              && ate.GlAccountId == request.GlAccountId
-                              && act.IsPosted == "Y"
-                              && ate.DebitCreditFlag == "D"
-                              && act.GlFiscalTypeId == "ACTUAL"
-                              && act.TransactionDate < customTimePeriod.FromDate
-                        select ate.Amount).SumAsync(cancellationToken)
-                    : 0;
-
-                var openingCredits = request.IncludePrePeriodTransactions
-                    ? (decimal)await (from ate in _context.AcctgTransEntries
-                        join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
-                        where ate.OrganizationPartyId == request.OrganizationPartyId
-                              && ate.GlAccountId == request.GlAccountId
-                              && act.IsPosted == "Y"
-                              && ate.DebitCreditFlag == "C"
-                              && act.GlFiscalTypeId == "ACTUAL"
-                              && act.TransactionDate < customTimePeriod.FromDate
-                        select ate.Amount).SumAsync(cancellationToken)
-                    : 0;
-
-                var endingDebits = (decimal)await (from ate in _context.AcctgTransEntries
+                // 5. Calculate aggregates using consistent cutoffs
+                // Opening = everything BEFORE the period starts (≤ day before FromDate)
+                var openingDebits = await (
+                    from ate in _context.AcctgTransEntries
                     join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
                     where ate.OrganizationPartyId == request.OrganizationPartyId
                           && ate.GlAccountId == request.GlAccountId
                           && act.IsPosted == "Y"
                           && ate.DebitCreditFlag == "D"
                           && act.GlFiscalTypeId == "ACTUAL"
-                          && act.TransactionDate < customTimePeriod.ThruDate
-                    select ate.Amount).SumAsync(cancellationToken);
+                          && act.TransactionDate <= openingCutoff
+                    select ate.Amount
+                ).SumAsync(cancellationToken);
 
-                var endingCredits = (decimal)await (from ate in _context.AcctgTransEntries
+                var openingCredits = await (
+                    from ate in _context.AcctgTransEntries
                     join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
                     where ate.OrganizationPartyId == request.OrganizationPartyId
                           && ate.GlAccountId == request.GlAccountId
                           && act.IsPosted == "Y"
                           && ate.DebitCreditFlag == "C"
                           && act.GlFiscalTypeId == "ACTUAL"
-                          && act.TransactionDate < customTimePeriod.ThruDate
-                    select ate.Amount).SumAsync(cancellationToken);
+                          && act.TransactionDate <= openingCutoff
+                    select ate.Amount
+                ).SumAsync(cancellationToken);
 
-                // 7. Determine if debit account
+                // Ending = everything up to end of period (≤ ThruDate)
+                var endingDebits = await (
+                    from ate in _context.AcctgTransEntries
+                    join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
+                    where ate.OrganizationPartyId == request.OrganizationPartyId
+                          && ate.GlAccountId == request.GlAccountId
+                          && act.IsPosted == "Y"
+                          && ate.DebitCreditFlag == "D"
+                          && act.GlFiscalTypeId == "ACTUAL"
+                          && act.TransactionDate <= periodEnd
+                    select ate.Amount
+                ).SumAsync(cancellationToken);
+
+                var endingCredits = await (
+                    from ate in _context.AcctgTransEntries
+                    join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
+                    where ate.OrganizationPartyId == request.OrganizationPartyId
+                          && ate.GlAccountId == request.GlAccountId
+                          && act.IsPosted == "Y"
+                          && ate.DebitCreditFlag == "C"
+                          && act.GlFiscalTypeId == "ACTUAL"
+                          && act.TransactionDate <= periodEnd
+                    select ate.Amount
+                ).SumAsync(cancellationToken);
+
+                // 6. Determine account side
                 bool isDebit = await _acctgMiscService.IsDebitAccount(request.GlAccountId);
 
-                // 8. Calculate opening and ending balances
-                decimal openingBalance = isDebit
+                // 7. Calculate balances
+                decimal openingBalance = (decimal)(isDebit
                     ? openingDebits - openingCredits
-                    : openingCredits - openingDebits;
+                    : openingCredits - openingDebits);
 
-                decimal endingBalance = isDebit
+                decimal endingBalance = (decimal)(isDebit
                     ? endingDebits - endingCredits
-                    : endingCredits - endingDebits;
+                    : endingCredits - endingDebits);
 
-                // 9. Calculate period debits and credits
-                decimal postedDebits = endingDebits - openingDebits;
-                decimal postedCredits = endingCredits - openingCredits;
+                decimal postedDebits   = (decimal)(endingDebits - openingDebits);
+                decimal postedCredits  = (decimal)(endingCredits - openingCredits);
 
-                // 10. Return result
+                // 8. Return result
                 return Result<GlAccountTransactionDetails>.Success(new GlAccountTransactionDetails
                 {
-                    OpeningBalance = openingBalance,
-                    PostedDebits = postedDebits,
-                    PostedCredits = postedCredits,
-                    EndingBalance = endingBalance,
-                    GlAccountId = request.GlAccountId,
-                    AccountCode = glAccount.AccountCode,
-                    AccountName = glAccount.AccountNameArabic,
-                    Transactions = transactions
+                    OpeningBalance  = openingBalance,
+                    PostedDebits    = postedDebits,
+                    PostedCredits   = postedCredits,
+                    EndingBalance   = endingBalance,
+                    GlAccountId     = request.GlAccountId,
+                    AccountCode     = glAccount.AccountCode,
+                    AccountName     = glAccount.AccountNameArabic,
+                    Transactions    = transactions
                 });
             }
             catch (Exception ex)

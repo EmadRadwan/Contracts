@@ -303,3 +303,4 @@ Summarize this entire conversation as a concise JSON or bullet-point outline, in
  
  CreateAcctgTransForCertificateIssuance
  CreateAcctgTransForShipmentReceiptForProject
+ now i need a business advice. what do you think of using this type of tranaction for an opening balance when the client starts using the system. 
