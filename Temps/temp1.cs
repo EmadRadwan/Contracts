@@ -1,210 +1,156 @@
-using Application.Accounting.Services.Models;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Persistence;
-
-namespace Application.Accounting.Services;
-
-public class GetGlAccountTransactionDetails
+public async Task<string> CreateAccountingTransactionForApartmentIncomingPayment(string paymentId)
 {
-    public class Query : IRequest<Result<GlAccountTransactionDetails>>
+    try
     {
-        public string CustomTimePeriodId { get; set; }
-        public string OrganizationPartyId { get; set; }
-        public string GlAccountId { get; set; }
-        public bool IncludePrePeriodTransactions { get; set; } = true;
+        var payment = await _context.Payments
+            .Include(p => p.PaymentMethod)
+            .Include(p => p.SalesRequest)
+            .FirstOrDefaultAsync(p => p.PaymentId == paymentId);
+
+        if (payment == null)
+            throw new Exception($"Payment not found: {paymentId}");
+
+        if (payment.SalesRequest == null)
+            throw new Exception($"SalesRequest not found for payment: {paymentId}");
+
+        var companyPartyId = await _productStoreService.GetProductStorePayToPartId();
+        var now = DateTime.UtcNow;
+        var transactionDate = payment.EffectiveDate;
+
+        string bankOrCashGlAccountId = payment.PaymentMethod?.GlAccountId
+                                       ?? throw new Exception("GL account not configured on payment method");
+
+        // ────────────────────────────────────────────────
+        // Determine payment type & related strings
+        // ────────────────────────────────────────────────
+        string paymentType;
+        string paymentTypeDescription;
+        string chequeOrTransferRef = string.Empty;
+
+        if (payment.IsBankTransfer == true)
+        {
+            paymentType = "BankTransfer";
+            paymentTypeDescription = "Bank Transfer";
+        }
+        else if (!string.IsNullOrEmpty(payment.ChequeNumber))
+        {
+            paymentType = "Cheque";
+            paymentTypeDescription = "Cheque";
+            chequeOrTransferRef = $"#{payment.ChequeNumber}";
+        }
+        else
+        {
+            paymentType = "Cash";
+            paymentTypeDescription = "Cash";
+        }
+
+        // ────────────────────────────────────────────────
+        // Determine credit GL account — with party-specific override
+        // ────────────────────────────────────────────────
+        string creditGlAccountId;
+
+        if (payment.SalesRequest.IsChequesDelivered == true)
+        {
+            // For delivered cheques → always use Cheques Under Collection
+            creditGlAccountId = "124410";
+        }
+        else
+        {
+            // For normal receivable → try party-specific → fallback to default
+            creditGlAccountId = await GetCustomerReceivableGlAccountId(
+                organizationPartyId: companyPartyId,
+                customerPartyId:     payment.PartyIdFrom,
+                cancellationToken:   default);
+        }
+
+        // Main transaction description
+        var description = $"Apartment incoming payment - {paymentTypeDescription} {chequeOrTransferRef} - " +
+                          $"Payment {payment.PaymentId} - SR {payment.SalesRequestId}";
+
+        var acctgTransParams = new CreateAcctgTransParams
+        {
+            AcctgTransTypeId = "INCOMING_PAYMENT",
+            TransactionDate  = transactionDate,
+            IsPosted         = "Y",
+            Description      = description,
+            GlFiscalTypeId   = "ACTUAL",
+            PaymentId        = payment.PaymentId,
+            SalesRequestId   = payment.SalesRequestId,
+            PartyId          = payment.PartyIdFrom
+        };
+
+        string acctgTransId = await _acctgTransService.CreateAcctgTrans(acctgTransParams);
+
+        int seq = 0;
+
+        // ────────────────────────────────────────────────
+        // Debit entry (incoming money → bank/cash)
+        // ────────────────────────────────────────────────
+        string debitDescription = paymentType switch
+        {
+            "BankTransfer" => $"Bank transfer received from customer {chequeOrTransferRef}",
+            "Cheque"       => $"Bank deposit - Cleared cheque {chequeOrTransferRef}",
+            _              => "Cash receipt from customer"
+        };
+
+        var debitEntry = new AcctgTransEntry
+        {
+            AcctgTransId          = acctgTransId,
+            AcctgTransEntrySeqId  = (++seq).ToString("D3"),
+            GlAccountId           = bankOrCashGlAccountId,
+            DebitCreditFlag       = "D",
+            AcctgTransEntryTypeId = "_NA_",
+            Amount                = payment.Amount,
+            ReconcileStatusId     = "AES_NOT_RECONCILED",
+            Description           = debitDescription,
+            OrganizationPartyId   = companyPartyId,
+            PartyId               = payment.PartyIdFrom,
+            CreatedStamp          = now,
+            LastUpdatedStamp      = now
+        };
+        await _acctgTransService.CreateAcctgTransEntry(debitEntry);
+
+        // ────────────────────────────────────────────────
+        // Credit entry (reducing receivable or cheques under collection)
+        // ────────────────────────────────────────────────
+        string creditDescription = payment.SalesRequest.IsChequesDelivered == true
+            ? paymentType switch
+            {
+                "BankTransfer" => $"Bank transfer applied - reducing cheques under collection",
+                "Cheque"       => $"Clearing cheques under collection {chequeOrTransferRef}",
+                _              => $"Cash payment applied - reducing cheques under collection"
+            }
+            : $"Receipt against customer receivable {chequeOrTransferRef}";
+
+        var creditEntry = new AcctgTransEntry
+        {
+            AcctgTransId          = acctgTransId,
+            AcctgTransEntrySeqId  = (++seq).ToString("D3"),
+            GlAccountId           = creditGlAccountId,
+            DebitCreditFlag       = "C",
+            AcctgTransEntryTypeId = "_NA_",
+            Amount                = payment.Amount,
+            ReconcileStatusId     = "AES_NOT_RECONCILED",
+            Description           = creditDescription,
+            OrganizationPartyId   = companyPartyId,
+            PartyId               = payment.PartyIdFrom,
+            CreatedStamp          = now,
+            LastUpdatedStamp      = now
+        };
+        await _acctgTransService.CreateAcctgTransEntry(creditEntry);
+
+        _logger.LogInformation(
+            "Accounting transaction {AcctgTransId} created for apartment incoming {PaymentType} payment {PaymentId}. " +
+            "Debit: {DebitDesc} | Credit GL {CreditGlAccountId} (IsChequesDelivered: {IsChequesDelivered})",
+            acctgTransId, paymentTypeDescription, paymentId,
+            debitDescription, creditGlAccountId, payment.SalesRequest.IsChequesDelivered);
+
+        return acctgTransId;
     }
-
-    public class Handler : IRequestHandler<Query, Result<GlAccountTransactionDetails>>
+    catch (Exception ex)
     {
-        private readonly DataContext _context;
-        private readonly IAcctgMiscService _acctgMiscService;
-
-        public Handler(DataContext context, IAcctgMiscService acctgMiscService)
-        {
-            _context = context;
-            _acctgMiscService = acctgMiscService;
-        }
-
-        public async Task<Result<GlAccountTransactionDetails>> Handle(Query request,
-            CancellationToken cancellationToken)
-        {
-            try
-            {
-                // 1. Retrieve CustomTimePeriod
-                var customTimePeriod = await _context.CustomTimePeriods
-                    .FindAsync(request.CustomTimePeriodId);
-
-                if (customTimePeriod == null)
-                {
-                    return Result<GlAccountTransactionDetails>.Failure("CustomTimePeriod not found.");
-                }
-
-                if (!customTimePeriod.FromDate.HasValue || !customTimePeriod.ThruDate.HasValue)
-                {
-                    return Result<GlAccountTransactionDetails>.Failure("CustomTimePeriod date range is incomplete.");
-                }
-
-                // 2. Retrieve GL Account
-                var glAccount = await _context.GlAccounts
-                    .FindAsync(request.GlAccountId);
-
-                if (glAccount == null)
-                {
-                    return Result<GlAccountTransactionDetails>.Failure("GlAccount not found.");
-                }
-
-                // Define consistent cut-off points (same as trial balance logic)
-                var periodStart = customTimePeriod.FromDate.Value.Date;           // e.g. 2026-01-01 00:00:00
-                var periodEnd   = customTimePeriod.ThruDate.Value.Date;           // inclusive end
-                var openingCutoff = periodStart.AddDays(-1).AddTicks(-1);         // last moment of previous day
-
-                // 3. Build base query for transaction list
-                var query = from ate in _context.AcctgTransEntries
-                            join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
-                            join att in _context.AcctgTransTypes on act.AcctgTransTypeId equals att.AcctgTransTypeId into transTypes
-                            from att in transTypes.DefaultIfEmpty()
-                            join p in _context.Parties on act.PartyId equals p.PartyId into parties
-                            from p in parties.DefaultIfEmpty()
-                            join prod in _context.Products on ate.ProductId equals prod.ProductId into products
-                            from prod in products.DefaultIfEmpty()
-                            join we in _context.WorkEfforts on act.WorkEffortId equals we.WorkEffortId into workEfforts
-                            from we in workEfforts.DefaultIfEmpty()
-                            where ate.OrganizationPartyId == request.OrganizationPartyId
-                                  && ate.GlAccountId == request.GlAccountId
-                                  && act.IsPosted == "Y"
-                                  && act.GlFiscalTypeId == "ACTUAL"
-                            select new TransactionEntryDto
-                            {
-                                AcctgTransId = ate.AcctgTransId,
-                                AcctgTransEntrySeqId = ate.AcctgTransEntrySeqId,
-                                TransactionDate = (DateTime)act.TransactionDate,
-                                AcctgTransTypeId = act.AcctgTransTypeId ?? "Unknown",
-                                AcctgTransTypeDescription = att != null ? att.Description : (act.AcctgTransTypeId ?? "Unknown"),
-                                GlFiscalTypeId = act.GlFiscalTypeId,
-                                InvoiceId = act.InvoiceId,
-                                PaymentId = act.PaymentId,
-                                WorkEffortId = act.WorkEffortId,
-                                ShipmentId = act.ShipmentId,
-                                PartyId = act.PartyId,
-                                PartyName = p != null ? p.Description : null,
-                                ProductId = ate.ProductId,
-                                ProductName = prod != null ? prod.ProductName : null,
-                                IsPosted = act.IsPosted,
-                                PostedDate = act.PostedDate,
-                                DebitCreditFlag = ate.DebitCreditFlag,
-                                Amount = (decimal)ate.Amount,
-                                Description = act.Description,
-                                CurrencyUomId = ate.CurrencyUomId,
-                                CertificateNumber = we != null ? we.CertificateNumber : null
-                            };
-
-                // 4. Filter transactions for display (respect IncludePrePeriodTransactions)
-                IQueryable<TransactionEntryDto> transactionsQuery;
-
-                if (request.IncludePrePeriodTransactions)
-                {
-                    // Show everything up to (but not including) ThruDate + 1
-                    transactionsQuery = query.Where(x => x.TransactionDate <= periodEnd);
-                }
-                else
-                {
-                    // Only current period
-                    transactionsQuery = query.Where(x =>
-                        x.TransactionDate >= periodStart &&
-                        x.TransactionDate <= periodEnd);
-                }
-
-                var transactions = await transactionsQuery
-                    .OrderBy(x => x.TransactionDate)
-                    .ThenBy(x => x.AcctgTransId)
-                    .ThenBy(x => x.AcctgTransEntrySeqId)
-                    .ToListAsync(cancellationToken);
-
-                // 5. Calculate aggregates using consistent cutoffs
-                // Opening = everything BEFORE the period starts (≤ day before FromDate)
-                var openingDebits = await (
-                    from ate in _context.AcctgTransEntries
-                    join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
-                    where ate.OrganizationPartyId == request.OrganizationPartyId
-                          && ate.GlAccountId == request.GlAccountId
-                          && act.IsPosted == "Y"
-                          && ate.DebitCreditFlag == "D"
-                          && act.GlFiscalTypeId == "ACTUAL"
-                          && act.TransactionDate <= openingCutoff
-                    select ate.Amount
-                ).SumAsync(cancellationToken);
-
-                var openingCredits = await (
-                    from ate in _context.AcctgTransEntries
-                    join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
-                    where ate.OrganizationPartyId == request.OrganizationPartyId
-                          && ate.GlAccountId == request.GlAccountId
-                          && act.IsPosted == "Y"
-                          && ate.DebitCreditFlag == "C"
-                          && act.GlFiscalTypeId == "ACTUAL"
-                          && act.TransactionDate <= openingCutoff
-                    select ate.Amount
-                ).SumAsync(cancellationToken);
-
-                // Ending = everything up to end of period (≤ ThruDate)
-                var endingDebits = await (
-                    from ate in _context.AcctgTransEntries
-                    join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
-                    where ate.OrganizationPartyId == request.OrganizationPartyId
-                          && ate.GlAccountId == request.GlAccountId
-                          && act.IsPosted == "Y"
-                          && ate.DebitCreditFlag == "D"
-                          && act.GlFiscalTypeId == "ACTUAL"
-                          && act.TransactionDate <= periodEnd
-                    select ate.Amount
-                ).SumAsync(cancellationToken);
-
-                var endingCredits = await (
-                    from ate in _context.AcctgTransEntries
-                    join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
-                    where ate.OrganizationPartyId == request.OrganizationPartyId
-                          && ate.GlAccountId == request.GlAccountId
-                          && act.IsPosted == "Y"
-                          && ate.DebitCreditFlag == "C"
-                          && act.GlFiscalTypeId == "ACTUAL"
-                          && act.TransactionDate <= periodEnd
-                    select ate.Amount
-                ).SumAsync(cancellationToken);
-
-                // 6. Determine account side
-                bool isDebit = await _acctgMiscService.IsDebitAccount(request.GlAccountId);
-
-                // 7. Calculate balances
-                decimal openingBalance = isDebit
-                    ? openingDebits - openingCredits
-                    : openingCredits - openingDebits;
-
-                decimal endingBalance = isDebit
-                    ? endingDebits - endingCredits
-                    : endingCredits - endingDebits;
-
-                decimal postedDebits   = endingDebits - openingDebits;
-                decimal postedCredits  = endingCredits - openingCredits;
-
-                // 8. Return result
-                return Result<GlAccountTransactionDetails>.Success(new GlAccountTransactionDetails
-                {
-                    OpeningBalance  = openingBalance,
-                    PostedDebits    = postedDebits,
-                    PostedCredits   = postedCredits,
-                    EndingBalance   = endingBalance,
-                    GlAccountId     = request.GlAccountId,
-                    AccountCode     = glAccount.AccountCode,
-                    AccountName     = glAccount.AccountNameArabic,
-                    Transactions    = transactions
-                });
-            }
-            catch (Exception ex)
-            {
-                return Result<GlAccountTransactionDetails>.Failure(
-                    $"Error retrieving transaction details: {ex.Message}");
-            }
-        }
+        _logger.LogError(ex, "Failed to create accounting transaction for apartment incoming payment {PaymentId}",
+            paymentId);
+        throw;
     }
 }

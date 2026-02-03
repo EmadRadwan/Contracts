@@ -5101,6 +5101,23 @@ public class GeneralLedgerService : IGeneralLedgerService
                 "An unexpected error occurred while copying the accounting transaction.");
         }
     }
+    
+    private async Task<string> GetCustomerReceivableGlAccountId(
+        string organizationPartyId,
+        string customerPartyId,
+        CancellationToken cancellationToken = default)
+    {
+        var partyGlAccount = await _context.PartyGlAccounts
+            .Where(pga =>
+                pga.OrganizationPartyId == organizationPartyId &&
+                pga.PartyId == customerPartyId &&
+                pga.RoleTypeId == "BILL_TO_CUSTOMER" &&
+                pga.GlAccountTypeId == "ACCOUNTS_RECEIVABLE")
+            .Select(pga => pga.GlAccountId)
+            .FirstOrDefaultAsync(cancellationToken);
+    
+        return partyGlAccount ?? "121100";
+    }
 
     public async Task<string> CreateAccountingTransactionForApartmentIncomingPayment(string paymentId)
     {
@@ -5149,9 +5166,21 @@ public class GeneralLedgerService : IGeneralLedgerService
             }
             
             // Determine credit GL account
-            string creditGlAccountId = (bool)payment.SalesRequest.IsChequesDelivered
-                ? "124410" // Cheques Under Collection
-                : "121100"; // Accounts Receivable
+            string creditGlAccountId;
+
+            if (payment.SalesRequest.IsChequesDelivered == true)
+            {
+                // For delivered cheques → always use Cheques Under Collection
+                creditGlAccountId = "124410";
+            }
+            else
+            {
+                // For normal receivable → try party-specific → fallback to default
+                creditGlAccountId = await GetCustomerReceivableGlAccountId(
+                    organizationPartyId: companyPartyId,
+                    customerPartyId:     payment.PartyIdFrom,
+                    cancellationToken:   default);
+            }
 
             // Main transaction description
             var description = $"Apartment incoming payment - {paymentTypeDescription} {chequeOrTransferRef} - " +
