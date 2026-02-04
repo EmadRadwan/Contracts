@@ -5223,6 +5223,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 ReconcileStatusId = "AES_NOT_RECONCILED",
                 Description = debitDescription,
                 OrganizationPartyId = companyPartyId,
+                ProductId = payment.SalesRequest.ProductId,
                 PartyId = payment.PartyIdFrom,
                 CreatedStamp = now,
                 LastUpdatedStamp = now
@@ -5252,6 +5253,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 ReconcileStatusId = "AES_NOT_RECONCILED",
                 Description = creditDescription,
                 OrganizationPartyId = companyPartyId,
+                ProductId = payment.SalesRequest.ProductId,
                 PartyId = payment.PartyIdFrom,
                 CreatedStamp = now,
                 LastUpdatedStamp = now

@@ -1,156 +1,81 @@
-public async Task<string> CreateAccountingTransactionForApartmentIncomingPayment(string paymentId)
+using AutoMapper;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Persistence;
+
+namespace Application.Shipments.OrganizationGlSettings  // ← consider moving to Accounting namespace?
 {
-    try
+    public class GetPartyGlAccounts
     {
-        var payment = await _context.Payments
-            .Include(p => p.PaymentMethod)
-            .Include(p => p.SalesRequest)
-            .FirstOrDefaultAsync(p => p.PaymentId == paymentId);
-
-        if (payment == null)
-            throw new Exception($"Payment not found: {paymentId}");
-
-        if (payment.SalesRequest == null)
-            throw new Exception($"SalesRequest not found for payment: {paymentId}");
-
-        var companyPartyId = await _productStoreService.GetProductStorePayToPartId();
-        var now = DateTime.UtcNow;
-        var transactionDate = payment.EffectiveDate;
-
-        string bankOrCashGlAccountId = payment.PaymentMethod?.GlAccountId
-                                       ?? throw new Exception("GL account not configured on payment method");
-
-        // ────────────────────────────────────────────────
-        // Determine payment type & related strings
-        // ────────────────────────────────────────────────
-        string paymentType;
-        string paymentTypeDescription;
-        string chequeOrTransferRef = string.Empty;
-
-        if (payment.IsBankTransfer == true)
+        public class Query : IRequest<Result<List<GetPartyGlAccountDto>>>
         {
-            paymentType = "BankTransfer";
-            paymentTypeDescription = "Bank Transfer";
-        }
-        else if (!string.IsNullOrEmpty(payment.ChequeNumber))
-        {
-            paymentType = "Cheque";
-            paymentTypeDescription = "Cheque";
-            chequeOrTransferRef = $"#{payment.ChequeNumber}";
-        }
-        else
-        {
-            paymentType = "Cash";
-            paymentTypeDescription = "Cash";
+            public string CompanyId { get; set; } = null!;
         }
 
-        // ────────────────────────────────────────────────
-        // Determine credit GL account — with party-specific override
-        // ────────────────────────────────────────────────
-        string creditGlAccountId;
-
-        if (payment.SalesRequest.IsChequesDelivered == true)
+        public class Handler : IRequestHandler<Query, Result<List<GetPartyGlAccountDto>>>
         {
-            // For delivered cheques → always use Cheques Under Collection
-            creditGlAccountId = "124410";
-        }
-        else
-        {
-            // For normal receivable → try party-specific → fallback to default
-            creditGlAccountId = await GetCustomerReceivableGlAccountId(
-                organizationPartyId: companyPartyId,
-                customerPartyId:     payment.PartyIdFrom,
-                cancellationToken:   default);
-        }
+            private readonly DataContext _context;
+            private readonly IMapper _mapper;
 
-        // Main transaction description
-        var description = $"Apartment incoming payment - {paymentTypeDescription} {chequeOrTransferRef} - " +
-                          $"Payment {payment.PaymentId} - SR {payment.SalesRequestId}";
-
-        var acctgTransParams = new CreateAcctgTransParams
-        {
-            AcctgTransTypeId = "INCOMING_PAYMENT",
-            TransactionDate  = transactionDate,
-            IsPosted         = "Y",
-            Description      = description,
-            GlFiscalTypeId   = "ACTUAL",
-            PaymentId        = payment.PaymentId,
-            SalesRequestId   = payment.SalesRequestId,
-            PartyId          = payment.PartyIdFrom
-        };
-
-        string acctgTransId = await _acctgTransService.CreateAcctgTrans(acctgTransParams);
-
-        int seq = 0;
-
-        // ────────────────────────────────────────────────
-        // Debit entry (incoming money → bank/cash)
-        // ────────────────────────────────────────────────
-        string debitDescription = paymentType switch
-        {
-            "BankTransfer" => $"Bank transfer received from customer {chequeOrTransferRef}",
-            "Cheque"       => $"Bank deposit - Cleared cheque {chequeOrTransferRef}",
-            _              => "Cash receipt from customer"
-        };
-
-        var debitEntry = new AcctgTransEntry
-        {
-            AcctgTransId          = acctgTransId,
-            AcctgTransEntrySeqId  = (++seq).ToString("D3"),
-            GlAccountId           = bankOrCashGlAccountId,
-            DebitCreditFlag       = "D",
-            AcctgTransEntryTypeId = "_NA_",
-            Amount                = payment.Amount,
-            ReconcileStatusId     = "AES_NOT_RECONCILED",
-            Description           = debitDescription,
-            OrganizationPartyId   = companyPartyId,
-            PartyId               = payment.PartyIdFrom,
-            CreatedStamp          = now,
-            LastUpdatedStamp      = now
-        };
-        await _acctgTransService.CreateAcctgTransEntry(debitEntry);
-
-        // ────────────────────────────────────────────────
-        // Credit entry (reducing receivable or cheques under collection)
-        // ────────────────────────────────────────────────
-        string creditDescription = payment.SalesRequest.IsChequesDelivered == true
-            ? paymentType switch
+            public Handler(DataContext context, IMapper mapper)
             {
-                "BankTransfer" => $"Bank transfer applied - reducing cheques under collection",
-                "Cheque"       => $"Clearing cheques under collection {chequeOrTransferRef}",
-                _              => $"Cash payment applied - reducing cheques under collection"
+                _context = context;
+                _mapper = mapper;
             }
-            : $"Receipt against customer receivable {chequeOrTransferRef}";
 
-        var creditEntry = new AcctgTransEntry
-        {
-            AcctgTransId          = acctgTransId,
-            AcctgTransEntrySeqId  = (++seq).ToString("D3"),
-            GlAccountId           = creditGlAccountId,
-            DebitCreditFlag       = "C",
-            AcctgTransEntryTypeId = "_NA_",
-            Amount                = payment.Amount,
-            ReconcileStatusId     = "AES_NOT_RECONCILED",
-            Description           = creditDescription,
-            OrganizationPartyId   = companyPartyId,
-            PartyId               = payment.PartyIdFrom,
-            CreatedStamp          = now,
-            LastUpdatedStamp      = now
-        };
-        await _acctgTransService.CreateAcctgTransEntry(creditEntry);
+            public async Task<Result<List<GetPartyGlAccountDto>>> Handle(
+                Query request,
+                CancellationToken cancellationToken)
+            {
+                if (string.IsNullOrWhiteSpace(request.CompanyId))
+                {
+                    return Result<List<GetPartyGlAccountDto>>.Failure("Company ID is required");
+                }
 
-        _logger.LogInformation(
-            "Accounting transaction {AcctgTransId} created for apartment incoming {PaymentType} payment {PaymentId}. " +
-            "Debit: {DebitDesc} | Credit GL {CreditGlAccountId} (IsChequesDelivered: {IsChequesDelivered})",
-            acctgTransId, paymentTypeDescription, paymentId,
-            debitDescription, creditGlAccountId, payment.SalesRequest.IsChequesDelivered);
+                var query = from pga in _context.PartyGlAccounts
+                            join party in _context.Parties 
+                                on pga.PartyId equals party.PartyId
 
-        return acctgTransId;
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "Failed to create accounting transaction for apartment incoming payment {PaymentId}",
-            paymentId);
-        throw;
+                            join role in _context.RoleTypes   // ← added join for role description
+                                on pga.RoleTypeId equals role.RoleTypeId
+
+                            join glAcct in _context.GlAccounts
+                                on pga.GlAccountId equals glAcct.GlAccountId into glAcctJoin
+                                from glAcct in glAcctJoin.DefaultIfEmpty()   // LEFT JOIN (GlAccountId is nullable)
+
+                            join glType in _context.GlAccountTypes
+                                on pga.GlAccountTypeId equals glType.GlAccountTypeId   // ← use type from PartyGlAccount
+
+                            where pga.OrganizationPartyId == request.CompanyId
+
+                            select new GetPartyGlAccountDto
+                            {
+                                PartyId              = pga.PartyId,
+                                PartyDescription     = party.Description ?? party.PartyName ?? "Unknown Party",
+
+                                RoleTypeId           = pga.RoleTypeId,
+                                RoleDescription      = role.Description ?? role.RoleTypeId,  // fallback
+
+                                GlAccountTypeId      = pga.GlAccountTypeId,
+                                GlAccountTypeDescription = glType.Description ?? "Unknown Type",
+
+                                GlAccountId          = pga.GlAccountId,
+                                GlAccountName        = glAcct != null 
+                                    ? $"{glAcct.GlAccountId} - {glAcct.AccountName ?? glAcct.AccountNameArabic ?? "Unnamed"}"
+                                    : "—",  // or "Not Assigned"
+
+                                // Optional extras
+                                // CreatedStamp     = pga.CreatedStamp,
+                                // LastUpdatedStamp = pga.LastUpdatedStamp
+                            };
+
+                var partyGlAccounts = await query
+                    .OrderBy(x => x.PartyDescription)
+                    .ThenBy(x => x.RoleDescription)
+                    .ToListAsync(cancellationToken);
+
+                return Result<List<GetPartyGlAccountDto>>.Success(partyGlAccounts);
+            }
+        }
     }
 }

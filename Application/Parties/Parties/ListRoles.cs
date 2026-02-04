@@ -24,15 +24,18 @@ public class ListRoles
 
         public async Task<Result<List<RoleDto>>> Handle(Query request, CancellationToken cancellationToken)
         {
-            
-            var query = await (from r in _context.RoleTypes
-                select new RoleDto
+            var roles = await _context.RoleTypes
+                .Where(r => r.RoleTypeId == "PARTNER" ||
+                            r.RoleTypeId == "BILL_TO_CUSTOMER" ||
+                            r.RoleTypeId == "BILL_FROM_VENDOR" || r.RoleTypeId == "EMPLOYEE")
+                .Select(r => new RoleDto
                 {
                     RoleTypeId = r.RoleTypeId,
                     RoleName = r.Description
-                }).ToListAsync(cancellationToken);
+                })
+                .ToListAsync(cancellationToken);
 
-            return Result<List<RoleDto>>.Success(query);
+            return Result<List<RoleDto>>.Success(roles);
         }
     }
 }

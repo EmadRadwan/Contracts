@@ -592,4 +592,11 @@ public class OrganizationGlController : BaseApiController
 
         return NoContent();
     }
+    
+    [HttpPost("partyGlAccounts")]
+    public async Task<IActionResult> CreatePartyGlAccount([FromBody] CreatePartyGlAccountCommand command)
+    {
+        var result = await Mediator.Send(command);
+        return HandleResults(result);
+    }
 }

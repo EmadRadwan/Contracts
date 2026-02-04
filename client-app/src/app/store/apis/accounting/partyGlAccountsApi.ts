@@ -14,7 +14,7 @@ const partyGlAccountsApi = createApi({
             return headers;
         },
     }),
-
+    tagTypes: ["PartyGlAccounts"],
     endpoints (builder) {
         return {
             fetchPartyGlAccounts: builder.query<any[], any>({
@@ -24,7 +24,8 @@ const partyGlAccountsApi = createApi({
                         params: companyId,
                         method: "GET"
                     }
-                }
+                },
+                providesTags: ["PartyGlAccounts"],
             }),
             fetchRoles: builder.query<any[], any>({
                 query: () => {
@@ -33,10 +34,30 @@ const partyGlAccountsApi = createApi({
                         method: "GET"
                     }
                 }
-            })
+            }),
+            createPartyGlAccount: builder.mutation<
+                { success: boolean; message?: string; partyGlAccountId?: string },
+                CreatePartyGlAccountRequest
+                >({
+                query: (body) => ({
+                    url: "/organizationGl/partyGlAccounts",     // ← choose your actual path
+                    method: "POST",
+                    body,
+                }),
+                invalidatesTags: ["PartyGlAccounts"],        // ← will refetch the list
+            }),
         }
     }
 })
 
-export const {useFetchPartyGlAccountsQuery, useFetchRolesQuery } = partyGlAccountsApi
+export const {useFetchPartyGlAccountsQuery, useFetchRolesQuery, useCreatePartyGlAccountMutation
+} = partyGlAccountsApi
 export {partyGlAccountsApi}
+
+export interface CreatePartyGlAccountRequest {
+    companyId: string;              // or organizationPartyId
+    partyId: string;
+    roleTypeId: string;
+    glAccountId: string;
+    glAccountTypeId: string;
+}

@@ -1,58 +1,32 @@
-// Add these imports if missing
-import { ComboBoxFilterChangeEvent } from "@progress/kendo-react-dropdowns";
+// PartyGlAccountsForm.tsx
 
-// Inside your component:
-export const FormComboBox2: React.FC<FormComboBox2Props> = (fieldRenderProps) => {
-    const {
-        // ... your existing destructuring
-        data = [],
-        // ...
-    } = fieldRenderProps;
+// Add this constant near the top of the component (or in a shared constants file)
+const ALLOWED_GL_ACCOUNT_TYPES = [
+    "ACCOUNTS_PAYABLE",
+    "ACCOUNTS_RECEIVABLE",
+    "OWNERS_EQUITY",
+];
 
-    // NEW: local state for the currently visible (filtered) items
-    const [filteredData, setFilteredData] = React.useState(data);
-
-    // NEW: sync filteredData when full data changes (initial load, data refresh)
-    React.useEffect(() => {
-        setFilteredData(data);
-    }, [data]);
-
-    // NEW: the handler from the demo
-    const handleFilterChange = React.useCallback((event: ComboBoxFilterChangeEvent) => {
-        const filterValue = event.filter.value?.trim() ?? "";
-
-        if (!filterValue) {
-            setFilteredData(data); // show all when cleared
-            return;
-        }
-
-        // Simple contains filter (demo uses similar logic; customize as needed)
-        const filtered = data.filter((item) =>
-            String(item[textField] ?? "")
-                .toLowerCase()
-                .includes(filterValue.toLowerCase())
-        );
-
-        setFilteredData(filtered);
-    }, [data, textField]);
-
-    // ... rest of your code ...
-
-    return (
-        <FieldWrapper ...>
-    {/* ... Label ... */}
-
-    <ComboBox
-        // ... your existing props
-        filterable={true}
-        data={filteredData}           // ← changed: use filtered instead of raw data
-        onFilterChange={handleFilterChange}  // ← this is what makes it match the demo
-        value={selectedItem}
-        onChange={handleChange}
-        // ... rest
-    />
-
-    {/* ... hint, error ... */}
-</FieldWrapper>
+// Then filter the data before passing to the Field
+const filteredGlAccountTypes = React.useMemo(() =>
+        (glAccountTypes ?? []).filter(type =>
+            ALLOWED_GL_ACCOUNT_TYPES.includes(type.glAccountTypeId)
+        ),
+    [glAccountTypes]
 );
-};
+
+// ...
+
+<Field
+    name={"glAccountTypeId"}
+    id={"glAccountTypeId"}
+    label={getTranslatedLabel(
+        "accounting.partyGlAccountsForm.glAccountType",
+        "GL Account Type"
+    )}
+    component={MemoizedFormComboBox2}
+    data={filteredGlAccountTypes}           // ← use the filtered array here
+    dataItemKey={"glAccountTypeId"}
+    textField={"description"}
+    validator={requiredValidator}
+/>

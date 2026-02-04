@@ -2,27 +2,22 @@ import Grid from "@mui/material/Grid";
 import { Menu, MenuItem, MenuSelectEvent } from "@progress/kendo-react-layout";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
+import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";   // ← add this import
 
 const links = [
-  { title: "GL Account Type Defaults", path: "/gLAccountTypeDefaults" },
-  { title: "Product GL Accounts", path: "/productGLAccounts" },
-  { title: "Product Category GL Account", path: "/productCategoryGLAccount" },
-  { title: "FinAccount Type GL Account", path: "/finAccountTypeGLAccount" },
-  { title: "Sales Invoice GL Account", path: "/salesInvoiceGLAccount" },
-  { title: "Purchase Invoice GL Account", path: "/purchaseInvoiceGLAccount" },
-  {
-    title: "Payment Type/GL Account Type ID",
-    path: "/paymentTypeGLAccountTypeID",
-  },
-  {
-    title: "Payment Method ID/GL Account ID",
-    path: "/paymentMethodIDGLAccountID",
-  },
-  { title: "Variance Reason GL Accounts", path: "/varianceReasonGLAccounts" },
-  { title: "Credit Card Type GL Account", path: "/creditCardTypeGLAccount" },
-  { title: "Tax Authority GL Accounts", path: "/taxAuthorityGLAccounts" },
-  { title: "Party GL Accounts", path: "/partyGLAccounts" },
-  { title: "Fixed Asset Type GL Mappings", path: "/fixedAssetTypeGLMappings" },
+  { title: "GL Account Type Defaults",          path: "/gLAccountTypeDefaults",          key: "glAccountTypeDefaults" },
+  { title: "Product GL Accounts",               path: "/productGLAccounts",              key: "productGLAccounts" },
+  { title: "Product Category GL Account",       path: "/productCategoryGLAccount",       key: "productCategoryGLAccount" },
+  { title: "FinAccount Type GL Account",        path: "/finAccountTypeGLAccount",        key: "finAccountTypeGLAccount" },
+  { title: "Sales Invoice GL Account",          path: "/salesInvoiceGLAccount",          key: "salesInvoiceGLAccount" },
+  { title: "Purchase Invoice GL Account",       path: "/purchaseInvoiceGLAccount",       key: "purchaseInvoiceGLAccount" },
+  { title: "Payment Type/GL Account Type ID",   path: "/paymentTypeGLAccountTypeID",     key: "paymentTypeGLAccountTypeID" },
+  { title: "Payment Method ID/GL Account ID",   path: "/paymentMethodIDGLAccountID",     key: "paymentMethodIDGLAccountID" },
+  { title: "Variance Reason GL Accounts",       path: "/varianceReasonGLAccounts",       key: "varianceReasonGLAccounts" },
+  { title: "Credit Card Type GL Account",       path: "/creditCardTypeGLAccount",        key: "creditCardTypeGLAccount" },
+  { title: "Tax Authority GL Accounts",         path: "/taxAuthorityGLAccounts",         key: "taxAuthorityGLAccounts" },
+  { title: "Party GL Accounts",                 path: "/partyGLAccounts",                 key: "partyGLAccounts" },
+  { title: "Fixed Asset Type GL Mappings",      path: "/fixedAssetTypeGLMappings",       key: "fixedAssetTypeGLMappings" },
 ];
 
 const normalizePath = (path: string) => path.replace(/^\//, "").toLowerCase();
@@ -43,11 +38,14 @@ function withRouter(Component: any) {
 }
 
 const GlAccountTypeDefaultsMenuNavContainer = ({
-  selectedMenuItem,
-  router,
-}: GlAccountTypeDefaultsMenuNavContainerProps & { router: any }) => {
+                                                 selectedMenuItem,
+                                                 router,
+                                               }: GlAccountTypeDefaultsMenuNavContainerProps & { router: any }) => {
   const theme = useTheme();
   const { location, navigate } = router;
+
+  // Add translation hook ───────────────┐
+  const { getTranslatedLabel } = useTranslationHelper();
 
   const normalizedCurrentPath = normalizePath(location.pathname);
   const normalizedSelectedMenuItem = normalizePath(selectedMenuItem || "");
@@ -58,12 +56,7 @@ const GlAccountTypeDefaultsMenuNavContainer = ({
 
   const menuStyles = (path: string) => {
     const normalizedPath = normalizePath(path);
-    const isSelected =
-    // normalizedPath === normalizedSelectedMenuItem ||
-    normalizedPath === normalizedCurrentPath 
-    // console.log(
-    //   `Path: ${path}, Normalized Path: ${normalizedPath}, Is Selected: ${isSelected}`
-    // );
+    const isSelected = normalizedPath === normalizedCurrentPath;
 
     return {
       color: isSelected ? theme.palette.primary.main : "inherit",
@@ -72,21 +65,26 @@ const GlAccountTypeDefaultsMenuNavContainer = ({
   };
 
   return (
-    <Grid container marginTop={2} spacing={2}>
-      <Grid item xs={12}>
-        <Menu onSelect={onSelect}>
-          {links.map((link: any, index: number) => (
-            <MenuItem
-              key={index}
-              text={link.title}
-              data={{ route: link.path }}
-              cssClass={"div-container-withBorderCurved-wrap"}
-              cssStyle={menuStyles(link.path)}
-            />
-          ))}
-        </Menu>
+      <Grid container marginTop={2} spacing={2}>
+        <Grid item xs={12}>
+          <Menu onSelect={onSelect}>
+            {links.map((link, index) => (
+                <MenuItem
+                    key={index}
+                    //           ┌───────────────────────────────┐
+                    //           │           Use translation here        │
+                    text={getTranslatedLabel(
+                        `accounting.glAccountTypeDefaultsMenu.${link.key}`,
+                        link.title
+                    )}
+                    data={{ route: link.path }}
+                    cssClass={"div-container-withBorderCurved-wrap"}
+                    cssStyle={menuStyles(link.path)}
+                />
+            ))}
+          </Menu>
+        </Grid>
       </Grid>
-    </Grid>
   );
 };
 

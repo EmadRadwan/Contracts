@@ -1001,8 +1001,43 @@
     },
     "orgGlSettingsMenu": {
       "chartOfAccounts": "شجرة الحسابات",
-      "glAccountDefaults": "إعدادات الحسابات الافتراضية",
-      "timePeriod": "الفترة الزمنية"
+      "glAccountDefaults": "إعدادات الحسابات ",
+      "timePeriod": "الفترات الزمنية"
+    },
+    "partyGlAccountsForm": {
+      "party": "الطرف",
+      "role": "الدور",
+      "glAccountType": "نوع حساب دفتر الأستاذ",
+      "glAccount": "حساب دفتر الأستاذ",
+      "saveButton": "حفظ"
+    },
+    "partyGlAccounts": {
+      "grid": {
+        "party": "الطرف",
+        "glAccountName": "اسم حساب دفتر الأستاذ",
+        "roleDescription": " الدور",
+        "glAccountType": "نوع حساب دفتر الأستاذ"
+      },
+      "toast": {
+        "selectRequired": "يرجى اختيار حساب ونوع حساب.",
+        "saveFailed": "فشل حفظ ربط الحساب الأستاذ",
+        "duplicate": "لا يمكن الإضافة: حساب الأستاذ مرتبط بالفعل بهذا الطرف ونفس الدور ونوع الحساب"
+      }
+    },
+    "glAccountTypeDefaultsMenu": {
+      "glAccountTypeDefaults": "افتراضيات نوع حساب دفتر الأستاذ العام",
+      "productGLAccounts": "حسابات دفتر الأستاذ للمنتجات",
+      "productCategoryGLAccount": "حساب دفتر الأستاذ لفئة المنتج",
+      "finAccountTypeGLAccount": "حساب دفتر الأستاذ لنوع الحساب المالي",
+      "salesInvoiceGLAccount": "حساب دفتر الأستاذ لفاتورة المبيعات",
+      "purchaseInvoiceGLAccount": "حساب دفتر الأستاذ لفاتورة الشراء",
+      "paymentTypeGLAccountTypeID": "نوع الدفع / معرف نوع حساب دفتر الأستاذ",
+      "paymentMethodIDGLAccountID": "معرف طريقة الدفع / معرف حساب دفتر الأستاذ",
+      "varianceReasonGLAccounts": "حسابات دفتر الأستاذ لأسباب التباين",
+      "creditCardTypeGLAccount": "حساب دفتر الأستاذ لنوع بطاقة الائتمان",
+      "taxAuthorityGLAccounts": "حسابات دفتر الأستاذ للسلطة الضريبية",
+      "partyGLAccounts": "حسابات دفتر الأستاذ للطرف",
+      "fixedAssetTypeGLMappings": "ربط أنواع الأصول الثابتة بحسابات دفتر الأستاذ"
     },
     "glAccount": {
       "list": {

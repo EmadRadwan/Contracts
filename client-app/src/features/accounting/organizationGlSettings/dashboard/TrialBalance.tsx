@@ -59,7 +59,6 @@ const TrialBalance = () => {
   const {user} = useAppSelector((state) => state.account);
   const companyId = user?.organizationPartyId || "";
   const organizationPartyName = user?.organizationPartyName || "";
-  console.log('user', user);
   
 
   const handleSelectTimePeriod = (value: any) => {
