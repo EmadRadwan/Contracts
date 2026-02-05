@@ -29830,7 +29830,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
 
             modelBuilder.Entity<PartyGlAccount>(entity =>
             {
-                entity.HasKey(e => new { e.OrganizationPartyId, e.PartyId, e.RoleTypeId, e.GlAccountTypeId });
+                entity.HasKey(e => new { e.OrganizationPartyId, e.PartyId, e.RoleTypeId, e.GlAccountTypeId, e.GlAccountId });
 
                 entity.ToTable("PARTY_GL_ACCOUNT");
 

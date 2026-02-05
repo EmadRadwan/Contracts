@@ -1116,7 +1116,7 @@ public class SeedContracts
                 }
                 else if (party.MainRole == "EMPLOYEE")
                 {
-                    string[] employeeRoles = { "AGENT", "SALES_REP" };
+                    string[] employeeRoles = { "AGENT", "SALES_REP", "EMPLOYEE" };
                     foreach (var role in employeeRoles)
                     {
                         context.PartyRoles.Add(new PartyRole

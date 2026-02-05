@@ -1,81 +1,23 @@
-using AutoMapper;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Persistence;
-
-namespace Application.Shipments.OrganizationGlSettings  // ← consider moving to Accounting namespace?
-{
-    public class GetPartyGlAccounts
+var partyGlAccounts = await (
+    from pga in _context.PartyGlAccounts
+    join a in _context.GlAccounts on pga.GlAccountId equals a.GlAccountId                  // child account
+    join parent in _context.GlAccounts on a.ParentGlAccountId equals parent.GlAccountId   // ← added: parent account
+    join gat in _context.GlAccountTypes on pga.GlAccountTypeId equals gat.GlAccountTypeId
+    join p in _context.Parties on pga.PartyId equals p.PartyId
+    join role in _context.RoleTypes on pga.RoleTypeId equals role.RoleTypeId
+    where pga.OrganizationPartyId == request.CompanyId
+    select new GetPartyGlAccountDto
     {
-        public class Query : IRequest<Result<List<GetPartyGlAccountDto>>>
-        {
-            public string CompanyId { get; set; } = null!;
-        }
+        PartyId              = p.PartyId,
+        PartyDescription     = p.Description,  // or p.Name / whatever your field is
+        GlAccountId          = pga.GlAccountId,
+        RoleTypeId           = pga.RoleTypeId,
+        RoleDescription      = role.Description ?? role.RoleTypeId,
+        GlAccountTypeDescription = gat.Description,
+        GlAccountName        = pga.GlAccountId + " - " + a.AccountNameArabic,
 
-        public class Handler : IRequestHandler<Query, Result<List<GetPartyGlAccountDto>>>
-        {
-            private readonly DataContext _context;
-            private readonly IMapper _mapper;
-
-            public Handler(DataContext context, IMapper mapper)
-            {
-                _context = context;
-                _mapper = mapper;
-            }
-
-            public async Task<Result<List<GetPartyGlAccountDto>>> Handle(
-                Query request,
-                CancellationToken cancellationToken)
-            {
-                if (string.IsNullOrWhiteSpace(request.CompanyId))
-                {
-                    return Result<List<GetPartyGlAccountDto>>.Failure("Company ID is required");
-                }
-
-                var query = from pga in _context.PartyGlAccounts
-                            join party in _context.Parties 
-                                on pga.PartyId equals party.PartyId
-
-                            join role in _context.RoleTypes   // ← added join for role description
-                                on pga.RoleTypeId equals role.RoleTypeId
-
-                            join glAcct in _context.GlAccounts
-                                on pga.GlAccountId equals glAcct.GlAccountId into glAcctJoin
-                                from glAcct in glAcctJoin.DefaultIfEmpty()   // LEFT JOIN (GlAccountId is nullable)
-
-                            join glType in _context.GlAccountTypes
-                                on pga.GlAccountTypeId equals glType.GlAccountTypeId   // ← use type from PartyGlAccount
-
-                            where pga.OrganizationPartyId == request.CompanyId
-
-                            select new GetPartyGlAccountDto
-                            {
-                                PartyId              = pga.PartyId,
-                                PartyDescription     = party.Description ?? party.PartyName ?? "Unknown Party",
-
-                                RoleTypeId           = pga.RoleTypeId,
-                                RoleDescription      = role.Description ?? role.RoleTypeId,  // fallback
-
-                                GlAccountTypeId      = pga.GlAccountTypeId,
-                                GlAccountTypeDescription = glType.Description ?? "Unknown Type",
-
-                                GlAccountId          = pga.GlAccountId,
-                                GlAccountName        = glAcct != null 
-                                    ? $"{glAcct.GlAccountId} - {glAcct.AccountName ?? glAcct.AccountNameArabic ?? "Unnamed"}"
-                                    : "—",  // or "Not Assigned"
-
-                                // Optional extras
-                                // CreatedStamp     = pga.CreatedStamp,
-                                // LastUpdatedStamp = pga.LastUpdatedStamp
-                            };
-
-                var partyGlAccounts = await query
-                    .OrderBy(x => x.PartyDescription)
-                    .ThenBy(x => x.RoleDescription)
-                    .ToListAsync(cancellationToken);
-
-                return Result<List<GetPartyGlAccountDto>>.Success(partyGlAccounts);
-            }
-        }
-    }
-}
+        // ── NEW fields ──
+        ParentGlAccountId    = a.ParentGlAccountId,
+        ParentGlAccountName  = parent.AccountNameArabic ?? parent.AccountName ?? "غير محدد",
+        FullGlAccountPath    = parent.AccountNameArabic + " → " + a.AccountNameArabic   // optional: nice for display
+    }).ToListAsync(cancellationToken);

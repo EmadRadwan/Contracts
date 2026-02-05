@@ -149,6 +149,14 @@ var telcomNumberQuery = from prty in _context.Parties
                         ContactMechTypeId = "POSTAL_ADDRESS"
                     };
                     _context.ContactMeches.Add(contactMech);
+                    
+                    var roleTypeEmployee = await _context.RoleTypes.SingleOrDefaultAsync(
+                        x => x.RoleTypeId == "EMPLOYEE", cancellationToken);
+
+                    
+                    var partyRoleEmployee =
+                        _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeEmployee);
+
 
                     var partyContactMech = new PartyContactMech
                     {
@@ -156,8 +164,8 @@ var telcomNumberQuery = from prty in _context.Parties
                         LastUpdatedStamp = stamp,
                         CreatedStamp = stamp,
                         ContactMech = contactMech,
-                        Party = party,
-                        RoleTypeId = "EMPLOYEE"
+                        PartyRole = partyRoleEmployee,
+                        RoleType = roleTypeEmployee
                     };
                     _context.PartyContactMeches.Add(partyContactMech);
 

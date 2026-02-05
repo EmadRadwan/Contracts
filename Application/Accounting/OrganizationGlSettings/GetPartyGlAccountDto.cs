@@ -9,4 +9,6 @@ public class GetPartyGlAccountDto
     public string GlAccountName { get; set; }
     public string RoleTypeId { get; set; }
     public string RoleDescription { get; set; }
+    public string ParentGlAccountId { get; set; }
+    public string ParentGlAccountName { get; set; }
 }

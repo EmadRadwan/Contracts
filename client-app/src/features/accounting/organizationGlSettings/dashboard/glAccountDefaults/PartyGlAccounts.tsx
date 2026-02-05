@@ -122,6 +122,22 @@ const PartyGlAccounts = () => {
                                     )}
                                     width={150}
                                 />
+                                <Column
+                                    field="parentGlAccountName"
+                                    title={getTranslatedLabel(
+                                        "accounting.partyGlAccounts.grid.parentGlAccountName",
+                                        "Parent Account"
+                                    )}
+                                    width={150}
+                                />
+                                <Column
+                                    field="partyId"
+                                    title={getTranslatedLabel(
+                                        "accounting.partyGlAccounts.grid.partyId",
+                                        "Party Id"
+                                    )}
+                                    width={150}
+                                />
                                 {/* <Column cell={CommandCell} width="auto" /> */}
                             </KendoGrid>
                         </div>
