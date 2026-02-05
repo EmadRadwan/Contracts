@@ -20,7 +20,7 @@ public class Handler : IRequestHandler<CreatePartyGlAccountCommand, Results<Crea
 {
     private readonly DataContext _context;
     private readonly IUserAccessor _userAccessor;
-    
+
     public Handler(DataContext context, IUserAccessor userAccessor)
     {
         _context = context;
@@ -31,6 +31,32 @@ public class Handler : IRequestHandler<CreatePartyGlAccountCommand, Results<Crea
         CreatePartyGlAccountCommand request,
         CancellationToken ct)
     {
+        // 1. Check if the PartyRole already exists for this Party + RoleType
+        var roleExists = await _context.PartyRoles
+            .AnyAsync(pr =>
+                    pr.PartyId == request.PartyId &&
+                    pr.RoleTypeId == request.RoleTypeId,
+                ct);
+
+        // 2. If not, create the PartyRole first
+        if (!roleExists)
+        {
+            var newRole = new PartyRole
+            {
+                PartyId = request.PartyId,
+                RoleTypeId = request.RoleTypeId,
+                CreatedStamp = DateTime.UtcNow,
+                CreatedTxStamp = DateTime.UtcNow,
+                LastUpdatedStamp = DateTime.UtcNow,
+                LastUpdatedTxStamp = DateTime.UtcNow
+            };
+
+            _context.PartyRoles.Add(newRole);
+
+            // Optional: you can log or return early if role creation fails,
+            // but usually we just continue and let the final SaveChanges fail if needed
+        }
+
         var exists = await _context.PartyGlAccounts
             .AnyAsync(p =>
                     p.OrganizationPartyId == request.CompanyId &&
