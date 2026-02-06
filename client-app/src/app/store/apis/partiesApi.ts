@@ -10,7 +10,7 @@ interface ListResponse<T> {
 
 const partiesApi = createApi({
     reducerPath: "parties",
-    tagTypes: ["Parties"],
+    tagTypes: ["Parties", "EmplPositionTypes", "Employee", "Party", "Parties", "Supplier", "Contractor", "Customer"],
     baseQuery: fetchBaseQuery({
         baseUrl: import.meta.env.VITE_API_URL,
         prepareHeaders: (headers, {getState}) => {
@@ -22,7 +22,6 @@ const partiesApi = createApi({
             return headers;
         },
     }),
-
     endpoints(builder) {
         return {
             fetchParties: builder.query<ListResponse<Party>, State>({
@@ -32,9 +31,6 @@ const partiesApi = createApi({
                 },
                 providesTags: ["Parties"],
                 transformResponse: (response: any, meta, arg) => {
-                    console.log("Parties response meta:", meta);
-                    console.log("Parties response arg:", arg);
-                    console.log("Parties response data:", response);
                     const {totalCount} = JSON.parse(
                         meta!.response!.headers.get("count")!,
                     );
@@ -60,12 +56,15 @@ const partiesApi = createApi({
                         method: "GET",
                     };
                 },
+                providesTags: ['Customer']
             }),
             fetchEmployee: builder.query<Party, string>({
                 query: (partyId) => ({
                     url: `/parties/${partyId}/getEmployee`,
                     method: "GET",
                 }),
+                providesTags: ['Employee']
+                
             }),
             fetchSupplier: builder.query<Party, any>({
                 query: (partyId) => {
@@ -75,6 +74,7 @@ const partiesApi = createApi({
                         method: "GET",
                     };
                 },
+                providesTags: ['Supplier']
             }),
             fetchContractor: builder.query<Party, any>({
                 query: (partyId) => {
@@ -84,6 +84,7 @@ const partiesApi = createApi({
                         method: "GET",
                     };
                 },
+                providesTags: ['Contractor']
             }),
             fetchCompanies: builder.query<any[], any>({
                 query: () => {
@@ -99,12 +100,92 @@ const partiesApi = createApi({
                     method: 'GET',
                 }),
             }),
+            getPartySubLedger: builder.query<PartySubLedgerResponse, string>({
+                query: (partyId) => ({
+                    url: `parties/subledger/${partyId}`,
+                    method: 'GET',
+                }),
+            }),
             getEmplPositionTypes: builder.query<EmplPositionType[], void>({
                 query: () => ({
                     url: '/EmplPositionTypes',
                     method: 'GET',
                 }),
                 providesTags: ['EmplPositionTypes'], // useful if you later invalidate on create/update
+            }),
+            createEmployee: builder.mutation<
+                EmployeeMutationResponse,     // result type
+                any                           // input type — you can tighten later (e.g. EmployeeFormValues)
+                >({
+                query: (employeeData) => ({
+                    url: '/parties/createEmployee',
+                    method: 'POST',
+                    body: employeeData,
+                }),
+
+                invalidatesTags: ['Employee', 'Party', 'Parties'],
+            }),
+
+            updateEmployee: builder.mutation<
+                EmployeeMutationResponse,
+                any
+                >({
+                query: (employeeData) => ({
+                    url: '/parties/updateEmployee',
+                    method: 'PUT',
+                    body: employeeData,
+                }),
+
+                // More precise invalidation if you know the partyId
+                invalidatesTags: ['Employee', 'Party', 'Parties'],
+            }),
+            createCustomer: builder.mutation<any, any>({
+                query: (customerData) => ({
+                    url: '/parties/createCustomer',
+                    method: 'POST',
+                    body: customerData,
+                }),
+                invalidatesTags: ['Customer', 'Party', 'Parties'],
+            }),
+            updateCustomer: builder.mutation<any, any>({
+                query: (customerData) => ({
+                    url: '/parties/updateCustomer',
+                    method: 'PUT',
+                    body: customerData,
+                }),
+                invalidatesTags: ['Customer', 'Party', 'Parties'],
+            }),
+            createSupplier: builder.mutation<any, any>({
+                query: (supplierData) => ({
+                    url: '/parties/createSupplier',
+                    method: 'POST',
+                    body: supplierData,
+                }),
+                invalidatesTags: ['Supplier', 'Party', 'Parties'],
+            }),
+            updateSupplier: builder.mutation<any, any>({
+                query: (supplierData) => ({
+                    url: '/parties/updateSupplier',
+                    method: 'PUT',
+                    body: supplierData,
+                }),
+                invalidatesTags: ['Supplier', 'Party', 'Parties'],
+            }),
+            createContractor: builder.mutation<any, any>({
+                query: (contractorData) => ({
+                    url: '/parties/createContractor',
+                    method: 'POST',
+                    body: contractorData,
+                }),
+                invalidatesTags: ['Contractor', 'Party', 'Parties'],
+            }),
+            updateContractor: builder.mutation<any, any>({
+                query: (contractorData) => ({
+                    url: '/parties/updateContractor',
+                    method: 'PUT',
+                    body: contractorData,
+                }),
+                invalidatesTags: ['Contractor', 'Party', 'Parties'],
             }),
         };
     },
@@ -116,6 +197,10 @@ export const {
     useFetchSupplierQuery,
     useFetchCompaniesQuery, useGetPartyFinancialHistoryQuery,
     useFetchContractorQuery, useFetchEmployeeQuery,
-    useUpdatePartyMainRoleMutation, useGetEmplPositionTypesQuery
+    useUpdatePartyMainRoleMutation,
+    useGetEmplPositionTypesQuery, useCreateEmployeeMutation,
+    useUpdateEmployeeMutation, useCreateCustomerMutation, useUpdateCustomerMutation,
+    useCreateSupplierMutation, useUpdateSupplierMutation, useCreateContractorMutation,
+    useUpdateContractorMutation, useGetPartySubLedgerQuery
 } = partiesApi;
 export {partiesApi};

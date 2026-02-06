@@ -15,6 +15,12 @@ import CreateCustomerMenu from "../menu/CreateCustomerMenu";
 import {setSingleParty} from "../slice/singlePartySlice";
 import {requiredValidator,} from "../../../app/common/form/Validators";
 import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
+import {
+    useCreateEmployeeMutation,
+    useCreateSupplierMutation,
+    useUpdateEmployeeMutation,
+    useUpdateSupplierMutation
+} from "../../../app/store/apis";
 
 interface Props {
     party?: Party;
@@ -46,6 +52,12 @@ export default function CreateSupplierForm({
         skip: party?.partyId === undefined,
     });
 
+    const [createSupplier, { isLoading: isCreating }] = useCreateSupplierMutation();
+    const [updateSupplier, { isLoading: isUpdating }] = useUpdateSupplierMutation();
+
+    const isMutating = isCreating || isUpdating || buttonFlag;
+
+
     const dispatch = useAppDispatch();
 
     async function handleSubmitData(data: any) {
@@ -53,9 +65,9 @@ export default function CreateSupplierForm({
         try {
             let response: any;
             if (editMode === 2) {
-                response = await agent.Parties.updateSupplier(data);
+                response = await updateSupplier(data).unwrap();
             } else {
-                response = await agent.Parties.createSupplier(data);
+                response = await createSupplier(data).unwrap();
             }
             // after await agent.Parties.updateSupplier / createSupplier
             setCreationSuccess({
@@ -239,7 +251,7 @@ export default function CreateSupplierForm({
                                                 />
                                             </Grid>
                                         </Grid>
-                                        {supplier?.apGlAccountId && (
+                                        {supplier?.linkedGlAccounts?.length > 0 ? (
                                             <Grid item xs={12} sx={{mt: 4}}>
                                                 <Box
                                                     sx={{
@@ -250,73 +262,84 @@ export default function CreateSupplierForm({
                                                     }}
                                                 >
                                                     <Typography variant="h6" color="success.main" gutterBottom>
-                                                        {getTranslatedLabel(
-                                                            "party.suppliers.form.linkedApAccount",
-                                                            "Linked Accounts Payable Sub-Account"
-                                                        )}
+                                                        {getTranslatedLabel("party.suppliers.form.linkedAccounts", "Linked GL Accounts")}
                                                     </Typography>
 
-                                                    <Grid container spacing={2}>
-                                                        <Grid item xs={12} sm={6}>
-                                                            <Typography>
-                                                                <strong>
-                                                                    {getTranslatedLabel("party.suppliers.form.glAccountId", "GL Account ID")}:
-                                                                </strong>{" "}
-                                                                {supplier.apGlAccountId}
-                                                            </Typography>
-                                                        </Grid>
-                                                        <Grid item xs={12} sm={6}>
-                                                            <Typography>
-                                                                <strong>
-                                                                    {getTranslatedLabel("party.suppliers.form.accountName", "Account Name")}:
-                                                                </strong>{" "}
-                                                                {supplier.apGlAccountName || "—"}
-                                                            </Typography>
-                                                        </Grid>
-                                                        {supplier.apGlAccountNameArabic && (
-                                                            <Grid item xs={12}>
-                                                                <Typography>
-                                                                    <strong>
-                                                                        {getTranslatedLabel(
-                                                                            "party.suppliers.form.accountNameArabic",
-                                                                            "Account Name (Arabic)"
-                                                                        )}
-                                                                        :
-                                                                    </strong>{" "}
-                                                                    {supplier.apGlAccountNameArabic}
-                                                                </Typography>
+                                                    {supplier.linkedGlAccounts.map((acc, index) => (
+                                                        <Box
+                                                            key={acc.glAccountId}
+                                                            sx={{
+                                                                mt: index > 0 ? 3 : 1,
+                                                                p: 2,
+                                                                bgcolor: "white",
+                                                                borderRadius: 1,
+                                                                border: "1px solid #e0e0e0",
+                                                            }}
+                                                        >
+                                                            <Grid container spacing={2}>
+                                                                <Grid item xs={12} sm={4}>
+                                                                    <Typography>
+                                                                        <strong>{getTranslatedLabel("party.suppliers.form.glAccountId", "GL Account ID")}:</strong>{" "}
+                                                                        {acc.glAccountId}
+                                                                    </Typography>
+                                                                </Grid>
+                                                                <Grid item xs={12} sm={4}>
+                                                                    <Typography>
+                                                                        <strong>{getTranslatedLabel("party.suppliers.form.role", "Role")}:</strong>{" "}
+                                                                        {acc.roleDescription || acc.roleTypeId}
+                                                                    </Typography>
+                                                                </Grid>
+                                                                <Grid item xs={12} sm={4}>
+                                                                    <Typography>
+                                                                        <strong>{getTranslatedLabel("party.suppliers.form.accountType", "Type")}:</strong>{" "}
+                                                                        {acc.glAccountTypeId}
+                                                                    </Typography>
+                                                                </Grid>
+
+                                                                <Grid item xs={12} sm={6}>
+                                                                    <Typography>
+                                                                        <strong>{getTranslatedLabel("party.suppliers.form.accountName", "Name")}:</strong>{" "}
+                                                                        {acc.accountName || "—"}
+                                                                    </Typography>
+                                                                </Grid>
+                                                                <Grid item xs={12} sm={6}>
+                                                                    <Typography>
+                                                                        <strong>{getTranslatedLabel("party.suppliers.form.accountNameArabic", "Arabic Name")}:</strong>{" "}
+                                                                        {acc.accountNameArabic || "—"}
+                                                                    </Typography>
+                                                                </Grid>
+
+                                                                {acc.accountDescription && (
+                                                                    <Grid item xs={12}>
+                                                                        <Typography variant="body2"
+                                                                                    color="text.secondary">
+                                                                            {acc.accountDescription}
+                                                                        </Typography>
+                                                                    </Grid>
+                                                                )}
                                                             </Grid>
-                                                        )}
-                                                        {supplier.apGlAccountDescription && (
-                                                            <Grid item xs={12}>
-                                                                <Typography variant="body2" color="text.secondary">
-                                                                    {supplier.apGlAccountDescription}
-                                                                </Typography>
-                                                            </Grid>
-                                                        )}
-                                                    </Grid>
+                                                        </Box>
+                                                    ))}
                                                 </Box>
                                             </Grid>
-                                        )}
-                                        {!supplier?.apGlAccountId && editMode === 2 && (
+                                        ) : editMode === 2 ? (
+                                            // No accounts message (same as before)
                                             <Grid item xs={12} sx={{mt: 3}}>
-                                                <Box
-                                                    sx={{
-                                                        p: 2,
-                                                        bgcolor: "#fff3e0",
-                                                        borderRadius: 2,
-                                                        border: "1px solid #ff9800",
-                                                    }}
-                                                >
+                                                <Box sx={{
+                                                    p: 2,
+                                                    bgcolor: "#fff3e0",
+                                                    borderRadius: 2,
+                                                    border: "1px solid #ff9800"
+                                                }}>
                                                     <Typography variant="body1" color="warning.dark">
                                                         {getTranslatedLabel(
-                                                            "party.suppliers.form.noLinkedApAccount",
-                                                            "No dedicated Accounts Payable sub-account is linked yet. Save the supplier to automatically create one."
+                                                            "party.suppliers.form.noLinkedAccounts",
+                                                            "No GL accounts are linked yet."
                                                         )}
                                                     </Typography>
                                                 </Box>
                                             </Grid>
-                                        )}
+                                        ) : null}
                                         <div className="k-form-buttons">
                                             <Grid container rowSpacing={2}>
                                                 <Grid item xs={1}>
@@ -324,7 +347,7 @@ export default function CreateSupplierForm({
                                                         variant="contained"
                                                         type={"submit"}
                                                         color="success"
-                                                        disabled={!formRenderProps.allowSubmit || buttonFlag}
+                                                        disabled={!formRenderProps.allowSubmit || isMutating}
                                                     >
                                                         {getTranslatedLabel("party.suppliers.form.submit", "Submit")}
                                                     </Button>
@@ -341,7 +364,7 @@ export default function CreateSupplierForm({
                                             </Grid>
                                         </div>
 
-                                        {buttonFlag && (
+                                        {isMutating && (
                                             <LoadingComponent
                                                 message={getTranslatedLabel("party.suppliers.form.processing", "Processing Supplier...")}/>
                                         )}

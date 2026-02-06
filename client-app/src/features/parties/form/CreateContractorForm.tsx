@@ -15,7 +15,12 @@ import {Box, Paper, Typography} from "@mui/material";
 import CreateCustomerMenu from "../menu/CreateCustomerMenu";
 import {requiredValidator,} from "../../../app/common/form/Validators";
 import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
-import {useFetchContractorQuery} from "../../../app/store/apis";
+import {
+    useCreateContractorMutation,
+    useCreateEmployeeMutation,
+    useFetchContractorQuery, useUpdateContractorMutation,
+    useUpdateEmployeeMutation
+} from "../../../app/store/apis";
 
 interface Props {
     party?: Party;
@@ -32,9 +37,7 @@ export default function CreateContractorForm({
     const [buttonFlag, setButtonFlag] = useState(false);
     const {getTranslatedLabel} = useTranslationHelper();
 
-    // REFACTOR: Match supplier query signature and include error/loading states
-    // Purpose: Consistent RTK Query usage and UX
-    // Improvement: Show loading, handle errors, skip when no partyId
+    
     const {
         data: contractor,
         error,
@@ -43,6 +46,13 @@ export default function CreateContractorForm({
     } = useFetchContractorQuery(party?.partyId, {
         skip: party?.partyId === undefined,
     });
+
+    const [createContractor, { isLoading: isCreating }] = useCreateContractorMutation();
+    const [updateContractor, { isLoading: isUpdating }] = useUpdateContractorMutation();
+
+    const isMutating = isCreating || isUpdating || buttonFlag;
+
+
     const [creationSuccess, setCreationSuccess] = useState<{
         partyId: string;
         apGlAccountId: string | null;
@@ -57,9 +67,9 @@ export default function CreateContractorForm({
         try {
             let response: any;
             if (editMode === 2) {
-                response = await agent.Parties.updateContractor(data);
+                response = await updateContractor(data).unwrap();
             } else {
-                response = await agent.Parties.createContractor(data);
+                response = await createContractor(data).unwrap();
             }
             setCreationSuccess({
                 partyId: response.partyId,
@@ -94,11 +104,11 @@ export default function CreateContractorForm({
                 {creationSuccess && (
                     <Box sx={{p: 3, mb: 3, bgcolor: '#e3f2fd', borderRadius: 2, border: '1px solid #90caf9'}}>
                         <Typography variant="h5" color="primary" gutterBottom>
-                            {getTranslatedLabel("party.contractors.form.success", "Supplier Saved Successfully!")}
+                            {getTranslatedLabel("party.contractors.form.success", "Contractor Saved Successfully!")}
                         </Typography>
 
                         <Typography variant="body1" gutterBottom>
-                            {getTranslatedLabel("party.contractors.form.supplierId", "Supplier ID")}:{" "}
+                            {getTranslatedLabel("party.contractors.form.contractorId", "Contractor ID")}:{" "}
                             <strong>{creationSuccess.partyId}</strong>
                         </Typography>
 
@@ -248,7 +258,7 @@ export default function CreateContractorForm({
                                             </Grid>
                                         </Grid>
 
-                                        {contractor?.apGlAccountId && (
+                                        {contractor?.linkedGlAccounts?.length > 0 ? (
                                             <Grid item xs={12} sx={{mt: 4}}>
                                                 <Box
                                                     sx={{
@@ -259,73 +269,84 @@ export default function CreateContractorForm({
                                                     }}
                                                 >
                                                     <Typography variant="h6" color="success.main" gutterBottom>
-                                                        {getTranslatedLabel(
-                                                            "party.contractors.form.linkedApAccount",
-                                                            "Linked Accounts Payable Sub-Account"
-                                                        )}
+                                                        {getTranslatedLabel("party.contractors.form.linkedAccounts", "Linked GL Accounts")}
                                                     </Typography>
 
-                                                    <Grid container spacing={2}>
-                                                        <Grid item xs={12} sm={6}>
-                                                            <Typography>
-                                                                <strong>
-                                                                    {getTranslatedLabel("party.contractors.form.glAccountId", "GL Account ID")}:
-                                                                </strong>{" "}
-                                                                {contractor.apGlAccountId}
-                                                            </Typography>
-                                                        </Grid>
-                                                        <Grid item xs={12} sm={6}>
-                                                            <Typography>
-                                                                <strong>
-                                                                    {getTranslatedLabel("party.contractors.form.accountName", "Account Name")}:
-                                                                </strong>{" "}
-                                                                {contractor.apGlAccountName || "—"}
-                                                            </Typography>
-                                                        </Grid>
-                                                        {contractor.apGlAccountNameArabic && (
-                                                            <Grid item xs={12}>
-                                                                <Typography>
-                                                                    <strong>
-                                                                        {getTranslatedLabel(
-                                                                            "party.contractors.form.accountNameArabic",
-                                                                            "Account Name (Arabic)"
-                                                                        )}
-                                                                        :
-                                                                    </strong>{" "}
-                                                                    {contractor.apGlAccountNameArabic}
-                                                                </Typography>
+                                                    {contractor.linkedGlAccounts.map((acc, index) => (
+                                                        <Box
+                                                            key={acc.glAccountId}
+                                                            sx={{
+                                                                mt: index > 0 ? 3 : 1,
+                                                                p: 2,
+                                                                bgcolor: "white",
+                                                                borderRadius: 1,
+                                                                border: "1px solid #e0e0e0",
+                                                            }}
+                                                        >
+                                                            <Grid container spacing={2}>
+                                                                <Grid item xs={12} sm={4}>
+                                                                    <Typography>
+                                                                        <strong>{getTranslatedLabel("party.contractors.form.glAccountId", "GL Account ID")}:</strong>{" "}
+                                                                        {acc.glAccountId}
+                                                                    </Typography>
+                                                                </Grid>
+                                                                <Grid item xs={12} sm={4}>
+                                                                    <Typography>
+                                                                        <strong>{getTranslatedLabel("party.contractors.form.role", "Role")}:</strong>{" "}
+                                                                        {acc.roleDescription || acc.roleTypeId}
+                                                                    </Typography>
+                                                                </Grid>
+                                                                <Grid item xs={12} sm={4}>
+                                                                    <Typography>
+                                                                        <strong>{getTranslatedLabel("party.contractors.form.accountType", "Type")}:</strong>{" "}
+                                                                        {acc.glAccountTypeId}
+                                                                    </Typography>
+                                                                </Grid>
+
+                                                                <Grid item xs={12} sm={6}>
+                                                                    <Typography>
+                                                                        <strong>{getTranslatedLabel("party.contractors.form.accountName", "Name")}:</strong>{" "}
+                                                                        {acc.accountName || "—"}
+                                                                    </Typography>
+                                                                </Grid>
+                                                                <Grid item xs={12} sm={6}>
+                                                                    <Typography>
+                                                                        <strong>{getTranslatedLabel("party.contractors.form.accountNameArabic", "Arabic Name")}:</strong>{" "}
+                                                                        {acc.accountNameArabic || "—"}
+                                                                    </Typography>
+                                                                </Grid>
+
+                                                                {acc.accountDescription && (
+                                                                    <Grid item xs={12}>
+                                                                        <Typography variant="body2"
+                                                                                    color="text.secondary">
+                                                                            {acc.accountDescription}
+                                                                        </Typography>
+                                                                    </Grid>
+                                                                )}
                                                             </Grid>
-                                                        )}
-                                                        {contractor.apGlAccountDescription && (
-                                                            <Grid item xs={12}>
-                                                                <Typography variant="body2" color="text.secondary">
-                                                                    {contractor.apGlAccountDescription}
-                                                                </Typography>
-                                                            </Grid>
-                                                        )}
-                                                    </Grid>
+                                                        </Box>
+                                                    ))}
                                                 </Box>
                                             </Grid>
-                                        )}
-                                        {!contractor?.apGlAccountId && editMode === 2 && (
+                                        ) : editMode === 2 ? (
+                                            // No accounts message (same as before)
                                             <Grid item xs={12} sx={{mt: 3}}>
-                                                <Box
-                                                    sx={{
-                                                        p: 2,
-                                                        bgcolor: "#fff3e0",
-                                                        borderRadius: 2,
-                                                        border: "1px solid #ff9800",
-                                                    }}
-                                                >
+                                                <Box sx={{
+                                                    p: 2,
+                                                    bgcolor: "#fff3e0",
+                                                    borderRadius: 2,
+                                                    border: "1px solid #ff9800"
+                                                }}>
                                                     <Typography variant="body1" color="warning.dark">
                                                         {getTranslatedLabel(
-                                                            "party.contractors.form.noLinkedApAccount",
-                                                            "No dedicated Accounts Payable sub-account is linked yet. Save the contractor to automatically create one."
+                                                            "party.contractors.form.noLinkedAccounts",
+                                                            "No GL accounts are linked yet."
                                                         )}
                                                     </Typography>
                                                 </Box>
                                             </Grid>
-                                        )}
+                                        ) : null}
                                         <div className="k-form-buttons">
                                             <Grid container rowSpacing={2}>
                                                 <Grid item xs={1}>
@@ -333,7 +354,7 @@ export default function CreateContractorForm({
                                                         variant="contained"
                                                         type={"submit"}
                                                         color="success"
-                                                        disabled={!formRenderProps.allowSubmit || buttonFlag}
+                                                        disabled={!formRenderProps.allowSubmit || isMutating}
                                                     >
                                                         {getTranslatedLabel("party.contractors.form.submit", "Submit")}
                                                     </Button>
@@ -350,7 +371,7 @@ export default function CreateContractorForm({
                                             </Grid>
                                         </div>
 
-                                        {buttonFlag && (
+                                        {isMutating  && (
                                             <LoadingComponent
                                                 message={getTranslatedLabel("party.contractors.form.processing", "Processing Contractor...")}/>
                                         )}

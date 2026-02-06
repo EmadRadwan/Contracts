@@ -30,7 +30,7 @@ public class PartiesController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new GetPartiesWithEmployeesLov.Query { Params = param }));
     }
-    
+
     [HttpGet("getPartiesEmployeesLov", Name = "GetPartiesEmployeesLov")]
     public async Task<IActionResult> GetPartiesEmployeesLov([FromQuery] PartyLovParams param)
     {
@@ -42,13 +42,13 @@ public class PartiesController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new GetSuppliersLov.Query { Params = param }));
     }
-    
+
     [HttpGet("getContractorsLov", Name = "GetContractorsLov")]
     public async Task<IActionResult> GetContractorsLov([FromQuery] PartyLovParams param)
     {
         return HandleResult(await Mediator.Send(new GetContractorsLov.Query { Params = param }));
     }
-    
+
     [HttpGet("getContractorsAndSuppliersLov", Name = "GetContractorsAndSuppliersLov")]
     public async Task<IActionResult> GetContractorsAndSuppliersLov([FromQuery] PartyLovParams param)
     {
@@ -66,7 +66,7 @@ public class PartiesController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new GetCustomer.Query { PartyId = partyId }));
     }
-    
+
     [HttpGet("{partyId}/getEmployee", Name = "GetEmployee")]
     public async Task<IActionResult> GetEmployee(string partyId)
     {
@@ -84,11 +84,12 @@ public class PartiesController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new GetContractor.Query { PartyId = partyId }));
     }
-    
+
     [HttpPut("updateMainRole/{partyId}")]
     public async Task<IActionResult> UpdateMainRole(string partyId, [FromBody] UpdateMainRoleDto dto)
     {
-        return HandleResult(await Mediator.Send(new UpdateMainRole.Command { PartyId = partyId, MainRole = dto.MainRole }));
+        return HandleResult(await Mediator.Send(new UpdateMainRole.Command
+            { PartyId = partyId, MainRole = dto.MainRole }));
     }
 
     [HttpGet("getSuppliers", Name = "GetSuppliers")]
@@ -101,8 +102,8 @@ public class PartiesController : BaseApiController
     public async Task<IActionResult> CreateCustomer(PartyDto2 partyDto)
     {
         return HandleResult(await Mediator.Send(new CreateCustomer.Command { PartyDto = partyDto }));
-    } 
-    
+    }
+
     [HttpPost("createParty", Name = "CreateParty")]
     public async Task<IActionResult> CreateParty(PartyDto2 partyDto)
     {
@@ -150,7 +151,7 @@ public class PartiesController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new ListRoles.Query()));
     }
-    
+
     [HttpGet("{partyId}/getPartyFinancialHistory")]
     public async Task<IActionResult> GetPartyFinancialHistory(
         string partyId,
@@ -172,6 +173,21 @@ public class PartiesController : BaseApiController
         return HandleResult(await Mediator.Send(query));
     }
     
+    [HttpGet("subledger/{partyId}")]
+    public async Task<IActionResult> GetPartySubLedger(
+        string partyId,
+        [FromQuery] string? organizationPartyId = null,
+        [FromQuery] string? defaultCurrencyUomId = null)
+    {
+        var query = new GetPartySubLedgerDetails.Query 
+        { 
+            PartyId = partyId, 
+            OrganizationPartyId = organizationPartyId, 
+            DefaultCurrencyUomId = defaultCurrencyUomId 
+        };
+        return HandleResult(await Mediator.Send(query));
+    }
+
     [HttpPost("createEmployee", Name = "CreateEmployee")]
     public async Task<IActionResult> CreateEmployee(PartyDto2 partyDto)
     {

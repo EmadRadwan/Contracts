@@ -25,137 +25,149 @@ public class GetCustomer
 
         public async Task<Result<PartyDto>> Handle(Query request, CancellationToken cancellationToken)
         {
-            var result = await (
-                    from prty in _context.Parties
-                    where prty.PartyId == request.PartyId
+            var query =
+                from prty in _context.Parties
+                where prty.PartyId == request.PartyId
 
-                    // === CORE: Always present ===
-                    join pt in _context.PartyTypes on prty.PartyTypeId equals pt.PartyTypeId
-                    join st in _context.StatusItems on prty.StatusId equals st.StatusId into stGroup
-                    from st in stGroup.DefaultIfEmpty()
-                    join person in _context.Persons on prty.PartyId equals person.PartyId into personGroup
-                    from person in personGroup.DefaultIfEmpty() // Person may not exist for non-person parties
+                // === CORE: Always present ===
+                join pt in _context.PartyTypes on prty.PartyTypeId equals pt.PartyTypeId
+                join st in _context.StatusItems on prty.StatusId equals st.StatusId into stGroup
+                from st in stGroup.DefaultIfEmpty()
+                join person in _context.Persons on prty.PartyId equals person.PartyId into personGroup
+                from person in personGroup.DefaultIfEmpty() // Person may not exist for non-person parties
 
-                    // === PHONE: Left join (PRIMARY_PHONE) ===
-                    join phonePurpose in _context.PartyContactMechPurposes
-                            .Where(p => p.ContactMechPurposeTypeId == "PRIMARY_PHONE")
-                        on prty.PartyId equals phonePurpose.PartyId into phonePurposeGroup
-                    from phonePurpose in phonePurposeGroup.DefaultIfEmpty()
-                    join pcmPhone in _context.PartyContactMeches
-                        on new { phonePurpose.PartyId, phonePurpose.ContactMechId }
-                        equals new { pcmPhone.PartyId, pcmPhone.ContactMechId } into pcmPhoneGroup
-                    from pcmPhone in pcmPhoneGroup.DefaultIfEmpty()
-                    join cmPhone in _context.ContactMeches
-                        on pcmPhone.ContactMechId equals cmPhone.ContactMechId into cmPhoneGroup
-                    from cmPhone in cmPhoneGroup.DefaultIfEmpty()
-                    join tn in _context.TelecomNumbers
-                        on cmPhone.ContactMechId equals tn.ContactMechId into tnGroup
-                    from tn in tnGroup.DefaultIfEmpty()
-                    join cmptPhone in _context.ContactMechPurposeTypes
-                        on phonePurpose.ContactMechPurposeTypeId equals cmptPhone.ContactMechPurposeTypeId into
-                        cmptPhoneGroup
-                    from cmptPhone in cmptPhoneGroup.DefaultIfEmpty()
+                // === PHONE: Left join (PRIMARY_PHONE) ===
+                join phonePurpose in _context.PartyContactMechPurposes
+                        .Where(p => p.ContactMechPurposeTypeId == "PRIMARY_PHONE")
+                    on prty.PartyId equals phonePurpose.PartyId into phonePurposeGroup
+                from phonePurpose in phonePurposeGroup.DefaultIfEmpty()
+                join pcmPhone in _context.PartyContactMeches
+                    on new { phonePurpose.PartyId, phonePurpose.ContactMechId }
+                    equals new { pcmPhone.PartyId, pcmPhone.ContactMechId } into pcmPhoneGroup
+                from pcmPhone in pcmPhoneGroup.DefaultIfEmpty()
+                join cmPhone in _context.ContactMeches
+                    on pcmPhone.ContactMechId equals cmPhone.ContactMechId into cmPhoneGroup
+                from cmPhone in cmPhoneGroup.DefaultIfEmpty()
+                join tn in _context.TelecomNumbers
+                    on cmPhone.ContactMechId equals tn.ContactMechId into tnGroup
+                from tn in tnGroup.DefaultIfEmpty()
+                join cmptPhone in _context.ContactMechPurposeTypes
+                    on phonePurpose.ContactMechPurposeTypeId equals cmptPhone.ContactMechPurposeTypeId into
+                    cmptPhoneGroup
+                from cmptPhone in cmptPhoneGroup.DefaultIfEmpty()
 
-                    // === ADDRESS: Left join (GENERAL_LOCATION) ===
-                    join addrPurpose in _context.PartyContactMechPurposes
-                            .Where(p => p.ContactMechPurposeTypeId == "GENERAL_LOCATION")
-                        on prty.PartyId equals addrPurpose.PartyId into addrPurposeGroup
-                    from addrPurpose in addrPurposeGroup.DefaultIfEmpty()
-                    join pcmAddr in _context.PartyContactMeches
-                        on new { addrPurpose.PartyId, addrPurpose.ContactMechId }
-                        equals new { pcmAddr.PartyId, pcmAddr.ContactMechId } into pcmAddrGroup
-                    from pcmAddr in pcmAddrGroup.DefaultIfEmpty()
-                    join cmAddr in _context.ContactMeches
-                        on pcmAddr.ContactMechId equals cmAddr.ContactMechId into cmAddrGroup
-                    from cmAddr in cmAddrGroup.DefaultIfEmpty()
-                    join pa in _context.PostalAddresses
-                        on cmAddr.ContactMechId equals pa.ContactMechId into paGroup
-                    from pa in paGroup.DefaultIfEmpty()
-                    join geo in _context.Geos
-                        on pa.CountryGeoId equals geo.GeoId into geoGroup
-                    from geo in geoGroup.DefaultIfEmpty()
+                // === ADDRESS: Left join (GENERAL_LOCATION) ===
+                join addrPurpose in _context.PartyContactMechPurposes
+                        .Where(p => p.ContactMechPurposeTypeId == "GENERAL_LOCATION")
+                    on prty.PartyId equals addrPurpose.PartyId into addrPurposeGroup
+                from addrPurpose in addrPurposeGroup.DefaultIfEmpty()
+                join pcmAddr in _context.PartyContactMeches
+                    on new { addrPurpose.PartyId, addrPurpose.ContactMechId }
+                    equals new { pcmAddr.PartyId, pcmAddr.ContactMechId } into pcmAddrGroup
+                from pcmAddr in pcmAddrGroup.DefaultIfEmpty()
+                join cmAddr in _context.ContactMeches
+                    on pcmAddr.ContactMechId equals cmAddr.ContactMechId into cmAddrGroup
+                from cmAddr in cmAddrGroup.DefaultIfEmpty()
+                join pa in _context.PostalAddresses
+                    on cmAddr.ContactMechId equals pa.ContactMechId into paGroup
+                from pa in paGroup.DefaultIfEmpty()
+                join geo in _context.Geos
+                    on pa.CountryGeoId equals geo.GeoId into geoGroup
+                from geo in geoGroup.DefaultIfEmpty()
 
-                    // === EMAIL: Left join (PRIMARY_EMAIL) ===
-                    join emailPurpose in _context.PartyContactMechPurposes
-                            .Where(p => p.ContactMechPurposeTypeId == "PRIMARY_EMAIL")
-                        on prty.PartyId equals emailPurpose.PartyId into emailPurposeGroup
-                    from emailPurpose in emailPurposeGroup.DefaultIfEmpty()
-                    join pcmEmail in _context.PartyContactMeches
-                        on new { emailPurpose.PartyId, emailPurpose.ContactMechId }
-                        equals new { pcmEmail.PartyId, pcmEmail.ContactMechId } into pcmEmailGroup
-                    from pcmEmail in pcmEmailGroup.DefaultIfEmpty()
-                    join cmEmail in _context.ContactMeches
-                        on pcmEmail.ContactMechId equals cmEmail.ContactMechId into cmEmailGroup
-                    from cmEmail in cmEmailGroup.DefaultIfEmpty()
-                    join pga in _context.PartyGlAccounts
-                        on new
-                        {
-                            Org = "Company", Party = prty.PartyId, Role = "BILL_TO_CUSTOMER",
-                            Type = "ACCOUNTS_RECEIVABLE"
-                        }
-                        equals new
-                        {
-                            Org = pga.OrganizationPartyId, Party = pga.PartyId, Role = pga.RoleTypeId,
-                            Type = pga.GlAccountTypeId
-                        }
-                        into pgaGroup
-                    from pga in pgaGroup.DefaultIfEmpty()
-                    join gla in _context.GlAccounts
-                        on pga.GlAccountId equals gla.GlAccountId
-                        into glaGroup
-                    from gla in glaGroup.DefaultIfEmpty()
-                    select new PartyDto
-                    {
-                        PartyId = prty.PartyId,
-                        Description = prty.Description + " ( " + prty.MainRole + " )",
+                // === EMAIL: Left join (PRIMARY_EMAIL) ===
+                join emailPurpose in _context.PartyContactMechPurposes
+                        .Where(p => p.ContactMechPurposeTypeId == "PRIMARY_EMAIL")
+                    on prty.PartyId equals emailPurpose.PartyId into emailPurposeGroup
+                from emailPurpose in emailPurposeGroup.DefaultIfEmpty()
+                join pcmEmail in _context.PartyContactMeches
+                    on new { emailPurpose.PartyId, emailPurpose.ContactMechId }
+                    equals new { pcmEmail.PartyId, pcmEmail.ContactMechId } into pcmEmailGroup
+                from pcmEmail in pcmEmailGroup.DefaultIfEmpty()
+                join cmEmail in _context.ContactMeches
+                    on pcmEmail.ContactMechId equals cmEmail.ContactMechId into cmEmailGroup
+                from cmEmail in cmEmailGroup.DefaultIfEmpty()
+                join pga in _context.PartyGlAccounts on prty.PartyId equals pga.PartyId into pgaGroup
+                from pga in pgaGroup.DefaultIfEmpty()
+                join gla in _context.GlAccounts on pga.GlAccountId equals gla.GlAccountId into glaGroup
+                from gla in glaGroup.DefaultIfEmpty()
+                join role in _context.RoleTypes on pga.RoleTypeId equals role.RoleTypeId into roleGroup
+                from role in roleGroup.DefaultIfEmpty()
+                select new
+                {
+                    Party = prty,
+                    PartyType = pt,
+                    Status = st,
+                    PhonePurpose = phonePurpose,
+                    TelecomNumber = tn,
+                    PhonePurposeType = cmptPhone,
+                    AddrPurpose = addrPurpose,
+                    PostalAddress = pa,
+                    Geo = geo,
+                    EmailPurpose = emailPurpose,
+                    EmailInfo = cmEmail.InfoString,
+                    Pga = pga,
+                    Gla = gla,
+                    RoleType = role
+                };
 
-                        // REFACTOR: Use Description as GroupName (no PartyGroup for customers either)
-                        // Purpose: UI expects GroupName for the name field
-                        // Improvement: Consistent with supplier and seeded data
-                        GroupName = prty.Description,
+            var rawResults = await query
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
 
-                        PartyTypeId = pt.PartyTypeId,
-                        PartyTypeDescription = pt.Description,
-                        StatusDescription = st != null ? st.Description : null,
-                        MainRole = prty.MainRole,
-
-                        // Person fields (only for Person parties)
-                        FirstName = prty.Description,
-
-                        // === PHONE ===
-                        MobileContactNumber = phonePurpose != null ? tn.ContactNumber : null,
-                        ContactType = phonePurpose != null ? cmptPhone.Description : null,
-
-                        // === ADDRESS ===
-                        Address1 = addrPurpose != null ? pa.Address1 : null,
-                        Address2 = addrPurpose != null ? pa.Address2 : null,
-                        GeoId = addrPurpose != null ? pa.CountryGeoId : null,
-                        GeoName = addrPurpose != null ? geo.GeoName : null,
-
-                        // === EMAIL ===
-                        InfoString = emailPurpose != null ? cmEmail.InfoString : null,
-                        ArGlAccountId = pga != null ? pga.GlAccountId : null,
-                        ArGlAccountName = gla != null ? gla.AccountName : null,
-                        ArGlAccountNameArabic = gla != null ? gla.AccountNameArabic : null,
-                        ArGlAccountDescription = gla != null ? gla.Description : null,
-                        ArGlAccountCreatedStamp = gla != null ? (DateTime?)gla.CreatedStamp : null
-                    })
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (result == null)
-                return Result<PartyDto>.Failure("Party not found");
-
-            // REFACTOR: Clean GroupName — remove " ( CUSTOMER )" suffix if present
-            // Purpose: UI displays a clean name in inputs/selects
-            // Improvement: Matches supplier behavior and form expectations
-            if (!string.IsNullOrEmpty(result.Description))
+            if (!rawResults.Any())
             {
-                var cleanName = result.Description.Split(" ( ").FirstOrDefault();
-                if (!string.IsNullOrEmpty(cleanName))
-                    result.GroupName = cleanName;
+                return Result<PartyDto>.Failure("Party not found");
             }
 
-            return Result<PartyDto>.Success(result);
+            // Group results by party (since group join creates cartesian product)
+            var firstRecord = rawResults.First();
+
+            var dto = new PartyDto
+            {
+                PartyId = firstRecord.Party.PartyId,
+                Description = $"{firstRecord.Party.Description ?? ""} ( {firstRecord.Party.MainRole ?? ""} )",
+                GroupName = firstRecord.Party.Description?.Split(" ( ").FirstOrDefault() ??
+                            firstRecord.Party.Description ?? "",
+                PartyTypeId = firstRecord.PartyType.PartyTypeId,
+                PartyTypeDescription = firstRecord.PartyType.Description,
+                StatusDescription = firstRecord.Status?.Description,
+                MainRole = firstRecord.Party.MainRole,
+                FirstName = firstRecord.Party.Description,
+
+                // Phone
+                MobileContactNumber = firstRecord.TelecomNumber?.ContactNumber,
+                ContactType = firstRecord.PhonePurposeType?.Description,
+
+                // Address
+                Address1 = firstRecord.PostalAddress?.Address1,
+                Address2 = firstRecord.PostalAddress?.Address2,
+                GeoId = firstRecord.PostalAddress?.CountryGeoId,
+                GeoName = firstRecord.Geo?.GeoName,
+
+                // Email
+                InfoString = firstRecord.EmailInfo,
+
+                // All linked GL accounts
+                LinkedGlAccounts = rawResults
+                    .Where(r => r.Pga != null && r.Gla != null)
+                    .Select(r => new PartyGlAccountSimpleDto
+                    {
+                        GlAccountId = r.Pga.GlAccountId,
+                        GlAccountTypeId = r.Pga.GlAccountTypeId,
+                        RoleTypeId = r.Pga.RoleTypeId,
+                        RoleDescription = r.RoleType?.Description ?? r.Pga.RoleTypeId,
+                        AccountName = r.Gla.AccountName,
+                        AccountNameArabic = r.Gla.AccountNameArabic,
+                        AccountDescription = r.Gla.Description,
+                        CreatedStamp = r.Gla.CreatedStamp
+                    })
+                    .OrderBy(a => a.RoleTypeId)
+                    .ThenBy(a => a.GlAccountId)
+                    .ToList()
+            };
+
+            return Result<PartyDto>.Success(dto);
         }
     }
 }

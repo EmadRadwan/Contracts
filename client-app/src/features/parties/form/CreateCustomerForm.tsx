@@ -19,6 +19,12 @@ import CreateCustomerMenu from '../menu/CreateCustomerMenu';
 import { setSingleParty } from '../slice/singlePartySlice';
 import { phoneValidator, requiredValidator } from '../../../app/common/form/Validators';
 import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
+import {
+  useCreateCustomerMutation,
+  useCreateEmployeeMutation,
+  useUpdateCustomerMutation,
+  useUpdateEmployeeMutation
+} from "../../../app/store/apis";
 
 interface Props {
   party?: Party;
@@ -40,8 +46,14 @@ export default function CreateCustomerForm({ party, cancelEdit, editMode }: Prop
   const { data: customer, error, isFetching, isLoading } = useFetchCustomerQuery(party?.partyId, {
     skip: party?.partyId === undefined,
   });
-  
-  
+
+  const [createCustomer, { isLoading: isCreating }] = useCreateCustomerMutation();
+  const [updateCustomer, { isLoading: isUpdating }] = useUpdateCustomerMutation();
+
+  const isMutating = isCreating || isUpdating || buttonFlag;
+
+
+
   const { getTranslatedLabel } = useTranslationHelper();
 
   const dispatch = useAppDispatch();
@@ -53,7 +65,8 @@ export default function CreateCustomerForm({ party, cancelEdit, editMode }: Prop
     try {
       let response: any;
       if (editMode === 2) {
-        response = await agent.Parties.updateCustomer(data);
+        response = await updateCustomer(data).unwrap();
+
         setCreationSuccess({
           partyId: response.partyId,
           glAccountId: response.createdGlAccountId || null,
@@ -64,7 +77,8 @@ export default function CreateCustomerForm({ party, cancelEdit, editMode }: Prop
         dispatch(setSingleParty(response));
         // For edit mode you might want different success UI
       } else {
-        response = await agent.Parties.createCustomer(data);
+        response = await createCustomer(data).unwrap();
+
         dispatch(setParty(response));
         dispatch(setSingleParty(response));
 
@@ -241,59 +255,95 @@ export default function CreateCustomerForm({ party, cancelEdit, editMode }: Prop
                               />
                             </Grid>
                           </Grid>
-                          {customer?.arGlAccountId && (
-                              <Box sx={{ mt: 4, p: 3, bgcolor: '#f5faff', borderRadius: 2, border: '1px solid #bbdefb' }}>
-                                <Typography variant="h6" color="primary" gutterBottom>
-                                  {getTranslatedLabel("party.customers.form.linkedArAccount", "Linked Accounts Receivable Sub-Account")}
-                                </Typography>
-                                <Grid container spacing={2}>
-                                  <Grid item xs={12} sm={6}>
-                                    <Typography>
-                                      <strong>{getTranslatedLabel("party.customers.form.glAccountId", "GL Account ID")}:</strong>{' '}
-                                      {customer.arGlAccountId}
-                                    </Typography>
-                                  </Grid>
-                                  <Grid item xs={12} sm={6}>
-                                    <Typography>
-                                      <strong>{getTranslatedLabel("party.customers.form.accountName", "Account Name")}:</strong>{' '}
-                                      {customer.arGlAccountName || '—'}
-                                    </Typography>
-                                  </Grid>
-                                  <Grid item xs={12}>
-                                    <Typography>
-                                      <strong>{getTranslatedLabel("party.customers.form.accountNameArabic", "Account Name (Arabic)")}:</strong>{' '}
-                                      {customer.arGlAccountNameArabic || '—'}
-                                    </Typography>
-                                  </Grid>
-                                  {customer.arGlAccountDescription && (
-                                      <Grid item xs={12}>
-                                        <Typography>
-                                          <strong>{getTranslatedLabel("party.customers.form.description", "Description")}:</strong>{' '}
-                                          {customer.arGlAccountDescription}
-                                        </Typography>
-                                      </Grid>
-                                  )}
-                                  {customer.arGlAccountCreatedStamp && (
-                                      <Grid item xs={12}>
-                                        <Typography variant="body2" color="text.secondary">
-                                          {getTranslatedLabel("party.customers.form.createdOn", "Created on")}: {new Date(customer.arGlAccountCreatedStamp).toLocaleDateString()}
-                                        </Typography>
-                                      </Grid>
-                                  )}
-                                </Grid>
-                              </Box>
-                          )}
+                          {customer?.linkedGlAccounts?.length > 0 ? (
+                              <Grid item xs={12} sx={{mt: 4}}>
+                                <Box
+                                    sx={{
+                                      p: 3,
+                                      bgcolor: "#e8f5e9",
+                                      borderRadius: 2,
+                                      border: "1px solid #81c784",
+                                    }}
+                                >
+                                  <Typography variant="h6" color="success.main" gutterBottom>
+                                    {getTranslatedLabel("party.customers.form.linkedAccounts", "Linked GL Accounts")}
+                                  </Typography>
 
-                          {!customer?.arGlAccountId && editMode === 2 && (
-                              <Box sx={{ mt: 3, p: 2, bgcolor: '#fff3e0', borderRadius: 2, border: '1px solid #ff9800' }}>
-                                <Typography variant="body1" color="warning.dark">
-                                  {getTranslatedLabel(
-                                      "party.customers.form.noLinkedArAccount",
-                                      "No dedicated Accounts Receivable sub-account is linked yet. Save the customer to automatically create one."
-                                  )}
-                                </Typography>
-                              </Box>
-                          )}
+                                  {customer.linkedGlAccounts.map((acc, index) => (
+                                      <Box
+                                          key={acc.glAccountId}
+                                          sx={{
+                                            mt: index > 0 ? 3 : 1,
+                                            p: 2,
+                                            bgcolor: "white",
+                                            borderRadius: 1,
+                                            border: "1px solid #e0e0e0",
+                                          }}
+                                      >
+                                        <Grid container spacing={2}>
+                                          <Grid item xs={12} sm={4}>
+                                            <Typography>
+                                              <strong>{getTranslatedLabel("party.customers.form.glAccountId", "GL Account ID")}:</strong>{" "}
+                                              {acc.glAccountId}
+                                            </Typography>
+                                          </Grid>
+                                          <Grid item xs={12} sm={4}>
+                                            <Typography>
+                                              <strong>{getTranslatedLabel("party.customers.form.role", "Role")}:</strong>{" "}
+                                              {acc.roleDescription || acc.roleTypeId}
+                                            </Typography>
+                                          </Grid>
+                                          <Grid item xs={12} sm={4}>
+                                            <Typography>
+                                              <strong>{getTranslatedLabel("party.customers.form.accountType", "Type")}:</strong>{" "}
+                                              {acc.glAccountTypeId}
+                                            </Typography>
+                                          </Grid>
+
+                                          <Grid item xs={12} sm={6}>
+                                            <Typography>
+                                              <strong>{getTranslatedLabel("party.customers.form.accountName", "Name")}:</strong>{" "}
+                                              {acc.accountName || "—"}
+                                            </Typography>
+                                          </Grid>
+                                          <Grid item xs={12} sm={6}>
+                                            <Typography>
+                                              <strong>{getTranslatedLabel("party.customers.form.accountNameArabic", "Arabic Name")}:</strong>{" "}
+                                              {acc.accountNameArabic || "—"}
+                                            </Typography>
+                                          </Grid>
+
+                                          {acc.accountDescription && (
+                                              <Grid item xs={12}>
+                                                <Typography variant="body2"
+                                                            color="text.secondary">
+                                                  {acc.accountDescription}
+                                                </Typography>
+                                              </Grid>
+                                          )}
+                                        </Grid>
+                                      </Box>
+                                  ))}
+                                </Box>
+                              </Grid>
+                          ) : editMode === 2 ? (
+                              // No accounts message (same as before)
+                              <Grid item xs={12} sx={{mt: 3}}>
+                                <Box sx={{
+                                  p: 2,
+                                  bgcolor: "#fff3e0",
+                                  borderRadius: 2,
+                                  border: "1px solid #ff9800"
+                                }}>
+                                  <Typography variant="body1" color="warning.dark">
+                                    {getTranslatedLabel(
+                                        "party.customers.form.noLinkedAccounts",
+                                        "No GL accounts are linked yet."
+                                    )}
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                          ) : null}
                           <div className='k-form-buttons'>
                             <Grid container rowSpacing={2}>
                               <Grid item xs={1}>
@@ -301,7 +351,7 @@ export default function CreateCustomerForm({ party, cancelEdit, editMode }: Prop
                                     variant='contained'
                                     type={'submit'}
                                     color='success'
-                                    disabled={!formRenderProps.allowSubmit || buttonFlag}
+                                    disabled={!formRenderProps.allowSubmit || isMutating}
                                 >
                                   {getTranslatedLabel("party.customers.form.submit", "Submit")}
                                 </Button>
@@ -314,7 +364,7 @@ export default function CreateCustomerForm({ party, cancelEdit, editMode }: Prop
                             </Grid>
                           </div>
 
-                          {buttonFlag && <LoadingComponent message={getTranslatedLabel("party.customers.form.processing", "Processing Customer...")} />}
+                          {isMutating && <LoadingComponent message={getTranslatedLabel("party.customers.form.processing", "Processing Customer...")} />}
 
                         </fieldset>
                       </FormElement>

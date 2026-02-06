@@ -10,14 +10,18 @@ import {
     useAppDispatch,
     useFetchCountriesQuery
 } from '../../../app/store/configureStore';
-import agent from '../../../app/api/agent';
 import LoadingComponent from '../../../app/layout/LoadingComponent';
 import { setParty } from '../slice/partySlice';
 import { setSingleParty } from '../slice/singlePartySlice';
 import { Box, Paper, Typography } from '@mui/material';
 import { phoneValidator, requiredValidator } from '../../../app/common/form/Validators';
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
-import {useFetchEmployeeQuery, useGetEmplPositionTypesQuery} from "../../../app/store/apis";
+import {
+    useCreateEmployeeMutation,
+    useFetchEmployeeQuery,
+    useGetEmplPositionTypesQuery,
+    useUpdateEmployeeMutation
+} from "../../../app/store/apis";
 import {MemoizedFormComboBox2} from "../../../app/common/form/FormComboBox2";
 import FormNumericTextBox from "../../../app/common/form/FormNumericTextBox";
 
@@ -34,6 +38,11 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
     const { data: employee, isFetching } = useFetchEmployeeQuery(party?.partyId, {
         skip: party?.partyId === undefined || editMode !== 2,
     });
+
+    const [createEmployee, { isLoading: isCreating }] = useCreateEmployeeMutation();
+    const [updateEmployee, { isLoading: isUpdating }] = useUpdateEmployeeMutation();
+
+    const isMutating = isCreating || isUpdating || buttonFlag;
 
     const {
         data: positionTypes = [],
@@ -58,11 +67,11 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
     async function handleSubmitData(data: any) {
         setButtonFlag(true);
         try {
-            let response: any;
+            let response;
             if (editMode === 2) {
-                response = await agent.Parties.updateEmployee(data);
+                response = await updateEmployee(data).unwrap();
             } else {
-                response = await agent.Parties.createEmployee(data);
+                response = await createEmployee(data).unwrap();
             }
             setCreationSuccess({
                 partyId: response.partyId || response.PartyId,
@@ -289,85 +298,95 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
                                             />
                                         </Grid>
 
-                                        {/* ──────────────────────────────────────────────── */}
-                                        {/* Existing Loan Receivable Account */}
-                                        {employee?.loanGlAccountId && (
-                                            <Grid item xs={12} sx={{ mt: 4 }}>
-                                                <Box sx={{ p: 3, bgcolor: "#e3f2fd", borderRadius: 2, border: "1px solid #90caf9" }}>
-                                                    <Typography variant="h6" color="primary" gutterBottom>
-                                                        {getTranslatedLabel("party.employees.form.linkedLoanAccount", "Linked Loans Receivable Account")}
-                                                    </Typography>
-                                                    <Grid container spacing={2}>
-                                                        <Grid item xs={12} sm={6}>
-                                                            <Typography><strong>GL Account ID:</strong> {employee.loanGlAccountId}</Typography>
-                                                        </Grid>
-                                                        <Grid item xs={12} sm={6}>
-                                                            <Typography><strong>Account Name:</strong> {employee.loanGlAccountName || "—"}</Typography>
-                                                        </Grid>
-                                                        {employee.loanGlAccountNameArabic && (
-                                                            <Grid item xs={12}>
-                                                                <Typography><strong>اسم الحساب:</strong> {employee.loanGlAccountNameArabic}</Typography>
-                                                            </Grid>
-                                                        )}
-                                                    </Grid>
-                                                </Box>
-                                            </Grid>
-                                        )}
-
-                                        {/* Existing Accrued Expenses Account */}
-                                        {employee?.accruedGlAccountId && (
-                                            <Grid item xs={12} sx={{ mt: 3 }}>
-                                                <Box sx={{ p: 3, bgcolor: "#e8f5e9", borderRadius: 2, border: "1px solid #81c784" }}>
+                                        {employee?.linkedGlAccounts?.length > 0 ? (
+                                            <Grid item xs={12} sx={{mt: 4}}>
+                                                <Box
+                                                    sx={{
+                                                        p: 3,
+                                                        bgcolor: "#e8f5e9",
+                                                        borderRadius: 2,
+                                                        border: "1px solid #81c784",
+                                                    }}
+                                                >
                                                     <Typography variant="h6" color="success.main" gutterBottom>
-                                                        {getTranslatedLabel("party.employees.form.linkedAccruedAccount", "Linked Accrued Expenses Account")}
+                                                        {getTranslatedLabel("party.employees.form.linkedAccounts", "Linked GL Accounts")}
                                                     </Typography>
-                                                    <Grid container spacing={2}>
-                                                        <Grid item xs={12} sm={6}>
-                                                            <Typography><strong>GL Account ID:</strong> {employee.accruedGlAccountId}</Typography>
-                                                        </Grid>
-                                                        <Grid item xs={12} sm={6}>
-                                                            <Typography><strong>Account Name:</strong> {employee.accruedGlAccountName || "—"}</Typography>
-                                                        </Grid>
-                                                        {employee.accruedGlAccountNameArabic && (
-                                                            <Grid item xs={12}>
-                                                                <Typography><strong>اسم الحساب:</strong> {employee.accruedGlAccountNameArabic}</Typography>
+
+                                                    {employee.linkedGlAccounts.map((acc, index) => (
+                                                        <Box
+                                                            key={acc.glAccountId}
+                                                            sx={{
+                                                                mt: index > 0 ? 3 : 1,
+                                                                p: 2,
+                                                                bgcolor: "white",
+                                                                borderRadius: 1,
+                                                                border: "1px solid #e0e0e0",
+                                                            }}
+                                                        >
+                                                            <Grid container spacing={2}>
+                                                                <Grid item xs={12} sm={4}>
+                                                                    <Typography>
+                                                                        <strong>{getTranslatedLabel("party.employees.form.glAccountId", "GL Account ID")}:</strong>{" "}
+                                                                        {acc.glAccountId}
+                                                                    </Typography>
+                                                                </Grid>
+                                                                <Grid item xs={12} sm={4}>
+                                                                    <Typography>
+                                                                        <strong>{getTranslatedLabel("party.employees.form.role", "Role")}:</strong>{" "}
+                                                                        {acc.roleDescription || acc.roleTypeId}
+                                                                    </Typography>
+                                                                </Grid>
+                                                                <Grid item xs={12} sm={4}>
+                                                                    <Typography>
+                                                                        <strong>{getTranslatedLabel("party.employees.form.accountType", "Type")}:</strong>{" "}
+                                                                        {acc.glAccountTypeId}
+                                                                    </Typography>
+                                                                </Grid>
+
+                                                                <Grid item xs={12} sm={6}>
+                                                                    <Typography>
+                                                                        <strong>{getTranslatedLabel("party.employees.form.accountName", "Name")}:</strong>{" "}
+                                                                        {acc.accountName || "—"}
+                                                                    </Typography>
+                                                                </Grid>
+                                                                <Grid item xs={12} sm={6}>
+                                                                    <Typography>
+                                                                        <strong>{getTranslatedLabel("party.employees.form.accountNameArabic", "Arabic Name")}:</strong>{" "}
+                                                                        {acc.accountNameArabic || "—"}
+                                                                    </Typography>
+                                                                </Grid>
+
+                                                                {acc.accountDescription && (
+                                                                    <Grid item xs={12}>
+                                                                        <Typography variant="body2"
+                                                                                    color="text.secondary">
+                                                                            {acc.accountDescription}
+                                                                        </Typography>
+                                                                    </Grid>
+                                                                )}
                                                             </Grid>
-                                                        )}
-                                                    </Grid>
+                                                        </Box>
+                                                    ))}
                                                 </Box>
                                             </Grid>
-                                        )}
-
-                                        {/* Warnings when missing (edit mode) */}
-                                        {editMode === 2 && (
-                                            <>
-                                                {!employee?.loanGlAccountId && (
-                                                    <Grid item xs={12} sx={{ mt: 3 }}>
-                                                        <Box sx={{ p: 2, bgcolor: "#fff3e0", borderRadius: 2, border: "1px solid #ff9800" }}>
-                                                            <Typography color="warning.dark">
-                                                                {getTranslatedLabel(
-                                                                    "party.employees.form.noLoanAccount",
-                                                                    "No dedicated Loans Receivable account linked yet. Save to create automatically."
-                                                                )}
-                                                            </Typography>
-                                                        </Box>
-                                                    </Grid>
-                                                )}
-
-                                                {!employee?.accruedGlAccountId && (
-                                                    <Grid item xs={12} sx={{ mt: 2 }}>
-                                                        <Box sx={{ p: 2, bgcolor: "#fff3e0", borderRadius: 2, border: "1px solid #ff9800" }}>
-                                                            <Typography color="warning.dark">
-                                                                {getTranslatedLabel(
-                                                                    "party.employees.form.noAccruedAccount",
-                                                                    "No dedicated Accrued Expenses account linked yet. Save to create automatically."
-                                                                )}
-                                                            </Typography>
-                                                        </Box>
-                                                    </Grid>
-                                                )}
-                                            </>
-                                        )}
+                                        ) : editMode === 2 ? (
+                                            // No accounts message (same as before)
+                                            <Grid item xs={12} sx={{mt: 3}}>
+                                                <Box sx={{
+                                                    p: 2,
+                                                    bgcolor: "#fff3e0",
+                                                    borderRadius: 2,
+                                                    border: "1px solid #ff9800"
+                                                }}>
+                                                    <Typography variant="body1" color="warning.dark">
+                                                        {getTranslatedLabel(
+                                                            "party.employees.form.noLinkedAccounts",
+                                                            "No GL accounts are linked yet."
+                                                        )}
+                                                    </Typography>
+                                                </Box>
+                                            </Grid>
+                                        ) : null}
                                     </Grid>
 
                                     <div className="k-form-buttons">
@@ -377,7 +396,7 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
                                                     variant="contained"
                                                     type="submit"
                                                     color="success"
-                                                    disabled={!formRenderProps.allowSubmit || buttonFlag}
+                                                    disabled={!formRenderProps.allowSubmit || isMutating}
                                                 >
                                                     {getTranslatedLabel("party.employees.form.submit", "Submit")}
                                                 </Button>
@@ -390,7 +409,7 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
                                         </Grid>
                                     </div>
 
-                                    {buttonFlag && (
+                                    {isMutating && (
                                         <LoadingComponent message={getTranslatedLabel("party.employees.form.processing", "Processing Employee...")} />
                                     )}
                                 </fieldset>

@@ -25,7 +25,7 @@ public class GetContractor
 
         public async Task<Result<PartyDto>> Handle(Query request, CancellationToken cancellationToken)
         {
-            var result = await (
+            var query =
                     from prty in _context.Parties
                     where prty.PartyId == request.PartyId
 
@@ -87,66 +87,86 @@ public class GetContractor
                     join cmEmail in _context.ContactMeches
                         on pcmEmail.ContactMechId equals cmEmail.ContactMechId into cmEmailGroup
                     from cmEmail in cmEmailGroup.DefaultIfEmpty()
-                    join pgaAp in _context.PartyGlAccounts
-                        on new { Org = "Company", P = prty.PartyId, R = "BILL_FROM_VENDOR", T = "ACCOUNTS_PAYABLE" }
-                        equals new
-                        {
-                            Org = pgaAp.OrganizationPartyId, P = pgaAp.PartyId, R = pgaAp.RoleTypeId,
-                            T = pgaAp.GlAccountTypeId
-                        }
-                        into pgaApGroup
-                    from pgaAp in pgaApGroup.DefaultIfEmpty()
-                    join glaAp in _context.GlAccounts on pgaAp.GlAccountId equals glaAp.GlAccountId into glaApGroup
-                    from glaAp in glaApGroup.DefaultIfEmpty()
-                    select new PartyDto
+                    join pga in _context.PartyGlAccounts on prty.PartyId equals pga.PartyId into pgaGroup
+                    from pga in pgaGroup.DefaultIfEmpty()
+                    join gla in _context.GlAccounts on pga.GlAccountId equals gla.GlAccountId into glaGroup
+                    from gla in glaGroup.DefaultIfEmpty()
+                    join role in _context.RoleTypes on pga.RoleTypeId equals role.RoleTypeId into roleGroup
+                    from role in roleGroup.DefaultIfEmpty()
+                    select new
                     {
-                        PartyId = prty.PartyId,
-                        Description = prty.Description + " ( " + prty.MainRole + " )",
+                        Party = prty,
+                        PartyType = pt,
+                        Status = st,
+                        PhonePurpose = phonePurpose,
+                        TelecomNumber = tn,
+                        PhonePurposeType = cmptPhone,
+                        AddrPurpose = addrPurpose,
+                        PostalAddress = pa,
+                        Geo = geo,
+                        EmailPurpose = emailPurpose,
+                        EmailInfo = cmEmail.InfoString,
+                        Pga = pga,
+                        Gla = gla,
+                        RoleType = role
+                    };
+            
+            var rawResults = await query
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
 
-                        // REFACTOR: Use PartyGroup.GroupName if exists, else fallback to Description
-                        // Purpose: Match supplier behavior (GroupName = clean name)
-                        // Improvement: Consistent UI input population
-                        GroupName = ptgr != null ? ptgr.GroupName : prty.Description,
-
-                        PartyTypeId = pt.PartyTypeId,
-                        PartyTypeDescription = pt.Description,
-                        StatusDescription = st.Description,
-                        MainRole = prty.MainRole,
-
-                        // === PHONE ===
-                        MobileContactNumber = phonePurpose != null ? tn.ContactNumber : null,
-                        ContactType = phonePurpose != null ? cmptPhone.Description : null,
-
-                        // === ADDRESS ===
-                        Address1 = addrPurpose != null ? pa.Address1 : null,
-                        Address2 = addrPurpose != null ? pa.Address2 : null,
-                        GeoId = addrPurpose != null ? pa.CountryGeoId : null,
-                        GeoName = addrPurpose != null ? geo.GeoName : null,
-
-                        // === EMAIL ===
-                        InfoString = emailPurpose != null ? cmEmail.InfoString : null,
-                        ApGlAccountId = pgaAp != null ? pgaAp.GlAccountId : null,
-                        ApGlAccountName = glaAp != null ? glaAp.AccountName : null,
-                        ApGlAccountNameArabic = glaAp != null ? glaAp.AccountNameArabic : null,
-                        ApGlAccountDescription = glaAp != null ? glaAp.Description : null,
-                        ApGlAccountCreatedStamp = glaAp != null ? (DateTime?)glaAp.CreatedStamp : null,
-                    })
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (result == null)
-                return Result<PartyDto>.Failure("Contractor not found");
-
-            // REFACTOR: Clean GroupName — remove " ( CONTRACTOR )" suffix if present in Description
-            // Purpose: Match supplier UI behavior
-            // Improvement: Clean display in form input
-            if (!string.IsNullOrEmpty(result.Description))
+            if (!rawResults.Any())
             {
-                var cleanName = result.Description.Split(" ( ").FirstOrDefault();
-                if (!string.IsNullOrEmpty(cleanName))
-                    result.GroupName = cleanName;
+                return Result<PartyDto>.Failure("Party not found");
             }
 
-            return Result<PartyDto>.Success(result);
+            // Group results by party (since group join creates cartesian product)
+            var firstRecord = rawResults.First();
+
+            var dto = new PartyDto
+            {
+                PartyId = firstRecord.Party.PartyId,
+                Description = $"{firstRecord.Party.Description ?? ""} ( {firstRecord.Party.MainRole ?? ""} )",
+                GroupName = firstRecord.Party.Description?.Split(" ( ").FirstOrDefault() ??
+                            firstRecord.Party.Description ?? "",
+                PartyTypeId = firstRecord.PartyType.PartyTypeId,
+                PartyTypeDescription = firstRecord.PartyType.Description,
+                StatusDescription = firstRecord.Status?.Description,
+                MainRole = firstRecord.Party.MainRole,
+
+                // Phone
+                MobileContactNumber = firstRecord.TelecomNumber?.ContactNumber,
+                ContactType = firstRecord.PhonePurposeType?.Description,
+
+                // Address
+                Address1 = firstRecord.PostalAddress?.Address1,
+                Address2 = firstRecord.PostalAddress?.Address2,
+                GeoId = firstRecord.PostalAddress?.CountryGeoId,
+                GeoName = firstRecord.Geo?.GeoName,
+
+                // Email
+                InfoString = firstRecord.EmailInfo,
+
+                // All linked GL accounts
+                LinkedGlAccounts = rawResults
+                    .Where(r => r.Pga != null && r.Gla != null)
+                    .Select(r => new PartyGlAccountSimpleDto
+                    {
+                        GlAccountId = r.Pga.GlAccountId,
+                        GlAccountTypeId = r.Pga.GlAccountTypeId,
+                        RoleTypeId = r.Pga.RoleTypeId,
+                        RoleDescription = r.RoleType?.Description ?? r.Pga.RoleTypeId,
+                        AccountName = r.Gla.AccountName,
+                        AccountNameArabic = r.Gla.AccountNameArabic,
+                        AccountDescription = r.Gla.Description,
+                        CreatedStamp = r.Gla.CreatedStamp
+                    })
+                    .OrderBy(a => a.RoleTypeId)
+                    .ThenBy(a => a.GlAccountId)
+                    .ToList()
+            };
+
+            return Result<PartyDto>.Success(dto);
         }
     }
 }

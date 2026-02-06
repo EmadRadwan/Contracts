@@ -18,34 +18,41 @@ public class UpdateEmployee
     {
         private readonly DataContext _context;
         private readonly IUserAccessor _userAccessor;
+        private readonly IUtilityService _utilityService;
 
-        public Handler(DataContext context, IUserAccessor userAccessor)
+
+        public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService)
         {
             _context = context;
             _userAccessor = userAccessor;
+            _utilityService = utilityService;
         }
 
         public async Task<Result<PartyDto2>> Handle(Command request, CancellationToken cancellationToken)
         {
             var transaction = _context.Database.BeginTransaction();
 
-            var party = await _context.Parties.FindAsync(request.PartyDto.PartyId);
-            if (party == null) return null;
+            var party = await _context.Parties
+                .Include(p => p.Person)
+                .FirstOrDefaultAsync(p => p.PartyId == request.PartyDto.PartyId, cancellationToken);
+
+            if (party == null)
+                return Result<PartyDto2>.Failure("Employee not found");
 
             var stamp = DateTime.Now;
 
             party.LastUpdatedStamp = stamp;
             party.Description = request.PartyDto.FirstName;
 
-            var person = await _context.Persons.FindAsync(request.PartyDto.PartyId);
-            if (person == null) return null;
+            if (party.Person != null)
+            {
+                party.Person.FirstName = request.PartyDto.FirstName?.Trim();
+                party.Person.MiddleName = request.PartyDto.MiddleName?.Trim();
+                party.Person.PersonalTitle = request.PartyDto.PersonalTitle?.Trim();
+                party.Person.LastUpdatedStamp = stamp;
+            }
 
-            person.FirstName = request.PartyDto.FirstName;
-            person.MiddleName = request.PartyDto.MiddleName;
-            person.PersonalTitle = request.PartyDto.PersonalTitle;
-            person.LastUpdatedStamp = stamp;
-
-var telcomNumberQuery = from prty in _context.Parties
+            var telcomNumberQuery = from prty in _context.Parties
                 join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
                 join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId
                 join tn in _context.TelecomNumbers on cm.ContactMechId equals tn.ContactMechId
@@ -149,11 +156,11 @@ var telcomNumberQuery = from prty in _context.Parties
                         ContactMechTypeId = "POSTAL_ADDRESS"
                     };
                     _context.ContactMeches.Add(contactMech);
-                    
+
                     var roleTypeEmployee = await _context.RoleTypes.SingleOrDefaultAsync(
                         x => x.RoleTypeId == "EMPLOYEE", cancellationToken);
 
-                    
+
                     var partyRoleEmployee =
                         _context.PartyRoles.FirstOrDefault(pr => pr.Party == party && pr.RoleType == roleTypeEmployee);
 
@@ -255,6 +262,134 @@ var telcomNumberQuery = from prty in _context.Parties
                     _context.PartyContactMechPurposes.Add(partyContactMechPurpose);
                 }
             }
+            //--------------
+
+            var employment = await _context.Employments
+                .FirstOrDefaultAsync(e =>
+                        e.PartyIdFrom == "Company" &&
+                        e.PartyIdTo == party.PartyId &&
+                        e.RoleTypeIdTo == "EMPLOYEE",
+                    cancellationToken);
+
+            if (employment == null)
+            {
+                employment = new Employment
+                {
+                    PartyIdFrom = "Company",
+                    PartyIdTo = party.PartyId,
+                    FromDate = stamp,
+                    RoleTypeIdFrom = "INTERNAL_ORGANIZATIO",
+                    RoleTypeIdTo = "EMPLOYEE",
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp
+                };
+                _context.Employments.Add(employment);
+            }
+            else
+            {
+                employment.LastUpdatedStamp = stamp;
+            }
+
+            // B. Position Fulfillment + EmplPosition
+            EmplPosition? currentPosition = null;
+            if (!string.IsNullOrWhiteSpace(request.PartyDto.EmplPositionTypeId))
+            {
+                // Check if position type exists
+                var positionTypeExists = await _context.EmplPositionTypes
+                    .AnyAsync(t => t.EmplPositionTypeId == request.PartyDto.EmplPositionTypeId, cancellationToken);
+
+                if (!positionTypeExists)
+                    return Result<PartyDto2>.Failure($"Position type {request.PartyDto.EmplPositionTypeId} not found.");
+
+                // Find current active fulfillment
+                var fulfillment = await _context.EmplPositionFulfillments
+                    .Include(f => f.EmplPosition)
+                    .FirstOrDefaultAsync(f =>
+                            f.PartyId == party.PartyId &&
+                            f.ThruDate == null,
+                        cancellationToken);
+
+                if (fulfillment != null)
+                {
+                    // Update existing position type if changed
+                    if (fulfillment.EmplPosition?.EmplPositionTypeId != request.PartyDto.EmplPositionTypeId)
+                    {
+                        fulfillment.EmplPosition.EmplPositionTypeId = request.PartyDto.EmplPositionTypeId;
+                        fulfillment.EmplPosition.LastUpdatedStamp = stamp;
+                    }
+
+                    fulfillment.LastUpdatedStamp = stamp;
+                    currentPosition = fulfillment.EmplPosition;
+                }
+                else
+                {
+                    // Create new position and fulfillment
+                    var positionId = await _utilityService.GetNextSequence("EmplPosition");
+
+                    currentPosition = new EmplPosition
+                    {
+                        EmplPositionId = positionId,
+                        StatusId = "EMPL_POS_ACTIVE",
+                        PartyId = "Company",
+                        EmplPositionTypeId = request.PartyDto.EmplPositionTypeId,
+                        CreatedStamp = stamp,
+                        LastUpdatedStamp = stamp
+                    };
+                    _context.EmplPositions.Add(currentPosition);
+
+                    var newFulfillment = new EmplPositionFulfillment
+                    {
+                        EmplPositionId = positionId,
+                        PartyId = party.PartyId,
+                        FromDate = stamp,
+                        CreatedStamp = stamp,
+                        LastUpdatedStamp = stamp
+                    };
+                    _context.EmplPositionFulfillments.Add(newFulfillment);
+                }
+            }
+
+            // C. Monthly Base Salary (RateAmount)
+            if (request.PartyDto.MonthlyBaseSalary.HasValue && request.PartyDto.MonthlyBaseSalary > 0)
+            {
+                var latestRate = await _context.RateAmounts
+                    .Where(r =>
+                        r.PartyId == party.PartyId &&
+                        r.PeriodTypeId == "RATE_MONTH" &&
+                        r.RateTypeId == "AVERAGE_PAY_RATE")
+                    .OrderByDescending(r => r.FromDate)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (latestRate != null)
+                {
+                    // Update if amount changed
+                    if (latestRate.Amount != request.PartyDto.MonthlyBaseSalary.Value)
+                    {
+                        latestRate.Amount = request.PartyDto.MonthlyBaseSalary.Value;
+                        latestRate.LastUpdatedStamp = stamp;
+                    }
+                }
+                else
+                {
+                    // Create new
+                    var newRate = new RateAmount
+                    {
+                        RateTypeId = "AVERAGE_PAY_RATE",
+                        RateCurrencyUomId = "EGP",
+                        PeriodTypeId = "RATE_MONTH",
+                        WorkEffortId = "_NA_",
+                        PartyId = party.PartyId,
+                        EmplPositionTypeId = "_NA_",
+                        FromDate = stamp,
+                        Amount = request.PartyDto.MonthlyBaseSalary.Value,
+                        CreatedStamp = stamp,
+                        LastUpdatedStamp = stamp
+                    };
+                    _context.RateAmounts.Add(newRate);
+                }
+            }
+
+            //---------------
 
             var createdAccounts = new List<(string Id, string Type, string Name, string Arabic)>();
             bool apCreated = false;
@@ -281,7 +416,7 @@ var telcomNumberQuery = from prty in _context.Parties
                     p.RoleTypeId == "EMPLOYEE" &&
                     p.GlAccountTypeId == "ACCOUNTS_RECEIVABLE", cancellationToken))
             {
-                loanId = await GenerateUniqueGlId("1241",2);
+                loanId = await GenerateUniqueGlId("1241", 2);
                 if (loanId == null) throw new Exception("Cannot generate loan GL ID");
 
                 var loanAccount = new GlAccount

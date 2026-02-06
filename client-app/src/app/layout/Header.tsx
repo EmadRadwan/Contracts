@@ -43,7 +43,7 @@ const midLinks = [
     { title: "projects", path: "/projects", key: "projects", icon: <HomeWork sx={{ color: "#03A9F4" }} /> },
     {
         title: "sales",
-        path: "/reserve-requests",
+        path: "/sales-requests",
         key: "sales",
         icon: <ReceiptIcon sx={{ color: "#4CAF50" }} />, // Green for sales
     },

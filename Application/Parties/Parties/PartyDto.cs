@@ -54,6 +54,12 @@ public class PartyDto
     public string? AccruedGlAccountId { get; set; }
     public string? AccruedGlAccountName { get; set; }
     public string? AccruedGlAccountNameArabic { get; set; }
+    public string? EmplPositionTypeId { get; set; }
+    public string? EmplPositionDescription { get; set; }
+    public decimal? MonthlyBaseSalary { get; set; }
     public string? ContactType { get; set; }
     public DateTime? LastUpdatedStamp { get; set; }
+    
+    public List<PartyGlAccountSimpleDto>? LinkedGlAccounts { get; set; } = new();
+
 }

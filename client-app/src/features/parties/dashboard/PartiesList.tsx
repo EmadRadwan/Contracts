@@ -87,6 +87,7 @@ export default function PartiesList() {
 
     function cancelEdit() {
         setEditMode(0);
+        setParty(undefined);
         setForm('')
     }
 

@@ -1,32 +1,36 @@
-// PartyGlAccountsForm.tsx
+// Add near the existing Excel button
+const { data: subLedgerData, isFetching: isSubLedgerFetching } = useGetPartySubLedgerQuery(partyId, {
+    skip: !partyId,
+});
 
-// Add this constant near the top of the component (or in a shared constants file)
-const ALLOWED_GL_ACCOUNT_TYPES = [
-    "ACCOUNTS_PAYABLE",
-    "ACCOUNTS_RECEIVABLE",
-    "OWNERS_EQUITY",
-];
+<Button
+    variant="outlined"
+    color="primary"
+    disabled={isSubLedgerFetching || !subLedgerData?.SubLedgers?.length}
+    onClick={() => {
+        // You can also open a modal to preview, but for now just trigger download
+    }}
+>
+    تصدير دفتر الأستاذ الفرعي (Excel)
+</Button>
 
-// Then filter the data before passing to the Field
-const filteredGlAccountTypes = React.useMemo(() =>
-        (glAccountTypes ?? []).filter(type =>
-            ALLOWED_GL_ACCOUNT_TYPES.includes(type.glAccountTypeId)
-        ),
-    [glAccountTypes]
-);
+// Then pass to new component:
+{subLedgerData && subLedgerData.SubLedgers.length > 0 && (
+    <PartySubLedgerExcel
+        party={{ partyId, partyName: displayName }}
+        subLedgers={subLedgerData.SubLedgers}
+        getTranslatedLabel={getTranslatedLabel}
+        isFetching={isSubLedgerFetching}
+        currency={subLedgerData.CurrencyUomId}
+    />
+)}
 
-// ...
-
-<Field
-    name={"glAccountTypeId"}
-    id={"glAccountTypeId"}
-    label={getTranslatedLabel(
-        "accounting.partyGlAccountsForm.glAccountType",
-        "GL Account Type"
-    )}
-    component={MemoizedFormComboBox2}
-    data={filteredGlAccountTypes}           // ← use the filtered array here
-    dataItemKey={"glAccountTypeId"}
-    textField={"description"}
-    validator={requiredValidator}
-/>
+{subLedgerData && subLedgerData.SubLedgers.length > 0 && (
+    <PartySubLedgerExcel
+        party={{ partyId, partyName: displayName }}
+        subLedgers={subLedgerData.SubLedgers}
+        getTranslatedLabel={getTranslatedLabel}
+        isFetching={isSubLedgerFetching}
+        currency={subLedgerData.CurrencyUomId}
+    />
+)}

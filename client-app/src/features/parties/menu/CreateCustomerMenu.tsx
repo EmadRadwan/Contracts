@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {Button, Menu, MenuItem} from '@mui/material';
 import {useNavigate} from 'react-router-dom';
+import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
 
 interface Props {
     partyId?: string;
@@ -11,6 +12,7 @@ const CreateCustomerMenu: React.FC<Props> = ({partyId, partyName}) => {
     const navigate = useNavigate();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
+    const {getTranslatedLabel} = useTranslationHelper();
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
@@ -49,9 +51,8 @@ const CreateCustomerMenu: React.FC<Props> = ({partyId, partyName}) => {
                 transformOrigin={{vertical: 'top', horizontal: 'right'}}
             >
                 <MenuItem onClick={handleFinancialHistory} disabled={!partyId}>
-                    Financial History
+                    {getTranslatedLabel("party.financial.history.menuTitle", "Financial History")}
                 </MenuItem>
-                {/* Add other menu items here if needed */}
             </Menu>
         </>
     );

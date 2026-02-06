@@ -1,17 +1,50 @@
-[
-  {
-    "PROJECT_ID": "111"
-  },
-  {
-    "PROJECT_ID": "111"
-  },
-  {
-    "PROJECT_ID": "113"
-  },
-  {
-    "PROJECT_ID": "10067"
-  },
-  {
-    "PROJECT_ID": "113"
-  }
-]
+{
+  "partyId": "186",
+  "currencyUomId": "EGP",
+  "subLedgers": [
+    {
+      "roleTypeId": "PARTNER",
+      "glAccountId": "302000",
+      "glAccountTypeId": "OWNERS_EQUITY",
+      "entries": [
+        {
+          "transactionDate": "2026-01-13T17:24:07Z",
+          "transactionId": "10872",
+          "description": "",
+          "debitCreditFlag": "D",
+          "amount": 12016.000,
+          "currencyUomId": "EGP",
+          "glAccountId": "302000",
+          "glAccountTypeId": null,
+          "roleTypeId": "PARTNER",
+          "runningBalance": -12016.00
+        },
+        {
+          "transactionDate": "2026-01-18T08:29:39Z",
+          "transactionId": "11015",
+          "description": "قسط الشالية احمد لطفي بنك القاهرة +40ج رسوم تحويل",
+          "debitCreditFlag": "D",
+          "amount": 25190.000,
+          "currencyUomId": "EGP",
+          "glAccountId": "302000",
+          "glAccountTypeId": "PREPAID_EXPENSES",
+          "roleTypeId": "PARTNER",
+          "runningBalance": -37206.00
+        },
+        {
+          "transactionDate": "2026-01-18T08:31:54Z",
+          "transactionId": "11018",
+          "description": "شخصي الحاج احمد لطفي قسط سيارة مقسم تحويل (25 الف +25 الف )",
+          "debitCreditFlag": "D",
+          "amount": 50000.000,
+          "currencyUomId": "EGP",
+          "glAccountId": "302000",
+          "glAccountTypeId": "PREPAID_EXPENSES",
+          "roleTypeId": "PARTNER",
+          "runningBalance": -87206.00
+        }
+      ],
+      "finalBalance": -87206.000
+    }
+  ]
+}

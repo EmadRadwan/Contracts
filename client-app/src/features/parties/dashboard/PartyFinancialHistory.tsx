@@ -10,9 +10,10 @@ import {
 import {orderBy, SortDescriptor, State} from '@progress/kendo-data-query';
 import {Link, useLocation} from 'react-router-dom';
 import './partyFinancialHistory.css';
-import {useGetPartyFinancialHistoryQuery} from "../../../app/store/apis";
+import {useGetPartyFinancialHistoryQuery, useGetPartySubLedgerQuery} from "../../../app/store/apis";
 import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
 import {PartyFinancialHistoryExcel} from "../report/PartyFinancialHistoryExcel";
+import {PartySubLedgerExcel} from "../report/PartySubLedgerExcel";
 
 interface Props {
     partyId: string;
@@ -57,6 +58,9 @@ const PartyFinancialHistory: React.FC<Props> = ({partyId, partyName}) => {
     const {data, error, isLoading} = useGetPartyFinancialHistoryQuery(partyId, {
         skip: !partyId,
         refetchOnMountOrArgChange: true,
+    });
+    const { data: subLedgerData, isFetching: isSubLedgerFetching } = useGetPartySubLedgerQuery(partyId, {
+        skip: !partyId,
     });
     const [tabValue, setTabValue] = useState(0);
     const [sort, setSort] = useState<SortDescriptor[]>([{field: 'invoiceDate', dir: 'asc'}]);
@@ -484,6 +488,18 @@ const PartyFinancialHistory: React.FC<Props> = ({partyId, partyName}) => {
                                     getTranslatedLabel={getTranslatedLabel}
                                     isFetching={isLoading}
                                     perspective={data.LedgerPerspective || 'Company'}
+                                />
+                            )}
+                        </Grid>
+
+                        <Grid item xs={12} md={4} sx={{textAlign: {md: 'right'}}}>
+                            {subLedgerData && subLedgerData?.subLedgers?.length > 0 && (
+                                <PartySubLedgerExcel
+                                    party={{ partyId, partyName: displayName }}
+                                    subLedgers={subLedgerData?.subLedgers}
+                                    getTranslatedLabel={getTranslatedLabel}
+                                    isFetching={isSubLedgerFetching}
+                                    currency={subLedgerData?.CurrencyUomId}
                                 />
                             )}
                         </Grid>
