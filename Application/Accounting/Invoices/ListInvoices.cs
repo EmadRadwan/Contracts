@@ -2,9 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.OData.Query;
 using Persistence;
 using Domain;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+
 
 namespace Application.Accounting.Invoices
 {

@@ -5,7 +5,7 @@ using Application.Order.SalesRequests;
 
 namespace API.Controllers.Order.SalesRequest;
 
-public class SalesRequestRecordsController : BaseODataController2<SalesRequestRecord>
+public class SalesRequestRecordsController : BaseODataController<SalesRequestRecord>
 {
     [HttpGet]
     [EnableQuery]

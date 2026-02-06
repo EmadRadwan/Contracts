@@ -62,7 +62,7 @@ const salesRequestApi = createApi({
                     );
                     return {
                         data: response,
-                        total: totalCount,
+                        totalCount: totalCount,
                     };
                 },
             }),

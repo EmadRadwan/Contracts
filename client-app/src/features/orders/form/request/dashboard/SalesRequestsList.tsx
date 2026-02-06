@@ -40,12 +40,13 @@ function SalesRequestsList() {
     // Grid data
     // -----------------------------------------------------------------
     const [dataState, setDataState] = useState<State>({ take: 9, skip: 0 });
-    const { data, isFetching } = useFetchSalesRequestsQuery(dataState);
+    const { data, isFetching } = useFetchSalesRequestsQuery({...dataState});
 
+    console.log('data!.totalCount', data?.totalCount);
     React.useEffect(() => {
         if (data) {
             const adjustedData = handleDatesArray(data.data);
-            setSRequests({ data: adjustedData, total: data.total });
+            setSRequests({ data: adjustedData, total: data!.totalCount});
         }
     }, [data]);
     
