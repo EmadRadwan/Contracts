@@ -1,4 +1,5 @@
 using Application.Accounting.Services;
+using Application.Core;
 using Domain;
 using FluentValidation;
 using MediatR;
@@ -10,7 +11,7 @@ namespace Application.Accounting.Payments;
 
 public class UpdatePayment
 {
-    public class Command : IRequest<Result<PaymentDto>>
+    public class Command : IRequest<Results<PaymentDto>>
     {
         public PaymentDto PaymentDto { get; set; }
     }
@@ -23,7 +24,7 @@ public class UpdatePayment
         }
     }
 
-    public class Handler : IRequestHandler<Command, Result<PaymentDto>>
+    public class Handler : IRequestHandler<Command, Results<PaymentDto>>
     {
         private readonly DataContext _context;
         private readonly IFinAccountService _finAccountService;
@@ -40,14 +41,120 @@ public class UpdatePayment
             _mediator = mediator;
         }
 
-        public async Task<Result<PaymentDto>> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Results<PaymentDto>> Handle(Command request, CancellationToken cancellationToken)
         {
             var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-            string finAccountTransId = null!;
+
             var dto = request.PaymentDto;
-            var effectiveDate = dto.ChequeDate 
-                                ?? dto.EffectiveDate 
-                                ?? dto.EffectiveDate; // fallback preserves original if both are null (though unlikely)
+
+            // ────────────────────────────────────────────────────────────────
+            // 1. Load original payment (critical for comparisons)
+            // ────────────────────────────────────────────────────────────────
+            var original = await _context.Payments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.PaymentId == dto.PaymentId, cancellationToken);
+
+            if (original == null)
+                return Results<PaymentDto>.Failure("الدفعة غير موجودة", "PAYMENT_NOT_FOUND");
+
+            DateTime effectiveDate = dto.EffectiveDate ?? dto.ChequeDate ?? original.EffectiveDate ?? DateTime.UtcNow;
+
+            // ────────────────────────────────────────────────────────────────
+            // 2. Employee Advance specific validations & updates
+            // ────────────────────────────────────────────────────────────────
+            EmployeeAdvance? advance = null;
+            bool isShortTermAdvance = original.PaymentTypeId == "EMPLOYEE_ADVANCE";
+
+            if (original.PaymentTypeId is "EMPLOYEE_ADVANCE" or "EMPLOYEE_LONG_TERM_ADVANCE")
+            {
+                // Prevent changing critical identifiers
+                if (dto.PartyIdTo != original.PartyIdTo)
+                    return Results<PaymentDto>.Failure("لا يمكن تغيير الموظف بعد إنشاء السلفة",
+                        "CANNOT_CHANGE_EMPLOYEE");
+
+                if (dto.PaymentTypeId != original.PaymentTypeId)
+                    return Results<PaymentDto>.Failure("لا يمكن تغيير نوع الدفعة للسلفة", "CANNOT_CHANGE_PAYMENT_TYPE");
+
+                if (isShortTermAdvance)
+                {
+                    advance = await _context.EmployeeAdvances
+                        .FirstOrDefaultAsync(ea => ea.PaymentId == dto.PaymentId, cancellationToken);
+
+                    if (advance == null)
+                        return Results<PaymentDto>.Failure("سجل السلفة المرتبط مفقود", "ADVANCE_RECORD_MISSING");
+
+                    // ── Amount change logic ──
+                    decimal oldAmount = original.Amount;
+                    decimal newAmount = dto.Amount;
+
+                    if (newAmount <= 0)
+                        return Results<PaymentDto>.Failure("المبلغ يجب أن يكون أكبر من صفر", "INVALID_AMOUNT");
+
+                    // Optional: stricter rule — prevent increase after deduction start
+                    bool deductionsStarted = advance.StartDate <= DateTime.UtcNow;
+                    if (newAmount > oldAmount && deductionsStarted)
+                        return Results<PaymentDto>.Failure("لا يمكن زيادة السلفة بعد بدء الخصومات",
+                            "CANNOT_INCREASE_AFTER_DEDUCTION");
+
+                    // Re-check monthly limit only when increasing (short-term only)
+                    if (newAmount > oldAmount)
+                    {
+                        var monthStart = new DateTime(effectiveDate.Year, effectiveDate.Month, 1);
+                        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+
+                        var otherAdvancesSum = await _context.EmployeeAdvances
+                            .Where(ea => ea.PartyId == dto.PartyIdTo &&
+                                         ea.AdvanceDate >= monthStart &&
+                                         ea.AdvanceDate <= monthEnd &&
+                                         ea.PaymentId != dto.PaymentId &&
+                                         ea.StatusId != "ADVANCE_CANCELLED" &&
+                                         ea.StatusId != "ADVANCE_REJECTED")
+                            .SumAsync(ea => ea.Amount, cancellationToken);
+
+                        var salaryRecord = await _context.RateAmounts
+                            .Where(ra => ra.PartyId == dto.PartyIdTo &&
+                                         ra.PeriodTypeId == "RATE_MONTH" &&
+                                         ra.FromDate <= DateTime.UtcNow &&
+                                         (ra.ThruDate == null || ra.ThruDate > DateTime.UtcNow))
+                            .OrderByDescending(ra => ra.FromDate)
+                            .Select(ra => ra.Amount)
+                            .FirstOrDefaultAsync(cancellationToken);
+
+                        if (salaryRecord <= 0)
+                            return Results<PaymentDto>.Failure("الراتب الشهري غير صالح أو مفقود", "INVALID_SALARY");
+
+                        decimal maxAllowed = (decimal)salaryRecord * 0.50m;
+                        decimal newTotal = otherAdvancesSum + newAmount;
+
+                        if (newTotal > maxAllowed)
+                        {
+                            return Results<PaymentDto>.Failure(
+                                $"المبلغ الجديد ({newAmount:N2}) + السلف الأخرى في الشهر ({otherAdvancesSum:N2}) " +
+                                $"يتجاوز الحد الأقصى الشهري ({maxAllowed:N2}).",
+                                "MONTHLY_ADVANCE_LIMIT_EXCEEDED_ON_UPDATE");
+                        }
+                    }
+
+                    // ── Update EmployeeAdvance fields ──
+                    advance.Amount = newAmount;
+                    advance.InstallmentAmount = newAmount; // still full amount for short-term
+                    advance.AdvanceDate = effectiveDate;
+                    advance.Description = dto.Comments ?? advance.Description ?? "سلفة راتب قصيرة الأجل";
+                    advance.CurrencyUomId = dto.ActualCurrencyUomId ?? original.CurrencyUomId ?? "EGP";
+                    advance.LastUpdatedStamp = DateTime.UtcNow;
+                    advance.LastUpdatedTxStamp = DateTime.UtcNow;
+
+                    _context.EmployeeAdvances.Update(advance);
+                }
+            }
+
+
+            string finAccountTransId = null!;
+            dto = request.PaymentDto;
+            effectiveDate = (DateTime)(dto.ChequeDate
+                                       ?? dto.EffectiveDate
+                                       ??
+                                       dto.EffectiveDate); // fallback preserves original if both are null (though unlikely)
 
 
             try
@@ -155,7 +262,7 @@ public class UpdatePayment
                         FinAccountTransId = finAccountTransId,
                         OverrideGlAccountId = request.PaymentDto.OverrideGlAccountId,
                         ProjectId = request.PaymentDto.ProjectId,
-                        CostCenterId =  request.PaymentDto.CostCenterId,
+                        CostCenterId = request.PaymentDto.CostCenterId,
                         PaymentRefNum = request.PaymentDto.PaymentRefNum,
                     };
                     // update the payment itself
@@ -244,15 +351,15 @@ public class UpdatePayment
                     ChequeDate = payment.ChequeDate,
                     PaymentRefNum = payment.PaymentRefNum
                 };
-                
 
-                return Result<PaymentDto>.Success(paymentToReturn);
+
+                return Results<PaymentDto>.Success(paymentToReturn);
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync(cancellationToken);
 
-                return Result<PaymentDto>.Failure("Error updating Payment");
+                return Results<PaymentDto>.Failure("Error updating Payment");
             }
         }
     }

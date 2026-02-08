@@ -82,6 +82,7 @@ const PAYMENT_TYPE_FILTERS = {
         "DEBTORS_ADVANCE",
         "DUE_INSTALLMENT",
         "EMPLOYEE_ADVANCE",
+        "EMPLOYEE_LONG_TERM_ADVANCE",
         "EQUIPMENT_EXPENSES",
         "LABOR_WAGES",
         "LAND_PURCHASE",
@@ -133,7 +134,7 @@ export default function PaymentForm({
     
     const {
         payment,
-        handleCreate,
+        handleCreate, handleDuplicate,
         handleUpdate,
         handleStatusChange,
         isLoading: hookLoading,
@@ -186,6 +187,9 @@ export default function PaymentForm({
             setShowTransactionsList(true);
         } else if (action === "applications") {
             setShowPaymentApplicationsList(true);
+        }
+        else if (action === "duplicate") {
+            handleDuplicate();
         }
     };
 

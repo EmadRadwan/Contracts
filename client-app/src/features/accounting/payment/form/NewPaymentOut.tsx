@@ -281,7 +281,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                     `${localizationKey}.paymentType`,
                                                     "Payment Type *"
                                                 )}
-                                                component={MemoizedFormDropDownList}
+                                                component={MemoizedFormComboBox2}
                                                 dataItemKey="paymentTypeId"
                                                 textField="description"
                                                 data={filteredPaymentTypes}
@@ -302,7 +302,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                     `${localizationKey}.paymentMethod`,
                                                     "Payment Method *"
                                                 )}
-                                                component={MemoizedFormDropDownList}
+                                                component={MemoizedFormComboBox2}
                                                 dataItemKey="paymentMethodId"
                                                 textField="description"
                                                 data={paymentMethods || []}

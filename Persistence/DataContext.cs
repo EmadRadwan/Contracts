@@ -898,6 +898,8 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
         public DbSet<SalesRequest> SalesRequests { get; set; }
         public DbSet<SalesRequestInstallment> SalesRequestInstallments { get; set; }
         public DbSet<ReserveRequest> ReserveRequests { get; set; }
+        public DbSet<EmployeeAdvance> EmployeeAdvances { get; set; }
+        public DbSet<EmployeeAdvanceSchedule> EmployeeAdvanceSchedules { get; set; }
 
         
 
@@ -13545,6 +13547,181 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("EMPLMNT_TPTRL");
             });
+            
+                        
+            modelBuilder.Entity<EmployeeAdvance>(entity =>
+    {
+        entity.ToTable("EMPLOYEE_ADVANCE");
+
+        entity.HasKey(e => e.AdvanceId);
+
+        entity.HasIndex(e => e.PartyId, "ADVANCE_PARTY_IDX");
+        entity.HasIndex(e => e.AdvanceDate, "ADVANCE_DATE_IDX");
+        entity.HasIndex(e => e.CreatedTxStamp, "ADVANCE_TXCRTS");
+        entity.HasIndex(e => e.LastUpdatedTxStamp, "ADVANCE_TXSTMP");
+
+        entity.Property(e => e.AdvanceId)
+              .HasMaxLength(40)
+              .IsUnicode(false)
+              .HasColumnName("ADVANCE_ID");
+
+        entity.Property(e => e.PartyId)
+              .HasMaxLength(36)
+              .IsUnicode(false)
+              .HasColumnName("PARTY_ID");
+              
+          entity.Property(e => e.PaymentId)
+              .HasMaxLength(36)
+              .IsUnicode(false)
+              .HasColumnName("PAYMENT_ID");
+
+        entity.Property(e => e.AdvanceDate)
+              .HasColumnType("datetime")
+              .HasColumnName("ADVANCE_DATE");
+
+        entity.Property(e => e.Amount)
+              .HasColumnType("decimal(18,2)")
+              .HasColumnName("AMOUNT");
+
+        entity.Property(e => e.CurrencyUomId)
+              .HasMaxLength(20)
+              .IsUnicode(false)
+              .HasColumnName("CURRENCY_UOM_ID");
+
+        entity.Property(e => e.InstallmentCount)
+              .HasColumnName("INSTALLMENT_COUNT");
+
+        entity.Property(e => e.InstallmentAmount)
+              .HasColumnType("decimal(18,2)")
+              .HasColumnName("INSTALLMENT_AMT");
+
+        entity.Property(e => e.StartDate)
+              .HasColumnType("date")
+              .HasColumnName("START_DATE");
+
+        entity.Property(e => e.StatusId)
+              .HasMaxLength(20)
+              .IsUnicode(false)
+              .HasColumnName("STATUS_ID");
+
+        entity.Property(e => e.Description)
+              .HasColumnName("DESCRIPTION");
+
+        entity.Property(e => e.CreatedStamp)
+              .HasColumnType("datetime")
+              .HasColumnName("CREATED_STAMP");
+
+        entity.Property(e => e.CreatedTxStamp)
+              .HasColumnType("datetime")
+              .HasColumnName("CREATED_TX_STAMP");
+
+        entity.Property(e => e.LastUpdatedStamp)
+              .HasColumnType("datetime")
+              .HasColumnName("LAST_UPDATED_STAMP");
+
+        entity.Property(e => e.LastUpdatedTxStamp)
+              .HasColumnType("datetime")
+              .HasColumnName("LAST_UPDATED_TX_STAMP");
+
+        entity.HasOne(d => d.Party)
+              .WithMany(p => p.EmployeeAdvances)  // add this collection to Party if needed
+              .HasForeignKey(d => d.PartyId)
+              .OnDelete(DeleteBehavior.Restrict)
+              .HasConstraintName("ADVANCE_PARTY_FK");
+              
+       entity.HasOne(e => e.Payment)
+              .WithMany(p => p.EmployeeAdvances)
+              .HasForeignKey(e => e.PaymentId)
+              .OnDelete(DeleteBehavior.Restrict) // or Restrict / ClientSetNull
+              .HasConstraintName("FK_EMPLOYEE_ADVANCE_PAYMENT");
+
+    });
+
+    // ────────────────────────────────────────────────────────────────
+    // EmployeeAdvanceSchedule
+    // ────────────────────────────────────────────────────────────────
+    modelBuilder.Entity<EmployeeAdvanceSchedule>(entity =>
+    {
+        entity.ToTable("EMPLOYEE_ADVANCE_SCHEDULE");
+
+        entity.HasKey(e => e.ScheduleId);
+
+        entity.HasIndex(e => e.AdvanceId, "ADV_SCH_ADVANCE_IDX");
+        entity.HasIndex(e => e.DueDate, "ADV_SCH_DUE_DATE_IDX");
+        entity.HasIndex(e => e.PayrolInvoiceId, "ADV_SCH_INVOICE_IDX");
+        entity.HasIndex(e => e.CreatedTxStamp, "ADV_SCH_TXCRTS");
+        entity.HasIndex(e => e.LastUpdatedTxStamp, "ADV_SCH_TXSTMP");
+
+        entity.Property(e => e.ScheduleId)
+              .HasMaxLength(20)
+              .IsUnicode(false)
+              .HasColumnName("SCHEDULE_ID");
+
+        entity.Property(e => e.AdvanceId)
+              .HasMaxLength(20)
+              .IsUnicode(false)
+              .HasColumnName("ADVANCE_ID");
+
+        entity.Property(e => e.InstallmentNumber)
+              .HasColumnName("INSTALLMENT_NUM");
+
+        entity.Property(e => e.DueDate)
+              .HasColumnType("date")
+              .HasColumnName("DUE_DATE");
+
+        entity.Property(e => e.ScheduledAmount)
+              .HasColumnType("decimal(18,2)")
+              .HasColumnName("SCHED_AMT");
+
+        entity.Property(e => e.DeductedAmount)
+              .HasColumnType("decimal(18,2)")
+              .HasColumnName("DEDUCTED_AMT");
+
+        entity.Property(e => e.RemainingAmount)
+              .HasColumnType("decimal(18,2)")
+              .HasColumnName("REMAINING_AMT");
+
+        entity.Property(e => e.StatusId)
+              .HasMaxLength(20)
+              .IsUnicode(false)
+              .HasColumnName("STATUS_ID");
+
+        entity.Property(e => e.PayrolInvoiceId)
+              .HasMaxLength(20)
+              .IsUnicode(false)
+              .HasColumnName("PAYROL_INVOICE_ID");
+
+        entity.Property(e => e.Notes)
+              .HasColumnName("NOTES");
+
+        entity.Property(e => e.CreatedStamp)
+              .HasColumnType("datetime")
+              .HasColumnName("CREATED_STAMP");
+
+        entity.Property(e => e.CreatedTxStamp)
+              .HasColumnType("datetime")
+              .HasColumnName("CREATED_TX_STAMP");
+
+        entity.Property(e => e.LastUpdatedStamp)
+              .HasColumnType("datetime")
+              .HasColumnName("LAST_UPDATED_STAMP");
+
+        entity.Property(e => e.LastUpdatedTxStamp)
+              .HasColumnType("datetime")
+              .HasColumnName("LAST_UPDATED_TX_STAMP");
+
+        entity.HasOne(d => d.EmployeeAdvance)
+              .WithMany(p => p.EmployeeAdvanceSchedules)
+              .HasForeignKey(d => d.AdvanceId)
+              .OnDelete(DeleteBehavior.Cascade)
+              .HasConstraintName("ADV_SCH_ADVANCE_FK");
+
+        entity.HasOne(d => d.PayrolInvoice)
+              .WithMany(p => p.EmployeeAdvanceSchedules)  // add this collection to Invoice if needed
+              .HasForeignKey(d => d.PayrolInvoiceId)
+              .OnDelete(DeleteBehavior.SetNull)
+              .HasConstraintName("ADV_SCH_INVOICE_FK");
+    });
 
             modelBuilder.Entity<EmploymentApp>(entity =>
             {

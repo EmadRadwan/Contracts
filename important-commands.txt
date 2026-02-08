@@ -45,7 +45,7 @@ dotnet ef database drop -p Persistence -s API
 dotnet ef migrations add "Added uom to orderitem" -p Persistence -s API
 dotnet ef migrations add CreateInvoiceRecordsView -p Persistence -s API
 //Migrations for database views:
-dotnet ef migrations add CreateDatabaseViews -p Persistence -s API
+dotnet ef migrations add AddPaymentLinkToEmployeeAdvance -p Persistence -s API
     - then add the database view creation code to the newly created migration file
     - if view migrations to be dropped, remove their files from the migration folder
       and from the __EFMigrationHistory table

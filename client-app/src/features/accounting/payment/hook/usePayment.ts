@@ -2,7 +2,7 @@ import {useEffect, useMemo, useRef, useState} from "react";
 import { toast } from "react-toastify";
 import { Payment } from "../../../../app/models/accounting/payment";
 import {
-  useCreatePaymentAndFinAccountTransMutation,
+  useCreatePaymentAndFinAccountTransMutation, useDuplicatePaymentMutation,
   useSetPaymentStatusToReceivedMutation,
   useUpdatePaymentMutation,
 } from "../../../../app/store/apis";
@@ -93,8 +93,9 @@ export default function usePayment({
   const [updatePayment, { isLoading: isUpdateLoading }] = useUpdatePaymentMutation();
   const [setPaymentStatus, { isLoading: isStatusLoading }] =
       useSetPaymentStatusToReceivedMutation();
+  const [duplicatePayment, { isLoading: isDuplicating }] = useDuplicatePaymentMutation();
 
-  const isLoading = isCreateLoading || isUpdateLoading || isStatusLoading;
+  const isLoading = isCreateLoading || isUpdateLoading || isStatusLoading || isDuplicating;
 
   
   const defaultNewPayment = useMemo(() => ({
@@ -210,6 +211,27 @@ export default function usePayment({
 
     } catch (error) {
       handleApiError(error, "Failed to create payment");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDuplicate = async () => {
+    if (!payment?.paymentId) {
+      toast.error("لا يوجد دفعة لتكرارها");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const newPayment = await duplicatePayment(payment.paymentId).unwrap();
+
+      toast.success(`تم إنشاء نسخة جديدة بنجاح – رقم الدفعة: ${newPayment.paymentId}`);
+
+    } catch (err: any) {
+      const msg = err?.data?.title || "فشل تكرار الدفعة";
+      toast.error(msg);
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
@@ -336,7 +358,7 @@ const handleCreate = async (data: {
 
   return {
     payment,
-    handleCreate,
+    handleCreate, handleDuplicate,
     handleUpdate,
     handleStatusChange,
     isLoading

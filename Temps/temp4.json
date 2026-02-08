@@ -1,50 +1,158 @@
-{
-  "partyId": "186",
-  "currencyUomId": "EGP",
-  "subLedgers": [
-    {
-      "roleTypeId": "PARTNER",
-      "glAccountId": "302000",
-      "glAccountTypeId": "OWNERS_EQUITY",
-      "entries": [
-        {
-          "transactionDate": "2026-01-13T17:24:07Z",
-          "transactionId": "10872",
-          "description": "",
-          "debitCreditFlag": "D",
-          "amount": 12016.000,
-          "currencyUomId": "EGP",
-          "glAccountId": "302000",
-          "glAccountTypeId": null,
-          "roleTypeId": "PARTNER",
-          "runningBalance": -12016.00
-        },
-        {
-          "transactionDate": "2026-01-18T08:29:39Z",
-          "transactionId": "11015",
-          "description": "قسط الشالية احمد لطفي بنك القاهرة +40ج رسوم تحويل",
-          "debitCreditFlag": "D",
-          "amount": 25190.000,
-          "currencyUomId": "EGP",
-          "glAccountId": "302000",
-          "glAccountTypeId": "PREPAID_EXPENSES",
-          "roleTypeId": "PARTNER",
-          "runningBalance": -37206.00
-        },
-        {
-          "transactionDate": "2026-01-18T08:31:54Z",
-          "transactionId": "11018",
-          "description": "شخصي الحاج احمد لطفي قسط سيارة مقسم تحويل (25 الف +25 الف )",
-          "debitCreditFlag": "D",
-          "amount": 50000.000,
-          "currencyUomId": "EGP",
-          "glAccountId": "302000",
-          "glAccountTypeId": "PREPAID_EXPENSES",
-          "roleTypeId": "PARTNER",
-          "runningBalance": -87206.00
-        }
-      ],
-      "finalBalance": -87206.000
-    }
-  ]
-}
+[
+  {
+    "STATUS_ID": "ADVANCE_ACTIVE",
+    "STATUS_TYPE_ID": "EMPLOYEE_ADVANCE_STATUS",
+    "STATUS_CODE": "03",
+    "SEQUENCE_ID": "ACTIVE",
+    "DESCRIPTION": "Active / Being Repaid",
+    "DESCRIPTION_ARABIC": "نشطة / جاري السداد",
+    "DESCRIPTION_TURKISH": null,
+    "LAST_UPDATED_STAMP": "2026-02-07 18:45:44",
+    "LAST_UPDATED_TX_STAMP": "2026-02-07 18:45:44",
+    "CREATED_STAMP": "2026-02-07 18:45:44",
+    "CREATED_TX_STAMP": "2026-02-07 18:45:44"
+  },
+  {
+    "STATUS_ID": "ADVANCE_APPROVED",
+    "STATUS_TYPE_ID": "EMPLOYEE_ADVANCE_STATUS",
+    "STATUS_CODE": "02",
+    "SEQUENCE_ID": "APPROVED",
+    "DESCRIPTION": "Approved",
+    "DESCRIPTION_ARABIC": "تمت الموافقة",
+    "DESCRIPTION_TURKISH": null,
+    "LAST_UPDATED_STAMP": "2026-02-07 18:45:44",
+    "LAST_UPDATED_TX_STAMP": "2026-02-07 18:45:44",
+    "CREATED_STAMP": "2026-02-07 18:45:44",
+    "CREATED_TX_STAMP": "2026-02-07 18:45:44"
+  },
+  {
+    "STATUS_ID": "ADVANCE_CANCELLED",
+    "STATUS_TYPE_ID": "EMPLOYEE_ADVANCE_STATUS",
+    "STATUS_CODE": "06",
+    "SEQUENCE_ID": "CANCELLED",
+    "DESCRIPTION": "Cancelled",
+    "DESCRIPTION_ARABIC": "ملغاة",
+    "DESCRIPTION_TURKISH": null,
+    "LAST_UPDATED_STAMP": "2026-02-07 18:45:44",
+    "LAST_UPDATED_TX_STAMP": "2026-02-07 18:45:44",
+    "CREATED_STAMP": "2026-02-07 18:45:44",
+    "CREATED_TX_STAMP": "2026-02-07 18:45:44"
+  },
+  {
+    "STATUS_ID": "ADVANCE_FULLY_PAID",
+    "STATUS_TYPE_ID": "EMPLOYEE_ADVANCE_STATUS",
+    "STATUS_CODE": "04",
+    "SEQUENCE_ID": "PAID",
+    "DESCRIPTION": "Fully Paid",
+    "DESCRIPTION_ARABIC": "تم السداد كاملاً",
+    "DESCRIPTION_TURKISH": null,
+    "LAST_UPDATED_STAMP": "2026-02-07 18:45:44",
+    "LAST_UPDATED_TX_STAMP": "2026-02-07 18:45:44",
+    "CREATED_STAMP": "2026-02-07 18:45:44",
+    "CREATED_TX_STAMP": "2026-02-07 18:45:44"
+  },
+  {
+    "STATUS_ID": "ADVANCE_PARTIALLY_PAID",
+    "STATUS_TYPE_ID": "EMPLOYEE_ADVANCE_STATUS",
+    "STATUS_CODE": "05",
+    "SEQUENCE_ID": "PARTIAL",
+    "DESCRIPTION": "Partially Paid",
+    "DESCRIPTION_ARABIC": "تم السداد جزئياً",
+    "DESCRIPTION_TURKISH": null,
+    "LAST_UPDATED_STAMP": "2026-02-07 18:45:44",
+    "LAST_UPDATED_TX_STAMP": "2026-02-07 18:45:44",
+    "CREATED_STAMP": "2026-02-07 18:45:44",
+    "CREATED_TX_STAMP": "2026-02-07 18:45:44"
+  },
+  {
+    "STATUS_ID": "ADVANCE_REJECTED",
+    "STATUS_TYPE_ID": "EMPLOYEE_ADVANCE_STATUS",
+    "STATUS_CODE": "07",
+    "SEQUENCE_ID": "REJECTED",
+    "DESCRIPTION": "Rejected",
+    "DESCRIPTION_ARABIC": "مرفوضة",
+    "DESCRIPTION_TURKISH": null,
+    "LAST_UPDATED_STAMP": "2026-02-07 18:45:44",
+    "LAST_UPDATED_TX_STAMP": "2026-02-07 18:45:44",
+    "CREATED_STAMP": "2026-02-07 18:45:44",
+    "CREATED_TX_STAMP": "2026-02-07 18:45:44"
+  },
+  {
+    "STATUS_ID": "ADVANCE_REQUESTED",
+    "STATUS_TYPE_ID": "EMPLOYEE_ADVANCE_STATUS",
+    "STATUS_CODE": "01",
+    "SEQUENCE_ID": "REQUESTED",
+    "DESCRIPTION": "Requested / Pending Approval",
+    "DESCRIPTION_ARABIC": "مطلوبة / في انتظار الموافقة",
+    "DESCRIPTION_TURKISH": null,
+    "LAST_UPDATED_STAMP": "2026-02-07 18:45:44",
+    "LAST_UPDATED_TX_STAMP": "2026-02-07 18:45:44",
+    "CREATED_STAMP": "2026-02-07 18:45:44",
+    "CREATED_TX_STAMP": "2026-02-07 18:45:44"
+  },
+  {
+    "STATUS_ID": "SCHED_DUE",
+    "STATUS_TYPE_ID": "EMPLOYEE_ADVANCE_STATUS",
+    "STATUS_CODE": "09",
+    "SEQUENCE_ID": "DUE",
+    "DESCRIPTION": "Due for Deduction",
+    "DESCRIPTION_ARABIC": "مستحق الخصم",
+    "DESCRIPTION_TURKISH": null,
+    "LAST_UPDATED_STAMP": "2026-02-07 18:45:44",
+    "LAST_UPDATED_TX_STAMP": "2026-02-07 18:45:44",
+    "CREATED_STAMP": "2026-02-07 18:45:44",
+    "CREATED_TX_STAMP": "2026-02-07 18:45:44"
+  },
+  {
+    "STATUS_ID": "SCHED_OVERDUE",
+    "STATUS_TYPE_ID": "EMPLOYEE_ADVANCE_STATUS",
+    "STATUS_CODE": "11",
+    "SEQUENCE_ID": "OVERDUE",
+    "DESCRIPTION": "Overdue / Not Paid",
+    "DESCRIPTION_ARABIC": "متأخر / غير مدفوع",
+    "DESCRIPTION_TURKISH": null,
+    "LAST_UPDATED_STAMP": "2026-02-07 18:45:44",
+    "LAST_UPDATED_TX_STAMP": "2026-02-07 18:45:44",
+    "CREATED_STAMP": "2026-02-07 18:45:44",
+    "CREATED_TX_STAMP": "2026-02-07 18:45:44"
+  },
+  {
+    "STATUS_ID": "SCHED_PAID",
+    "STATUS_TYPE_ID": "EMPLOYEE_ADVANCE_STATUS",
+    "STATUS_CODE": "10",
+    "SEQUENCE_ID": "PAID",
+    "DESCRIPTION": "Deducted / Paid",
+    "DESCRIPTION_ARABIC": "تم الخصم / السداد",
+    "DESCRIPTION_TURKISH": null,
+    "LAST_UPDATED_STAMP": "2026-02-07 18:45:44",
+    "LAST_UPDATED_TX_STAMP": "2026-02-07 18:45:44",
+    "CREATED_STAMP": "2026-02-07 18:45:44",
+    "CREATED_TX_STAMP": "2026-02-07 18:45:44"
+  },
+  {
+    "STATUS_ID": "SCHED_PENDING",
+    "STATUS_TYPE_ID": "EMPLOYEE_ADVANCE_STATUS",
+    "STATUS_CODE": "08",
+    "SEQUENCE_ID": "PENDING",
+    "DESCRIPTION": "Pending Deduction",
+    "DESCRIPTION_ARABIC": "في انتظار الخصم",
+    "DESCRIPTION_TURKISH": null,
+    "LAST_UPDATED_STAMP": "2026-02-07 18:45:44",
+    "LAST_UPDATED_TX_STAMP": "2026-02-07 18:45:44",
+    "CREATED_STAMP": "2026-02-07 18:45:44",
+    "CREATED_TX_STAMP": "2026-02-07 18:45:44"
+  },
+  {
+    "STATUS_ID": "SCHED_WRITTEN_OFF",
+    "STATUS_TYPE_ID": "EMPLOYEE_ADVANCE_STATUS",
+    "STATUS_CODE": "12",
+    "SEQUENCE_ID": "WRITTEN_OFF",
+    "DESCRIPTION": "Written Off / Forgiven",
+    "DESCRIPTION_ARABIC": "شطب / إسقاط",
+    "DESCRIPTION_TURKISH": null,
+    "LAST_UPDATED_STAMP": "2026-02-07 18:45:44",
+    "LAST_UPDATED_TX_STAMP": "2026-02-07 18:45:44",
+    "CREATED_STAMP": "2026-02-07 18:45:44",
+    "CREATED_TX_STAMP": "2026-02-07 18:45:44"
+  }
+]

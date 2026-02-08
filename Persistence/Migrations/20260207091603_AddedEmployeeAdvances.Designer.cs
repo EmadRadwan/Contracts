@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence;
 
@@ -10,9 +11,11 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20260207091603_AddedEmployeeAdvances")]
+    partial class AddedEmployeeAdvances
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -11927,9 +11930,9 @@ namespace Persistence.Migrations
             modelBuilder.Entity("Domain.EmployeeAdvance", b =>
                 {
                     b.Property<string>("AdvanceId")
-                        .HasMaxLength(40)
+                        .HasMaxLength(20)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("varchar(20)")
                         .HasColumnName("ADVANCE_ID");
 
                     b.Property<DateTime>("AdvanceDate")
@@ -11977,16 +11980,10 @@ namespace Persistence.Migrations
 
                     b.Property<string>("PartyId")
                         .IsRequired()
-                        .HasMaxLength(36)
+                        .HasMaxLength(20)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(36)")
+                        .HasColumnType("varchar(20)")
                         .HasColumnName("PARTY_ID");
-
-                    b.Property<string>("PaymentId")
-                        .HasMaxLength(36)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(36)")
-                        .HasColumnName("PAYMENT_ID");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("date")
@@ -12000,8 +11997,6 @@ namespace Persistence.Migrations
                         .HasColumnName("STATUS_ID");
 
                     b.HasKey("AdvanceId");
-
-                    b.HasIndex("PaymentId");
 
                     b.HasIndex(new[] { "AdvanceDate" }, "ADVANCE_DATE_IDX");
 
@@ -64147,15 +64142,7 @@ namespace Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("ADVANCE_PARTY_FK");
 
-                    b.HasOne("Domain.Payment", "Payment")
-                        .WithMany("EmployeeAdvances")
-                        .HasForeignKey("PaymentId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .HasConstraintName("FK_EMPLOYEE_ADVANCE_PAYMENT");
-
                     b.Navigation("Party");
-
-                    b.Navigation("Payment");
                 });
 
             modelBuilder.Entity("Domain.EmployeeAdvanceSchedule", b =>
@@ -82098,8 +82085,6 @@ namespace Persistence.Migrations
                     b.Navigation("AcctgTrans");
 
                     b.Navigation("Deductions");
-
-                    b.Navigation("EmployeeAdvances");
 
                     b.Navigation("FinAccountTrans");
 

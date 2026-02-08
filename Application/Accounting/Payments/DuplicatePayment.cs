@@ -1,4 +1,12 @@
-// Application/Accounting/Payments/DuplicatePayment.cs
+using Application.Accounting.FinAccounts;
+using Application.Accounting.Services;
+using Application.Core;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Persistence;
+
+namespace Application.Accounting.Payments;
+
 
 public class DuplicatePayment
 {
@@ -28,7 +36,7 @@ public class DuplicatePayment
 
             if (original == null)
             {
-                return Results.Failure<CreatePaymentAndFinAccountTransResponse>(
+                return Results<CreatePaymentAndFinAccountTransResponse>.Failure(
                     "Original payment not found",
                     "PAYMENT_NOT_FOUND"
                 );
@@ -40,9 +48,7 @@ public class DuplicatePayment
                 PaymentTypeId      = original.PaymentTypeId,
                 PaymentMethodId    = original.PaymentMethodId,
                 Amount             = original.Amount,
-                CurrencyUomId      = original.CurrencyUomId,
                 PaymentDate        = DateTime.UtcNow,           // or original.EffectiveDate ?
-                EffectiveDate      = DateTime.UtcNow,           // most common choice
                 Comments           = original.Comments != null 
                                      ? $"نسخة من دفعة {original.PaymentId} – {original.Comments}"
                                      : $"نسخة من دفعة {original.PaymentId}",
@@ -51,12 +57,11 @@ public class DuplicatePayment
                 ChequeNumber       = original.ChequeNumber,
                 ChequeDate         = original.ChequeDate,
                 OverrideGlAccountId= original.OverrideGlAccountId,
-                ProjectId          = original.ProjectId,
+                ProjectId          = original.WorkEffortId,
                 CostCenterId       = original.CostCenterId,
                 IsBankTransfer     = original.IsBankTransfer,
-                PaymentRefNum      = original.PaymentRefNum,
-                // Usually do NOT copy these:
-                // StatusId, FinAccountTransId, PaymentPreferenceId, etc.
+                StatusId          = "PMNT_NOT_PAID", 
+                SalesRequestId       = original.SalesRequestId,
             };
 
             var createCommand = new CreatePaymentAndFinAccountTrans.Command 

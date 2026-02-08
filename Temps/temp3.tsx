@@ -1,9 +1,49 @@
-// In HandleODataQueryAsync or controller
-var total = queryWithFilterOnly.Count();           // sync ok since in-memory
-var paged = options.ApplyTo(query) as IQueryable<T>;
-
-return Ok(new
-{
-    value = paged,                  // paged items
-    ["@odata.count"] = total       // ← manually add it!
-});
+{paymentMethodId: "CASH", isDepositWithDrawPayment: "Y", finAccountTransTypeId: "WITHDRAWAL",…}
+amount
+    :
+    2
+chequeDate
+    :
+    null
+chequeNumber
+    :
+    ""
+comments
+    :
+    "t"
+costCenterId
+    :
+    null
+finAccountTransTypeId
+    :
+    "WITHDRAWAL"
+isBankTransfer
+    :
+    false
+isDepositWithDrawPayment
+    :
+    "Y"
+partyIdFrom
+    :
+    "Company"
+partyIdTo
+    :
+    "123"
+paymentDate
+    :
+    "2026-02-07T22:00:00.000Z"
+paymentMethodId
+    :
+    "CASH"
+paymentRefNum
+    :
+    ""
+paymentTypeId
+    :
+    "ADVERTISING_EXPENSES"
+projectId
+    :
+    "112"
+statusId
+    :
+    "PMNT_NOT_PAID"

@@ -79,13 +79,22 @@ public class PaymentsController : BaseApiController
     [HttpPost("createPaymentAndFinAccountTrans")]
     public async Task<IActionResult> CreatePaymentAndFinAccountTrans(CreatePaymentAndFinAccountTransRequest request)
     {
-        return HandleResult(await Mediator.Send(new CreatePaymentAndFinAccountTrans.Command { Request = request }));
+        return HandleResults(await Mediator.Send(new CreatePaymentAndFinAccountTrans.Command { request = request }));
+    }
+    
+    [HttpPost("duplicate/{originalPaymentId}")]
+    public async Task<IActionResult> DuplicatePayment(string originalPaymentId)
+    {
+        return HandleResults(await Mediator.Send(new DuplicatePayment.Command 
+        { 
+            OriginalPaymentId = originalPaymentId 
+        }));
     }
 
     [HttpPut("updatePayment", Name = "UpdatePayment")]
     public async Task<IActionResult> UpdatePayment(PaymentDto paymentDto)
     {
-        return HandleResult(await Mediator.Send(new UpdatePayment.Command
+        return HandleResults(await Mediator.Send(new UpdatePayment.Command
             { PaymentDto = paymentDto }));
     }
 

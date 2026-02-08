@@ -503,7 +503,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                         `${localizationKey}.paymentMethod`,
                                                         "Payment Method *"
                                                     )}
-                                                    component={MemoizedFormDropDownList}
+                                                    component={MemoizedFormComboBox2}
                                                     dataItemKey="paymentMethodId"
                                                     textField="description"
                                                     data={paymentMethods || []}

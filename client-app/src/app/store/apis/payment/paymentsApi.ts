@@ -95,6 +95,13 @@ const paymentsApi = createApi({
                     };
                 },
             }),
+            duplicatePayment: builder.mutation<Payment, string>({
+                query: (originalPaymentId) => ({
+                    url: `/payments/duplicate/${originalPaymentId}`,
+                    method: "POST",
+                }),
+                invalidatesTags: ["Payments"],
+            }),
             updatePayment: builder.mutation({
                 query: (payment) => {
                     return {
@@ -312,6 +319,6 @@ export const {
     useFetchPaymentsWithDueStatusQuery,
     useLazyGetPaymentReportPdfQuery,
     useLazyFetchPaymentsByDateRangeQuery,
-    useDeletePaymentMutation,
+    useDeletePaymentMutation, useDuplicatePaymentMutation,
 } = paymentsApi;
 export {paymentsApi};

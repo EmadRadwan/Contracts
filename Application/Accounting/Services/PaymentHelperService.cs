@@ -1237,6 +1237,7 @@ public class PaymentHelperService : IPaymentHelperService
                 PaymentTypeId = request.PaymentTypeId,
                 ChequeNumber = request.ChequeNumber, // Added
                 ChequeDate = request.ChequeDate, // Added
+                SalesRequestId = request.SalesRequestId, // Added
                 Comments = request.Comments,
                 IsBankTransfer = request.IsBankTransfer,
                 OverrideGlAccountId = request.OverrideGlAccountId,

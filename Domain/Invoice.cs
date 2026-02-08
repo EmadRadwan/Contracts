@@ -50,6 +50,8 @@ public class Invoice
     public RecurrenceInfo? RecurrenceInfo { get; set; }
     public RoleType? RoleType { get; set; }
     public StatusItem? Status { get; set; }
+    public virtual ICollection<EmployeeAdvanceSchedule> EmployeeAdvanceSchedules { get; set; } = new HashSet<EmployeeAdvanceSchedule>();
+
     public ICollection<AcctgTran> AcctgTrans { get; set; }
     public ICollection<InvoiceAttribute> InvoiceAttributes { get; set; }
     public ICollection<InvoiceContactMech> InvoiceContactMeches { get; set; }

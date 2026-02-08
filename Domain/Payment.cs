@@ -65,6 +65,7 @@ public class Payment
     public virtual WorkEffort? WorkEffort { get; set; }
     public virtual CostCenter? CostCenter { get; set; }
     public virtual SalesRequest? SalesRequest { get; set; }
+    public virtual ICollection<EmployeeAdvance> EmployeeAdvances { get; set; }
 
 
     public StatusItem? Status { get; set; }

@@ -58,7 +58,7 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
     const canViewApplications = payment?.statusId !== 'PMNT_NOT_PAID';
     const canViewTransactions = payment?.statusId !== 'PMNT_NOT_PAID';
 
-    console.log('PaymentActions Rendered with payment:', payment);
+    //console.log('PaymentActions Rendered with payment:', payment);
 
     // In create mode (formEditMode === 1), only show create options
     if (formEditMode === 1) {
@@ -125,6 +125,12 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                         {getAvailableStatusTransitions(payment).toReceived  && (
                             <MenuItem onClick={() => onMenuSelect('receive')}>
                                 {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.receive`, "Status to Received")}
+                            </MenuItem>
+                        )}
+
+                        {!!payment?.paymentId && (
+                            <MenuItem onClick={() => onMenuSelect('duplicate')}>
+                                {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.duplicate`, "Duplicate Payment")}
                             </MenuItem>
                         )}
                     </>
