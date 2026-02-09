@@ -116,9 +116,9 @@ public class ApproveSalesRequest
                         : "RECEIPT_DUE_INSTALLMENT";
 
                     var comments = inst.IsAdvance
-                        ? $"Advance payment ({inst.InstallmentNumber}) - SR {sr.SalesRequestId}"
-                        : $"Installment {inst.InstallmentNumber} - Due {inst.DueDate:yyyy-MM-dd} - SR {sr.SalesRequestId}";
-
+                        ? $"Advance payment #{inst.InstallmentNumber} – Apt {sr.ProductId} – SR {sr.SalesRequestId}"
+                        : $"Installment #{inst.InstallmentNumber} – Due {inst.DueDate:yyyy-MM-dd} – Apt {sr.ProductId} – SR {sr.SalesRequestId}";
+                    
                     paymentsToCreate.Add(new CreatePaymentParam
                     {
                         PartyIdFrom = sr.FromPartyId!, // Customer
@@ -214,7 +214,7 @@ public class ApproveSalesRequest
                     AcctgTransEntryTypeId = "_NA_",
                     Amount = totalPrice,
                     ReconcileStatusId = "AES_NOT_RECONCILED",
-                    Description = $"Apartment sale receivable - {apartment.ApartmentName}",
+                    Description = $"Receivable for apartment {sr.ProductId} ({apartment.ApartmentName}) - SR {sr.SalesRequestId}",
                     OrganizationPartyId = companyPartyId,
                     ProductId = sr.ProductId,
                     PartyId = sr.FromPartyId,
@@ -233,7 +233,7 @@ public class ApproveSalesRequest
                     AcctgTransEntryTypeId = "_NA_",
                     Amount = totalPrice,
                     ReconcileStatusId = "AES_NOT_RECONCILED",
-                    Description = $"Apartment sale revenue - {apartment.ApartmentName}",
+                    Description = $"Revenue - apartment {sr.ProductId} ({apartment.ApartmentName}) - SR {sr.SalesRequestId}",
                     OrganizationPartyId = companyPartyId,
                     PartyId = sr.FromPartyId,
                     ProductId = sr.ProductId,

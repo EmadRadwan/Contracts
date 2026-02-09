@@ -156,6 +156,7 @@ import ContactsDashboard from "../../features/CRM/contacts/ContactsDashboard";
 import MultiAcctgTransEntryForm from "../../features/accounting/transaction/form/MultiAcctgTransEntryForm";
 import UsersList from "../../features/account/users/UsersList";
 import RolesList from "../../features/account/users/RolesList";
+import EmployeeAdvancesList from "../../features/humanResources/dashboard/EmployeeAdvancesList";
 
 const PartyFinancialHistoryWrapper = () => {
     const {partyId} = useParams<{ partyId: string }>();
@@ -387,6 +388,14 @@ export const routes: RouteObject[] = [
                         children: [
                             {path: "projects", element: <ProjectsDashboard/>},
                             {path: "projectCertificates", element: <ProjectCertificatesList/>},
+                        ],
+                    },
+
+                    {
+                        element: <RequireRole allowedRoles="HR_View" />,
+                        children: [
+                            {path: "humanResources", element: <EmployeeAdvancesList/>},
+                            {path: "employee-advances", element: <EmployeeAdvancesList/>},
                         ],
                     },
 

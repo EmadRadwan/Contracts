@@ -60,6 +60,7 @@ const salesRequestApi = createApi({
                     const {totalCount} = JSON.parse(
                         meta!.response!.headers.get("count")!,
                     );
+                    console.log("Total Sales Requests:", totalCount);
                     return {
                         data: response,
                         totalCount: totalCount,

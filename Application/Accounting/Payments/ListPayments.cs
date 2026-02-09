@@ -1,7 +1,12 @@
-using Application.Order.Orders;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.OData.Query;
+using Microsoft.EntityFrameworkCore;
 using Persistence;
+using Application.Order.Orders; // for OrderPartyDto
 
 namespace Application.Accounting.Payments;
 
@@ -28,119 +33,124 @@ public class ListPayments
             var language = request.Language?.ToLower() ?? "en";
             var isArabic = language == "ar";
 
+            // REFACTOR: Single query with ALL joins (including NEW SalesRequest → Product)
+            //          Filter applied server-side BEFORE projection
+            var query = (from pyt in _context.Payments
 
-            var query = (
-                from pyt in _context.Payments
+                         // Required inner joins
+                         join ptt in _context.PaymentTypes on pyt.PaymentTypeId equals ptt.PaymentTypeId
+                         join sts in _context.StatusItems on pyt.StatusId equals sts.StatusId
+                         join pty in _context.Parties on pyt.PartyIdFrom equals pty.PartyId
 
-                // Required joins (inner – these should always exist)
-                join ptt in _context.PaymentTypes
-                    on pyt.PaymentTypeId equals ptt.PaymentTypeId
-                join sts in _context.StatusItems
-                    on pyt.StatusId equals sts.StatusId
-                join pty in _context.Parties
-                    on pyt.PartyIdFrom equals pty.PartyId
+                         // LEFT JOINS (existing + NEW)
+                         join pmt in _context.PaymentMethodTypes on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into pmtJoin
+                         from pmt in pmtJoin.DefaultIfEmpty()
 
-                // REFACTOR: LEFT JOIN – PaymentMethodTypeId is often NULL
-                join pmt in _context.PaymentMethodTypes
-                    on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into pmtJoin
-                from pmt in pmtJoin.DefaultIfEmpty()
+                         join ptyto in _context.Parties on pyt.PartyIdTo equals ptyto.PartyId into ptytoJoin
+                         from ptyto in ptytoJoin.DefaultIfEmpty()
 
-                // REFACTOR: LEFT JOIN – PartyIdTo may be "Company" or missing
-                join ptyto in _context.Parties
-                    on pyt.PartyIdTo equals ptyto.PartyId into ptytoJoin
-                from ptyto in ptytoJoin.DefaultIfEmpty()
-                join opp in _context.OrderPaymentPreferences
-                    on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId into oppJoin
-                from opp in oppJoin.DefaultIfEmpty()
-                join ord in _context.OrderHeaders
-                    on opp.OrderId equals ord.OrderId into ordJoin
-                from ord in ordJoin.DefaultIfEmpty()
-                join we in _context.WorkEfforts
-                    on ord.OrderId equals we.RelatedOrderId into weJoin
-                from we in weJoin.DefaultIfEmpty()
+                         join opp in _context.OrderPaymentPreferences on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId into oppJoin
+                         from opp in oppJoin.DefaultIfEmpty()
+                         join ord in _context.OrderHeaders on opp.OrderId equals ord.OrderId into ordJoin
+                         from ord in ordJoin.DefaultIfEmpty()
+                         join we in _context.WorkEfforts on ord.OrderId equals we.RelatedOrderId into weJoin
+                         from we in weJoin.DefaultIfEmpty()
 
-                // REFACTOR: LEFT JOIN for CostCenter – assuming you have a CostCenter entity/table
-                join cc in _context.CostCenters on pyt.CostCenterId equals cc.CostCenterId into ccJoin
-                from cc in ccJoin.DefaultIfEmpty()
+                         join cc in _context.CostCenters on pyt.CostCenterId equals cc.CostCenterId into ccJoin
+                         from cc in ccJoin.DefaultIfEmpty()
 
-                // REFACTOR: LEFT JOIN for Project (WorkEffort) – to get projectId & project name
-                join proj in _context.WorkEfforts on pyt.WorkEffortId equals proj.WorkEffortId into projJoin
-                from proj in projJoin.DefaultIfEmpty()
-                select new PaymentRecord
-                {
-                    PaymentId = pyt.PaymentId,
-                    PaymentTypeId = pyt.PaymentTypeId,
-                    PaymentTypeDescription = isArabic ? ptt.DescriptionArabic : ptt.Description,
+                         join proj in _context.WorkEfforts on pyt.WorkEffortId equals proj.WorkEffortId into projJoin
+                         from proj in projJoin.DefaultIfEmpty()
 
-                    PaymentMethodId = pyt.PaymentMethodId,
-                    PaymentMethodTypeId = pyt.PaymentMethodTypeId,
-                    PaymentMethodTypeDescription = pmt != null
-                        ? (isArabic ? pmt.DescriptionArabic : pmt.Description)
-                        : null,
+                         // REFACTOR: NEW LEFT JOINS for ProductId & BuildingNumber (per your sample data)
+                         join sr in _context.SalesRequests on pyt.SalesRequestId equals sr.SalesRequestId into srJoin
+                         from sr in srJoin.DefaultIfEmpty()
+                         join prod in _context.Products on sr.ProductId equals prod.ProductId into prodJoin
+                         from prod in prodJoin.DefaultIfEmpty()
 
-                    PartyIdFrom = pyt.PartyIdFrom,
-                    PartyIdFromName = pty.Description ?? string.Empty,
+                         select new PaymentRecord
+                         {
+                             PaymentId = pyt.PaymentId,
+                             PaymentTypeId = pyt.PaymentTypeId,
+                             PaymentTypeDescription = isArabic ? ptt.DescriptionArabic : ptt.Description,
 
-                    PartyIdTo = pyt.PartyIdTo,
-                    PartyIdToName = ptyto != null
-                        ? ptyto.Description
-                        : (pyt.PartyIdTo == "Company" ? "Company" : pyt.PartyIdTo ?? "Unknown"),
+                             PaymentMethodId = pyt.PaymentMethodId,
+                             PaymentMethodTypeId = pyt.PaymentMethodTypeId,
+                             PaymentMethodTypeDescription = pmt != null
+                                 ? (isArabic ? pmt.DescriptionArabic : pmt.Description)
+                                 : null,
 
-                    StatusId = pyt.StatusId,
-                    StatusDescription = isArabic ? sts.DescriptionArabic : sts.Description,
-                    StatusDescriptionEnglish = sts.Description,
+                             PartyIdFrom = pyt.PartyIdFrom,
+                             PartyIdFromName = pty.Description ?? string.Empty,
 
-                    EffectiveDate = (DateTime)pyt.EffectiveDate,
-                    Comments = pyt.Comments,
-                    PaymentRefNum = pyt.PaymentRefNum,
-                    PaymentPreferenceId = pyt.PaymentPreferenceId,
-                    IsBankTransfer = pyt.IsBankTransfer,
-                    Amount = pyt.Amount,
-                    ActualCurrencyAmount = pyt.ActualCurrencyAmount ?? pyt.Amount,
-                    CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
+                             PartyIdTo = pyt.PartyIdTo,
+                             PartyIdToName = ptyto != null
+                                 ? ptyto.Description
+                                 : (pyt.PartyIdTo == "Company" ? "Company" : pyt.PartyIdTo ?? "Unknown"),
 
-                    FinAccountTransId = pyt.FinAccountTransId,
-                    OverrideGlAccountId = pyt.OverrideGlAccountId,
+                             StatusId = pyt.StatusId,
+                             StatusDescription = isArabic ? sts.DescriptionArabic : sts.Description,
+                             StatusDescriptionEnglish = sts.Description,
 
+                             EffectiveDate = (DateTime)pyt.EffectiveDate,
+                             Comments = pyt.Comments,
+                             PaymentRefNum = pyt.PaymentRefNum,
+                             PaymentPreferenceId = pyt.PaymentPreferenceId,
+                             IsBankTransfer = pyt.IsBankTransfer,
+                             Amount = pyt.Amount,
+                             ActualCurrencyAmount = pyt.ActualCurrencyAmount ?? pyt.Amount,
+                             CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
 
-                    FromPartyId = new OrderPartyDto
-                    {
-                        FromPartyId = pty.PartyId,
-                        FromPartyName = pty.Description ?? string.Empty
-                    },
+                             FinAccountTransId = pyt.FinAccountTransId,
+                             OverrideGlAccountId = pyt.OverrideGlAccountId,
 
-                    IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
-                    OrganizationPartyId = ptt.ParentTypeId == "DISBURSEMENT" ? pyt.PartyIdFrom : pyt.PartyIdTo,
+                             FromPartyId = new OrderPartyDto
+                             {
+                                 FromPartyId = pty.PartyId,
+                                 FromPartyName = pty.Description ?? string.Empty
+                             },
 
-                    OrderId = ord != null ? ord.OrderId : null,
-                    CertificateNumber = we != null ? we.CertificateNumber : null,
+                             IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
+                             OrganizationPartyId = ptt.ParentTypeId == "DISBURSEMENT" ? pyt.PartyIdFrom : pyt.PartyIdTo,
 
-                    ChequeNumber = pyt.ChequeNumber,
-                    ChequeDate = pyt.ChequeDate,
-                    ProjectId = pyt.WorkEffortId,
-                    ProjectName = proj != null ? proj.ProjectName : null,
-                    CostCenterId = pyt.CostCenterId,
-                    SalesRequestId = pyt.SalesRequestId,
-                    CostCenterDescription = cc.Description,
-                    CreatedStamp = (DateTime)pyt.CreatedStamp,
-                }
-            ).AsQueryable();
+                             OrderId = ord != null ? ord.OrderId : null,
+                             CertificateNumber = we != null ? we.CertificateNumber : null,
 
-            // REFACTOR: Filter incoming vs outgoing payments
+                             ChequeNumber = pyt.ChequeNumber,
+                             ChequeDate = pyt.ChequeDate,
+                             ProjectId = pyt.WorkEffortId,
+                             ProjectName = proj != null ? proj.ProjectName : null,
+                             CostCenterId = pyt.CostCenterId,
+                             SalesRequestId = pyt.SalesRequestId,
+                             CostCenterDescription = cc != null ? cc.Description : null, // REFACTOR: null-safe
+
+                             // REFACTOR: NEW FIELDS from your request (matches sample: "A1-01", "A1")
+                             ProductId = prod != null ? prod.ProductId : null,           // e.g. "A1-01"
+                             BuildingNumber = prod != null ? prod.BuildingNumber : null, // e.g. "A1"
+
+                             CreatedStamp = (DateTime)pyt.CreatedStamp,
+                         }).AsQueryable();
+
+            // REFACTOR: Server-side filter for incoming/outgoing (before OData)
             if (!string.IsNullOrEmpty(request.PaymentType))
             {
                 var isOutgoing = request.PaymentType.ToLower() == "outgoing";
                 query = query.Where(p => p.IsDisbursement == isOutgoing);
             }
 
-            // Apply OData $filter, $orderby, $skip, $top etc.
-            if (request.Options.Filter != null)
-                query = request.Options.Filter.ApplyTo(query, new ODataQuerySettings()) as IQueryable<PaymentRecord>;
+            // REFACTOR: Apply ONLY $filter here (safe, type-preserving)
+            //          $orderby/$skip/$top handled by BaseODataController after projection
+            if (request.Options?.Filter != null)
+            {
+                query = request.Options.Filter.ApplyTo(query, new ODataQuerySettings 
+                { 
+                    // REFACTOR: Disable stable ordering to avoid complex ORDER BY translation failures
+                    EnsureStableOrdering = false 
+                }) as IQueryable<PaymentRecord>;
+            }
 
-            if (request.Options.OrderBy != null)
-                query = request.Options.OrderBy.ApplyTo(query, new ODataQuerySettings()) as IQueryable<PaymentRecord>;
+            // Note: NO OrderBy/Skip/Top here — BaseODataController.HandleODataQueryAsync applies them safely
 
-            // Note: Skip/Take should be applied by the controller if needed
             return await Task.FromResult(query);
         }
     }

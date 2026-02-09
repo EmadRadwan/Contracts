@@ -15,6 +15,7 @@ import { useTranslationHelper } from "../hooks/useTranslationHelper";
 import withFloatingLabel from "../components/FloatingLabel";
 import {Can} from "../../features/account/Can";
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 
 const MyNavLink = React.forwardRef<any, any>((props, ref) => (
     <NavLink
@@ -33,6 +34,7 @@ const moduleRoleMap: Record<string, string> = {
     projects: "Projects_View",
     sales: "Sales_View",
     crm: "CRM_View",
+    hr: "HR_View",
 };
 
 const midLinks = [
@@ -48,6 +50,8 @@ const midLinks = [
         icon: <ReceiptIcon sx={{ color: "#4CAF50" }} />, // Green for sales
     },
     { title: "CRM", path: "/leads", key: "crm", icon: <ManageAccountsIcon sx={{ color: "#fabd52" }} /> },
+,
+    { title: "hr", path: "/humanResources", key: "hr", icon: <SupervisorAccountIcon sx={{ color: "#fabd52" }} /> },
 
 ];
 

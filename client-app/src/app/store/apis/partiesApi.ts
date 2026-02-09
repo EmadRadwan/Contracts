@@ -2,6 +2,7 @@ import {createApi, fetchBaseQuery} from "@reduxjs/toolkit/query/react";
 import {store} from "../configureStore";
 import {Party} from "../../models/party/party";
 import {State, toODataString} from "@progress/kendo-data-query";
+import {EmployeeAdvance} from "../../models/humanResources/employeeAdvance";
 
 interface ListResponse<T> {
     data: T[];
@@ -10,7 +11,7 @@ interface ListResponse<T> {
 
 const partiesApi = createApi({
     reducerPath: "parties",
-    tagTypes: ["Parties", "EmplPositionTypes", "Employee", "Party", "Parties", "Supplier", "Contractor", "Customer"],
+    tagTypes: ["Parties", "EmplPositionTypes", "Employee", "Party", "Parties", "Supplier", "Contractor", "Customer", "EmployeeAdvance"],
     baseQuery: fetchBaseQuery({
         baseUrl: import.meta.env.VITE_API_URL,
         prepareHeaders: (headers, {getState}) => {
@@ -34,6 +35,7 @@ const partiesApi = createApi({
                     const {totalCount} = JSON.parse(
                         meta!.response!.headers.get("count")!,
                     );
+                    console.log("Total Parties:", totalCount);
                     return {
                         data: response,
                         total: totalCount,
@@ -187,6 +189,23 @@ const partiesApi = createApi({
                 }),
                 invalidatesTags: ['Contractor', 'Party', 'Parties'],
             }),
+            fetchEmployeeAdvances: builder.query<ListResponse<EmployeeAdvance>, State>({
+                query: (queryArgs) => {
+                    const url = `/odata/employeeAdvanceRecords?$count=true&${toODataString(queryArgs)}`;
+                    return {url, method: "GET"};
+                },
+                providesTags: ['EmployeeAdvance'],
+                transformResponse: (response: any, meta, arg) => {
+                    const {totalCount} = JSON.parse(
+                        meta!.response!.headers.get("count")!,
+                    );
+                    console.log("Total Employee Advances:", totalCount);
+                    return {
+                        data: response,
+                        total: totalCount,
+                    };
+                },
+            }),
         };
     },
 });
@@ -201,6 +220,6 @@ export const {
     useGetEmplPositionTypesQuery, useCreateEmployeeMutation,
     useUpdateEmployeeMutation, useCreateCustomerMutation, useUpdateCustomerMutation,
     useCreateSupplierMutation, useUpdateSupplierMutation, useCreateContractorMutation,
-    useUpdateContractorMutation, useGetPartySubLedgerQuery
+    useUpdateContractorMutation, useGetPartySubLedgerQuery, useFetchEmployeeAdvancesQuery
 } = partiesApi;
 export {partiesApi};

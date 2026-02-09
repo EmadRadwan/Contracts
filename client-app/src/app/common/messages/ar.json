@@ -39,6 +39,7 @@
       "crm": "علاقات العملاء",
       "projects": "المشاريع",
       "login": "تسجيل الدخول",
+      "hr": "الموارد البشرية",
       "sales": "المبيعات"
     },
     "statuses": {
@@ -1123,6 +1124,9 @@
         },
         "paymentId": "رقم الدفعة",
         "paymentType": "نوع الدفعة",
+        "paymentMethodTypeDescription": "طريقة الدفع",
+        "buildingNumber": "رقم المبنى",
+        "productId": "رقم الوحدة",
         "from": "من الطرف",
         "to": "إلى الطرف",
         "date": "تاريخ الدفعة",

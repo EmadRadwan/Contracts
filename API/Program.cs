@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using API.Controllers.Accounting.Transactions;
+using API.Controllers.HumanResources;
 using Application.Accounting.Payments;
 using Application.Accounting.Transactions;
 using Application.Shipments.Agreement;
@@ -18,6 +19,7 @@ using Application.Shipments.Transactions;
 using Application.Catalog.Products;
 using Application.Catalog.ProductStores;
 using Application.Facilities.FacilityInventories;
+using Application.HumanResources;
 using Application.Manufacturing;
 using Application.Order.Orders;
 using Application.Order.Orders.Returns;
@@ -241,6 +243,7 @@ static IEdmModel GetEdmModel()
     modelBuilder.EntitySet<WorkEffortRecord>("WorkEffortRecord");
     modelBuilder.EntitySet<CostComponentCalcRecord>("CostComponentCalcRecord");
     modelBuilder.EntitySet<CostComponentRecord>("CostComponentRecord");
+    modelBuilder.EntitySet<EmployeeAdvanceRecord>("EmployeeAdvanceRecord");
 
     var model = modelBuilder.GetEdmModel();
 

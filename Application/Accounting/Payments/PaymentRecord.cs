@@ -44,6 +44,8 @@ public class PaymentRecord
     public OrderPartyDto FromPartyId { get; set; }
     public string? ProjectId { get; set; }
     public string? ProjectName { get; set; }
+    public string? ProductId { get; set; }
+    public string? BuildingNumber { get; set; }
     public string? CostCenterId { get; set; }
     public string? CostCenterDescription { get; set; }
     public int DaysUntilDue { get; set; }

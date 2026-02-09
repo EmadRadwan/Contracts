@@ -110,6 +110,7 @@ const paymentsApi = createApi({
                         body: {...payment},
                     };
                 },
+                    invalidatesTags: ["Payments"]
             }),
             setPaymentStatusToReceived: builder.mutation({
                 query: (changePaymentStatus) => {
