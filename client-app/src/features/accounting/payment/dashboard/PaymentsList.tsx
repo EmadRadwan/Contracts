@@ -310,6 +310,12 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
       width: 150,
     },
     {
+      field: "amount",
+      title: getTranslatedLabel(`${localizationKey}.amount`, "Amount"),
+      width: 130,
+      filter: "numeric",
+    },
+    {
       field: "paymentMethodTypeDescription",
       title: getTranslatedLabel(`${localizationKey}.paymentMethodTypeDescription`, "Payment Method Type"),
       width: 150,
@@ -344,12 +350,6 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
             field: "statusDescription",
             title: getTranslatedLabel(`${localizationKey}.status`, "Status"),
             width: 120,
-          },
-          {
-            field: "amount",
-            title: getTranslatedLabel(`${localizationKey}.amount`, "Amount"),
-            width: 130,
-            filter: "numeric",
           },
           {
             field: "comments",
@@ -414,12 +414,6 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
             field: "paymentRefNum",
             title: getTranslatedLabel(`${localizationKey}.paymentRefNum`, "Ref Number"),
             width: 140,
-          },
-          {
-            field: "amount",
-            title: getTranslatedLabel(`${localizationKey}.amount`, "Amount"),
-            width: 130,
-            filter: "numeric",
           },
           {
             field: "projectName",

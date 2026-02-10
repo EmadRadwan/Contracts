@@ -19,6 +19,7 @@ import { AcctgTransEntry } from "../../../../app/models/accounting/acctgTransEnt
 import {useLocation, useParams} from "react-router-dom";
 import useMultiAcctgTrans from "../hook/useMultiAcctgTrans";
 import {FormComboBoxVirtualParty} from "../../../../app/common/form/FormComboBoxVirtualParty";
+import useDuplicateAcctgTrans from "../hook/useDuplicateAcctgTrans";
 
 interface TransEntry {
     id: string;
@@ -40,22 +41,19 @@ interface FormValues {
 export default function EditMultiAcctgTrans() {
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = "accounting.orgGL.accounting.trans.multi";
-    const companyId = useAppSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyId);
-    const companyName = useAppSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
+    const {user} = useAppSelector((state) => state.account);
+    const companyId = user?.organizationPartyId || "";
     const location = useLocation();
-    const { acctgTransId: idFromUrl } = useParams<{ acctgTransId: string }>();
+    const { acctgTransId: currentTransId } = useParams<{ acctgTransId: string }>();
 
-    const acctgTransId =
-        location.state?.selectedAcctgTrans?.acctgTransId ||
-        location.state?.acctgTransId ||
-        idFromUrl;
+    const initialTransFromState = location.state?.selectedAcctgTrans;
 
-    const selectedAcctgTrans = location.state?.selectedAcctgTrans;
 
+    
     const { data: glAccounts, isLoading: isLoadingGlAccounts } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, { skip: !companyId });
 
-    const { data: transEntriesData, isLoading: isLoadingEntries } = useFetchGeneralAcctTransEntriesQuery(acctgTransId, {
-        skip: !acctgTransId,
+    const { data: transEntriesData, isLoading: isLoadingEntries } = useFetchGeneralAcctTransEntriesQuery(currentTransId, {
+        skip: !currentTransId,
     });
     const [transEntries, setTransEntries] = useState<TransEntry[]>([]);
     const [formResetCounter, setFormResetCounter] = useState(0);
@@ -64,26 +62,26 @@ export default function EditMultiAcctgTrans() {
     const { isLoading: isUpdating, handleUpdateMultiAcctgTransWithEntries } = useEditMultiAcctgTrans();
     const { isLoading: isPosting, postTransaction } = useMultiAcctgTrans();
     const [justPosted, setJustPosted] = useState(false);
-    
+    const { duplicate, isDuplicating } = useDuplicateAcctgTrans();
     const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
 
-    const [headerValues, setHeaderValues] = useState({
-        transactionDate: selectedAcctgTrans?.transactionDate
-            ? new Date(selectedAcctgTrans.transactionDate)
+    const [headerValues, setHeaderValues] = useState(() => ({
+        transactionDate: initialTransFromState?.transactionDate
+            ? new Date(initialTransFromState.transactionDate)
             : new Date(),
-        headerDescription: selectedAcctgTrans?.description || "",
-        party: selectedAcctgTrans?.partyId
-            ? { fromPartyId: selectedAcctgTrans.partyId, fromPartyName: selectedAcctgTrans.partyName || "" }
+        headerDescription: initialTransFromState?.description || "",
+        party: initialTransFromState?.partyId
+            ? {
+                fromPartyId: initialTransFromState.partyId,
+                fromPartyName: initialTransFromState.partyName || "",
+            }
             : null,
-    });
+    }));
 
+    // Populate entries when data arrives (using currentTransId)
     useEffect(() => {
-        setJustPosted(false);
-    }, [selectedAcctgTrans?.acctgTransId]);
-
-    useEffect(() => {
-        if (selectedAcctgTrans && transEntriesData) {
-            const adjustedEntries = transEntriesData.map((entry: AcctgTransEntry) => ({
+        if (transEntriesData) {
+            const adjusted = transEntriesData.map((entry: AcctgTransEntry) => ({
                 id: `${entry.acctgTransId}-${entry.acctgTransEntrySeqId}`,
                 acctgTransEntrySeqId: entry.acctgTransEntrySeqId,
                 debitGlAccountId: entry.debitCreditFlag === "D" ? entry.glAccountId : undefined,
@@ -92,9 +90,14 @@ export default function EditMultiAcctgTrans() {
                 description: entry.description || "",
                 debitCreditFlag: entry.debitCreditFlag as "D" | "C",
             }));
-            setTransEntries(adjustedEntries);
+            setTransEntries(adjusted);
         }
-    }, [selectedAcctgTrans, transEntriesData]);
+    }, [transEntriesData]);
+
+    // Reset justPosted when transaction ID changes
+    useEffect(() => {
+        setJustPosted(false);
+    }, [currentTransId]);
 
     const initialFormValues: FormValues = useMemo(
         () => ({
@@ -166,49 +169,49 @@ export default function EditMultiAcctgTrans() {
         setTransEntries((prev) => prev.filter((entry) => entry.id !== entryId));
     }, []);
 
-    const handleSaveTransaction = useCallback(
-        async () => {
-            if (!selectedAcctgTrans?.acctgTransId) {
-                toast.error(getTranslatedLabel("general.error", "No transaction ID provided"));
-                return;
-            }
-            if (transEntries.length === 0) {
-                toast.error(getTranslatedLabel("general.error", "No entries to save"));
-                return;
-            }
-            try {
-                await handleUpdateMultiAcctgTransWithEntries({
-                    acctgTransId: selectedAcctgTrans.acctgTransId,
-                    UpdateMultiAcctgTransParams: {
-                        AcctgTransId: selectedAcctgTrans.acctgTransId, // REFACTOR: Include AcctgTransId in UpdateMultiAcctgTransParams
-                        // Purpose: Match backend validation requirement for AcctgTransId
-                        // Improvement: Ensures payload structure aligns with backend expectations
-                        AcctgTransTypeId: "_NA_",
-                        TransactionDate: headerValues.transactionDate,
-                        OrganizationPartyId: companyId,
-                        HeaderDescription: headerValues.headerDescription,
-                        Description: transEntries[0]?.description || "",
-                        IsPosted: selectedAcctgTrans?.isPosted || "N",
-                        GlFiscalTypeId: "ACTUAL",
-                        partyId: headerValues.party?.fromPartyId || undefined,
-                    },
-                    Entries: transEntries.map((entry) => ({
-                        acctgTransEntrySeqId: entry.acctgTransEntrySeqId,
-                        debitGlAccountId: entry.debitGlAccountId,
-                        creditGlAccountId: entry.creditGlAccountId,
-                        amount: entry.amount,
-                        description: entry.description,
-                        debitCreditFlag: entry.debitCreditFlag,
-                    })),
-                });
-                toast.success(getTranslatedLabel("general.success", "Transaction updated successfully"));
-                router.navigate("/orgGl");
-            } catch (error) {
-                toast.error(getTranslatedLabel("general.error", "Failed to update transaction"));
-            }
-        },
-        [transEntries, companyId, handleUpdateMultiAcctgTransWithEntries, getTranslatedLabel, headerValues, selectedAcctgTrans]
-    );
+    const handleSaveTransaction = useCallback(async () => {
+        if (!currentTransId) {
+            toast.error(getTranslatedLabel("general.error", "No transaction ID provided"));
+            return;
+        }
+        if (transEntries.length === 0) {
+            toast.error(getTranslatedLabel("general.error", "No entries to save"));
+            return;
+        }
+
+        try {
+            await handleUpdateMultiAcctgTransWithEntries({
+                acctgTransId: currentTransId,
+                updateMultiAcctgTransParams: {
+                    acctgTransId: currentTransId,
+                    transactionDate: headerValues.transactionDate,
+                    headerDescription: headerValues.headerDescription,
+                    description: transEntries[0]?.description || "",
+                    partyId: headerValues.party?.fromPartyId || undefined,
+                },
+                entries: transEntries.map((entry) => ({
+                    acctgTransEntrySeqId: entry.acctgTransEntrySeqId,
+                    debitGlAccountId: entry.debitGlAccountId,
+                    creditGlAccountId: entry.creditGlAccountId,
+                    amount: entry.amount,
+                    description: entry.description,
+                    debitCreditFlag: entry.debitCreditFlag,
+                })),
+            });
+
+            toast.success(getTranslatedLabel("general.success", "Transaction updated successfully"));
+        } catch (error) {
+            toast.error(getTranslatedLabel("general.error", "Failed to update transaction"));
+        }
+    }, [
+        currentTransId,
+        transEntries,
+        companyId,
+        headerValues,
+        handleUpdateMultiAcctgTransWithEntries,
+        getTranslatedLabel,
+        justPosted,
+    ]);
 
     const pageChange = useCallback((event: GridPageChangeEvent) => {
         setPage(event.page);
@@ -252,7 +255,7 @@ export default function EditMultiAcctgTrans() {
         [transEntriesData, handleEditEntry]
     );
 
-    
+
     const RemoveCell = useCallback(
         ({ dataItem }: GridCellProps) => (
             <td>
@@ -260,19 +263,13 @@ export default function EditMultiAcctgTrans() {
                     variant="text"
                     color="error"
                     onClick={() => handleRemoveEntry(dataItem.id)}
-                    disabled={isUpdating || isPosting || selectedAcctgTrans?.isPosted === "Y"}
+                    disabled={isUpdating || isPosting || justPosted}
                 >
                     {getTranslatedLabel("general.remove", "Remove")}
                 </Button>
             </td>
         ),
-        [
-            handleRemoveEntry,
-            getTranslatedLabel,
-            isUpdating,
-            isPosting,
-            selectedAcctgTrans,
-        ]
+        [handleRemoveEntry, getTranslatedLabel, isUpdating, isPosting, justPosted]
     );
 
     const totalDebit = useMemo(
@@ -287,51 +284,43 @@ export default function EditMultiAcctgTrans() {
     let formRenderProps: any; // Store form render props for updating form values
 
     const handlePostTransaction = useCallback(async () => {
-        if (!selectedAcctgTrans?.acctgTransId) {
+        if (!currentTransId) {
             toast.error("No transaction ID available");
             return;
         }
 
         try {
-            const messages = await postTransaction(selectedAcctgTrans.acctgTransId);
+            const messages = await postTransaction(currentTransId);
 
-            // Success: empty array
             if (Array.isArray(messages) && messages.length === 0) {
                 toast.success("Accounting Transaction Posted Successfully");
-                setJustPosted(true); // <-- Hide button + show chip
-            }
-            // Warnings / Errors
-            else if (Array.isArray(messages)) {
-                messages.forEach((message: string) => {
-                    if (message.includes("Error Journal")) {
-                        toast.warn(message);
-                    } else {
-                        toast.error(message);
-                    }
+                setJustPosted(true);
+            } else if (Array.isArray(messages)) {
+                messages.forEach((msg: string) => {
+                    if (msg.includes("Error Journal")) toast.warn(msg);
+                    else toast.error(msg);
                 });
             }
-        } catch (err) {
-            // Already handled in hook
+        } catch {
+            // handled in hook
         }
-    }, [selectedAcctgTrans?.acctgTransId, postTransaction]);
+    }, [currentTransId, postTransaction]);
 
     const isLoading = isUpdating || isPosting;
 
-    console.log('selectedAcctgTrans:', selectedAcctgTrans);
-    console.log('acctgTransId:', acctgTransId);
+    
     return (
         <>
             <AccountingMenu selectedMenuItem={"orgGl"} />
             <Paper elevation={5} sx={{ p: 2, borderRadius: 2 }}>
                 <Typography variant="h5" sx={{ mb: 2 }}>
                     {getTranslatedLabel(`${localizationKey}.editTitle`, "Edit Accounting Transaction")}
-                    {selectedAcctgTrans?.acctgTransId && (
+                    {currentTransId && (
                         <span style={{ marginLeft: 8, color: "#1976d2", fontWeight: 600 }}>
-              #{selectedAcctgTrans.acctgTransId}
+              #{currentTransId}
             </span>
                     )}
-                    {/* REFACTOR: Show posted status */}
-                    {(selectedAcctgTrans?.isPosted === "Y" || justPosted) && (
+                    {(justPosted || transEntriesData?.[0]?.isPosted === "Y") && (
                         <Chip
                             label={getTranslatedLabel("general.posted", "Posted")}
                             color="success"
@@ -346,9 +335,14 @@ export default function EditMultiAcctgTrans() {
                             id="transactionDate"
                             label={getTranslatedLabel(`${localizationKey}.transactionDate`, "Transaction Date *")}
                             value={headerValues.transactionDate}
-                            onChange={(e) => setHeaderValues((prev) => ({ ...prev, transactionDate: e.value || new Date() }))}
+                            onChange={(e) =>
+                                setHeaderValues((prev) => ({
+                                    ...prev,
+                                    transactionDate: e.value || new Date(),
+                                }))
+                            }
                             validator={requiredValidator}
-                            disabled={selectedAcctgTrans?.isPosted === "Y"}
+                            disabled={justPosted}
                         />
                     </Grid>
                     <Grid item xs={3}>
@@ -356,9 +350,11 @@ export default function EditMultiAcctgTrans() {
                             id="headerDescription"
                             label={getTranslatedLabel(`${localizationKey}.headerDescription`, "Header Description")}
                             value={headerValues.headerDescription}
-                            onChange={(e) => setHeaderValues((prev) => ({ ...prev, headerDescription: e.value }))}
+                            onChange={(e) =>
+                                setHeaderValues((prev) => ({ ...prev, headerDescription: e.value }))
+                            }
                             autoComplete="off"
-                            disabled={selectedAcctgTrans?.isPosted === "Y"}
+                            disabled={justPosted}
                         />
                     </Grid>
 
@@ -367,30 +363,27 @@ export default function EditMultiAcctgTrans() {
                             id="partyId"
                             label={getTranslatedLabel(`${localizationKey}.party`, "Employee")}
                             value={headerValues.party}
-                            onChange={(e: any) => setHeaderValues((prev) => ({
-                                ...prev,
-                                party: e.value
-                            }))}
+                            onChange={(e: any) =>
+                                setHeaderValues((prev) => ({ ...prev, party: e.value }))
+                            }
                             valueField="fromPartyId"
                             textField="fromPartyName"
-                            disabled={selectedAcctgTrans?.isPosted === "Y"}
+                            disabled={justPosted}
                         />
                     </Grid>
 
-                    {selectedAcctgTrans?.acctgTransId &&
-                        selectedAcctgTrans?.isPosted !== "Y" &&
-                        !justPosted && (
-                            <Grid item xs={3} container justifyContent="flex-end">
-                                <Button
-                                    variant="contained"
-                                    color="info"
-                                    onClick={handlePostTransaction}
-                                    disabled={isLoading}
-                                >
-                                    {getTranslatedLabel("general.postTransaction", "Post Transaction")}
-                                </Button>
-                            </Grid>
-                        )}
+                    {currentTransId && !justPosted && (
+                        <Grid item xs={3} container justifyContent="flex-end">
+                            <Button
+                                variant="contained"
+                                color="info"
+                                onClick={handlePostTransaction}
+                                disabled={isLoading}
+                            >
+                                {getTranslatedLabel("general.postTransaction", "Post Transaction")}
+                            </Button>
+                        </Grid>
+                    )}
                 </Grid>
                 <Form
                     initialValues={initialFormValues}
@@ -417,7 +410,7 @@ export default function EditMultiAcctgTrans() {
                                                         textField="text"
                                                         selectField="selected"
                                                         expandField="expanded"
-                                                        disabled={selectedAcctgTrans?.isPosted === "Y"}
+                                                        disabled={justPosted}
                                                     />
                                                 )}
                                             </Grid>
@@ -435,7 +428,7 @@ export default function EditMultiAcctgTrans() {
                                                         textField="text"
                                                         selectField="selected"
                                                         expandField="expanded"
-                                                        disabled={selectedAcctgTrans?.isPosted === "Y"}
+                                                        disabled={justPosted}
                                                     />
                                                 )}
                                             </Grid>
@@ -448,7 +441,7 @@ export default function EditMultiAcctgTrans() {
                                                     min={0}
                                                     component={FormNumericTextBox}
                                                     validator={requiredValidator}
-                                                    disabled={selectedAcctgTrans?.isPosted === "Y"}
+                                                    disabled={justPosted}
                                                 />
                                             </Grid>
                                             <Grid item xs={3}>
@@ -458,7 +451,7 @@ export default function EditMultiAcctgTrans() {
                                                     label={getTranslatedLabel(`${localizationKey}.description`, "Description")}
                                                     component={FormInput}
                                                     autoComplete="off"
-                                                    disabled={selectedAcctgTrans?.isPosted === "Y"}
+                                                    disabled={justPosted}
                                                 />
                                             </Grid>
                                             <Grid item xs={1}>
@@ -470,7 +463,7 @@ export default function EditMultiAcctgTrans() {
                                                         !formRenderProps.allowSubmit ||
                                                         (!formRenderProps.valueGetter("debitGlAccountId") && !formRenderProps.valueGetter("creditGlAccountId")) ||
                                                         isLoading ||
-                                                        selectedAcctgTrans?.isPosted === "Y"
+                                                        justPosted
                                                     }
                                                 >
                                                     {selectedEntryId ? getTranslatedLabel("general.update", "Update Entry") : getTranslatedLabel("general.add", "Add Entry")}
@@ -486,14 +479,26 @@ export default function EditMultiAcctgTrans() {
                                                     color="primary"
                                                     onClick={handleSaveTransaction}
                                                     disabled={
-                                                        !formRenderProps.allowSubmit ||
-                                                        (!formRenderProps.valueGetter("debitGlAccountId") && !formRenderProps.valueGetter("creditGlAccountId")) ||
-                                                        isLoading
+                                                        transEntries.length === 0 ||           // no entries → disable
+                                                        isLoading ||                           // ongoing request → disable
+                                                        justPosted                             // already posted → disable
                                                     }
                                                 >
                                                     {getTranslatedLabel("general.save", "Save Transaction")}
                                                 </Button>
                                             </Grid>
+                                            {currentTransId && (
+                                                <Grid item xs={2}>
+                                                    <Button
+                                                        variant="outlined"
+                                                        color="secondary"
+                                                        onClick={() => duplicate(currentTransId)}
+                                                        disabled={isDuplicating || isLoading}
+                                                    >
+                                                        {isDuplicating ? "Duplicating..." : getTranslatedLabel("general.duplicate", "Duplicate")}
+                                                    </Button>
+                                                </Grid>
+                                            )}
                                             <Grid item xs={12}>
                                                 <KendoGrid
                                                     style={{ height: "40vh" }}

@@ -59,7 +59,7 @@ namespace Application.Accounting.Transactions
                         IsPosted = request.UpdateMultiAcctgTransParams.IsPosted,
                         Description = request.UpdateMultiAcctgTransParams.HeaderDescription,
                         GlFiscalTypeId = request.UpdateMultiAcctgTransParams.GlFiscalTypeId,
-                        PartyId = request.UpdateMultiAcctgTransParams.OrganizationPartyId,
+                        PartyId = request.UpdateMultiAcctgTransParams.PartyId,
                         LastUpdatedStamp = DateTime.UtcNow
                     };
                     var updateMessages = await _acctgTransService.UpdateAcctgTrans(acctgTrans);
@@ -153,12 +153,13 @@ namespace Application.Accounting.Transactions
     public class UpdateMultiAcctgTransParams
     {
         public string AcctgTransId { get; set; }
-        public string AcctgTransTypeId { get; set; }
-        public DateTime TransactionDate { get; set; }
-        public string OrganizationPartyId { get; set; }
-        public string HeaderDescription { get; set; }
-        public string IsPosted { get; set; }
-        public string GlFiscalTypeId { get; set; }
+        public string? AcctgTransTypeId { get; set; }
+        public DateTime? TransactionDate { get; set; }
+        public string? OrganizationPartyId { get; set; }
+        public string? HeaderDescription { get; set; }
+        public string? IsPosted { get; set; }
+        public string? PartyId { get; set; }
+        public string? GlFiscalTypeId { get; set; }
     }
 
     public class UpdateMultiAcctgTransResult

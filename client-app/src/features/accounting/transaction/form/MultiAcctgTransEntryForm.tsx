@@ -23,6 +23,7 @@ import useMultiAcctgTrans from "../hook/useMultiAcctgTrans";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import {FormComboBoxVirtualParty} from "../../../../app/common/form/FormComboBoxVirtualParty";
+import useDuplicateAcctgTrans from "../hook/useDuplicateAcctgTrans";
 
 interface TransEntry {
     id: string;
@@ -60,7 +61,7 @@ export default function MultiAcctgTransEntryForm() {
     const {isLoading, saveMultiAcctgTransWithEntries, postTransaction} = useMultiAcctgTrans();
     const [justPosted, setJustPosted] = useState(false);
     const { data: acctgTransTypes, isLoading: isLoadingTransTypes } = useFetchAcctgTransTypesQuery(undefined);
-
+    const { duplicate, isDuplicating } = useDuplicateAcctgTrans();
     // REFACTOR: Manage header-level fields outside the form to persist across resets
     const [headerValues, setHeaderValues] = useState({
         transactionDate: new Date(),
@@ -516,6 +517,18 @@ export default function MultiAcctgTransEntryForm() {
                                                         : getTranslatedLabel("general.add", "Add Entry")}
                                                 </Button>
                                             </Grid>
+                                            {transactionId && (
+                                                <Grid item xs={2}>
+                                                    <Button
+                                                        variant="outlined"
+                                                        color="secondary"
+                                                        onClick={() => duplicate(transactionId)}
+                                                        disabled={isDuplicating}
+                                                    >
+                                                        {isDuplicating ? "Duplicating..." : getTranslatedLabel("general.duplicate", "Duplicate")}
+                                                    </Button>
+                                                </Grid>
+                                            )}
                                         </Grid>
                                     </Grid>
                                     {/* Bottom: Save Transaction and New Transaction Buttons, Kendo Grid */}

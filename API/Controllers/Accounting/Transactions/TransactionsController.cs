@@ -184,6 +184,13 @@ public class TransactionsController : BaseApiController
         // Improvement: Maintains separation of concerns
         return HandleResult(await Mediator.Send(command));
     }
+    
+    [HttpPost("duplicateAcctgTrans/{acctgTransId}")]
+    public async Task<IActionResult> DuplicateAcctgTrans(string acctgTransId)
+    {
+        var command = new DuplicateAcctgTrans.Command { AcctgTransId = acctgTransId };
+        return HandleResult(await Mediator.Send(command));
+    }
 
     [HttpPost("createInitialBalanceTrans")]
     public async Task<IActionResult> CreateInitialBalanceTrans([FromBody] CreateInitialBalanceTrans.Command command)

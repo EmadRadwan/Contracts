@@ -11,8 +11,8 @@ public class CreatePaymentAndFinAccountTransRequest
     public string? PartyIdFrom { get; set; }
     public string? PartyIdTo { get; set; }
     public decimal Amount { get; set; }
-    public string StatusId { get; set; }
-    public string SalesRequestId { get; set; }
+    public string? StatusId { get; set; }
+    public string? SalesRequestId { get; set; }
     public DateTime? PaymentDate { get; set; }
     public string? Comments { get; set; }
     public string? PaymentRefNum { get; set; }
