@@ -517,18 +517,6 @@ export default function MultiAcctgTransEntryForm() {
                                                         : getTranslatedLabel("general.add", "Add Entry")}
                                                 </Button>
                                             </Grid>
-                                            {transactionId && (
-                                                <Grid item xs={2}>
-                                                    <Button
-                                                        variant="outlined"
-                                                        color="secondary"
-                                                        onClick={() => duplicate(transactionId)}
-                                                        disabled={isDuplicating}
-                                                    >
-                                                        {isDuplicating ? "Duplicating..." : getTranslatedLabel("general.duplicate", "Duplicate")}
-                                                    </Button>
-                                                </Grid>
-                                            )}
                                         </Grid>
                                     </Grid>
                                     {/* Bottom: Save Transaction and New Transaction Buttons, Kendo Grid */}
@@ -545,7 +533,19 @@ export default function MultiAcctgTransEntryForm() {
                                                     {getTranslatedLabel("general.save", "Save Transaction")}
                                                 </Button>
                                             </Grid>
-                                            {/* REFACTOR: Add New Transaction button */}
+                                            {transactionId && (
+                                                <Grid item xs={2}>
+                                                    <Button
+                                                        variant="outlined"
+                                                        color="secondary"
+                                                        onClick={() => duplicate(transactionId)}
+                                                        disabled={isDuplicating}
+                                                    >
+                                                        {isDuplicating ? "Duplicating..." : getTranslatedLabel(`${localizationKey}.duplicateAcctgTrans`, "Duplicate")}
+                                                        
+                                                    </Button>
+                                                </Grid>
+                                            )}
                                             <Grid item xs={2}>
                                                 <Button
                                                     variant="contained"
@@ -553,7 +553,7 @@ export default function MultiAcctgTransEntryForm() {
                                                     onClick={handleNewTransaction}
                                                     disabled={isLoading}
                                                 >
-                                                    {getTranslatedLabel("general.newTransaction", "New Transaction")}
+                                                    {getTranslatedLabel(`${localizationKey}.newTransaction`, "New Transaction")}
                                                 </Button>
                                             </Grid>
 
@@ -565,7 +565,7 @@ export default function MultiAcctgTransEntryForm() {
                                                         onClick={handlePostTransaction}
                                                         disabled={isLoading || justPosted}
                                                     >
-                                                        {getTranslatedLabel("general.postTransaction", "Post Transaction")}
+                                                        {getTranslatedLabel(`${localizationKey}.postTransaction`, "Post Transaction")}
                                                     </Button>
                                                 </Grid>
                                             )}
@@ -597,7 +597,7 @@ export default function MultiAcctgTransEntryForm() {
                                                         width={100}
                                                         format="{0:n2}"
                                                     />
-                                                    <Column width={320}
+                                                    <Column 
                                                             title={""}
                                                             footerCell={() => (
                                                                 <td style={{
@@ -631,7 +631,7 @@ export default function MultiAcctgTransEntryForm() {
                                 </Grid>
                                 {isLoading && (
                                     <LoadingComponent
-                                        message={getTranslatedLabel("accounting.orgGL.accounting.summary.loading", "Loading Accounting Transactions...")}
+                                        message={getTranslatedLabel(`${localizationKey}.processing`, "Processing Transactions...")}
                                     />
                                 )}
                             </FormElement>

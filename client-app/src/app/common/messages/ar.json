@@ -1301,6 +1301,10 @@
             "description": "الوصف",
             "entries": "إدخالات المعاملة",
             "glAccount": "حساب دفتر الأستاذ",
+            "duplicateAcctgTrans": "نسخ المعاملة",
+            "newTransaction": "إنشاء معاملة جديدة",
+            "postTransaction": "ترحيل القيد",
+            "processing": "جارى تنفيذ المعاملة",
             "debitCredit": "مدين/دائن",
             "totalDebit": "إجمالي المدين",
             "totalCredit": "إجمالي الدائن"

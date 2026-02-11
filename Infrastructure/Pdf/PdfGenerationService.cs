@@ -192,12 +192,18 @@ namespace Infrastructure.Pdf
                         });
 
                         // ===== PURPOSE ROW =====
-                        mainCol.Item().PaddingTop(6).Row(r =>
+                        mainCol.Item().PaddingTop(6).Column(purposeCol =>
                         {
-                            r.RelativeItem().BorderBottom(1).BorderColor(Colors.Grey.Medium);
-                            r.AutoItem().AlignMiddle().BorderBottom(1).BorderColor(Colors.Grey.Medium)
-                                .Text(data.Comments ?? "").FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
-                            r.AutoItem().AlignMiddle().Text(" : وذلك عن").FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
+                            purposeCol.Item().AlignRight()
+                                .Text("وذلك عن :")
+                                .FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
+
+                            purposeCol.Item().PaddingTop(2)
+                                .BorderBottom(1).BorderColor(Colors.Grey.Medium)
+                                .PaddingBottom(2)
+                                .Text(data.Comments ?? "")
+                                .FontSize(9).FontFamily("Lato", "Noto Sans Arabic")
+                                .WrapAnywhere();
                         });
 
                         // ===== SPACER =====

@@ -31,7 +31,9 @@ public class AcctgTransService : IAcctgTransService
     {
         // Create an accounting transaction
         var stamp = DateTime.UtcNow;
-        var newAcctgTransSequence = await _utilityService.GetNextSequence("AcctgTrans");
+        var newSeqParam = parameters.AcctgTransTypeId == "GENERAL_JOURNAL" ? "AcctgTransGeneralJournal" : "AcctgTrans";
+        
+        var newAcctgTransSequence = await _utilityService.GetNextSequence(newSeqParam);
 
 
         var acctgTran = new AcctgTran

@@ -20,6 +20,7 @@ import {useLocation, useParams} from "react-router-dom";
 import useMultiAcctgTrans from "../hook/useMultiAcctgTrans";
 import {FormComboBoxVirtualParty} from "../../../../app/common/form/FormComboBoxVirtualParty";
 import useDuplicateAcctgTrans from "../hook/useDuplicateAcctgTrans";
+import LoadingComponent from "../../../../app/layout/LoadingComponent";
 
 interface TransEntry {
     id: string;
@@ -371,19 +372,6 @@ export default function EditMultiAcctgTrans() {
                             disabled={justPosted}
                         />
                     </Grid>
-
-                    {currentTransId && !justPosted && (
-                        <Grid item xs={3} container justifyContent="flex-end">
-                            <Button
-                                variant="contained"
-                                color="info"
-                                onClick={handlePostTransaction}
-                                disabled={isLoading}
-                            >
-                                {getTranslatedLabel("general.postTransaction", "Post Transaction")}
-                            </Button>
-                        </Grid>
-                    )}
                 </Grid>
                 <Form
                     initialValues={initialFormValues}
@@ -495,7 +483,19 @@ export default function EditMultiAcctgTrans() {
                                                         onClick={() => duplicate(currentTransId)}
                                                         disabled={isDuplicating || isLoading}
                                                     >
-                                                        {isDuplicating ? "Duplicating..." : getTranslatedLabel("general.duplicate", "Duplicate")}
+                                                        {isDuplicating ? "Duplicating..." : getTranslatedLabel(`${localizationKey}.duplicateAcctgTrans`, "Duplicate")}
+                                                    </Button>
+                                                </Grid>
+                                            )}
+                                            {currentTransId && !justPosted && (
+                                                <Grid item xs={3} container justifyContent="flex-end">
+                                                    <Button
+                                                        variant="contained"
+                                                        color="info"
+                                                        onClick={handlePostTransaction}
+                                                        disabled={isLoading}
+                                                    >
+                                                        {getTranslatedLabel(`${localizationKey}.postTransaction`, "Post Transaction")}
                                                     </Button>
                                                 </Grid>
                                             )}
@@ -557,6 +557,11 @@ export default function EditMultiAcctgTrans() {
                                         width="100%"
                                         height="60vh"
                                         sx={{ borderRadius: 2, mt: 2 }}
+                                    />
+                                )}
+                                {isLoading && (
+                                    <LoadingComponent
+                                        message={getTranslatedLabel(`${localizationKey}.processing`, "Processing Transactions...")}
                                     />
                                 )}
                             </FormElement>
