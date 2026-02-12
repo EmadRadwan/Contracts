@@ -67,8 +67,7 @@ public class GetPartySubLedgerDetails
                     var entries = await _context.AcctgTransEntries
                         .Include(ate => ate.AcctgTrans)
                         .Where(ate => ate.GlAccountId == pga.GlAccountId
-                                      && ate.AcctgTrans.IsPosted == "Y"
-                                      && ate.AcctgTrans.PartyId == request.PartyId) // important filter!
+                                      && ate.AcctgTrans.IsPosted == "Y")
                         .Select(ate => new SubLedgerEntry
                         {
                             TransactionDate = ate.AcctgTrans.TransactionDate,
