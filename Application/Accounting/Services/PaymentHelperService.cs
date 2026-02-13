@@ -368,8 +368,17 @@ public class PaymentHelperService : IPaymentHelperService
                 bool isRelatedToApartment = !string.IsNullOrEmpty(payment.SalesRequestId);
                 if (isRelatedToApartment)
                 {
-                    // Special path: Cheque cleared → move from Cheques Under Collection to Bank
-                    await _generalLedgerService.CreateAccountingTransactionForApartmentIncomingPayment(paymentId);
+                    if (payment.PaymentTypeId == "RECEIPT_MAINTENANCE_AMOUNT")
+                    {
+                        // Maintenance deposit: Debit Bank/Cash, Credit 250130
+                        await _generalLedgerService.CreateAccountingTransactionForMaintenanceDepositPayment(paymentId);
+                    }
+                    else
+                    {
+                        // Normal installment (RECEIPT_DUE_INSTALLMENT / RECEIPT_ADVANCE_PAYMENT):
+                        // existing apartment incoming payment logic
+                        await _generalLedgerService.CreateAccountingTransactionForApartmentIncomingPayment(paymentId);
+                    }
                 }
                 else
                 {

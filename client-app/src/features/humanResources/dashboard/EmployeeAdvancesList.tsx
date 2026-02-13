@@ -1,4 +1,3 @@
-// app/features/employees/advances/EmployeeAdvancesList.tsx
 import React from "react";
 import {
     Grid as KendoGrid,
@@ -15,6 +14,7 @@ import LoadingComponent from "../../../app/layout/LoadingComponent";
 import { handleDatesArray } from "../../../app/util/utils";
 import {EmployeeAdvance} from "../../../app/models/humanResources/employeeAdvance";
 import {useFetchEmployeeAdvancesQuery} from "../../../app/store/apis";
+import EmployeeAdvanceForm from "../form/EmployeeAdvanceForm";
 import EmployeeAdvanceMenu from "../menu/EmployeeAdvanceMenu";
 
 function EmployeeAdvancesList() {
@@ -70,7 +70,7 @@ function EmployeeAdvancesList() {
         );
     };
 
-    /*if (viewMode === "form" && editMode !== 0) {
+    if (viewMode === "form" && editMode !== 0) {
         return (
             <EmployeeAdvanceForm
                 advance={editMode === 1 ? undefined : selectedAdvance}
@@ -82,10 +82,10 @@ function EmployeeAdvancesList() {
                 }}
             />
         );
-    }*/
+    }
 
     const handleMenuSelect = (key: string) => {
-        if (key === "employeeAdvance.menu.advances") {
+        if (key === "party.employeeAdvance.menu.advances") {
             setViewMode("list");
             setEditMode(0);
             setSelectedAdvance(undefined);
@@ -116,18 +116,18 @@ function EmployeeAdvancesList() {
                                 color="secondary"
                                 onClick={() => startEdit()}
                             >
-                                {getTranslatedLabel("employeeAdvance.list.create", "Create Advance")}
+                                {getTranslatedLabel("party.employeeAdvance.list.create", "Create Advance")}
                             </Button>
                         </GridToolbar>
 
-                        <Column field="advanceId" title="ID" cell={IdCell} width={130} />
-                        <Column field="employeeName" title={getTranslatedLabel("employeeAdvance.list.employee", "Employee")} width={220} />
-                        <Column field="advanceDate" title="Date" format="{0:dd/MM/yyyy}" filter="date" width={140} />
-                        <Column field="amount" title="Amount" format="{0:n2}" width={130} />
-                        <Column field="installmentCount" title="Installments" width={120} />
-                        <Column field="installmentAmount" title="Monthly" format="{0:n2}" width={130} />
-                        <Column field="statusDescription" title="Status" width={160} />
-                        <Column field="description" title="Notes" />
+                        <Column field="advanceId" title={getTranslatedLabel("party.employeeAdvance.list.id", "ID")} cell={IdCell} width={130} />
+                        <Column field="employeeName" title={getTranslatedLabel("party.employeeAdvance.list.employee", "Employee")} width={220} />
+                        <Column field="advanceDate" title={getTranslatedLabel("party.employeeAdvance.list.date", "Date")} format="{0:dd/MM/yyyy}" filter="date" width={140} />
+                        <Column field="amount" title={getTranslatedLabel("party.employeeAdvance.list.amount", "Amount")} format="{0:n2}" width={130} />
+                        <Column field="installmentCount" title={getTranslatedLabel("party.employeeAdvance.list.installments", "Installments")} width={120} />
+                        <Column field="installmentAmount" title={getTranslatedLabel("party.employeeAdvance.list.monthly", "Monthly")} format="{0:n2}" width={130} />
+                        <Column field="statusDescription" title={getTranslatedLabel("party.employeeAdvance.list.status", "Status")} width={160} />
+                        <Column field="description" title={getTranslatedLabel("party.employeeAdvance.list.notes", "Notes")} />
                     </KendoGrid>
 
                     {isFetching && <LoadingComponent />}

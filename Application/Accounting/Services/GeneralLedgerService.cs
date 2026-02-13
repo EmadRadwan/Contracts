@@ -51,6 +51,7 @@ public interface IGeneralLedgerService
     Task<GeneralServiceResult<string>> CopyAcctgTransAndEntries(string fromAcctgTransId, bool revert);
     Task<List<string>> PostAcctgTrans(string acctgTransId, bool verifyOnly = false);
     Task<string> CreateAccountingTransactionForApartmentIncomingPayment(string paymentId);
+    Task<string> CreateAccountingTransactionForMaintenanceDepositPayment(string paymentId);
     Task<string> CreatePostdatedChequeAccountingTransaction(string paymentId);
     Task<string> CreatePostdatedChequeIssuedAccountingTransaction(string paymentId);
 }
@@ -5275,6 +5276,130 @@ public class GeneralLedgerService : IGeneralLedgerService
             throw;
         }
     }
+    
+    public async Task<string> CreateAccountingTransactionForMaintenanceDepositPayment(string paymentId)
+    {
+        try
+        {
+            var payment = await _context.Payments
+                .Include(p => p.PaymentMethod)
+                .Include(p => p.SalesRequest)
+                .FirstOrDefaultAsync(p => p.PaymentId == paymentId);
+            
+            var product = await _context.Products
+                .FirstOrDefaultAsync(p => p.ProductId == payment.SalesRequest.ProductId);
+
+
+            if (payment == null)
+                throw new Exception($"Payment not found: {paymentId}");
+
+            if (payment.SalesRequest == null)
+                throw new Exception($"SalesRequest not found for payment: {paymentId}");
+
+            var companyPartyId = await _productStoreService.GetProductStorePayToPartId();
+            var now = DateTime.UtcNow;
+            var transactionDate = payment.EffectiveDate;
+
+            string bankOrCashGlAccountId = payment.PaymentMethod?.GlAccountId
+                                           ?? throw new Exception("GL account not configured on payment method");
+
+            // ────────────────────────────────────────────────
+            // Determine payment type for description
+            // ────────────────────────────────────────────────
+            string paymentTypeDescription;
+            string chequeOrTransferRef = string.Empty;
+
+            if (payment.IsBankTransfer == true)
+            {
+                paymentTypeDescription = "Bank Transfer";
+            }
+            else if (!string.IsNullOrEmpty(payment.ChequeNumber))
+            {
+                paymentTypeDescription = "Cheque";
+                chequeOrTransferRef = $"#{payment.ChequeNumber}";
+            }
+            else
+            {
+                paymentTypeDescription = "Cash";
+            }
+
+            var description = $"Maintenance deposit received - {paymentTypeDescription} {chequeOrTransferRef} - " +
+                              $"Payment {payment.PaymentId} - SR {payment.SalesRequestId}  - {product.ProductId}";
+
+            var acctgTransParams = new CreateAcctgTransParams
+            {
+                AcctgTransTypeId = "APARTMENT_MAINTENANCE_DEPOSIT",
+                TransactionDate = transactionDate,
+                IsPosted = "Y",
+                Description = description,
+                GlFiscalTypeId = "ACTUAL",
+                PaymentId = payment.PaymentId,
+                SalesRequestId = payment.SalesRequestId,
+                PartyId = payment.PartyIdFrom
+            };
+
+            string acctgTransId = await _acctgTransService.CreateAcctgTrans(acctgTransParams);
+
+            int seq = 0;
+
+            // ────────────────────────────────────────────────
+            // Debit entry → Bank / Cash (money coming in)
+            // ────────────────────────────────────────────────
+            var debitEntry = new AcctgTransEntry
+            {
+                AcctgTransId = acctgTransId,
+                AcctgTransEntrySeqId = (++seq).ToString("D3"),
+                GlAccountId = bankOrCashGlAccountId,
+                DebitCreditFlag = "D",
+                AcctgTransEntryTypeId = "_NA_",
+                Amount = payment.Amount,
+                ReconcileStatusId = "AES_NOT_RECONCILED",
+                Description = $"Maintenance deposit received - {paymentTypeDescription} {chequeOrTransferRef} - SR {payment.SalesRequestId}  - {product.ProductId}",
+                OrganizationPartyId = companyPartyId,
+                ProductId = payment.SalesRequest.ProductId,
+                PartyId = payment.PartyIdFrom,
+                CreatedStamp = now,
+                LastUpdatedStamp = now
+            };
+            await _acctgTransService.CreateAcctgTransEntry(debitEntry);
+
+            // ────────────────────────────────────────────────
+            // Credit entry → 250130 (Maintenance Deposit liability)
+            // ────────────────────────────────────────────────
+            var creditEntry = new AcctgTransEntry
+            {
+                AcctgTransId = acctgTransId,
+                AcctgTransEntrySeqId = (++seq).ToString("D3"),
+                GlAccountId = "250130",
+                DebitCreditFlag = "C",
+                AcctgTransEntryTypeId = "_NA_",
+                Amount = payment.Amount,
+                ReconcileStatusId = "AES_NOT_RECONCILED",
+                Description = $"Maintenance deposit liability - SR {payment.SalesRequestId} - {product.ProductId}",
+                OrganizationPartyId = companyPartyId,
+                ProductId = payment.SalesRequest.ProductId,
+                PartyId = payment.PartyIdFrom,
+                CreatedStamp = now,
+                LastUpdatedStamp = now
+            };
+            await _acctgTransService.CreateAcctgTransEntry(creditEntry);
+
+            _logger.LogInformation(
+                "Maintenance deposit accounting transaction {AcctgTransId} created for payment {PaymentId}. " +
+                "Debit: {BankGl} | Credit: 250130",
+                acctgTransId, paymentId, bankOrCashGlAccountId);
+
+            return acctgTransId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to create maintenance deposit accounting transaction for payment {PaymentId}",
+                paymentId);
+            throw;
+        }
+    }
+
 
     public async Task<string> CreatePostdatedChequeAccountingTransaction(string paymentId)
     {

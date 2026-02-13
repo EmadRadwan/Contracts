@@ -1,5 +1,4 @@
-/*
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef } from "react";
 import { Form, FormElement, FormRenderProps, Field } from "@progress/kendo-react-form";
 import { Paper, Grid, Button, Typography, Box } from "@mui/material";
 import { toast } from "react-toastify";
@@ -12,6 +11,7 @@ import { requiredValidator } from "../../../app/common/form/Validators";
 import {EmployeeAdvance} from "../../../app/models/humanResources/employeeAdvance";
 import EmployeeAdvanceMenu from "../menu/EmployeeAdvanceMenu";
 import FormInput from "../../../app/common/form/FormInput";
+import {useCreateEmployeeAdvanceMutation, useUpdateEmployeeAdvanceMutation} from "../../../app/store/apis";
 
 // -----------------------------------------------------------------
 // Props
@@ -34,7 +34,7 @@ function EmployeeAdvanceForm({
                                  onAdvanceCreated,
                                  onAdvanceUpdated,
                              }: Props) {
-    const [createAdvance, { isLoading: isCreating }] = useAddEmployeeAdvanceMutation();
+    const [createAdvance, { isLoading: isCreating }] = useCreateEmployeeAdvanceMutation();
     const [updateAdvance, { isLoading: isUpdating }] = useUpdateEmployeeAdvanceMutation();
 
     const { getTranslatedLabel } = useTranslationHelper();
@@ -81,11 +81,11 @@ function EmployeeAdvanceForm({
         try {
             // Basic client-side checks (beyond validators)
             if (!values.amount || values.amount <= 0) {
-                toast.error(getTranslatedLabel("employeeAdvance.form.amountRequired", "Amount must be greater than zero."));
+                toast.error(getTranslatedLabel("party.employeeAdvance.form.amountRequired", "Amount must be greater than zero."));
                 return;
             }
             if (values.installmentCount > 0 && !values.startDate) {
-                toast.error(getTranslatedLabel("employeeAdvance.form.startDateRequired", "Start date is required when installments > 0."));
+                toast.error(getTranslatedLabel("party.employeeAdvance.form.startDateRequired", "Start date is required when installments > 0."));
                 return;
             }
 
@@ -99,11 +99,11 @@ function EmployeeAdvanceForm({
 
             if (isCreate) {
                 const created = await createAdvance(payload).unwrap();
-                toast.success(getTranslatedLabel("employeeAdvance.form.created", "Employee advance created successfully"));
+                toast.success(getTranslatedLabel("party.employeeAdvance.form.created", "Employee advance created successfully"));
                 onAdvanceCreated?.(created);
             } else {
                 const updated = await updateAdvance({ advanceId: advance!.advanceId, ...payload }).unwrap();
-                toast.success(getTranslatedLabel("employeeAdvance.form.updated", "Employee advance updated successfully"));
+                toast.success(getTranslatedLabel("party.employeeAdvance.form.updated", "Employee advance updated successfully"));
                 onAdvanceUpdated?.(updated);
             }
         } catch (err: any) {
@@ -111,7 +111,7 @@ function EmployeeAdvanceForm({
             toast.error(
                 err?.data?.errors
                     ? Object.values(err.data.errors).flat().join(" ")
-                    : getTranslatedLabel("employeeAdvance.form.error", "Failed to save employee advance")
+                    : getTranslatedLabel("party.employeeAdvance.form.error", "Failed to save employee advance")
             );
         }
     };
@@ -124,7 +124,7 @@ function EmployeeAdvanceForm({
             <EmployeeAdvanceMenu
                 selectedMenuItem="/employee-advances"
                 onMenuSelect={(key) => {
-                    if (key === "employeeAdvance.menu.advances") {
+                    if (key === "party.employeeAdvance.menu.advances") {
                         cancelEdit(); // force back to list
                     }
                 }}
@@ -133,10 +133,10 @@ function EmployeeAdvanceForm({
             <Paper elevation={5} className="div-container-withBorderCurved" sx={{ p: 3 }}>
                 <Typography variant="h5" gutterBottom>
                     {isCreate
-                        ? getTranslatedLabel("employeeAdvance.form.new", "New Employee Advance")
+                        ? getTranslatedLabel("party.employeeAdvance.form.new", "New Employee Advance")
                         : isReadOnly
-                            ? getTranslatedLabel("employeeAdvance.form.view", "View Employee Advance")
-                            : getTranslatedLabel("employeeAdvance.form.edit", "Edit Employee Advance")}
+                            ? getTranslatedLabel("party.employeeAdvance.form.view", "View Employee Advance")
+                            : getTranslatedLabel("party.employeeAdvance.form.edit", "Edit Employee Advance")}
                     {advance?.advanceId && (
                         <Box component="span" sx={{ ml: 2, color: "text.secondary", fontSize: "0.8em" }}>
                             #{advance.advanceId}
@@ -157,11 +157,11 @@ function EmployeeAdvanceForm({
                             <FormElement>
                                 <fieldset disabled={isReadOnly || isSubmitting}>
                                     <Grid container spacing={3}>
-                                        {/!* Row 1 *!/}
+                                        {/* Row 1 */}
                                         <Grid item xs={12} sm={6} md={4}>
                                             <Field
                                                 name="advanceDate"
-                                                label={getTranslatedLabel("employeeAdvance.form.advanceDate", "Advance Date *")}
+                                                label={getTranslatedLabel("party.employeeAdvance.form.advanceDate", "Advance Date *")}
                                                 component={FormDatePicker}
                                                 validator={requiredValidator}
                                             />
@@ -170,18 +170,18 @@ function EmployeeAdvanceForm({
                                         <Grid item xs={12} sm={6} md={4}>
                                             <Field
                                                 name="amount"
-                                                label={getTranslatedLabel("employeeAdvance.form.amount", "Amount *")}
+                                                label={getTranslatedLabel("party.employeeAdvance.form.amount", "Amount *")}
                                                 component={FormNumericTextBox}
                                                 format="n2"
                                                 validator={requiredValidator}
                                             />
                                         </Grid>
 
-                                        {/!* Row 2 *!/}
+                                        {/* Row 2 */}
                                         <Grid item xs={12} sm={6} md={4}>
                                             <Field
                                                 name="installmentCount"
-                                                label={getTranslatedLabel("employeeAdvance.form.installmentCount", "Number of Installments")}
+                                                label={getTranslatedLabel("party.employeeAdvance.form.installmentCount", "Number of Installments")}
                                                 component={FormNumericTextBox}
                                                 min={0}
                                                 format="n0"
@@ -191,7 +191,7 @@ function EmployeeAdvanceForm({
                                         <Grid item xs={12} sm={6} md={4}>
                                             <Field
                                                 name="installmentAmount"
-                                                label={getTranslatedLabel("employeeAdvance.form.installmentAmount", "Installment Amount")}
+                                                label={getTranslatedLabel("party.employeeAdvance.form.installmentAmount", "Installment Amount")}
                                                 component={FormNumericTextBox}
                                                 format="n2"
                                             />
@@ -200,33 +200,33 @@ function EmployeeAdvanceForm({
                                         <Grid item xs={12} sm={6} md={4}>
                                             <Field
                                                 name="startDate"
-                                                label={getTranslatedLabel("employeeAdvance.form.startDate", "First Installment Date")}
+                                                label={getTranslatedLabel("party.employeeAdvance.form.startDate", "First Installment Date")}
                                                 component={FormDatePicker}
                                             />
                                         </Grid>
 
-                                        {/!* Row 3 – Notes *!/}
+                                        {/* Row 3 – Notes */}
                                         <Grid item xs={12}>
                                             <Field
                                                 name="description"
-                                                label={getTranslatedLabel("employeeAdvance.form.description", "Description / Notes")}
+                                                label={getTranslatedLabel("party.employeeAdvance.form.description", "Description / Notes")}
                                                 component={FormInput}
                                                 multiline
                                                 rows={3}
                                             />
                                         </Grid>
 
-                                        {/!* Status – can be combo later if more statuses *!/}
+                                        {/* Status – can be combo later if more statuses */}
                                         <Grid item xs={12} sm={6}>
                                             <Typography variant="caption" color="text.secondary">
-                                                {getTranslatedLabel("employeeAdvance.form.status", "Status")}:{" "}
+                                                {getTranslatedLabel("party.employeeAdvance.form.status", "Status")}:{" "}
                                                 {advance?.statusDescription || "Active"}
                                             </Typography>
                                         </Grid>
                                     </Grid>
                                 </fieldset>
 
-                                {/!* Actions *!/}
+                                {/* Actions */}
                                 <Box sx={{ mt: 4, display: "flex", justifyContent: "flex-end", gap: 2 }}>
                                     <Button
                                         variant="outlined"
@@ -259,4 +259,4 @@ function EmployeeAdvanceForm({
     );
 }
 
-export default React.memo(EmployeeAdvanceForm);*/
+export default React.memo(EmployeeAdvanceForm);

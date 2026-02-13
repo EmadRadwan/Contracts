@@ -1,4 +1,3 @@
-import React from 'react';
 import { Box, List, ListItem, ListItemIcon, Toolbar, Typography } from "@mui/material";
 import { NavLink } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
@@ -23,8 +22,8 @@ const links = [
     {
         title: 'Employee Advances',
         path: '/employee-advances',
-        key: "employeeAdvance.menu.advances",
-        translationKey: "employeeAdvance.menu.advances",
+        key: "party.employeeAdvance.menu.advances",
+        translationKey: "party.employeeAdvance.menu.advances",
         icon: <PaidOutlinedIcon sx={{ color: "#2196F3" }} />, // blue-ish for money/advances
         requiredRole: "ViewEmployeeAdvances" as const,        // adjust to your actual permission
     },

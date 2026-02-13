@@ -24,6 +24,7 @@ interface TransactionRow {
     debitCreditFlag: 'D' | 'C';
     amount: number;
     description?: string;
+    projectName?: string;
 }
 
 interface GlAccountTransactionsExcelProps {
@@ -126,6 +127,7 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.invoiceId', 'Invoice ID'),
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.paymentId', 'Payment ID'),
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.workEffortId', 'Work Effort ID'),
+            getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.projectName', 'Project Name'),   // ← new
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.partyId', 'Party Name'),
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.productId', 'Product Name'),
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.isPosted', 'Is Posted'),
@@ -151,6 +153,7 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
             { width: 12 }, // invoice
             { width: 12 }, // payment
             { width: 12 }, // work effort
+            { width: 28 },
             { width: 18 }, // party
             { width: 18 }, // product
             { width: 10 }, // posted
@@ -172,6 +175,7 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
                 utils.safeString(r.invoiceId),
                 utils.safeString(r.paymentId),
                 utils.safeString(r.workEffortId),
+                utils.rtlEmbed(utils.safeString(r.projectName)), 
                 utils.rtlEmbed(utils.safeString(r.partyName)),
                 utils.rtlEmbed(utils.safeString(r.productName)),
                 r.isPosted ? 'Yes' : 'No',

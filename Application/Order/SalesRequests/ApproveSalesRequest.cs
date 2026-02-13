@@ -160,7 +160,7 @@ public class ApproveSalesRequest
                         PaymentTypeId = "RECEIPT_MAINTENANCE_AMOUNT",
                         StatusId = "PMNT_NOT_PAID",
                         Comments =
-                            $"Maintenance deposit - Due {maintenanceDueDate:yyyy-MM-dd} - SR {sr.SalesRequestId}",
+                            $"Maintenance deposit - Due {maintenanceDueDate:yyyy-MM-dd} - SR {sr.SalesRequestId}  – Apt {sr.ProductId}",
                         SalesRequestId = sr.SalesRequestId,
                         PaymentMethodId = null,
                         PaymentMethodTypeId = null
@@ -298,8 +298,64 @@ public class ApproveSalesRequest
                     await _acctgTransService.CreateAcctgTransEntry(creditEntry);
                 }
 
+                    // Create accounting transaction for Maintenance / Security Deposit
+                    if (sr.MaintenanceDeposit > 0)
+                    {
+                        var maintenanceAcctgTransParams = new CreateAcctgTransParams
+                        {
+                            AcctgTransTypeId = "APARTMENT_MAINTENANCE_DEPOSIT",
+                            TransactionDate = sr.SaleDate ?? DateTime.UtcNow.Date,
+                            IsPosted = "Y",
+                            Description = $"Maintenance Deposit - SR {sr.SalesRequestId} - {apartment.ApartmentName}",
+                            GlFiscalTypeId = "ACTUAL",
+                            SalesRequestId = sr.SalesRequestId,
+                            PartyId = sr.FromPartyId
+                        };
 
-                // 7. Save approval
+                        var maintenanceAcctgTransId = await _acctgTransService.CreateAcctgTrans(maintenanceAcctgTransParams);
+
+                        var maintenanceSeq = 0;
+
+                        // Debit: Accounts Receivable
+                        var maintenanceDebitEntry = new AcctgTransEntry
+                        {
+                            AcctgTransId = maintenanceAcctgTransId,
+                            AcctgTransEntrySeqId = (++maintenanceSeq).ToString().PadLeft(3, '0'), // "001"
+                            GlAccountId = receivableGlAccountId,
+                            DebitCreditFlag = "D",
+                            AcctgTransEntryTypeId = "_NA_",
+                            Amount = sr.MaintenanceDeposit.Value,
+                            ReconcileStatusId = "AES_NOT_RECONCILED",
+                            Description = $"Maintenance deposit receivable - {apartment.ApartmentName} - SR {sr.SalesRequestId}",
+                            OrganizationPartyId = companyPartyId,
+                            ProductId = sr.ProductId,
+                            PartyId = sr.FromPartyId,
+                            CreatedStamp = stamp,
+                            LastUpdatedStamp = stamp
+                        };
+                        await _acctgTransService.CreateAcctgTransEntry(maintenanceDebitEntry);
+
+                        // Credit: Maintenance Deposit Liability
+                        var maintenanceCreditEntry = new AcctgTransEntry
+                        {
+                            AcctgTransId = maintenanceAcctgTransId,
+                            AcctgTransEntrySeqId = (++maintenanceSeq).ToString().PadLeft(3, '0'), // "002"
+                            GlAccountId = "250130",
+                            DebitCreditFlag = "C",
+                            AcctgTransEntryTypeId = "_NA_",
+                            Amount = sr.MaintenanceDeposit.Value,
+                            ReconcileStatusId = "AES_NOT_RECONCILED",
+                            Description = $"Maintenance deposit liability - {apartment.ApartmentName} - SR {sr.SalesRequestId}",
+                            OrganizationPartyId = companyPartyId,
+                            ProductId = sr.ProductId,
+                            PartyId = sr.FromPartyId,
+                            CreatedStamp = stamp,
+                            LastUpdatedStamp = stamp
+                        };
+                        await _acctgTransService.CreateAcctgTransEntry(maintenanceCreditEntry);
+                    }
+
+                    // 7. Save approval
                 var saved = await _context.SaveChangesAsync(ct) > 0;
                 if (!saved)
                 {

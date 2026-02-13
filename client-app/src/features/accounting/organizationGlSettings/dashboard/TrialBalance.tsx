@@ -1,4 +1,4 @@
-import { Button, Grid, Paper, Typography } from "@mui/material";
+import {Box, Button, Grid, Paper, Typography} from "@mui/material";
 import {
   useAppDispatch,
   useAppSelector,
@@ -181,10 +181,17 @@ const TrialBalance = () => {
                 >
                   <GridToolbar>
                     <Typography variant="body1">
-                      {getTranslatedLabel(`${localizationKey}.debits`, "Debits total: ")} {formatCurrency(data.postedDebitsTotal)}
+                      {getTranslatedLabel(`${localizationKey}.debits`, "Debits total: ")}
+                      <Box component="span" fontWeight="bold" color="success.main">
+                        {data.postedDebitsTotal}
+                      </Box>
                     </Typography>
+
                     <Typography variant="body1">
-                      {getTranslatedLabel(`${localizationKey}.credits`, "Credits total: ")} {formatCurrency(data.postedCreditsTotal)}
+                      {getTranslatedLabel(`${localizationKey}.credits`, "Credits total: ")}
+                      <Box component="span" fontWeight="bold" color="error.main">
+                        {data.postedCreditsTotal}
+                      </Box>
                     </Typography>
 
                     <TrialBalanceExcel

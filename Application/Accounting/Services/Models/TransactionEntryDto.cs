@@ -14,6 +14,7 @@ public class TransactionEntryDto
     public string ShipmentId { get; set; }
     public string PartyId { get; set; }
     public string CertificateNumber { get; set; }
+    public string ProjectName { get; set; }
     public string PartyName { get; set; }
     public string ProductId { get; set; }
     public string ProductName { get; set; }

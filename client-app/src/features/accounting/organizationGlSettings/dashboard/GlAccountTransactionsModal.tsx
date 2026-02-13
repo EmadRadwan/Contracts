@@ -87,6 +87,7 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
             debitCreditFlag: t.debitCreditFlag ?? 'C',
             amount: t.amount ?? 0,
             description: t.description,
+            projectName: t.projectName ?? '',
         }));
     }, [data?.transactions]);
 

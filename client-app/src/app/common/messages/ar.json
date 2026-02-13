@@ -355,6 +355,39 @@
           "to": "لـ"
         }
       }
+    },
+    "employeeAdvance": {
+      "form": {
+        "new": "سلفة موظف جديدة",
+        "view": "عرض سلفة موظف",
+        "edit": "تعديل سلفة موظف",
+        "advanceDate": "تاريخ السلفة *",
+        "amount": "المبلغ *",
+        "installmentCount": "عدد الأقساط",
+        "installmentAmount": "مبلغ القسط",
+        "startDate": "تاريخ أول قسط",
+        "description": "الوصف / ملاحظات",
+        "status": "الحالة",
+        "amountRequired": "يجب أن يكون المبلغ أكبر من الصفر.",
+        "startDateRequired": "تاريخ البدء مطلوب عندما يكون عدد الأقساط أكبر من الصفر.",
+        "created": "تم إنشاء سلفة الموظف بنجاح",
+        "updated": "تم تحديث سلفة الموظف بنجاح",
+        "error": "فشل في حفظ سلفة الموظف"
+      },
+      "list": {
+        "create": "إنشاء سلفة",
+        "id": "الرقم",
+        "employee": "الموظف",
+        "date": "التاريخ",
+        "amount": "المبلغ",
+        "installments": "عدد الأقساط",
+        "monthly": "القسط الشهري",
+        "status": "الحالة",
+        "notes": "ملاحظات"
+      },
+      "menu": {
+        "advances": "السلف"
+      }
     }
   },
   "product": {
@@ -1361,6 +1394,7 @@
             "transactions": "الحركات",
             "totalDebit": "إجمالي المدين:",
             "totalCredit": "إجمالي الدائن:",
+            "projectName": "المشروع",
             "includePrePeriod": "تضمين الحركات قبل الفترة",
             "accountCode": "كود الحساب:",
             "accountName": "اسم الحساب:",

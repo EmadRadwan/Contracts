@@ -206,6 +206,22 @@ const partiesApi = createApi({
                     };
                 },
             }),
+            createEmployeeAdvance: builder.mutation<EmployeeAdvance, Partial<EmployeeAdvance>>({
+                query: (advance) => ({
+                    url: '/humanResources/createEmployeeAdvance',
+                    method: 'POST',
+                    body: advance,
+                }),
+                invalidatesTags: ['EmployeeAdvance'],
+            }),
+            updateEmployeeAdvance: builder.mutation<EmployeeAdvance, Partial<EmployeeAdvance> & { advanceId: string | number }>({
+                query: (advance) => ({
+                    url: '/humanResources/updateEmployeeAdvance',
+                    method: 'PUT',
+                    body: advance,
+                }),
+                invalidatesTags: ['EmployeeAdvance'],
+            }),
         };
     },
 });
@@ -220,6 +236,7 @@ export const {
     useGetEmplPositionTypesQuery, useCreateEmployeeMutation,
     useUpdateEmployeeMutation, useCreateCustomerMutation, useUpdateCustomerMutation,
     useCreateSupplierMutation, useUpdateSupplierMutation, useCreateContractorMutation,
-    useUpdateContractorMutation, useGetPartySubLedgerQuery, useFetchEmployeeAdvancesQuery
+    useUpdateContractorMutation, useGetPartySubLedgerQuery, useFetchEmployeeAdvancesQuery,
+    useCreateEmployeeAdvanceMutation, useUpdateEmployeeAdvanceMutation
 } = partiesApi;
 export {partiesApi};

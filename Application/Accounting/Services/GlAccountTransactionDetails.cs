@@ -48,15 +48,16 @@ public class GetGlAccountTransactionDetails
                 {
                     return Result<GlAccountTransactionDetails>.Failure("GlAccount not found.");
                 }
-                
-                var periodStart = customTimePeriod.FromDate.Value.Date;           // e.g. 2026-01-01 00:00:00
-                var periodEnd   = customTimePeriod.ThruDate.Value.Date;           // inclusive end
-                var openingCutoff = periodStart.AddTicks(-1); 
+
+                var periodStart = customTimePeriod.FromDate.Value.Date; // e.g. 2026-01-01 00:00:00
+                var periodEnd = customTimePeriod.ThruDate.Value.Date; // inclusive end
+                var openingCutoff = periodStart.AddTicks(-1);
 
                 // 3. Build query for transactions
                 var query = from ate in _context.AcctgTransEntries
                     join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
-                    join att in _context.AcctgTransTypes on act.AcctgTransTypeId equals att.AcctgTransTypeId into transTypes
+                    join att in _context.AcctgTransTypes on act.AcctgTransTypeId equals att.AcctgTransTypeId into
+                        transTypes
                     from att in transTypes.DefaultIfEmpty()
                     join p in _context.Parties on act.PartyId equals p.PartyId into parties
                     from p in parties.DefaultIfEmpty()
@@ -64,6 +65,10 @@ public class GetGlAccountTransactionDetails
                     from prod in products.DefaultIfEmpty()
                     join we in _context.WorkEfforts on act.WorkEffortId equals we.WorkEffortId into workEfforts
                     from we in workEfforts.DefaultIfEmpty()
+                    join project in _context.WorkEfforts
+                        on we.ProjectId equals project.WorkEffortId
+                        into projects
+                    from project in projects.DefaultIfEmpty()
                     where ate.OrganizationPartyId == request.OrganizationPartyId
                           && ate.GlAccountId == request.GlAccountId
                           && act.IsPosted == "Y"
@@ -90,7 +95,8 @@ public class GetGlAccountTransactionDetails
                         Amount = (decimal)ate.Amount,
                         Description = act.Description,
                         CurrencyUomId = ate.CurrencyUomId,
-                        CertificateNumber = we != null ? we.CertificateNumber : null
+                        CertificateNumber = we != null ? we.CertificateNumber : null,
+                        ProjectName = project != null ? project.ProjectName : null // ← or .Description, .Name, etc.
                     };
 
                 // 4. Filter transactions for display (respect IncludePrePeriodTransactions)
@@ -178,20 +184,20 @@ public class GetGlAccountTransactionDetails
                     ? endingDebits - endingCredits
                     : endingCredits - endingDebits);
 
-                decimal postedDebits   = (decimal)(endingDebits - openingDebits);
-                decimal postedCredits  = (decimal)(endingCredits - openingCredits);
+                decimal postedDebits = (decimal)(endingDebits - openingDebits);
+                decimal postedCredits = (decimal)(endingCredits - openingCredits);
 
                 // 8. Return result
                 return Result<GlAccountTransactionDetails>.Success(new GlAccountTransactionDetails
                 {
-                    OpeningBalance  = openingBalance,
-                    PostedDebits    = postedDebits,
-                    PostedCredits   = postedCredits,
-                    EndingBalance   = endingBalance,
-                    GlAccountId     = request.GlAccountId,
-                    AccountCode     = glAccount.AccountCode,
-                    AccountName     = glAccount.AccountNameArabic,
-                    Transactions    = transactions
+                    OpeningBalance = openingBalance,
+                    PostedDebits = postedDebits,
+                    PostedCredits = postedCredits,
+                    EndingBalance = endingBalance,
+                    GlAccountId = request.GlAccountId,
+                    AccountCode = glAccount.AccountCode,
+                    AccountName = glAccount.AccountNameArabic,
+                    Transactions = transactions
                 });
             }
             catch (Exception ex)
