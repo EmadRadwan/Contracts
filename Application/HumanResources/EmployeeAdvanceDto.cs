@@ -2,10 +2,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Application.HumanResources;
 
-public class EmployeeAdvanceRecord
+public class EmployeeAdvanceDto
 {
-    [Key] public string AdvanceId { get; set; } = null!;
-    public string PartyId { get; set; } = null!;
+    public string? AdvanceId { get; set; } = null!;
+    public string? PartyId { get; set; } = null!;
     public string? EmployeeName { get; set; } // ← Full name
     public string? AdvanceTypeId { get; set; }
     public string? PaymentId { get; set; }
@@ -16,8 +16,14 @@ public class EmployeeAdvanceRecord
     public string? StatusId { get; set; }
     public string? StatusDescription { get; set; } // ← Translated
     public string? Description { get; set; }
+    public List<EmployeeAdvanceScheduleDto>? CustomDeductionSchedules { get; set; }
+    
+}
 
-    // Audit
-    public DateTime? CreatedStamp { get; set; }
-    public DateTime? LastUpdatedStamp { get; set; }
+public class EmployeeAdvanceScheduleDto
+{
+    public int InstallmentNumber { get; set; }
+    public DateTime DueDate { get; set; }
+    public decimal ScheduledAmount { get; set; }
+    // StatusId? Notes? PayrollPeriodId? — optional at creation
 }

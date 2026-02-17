@@ -70,7 +70,7 @@ public class CreateEmployee
             var contactMechPurposeTypePrimaryEmail = await _context.ContactMechPurposeTypes.SingleOrDefaultAsync(
                 x => x.ContactMechPurposeTypeId == "PRIMARY_EMAIL", cancellationToken);
 
-            var stamp = DateTime.Now;
+            var stamp = DateTime.UtcNow;
             var newPartyId = await _utilityService.GetNextSequence("Party");
 
             var party = new Party

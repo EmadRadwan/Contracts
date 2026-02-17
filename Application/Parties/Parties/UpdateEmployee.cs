@@ -39,7 +39,7 @@ public class UpdateEmployee
             if (party == null)
                 return Result<PartyDto2>.Failure("Employee not found");
 
-            var stamp = DateTime.Now;
+            var stamp = DateTime.UtcNow;
 
             party.LastUpdatedStamp = stamp;
             party.Description = request.PartyDto.FirstName;

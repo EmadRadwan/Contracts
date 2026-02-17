@@ -168,7 +168,7 @@ public class AcctgReportsService : IAcctgReportsService
                 //    using our equivalent of the 'computeGlAccountBalanceForTimePeriod' service.
                 foreach (var organizationGlAccount in organizationGlAccounts)
                 {
-                    /*if (organizationGlAccount.GlAccountId != "110200")
+                    /*if (organizationGlAccount.GlAccountId != "1211007")
                     {
                         Console.WriteLine($"Skipping GlAccountId: {organizationGlAccount.GlAccountId}");
                         continue;

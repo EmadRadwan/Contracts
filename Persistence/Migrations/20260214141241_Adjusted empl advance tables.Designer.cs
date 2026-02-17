@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence;
 
@@ -10,9 +11,11 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20260214141241_Adjusted empl advance tables")]
+    partial class Adjustedempladvancetables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -12010,9 +12013,9 @@ namespace Persistence.Migrations
             modelBuilder.Entity("Domain.EmployeeAdvanceSchedule", b =>
                 {
                     b.Property<string>("ScheduleId")
-                        .HasMaxLength(36)
+                        .HasMaxLength(20)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(36)")
+                        .HasColumnType("varchar(20)")
                         .HasColumnName("SCHEDULE_ID");
 
                     b.Property<string>("AdvanceId")

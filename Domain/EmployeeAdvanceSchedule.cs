@@ -13,8 +13,7 @@ public class EmployeeAdvanceSchedule
     public DateTime DueDate { get; set; }
     public decimal ScheduledAmount { get; set; }
     public decimal DeductedAmount { get; set; }
-    public decimal RemainingAmount { get; set; }
-    public string StatusId { get; set; } = "SCHEDULE_PENDING";
+    public string? StatusId { get; set; }
     public string? PayrolInvoiceId { get; set; }
     public string? Notes { get; set; }
 

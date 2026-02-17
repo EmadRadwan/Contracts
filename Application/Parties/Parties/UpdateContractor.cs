@@ -38,7 +38,7 @@ public class UpdateContractor
                 return Result<PartyDto>.Failure("Contractor not found");
 
 
-            var stamp = DateTime.Now;
+            var stamp = DateTime.UtcNow;
 
             party.LastUpdatedStamp = stamp;
             party.Description = request.PartyDto.GroupName;

@@ -5303,6 +5303,11 @@ public class GeneralLedgerService : IGeneralLedgerService
             string bankOrCashGlAccountId = payment.PaymentMethod?.GlAccountId
                                            ?? throw new Exception("GL account not configured on payment method");
 
+            var receivableGlAccountId = await GetPartyReceivableAccount(
+                companyPartyId,
+                payment.SalesRequest.FromPartyId!);
+
+
             // ────────────────────────────────────────────────
             // Determine payment type for description
             // ────────────────────────────────────────────────
@@ -5364,13 +5369,13 @@ public class GeneralLedgerService : IGeneralLedgerService
             await _acctgTransService.CreateAcctgTransEntry(debitEntry);
 
             // ────────────────────────────────────────────────
-            // Credit entry → 250130 (Maintenance Deposit liability)
+            // Credit entry → receivableGlAccountId (Maintenance Deposit liability)
             // ────────────────────────────────────────────────
             var creditEntry = new AcctgTransEntry
             {
                 AcctgTransId = acctgTransId,
                 AcctgTransEntrySeqId = (++seq).ToString("D3"),
-                GlAccountId = "250130",
+                GlAccountId = receivableGlAccountId,
                 DebitCreditFlag = "C",
                 AcctgTransEntryTypeId = "_NA_",
                 Amount = payment.Amount,
@@ -5400,6 +5405,22 @@ public class GeneralLedgerService : IGeneralLedgerService
         }
     }
 
+    public async Task<string> GetPartyReceivableAccount(
+        string organizationPartyId,
+        string customerPartyId,
+        string? roleTypeId = "BILL_TO_CUSTOMER",
+        string? defaultAccount = "121100")
+    {
+        var account = await _context.PartyGlAccounts
+            .Where(pga => pga.OrganizationPartyId == organizationPartyId
+                          && pga.PartyId == customerPartyId
+                          && pga.RoleTypeId == roleTypeId
+                          && pga.GlAccountTypeId == "ACCOUNTS_RECEIVABLE")
+            .Select(pga => pga.GlAccountId)
+            .FirstOrDefaultAsync();
+
+        return account ?? defaultAccount ?? "121100";
+    }
 
     public async Task<string> CreatePostdatedChequeAccountingTransaction(string paymentId)
     {

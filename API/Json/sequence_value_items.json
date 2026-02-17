@@ -29,6 +29,13 @@
     "LAST_UPDATED_TX_STAMP": null,
     "CREATED_STAMP": "2022-05-27 12:23:42.217",
     "CREATED_TX_STAMP": null
+  },{
+    "SEQ_NAME": "EmployeeAdvance",
+    "SEQ_ID": 10010,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2022-05-27 12:23:42.217",
+    "CREATED_TX_STAMP": null
   },
   {
     "SEQ_NAME": "AgreementTerm",

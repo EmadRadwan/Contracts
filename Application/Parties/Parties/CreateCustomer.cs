@@ -87,7 +87,7 @@ public class CreateCustomer
             var contactMechPurposeTypePrimaryEmail = await _context.ContactMechPurposeTypes.SingleOrDefaultAsync(
                 x => x.ContactMechPurposeTypeId == "PRIMARY_EMAIL", cancellationToken);
 
-            var stamp = DateTime.Now; // e.g., 2025-07-16 15:53:00 EEST
+            var stamp = DateTime.UtcNow; // e.g., 2025-07-16 15:53:00 EEST
             var newPartyId = await _utilityService.GetNextSequence("Party");
 
             var party = new Party

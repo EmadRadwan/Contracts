@@ -13583,17 +13583,9 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
               .HasColumnType("decimal(18,2)")
               .HasColumnName("AMOUNT");
 
-        entity.Property(e => e.CurrencyUomId)
-              .HasMaxLength(20)
-              .IsUnicode(false)
-              .HasColumnName("CURRENCY_UOM_ID");
 
         entity.Property(e => e.InstallmentCount)
               .HasColumnName("INSTALLMENT_COUNT");
-
-        entity.Property(e => e.InstallmentAmount)
-              .HasColumnType("decimal(18,2)")
-              .HasColumnName("INSTALLMENT_AMT");
 
         entity.Property(e => e.StartDate)
               .HasColumnType("date")
@@ -13653,7 +13645,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
         entity.HasIndex(e => e.LastUpdatedTxStamp, "ADV_SCH_TXSTMP");
 
         entity.Property(e => e.ScheduleId)
-              .HasMaxLength(20)
+              .HasMaxLength(36)
               .IsUnicode(false)
               .HasColumnName("SCHEDULE_ID");
 
@@ -13677,9 +13669,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
               .HasColumnType("decimal(18,2)")
               .HasColumnName("DEDUCTED_AMT");
 
-        entity.Property(e => e.RemainingAmount)
-              .HasColumnType("decimal(18,2)")
-              .HasColumnName("REMAINING_AMT");
+    
 
         entity.Property(e => e.StatusId)
               .HasMaxLength(20)

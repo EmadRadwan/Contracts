@@ -38,21 +38,16 @@ public class ListEmployeeAdvancesQuery
                 select new EmployeeAdvanceRecord
                 {
                     AdvanceId         = adv.AdvanceId,
-                    EmployeePartyId   = adv.PartyId,
+                    PartyId   = adv.PartyId,
                     EmployeeName      = party != null ? party.Description : adv.PartyId,
                     PaymentId         = adv.PaymentId,
                     AdvanceDate       = adv.AdvanceDate,
                     Amount            = adv.Amount,
-                    CurrencyUomId     = adv.CurrencyUomId,
                     InstallmentCount  = adv.InstallmentCount,
-                    InstallmentAmount = adv.InstallmentAmount,
                     StartDate         = adv.StartDate,
                     StatusId          = adv.StatusId,
                     StatusDescription = statusLookup.GetValueOrDefault(adv.StatusId, adv.StatusId),
-                    // or: statusLookup.ContainsKey(adv.StatusId) ? statusLookup[adv.StatusId] : adv.StatusId,
                     Description       = adv.Description,
-                    CreatedStamp      = adv.CreatedStamp,
-                    LastUpdatedStamp  = adv.LastUpdatedStamp
                 };
 
             return query;

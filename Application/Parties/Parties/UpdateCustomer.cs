@@ -37,7 +37,7 @@ public class UpdateCustomer
 
             if (party == null) return null;
 
-            var stamp = DateTime.Now;
+            var stamp = DateTime.UtcNow;
 
             party.LastUpdatedStamp = stamp;
             party.Description = request.PartyDto.FirstName;

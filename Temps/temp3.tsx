@@ -1,15 +1,28 @@
-<GridToolbar>
-    <Typography variant="body1">
-        {getTranslatedLabel(`${localizationKey}.debits`, "Debits total: ")}
-        <Box component="span" fontWeight="bold" color="success.main">
-            {formatCurrency(data.postedDebitsTotal)}
-        </Box>
-    </Typography>
+<DeductionPlanModal
+    onClose={() => setShowDeductionPlan(false)}
+    totalAdvance={totalAmount}
+    initialSchedules={customSchedules.map((s, idx) => ({
+        id: `s-${idx}`,
+        number: idx + 1,
+        dueDate: s.dueDate,
+        scheduledAmount: s.scheduledAmount,
+    }))}
+    initialInstallmentCount={Number(valueGetter("installmentCount")) || 12}
+    initialStartDate={valueGetter("startDate")}
+    onApply={(schedules) => {
+        setCustomSchedules(schedules);
+        setShowDeductionPlan(false);
+        toast.success(getTranslatedLabel("employeeAdvance.deductionPlan.applied", "Deduction plan applied"));
 
-    <Typography variant="body1">
-        {getTranslatedLabel(`${localizationKey}.credits`, "Credits total: ")}
-        <Box component="span" fontWeight="bold" color="error.main">
-            {formatCurrency(data.postedCreditsTotal)}
-        </Box>
-    </Typography>
-</GridToolbar>
+        // Optional: sync back to main form fields
+        if (formRef.current) {
+            formRef.current.onChange("installmentCount", { value: schedules.length });
+            if (schedules.length > 0) {
+                formRef.current.onChange("startDate", {
+                    value: new Date(schedules[0].dueDate),
+                });
+            }
+        }
+    }}
+    isPreview={customSchedules.length > 0}
+/>

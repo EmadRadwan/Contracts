@@ -8,14 +8,30 @@ namespace API.Controllers.HumanResources;
 public class HumanResourcesController : BaseApiController
 {
     [HttpPost("createEmployeeAdvance")]
-    public async Task<IActionResult> CreateEmployeeAdvance(EmployeeAdvanceRecord advanceDto)
+    public async Task<IActionResult> CreateEmployeeAdvance(EmployeeAdvanceDto advanceDto)
     {
-        return HandleResult(await Mediator.Send(new CreateEmployeeAdvance.Command { AdvanceDto = advanceDto, Language = GetLanguage() }));
+        return HandleResults(await Mediator.Send(new CreateEmployeeAdvance.Command { AdvanceDto = advanceDto, Language = GetLanguage() }));
     }
 
     [HttpPut("updateEmployeeAdvance")]
     public async Task<IActionResult> UpdateEmployeeAdvance(EmployeeAdvanceRecord advanceDto)
     {
         return HandleResult(await Mediator.Send(new UpdateEmployeeAdvance.Command { AdvanceDto = advanceDto, Language = GetLanguage() }));
+    }
+    
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetAdvanceWithSchedules(
+        string id,
+        [FromQuery] string language = "en")
+    {
+        var query = new GetEmployeeAdvanceWithSchedulesQuery.Query
+        {
+            AdvanceId = id,
+            Language = language
+        };
+
+        var result = await Mediator.Send(query);
+
+        return Ok(result.Value);
     }
 }

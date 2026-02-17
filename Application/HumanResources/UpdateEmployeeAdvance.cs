@@ -32,11 +32,9 @@ public class UpdateEmployeeAdvance
 
             if (advance == null) return null;
 
-            advance.AdvanceDate = dto.AdvanceDate ?? advance.AdvanceDate;
+            advance.AdvanceDate = dto.AdvanceDate;
             advance.Amount = dto.Amount ?? advance.Amount;
-            advance.CurrencyUomId = dto.CurrencyUomId ?? advance.CurrencyUomId;
             advance.InstallmentCount = dto.InstallmentCount ?? advance.InstallmentCount;
-            advance.InstallmentAmount = dto.InstallmentAmount ?? advance.InstallmentAmount;
             advance.StartDate = dto.StartDate ?? advance.StartDate;
             advance.Description = dto.Description;
             advance.LastUpdatedStamp = DateTime.Now;
@@ -53,13 +51,11 @@ public class UpdateEmployeeAdvance
             var resultRecord = new EmployeeAdvanceRecord
             {
                 AdvanceId = advance.AdvanceId,
-                EmployeePartyId = advance.PartyId,
+                PartyId = advance.PartyId,
                 EmployeeName = party?.Description ?? advance.PartyId,
                 AdvanceDate = advance.AdvanceDate,
                 Amount = advance.Amount,
-                CurrencyUomId = advance.CurrencyUomId,
                 InstallmentCount = advance.InstallmentCount,
-                InstallmentAmount = advance.InstallmentAmount,
                 StartDate = advance.StartDate,
                 StatusId = advance.StatusId,
                 StatusDescription = request.Language == "ar" 
