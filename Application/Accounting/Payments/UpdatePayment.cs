@@ -5,6 +5,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.Extensions.Logging;
 using Persistence;
 
 namespace Application.Accounting.Payments;
@@ -29,16 +30,20 @@ public class UpdatePayment
         private readonly DataContext _context;
         private readonly IFinAccountService _finAccountService;
         private readonly IPaymentHelperService _paymentHelperService;
-        private readonly IMediator _mediator;
+        private readonly IGeneralLedgerService _generalLedgerService;
+        private readonly ILogger _logger;
+        
+
 
 
         public Handler(DataContext context, IFinAccountService finAccountService,
-            IPaymentHelperService paymentHelperService, IMediator mediator)
+            IPaymentHelperService paymentHelperService, IGeneralLedgerService generalLedgerService, ILogger<Handler> logger)
         {
             _context = context;
             _finAccountService = finAccountService;
             _paymentHelperService = paymentHelperService;
-            _mediator = mediator;
+            _generalLedgerService = generalLedgerService;
+            _logger = logger;
         }
 
         public async Task<Results<PaymentDto>> Handle(Command request, CancellationToken cancellationToken)
@@ -225,6 +230,32 @@ public class UpdatePayment
 
                     if (addedFinAccountTran != null) addedFinAccountTran.Entity.PaymentId = payment.PaymentId;
                     payment.FinAccountTransId = finAccountTransId;
+                }
+                
+                // Create accounting entry for postdated cheques when applicable
+            
+                // get payment type
+                var paymentType = await _context.PaymentTypes
+                    .FirstOrDefaultAsync(pt => pt.PaymentTypeId == request.PaymentDto.PaymentTypeId, cancellationToken: cancellationToken);
+
+                if (
+                    !string.IsNullOrEmpty(request.PaymentDto.OverrideGlAccountId) && paymentType.ParentTypeId == "DISBURSEMENT" &&
+                    (!string.IsNullOrEmpty(request.PaymentDto.ChequeNumber) || request.PaymentDto.ChequeDate.HasValue))
+                {
+                    try
+                    {
+                        // check first that such transaction exists
+                        var isPostDatedCheckExists = _context.AcctgTrans.Any(x => x.PaymentId == request.PaymentDto.PaymentId && x.AcctgTransTypeId == "CHECK_ISSUED");
+                        if (!isPostDatedCheckExists)
+                        {
+                            var acctgTransId = await _generalLedgerService.CreatePostdatedChequeAccountingTransaction(request.PaymentDto.PaymentId);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to create accounting transaction for postdated cheque");
+                        // Decide whether to fail the whole operation or just log
+                    }
                 }
 
 
