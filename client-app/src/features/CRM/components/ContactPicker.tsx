@@ -56,14 +56,21 @@ const ContactPicker: React.FC<ContactPickerProps> = ({
 
     const handleChange = useCallback((_: any, newValue: ContactLov | ContactLov[] | null) => {
         if (multiple) {
-            const selectedContacts = (newValue as ContactLov[] || []).map(c => ({
-                partyId: c.partyId,
-                partyName: c.fullName,
-                email: c.email,
-                phone: c.phone,
-                roleTypeId: 'LEAD_CONTACT'
-            }));
-            onChange(selectedContacts);
+            onChange([])
+            // const selectedContacts = (newValue as ContactLov[] || []).map(c => ({
+            //     partyId: c.partyId,
+            //     partyName: c.fullName,
+            //     email: c.email,
+            //     phone: c.phone,
+            //     roleTypeId: 'LEAD_CONTACT'
+            // }));
+            onChange([{
+                    partyId: (newValue as ContactLov[])[newValue?.length - 1].partyId,
+                    partyName: (newValue as ContactLov[])[newValue?.length - 1].fullName,
+                    email: (newValue as ContactLov[])[newValue?.length - 1].email,
+                    phone: (newValue as ContactLov[])[newValue?.length - 1].phone,
+                    roleTypeId: 'LEAD_CONTACT'
+                }]);
         } else {
             const contact = newValue as ContactLov | null;
             if (contact) {
@@ -96,7 +103,8 @@ const ContactPicker: React.FC<ContactPickerProps> = ({
             options={contacts || []}
             loading={loading}
             disabled={disabled}
-            value={multiple ? selectedValues : (selectedValues[0] || null)}
+            // value={multiple ? selectedValues : ([...selectedValues[0]] || [])}
+            value={selectedValues || []}
             inputValue={inputValue}
             open={open}
             onOpen={() => setOpen(true)}
