@@ -16,6 +16,8 @@ import LeadsBoard from './LeadsBoard';
 import LeadsList from './LeadsList';
 import LeadForm from './LeadForm';
 import { SalesOpportunity } from '../models/salesOpportunity';
+import ImportedDataGrid from './ImportedDataGrid';
+import ExcelUploadDialog from './ExcelUploadDialog';
 
 type ViewMode = 'board' | 'list';
 type EditMode = 'none' | 'create' | 'edit';
@@ -27,6 +29,27 @@ const LeadsDashboard: React.FC = () => {
     const [viewMode, setViewMode] = useState<ViewMode>('board');
     const [editMode, setEditMode] = useState<EditMode>('none');
     const [selectedOpportunity, setSelectedOpportunity] = useState<SalesOpportunity | undefined>();
+    const [uploadOpen, setUploadOpen] = useState(false);
+const [importedData, setImportedData] = useState<any[]>([]);
+const [importedFileName, setImportedFileName] = useState('');
+const [showImportedGrid, setShowImportedGrid] = useState(false);
+
+const handleUploadExcel = () => {
+  setUploadOpen(true);
+};
+
+const handleDataParsed = (data: any[], fileName: string) => {
+  setImportedData(data);
+  setImportedFileName(fileName);
+  setShowImportedGrid(true);
+  setUploadOpen(false);
+};
+
+const handleCloseImported = () => {
+  setShowImportedGrid(false);
+  setImportedData([]);
+  setImportedFileName('');
+};
 
     const handleViewChange = useCallback((_: React.MouseEvent<HTMLElement>, newView: ViewMode | null) => {
         if (newView !== null) {
@@ -107,6 +130,17 @@ const LeadsDashboard: React.FC = () => {
                                 {getTranslatedLabel(`${localizationKey}.createNew`, 'New Opportunity')}
                             </Button>
                         )}
+                        {viewMode === 'board' && (
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                sx={{ gap: 1 }}
+                                onClick={handleUploadExcel}
+                            >
+                                <AddIcon />
+                                {getTranslatedLabel(`${localizationKey}.uploadExcel`, 'Upload Excel')}
+                            </Button>
+                        )}
                     </Box>
                 </Box>
 
@@ -119,14 +153,27 @@ const LeadsDashboard: React.FC = () => {
                         onSuccess={handleFormSuccess}
                     />
                 ) : viewMode === 'board' ? (
-                    <LeadsBoard onEditOpportunity={handleEditOpportunity} />
-                ) : (
+  showImportedGrid ? (
+    <ImportedDataGrid
+      data={importedData}
+      fileName={importedFileName}
+      onClose={handleCloseImported}
+    />
+  ) : (
+    <LeadsBoard onEditOpportunity={handleEditOpportunity} />
+  )
+): (
                     <LeadsList
                         onCreateNew={handleCreateNew}
                         onEditOpportunity={handleEditOpportunity}
                     />
                 )}
             </Paper>
+            <ExcelUploadDialog
+  open={uploadOpen}
+  onClose={() => setUploadOpen(false)}
+  onDataParsed={handleDataParsed}
+/>
         </>
     );
 };

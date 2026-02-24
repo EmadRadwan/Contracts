@@ -1803,6 +1803,7 @@
       "boardView": "لوحة",
       "listView": "قائمة",
       "createNew": "فرصة جديدة",
+      "uploadExcel": "تحميل ملف Excel",
       "list": {
         "loading": "جاري تحميل الفرص...",
         "title": "فرص المبيعات",
