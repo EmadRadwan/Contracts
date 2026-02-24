@@ -23,18 +23,11 @@ public class ListEmployeeAdvancesQuery
         {
             var language = request.Language;
 
-            var statusLookup = await _context.StatusItems
-                .Where(s => s.StatusTypeId == "EMPLOYEE_ADVANCE_STATUS")
-                .ToDictionaryAsync(
-                    s => s.StatusId,
-                    s => language == "ar" 
-                        ? (s.DescriptionArabic ?? s.Description ?? s.StatusId) 
-                        : (s.Description ?? s.StatusId),
-                    ct);
-
             var query = from adv in _context.EmployeeAdvances
                 join party in _context.Parties on adv.PartyId equals party.PartyId into p
                 from party in p.DefaultIfEmpty()
+                join status in _context.StatusItems on adv.StatusId equals status.StatusId into s
+                from status in s.DefaultIfEmpty()
                 select new EmployeeAdvanceRecord
                 {
                     AdvanceId         = adv.AdvanceId,
@@ -42,11 +35,13 @@ public class ListEmployeeAdvancesQuery
                     EmployeeName      = party != null ? party.Description : adv.PartyId,
                     PaymentId         = adv.PaymentId,
                     AdvanceDate       = adv.AdvanceDate,
+                    AdvanceTypeId     = adv.AdvanceTypeId,
+                    AdvanceTypeDescription = adv.AdvanceTypeId == "EMPLOYEE_ADVANCE" ? "سلفة راتب" : "سلفة طويلة الأجل",
                     Amount            = adv.Amount,
                     InstallmentCount  = adv.InstallmentCount,
                     StartDate         = adv.StartDate,
                     StatusId          = adv.StatusId,
-                    StatusDescription = statusLookup.GetValueOrDefault(adv.StatusId, adv.StatusId),
+                    StatusDescription = status != null ? (language == "ar" ? status.DescriptionArabic : status.Description) : adv.StatusId,
                     Description       = adv.Description,
                 };
 

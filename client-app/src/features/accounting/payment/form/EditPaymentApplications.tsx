@@ -11,6 +11,7 @@ import {useFetchNotListedInvoicesQuery} from "../../../../app/store/apis/invoice
 import PaymentApplicationsInvGrid from "./PaymentApplicationsInvGrid";
 import NotAppliedInvoicesGrid from "./NotAppliedInvoicesGrid";
 import AddPaymentApplicationForm from "./AddPaymentApplicationForm";
+import {PaymentApplication} from "../../../../app/models/accounting/paymentApplication";
 
 
 interface EditPaymentApplicationsProps {
@@ -108,7 +109,7 @@ const EditPaymentApplications: React.FC<EditPaymentApplicationsProps> = ({paymen
                 {paymentApplications.length === 0 ? (
                     <MuiGrid item xs={12}>
                         <Typography variant="h6">
-                            {getTranslatedLabel(`${localizationKey}.noApplications`, "No payment applications found.")}
+                            {getTranslatedLabel(`${localizationKey}.paymentNotLinkedToAnyInvoice`, "No payment applications found.")}
                         </Typography>
                     </MuiGrid>
                 ) : (

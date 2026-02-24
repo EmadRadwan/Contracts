@@ -2,7 +2,7 @@ import {createApi, fetchBaseQuery} from "@reduxjs/toolkit/query/react";
 import {store} from "../configureStore";
 import {Party} from "../../models/party/party";
 import {State, toODataString} from "@progress/kendo-data-query";
-import {EmployeeAdvance} from "../../models/humanResources/employeeAdvance";
+import {EmployeeAdvance, EmployeeAdvanceDetail} from "../../models/humanResources/employeeAdvance";
 
 interface ListResponse<T> {
     data: T[];
@@ -19,6 +19,10 @@ const partiesApi = createApi({
             const token = store.getState().account.user?.token;
             if (token) {
                 headers.set("authorization", `Bearer ${token}`);
+            }
+            const lang = store.getState().localization.language ;
+            if (lang) {
+                headers.set("Accept-Language", `${lang}`);
             }
             return headers;
         },
@@ -222,6 +226,9 @@ const partiesApi = createApi({
                 }),
                 invalidatesTags: ['EmployeeAdvance'],
             }),
+            getEmployeeAdvanceDetail: builder.query<EmployeeAdvanceDetail, string>({
+                query: (advanceId) => `humanResources/${advanceId}`,
+            }),
         };
     },
 });
@@ -237,6 +244,7 @@ export const {
     useUpdateEmployeeMutation, useCreateCustomerMutation, useUpdateCustomerMutation,
     useCreateSupplierMutation, useUpdateSupplierMutation, useCreateContractorMutation,
     useUpdateContractorMutation, useGetPartySubLedgerQuery, useFetchEmployeeAdvancesQuery,
-    useCreateEmployeeAdvanceMutation, useUpdateEmployeeAdvanceMutation
+    useCreateEmployeeAdvanceMutation,
+    useUpdateEmployeeAdvanceMutation, useLazyGetEmployeeAdvanceDetailQuery, 
 } = partiesApi;
 export {partiesApi};

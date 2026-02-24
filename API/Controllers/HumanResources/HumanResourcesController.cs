@@ -14,9 +14,9 @@ public class HumanResourcesController : BaseApiController
     }
 
     [HttpPut("updateEmployeeAdvance")]
-    public async Task<IActionResult> UpdateEmployeeAdvance(EmployeeAdvanceRecord advanceDto)
+    public async Task<IActionResult> UpdateEmployeeAdvance(EmployeeAdvanceDto advanceDto)
     {
-        return HandleResult(await Mediator.Send(new UpdateEmployeeAdvance.Command { AdvanceDto = advanceDto, Language = GetLanguage() }));
+        return HandleResults(await Mediator.Send(new UpdateEmployeeAdvance.Command { AdvanceDto = advanceDto, Language = GetLanguage() }));
     }
     
     [HttpGet("{id}")]
@@ -31,6 +31,11 @@ public class HumanResourcesController : BaseApiController
         };
 
         var result = await Mediator.Send(query);
+        
+        if (!result.IsSuccess)
+        {
+            return NotFound(result.ErrorCode);
+        }
 
         return Ok(result.Value);
     }

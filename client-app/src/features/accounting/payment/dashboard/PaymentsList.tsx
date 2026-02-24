@@ -442,7 +442,6 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
       title: getTranslatedLabel(`${localizationKey}.actions`, "Actions"),
       width: 220,
       cell: ActionsCell,
-      locked: true,
     },
   ];
 

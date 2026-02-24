@@ -7,13 +7,16 @@ import {
     GridDataStateChangeEvent
 } from "@progress/kendo-react-grid";
 import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
-import { Grid, Paper, Button } from "@mui/material";
+import { Paper, Button } from "@mui/material";
 import {DataResult, State} from "@progress/kendo-data-query";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
 import { handleDatesArray } from "../../../app/util/utils";
 import {EmployeeAdvance} from "../../../app/models/humanResources/employeeAdvance";
-import {useFetchEmployeeAdvancesQuery} from "../../../app/store/apis";
+import {
+    useFetchEmployeeAdvancesQuery,
+    useLazyGetEmployeeAdvanceDetailQuery
+} from "../../../app/store/apis";
 import EmployeeAdvanceForm from "../form/EmployeeAdvanceForm";
 import EmployeeAdvanceMenu from "../menu/EmployeeAdvanceMenu";
 
@@ -28,7 +31,9 @@ function EmployeeAdvancesList() {
     });
     const { getTranslatedLabel } = useTranslationHelper();
     const { data, isFetching } = useFetchEmployeeAdvancesQuery({...dataState});
-
+    const [triggerGetDetail, { data: detailData, isLoading: isDetailLoading, error: detailError }] =
+        useLazyGetEmployeeAdvanceDetailQuery();
+    
     React.useEffect(() => {
         if (data) {
             const adjustedData = handleDatesArray(data.data);
@@ -41,15 +46,40 @@ function EmployeeAdvancesList() {
         setDataState(e.dataState);
     };
 
-    const startEdit = (adv?: EmployeeAdvance) => {
+    const startEdit = async (adv?: EmployeeAdvance) => {
         if (!adv) {
-            setEditMode(1); // create
+            // Create new advance
+            setEditMode(1);
             setSelectedAdvance(undefined);
-        } else {
-            const isClosed = adv.StatusId === "ADVANCE_PAID" || adv.StatusId === "ADVANCE_CANCELLED";
-            setEditMode(isClosed ? 3 : 2);
-            setSelectedAdvance(adv);
+            setViewMode("form");
+            return;
         }
+
+        // ────────────────────────────────────────────────
+        // Quick check using the lightweight list data
+        // ────────────────────────────────────────────────
+        const isLongTerm = adv.advanceTypeId === "EMPLOYEE_LONG_TERM_ADVANCE";
+
+        let fullDetail = adv; // default to the list item (enough for regular advances)
+
+        if (isLongTerm) {
+            // Only fetch detailed version (with schedules) for long-term advances
+            try {
+                const result = await triggerGetDetail(adv.advanceId).unwrap();
+                fullDetail = result;
+
+                // Optional: toast loading feedback if fetch takes time
+                // if (isDetailLoading) toast.info("Loading deduction plan...");
+            } catch (err) {
+                console.error("Failed to load full advance detail:", err);
+                return; // don't open form if critical data is missing
+            }
+        }
+
+        // Now decide mode based on status
+        const isClosed = fullDetail.statusId === "ADVANCE_PAID" || fullDetail.statusId === "ADVANCE_CANCELLED";
+        setEditMode(isClosed ? 3 : 2);
+        setSelectedAdvance(fullDetail);
         setViewMode("form");
     };
 
@@ -79,6 +109,9 @@ function EmployeeAdvancesList() {
                 onAdvanceCreated={(newAdv) => {
                     setSelectedAdvance(newAdv);
                     setEditMode(2);
+                }}
+                onAdvanceUpdated={(updated) => {
+                    setSelectedAdvance(updated);
                 }}
             />
         );
@@ -124,8 +157,7 @@ function EmployeeAdvancesList() {
                         <Column field="employeeName" title={getTranslatedLabel("party.employeeAdvance.list.employee", "Employee")} width={220} />
                         <Column field="advanceDate" title={getTranslatedLabel("party.employeeAdvance.list.date", "Date")} format="{0:dd/MM/yyyy}" filter="date" width={140} />
                         <Column field="amount" title={getTranslatedLabel("party.employeeAdvance.list.amount", "Amount")} format="{0:n2}" width={130} />
-                        <Column field="installmentCount" title={getTranslatedLabel("party.employeeAdvance.list.installments", "Installments")} width={120} />
-                        <Column field="installmentAmount" title={getTranslatedLabel("party.employeeAdvance.list.monthly", "Monthly")} format="{0:n2}" width={130} />
+                        <Column field="advanceTypeDescription" title={getTranslatedLabel("party.employeeAdvance.list.advanceTypeDescription", "Advance Type")} format="{0:n2}" width={130} />
                         <Column field="statusDescription" title={getTranslatedLabel("party.employeeAdvance.list.status", "Status")} width={160} />
                         <Column field="description" title={getTranslatedLabel("party.employeeAdvance.list.notes", "Notes")} />
                     </KendoGrid>

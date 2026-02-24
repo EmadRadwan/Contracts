@@ -418,12 +418,18 @@ public class PaymentHelperService : IPaymentHelperService
                 var paymentType = await _context.PaymentTypes
                     .FirstOrDefaultAsync(pt => pt.PaymentTypeId == payment.PaymentTypeId);
 
+                bool isEmployeeAdvance = EmployeeAdvancePaymentTypes.Contains(payment.PaymentTypeId);
+                
                 bool isPostDatedCheque = 
                     !string.IsNullOrEmpty(payment.OverrideGlAccountId) &&
                     paymentType?.ParentTypeId == "DISBURSEMENT" &&
                     (!string.IsNullOrEmpty(payment.ChequeNumber) || payment.ChequeDate.HasValue);
 
-                if (isPostDatedCheque)
+                if (isEmployeeAdvance)
+                {
+                    await _generalLedgerService.CreateAccountingTransactionForEmployeeAdvance(payment.PaymentId);
+                }
+                else if (isPostDatedCheque)
                 {
                     // Special accounting: debit POSTDATED CHECKS ISSUED, credit Bank
                     await _generalLedgerService.CreatePostdatedChequeIssuedAccountingTransaction(payment.PaymentId);
@@ -454,6 +460,12 @@ public class PaymentHelperService : IPaymentHelperService
             UpdatedPayment = payment
         };
     }
+    
+    private static readonly HashSet<string> EmployeeAdvancePaymentTypes = new()
+    {
+        "EMPLOYEE_ADVANCE",
+        "EMPLOYEE_LONG_TERM_ADVANCE"
+    };
 
     public async Task CreateMatchingPaymentApplication(string? paymentId, string? invoiceId)
     {

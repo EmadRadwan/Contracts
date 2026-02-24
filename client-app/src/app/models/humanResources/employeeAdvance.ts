@@ -1,7 +1,8 @@
 
 export interface EmployeeAdvance {
     advanceId: string;
-    employeePartyId: string;
+    advanceTypeId: string;
+    partyId: string;
     employeeName: string;           // ← Full employee name from Party.Description
     paymentId?: string | null;
     advanceDate: string;            // ISO string from backend (or Date if you parse it)
@@ -20,4 +21,24 @@ export interface EmployeeAdvance {
 
     // Optional: if you later want to include schedules or more details
     // employeeAdvanceSchedules?: EmployeeAdvanceScheduleRecord[];
+}
+
+// app/models/humanResources/employeeAdvance.ts  (extend existing type)
+
+export interface Schedule {
+    scheduleId: string;
+    installmentNumber: number;
+    dueDate: string;           // ISO date string "2025-04-15"
+    scheduledAmount: number;
+    deductedAmount: number;
+    statusId?: string;
+    payrollInvoiceId?: string;
+    notes?: string;
+}
+
+export interface EmployeeAdvanceDetail extends EmployeeAdvance {
+    // fields already in your form model
+    schedules: Schedule[];
+    // optionally add
+    isCustomPlan?: boolean;   // you can derive from advanceTypeId
 }

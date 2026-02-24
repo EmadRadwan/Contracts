@@ -54,6 +54,7 @@ public interface IGeneralLedgerService
     Task<string> CreateAccountingTransactionForMaintenanceDepositPayment(string paymentId);
     Task<string> CreatePostdatedChequeAccountingTransaction(string paymentId);
     Task<string> CreatePostdatedChequeIssuedAccountingTransaction(string paymentId);
+    Task<string> CreateAccountingTransactionForEmployeeAdvance(string paymentId);
 }
 
 public class GeneralLedgerService : IGeneralLedgerService
@@ -1159,8 +1160,8 @@ public class GeneralLedgerService : IGeneralLedgerService
 
             // Retrieve invoice items excluding taxable items
             var taxableItemTypeIds = new List<string> { "INV_SALES_TAX", "ITM_SALES_TAX" };
-            var invoiceItems = await _utilityService.FindLocalOrDatabaseListAsync<InvoiceItem>(
-                query => query.Where(ii =>
+            var invoiceItems = await _utilityService.FindLocalOrDatabaseListAsync<InvoiceItem>(query =>
+                query.Where(ii =>
                     ii.InvoiceId == invoiceId && !taxableItemTypeIds.Contains(ii.InvoiceItemTypeId)));
 
             var acctgTransEntries = new List<AcctgTransEntry>();
@@ -2089,7 +2090,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             throw new Exception($"Error creating accounting transaction: {ex.Message}", ex);
         }
     }
-    
+
     private async Task<List<string>> GetOrderIdsForInvoiceAsync(string invoiceId)
     {
         // 1. Look in change tracker first (includes Added, Modified, sometimes Unchanged)
@@ -2103,7 +2104,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             )
             .Select(e => e.Entity.OrderId)
             .Distinct()
-            .ToList();   // synchronous – change tracker is in-memory
+            .ToList(); // synchronous – change tracker is in-memory
 
         // 2. If nothing found in tracker → ask database (or always ask and union)
         var dbOrderIds = await _context.OrderItemBillings
@@ -2115,7 +2116,7 @@ public class GeneralLedgerService : IGeneralLedgerService
         // 3. Combine & remove duplicates
         var allOrderIds = trackerOrderIds
             .Concat(dbOrderIds)
-            .Distinct(StringComparer.Ordinal)   // or OrdinalIgnoreCase if needed
+            .Distinct(StringComparer.Ordinal) // or OrdinalIgnoreCase if needed
             .Where(id => !string.IsNullOrEmpty(id))
             .ToList();
 
@@ -2159,8 +2160,8 @@ public class GeneralLedgerService : IGeneralLedgerService
 
             var acctgTransEntries = new List<AcctgTransEntry>();
             int seqNum = 1; // Initialize sequence number for AcctgTransEntrySeqId
-            
-            
+
+
             foreach (var invoiceItem in invoiceItems)
             {
                 decimal amountFromOrder = 0;
@@ -2491,7 +2492,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             string contractorPartyId = invoice.PartyIdFrom;
 
             //var (workEffortId, projectGlAccountId) = await GetProjectInfoViaOrderItemBillingAsync(invoiceId);
-            
+
             var orderIds = await _context.OrderItemBillings
                 .Where(ob => ob.InvoiceId == invoiceId)
                 .Select(ob => ob.OrderId)
@@ -2505,8 +2506,8 @@ public class GeneralLedgerService : IGeneralLedgerService
             {
                 // Prefer the most specific match: SUPPLY_PROCUREMENT_CERTIFICATE + RelatedOrderId
                 workEffort = await _context.WorkEfforts
-                    .Where(w => orderIds.Contains(w.RelatedOrderId!))   // RelatedOrderId is usually string
-                    .OrderByDescending(w => w.LastStatusUpdate)         // most recent if somehow multiple
+                    .Where(w => orderIds.Contains(w.RelatedOrderId!)) // RelatedOrderId is usually string
+                    .OrderByDescending(w => w.LastStatusUpdate) // most recent if somehow multiple
                     .FirstOrDefaultAsync();
 
                 if (workEffort != null)
@@ -3326,18 +3327,18 @@ public class GeneralLedgerService : IGeneralLedgerService
             var organizationPartyId = payment.PartyIdFrom;
             var partyId = payment.PartyIdTo;
             var roleTypeId = "BILL_FROM_VENDOR";
-            
+
             // ── Get WorkEffortId ────────────────────────────────────────────────
             string? workEffortId = null;
 
             workEffortId = await (
                 from pyt in _context.Payments
                 where pyt.PaymentId == paymentId
-                join opp in _context.OrderPaymentPreferences 
+                join opp in _context.OrderPaymentPreferences
                     on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId
-                join ord in _context.OrderHeaders 
+                join ord in _context.OrderHeaders
                     on opp.OrderId equals ord.OrderId
-                join we in _context.WorkEfforts 
+                join we in _context.WorkEfforts
                     on ord.OrderId equals we.RelatedOrderId into weGroup
                 from we in weGroup.DefaultIfEmpty()
                 select we.WorkEffortId
@@ -3561,8 +3562,8 @@ public class GeneralLedgerService : IGeneralLedgerService
         // 3) <entity-condition entity-name="AcctgTransEntry" list="acctgTransEntryList">
         // -------------------------------------------------------------------
 
-        var acctgTransEntryList = await _utilityService.FindLocalOrDatabaseListAsync<AcctgTransEntry>(
-            query => query.Where(cc =>
+        var acctgTransEntryList = await _utilityService.FindLocalOrDatabaseListAsync<AcctgTransEntry>(query =>
+            query.Where(cc =>
                 cc.AcctgTransId == acctgTransId));
 
         // -------------------------------------------------------------------
@@ -5102,7 +5103,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 "An unexpected error occurred while copying the accounting transaction.");
         }
     }
-    
+
     private async Task<string> GetCustomerReceivableGlAccountId(
         string organizationPartyId,
         string customerPartyId,
@@ -5116,7 +5117,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 pga.GlAccountTypeId == "ACCOUNTS_RECEIVABLE")
             .Select(pga => pga.GlAccountId)
             .FirstOrDefaultAsync(cancellationToken);
-    
+
         return partyGlAccount ?? "121100";
     }
 
@@ -5165,7 +5166,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 paymentType = "Cash";
                 paymentTypeDescription = "Cash";
             }
-            
+
             // Determine credit GL account
             string creditGlAccountId;
 
@@ -5179,8 +5180,8 @@ public class GeneralLedgerService : IGeneralLedgerService
                 // For normal receivable → try party-specific → fallback to default
                 creditGlAccountId = await GetCustomerReceivableGlAccountId(
                     organizationPartyId: companyPartyId,
-                    customerPartyId:     payment.PartyIdFrom,
-                    cancellationToken:   default);
+                    customerPartyId: payment.PartyIdFrom,
+                    cancellationToken: default);
             }
 
             // Main transaction description
@@ -5209,8 +5210,8 @@ public class GeneralLedgerService : IGeneralLedgerService
             string debitDescription = paymentType switch
             {
                 "BankTransfer" => $"Bank transfer received from customer {chequeOrTransferRef}",
-                "Cheque"       => $"Bank deposit - Cleared cheque {chequeOrTransferRef}",
-                _              => "Cash receipt from customer"
+                "Cheque" => $"Bank deposit - Cleared cheque {chequeOrTransferRef}",
+                _ => "Cash receipt from customer"
             };
 
             var debitEntry = new AcctgTransEntry
@@ -5238,8 +5239,8 @@ public class GeneralLedgerService : IGeneralLedgerService
                 ? paymentType switch
                 {
                     "BankTransfer" => $"Bank transfer applied - reducing cheques under collection",
-                    "Cheque"       => $"Clearing cheques under collection {chequeOrTransferRef}",
-                    _              => $"Cash payment applied - reducing cheques under collection"
+                    "Cheque" => $"Clearing cheques under collection {chequeOrTransferRef}",
+                    _ => $"Cash payment applied - reducing cheques under collection"
                 }
                 : $"Receipt against customer receivable {chequeOrTransferRef}";
 
@@ -5276,7 +5277,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             throw;
         }
     }
-    
+
     public async Task<string> CreateAccountingTransactionForMaintenanceDepositPayment(string paymentId)
     {
         try
@@ -5285,7 +5286,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 .Include(p => p.PaymentMethod)
                 .Include(p => p.SalesRequest)
                 .FirstOrDefaultAsync(p => p.PaymentId == paymentId);
-            
+
             var product = await _context.Products
                 .FirstOrDefaultAsync(p => p.ProductId == payment.SalesRequest.ProductId);
 
@@ -5359,7 +5360,8 @@ public class GeneralLedgerService : IGeneralLedgerService
                 AcctgTransEntryTypeId = "_NA_",
                 Amount = payment.Amount,
                 ReconcileStatusId = "AES_NOT_RECONCILED",
-                Description = $"Maintenance deposit received - {paymentTypeDescription} {chequeOrTransferRef} - SR {payment.SalesRequestId}  - {product.ProductId}",
+                Description =
+                    $"Maintenance deposit received - {paymentTypeDescription} {chequeOrTransferRef} - SR {payment.SalesRequestId}  - {product.ProductId}",
                 OrganizationPartyId = companyPartyId,
                 ProductId = payment.SalesRequest.ProductId,
                 PartyId = payment.PartyIdFrom,
@@ -5451,13 +5453,13 @@ public class GeneralLedgerService : IGeneralLedgerService
             }
 
             var stamp = DateTime.UtcNow;
-            
+
             var chequeInfo = !string.IsNullOrEmpty(payment.ChequeNumber)
                 ? $"Cheque #{payment.ChequeNumber}"
                 : $"dated {payment.ChequeDate?.ToString("yyyy-MM-dd")}";
 
 
-            var description = 
+            var description =
                 $"Postdated cheque issuance - {chequeInfo} - " +
                 $"- Payment {payment.PaymentId} - {payment.Amount:N2}";
 
@@ -5585,7 +5587,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             var acctgTransParams = new CreateAcctgTransParams
             {
                 AcctgTransTypeId = "OUTGOING_PAYMENT", // ← use a specific type if your system has it
-                TransactionDate =  DateTime.UtcNow.Date,
+                TransactionDate = DateTime.UtcNow.Date,
                 IsPosted = "Y",
                 Description = description,
                 GlFiscalTypeId = "ACTUAL",
@@ -5614,10 +5616,10 @@ public class GeneralLedgerService : IGeneralLedgerService
                 LastUpdatedStamp = stamp
             };
             await _acctgTransService.CreateAcctgTransEntry(debitEntry);
-            
+
             // get payment method
             var bankGlAccountId = payment.PaymentMethod?.GlAccountId
-                                   ?? throw new Exception("Payment method GL account is not configured");
+                                  ?? throw new Exception("Payment method GL account is not configured");
 
             // 5. Credit entry – Postdated Checks Issued (liability account)
             var creditEntry = new AcctgTransEntry
@@ -5652,5 +5654,108 @@ public class GeneralLedgerService : IGeneralLedgerService
 
             throw; // or return Result<string>.Failure(...) depending on your error handling pattern
         }
+    }
+
+    public async Task<string> CreateAccountingTransactionForEmployeeAdvance(string paymentId)
+    {
+        var payment = await _context.Payments
+            .Include(p => p.PaymentMethod)
+            .FirstOrDefaultAsync(p => p.PaymentId == paymentId);
+
+        if (payment == null)
+            throw new Exception($"Payment {paymentId} not found");
+
+        if (payment.PartyIdTo == null)
+            throw new Exception("Employee (PartyTo) not found on payment");
+
+        var now = DateTime.UtcNow;
+        var effectiveDate = payment.EffectiveDate ?? now;
+
+        string employeePartyId = payment.PartyIdTo;
+        string companyPartyId = payment.PartyIdFrom;
+
+        // ───────────────────────────────────────────────
+        // Get the employee-specific Accrued Expenses GL (liability)
+        // ───────────────────────────────────────────────
+        var employeeAccruedGl = await _context.PartyGlAccounts
+            .Where(pga =>
+                pga.OrganizationPartyId == companyPartyId &&
+                pga.PartyId == employeePartyId &&
+                pga.RoleTypeId == "EMPLOYEE" &&
+                pga.GlAccountTypeId == "ACCOUNTS_PAYABLE")
+            .Select(pga => pga.GlAccountId)
+            .FirstOrDefaultAsync();
+
+        if (string.IsNullOrEmpty(employeeAccruedGl))
+        {
+            throw new Exception(
+                $"No employee-specific accrued expenses GL account found for employee {employeePartyId}");
+        }
+
+        // Usually the bank/cash GL comes from payment method
+        string debitGlAccountId = payment.PaymentMethod?.GlAccountId
+                                  ?? throw new Exception("No GL account configured on payment method");
+
+        string descriptionSuffix = payment.PaymentType?.Description ?? payment.PaymentTypeId;
+        var transDescription = payment.Comments;
+
+        var transParams = new CreateAcctgTransParams
+        {
+            AcctgTransTypeId = "DISBURSEMENT", // or "EMPLOYEE_ADVANCE" if you have custom type
+            TransactionDate = effectiveDate,
+            IsPosted = "Y",
+            Description = transDescription,
+            GlFiscalTypeId = "ACTUAL",
+            PaymentId = paymentId,
+            PartyId = employeePartyId
+        };
+
+        string acctgTransId = await _acctgTransService.CreateAcctgTrans(transParams);
+
+        int seq = 0;
+
+        // ───────────────────────────────────────────────
+        // Debit: Accrued salaries / Employee payable (liability decreases)
+        // ───────────────────────────────────────────────
+        var debitEntry = new AcctgTransEntry
+        {
+            AcctgTransId = acctgTransId,
+            AcctgTransEntrySeqId = (++seq).ToString("D3"),
+            GlAccountId = employeeAccruedGl,
+            DebitCreditFlag = "D",
+            Amount = payment.Amount,
+            Description = transDescription,
+            OrganizationPartyId = companyPartyId,
+            PartyId = employeePartyId,
+            ReconcileStatusId = "AES_NOT_RECONCILED",
+            CreatedStamp = now,
+            LastUpdatedStamp = now
+        };
+        await _acctgTransService.CreateAcctgTransEntry(debitEntry);
+
+        // ───────────────────────────────────────────────
+        // Credit: Bank / Cash (asset decreases)
+        // ───────────────────────────────────────────────
+        var creditEntry = new AcctgTransEntry
+        {
+            AcctgTransId = acctgTransId,
+            AcctgTransEntrySeqId = (++seq).ToString("D3"),
+            GlAccountId = debitGlAccountId, // bank or cash
+            DebitCreditFlag = "C",
+            Amount = payment.Amount,
+            Description = transDescription,
+            OrganizationPartyId = companyPartyId,
+            PartyId = employeePartyId,
+            ReconcileStatusId = "AES_NOT_RECONCILED",
+            CreatedStamp = now,
+            LastUpdatedStamp = now
+        };
+        await _acctgTransService.CreateAcctgTransEntry(creditEntry);
+
+        _logger.LogInformation(
+            "Created employee advance accounting trans {TransId} for payment {PaymentId} → Debit GL {AccruedGl} / Credit GL {BankGl}",
+            acctgTransId, paymentId, employeeAccruedGl, debitGlAccountId);
+
+        return acctgTransId;
     }
 }

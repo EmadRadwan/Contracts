@@ -204,7 +204,7 @@ public class InvoiceService : IInvoiceService
             })
             .ToListAsync();
 
-        context.Invoices = await GetInvoices(invoices, false, payment);
+        context.Invoices = await GetInvoices(invoices, true, payment);
 
         if (payment.CurrencyUomId == payment.ActualCurrencyUomId) return context;
 

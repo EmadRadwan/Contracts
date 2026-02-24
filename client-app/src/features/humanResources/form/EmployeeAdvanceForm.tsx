@@ -1,6 +1,6 @@
-import React, {useMemo, useRef, useState} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import { Form, FormElement, FormRenderProps, Field } from "@progress/kendo-react-form";
-import { Paper, Grid, Button, Typography, Box } from "@mui/material";
+import {Paper, Grid, Button, Typography, Box, Alert} from "@mui/material";
 import { toast } from "react-toastify";
 
 
@@ -8,7 +8,7 @@ import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import FormNumericTextBox from "../../../app/common/form/FormNumericTextBox";
 import FormDatePicker from "../../../app/common/form/FormDatePicker";
 import { requiredValidator } from "../../../app/common/form/Validators";
-import {EmployeeAdvance} from "../../../app/models/humanResources/employeeAdvance";
+import {EmployeeAdvance, Schedule} from "../../../app/models/humanResources/employeeAdvance";
 import EmployeeAdvanceMenu from "../menu/EmployeeAdvanceMenu";
 import FormInput from "../../../app/common/form/FormInput";
 import {useCreateEmployeeAdvanceMutation, useUpdateEmployeeAdvanceMutation} from "../../../app/store/apis";
@@ -20,9 +20,14 @@ import DeductionPlanModal from "./DeductionPlanModal";
 // -----------------------------------------------------------------
 // Props
 // -----------------------------------------------------------------
+interface DeductionSchedule {
+    dueDate: string;      // YYYY-MM-DD
+    scheduledAmount: number;
+}
+
 interface Props {
-    advance?: EmployeeAdvance;
-    editMode: number; // 1 = create, 2 = edit, 3 = read-only (paid/cancelled)
+    advance?: EmployeeAdvance & { schedules?: Schedule[] }; // union with detail shape
+    editMode: number; // 1=create, 2=edit, 3=read-only
     cancelEdit: () => void;
     onAdvanceCreated?: (created: EmployeeAdvance) => void;
     onAdvanceUpdated?: (updated: EmployeeAdvance) => void;
@@ -41,17 +46,33 @@ function EmployeeAdvanceForm({
     const [createAdvance, { isLoading: isCreating }] = useCreateEmployeeAdvanceMutation();
     const [updateAdvance, { isLoading: isUpdating }] = useUpdateEmployeeAdvanceMutation();
     const [showDeductionPlan, setShowDeductionPlan] = useState(false);
-    const [customSchedules, setCustomSchedules] = useState<
-        Array<{ dueDate: string; scheduledAmount: number }>
-    >([]);
+    const [customSchedules, setCustomSchedules] = useState<DeductionSchedule[]>([]);
+
     const { getTranslatedLabel } = useTranslationHelper();
     const formRef = useRef<FormRenderProps | null>(null);
 
     const isReadOnly = editMode === 3;
     const isCreate = editMode === 1;
+    const isEdit = editMode === 2;
     
     const employeeAdvanceTypes = [{advanceTypeId: "EMPLOYEE_ADVANCE", description: "سلفة راتب"}, {advanceTypeId: "EMPLOYEE_LONG_TERM_ADVANCE", description: "سلفة طويلة الأجل "}]
 
+
+    // -----------------------------------------------------------------
+    // Initialize customSchedules from queried data (only on mount/edit)
+    // -----------------------------------------------------------------
+    useEffect(() => {
+        if (!isCreate && advance?.advanceTypeId === "EMPLOYEE_LONG_TERM_ADVANCE" && advance?.schedules?.length) {
+            // Load existing schedules from detail query
+            const loadedSchedules = advance.schedules.map((s) => ({
+                dueDate: s.dueDate.split("T")[0], // ensure YYYY-MM-DD
+                scheduledAmount: Number(s.scheduledAmount),
+            }));
+
+            setCustomSchedules(loadedSchedules);
+        }
+    }, [advance, isCreate]);
+    
     // -----------------------------------------------------------------
     // Initial Values
     // -----------------------------------------------------------------
@@ -64,6 +85,7 @@ function EmployeeAdvanceForm({
                 installmentCount: null,
                 startDate: null,
                 statusId: "ADVANCE_ACTIVE",
+                advanceTypeId: "EMPLOYEE_ADVANCE",
                 description: "",
             };
         }
@@ -77,7 +99,9 @@ function EmployeeAdvanceForm({
             installmentCount: advance?.installmentCount ?? null,
             startDate: advance?.startDate ? new Date(advance.startDate) : null,
             statusId: advance?.statusId ?? "ADVANCE_ACTIVE",
+            advanceTypeId: advance?.advanceTypeId ?? "EMPLOYEE_ADVANCE",
             description: advance?.description ?? "",
+            partyId: {"fromPartyId": advance?.partyId, "fromPartyName": advance?.employeeName},
         };
     }, [advance, isCreate]);
 
@@ -89,35 +113,26 @@ function EmployeeAdvanceForm({
             const currentAdvanceType = formRef.current?.valueGetter("advanceTypeId");
             const isLongTerm = currentAdvanceType === "EMPLOYEE_LONG_TERM_ADVANCE";
 
-            // Basic client-side checks (beyond validators)
+            // Client-side validation
             if (!values.amount || values.amount <= 0) {
                 toast.error(getTranslatedLabel("party.employeeAdvance.form.amountRequired", "Amount must be greater than zero."));
                 return;
             }
-            if (values.installmentCount > 0 && !values.startDate) {
+
+            if (!isLongTerm && values.installmentCount > 0 && !values.startDate) {
                 toast.error(getTranslatedLabel("party.employeeAdvance.form.startDateRequired", "Start date is required when installments > 0."));
                 return;
             }
 
             if (isLongTerm) {
                 if (customSchedules.length === 0) {
-                    toast.error(
-                        getTranslatedLabel(
-                            "party.employeeAdvance.form.deductionPlanRequired",
-                            "Long-term advance requires a deduction plan. Please create one."
-                        )
-                    );
+                    toast.error(getTranslatedLabel("party.employeeAdvance.form.deductionPlanRequired", "Long-term advance requires a deduction plan."));
                     return;
                 }
 
                 const scheduledTotal = customSchedules.reduce((sum, s) => sum + s.scheduledAmount, 0);
                 if (Math.abs(scheduledTotal - Number(values.amount)) > 0.01) {
-                    toast.error(
-                        getTranslatedLabel(
-                            "party.employeeAdvance.form.planMismatch",
-                            "The total of the deduction plan does not match the advance amount."
-                        )
-                    );
+                    toast.error(getTranslatedLabel("party.employeeAdvance.form.planMismatch", "Deduction plan total does not match advance amount."));
                     return;
                 }
             }
@@ -127,9 +142,7 @@ function EmployeeAdvanceForm({
                 amount: Number(values.amount) || null,
                 partyId: values.partyId?.fromPartyId,
                 installmentCount: isLongTerm ? customSchedules.length : values.installmentCount,
-                // You can decide whether to send these or null them when custom plan exists
                 startDate: isLongTerm ? null : values.startDate ? new Date(values.startDate).toISOString() : null,
-
                 ...(isLongTerm && customSchedules.length > 0 && {
                     customDeductionSchedules: customSchedules,
                 }),
@@ -188,27 +201,27 @@ function EmployeeAdvanceForm({
                     render={(formRenderProps: FormRenderProps) => {
                         formRef.current = formRenderProps;
 
-                        const { valid, modified , valueGetter} = formRenderProps;
+                        const { valid, modified, valueGetter } = formRenderProps;
                         const isSubmitting = isCreating || isUpdating;
                         const advanceTypeId = valueGetter("advanceTypeId");
                         const isLongTermAdvance = advanceTypeId === "EMPLOYEE_LONG_TERM_ADVANCE";
                         const totalAmount = Number(valueGetter("amount") || 0);
                         const canOpenPlan = isLongTermAdvance && totalAmount > 0;
 
-                        // Fields should be disabled in read-only mode OR when submitting OR when NOT long-term
+                        const hasExistingPlan = !isCreate && advance?.schedules?.length > 0;
                         const isInstallmentDisabled = !isLongTermAdvance || isReadOnly || isSubmitting;
 
                         return (
                             <FormElement>
                                 <fieldset disabled={isReadOnly || isSubmitting}>
                                     <Grid container spacing={2}>
-                                        {/* Row 1 */}
-                                        <Grid item  xs={12} sm={6} md={4}>
+                                        {/* Employee, Type, Date, Amount */}
+                                        <Grid item xs={12} sm={6} md={4}>
                                             <Field
                                                 id="partyId"
                                                 name="partyId"
                                                 component={FormComboBoxVirtualPartyEmployee}
-                                                label={getTranslatedLabel("salesRequest.form.employee", "Employee")}
+                                                label={getTranslatedLabel("party.employeeAdvance.form.employee", "Employee")}
                                                 valueField="fromPartyId"
                                                 textField="fromPartyName"
                                                 validator={requiredValidator}
@@ -218,10 +231,7 @@ function EmployeeAdvanceForm({
                                             <Field
                                                 id="advanceTypeId"
                                                 name="advanceTypeId"
-                                                label={getTranslatedLabel(
-                                                    "party.employeeAdvance.form.advanceType",
-                                                    "Advance Type *"
-                                                )}
+                                                label={getTranslatedLabel("party.employeeAdvance.form.advanceType", "Advance Type *")}
                                                 component={MemoizedFormComboBox2}
                                                 dataItemKey="advanceTypeId"
                                                 textField="description"
@@ -237,7 +247,6 @@ function EmployeeAdvanceForm({
                                                 validator={requiredValidator}
                                             />
                                         </Grid>
-
                                         <Grid item xs={12} sm={6} md={4}>
                                             <Field
                                                 name="amount"
@@ -248,7 +257,7 @@ function EmployeeAdvanceForm({
                                             />
                                         </Grid>
 
-                                        {/* Row 2 */}
+                                        {/* Installments & Start Date (disabled for long-term) */}
                                         <Grid item xs={12} sm={6} md={4}>
                                             <Field
                                                 name="installmentCount"
@@ -259,7 +268,6 @@ function EmployeeAdvanceForm({
                                                 disabled={isInstallmentDisabled}
                                             />
                                         </Grid>
-
                                         <Grid item xs={12} sm={6} md={4}>
                                             <Field
                                                 name="startDate"
@@ -269,7 +277,7 @@ function EmployeeAdvanceForm({
                                             />
                                         </Grid>
 
-                                        {/* Row 3 – Notes */}
+                                        {/* Description */}
                                         <Grid item xs={12}>
                                             <Field
                                                 name="description"
@@ -280,34 +288,49 @@ function EmployeeAdvanceForm({
                                             />
                                         </Grid>
 
+                                        {/* Long-term deduction plan section */}
                                         {isLongTermAdvance && (
                                             <Grid item xs={12} sx={{ mt: 2 }}>
-                                                <Box display="flex" alignItems="center" gap={2}>
+                                                <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
                                                     <Typography variant="subtitle1">
                                                         {customSchedules.length > 0
                                                             ? `Custom deduction plan (${customSchedules.length} installments)`
                                                             : "No deduction plan defined yet"}
                                                     </Typography>
 
-                                                    <Button
-                                                        variant="outlined"
-                                                        size="small"
-                                                        onClick={() => setShowDeductionPlan(true)}
-                                                        disabled={!canOpenPlan}
-                                                    >
-                                                        {customSchedules.length > 0 ? "Edit Plan" : "Create Deduction Plan"}
-                                                    </Button>
+                                                    {!isReadOnly && (
+                                                        <Button
+                                                            variant="outlined"
+                                                            size="small"
+                                                            onClick={() => setShowDeductionPlan(true)}
+                                                            disabled={!canOpenPlan}
+                                                        >
+                                                            {customSchedules.length > 0 ? "Edit Plan" : "Create Deduction Plan"}
+                                                        </Button>
+                                                    )}
                                                 </Box>
 
                                                 {customSchedules.length > 0 && (
-                                                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
-                                                        Total scheduled: {customSchedules.reduce((s, r) => s + r.scheduledAmount, 0).toLocaleString()} EGP
-                                                    </Typography>
+                                                    <>
+                                                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+                                                            Total scheduled:{" "}
+                                                            {customSchedules
+                                                                .reduce((s, r) => s + r.scheduledAmount, 0)
+                                                                .toLocaleString(undefined, { minimumFractionDigits: 2 })}{" "}
+                                                            EGP
+                                                        </Typography>
+
+                                                        {hasExistingPlan && isEdit && (
+                                                            <Alert severity="info" sx={{ mt: 1 }}>
+                                                                This advance has an existing deduction plan loaded from the server.
+                                                            </Alert>
+                                                        )}
+                                                    </>
                                                 )}
                                             </Grid>
                                         )}
 
-                                        {/* Status – can be combo later if more statuses */}
+                                        {/* Status display */}
                                         <Grid item xs={12} sm={6}>
                                             <Typography variant="caption" color="text.secondary">
                                                 {getTranslatedLabel("party.employeeAdvance.form.status", "Status")}:{" "}
@@ -341,6 +364,8 @@ function EmployeeAdvanceForm({
                                         </Button>
                                     )}
                                 </Box>
+
+                                {/* Deduction Plan Modal */}
                                 {showDeductionPlan && (
                                     <ModalContainer show={showDeductionPlan} onClose={() => setShowDeductionPlan(false)} width={950}>
                                         <DeductionPlanModal
@@ -352,24 +377,26 @@ function EmployeeAdvanceForm({
                                                 dueDate: s.dueDate,
                                                 scheduledAmount: s.scheduledAmount,
                                             }))}
-                                            initialInstallmentCount={Number(valueGetter("installmentCount")) || 12}
-                                            initialStartDate={valueGetter("startDate")}
+                                            initialInstallmentCount={customSchedules.length || Number(valueGetter("installmentCount")) || 12}
+                                            initialStartDate={
+                                                customSchedules.length > 0
+                                                    ? new Date(customSchedules[0].dueDate)
+                                                    : valueGetter("startDate")
+                                            }
                                             onApply={(schedules) => {
                                                 setCustomSchedules(schedules);
                                                 setShowDeductionPlan(false);
                                                 toast.success(getTranslatedLabel("employeeAdvance.deductionPlan.applied", "Deduction plan applied"));
 
-                                                // Optional: sync back to main form fields
+                                                // Sync form fields
                                                 if (formRef.current) {
                                                     formRef.current.onChange("installmentCount", { value: schedules.length });
                                                     if (schedules.length > 0) {
-                                                        formRef.current.onChange("startDate", {
-                                                            value: new Date(schedules[0].dueDate),
-                                                        });
+                                                        formRef.current.onChange("startDate", { value: new Date(schedules[0].dueDate) });
                                                     }
                                                 }
                                             }}
-                                            isPreview={customSchedules.length > 0}
+                                            isPreview={isReadOnly || customSchedules.length > 0}
                                         />
                                     </ModalContainer>
                                 )}
@@ -377,7 +404,6 @@ function EmployeeAdvanceForm({
                         );
                     }}
                 />
-                
             </Paper>
         </>
     );

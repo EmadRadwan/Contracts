@@ -8,6 +8,7 @@ public class EmployeeAdvanceRecord
     public string PartyId { get; set; } = null!;
     public string? EmployeeName { get; set; } // ← Full name
     public string? AdvanceTypeId { get; set; }
+    public string? AdvanceTypeDescription { get; set; }
     public string? PaymentId { get; set; }
     public DateTime AdvanceDate { get; set; }
     public decimal? Amount { get; set; }
