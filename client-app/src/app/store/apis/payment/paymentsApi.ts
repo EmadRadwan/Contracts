@@ -293,6 +293,18 @@ const paymentsApi = createApi({
                 // Invalidate the payments list so the grid refreshes automatically
                 invalidatesTags: ['Payments'],
             }),
+            resetPayment: builder.mutation<{ message: string }, string>({
+                query: (paymentId) => ({
+                    url: `/payments/reset/${paymentId}`,
+                    method: "POST",
+                }),
+                invalidatesTags: (result, error, paymentId) => [
+                    { type: "Payments", id: paymentId },
+                    "Payments",           // list
+                    "PaymentApplications",
+                    "AccountingTransactions",
+                ],
+            }),
         };
     },
 });
@@ -320,6 +332,7 @@ export const {
     useFetchPaymentsWithDueStatusQuery,
     useLazyGetPaymentReportPdfQuery,
     useLazyFetchPaymentsByDateRangeQuery,
-    useDeletePaymentMutation, useDuplicatePaymentMutation,
+    useDeletePaymentMutation,
+    useDuplicatePaymentMutation, useResetPaymentMutation,
 } = paymentsApi;
 export {paymentsApi};

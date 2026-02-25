@@ -2,7 +2,7 @@ import {useEffect, useMemo, useRef, useState} from "react";
 import { toast } from "react-toastify";
 import { Payment } from "../../../../app/models/accounting/payment";
 import {
-  useCreatePaymentAndFinAccountTransMutation, useDuplicatePaymentMutation,
+  useCreatePaymentAndFinAccountTransMutation, useDuplicatePaymentMutation, useResetPaymentMutation,
   useSetPaymentStatusToReceivedMutation,
   useUpdatePaymentMutation,
 } from "../../../../app/store/apis";
@@ -12,6 +12,7 @@ import {
   setFormEditMode,
 } from "../slice/paymentsUiSlice";
 import {setSelectedPayment} from "../../slice/accountingSharedUiSlice";
+import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
 
 interface Company {
   organizationPartyId: string;
@@ -94,8 +95,10 @@ export default function usePayment({
   const [setPaymentStatus, { isLoading: isStatusLoading }] =
       useSetPaymentStatusToReceivedMutation();
   const [duplicatePayment, { isLoading: isDuplicating }] = useDuplicatePaymentMutation();
-
-  const isLoading = isCreateLoading || isUpdateLoading || isStatusLoading || isDuplicating;
+  const [resetPayment, { isLoading: isResetting }] = useResetPaymentMutation();
+  const {getTranslatedLabel} = useTranslationHelper();
+  const localizationKey = "accounting.payments.form";
+  const isLoading = isCreateLoading || isUpdateLoading || isStatusLoading || isDuplicating || isResetting;
 
   
   const defaultNewPayment = useMemo(() => ({
@@ -166,7 +169,56 @@ export default function usePayment({
     setIsLoading(false);
   };
 
-  
+  const handleReset = async () => {
+    if (!payment?.paymentId) {
+      toast.error(getTranslatedLabel("accounting.payments.noPayment", "No payment selected"));
+      return;
+    }
+
+    // Optional: extra safety check (you can also do it in backend)
+    if (!["PMNT_NOT_PAID", "PMNT_RECEIVED", "PMNT_SENT"].includes(payment.statusId ?? "")) {
+      toast.warning(
+          getTranslatedLabel(
+              "accounting.payments.resetNotAllowed",
+              "Reset is only allowed for payments in Received/Sent/Not Paid status"
+          )
+      );
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const response = await resetPayment(payment.paymentId).unwrap();
+
+      // Update local state & redux
+      const resetedPayment = {
+        ...payment,
+        statusId: PAYMENT_STATUSES.NOT_PAID,
+        statusDescription: "Not Paid",
+        // Optionally clear some fields if your backend returns them reset
+      };
+
+      finalizePayment(resetedPayment, PAYMENT_STATUSES.NOT_PAID);
+
+      toast.success(
+          getTranslatedLabel("accounting.payments.form.reset.resetSuccess", "تم إعادة تعيين الدفعة بنجاح")
+      );
+
+    } catch (err: any) {
+      const msg =
+          err?.data?.title ||
+          err?.data?.message ||
+          getTranslatedLabel("accounting.payments.resetFailed", "Failed to reset payment");
+      toast.error(
+          getTranslatedLabel("accounting.payments.form.reset.resetFailed", "فشل إعادة تعيين الدفعة")
+      );
+      console.error("[Reset Payment]", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
   const createPayment = async (
       newPayment: Payment
   ) => {
@@ -361,6 +413,6 @@ const handleCreate = async (data: {
     handleCreate, handleDuplicate,
     handleUpdate,
     handleStatusChange,
-    isLoading
+    isLoading, handleReset,
   };
 }

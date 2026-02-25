@@ -121,6 +121,34 @@
     "menu": {
       "salesRequests": "طلبات المبيعات",
       "reserveRequests": "استمارات الحجز"
+    },
+    "paymentPlan": {
+      "title": "جدول السداد",
+      "dueDate": "تاريخ الاستحقاق",
+      "amount": "المبلغ",
+      "splitAdvance": "تقسيم المقدم:",
+      "rounding": "التقريب:",
+      "nearest100": "لأقرب 100",
+      "nearest1000": "لأقرب 1000",
+      "setInstallmentValue": "تحديد قيمة القسط",
+      "actions": "الإجراءات",
+      "advanceTotal": "إجمالي المقدم:",
+      "installmentsTotal": "إجمالي الأقساط:",
+      "grandTotal": "الإجمالي الكلي:",
+      "mismatchWarning": "يجب أن يتساوى الإجمالي الكلي مع إجمالي سعر الشقة ({totalPrice}). يرجى التعديل لتتمكن من التطبيق.",
+      "cancel": "إلغاء",
+      "applyToForm": "تطبيق على النموذج",
+      "editInstallment": "تعديل القسط",
+      "mustBeGreaterThanZero": "يجب أن يكون أكبر من 0",
+      "save": "حفظ",
+      "installmentAmount": "قيمة القسط",
+      "roundingHelper": "سيتم التقريب لأقرب {roundingMode}",
+      "apply": "تطبيق",
+      "previewAlert": "معاينة - سيتم حفظ التغييرات عند الإرسال",
+      "dueDateRequired": "تاريخ الاستحقاق مطلوب",
+      "amountGreaterThanZero": "يجب أن يكون المبلغ أكبر من 0",
+      "edit": "تعديل",
+      "delete": "حذف"
     }
   },
   "reserveRequest": {
@@ -1191,7 +1219,15 @@
           "confirm": "تغيير الحالة إلى مؤكدة",
           "transactions": "القيود المحاسبية",
           "duplicate": "تكرار الدفعة",
-          "applications": "تطبيقات الدفع"
+          "applications": "تطبيقات الدفع",
+          "reset": "إعادة تعيين الدفعة"
+        },
+        "reset": {                                  
+          "dialogTitle": "تأكيد إعادة تعيين الدفعة",
+          "dialogMessage": "هل أنت متأكد من إعادة تعيين الدفعة رقم {paymentId}؟\n\nسيؤدي ذلك إلى:\n• إرجاع الحالة إلى \"غير مدفوع\"\n• حذف جميع تطبيقات الدفعة\n• حذف الحركات المحاسبية المرتبطة\n\nهذا الإجراء لا يمكن التراجع عنه.",
+          "resetConfirm": "إعادة تعيين الدفعة",
+          "resetSuccess": "تم إعادة تعيين الدفعة بنجاح",
+          "resetFailed": "فشل إعادة تعيين الدفعة"
         },
         "statuses": {
           "new": "جديد",

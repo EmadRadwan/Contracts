@@ -96,7 +96,11 @@ public class GetGlAccountTransactionDetails
                         Description = act.Description,
                         CurrencyUomId = ate.CurrencyUomId,
                         CertificateNumber = we != null ? we.CertificateNumber : null,
-                        ProjectName = project != null ? project.ProjectName : null // ← or .Description, .Name, etc.
+                        ProjectName = we != null
+                            ? (we.WorkEffortTypeId == "PROJECT" 
+                                ? (we.ProjectName ?? we.Description ?? we.WorkEffortName)
+                                : (project != null ? (project.ProjectName ?? project.Description ?? project.WorkEffortName) : null))
+                            : null,
                     };
 
                 // 4. Filter transactions for display (respect IncludePrePeriodTransactions)

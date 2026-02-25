@@ -65,7 +65,8 @@ public class ApproveSalesRequest
             {
                 // 1. Load SalesRequest with required data
                 var sr = await _context.SalesRequests
-                    .Include(s => s.Installments) // Critical: Load custom installments
+                    .Include(s => s.Installments)
+                    .Include(s => s.Product)
                     .FirstOrDefaultAsync(x => x.SalesRequestId == salesRequestId, ct);
 
                 if (sr == null)
@@ -196,7 +197,8 @@ public class ApproveSalesRequest
                     Description = $"Apartment Sale - SR {sr.SalesRequestId} - {apartment.ApartmentName}",
                     GlFiscalTypeId = "ACTUAL",
                     SalesRequestId = sr.SalesRequestId,
-                    PartyId = sr.FromPartyId
+                    PartyId = sr.FromPartyId,
+                    WorkEffortId = sr.Product.ProjectId
                 };
 
                 var acctgTransId = await _acctgTransService.CreateAcctgTrans(acctgTransParams);
@@ -252,7 +254,8 @@ public class ApproveSalesRequest
                         Description = $"Apartment Sale - SR {sr.SalesRequestId} - {apartment.ApartmentName}",
                         GlFiscalTypeId = "ACTUAL",
                         SalesRequestId = sr.SalesRequestId,
-                        PartyId = sr.FromPartyId
+                        PartyId = sr.FromPartyId,
+                        WorkEffortId = sr.Product.ProjectId
                     };
 
                     acctgTransId = await _acctgTransService.CreateAcctgTrans(acctgTransParams);
@@ -309,7 +312,8 @@ public class ApproveSalesRequest
                             Description = $"Maintenance Deposit - SR {sr.SalesRequestId} - {apartment.ApartmentName}",
                             GlFiscalTypeId = "ACTUAL",
                             SalesRequestId = sr.SalesRequestId,
-                            PartyId = sr.FromPartyId
+                            PartyId = sr.FromPartyId,
+                            WorkEffortId = sr.Product.ProjectId
                         };
 
                         var maintenanceAcctgTransId = await _acctgTransService.CreateAcctgTrans(maintenanceAcctgTransParams);

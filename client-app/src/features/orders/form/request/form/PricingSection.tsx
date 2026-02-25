@@ -55,9 +55,11 @@ export const PricingSection: React.FC<PricingSectionProps> = React.memo(
         };
 
         const handleCalculatorApply = (totalDiscount: number, finalPrice: number) => {
-            onChange("discount", { value: totalDiscount });
-            onChange("totalPrice", { value: finalPrice });
-            autoSetDerivedFields(formRenderProps, finalPrice);
+            const roundedDiscount = Math.round(totalDiscount);
+            const roundedPrice = Math.round(finalPrice);
+            onChange("discount", { value: roundedDiscount });
+            onChange("totalPrice", { value: roundedPrice });
+            autoSetDerivedFields(formRenderProps, roundedPrice);
             setShowCalculatorModal(false);
         };
 

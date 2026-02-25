@@ -155,11 +155,6 @@ public class AcctgReportsService : IAcctgReportsService
                     .OrderBy(gao => gao.GlAccount.AccountCode)
                     .ToListAsync();
 
-                /*foreach (var organizationGlAccount in organizationGlAccounts)
-                {
-                    Console.WriteLine($"Processing GlAccountId: {organizationGlAccount.GlAccountId}");
-                }*/
-
                 var accountBalances = new List<AccountBalance>();
                 decimal postedDebitsTotal = 0;
                 decimal postedCreditsTotal = 0;
@@ -168,7 +163,7 @@ public class AcctgReportsService : IAcctgReportsService
                 //    using our equivalent of the 'computeGlAccountBalanceForTimePeriod' service.
                 foreach (var organizationGlAccount in organizationGlAccounts)
                 {
-                    /*if (organizationGlAccount.GlAccountId != "120011")
+                    /*if (organizationGlAccount.GlAccountId != "250120")
                     {
                         Console.WriteLine($"Skipping GlAccountId: {organizationGlAccount.GlAccountId}");
                         continue;

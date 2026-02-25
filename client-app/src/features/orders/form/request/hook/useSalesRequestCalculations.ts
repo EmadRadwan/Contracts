@@ -61,10 +61,10 @@ export const useSalesRequestCalculations = ({
             }
 
             formRenderProps.onChange("advancePayment", {
-                value: finalTotal * defaultAdvancePercent,
+                value: Math.round(finalTotal * defaultAdvancePercent),
             });
             formRenderProps.onChange("maintenanceDeposit", {
-                value: finalTotal * defaultMaintenancePercent,
+                value: Math.round(finalTotal * defaultMaintenancePercent),
             });
         },
         [defaultAdvancePercent, defaultMaintenancePercent]
@@ -98,8 +98,9 @@ export const useSalesRequestCalculations = ({
             );
 
             const finalTotal = calculateFinalTotal(baseTotal, null);
-            formRenderProps.onChange("totalPrice", { value: finalTotal });
-            autoSetDerivedFields(formRenderProps, finalTotal);
+            const roundedFinalTotal = finalTotal != null ? Math.round(finalTotal) : null;
+            formRenderProps.onChange("totalPrice", { value: roundedFinalTotal });
+            autoSetDerivedFields(formRenderProps, roundedFinalTotal);
         },
         [calculateBaseTotal, calculateFinalTotal, autoSetDerivedFields]
     );
@@ -131,9 +132,10 @@ export const useSalesRequestCalculations = ({
 
             const baseTotal = calculateBaseTotal(aptM2, aptPrice, gardenM2, gardenPrice);
             const finalTotal = calculateFinalTotal(baseTotal, discount);
+            const roundedFinalTotal = finalTotal != null ? Math.round(finalTotal) : null;
 
-            formRenderProps.onChange("totalPrice", { value: finalTotal });
-            autoSetDerivedFields(formRenderProps, finalTotal);
+            formRenderProps.onChange("totalPrice", { value: roundedFinalTotal });
+            autoSetDerivedFields(formRenderProps, roundedFinalTotal);
         },
         [calculateBaseTotal, calculateFinalTotal, autoSetDerivedFields]
     );
@@ -153,17 +155,19 @@ export const useSalesRequestCalculations = ({
             );
 
             const finalTotal = calculateFinalTotal(baseTotal, value);
-            formRenderProps.onChange("totalPrice", { value: finalTotal });
-            autoSetDerivedFields(formRenderProps, finalTotal);
+            const roundedFinalTotal = finalTotal != null ? Math.round(finalTotal) : null;
+            formRenderProps.onChange("totalPrice", { value: roundedFinalTotal });
+            autoSetDerivedFields(formRenderProps, roundedFinalTotal);
         },
         [calculateBaseTotal, calculateFinalTotal, autoSetDerivedFields]
     );
 
     const handleAdvanceChange = useCallback(
         (formRenderProps: FormRenderProps, value: number | null) => {
-            formRenderProps.onChange("advancePayment", { value });
+            const roundedValue = value != null ? Math.round(value) : null;
+            formRenderProps.onChange("advancePayment", { value: roundedValue });
 
-            if (value == null) return;
+            if (roundedValue == null) return;
 
             const selectedApartmentObj = formRenderProps.valueGetter("productId");
             if (!selectedApartmentObj) return;
@@ -178,10 +182,10 @@ export const useSalesRequestCalculations = ({
             if (baseTotal == null) return;
 
             const discount = toNumber(formRenderProps.valueGetter("discount")) || 0;
-            const currentTotal = Math.max(0, baseTotal - discount);
+            const currentTotal = Math.max(0, Math.round(baseTotal - discount));
 
             // Optional: prevent advance > total (you may want to show a warning instead)
-            if (value > currentTotal) {
+            if (roundedValue > currentTotal) {
                 formRenderProps.onChange("advancePayment", { value: currentTotal });
                 // or show toast/warning: "Advance cannot exceed total price"
             }

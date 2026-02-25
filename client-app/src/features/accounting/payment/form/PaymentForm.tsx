@@ -7,7 +7,7 @@ import {
     useFetchPaymentMethodsQuery,
     useFetchPaymentTypesQuery,
 } from "../../../../app/store/configureStore";
-import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {useCallback, useMemo, useRef, useState} from "react";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import {Payment} from "../../../../app/models/accounting/payment";
 import ModalContainer from "../../../../app/common/modals/ModalContainer";
@@ -137,7 +137,7 @@ export default function PaymentForm({
         handleCreate, handleDuplicate,
         handleUpdate,
         handleStatusChange,
-        isLoading: hookLoading,
+        isLoading: hookLoading, handleReset
     } = usePayment({
         editMode,
         selectedPayment,
@@ -329,6 +329,7 @@ export default function PaymentForm({
                             getTranslatedLabel={getTranslatedLabel}
                             handleMenuSelect={handleMenuSelect}
                             getAvailableStatusTransitions={getAvailableStatusTransitions}
+                            handleReset={handleReset}
                         />
                     </Grid>
                 </Grid>

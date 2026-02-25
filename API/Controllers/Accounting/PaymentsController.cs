@@ -90,6 +90,15 @@ public class PaymentsController : BaseApiController
             OriginalPaymentId = originalPaymentId 
         }));
     }
+    
+    [HttpPost("reset/{paymentId}")]
+    public async Task<IActionResult> ResetPayment(string paymentId)
+    {
+        return HandleResults(await Mediator.Send(new ResetPayment.Command 
+        { 
+            PaymentId = paymentId 
+        }));
+    }
 
     [HttpPut("updatePayment", Name = "UpdatePayment")]
     public async Task<IActionResult> UpdatePayment(PaymentDto paymentDto)

@@ -279,8 +279,9 @@ function SalesRequestForm({
         if (formRef.current) {
             const currentAdvance = formRef.current.valueGetter("advancePayment");
             // Only update if different (prevents re-render loop)
-            if (Math.abs(actualAdvanceSum - (currentAdvance || 0)) > 0.01) {
-                formRef.current.onChange("advancePayment", { value: actualAdvanceSum });
+            const roundedAdvanceSum = Math.round(actualAdvanceSum);
+            if (Math.abs(roundedAdvanceSum - (currentAdvance || 0)) > 0.01) {
+                formRef.current.onChange("advancePayment", { value: roundedAdvanceSum });
             }
         }
 

@@ -5,7 +5,7 @@ import {
 } from "../../../../app/store/configureStore";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import TrialBalanceCustomTimePeriodForm from "../form/TrialBalanceCustomTimePeriodForm";
-import { useFetchTrialBalanceReportQuery } from "../../../../app/store/apis/accounting/accountingReportsApi";
+import { useLazyFetchTrialBalanceReportQuery } from "../../../../app/store/apis/accounting/accountingReportsApi";
 import { setSeletedCustomTimePeriodId } from "../../slice/accountingSharedUiSlice";
 import AccountingReportBreadcrumbs from "../menu/AccountingReportBreadcrumbs";
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
@@ -13,7 +13,6 @@ import {
   Grid as KendoGrid,
   GridColumn as Column,
   GridPageChangeEvent,
-  GridSortChangeEvent,
   GridToolbar,
   GRID_COL_INDEX_ATTRIBUTE, GridFilterChangeEvent
 } from "@progress/kendo-react-grid";
@@ -21,7 +20,6 @@ import {useEffect, useMemo, useState} from "react";
 import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
-import { formatCurrency } from "../../../../app/util/utils";
 import ModalContainer from "../../../../app/common/modals/ModalContainer";
 import GlAccountTransactionsModal from "./GlAccountTransactionsModal";
 import {TrialBalanceExcel} from "../report/TrialBalanceExcel";
@@ -59,21 +57,21 @@ const TrialBalance = () => {
   const {user} = useAppSelector((state) => state.account);
   const companyId = user?.organizationPartyId || "";
   const organizationPartyName = user?.organizationPartyName || "";
-  
+
+  const [runTrialBalance, { data, isLoading, isFetching, isSuccess }] =
+    useLazyFetchTrialBalanceReportQuery();
 
   const handleSelectTimePeriod = (value: any) => {
-    dispatch(setSeletedCustomTimePeriodId(value.customTimePeriodId));
+    const customTimePeriodId = value.customTimePeriodId;
+
+    dispatch(setSeletedCustomTimePeriodId(customTimePeriodId));
+
+    if (!customTimePeriodId || !companyId) return;
+
+    // Always run the report when the user clicks "Run",
+    // even if they selected the same period as last time.
+    runTrialBalance({ customTimePeriodId, organizationPartyId: companyId });
   };
-  const { data, isLoading, isFetching, isSuccess } =
-    useFetchTrialBalanceReportQuery(
-      {
-        customTimePeriodId: seletedCustomTimePeriodId!,
-        organizationPartyId: companyId!,
-      }!,
-      {
-        skip: !seletedCustomTimePeriodId || !companyId,
-      }
-    );
 
   // Then compute the filtered + sorted + paged data
   const processedData = useMemo(() => {

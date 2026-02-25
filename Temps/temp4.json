@@ -1,12 +1,24 @@
-[
-  {
-    "ACCTG_TRANS_TYPE_ID": "APARTMENT_MAINTENANCE_DEPOSIT",
-    "PARENT_TYPE_ID": "APARTMENT_RENTAL",
-    "HAS_TABLE": "N",
-    "DESCRIPTION": "Apartment Rental - Maintenance / Security Deposit",
-    "LAST_UPDATED_STAMP": "2026-02-12 18:30:00",
-    "LAST_UPDATED_TX_STAMP": "2026-02-12 18:30:00",
-    "CREATED_STAMP": "2026-02-12 18:30:00",
-    "CREATED_TX_STAMP": "2026-02-12 18:30:00"
-  }
-]
+"payments": {
+"form": {
+"actions": {
+"create": "إنشاء دفعة",
+"update": "تحديث الدفعة",
+"receive": "تغيير الحالة إلى مستلمة",
+"send": "تغيير الحالة إلى مدفوعة",
+"confirm": "تغيير الحالة إلى مؤكدة",
+"transactions": "القيود المحاسبية",
+"duplicate": "تكرار الدفعة",
+"applications": "تطبيقات الدفع",
+"reset": "إعادة تعيين الدفعة"           // ← NEW: menu item text
+},
+"reset": {                                   // ← NEW sub-node for dialog texts
+"dialogTitle": "تأكيد إعادة تعيين الدفعة",
+"dialogMessage": "هل أنت متأكد من إعادة تعيين الدفعة رقم {paymentId}؟\n\nسيؤدي ذلك إلى:\n• إرجاع الحالة إلى \"غير مدفوع\"\n• حذف جميع تطبيقات الدفعة\n• حذف الحركات المحاسبية المرتبطة\n\nهذا الإجراء لا يمكن التراجع عنه.",
+"resetConfirm": "إعادة تعيين الدفعة",
+"resetSuccess": "تم إعادة تعيين الدفعة بنجاح",
+"resetFailed": "فشل إعادة تعيين الدفعة"
+},
+// ... rest of "form" remains unchanged ...
+},
+// ... other sections (list, applications, transactions) remain unchanged ...
+}

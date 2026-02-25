@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Button, Menu, MenuItem } from '@mui/material';
+import { Button, Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import { Payment } from "../../../../app/models/accounting/payment";
-import {CertificateStatus} from "../../../../app/models/project/certificate";
 import {Can} from "../../../account/Can";
 
 const LOCALIZATION_KEY = "accounting.payments.form";
@@ -11,6 +10,7 @@ interface PaymentActionsProps {
     formEditMode: number;
     getTranslatedLabel: (key: string, defaultValue: string) => string;
     handleMenuSelect: (e: { item: { data: string } }) => void;
+    handleReset: () => void;
 }
 
 const getAvailableStatusTransitions = (payment?: Payment) => {
@@ -32,9 +32,11 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                                                            formEditMode,
                                                            getTranslatedLabel,
                                                            handleMenuSelect,
+                                                           handleReset,
                                                        }) => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
+    const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
@@ -55,10 +57,27 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
         handleClose();
     };
 
+    const handleResetClick = () => {
+        setResetDialogOpen(true);
+        handleClose(); // close menu
+    };
+
+    const handleConfirmReset = () => {
+        handleReset();
+        setResetDialogOpen(false);
+    };
+
+    const handleCancelReset = () => {
+        setResetDialogOpen(false);
+    };
+
     const canViewApplications = payment?.statusId !== 'PMNT_NOT_PAID';
     const canViewTransactions = payment?.statusId !== 'PMNT_NOT_PAID';
 
-    //console.log('PaymentActions Rendered with payment:', payment);
+    const canReset = payment &&
+        ['PMNT_RECEIVED', 'PMNT_SENT'].includes(payment.statusId ?? '') &&
+        formEditMode !== 1; // not in create mode
+
 
     // In create mode (formEditMode === 1), only show create options
     if (formEditMode === 1) {
@@ -135,6 +154,17 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                         )}
                     </>
                 </Can>
+
+                {canReset && (
+                    <Can perform="Reset_Payment"> {/* optional - add permission if needed */}
+                        <MenuItem
+                            onClick={handleResetClick}
+                            sx={{ color: '#d32f2f' }}
+                        >
+                            {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.reset`, "إعادة تعيين الدفعة")}
+                        </MenuItem>
+                    </Can>
+                )}
                 
                 {/*{getAvailableStatusTransitions(payment).toCancelled && (
                     <MenuItem onClick={() => onMenuSelect('cancel')}>
@@ -166,6 +196,44 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                     </MenuItem>
                 )}
             </Menu>
+
+            <Dialog
+                open={resetDialogOpen}
+                onClose={handleCancelReset}
+                aria-labelledby="reset-payment-dialog-title"
+                aria-describedby="reset-payment-dialog-description"
+            >
+                <DialogTitle id="reset-payment-dialog-title">
+                    {getTranslatedLabel(
+                        `${LOCALIZATION_KEY}.reset.dialogTitle`,
+                        "تأكيد إعادة تعيين الدفعة"
+                    )}
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="reset-payment-dialog-description">
+                        {getTranslatedLabel(
+                            `${LOCALIZATION_KEY}.reset.dialogMessage`,
+                            "هل أنت متأكد من إعادة تعيين الدفعة رقم {paymentId}؟\n\nسيؤدي ذلك إلى:\n• إرجاع الحالة إلى \"غير مدفوع\"\n• حذف جميع تطبيقات الدفعة\n• حذف الحركات المحاسبية المرتبطة\n\nهذا الإجراء لا يمكن التراجع عنه."
+                        ).replace("{paymentId}", payment?.paymentId || "")}
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        onClick={handleCancelReset}
+                        disabled={false} // can add isResetting if you pass loading state
+                    >
+                        {getTranslatedLabel("global.cancel", "Cancel")}
+                    </Button>
+                    <Button
+                        onClick={handleConfirmReset}
+                        color="error"
+                        variant="contained"
+                        autoFocus
+                    >
+                        {getTranslatedLabel(`${LOCALIZATION_KEY}.reset.resetConfirm`, "إعادة تعيين الدفعة")}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </>
     );
 };

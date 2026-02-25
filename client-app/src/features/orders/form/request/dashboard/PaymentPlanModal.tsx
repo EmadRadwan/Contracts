@@ -12,9 +12,13 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions, InputAdornment,
+    RadioGroup,
+    FormControlLabel,
+    Radio,
+    Checkbox,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import { Grid as KendoGrid, GridColumn as Column } from "@progress/kendo-react-grid";
+import { Grid as KendoGrid, GridColumn as Column, GridToolbar } from "@progress/kendo-react-grid";
 import { SalesRequest } from "../../../../../app/models/order/SalesRequest";
 import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHelper";
 import EditIcon from "@mui/icons-material/Edit";
@@ -74,6 +78,11 @@ export default function PaymentPlanModal({
 
     const [advanceSplitCount, setAdvanceSplitCount] = useState(1);
     const [rows, setRows] = useState<InstallmentRow[]>([]);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [roundingMode, setRoundingMode] = useState<'100' | '1000'>('100');
+    const [bulkEditOpen, setBulkEditOpen] = useState(false);
+    const [bulkAmount, setBulkAmount] = useState<number | "">("");
+
     const [editModal, setEditModal] = useState<EditModalData | null>(null);
     const [dateError, setDateError] = useState<string>("");
     const [amountError, setAmountError] = useState<string>("");
@@ -85,6 +94,11 @@ export default function PaymentPlanModal({
     const grandTotal = advanceSum + regularSum;
     const isValid = Math.abs(grandTotal - totalPrice) < 0.01;
 
+
+    const applyRounding = (amount: number, mode: '100' | '1000'): number => {
+        const factor = mode === '100' ? 100 : 1000;
+        return Math.round(amount / factor) * factor;
+    };
 
     useEffect(() => {
         if (initialInstallments && initialInstallments.length > 0) {
@@ -114,13 +128,14 @@ export default function PaymentPlanModal({
                 id: "adv-1",
                 number: 1,
                 dueDate: singleAdvanceDate.toISOString().split("T")[0],
-                amount: advancePayment,
+                amount: applyRounding(advancePayment, roundingMode),
                 isAdvance: true,
             });
         }
 
         if ((totalPrice - advancePayment) > 0 && numberOfInstallments > 0 && dateOfFirstInstallment) {
-            const installmentAmount = (totalPrice - advancePayment) / numberOfInstallments;
+            const totalToSplit = totalPrice - (advanceRowsLocal.length > 0 ? advanceRowsLocal[0].amount : advancePayment);
+            const installmentAmount = applyRounding(totalToSplit / numberOfInstallments, roundingMode);
             let currentDate = new Date(dateOfFirstInstallment);
 
             for (let i = 1; i <= numberOfInstallments; i++) {
@@ -128,10 +143,17 @@ export default function PaymentPlanModal({
                     id: `inst-${i}`,
                     number: i + advanceRowsLocal.length,
                     dueDate: currentDate.toISOString().split("T")[0],
-                    amount: installmentAmount,
+                    amount: i === 1 ? 0 : installmentAmount, // Will fix first installment below
                     isAdvance: false,
                 });
                 currentDate.setMonth(currentDate.getMonth() + monthsBetweenInstallments);
+            }
+
+            // Adjust first regular installment to take the remainder
+            if (regularRowsLocal.length > 0) {
+                const totalAdvance = advanceRowsLocal.reduce((s, r) => s + r.amount, 0);
+                const otherRegularsSum = regularRowsLocal.slice(1).reduce((s, r) => s + r.amount, 0);
+                regularRowsLocal[0].amount = totalPrice - totalAdvance - otherRegularsSum;
             }
         }
 
@@ -144,6 +166,7 @@ export default function PaymentPlanModal({
         numberOfInstallments,
         dateOfFirstInstallment,
         monthsBetweenInstallments,
+        roundingMode
     ]);
 
     useEffect(() => {
@@ -159,7 +182,7 @@ export default function PaymentPlanModal({
         let amountError = "";
 
         if (!row.dueDate) {
-            dateError = "Due date is required";
+            dateError = getTranslatedLabel("salesRequest.paymentPlan.dueDateRequired", "Due date is required");
         } else {
             const selected = new Date(row.dueDate);
             const today = new Date();
@@ -170,7 +193,7 @@ export default function PaymentPlanModal({
         }
 
         if (!row.amount || row.amount <= 0) {
-            amountError = "Amount must be greater than 0";
+            amountError = getTranslatedLabel("salesRequest.paymentPlan.amountGreaterThanZero", "Amount must be greater than 0");
         }
 
         return { dateError, amountError };
@@ -186,10 +209,11 @@ export default function PaymentPlanModal({
 
         const baseDate = new Date();
         baseDate.setDate(baseDate.getDate() + 7);
-        const equalAmount = advancePayment / count; // Even share for all advance rows
+        const rawEqualAmount = advancePayment / count;
+        const equalAmount = applyRounding(rawEqualAmount, roundingMode);
 
         if (diff > 0) {
-            // Adding new rows → update existing + create new ones with equal amounts
+            // Adding new rows
             const updatedCurrent = currentAdvanceRows.map((row) => ({
                 ...row,
                 amount: equalAmount,
@@ -203,13 +227,25 @@ export default function PaymentPlanModal({
                 isAdvance: true,
             }));
 
-            setRows([...updatedCurrent, ...newAdvanceRows, ...rows.filter((r) => !r.isAdvance)]);
+            const combinedAdvance = [...updatedCurrent, ...newAdvanceRows];
+            // Fix first advance row if needed (though usually advances match advancePayment exactly)
+            const sumAdv = combinedAdvance.reduce((s, r) => s + r.amount, 0);
+            if (sumAdv !== advancePayment) {
+                combinedAdvance[0].amount += (advancePayment - sumAdv);
+            }
+
+            setRows([...combinedAdvance, ...rows.filter((r) => !r.isAdvance)]);
         } else {
-            // Removing rows (diff < 0) → keep first 'count' rows and redistribute amount across them
+            // Removing rows
             const keptAdvanceRows = currentAdvanceRows.slice(0, count).map((row) => ({
                 ...row,
                 amount: equalAmount,
             }));
+
+            if (keptAdvanceRows.length > 0) {
+                const sumAdv = keptAdvanceRows.reduce((s, r) => s + r.amount, 0);
+                keptAdvanceRows[0].amount += (advancePayment - sumAdv);
+            }
 
             setRows([...keptAdvanceRows, ...rows.filter((r) => !r.isAdvance)]);
         }
@@ -322,7 +358,7 @@ export default function PaymentPlanModal({
                 <IconButton
                     size="small"
                     color="primary"
-                    title="Edit"
+                    title={getTranslatedLabel("salesRequest.paymentPlan.edit", "Edit")}
                     onClick={() => openEditModal(dataItem)}
                 >
                     <EditIcon fontSize="small" />
@@ -332,7 +368,7 @@ export default function PaymentPlanModal({
                     <IconButton
                         size="small"
                         color="error"
-                        title="Delete"
+                        title={getTranslatedLabel("salesRequest.paymentPlan.delete", "Delete")}
                         onClick={() => deleteAdvanceRow(dataItem.id)}
                     >
                         <DeleteIcon fontSize="small" />
@@ -342,6 +378,54 @@ export default function PaymentPlanModal({
         );
     };
     
+    const handleBulkApply = () => {
+        if (bulkAmount === "" || bulkAmount <= 0) return;
+
+        const roundedBulkAmount = applyRounding(bulkAmount, roundingMode);
+        
+        setRows(prevRows => {
+            const newRows = prevRows.map(row => {
+                if (selectedIds.has(row.id)) {
+                    return { ...row, amount: roundedBulkAmount };
+                }
+                return row;
+            });
+
+            // Always add the remaining in the first installment (regular)
+            const totalAdvance = newRows.filter(r => r.isAdvance).reduce((s, r) => s + r.amount, 0);
+            const otherRegularsSum = newRows.filter(r => !r.isAdvance).slice(1).reduce((s, r) => s + r.amount, 0);
+            
+            const firstRegularIdx = newRows.findIndex(r => !r.isAdvance);
+            if (firstRegularIdx !== -1) {
+                newRows[firstRegularIdx].amount = totalPrice - totalAdvance - otherRegularsSum;
+            }
+
+            return newRows;
+        });
+
+        setBulkEditOpen(false);
+        setBulkAmount("");
+        setSelectedIds(new Set());
+    };
+
+    const toggleSelection = (id: string) => {
+        const newSelection = new Set(selectedIds);
+        if (newSelection.has(id)) {
+            newSelection.delete(id);
+        } else {
+            newSelection.add(id);
+        }
+        setSelectedIds(newSelection);
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedIds.size === rows.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(rows.map(r => r.id)));
+        }
+    };
+
     const handleApply = () => {
         if (!isValid) return;
 
@@ -361,7 +445,7 @@ export default function PaymentPlanModal({
         <Grid container padding={2} spacing={2}>
             {isPreview && (
                 <Grid item xs={12}>
-                    <Alert severity="info">Preview – changes will be saved on submit</Alert>
+                    <Alert severity="info">{getTranslatedLabel("salesRequest.paymentPlan.previewAlert", "Preview – changes will be saved on submit")}</Alert>
                 </Grid>
             )}
 
@@ -379,33 +463,46 @@ export default function PaymentPlanModal({
                 </Grid>
             )}
 
-            {/* Advance Split Control */}
-            {advancePayment > 0 && (
-                <Grid item xs={12}>
-                    <Box display="flex" alignItems="center" gap={2}>
-                        <Typography variant="subtitle1">
-                            Split Advance Payment ({advancePayment.toLocaleString()}) into:
-                        </Typography>
-                        <TextField
-                            select
-                            size="small"
-                            value={advanceSplitCount}
-                            onChange={(e) => handleSplitChange(Number(e.target.value))}
-                            sx={{ width: 100 }}
+            {/* Advance Split Control & Rounding */}
+            <Grid item xs={12}>
+                <Box display="flex" alignItems="center" flexWrap="wrap" gap={3}>
+                    {advancePayment > 0 && (
+                        <Box display="flex" alignItems="center" gap={2}>
+                            <Typography variant="subtitle1">
+                                {getTranslatedLabel("salesRequest.paymentPlan.splitAdvance", "Split Advance:")}
+                            </Typography>
+                            <TextField
+                                select
+                                size="small"
+                                value={advanceSplitCount}
+                                onChange={(e) => handleSplitChange(Number(e.target.value))}
+                                sx={{ width: 80 }}
+                            >
+                                {[1, 2, 3].map((n) => (
+                                    <MenuItem key={n} value={n}>{n}</MenuItem>
+                                ))}
+                            </TextField>
+                            {advanceSplitCount < 3 && (
+                                <IconButton color="primary" onClick={addAdvanceRow}>
+                                    <AddIcon />
+                                </IconButton>
+                            )}
+                        </Box>
+                    )}
+
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <Typography variant="subtitle1">{getTranslatedLabel("salesRequest.paymentPlan.rounding", "Rounding:")}</Typography>
+                        <RadioGroup
+                            row
+                            value={roundingMode}
+                            onChange={(e) => setRoundingMode(e.target.value as '100' | '1000')}
                         >
-                            {[1, 2, 3].map((n) => (
-                                <MenuItem key={n} value={n}>{n}</MenuItem>
-                            ))}
-                        </TextField>
-                        {advanceSplitCount < 3 && (
-                            <IconButton color="primary" onClick={addAdvanceRow}>
-                                <AddIcon />
-                            </IconButton>
-                        )}
-                        
+                            <FormControlLabel value="100" control={<Radio size="small" />} label={getTranslatedLabel("salesRequest.paymentPlan.nearest100", "Nearest 100")} />
+                            <FormControlLabel value="1000" control={<Radio size="small" />} label={getTranslatedLabel("salesRequest.paymentPlan.nearest1000", "Nearest 1000")} />
+                        </RadioGroup>
                     </Box>
-                </Grid>
-            )}
+                </Box>
+            </Grid>
 
             {/* Kendo Grid */}
             <Grid item xs={12}>
@@ -415,14 +512,44 @@ export default function PaymentPlanModal({
                         sortable
                         scrollable={"none"}
                     >
-                    <Column
-                        field="number"
-                        title="#"
-                        width="80"
-                        cell={(props) => (
-                            <td>{props.dataItem.isAdvance ? `A${props.dataItem.number}` : props.dataItem.number}</td>
-                        )}
-                    />
+                        <GridToolbar>
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => setBulkEditOpen(true)}
+                                disabled={selectedIds.size === 0}
+                            >
+                                {getTranslatedLabel("salesRequest.paymentPlan.setInstallmentValue", "Set Installment Value")}
+                            </Button>
+                        </GridToolbar>
+                        <Column
+                            width="50"
+                            headerCell={() => (
+                                <Checkbox
+                                    size="small"
+                                    checked={selectedIds.size === rows.length && rows.length > 0}
+                                    indeterminate={selectedIds.size > 0 && selectedIds.size < rows.length}
+                                    onChange={toggleSelectAll}
+                                />
+                            )}
+                            cell={(props) => (
+                                <td>
+                                    <Checkbox
+                                        size="small"
+                                        checked={selectedIds.has(props.dataItem.id)}
+                                        onChange={() => toggleSelection(props.dataItem.id)}
+                                    />
+                                </td>
+                            )}
+                        />
+                        <Column
+                            field="number"
+                            title="#"
+                            width="60"
+                            cell={(props) => (
+                                <td>{props.dataItem.isAdvance ? `A${props.dataItem.number}` : props.dataItem.number}</td>
+                            )}
+                        />
                     <Column
                         field="dueDate"
                         title={getTranslatedLabel("salesRequest.paymentPlan.dueDate", "Due Date")}
@@ -435,7 +562,7 @@ export default function PaymentPlanModal({
                         width="180"
                         format="{0:n2}"
                     />
-                        <Column title="Actions" width="140" cell={ActionsCell} />
+                    <Column title={getTranslatedLabel("salesRequest.paymentPlan.actions", "Actions")} width="140" cell={ActionsCell} />
 
                     </KendoGrid>
                 </div>
@@ -446,19 +573,19 @@ export default function PaymentPlanModal({
                 <Box display="flex" flexDirection="column" gap={1}>
                     <Box display="flex" justifyContent="space-between">
                         <Typography variant="body2">
-                            Advance Total: {advanceSum.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            {getTranslatedLabel("salesRequest.paymentPlan.advanceTotal", "Advance Total:")} {advanceSum.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </Typography>
                         <Typography variant="body2">
-                            Installments Total: {regularSum.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            {getTranslatedLabel("salesRequest.paymentPlan.installmentsTotal", "Installments Total:")} {regularSum.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </Typography>
                         <Typography variant="body2" fontWeight="bold">
-                            Grand Total: {grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            {getTranslatedLabel("salesRequest.paymentPlan.grandTotal", "Grand Total:")} {grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             {" "}{isValid ? "✓" : "✗"}
                         </Typography>
                     </Box>
                     {!isValid && (
                         <Alert severity="warning">
-                            Grand total must equal apartment total ({totalPrice.toLocaleString()}). Adjust to enable Apply.
+                            {getTranslatedLabel("salesRequest.paymentPlan.mismatchWarning", "Grand total must equal apartment total ({totalPrice}). Adjust to enable Apply.").replace("{totalPrice}", totalPrice.toLocaleString())}
                         </Alert>
                     )}
                 </Box>
@@ -467,22 +594,22 @@ export default function PaymentPlanModal({
             {/* Actions */}
             <Grid item xs={12}>
                 <Box display="flex" justifyContent="flex-end" gap={2}  sx={{ pt: 1 }}>
-                    <Button onClick={onClose}>Cancel</Button>
+                    <Button onClick={onClose}>{getTranslatedLabel("salesRequest.paymentPlan.cancel", "Cancel")}</Button>
                     <Button variant="contained" color="primary" onClick={handleApply} disabled={!isValid}>
-                        Apply to Form
+                        {getTranslatedLabel("salesRequest.paymentPlan.applyToForm", "Apply to Form")}
                     </Button>
                 </Box>
             </Grid>
 
             {/* Edit Modal */}
             <Dialog open={!!editModal} onClose={() => setEditModal(null)} maxWidth="sm" fullWidth>
-                <DialogTitle>Edit Installment</DialogTitle>
+                <DialogTitle>{getTranslatedLabel("salesRequest.paymentPlan.editInstallment", "Edit Installment")}</DialogTitle>
                 <DialogContent>
                     {editModal && (
                         <Grid container spacing={2} sx={{ mt: 1 }}>
                             <Grid item xs={12}>
                                 <TextField
-                                    label="Due Date"
+                                    label={getTranslatedLabel("salesRequest.paymentPlan.dueDate", "Due Date")}
                                     type="date"
                                     fullWidth
                                     value={editModal.row.dueDate}
@@ -502,7 +629,7 @@ export default function PaymentPlanModal({
                             </Grid>
                             <Grid item xs={12}>
                                 <TextField
-                                    label="Amount"
+                                    label={getTranslatedLabel("salesRequest.paymentPlan.amount", "Amount")}
                                     type="number"
                                     fullWidth
                                     value={editModal.row.amount}
@@ -517,7 +644,7 @@ export default function PaymentPlanModal({
                                         startAdornment: <InputAdornment position="start">$</InputAdornment>,
                                     }}
                                     error={!!amountError}
-                                    helperText={amountError || "Must be greater than 0"}
+                                    helperText={amountError || getTranslatedLabel("salesRequest.paymentPlan.mustBeGreaterThanZero", "Must be greater than 0")}
                                 />
                             </Grid>
                         </Grid>
@@ -529,14 +656,40 @@ export default function PaymentPlanModal({
                         setDateError("");
                         setAmountError("");
                     }}>
-                        Cancel
+                        {getTranslatedLabel("salesRequest.paymentPlan.cancel", "Cancel")}
                     </Button>
                     <Button
                         variant="contained"
                         onClick={saveEdit}
                         disabled={!!dateError || !!amountError} // REFACTOR: Disable Save if validation fails
                     >
-                        Save
+                        {getTranslatedLabel("salesRequest.paymentPlan.save", "Save")}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Bulk Edit Dialog */}
+            <Dialog open={bulkEditOpen} onClose={() => setBulkEditOpen(false)} maxWidth="xs" fullWidth>
+                <DialogTitle>{getTranslatedLabel("salesRequest.paymentPlan.setInstallmentValue", "Set Installment Value")}</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ mt: 1 }}>
+                        <TextField
+                            label={getTranslatedLabel("salesRequest.paymentPlan.installmentAmount", "Installment Amount")}
+                            type="number"
+                            fullWidth
+                            value={bulkAmount}
+                            onChange={(e) => setBulkAmount(parseFloat(e.target.value) || "")}
+                            InputProps={{
+                                startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                            }}
+                            helperText={getTranslatedLabel("salesRequest.paymentPlan.roundingHelper", "Will be rounded to nearest {roundingMode}").replace("{roundingMode}", roundingMode)}
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setBulkEditOpen(false)}>{getTranslatedLabel("salesRequest.paymentPlan.cancel", "Cancel")}</Button>
+                    <Button variant="contained" onClick={handleBulkApply} disabled={!bulkAmount}>
+                        {getTranslatedLabel("salesRequest.paymentPlan.apply", "Apply")}
                     </Button>
                 </DialogActions>
             </Dialog>

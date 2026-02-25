@@ -1,8 +1,5 @@
 import {createApi, fetchBaseQuery} from "@reduxjs/toolkit/query/react";
 import {store} from "../../configureStore";
-import {
-    GlAccountTransactionDetails
-} from "../../../../features/accounting/organizationGlSettings/dashboard/GlAccountTransactionsModal";
 
 const accountingReportsApi = createApi({
     reducerPath: "accountingReports",
@@ -176,7 +173,7 @@ const accountingReportsApi = createApi({
 });
 
 export const {
-    useFetchTrialBalanceReportQuery,
+    useLazyFetchTrialBalanceReportQuery,
     useFetchTransactionTotalsReportQuery,
     useFetchIncomeStatementReportQuery,
     useFetchCashFlowStatementReportQuery,
