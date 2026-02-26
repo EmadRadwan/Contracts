@@ -107,6 +107,17 @@ public class GetEmployee
                         .Where(r => r.PeriodTypeId == "RATE_MONTH")
                     on prty.PartyId equals ra.PartyId into raGroup
                 from ra in raGroup.DefaultIfEmpty()
+                
+                // REPORTING TO
+                join rs in _context.EmplPositionReportingStructs on ep.EmplPositionId equals rs.EmplPositionIdManagedBy into rsGroup
+                from rs in rsGroup.DefaultIfEmpty()
+                join epRep in _context.EmplPositions on rs.EmplPositionIdReportingTo equals epRep.EmplPositionId into epRepGroup
+                from epRep in epRepGroup.DefaultIfEmpty()
+                join epfRep in _context.EmplPositionFulfillments.Where(f => f.ThruDate == null) on epRep.EmplPositionId equals epfRep.EmplPositionId into epfRepGroup
+                from epfRep in epfRepGroup.DefaultIfEmpty()
+                join managerParty in _context.Parties on epfRep.PartyId equals managerParty.PartyId into managerPartyGroup
+                from managerParty in managerPartyGroup.DefaultIfEmpty()
+
                 select new
                 {
                     Party = prty,
@@ -126,7 +137,9 @@ public class GetEmployee
                     EmplPositionFulfillment = epf,
                     EmplPosition = ep,
                     EmplPositionType = ept,
-                    RateAmount = ra
+                    RateAmount = ra,
+                    ReportingToPartyId = epfRep.PartyId,
+                    ReportingToPartyName = managerParty.Description
                 };
 
             var rawResults = await query
@@ -169,6 +182,13 @@ public class GetEmployee
                 EmplPositionTypeId = firstRecord.EmplPositionType?.EmplPositionTypeId,
                 EmplPositionDescription = firstRecord.EmplPositionType?.Description,
                 MonthlyBaseSalary = firstRecord.RateAmount?.Amount,
+                ReportingTo = firstRecord.ReportingToPartyId != null ? new FromPartyDto
+                {
+                    FromPartyId = firstRecord.ReportingToPartyId,
+                    FromPartyName = firstRecord.ReportingToPartyName,
+                    FromPartyPhone = ""
+                } : null,
+                ReportingToPartyId = firstRecord.ReportingToPartyId,
 
                 // All linked GL accounts
                 LinkedGlAccounts = rawResults

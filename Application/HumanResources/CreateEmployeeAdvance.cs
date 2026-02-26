@@ -235,7 +235,7 @@ public class CreateEmployeeAdvance
             else
             {
                 advance.InstallmentCount = dto.InstallmentCount ?? 0;
-                advance.StartDate = dto.StartDate ?? DateTime.UtcNow;
+                advance.StartDate = dto.StartDate;
             }
 
             _context.EmployeeAdvances.Add(advance);

@@ -3,6 +3,9 @@ import {Grid as KendoGrid, GridColumn} from "@progress/kendo-react-grid";
 import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import {Payment} from "../../../../app/models/accounting/payment";
+import React from "react";
+import {handleDatesArray} from "../../../../app/util/utils";
+import {DataResult} from "@progress/kendo-data-query";
 
 
 interface NotAppliedInvoice {
@@ -25,6 +28,16 @@ const NotAppliedInvoicesGrid: React.FC<NotAppliedInvoicesGridProps> = ({
                                                                        }) => {
     const {getTranslatedLabel} = useTranslationHelper();
     const localizationKey = "accounting.payments.applications";
+    const [invoices, setInvoices] = React.useState<[]>([]);
+    
+    React.useEffect(() => {
+        if (notAppliedInvoices) {
+            const adjustedData = handleDatesArray(notAppliedInvoices);
+            setInvoices(adjustedData);
+        }
+    }, [notAppliedInvoices]);
+    
+    console.log(invoices);
 
     if (isLoading) {
         return (
@@ -42,13 +55,18 @@ const NotAppliedInvoicesGrid: React.FC<NotAppliedInvoicesGridProps> = ({
                 {getTranslatedLabel(`${localizationKey}.notAppliedInvoices`, "Invoices Not Yet Applied")}
             </Typography>
             <KendoGrid
-                data={notAppliedInvoices}
+                data={invoices}
                 rowHeight={40}
                 className="kendo-grid-alternate"
             >
                 <GridColumn
                     field="invoiceId"
                     title={getTranslatedLabel(`${localizationKey}.invoiceId`, "Invoice ID")}
+                />
+                <GridColumn
+                    field="invoiceDate"
+                    title={getTranslatedLabel(`${localizationKey}.invoiceDate`, "Invoice Date")}
+                    format="{0: dd/MM/yyyy}"
                 />
                 <GridColumn
                     field="amount"

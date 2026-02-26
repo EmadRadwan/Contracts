@@ -138,6 +138,25 @@ public class SetPaymentStatusToReceived
                     .Select(p => p.Description)
                     .FirstOrDefaultAsync(ct);
 
+                // ---- 4.1 Update Employee Advance Status if applicable ----------------------
+                var paymentType = await _context.Payments
+                    .Where(p => p.PaymentId == request.PaymentChangeStatusDto.PaymentId)
+                    .Select(p => p.PaymentTypeId)
+                    .FirstOrDefaultAsync(ct);
+
+                if (paymentType is "EMPLOYEE_ADVANCE" or "EMPLOYEE_LONG_TERM_ADVANCE")
+                {
+                    var advance = await _context.EmployeeAdvances
+                        .FirstOrDefaultAsync(ea => ea.PaymentId == request.PaymentChangeStatusDto.PaymentId, ct);
+
+                    if (advance != null)
+                    {
+                        advance.StatusId = "ADVANCE_APPROVED";
+                        advance.LastUpdatedStamp = DateTime.UtcNow;
+                        await _context.SaveChangesAsync(ct);
+                    }
+                }
+
                 // ---- 5. Commit transaction -------------------------------------------------
                 await transaction.CommitAsync(ct);
 

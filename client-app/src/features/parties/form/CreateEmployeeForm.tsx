@@ -24,6 +24,7 @@ import {
 } from "../../../app/store/apis";
 import {MemoizedFormComboBox2} from "../../../app/common/form/FormComboBox2";
 import FormNumericTextBox from "../../../app/common/form/FormNumericTextBox";
+import {FormComboBoxVirtualPartyEmployee} from "../../../app/common/form/FormComboBoxVirtualPartyEmployee";
 
 interface Props {
     party?: Party;
@@ -67,11 +68,17 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
     async function handleSubmitData(data: any) {
         setButtonFlag(true);
         try {
+            // Extract fromPartyId from reportingTo object if present
+            const submitData = { ...data };
+            if (submitData.reportingTo && typeof submitData.reportingTo === 'object') {
+                submitData.reportingToPartyId = submitData.reportingTo.fromPartyId;
+            }
+
             let response;
             if (editMode === 2) {
-                response = await updateEmployee(data).unwrap();
+                response = await updateEmployee(submitData).unwrap();
             } else {
-                response = await createEmployee(data).unwrap();
+                response = await createEmployee(submitData).unwrap();
             }
             setCreationSuccess({
                 partyId: response.partyId || response.PartyId,
@@ -237,6 +244,15 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
                                                 format="n2"
                                                 min={0}
                                                 validator={requiredValidator}
+                                            />
+                                        </Grid>
+
+                                        <Grid item xs={3}>
+                                            <Field
+                                                id="reportingTo"
+                                                name="reportingTo"
+                                                label={getTranslatedLabel("party.employees.form.reportingToPartyId", "Reporting To")}
+                                                component={FormComboBoxVirtualPartyEmployee}
                                             />
                                         </Grid>
 

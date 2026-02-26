@@ -389,6 +389,52 @@ public class UpdateEmployee
                 }
             }
 
+            // D. Reporting Structure
+            if (currentPosition != null)
+            {
+                var existingReporting = await _context.EmplPositionReportingStructs
+                    .FirstOrDefaultAsync(r => r.EmplPositionIdManagedBy == currentPosition.EmplPositionId, cancellationToken);
+
+                if (!string.IsNullOrEmpty(request.PartyDto.ReportingToPartyId))
+                {
+                    var managerPosition = await _context.EmplPositions
+                        .Where(p => p.PartyId == "Company" && p.StatusId == "EMPL_POS_ACTIVE")
+                        .Join(_context.EmplPositionFulfillments,
+                            p => p.EmplPositionId,
+                            f => f.EmplPositionId,
+                            (p, f) => new { p, f })
+                        .Where(pf => pf.f.PartyId == request.PartyDto.ReportingToPartyId && pf.f.ThruDate == null)
+                        .Select(pf => pf.p)
+                        .FirstOrDefaultAsync(cancellationToken);
+
+                    if (managerPosition != null)
+                    {
+                        if (existingReporting != null)
+                        {
+                            existingReporting.EmplPositionIdReportingTo = managerPosition.EmplPositionId;
+                            existingReporting.LastUpdatedStamp = stamp;
+                            existingReporting.FromDate = stamp; // reset from date as we don't keep history
+                        }
+                        else
+                        {
+                            var reportingStruct = new EmplPositionReportingStruct
+                            {
+                                EmplPositionIdManagedBy = currentPosition.EmplPositionId,
+                                EmplPositionIdReportingTo = managerPosition.EmplPositionId,
+                                FromDate = stamp,
+                                CreatedStamp = stamp,
+                                LastUpdatedStamp = stamp
+                            };
+                            _context.EmplPositionReportingStructs.Add(reportingStruct);
+                        }
+                    }
+                }
+                else if (existingReporting != null)
+                {
+                    _context.EmplPositionReportingStructs.Remove(existingReporting);
+                }
+            }
+
             //---------------
 
             var createdAccounts = new List<(string Id, string Type, string Name, string Arabic)>();

@@ -51,7 +51,7 @@ function EmployeeAdvanceForm({
     const { getTranslatedLabel } = useTranslationHelper();
     const formRef = useRef<FormRenderProps | null>(null);
 
-    const isReadOnly = editMode === 3;
+    const isReadOnly = editMode === 3 || advance?.statusId === "ADVANCE_APPROVED";
     const isCreate = editMode === 1;
     const isEdit = editMode === 2;
     
@@ -159,11 +159,18 @@ function EmployeeAdvanceForm({
             }
         } catch (err: any) {
             console.error("Advance save failed:", err);
-            toast.error(
-                err?.data?.errors
-                    ? Object.values(err.data.errors).flat().join(" ")
-                    : getTranslatedLabel("party.employeeAdvance.form.error", "Failed to save employee advance")
-            );
+            
+            let errorMessage = getTranslatedLabel("party.employeeAdvance.form.error", "Failed to save employee advance");
+            
+            if (err?.data?.errors) {
+                errorMessage = Object.values(err.data.errors).flat().join(" ");
+            } else if (err?.data?.errorMessage) {
+                errorMessage = err.data.errorMessage;
+            } else if (typeof err?.data === 'string') {
+                errorMessage = err.data;
+            }
+            
+            toast.error(errorMessage);
         }
     };
 

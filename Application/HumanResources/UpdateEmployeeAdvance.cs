@@ -268,7 +268,7 @@ public class UpdateEmployeeAdvance
             else
             {
                 advance.InstallmentCount = dto.InstallmentCount ?? advance.InstallmentCount;
-                advance.StartDate = dto.StartDate ?? advance.StartDate;
+                advance.StartDate = dto.StartDate;
 
                 // If changing from long-term to short-term → remove old schedules
                 if (wasLongTerm)

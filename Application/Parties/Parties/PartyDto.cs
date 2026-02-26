@@ -58,6 +58,8 @@ public class PartyDto
     public string? EmplPositionDescription { get; set; }
     public decimal? MonthlyBaseSalary { get; set; }
     public string? ContactType { get; set; }
+    public FromPartyDto? ReportingTo { get; set; }
+    public string? ReportingToPartyId { get; set; }
     public DateTime? LastUpdatedStamp { get; set; }
     
     public List<PartyGlAccountSimpleDto>? LinkedGlAccounts { get; set; } = new();

@@ -332,6 +332,35 @@ public class CreateEmployee
             }
 
             // ────────────────────────────────────────────────────────────────
+            // 5. NEW: Reporting Structure
+            // ────────────────────────────────────────────────────────────────
+            if (!string.IsNullOrEmpty(request.PartyDto.ReportingToPartyId))
+            {
+                var managerPosition = await _context.EmplPositions
+                    .Where(p => p.PartyId == "Company" && p.StatusId == "EMPL_POS_ACTIVE")
+                    .Join(_context.EmplPositionFulfillments,
+                        p => p.EmplPositionId,
+                        f => f.EmplPositionId,
+                        (p, f) => new { p, f })
+                    .Where(pf => pf.f.PartyId == request.PartyDto.ReportingToPartyId && pf.f.ThruDate == null)
+                    .Select(pf => pf.p)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (managerPosition != null)
+                {
+                    var reportingStruct = new EmplPositionReportingStruct
+                    {
+                        EmplPositionIdManagedBy = positionId,
+                        EmplPositionIdReportingTo = managerPosition.EmplPositionId,
+                        FromDate = stamp,
+                        CreatedStamp = stamp,
+                        LastUpdatedStamp = stamp
+                    };
+                    _context.EmplPositionReportingStructs.Add(reportingStruct);
+                }
+            }
+
+            // ────────────────────────────────────────────────────────────────
             // CREATE TWO GL ACCOUNTS
             // ────────────────────────────────────────────────────────────────
 

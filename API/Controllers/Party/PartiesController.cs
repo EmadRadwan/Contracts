@@ -152,6 +152,30 @@ public class PartiesController : BaseApiController
         return HandleResult(await Mediator.Send(new ListRoles.Query()));
     }
 
+    [HttpGet("listRoleTypes")]
+    public async Task<IActionResult> ListRoleTypes()
+    {
+        return HandleResult(await Mediator.Send(new ListRoleTypes.Query()));
+    }
+
+    [HttpGet("{partyId}/listPartyRoles")]
+    public async Task<IActionResult> ListPartyRoles(string partyId)
+    {
+        return HandleResult(await Mediator.Send(new ListPartyRoles.Query { PartyId = partyId }));
+    }
+
+    [HttpPost("addPartyRole")]
+    public async Task<IActionResult> AddPartyRole(AddPartyRole.Command command)
+    {
+        return HandleResult(await Mediator.Send(command));
+    }
+
+    [HttpDelete("deletePartyRole")]
+    public async Task<IActionResult> DeletePartyRole([FromQuery] string partyId, [FromQuery] string roleTypeId)
+    {
+        return HandleResult(await Mediator.Send(new DeletePartyRole.Command { PartyId = partyId, RoleTypeId = roleTypeId }));
+    }
+
     [HttpGet("{partyId}/getPartyFinancialHistory")]
     public async Task<IActionResult> GetPartyFinancialHistory(
         string partyId,

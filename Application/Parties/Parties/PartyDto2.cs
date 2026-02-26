@@ -57,4 +57,6 @@ public class PartyDto2
     public string? ContactType { get; set; }
     public string? EmplPositionTypeId { get; set; }
     public decimal? MonthlyBaseSalary { get; set; } 
+    public FromPartyDto? ReportingTo { get; set; }
+    public string? ReportingToPartyId { get; set; }
 }

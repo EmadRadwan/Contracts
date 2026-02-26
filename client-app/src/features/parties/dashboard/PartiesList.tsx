@@ -9,6 +9,7 @@ import {
 
 import {useTableKeyboardNavigation} from "@progress/kendo-react-data-tools";
 import {
+    Box,
     Dialog,
     DialogActions,
     DialogContent,
@@ -31,6 +32,7 @@ import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
 import CreateContractorForm from "../form/CreateContractorForm";
 import CreateEmployeeForm from "../form/CreateEmployeeForm";
 import {toast} from "react-toastify";
+import ManageRolesModal from "./ManageRolesModal";
 
 
 export default function PartiesList() {
@@ -50,7 +52,9 @@ export default function PartiesList() {
 
     const {data: parties, error, isFetching, isLoading} = useFetchPartiesQuery({...dataState});
     const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+    const [manageRolesOpen, setManageRolesOpen] = useState(false);
     const [selectedPartyId, setSelectedPartyId] = useState<string | null>(null);
+    const [selectedPartyName, setSelectedPartyName] = useState<string>("");
     const [newRole, setNewRole] = useState<string>("");
 
     const [updateMainRole, {isLoading: isUpdatingRole}] = useUpdatePartyMainRoleMutation();
@@ -73,14 +77,28 @@ export default function PartiesList() {
 
         return (
             <td {...navigationAttributes}>
-                <Button
-                    size="small"
-                    variant="outlined"
-                    color="primary"
-                    onClick={handleOpenDialog}
-                >
-                    {getTranslatedLabel("party.parties.list.changeRole", "Change Role")}
-                </Button>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        onClick={handleOpenDialog}
+                    >
+                        {getTranslatedLabel("party.parties.list.changeMainRoleTitle", "Change Role")}
+                    </Button>
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        color="secondary"
+                        onClick={() => {
+                            setSelectedPartyId(props.dataItem.partyId);
+                            setSelectedPartyName(props.dataItem.description);
+                            setManageRolesOpen(true);
+                        }}
+                    >
+                        {getTranslatedLabel("party.parties.list.manageRoles", "Manage Roles")}
+                    </Button>
+                </Box>
             </td>
         );
     };
@@ -233,11 +251,23 @@ export default function PartiesList() {
                                     <Column
                                         title={getTranslatedLabel("party.parties.list.actions", "Actions")}
                                         cell={ChangeRoleCell}
-                                        width={150}
+                                        width={280}
                                         filterable={false}
                                         sortable={false}
                                     />
                                 </KendoGrid>
+                                {selectedPartyId && (
+                                    <ManageRolesModal
+                                        partyId={selectedPartyId}
+                                        partyName={selectedPartyName}
+                                        open={manageRolesOpen}
+                                        onClose={() => {
+                                            setManageRolesOpen(false);
+                                            setSelectedPartyId(null);
+                                            setSelectedPartyName("");
+                                        }}
+                                    />
+                                )}
                                 <Dialog open={roleDialogOpen} onClose={() => setRoleDialogOpen(false)} maxWidth="xs"
                                         fullWidth>
                                     <DialogTitle>

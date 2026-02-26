@@ -226,8 +226,38 @@ const partiesApi = createApi({
                 }),
                 invalidatesTags: ['EmployeeAdvance'],
             }),
+            deleteEmployeeAdvance: builder.mutation<void, string>({
+                query: (advanceId) => ({
+                    url: `/humanResources/${advanceId}`,
+                    method: 'DELETE',
+                }),
+                invalidatesTags: ['EmployeeAdvance'],
+            }),
             getEmployeeAdvanceDetail: builder.query<EmployeeAdvanceDetail, string>({
                 query: (advanceId) => `humanResources/${advanceId}`,
+            }),
+            fetchRolesTypes: builder.query<any[], void>({
+                query: () => '/parties/listRoleTypes',
+                providesTags: ['RoleType'],
+            }),
+            fetchPartyRoles: builder.query<any[], string>({
+                query: (partyId) => `/parties/${partyId}/listPartyRoles`,
+                providesTags: ['PartyRole'],
+            }),
+            addPartyRole: builder.mutation<void, { partyId: string, roleTypeId: string }>({
+                query: (data) => ({
+                    url: '/parties/addPartyRole',
+                    method: 'POST',
+                    body: data,
+                }),
+                invalidatesTags: ['PartyRole'],
+            }),
+            deletePartyRole: builder.mutation<void, { partyId: string, roleTypeId: string }>({
+                query: ({ partyId, roleTypeId }) => ({
+                    url: `/parties/deletePartyRole?partyId=${partyId}&roleTypeId=${roleTypeId}`,
+                    method: 'DELETE',
+                }),
+                invalidatesTags: ['PartyRole'],
             }),
         };
     },
@@ -245,6 +275,7 @@ export const {
     useCreateSupplierMutation, useUpdateSupplierMutation, useCreateContractorMutation,
     useUpdateContractorMutation, useGetPartySubLedgerQuery, useFetchEmployeeAdvancesQuery,
     useCreateEmployeeAdvanceMutation,
-    useUpdateEmployeeAdvanceMutation, useLazyGetEmployeeAdvanceDetailQuery, 
+    useUpdateEmployeeAdvanceMutation, useDeleteEmployeeAdvanceMutation, useLazyGetEmployeeAdvanceDetailQuery,
+    useFetchRolesTypesQuery, useFetchPartyRolesQuery, useAddPartyRoleMutation, useDeletePartyRoleMutation,
 } = partiesApi;
 export {partiesApi};

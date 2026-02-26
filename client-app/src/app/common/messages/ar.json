@@ -20,6 +20,9 @@
     "processing": "جاري المعالجة...",
     "add": "اضافة",
     "update": "تحديث",
+    "confirmDelete": "هل أنت متأكد من أنك تريد حذف هذا السجل؟",
+    "confirmDeleteTitle": "تأكيد الحذف",
+    "deleteSuccess": "تم حذف السجل بنجاح",
     "close": "غلق",
     "details": "التفاصيل",
     "generate": "إنشاء التقرير",
@@ -189,6 +192,19 @@
   },
   "party": {
     "parties": {
+      "manageRoles": {
+        "manageTitle": "إدارة أدوار",
+        "addRole": "إضافة دور جديد",
+        "roleType": "نوع الدور",
+        "assignedRoles": "الأدوار المعينة",
+        "roleId": "معرف الدور",
+        "roleName": "اسم الدور",
+        "addedSuccess": "تم إضافة الدور بنجاح",
+        "addedError": "فشل في إضافة الدور",
+        "deletedSuccess": "تم إزالة الدور بنجاح",
+        "deletedError": "فشل في إزالة الدور",
+        "nonDeletable": "دور أساسي - لا يمكن حذفه"
+      },
       "list": {
         "createCustomer": "إنشاء عميل",
         "createSupplier": "إنشاء مورد",
@@ -209,6 +225,7 @@
         "actions": "الإجراءات",
         "changeRole": "تغيير الدور",
         "changeMainRoleTitle": "تغيير الدور الرئيسي",
+        "manageRoles": "إدارة الأدوار",
         "newRole": "الدور الجديد",
         "roleUpdatedSuccess": "تم تحديث الدور بنجاح",
         "roleUpdateFailed": "فشل تحديث الدور"
@@ -256,6 +273,7 @@
         "lastName": "الاسم الأخير *",
         "monthlyBaseSalary": "الراتب الأساسي الشهري *",
         "emplPositionTypeId": "المسمى الوظيفي *",
+        "reportingToPartyId": "المدير المباشر *",
         "email": "البريد الإلكتروني (العمل)",
         "countryCode": "البلد",
         "mobile": "رقم الجوال",
@@ -1275,6 +1293,7 @@
         "noPayment": "لم يتم العثور على دفعة",
         "applyPayment": "تطبيق الدفعة على",
         "invoiceId": "رقم الفاتورة *",
+        "invoiceDate": "تاريخ الفاتورة",
         "amountApplied": "المبلغ المراد تطبيقه *",
         "apply": "تطبيق الدفعة",
         "notAppliedInvoices": "الفواتير",

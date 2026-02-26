@@ -7,7 +7,8 @@ import {
     GridDataStateChangeEvent
 } from "@progress/kendo-react-grid";
 import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
-import { Paper, Button } from "@mui/material";
+import { Paper, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
+import { toast } from "react-toastify";
 import {DataResult, State} from "@progress/kendo-data-query";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
@@ -15,7 +16,8 @@ import { handleDatesArray } from "../../../app/util/utils";
 import {EmployeeAdvance} from "../../../app/models/humanResources/employeeAdvance";
 import {
     useFetchEmployeeAdvancesQuery,
-    useLazyGetEmployeeAdvanceDetailQuery
+    useLazyGetEmployeeAdvanceDetailQuery,
+    useDeleteEmployeeAdvanceMutation
 } from "../../../app/store/apis";
 import EmployeeAdvanceForm from "../form/EmployeeAdvanceForm";
 import EmployeeAdvanceMenu from "../menu/EmployeeAdvanceMenu";
@@ -33,6 +35,9 @@ function EmployeeAdvancesList() {
     const { data, isFetching } = useFetchEmployeeAdvancesQuery({...dataState});
     const [triggerGetDetail, { data: detailData, isLoading: isDetailLoading, error: detailError }] =
         useLazyGetEmployeeAdvanceDetailQuery();
+    const [deleteAdvance] = useDeleteEmployeeAdvanceMutation();
+    const [confirmDialogOpen, setConfirmDialogOpen] = React.useState(false);
+    const [advanceToDelete, setAdvanceToDelete] = React.useState<string | null>(null);
     
     React.useEffect(() => {
         if (data) {
@@ -89,12 +94,49 @@ function EmployeeAdvancesList() {
         setViewMode("list");
     };
 
+    const handleDelete = async (advanceId: string) => {
+        setAdvanceToDelete(advanceId);
+        setConfirmDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (advanceToDelete) {
+            try {
+                await deleteAdvance(advanceToDelete).unwrap();
+                toast.success(getTranslatedLabel("general.deleteSuccess", "Record deleted successfully"));
+            } catch (err) {
+                console.error("Delete failed:", err);
+            } finally {
+                setConfirmDialogOpen(false);
+                setAdvanceToDelete(null);
+            }
+        }
+    };
+
     const IdCell = (props: any) => {
         const navigationAttributes = useTableKeyboardNavigation(props.id);
         return (
             <td {...navigationAttributes} style={{ color: "blue" }} {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}>
                 <Button onClick={() => startEdit(props.dataItem)} variant="text">
                     {props.dataItem.advanceId}
+                </Button>
+            </td>
+        );
+    };
+
+    const DeleteCell = (props: any) => {
+        const isApproved = props.dataItem.statusId === "ADVANCE_APPROVED";
+        const isClosed = props.dataItem.statusId === "ADVANCE_PAID" || props.dataItem.statusId === "ADVANCE_CANCELLED";
+
+        return (
+            <td>
+                <Button
+                    color="error"
+                    size="small"
+                    onClick={() => handleDelete(props.dataItem.advanceId)}
+                    disabled={isApproved || isClosed}
+                >
+                    {getTranslatedLabel("general.delete", "Delete")}
                 </Button>
             </td>
         );
@@ -160,13 +202,38 @@ function EmployeeAdvancesList() {
                         <Column field="advanceTypeDescription" title={getTranslatedLabel("party.employeeAdvance.list.advanceTypeDescription", "Advance Type")} format="{0:n2}" width={130} />
                         <Column field="statusDescription" title={getTranslatedLabel("party.employeeAdvance.list.status", "Status")} width={160} />
                         <Column field="description" title={getTranslatedLabel("party.employeeAdvance.list.notes", "Notes")} />
+                        <Column cell={DeleteCell} width={100} filterable={false} sortable={false} />
                     </KendoGrid>
 
                     {isFetching && <LoadingComponent />}
                 </div>
             </Paper>
+
+            <Dialog
+                open={confirmDialogOpen}
+                onClose={() => setConfirmDialogOpen(false)}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">
+                    {getTranslatedLabel("general.confirmDeleteTitle", "Confirm Delete")}
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        {getTranslatedLabel("general.confirmDelete", "Are you sure you want to delete this record?")}
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setConfirmDialogOpen(false)} color="primary">
+                        {getTranslatedLabel("general.cancel", "Cancel")}
+                    </Button>
+                    <Button onClick={confirmDelete} color="error" autoFocus>
+                        {getTranslatedLabel("general.delete", "Delete")}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </>
     );
-}
+};
 
 export default EmployeeAdvancesList;
