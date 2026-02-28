@@ -544,7 +544,7 @@ export {
     useFetchPaymentsQuery, useAddSalesOrderPaymentsMutation
     , useFetchOutgoingPaymentTypesQuery,
     useFetchIncomingPaymentTypesQuery,
-    useFetchPaymentMethodsQuery, useSetPaymentStatusToReceivedMutation
+    useFetchPaymentMethodsQuery, useSetPaymentStatusMutation
 } from "./apis/payment/paymentsApi";
 
 export {useFetchProductPromosQuery} from "./apis/productPromosApi";

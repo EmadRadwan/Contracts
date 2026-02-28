@@ -1,49 +1,59 @@
-// ────────────────────────────────────────────────────────────────
-//   Replicate OrderPaymentPreference if original had one
-// ────────────────────────────────────────────────────────────────
-if (!string.IsNullOrEmpty(original.PaymentPreferenceId))
+using Application.Interfaces;           // assuming Result<T> is here
+using Domain;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Persistence;
+
+namespace Application.Catalog.ProductCategories;
+
+public class ListProductCategories
 {
-    var originalPreference = await _context.OrderPaymentPreferences
-        .AsNoTracking()
-        .FirstOrDefaultAsync(opp => opp.OrderPaymentPreferenceId == original.PaymentPreferenceId, ct);
-
-    if (originalPreference != null && !string.IsNullOrEmpty(originalPreference.OrderId))
+    public class Query : IRequest<Result<List<ProductCategoryMemberDto>>>
     {
-        var newPreference = new OrderPaymentPreference
+        public string ProductId { get; set; } = string.Empty;
+    }
+
+    public class Handler : IRequestHandler<Query, Result<List<ProductCategoryMemberDto>>>
+    {
+        private readonly DataContext _context;
+
+        public Handler(DataContext context)
         {
-            // ID generation – adjust to match your actual strategy
-            // Common patterns in OFBiz-style systems: sequential, GUID, or custom prefix
-            OrderPaymentPreferenceId = Guid.NewGuid().ToString("N").ToUpperInvariant(),  
-            // If using database-generated ID → leave null and let EF handle
+            _context = context;
+        }
 
-            OrderId                  = originalPreference.OrderId,          // same PO / SO
-            // NO PaymentId here – that's correct, table doesn't have it
-
-            // Link the **new payment** via PaymentPreferenceId on the Payment side (done below)
-            PaymentMethodTypeId      = originalPreference.PaymentMethodTypeId,
-            PaymentMethodId          = originalPreference.PaymentMethodId,
-            StatusId                 = "PMNT_NOT_PAID",                     // fresh duplicate → not yet paid
-            MaxAmount                = createReq.Amount,                    // use the amount we just created with
-            CreatedDate              = DateTime.UtcNow,
-
-            // Usually null/empty in your domain, but copy if present:
-            OrderItemSeqId           = originalPreference.OrderItemSeqId,
-            ShipGroupSeqId           = originalPreference.ShipGroupSeqId,
-            ProductPricePurposeId    = originalPreference.ProductPricePurposeId,
-            // FinAccountId, SecurityCode, etc. → typically null for these cases
-        };
-
-        _context.OrderPaymentPreferences.Add(newPreference);
-        await _context.SaveChangesAsync(ct);
-
-        // ─── Critical: Update the NEW Payment to point to this new preference ───
-        var newPayment = await _context.Payments
-            .FirstOrDefaultAsync(p => p.PaymentId == newPaymentId, ct);
-
-        if (newPayment != null)
+        public async Task<Result<List<ProductCategoryMemberDto>>> Handle(
+            Query request,
+            CancellationToken cancellationToken)
         {
-            newPayment.PaymentPreferenceId = newPreference.OrderPaymentPreferenceId;
-            await _context.SaveChangesAsync(ct);
+            var productCategoryMembers = await _context.ProductCategoryMembers
+                .Where(z => z.ProductId == request.ProductId)
+                // Optional: include only active/current categories
+                // .Where(z => z.FromDate <= DateTime.UtcNow && (z.ThruDate == null || z.ThruDate > DateTime.UtcNow))
+                .Join(
+                    _context.ProductCategories,
+                    member => member.ProductCategoryId,
+                    category => category.ProductCategoryId,
+                    (member, category) => new { member, category }
+                )
+                .Select(x => new ProductCategoryMemberDto
+                {
+                    ProductId         = x.member.ProductId,
+                    ProductCategoryId = x.member.ProductCategoryId,
+                    FromDate          = x.member.FromDate,
+                    ThruDate          = x.member.ThruDate,
+                    Comments          = x.member.Comments,
+                    SequenceNum       = x.member.SequenceNum,
+                    Quantity          = x.member.Quantity,
+
+                    // ← New fields from joined ProductCategory
+                    CategoryDescriptionArabic = x.category.DescriptionArabic,
+                    // CategoryName           = x.category.CategoryName,           // if you want English too
+                    // CategoryDescription    = x.category.Description,           // if needed
+                })
+                .ToListAsync(cancellationToken);
+
+            return Result<List<ProductCategoryMemberDto>>.Success(productCategoryMembers);
         }
     }
 }

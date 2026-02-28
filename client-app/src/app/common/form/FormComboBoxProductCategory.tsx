@@ -1,12 +1,10 @@
 import * as React from 'react';
+import { FieldRenderProps, FieldWrapper } from '@progress/kendo-react-form';
+import { Label } from '@progress/kendo-react-labels';
+import { ComboBox } from '@progress/kendo-react-dropdowns';
+import { Notification, NotificationGroup } from "@progress/kendo-react-notification";
 
-import {FieldRenderProps, FieldWrapper} from '@progress/kendo-react-form';
-
-import {Label} from '@progress/kendo-react-labels';
-import {DropDownList} from '@progress/kendo-react-dropdowns';
-import {Notification, NotificationGroup,} from "@progress/kendo-react-notification";
-
-export const FormDropDownList = (fieldRenderProps: FieldRenderProps) => {
+export const FormComboBoxProductCategory = (fieldRenderProps: FieldRenderProps) => {
     const {
         validationMessage,
         touched,
@@ -20,17 +18,14 @@ export const FormDropDownList = (fieldRenderProps: FieldRenderProps) => {
         wrapperStyle,
         value,
         data,
-        name,
+        dataItemKey,
+        textField,
         onChange,
         ...others
     } = fieldRenderProps;
+
     const editorRef = React.useRef(null);
     const [focused, setFocused] = React.useState(false);
-
-    const onChangeHandler = React.useCallback(
-        (event) => onChange({value: event.value && event.value[name]}),
-        [onChange, name]
-    );
 
     const showValidationMessage = !focused && touched && validationMessage;
     const showHint = !showValidationMessage && focused && hint;
@@ -39,38 +34,12 @@ export const FormDropDownList = (fieldRenderProps: FieldRenderProps) => {
     const labelId = label ? `${id}_label` : '';
 
     const position = {
-        topLeft: {
-            top: 0,
-            left: 0,
-            alignItems: "flex-start",
-        },
-        topCenter: {
-            top: 0,
-            left: "50%",
-            transform: "translateX(-50%)",
-        },
-        topRight: {
-            top: 0,
-            right: 0,
-            alignItems: "flex-end",
-        },
-        bottomLeft: {
-            bottom: 0,
-            left: 0,
-            alignItems: "flex-start",
-        },
-        bottomCenter: {
-            bottom: 0,
-            left: "50%",
-            transform: "translateX(-50%)",
-        },
         bottomRight: {
             bottom: 0,
             right: 0,
             alignItems: "flex-end",
         },
-    };
-    const selectedValue = data!.find((item: any) => item[name] === value);
+    } as any;
 
     const handleOnFocus = React.useCallback(
         () => {
@@ -87,6 +56,21 @@ export const FormDropDownList = (fieldRenderProps: FieldRenderProps) => {
         },
         [onBlur]
     );
+
+    const onChangeHandler = React.useCallback(
+        (event: any) => {
+            const val = event.value;
+            if (val && typeof val === 'object') {
+                onChange({ value: val[dataItemKey] });
+            } else {
+                onChange({ value: val });
+            }
+        },
+        [onChange, dataItemKey]
+    );
+
+    const selectedValue = data ? data.find((item: any) => item[dataItemKey] === value) : null;
+
     return (
         <FieldWrapper style={wrapperStyle}>
             <Label
@@ -99,36 +83,34 @@ export const FormDropDownList = (fieldRenderProps: FieldRenderProps) => {
                 {label}
             </Label>
 
-            <DropDownList
+            <ComboBox
                 ariaLabelledBy={labelId}
                 ariaDescribedBy={`${hintId} ${errorId}`}
                 ref={editorRef}
                 valid={valid}
                 id={id}
                 disabled={disabled}
-                value={selectedValue || null}
-                data={data}
+                data={data || []}
+                dataItemKey={dataItemKey}
+                textField={textField}
+                value={selectedValue || value}
                 onChange={onChangeHandler}
                 onFocus={handleOnFocus}
                 onBlur={handleOnBlur}
+                filterable={true}
                 popupSettings={{ appendTo: document.body }}
                 {...others}
             />
             {
                 showHint &&
                 <NotificationGroup style={position.bottomRight}>
-                    <Notification type={{style: 'info', icon: true}} closable={false}>
+                    <Notification type={{ style: 'info', icon: true }} closable={false}>
                         <span>{hint}</span>
                     </Notification>
                 </NotificationGroup>
             }
-            {/*{
-                showValidationMessage &&
-                <Error id={errorId}>{validationMessage}</Error>
-            }*/}
         </FieldWrapper>
     );
 };
 
-export const MemoizedFormDropDownList = React.memo(FormDropDownList);
-
+export const MemoizedFormComboBoxProductCategory = React.memo(FormComboBoxProductCategory);

@@ -32,7 +32,7 @@ public class List
                 {
                     PrimaryProductCategoryId = r.ProductCategoryId,
                     ProductCategoryId = r.ProductCategoryId,
-                    Description = r.Description
+                    Description = r.DescriptionArabic
                 });
 
 

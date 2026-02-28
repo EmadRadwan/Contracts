@@ -1,6 +1,5 @@
 using Application.Interfaces;
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
+using Application.ProductCategories;
 using Domain;
 using FluentValidation;
 using MediatR;
@@ -11,60 +10,74 @@ namespace Application.Catalog.ProductCategories;
 
 public class CreateProductCategory
 {
-    public class Command : IRequest<Result<ProductCategoryDto>>
+    public class Command : IRequest<Result<ProductCategoryMemberDto>>
     {
-        public ProductCategoryMember ProductCategoryMember { get; set; }
+        public ProductCategoryMemberDto Member { get; set; } = null!;
     }
+    
 
-    public class CommandValidator : AbstractValidator<Command>
-    {
-        public CommandValidator()
-        {
-            RuleFor(x => x.ProductCategoryMember).SetValidator(new ProductCategoryValidator());
-        }
-    }
-
-    public class Handler : IRequestHandler<Command, Result<ProductCategoryDto>>
+    public class Handler : IRequestHandler<Command, Result<ProductCategoryMemberDto>>
     {
         private readonly DataContext _context;
-        private readonly IMapper _mapper;
         private readonly IUserAccessor _userAccessor;
 
-        public Handler(DataContext context, IUserAccessor userAccessor, IMapper mapper)
+        public Handler(DataContext context, IUserAccessor userAccessor)
         {
-            _userAccessor = userAccessor;
             _context = context;
-            _mapper = mapper;
+            _userAccessor = userAccessor;
         }
 
-        public async Task<Result<ProductCategoryDto>> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Result<ProductCategoryMemberDto>> Handle(
+            Command request,
+            CancellationToken cancellationToken)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(x =>
-                x.UserName == _userAccessor.GetUsername());
+            var currentUserName = _userAccessor.GetUsername();
 
+            // Optional: you can keep or remove this user check
+            var user = await _context.Users
+                .FirstOrDefaultAsync(x => x.UserName == currentUserName, cancellationToken);
 
-            var stamp = DateTime.Now;
+            // if (user == null)
+            //     return Result<ProductCategoryMemberDto>.Failure("User not found");
 
+            var now = DateTime.UtcNow;  // Recommended: use UTC for audit fields
 
-            request.ProductCategoryMember.CreatedStamp = stamp;
-            request.ProductCategoryMember.LastUpdatedStamp = stamp;
+            // Manual mapping: DTO → Entity
+            var entity = new ProductCategoryMember
+            {
+                ProductId         = request.Member.ProductId,
+                ProductCategoryId = request.Member.ProductCategoryId,
+                FromDate          = request.Member.FromDate,
+                ThruDate          = request.Member.ThruDate,
 
-            _context.ProductCategoryMembers.Add(request.ProductCategoryMember);
+                // Audit fields — always controlled by backend
+                CreatedStamp      = now,
+                CreatedTxStamp    = now,
+                LastUpdatedStamp  = now,
+                LastUpdatedTxStamp = now
+            };
 
+            _context.ProductCategoryMembers.Add(entity);
 
-            var result = await _context.SaveChangesAsync() > 0;
+            var success = await _context.SaveChangesAsync(cancellationToken) > 0;
 
-            if (!result) return Result<ProductCategoryDto>.Failure("Failed to create Product Category");
+            if (!success)
+            {
+                return Result<ProductCategoryMemberDto>.Failure(
+                    "Failed to create product category assignment");
+            }
 
-            var productCategoryToReturn = _context.ProductCategoryMembers.Where(x => x.ProductId ==
-                    request.ProductCategoryMember.ProductId
-                    && x.ProductCategoryId ==
-                    request.ProductCategoryMember.ProductCategoryId
-                    && x.FromDate ==
-                    request.ProductCategoryMember.FromDate)
-                .ProjectTo<ProductCategoryDto>(_mapper.ConfigurationProvider).Single();
+            // Manual mapping: Entity → DTO (for response)
+            var responseDto = new ProductCategoryMemberDto
+            {
+                ProductId         = entity.ProductId,
+                ProductCategoryId = entity.ProductCategoryId,
+                FromDate          = entity.FromDate,
+                ThruDate          = entity.ThruDate,
+                
+            };
 
-            return Result<ProductCategoryDto>.Success(productCategoryToReturn);
+            return Result<ProductCategoryMemberDto>.Success(responseDto);
         }
     }
 }

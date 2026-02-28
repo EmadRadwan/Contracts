@@ -13,15 +13,25 @@ import {
   useFetchProductTypesQuery,
   useUpdateProductMutation,
 } from "../../../../app/store/configureStore";
-import { Box, Paper, Typography } from "@mui/material";
+import {
+  Box,
+  Paper,
+  Typography,
+} from "@mui/material";
 import { requiredValidator } from "../../../../app/common/form/Validators";
-import { FormDropDownTreeProductCategory } from "../../../../app/common/form/FormDropDownTreeProductCategory";
+import { MemoizedFormMuiAutoCompleteProductCategory } from "../../../../app/common/form/FormMuiAutoCompleteProductCategory";
 import { toast } from "react-toastify";
 import CatalogMenu from "../../menu/CatalogMenu";
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
-import { useFetchProductCategoriesRawMaterialsQuery } from "../../../../app/store/apis";
+import {
+  useFetchProductCategoriesFlatQuery,
+  useFetchProductCategoriesRawMaterialsQuery,
+} from "../../../../app/store/apis";
 import { FormComboBoxVirtualProject } from "../../../../app/common/form/FormComboBoxVirtualProject";
 import FormNumericTextBox from "../../../../app/common/form/FormNumericTextBox";
+import ManageProductCategoryMembersModal from "./ManageProductCategoryMembersModal";
+import {FormDropDownTreeProductCategory} from "../../../../app/common/form/FormDropDownTreeProductCategory";
+import {MemoizedFormComboBox2} from "../../../../app/common/form/FormComboBox2";
 
 let renderCount = 0;
 
@@ -53,10 +63,15 @@ function ProductForm({
   );
   const [buttonFlag, setButtonFlag] = useState(false);
 
+  // Modal state
+  const [manageMembersOpen, setManageMembersOpen] = useState(false);
+
   const { data: productTypes, isFetching: isProductTypesFetching } =
       useFetchProductTypesQuery(undefined);
   const { data: productCategories, isFetching: isProductCategoriesFetching } =
       useFetchProductCategoriesQuery(undefined);
+  const { data: productCategoriesFlat, isFetching: isProductCategoriesFlatFetching } =
+      useFetchProductCategoriesFlatQuery(undefined);
   const {
     data: productCategoriesRawMaterials,
     isFetching: isProductCategoriesFetchingRawMaterials,
@@ -70,10 +85,10 @@ function ProductForm({
   const memoizedCategoryData = useMemo(() => {
     return selectedProductType === "RAW_MATERIAL"
         ? productCategoriesRawMaterials || []
-        : productCategories || [];
+        : productCategoriesFlat || [];
   }, [
     selectedProductType,
-    productCategories,
+    productCategoriesFlat,
     productCategoriesRawMaterials,
   ]);
 
@@ -217,6 +232,7 @@ function ProductForm({
       setButtonFlag(false);
     }
   }
+
   const isApartment = selectedProductType === "APARTMENT";
 
   return (
@@ -300,26 +316,36 @@ function ProductForm({
                           />
                         </Grid>
                         <Grid item xs={6}>
-                          {memoizedCategoryData.length > 0 && (
-                              <Field
-                                  key={`category-${selectedProductType}`}
-                                  id="primaryProductCategoryId"
-                                  name="primaryProductCategoryId"
-                                  label={getTranslatedLabel(
-                                      "product.products.form.category",
-                                      "Product Category *"
-                                  )}
-                                  data={memoizedCategoryData}
-                                  component={FormDropDownTreeProductCategory}
-                                  dataItemKey="productCategoryId"
-                                  textField="text"
-                                  validator={requiredValidator}
-                                  selectField="selected"
-                                  expandField="expanded"
-                              />
-                          )}
+                          <Field
+                              key={`category-${selectedProductType}`}
+                              id="primaryProductCategoryId"
+                              name="primaryProductCategoryId"
+                              label={getTranslatedLabel(
+                                  "product.products.form.category",
+                                  "Product Category *"
+                              )}
+                              data={memoizedCategoryData || []}
+                              component={MemoizedFormComboBox2}
+                              dataItemKey="productCategoryId"
+                              textField="description"
+                              validator={requiredValidator}
+                          />
                         </Grid>
                       </Grid>
+
+                      {editMode === 2 && product && (
+                          <Grid container spacing={2} mt={2}>
+                            <Grid item xs={12}>
+                              <Button
+                                  variant="outlined"
+                                  color="secondary"
+                                  onClick={() => setManageMembersOpen(true)}
+                              >
+                                {getTranslatedLabel("product.products.form.manageCategories", "Manage Additional Categories")}
+                              </Button>
+                            </Grid>
+                          </Grid>
+                      )}
 
                       {/* REFACTOR: Apartment fields with FormNumericTextBox */}
                       {/* Purpose: Use Kendo numeric input for precision, formatting, and validation */}
@@ -515,6 +541,7 @@ function ProductForm({
                       )}
                       {(isProductCategoriesFetching ||
                           isProductTypesFetching ||
+                          isProductCategoriesFlatFetching ||
                           isProductCategoriesFetchingRawMaterials) && (
                           <LoadingComponent message="Loading Data..." />
                       )}
@@ -523,6 +550,15 @@ function ProductForm({
               )}
           />
         </Paper>
+
+        {editMode === 2 && product && (
+            <ManageProductCategoryMembersModal
+                productId={product.productId}
+                productName={product.productName || ""}
+                open={manageMembersOpen}
+                onClose={() => setManageMembersOpen(false)}
+            />
+        )}
       </>
   );
 }

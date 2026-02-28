@@ -112,10 +112,10 @@ const paymentsApi = createApi({
                 },
                     invalidatesTags: ["Payments"]
             }),
-            setPaymentStatusToReceived: builder.mutation({
+            setPaymentStatus: builder.mutation({
                 query: (changePaymentStatus) => {
                     return {
-                        url: "/payments/setPaymentStatusToReceived",
+                        url: "/payments/setPaymentStatus",
                         method: "PUT",
                         body: {...changePaymentStatus},
                     };
@@ -323,7 +323,7 @@ export const {
     useCompleteSalesOrderPaymentsMutation,
     useCreatePaymentAndFinAccountTransMutation,
     useUpdatePaymentMutation,
-    useSetPaymentStatusToReceivedMutation,
+    useSetPaymentStatusMutation,
     useFetchPaymentApplicationsForPaymentQuery,
     useCalculatePaymentTotalsMutation,
     useRemovePaymentApplicationMutation,

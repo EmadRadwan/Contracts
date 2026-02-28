@@ -1,6 +1,6 @@
-using Application.ProductCategories;
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
+using Application.Interfaces;
+using Application.ProductCategories; // assuming Result<T> is here
+using Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
@@ -11,34 +11,43 @@ public class ListProductCategories
 {
     public class Query : IRequest<Result<List<ProductCategoryMemberDto>>>
     {
-        public string ProductId { get; set; }
+        public string ProductId { get; set; } = string.Empty;
     }
-
 
     public class Handler : IRequestHandler<Query, Result<List<ProductCategoryMemberDto>>>
     {
         private readonly DataContext _context;
-        private readonly IMapper _mapper;
 
-
-        public Handler(DataContext context, IMapper mapper)
+        public Handler(DataContext context)
         {
             _context = context;
-            _mapper = mapper;
         }
 
-        public async Task<Result<List<ProductCategoryMemberDto>>> Handle(Query request,
+        public async Task<Result<List<ProductCategoryMemberDto>>> Handle(
+            Query request,
             CancellationToken cancellationToken)
         {
-            var query = _context.ProductCategoryMembers
+            var productCategoryMembers = await _context.ProductCategoryMembers
                 .Where(z => z.ProductId == request.ProductId)
-                .ProjectTo<ProductCategoryMemberDto>(_mapper.ConfigurationProvider)
-                .AsQueryable();
+                // Optional: include only active/current categories
+                // .Where(z => z.FromDate <= DateTime.UtcNow && (z.ThruDate == null || z.ThruDate > DateTime.UtcNow))
+                .Join(
+                    _context.ProductCategories,
+                    member => member.ProductCategoryId,
+                    category => category.ProductCategoryId,
+                    (member, category) => new { member, category }
+                )
+                .Select(x => new ProductCategoryMemberDto
+                {
+                    ProductId         = x.member.ProductId,
+                    ProductCategoryId = x.member.ProductCategoryId,
+                    FromDate          = x.member.FromDate,
+                    ThruDate          = x.member.ThruDate,
 
-            var queryString = query.ToQueryString();
-
-            var productCategoryMembers = await query
-                .ToListAsync();
+                    // ← New fields from joined ProductCategory
+                    Description = x.category.DescriptionArabic,
+                })
+                .ToListAsync(cancellationToken);
 
             return Result<List<ProductCategoryMemberDto>>.Success(productCategoryMembers);
         }

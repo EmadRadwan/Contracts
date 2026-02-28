@@ -25,7 +25,7 @@ public class PaymentDetailsResponse
     public string PartyIdToName { get; set; }
 }
 
-public class SetPaymentStatusToReceived
+public class SetPaymentStatus
 {
     // ------------------------------------------------------------
     // 1. Command

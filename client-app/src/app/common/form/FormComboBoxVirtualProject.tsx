@@ -240,6 +240,7 @@ export const FormComboBoxVirtualProject = (fieldRenderProps: FieldRenderProps) =
                     total: total,
                 }}
                 onPageChange={pageChange}
+                popupSettings={{ appendTo: document.body }}
             />
             {showHint && (
                 <NotificationGroup style={position.bottomRight}>

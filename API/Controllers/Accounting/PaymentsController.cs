@@ -114,10 +114,10 @@ public class PaymentsController : BaseApiController
             { ReceiveOfflinePaymentInput = receiveOfflinePaymentInput }));
     }
 
-    [HttpPut("setPaymentStatusToReceived", Name = "SetPaymentStatusToReceived")]
-    public async Task<IActionResult> SetPaymentStatusToReceived(PaymentChangeStatusDto paymentChangeStatusDto)
+    [HttpPut("setPaymentStatus", Name = "SetPaymentStatus")]
+    public async Task<IActionResult> SetPaymentStatus(PaymentChangeStatusDto paymentChangeStatusDto)
     {
-        return HandleResults(await Mediator.Send(new SetPaymentStatusToReceived.Command
+        return HandleResults(await Mediator.Send(new SetPaymentStatus.Command
             { PaymentChangeStatusDto = paymentChangeStatusDto }));
     }
 

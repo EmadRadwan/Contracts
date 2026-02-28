@@ -5682,8 +5682,8 @@ public class GeneralLedgerService : IGeneralLedgerService
                 pga.OrganizationPartyId == companyPartyId &&
                 pga.PartyId == employeePartyId &&
                 pga.RoleTypeId == "EMPLOYEE" &&
-                pga.GlAccountTypeId == "ACCOUNTS_PAYABLE")
-            .Select(pga => pga.GlAccountId)
+                pga.GlAccountTypeId == "ACCOUNTS_RECEIVABLE")
+            .Select(pga => pga.GlAccountId) 
             .FirstOrDefaultAsync();
 
         if (string.IsNullOrEmpty(employeeAccruedGl))

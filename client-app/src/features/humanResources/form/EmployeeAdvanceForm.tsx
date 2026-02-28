@@ -16,6 +16,7 @@ import {MemoizedFormComboBox2} from "../../../app/common/form/FormComboBox2";
 import {FormComboBoxVirtualPartyEmployee} from "../../../app/common/form/FormComboBoxVirtualPartyEmployee";
 import ModalContainer from "../../../app/common/modals/ModalContainer";
 import DeductionPlanModal from "./DeductionPlanModal";
+import LoadingComponent from "../../../app/layout/LoadingComponent";
 
 // -----------------------------------------------------------------
 // Props
@@ -162,8 +163,8 @@ function EmployeeAdvanceForm({
             
             let errorMessage = getTranslatedLabel("party.employeeAdvance.form.error", "Failed to save employee advance");
             
-            if (err?.data?.errors) {
-                errorMessage = Object.values(err.data.errors).flat().join(" ");
+            if (err?.data?.title) {
+                errorMessage = err?.data?.title;
             } else if (err?.data?.errorMessage) {
                 errorMessage = err.data.errorMessage;
             } else if (typeof err?.data === 'string') {
@@ -411,6 +412,7 @@ function EmployeeAdvanceForm({
                         );
                     }}
                 />
+                {isCreating || isUpdating && <LoadingComponent message={getTranslatedLabel("party.employeeAdvance.form.processingAdvance", "Processing Advance...")} />}
             </Paper>
         </>
     );

@@ -13,14 +13,14 @@ import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 export default function CreateProductMenu() {
     const {getTranslatedLabel} = useTranslationHelper()
     const menuItems = [
-        { name: "Associations", path: "/productAssociations", key: "product.products.form.menu.associations", icon: <BusinessOutlinedIcon sx={{ color: "#FFA500" }} /> },
-        { name: "Prices", path: "/productPrices", key: "product.products.form.menu.prices", icon: <AttachMoneyOutlinedIcon sx={{ color: "#FF4081" }} /> },
-        { name: "Facilities", path: "/productFacilities", key: "product.products.form.menu.facilities", icon: <StoreOutlinedIcon sx={{ color: "#00BFFF" }} /> },
-        { name: "Locations", path: "/productLocations", key: "product.products.form.menu.locations", icon: <MapIcon sx={{ color: "#4CAF50" }} /> },
+        //{ name: "Associations", path: "/productAssociations", key: "product.products.form.menu.associations", icon: <BusinessOutlinedIcon sx={{ color: "#FFA500" }} /> },
+        //{ name: "Prices", path: "/productPrices", key: "product.products.form.menu.prices", icon: <AttachMoneyOutlinedIcon sx={{ color: "#FF4081" }} /> },
+        //{ name: "Facilities", path: "/productFacilities", key: "product.products.form.menu.facilities", icon: <StoreOutlinedIcon sx={{ color: "#00BFFF" }} /> },
+        //{ name: "Locations", path: "/productLocations", key: "product.products.form.menu.locations", icon: <MapIcon sx={{ color: "#4CAF50" }} /> },
         { name: "Categories", path: "/productCategories", key: "product.products.form.menu.categories", icon: <CategoryOutlinedIcon sx={{ color: "#FFC107" }} /> },
-        { name: "Suppliers", path: "/productSuppliers", key: "product.products.form.menu.suppliers", icon: <LocalShippingOutlinedIcon sx={{ color: "#9C27B0" }} /> },
-        { name: "Inventory", path: "/facilityInventories", key: "product.products.form.menu.inventory", icon: <InventoryOutlinedIcon sx={{ color: "#FF5722" }} /> },
-        { name: "Costs", path: "/productCosts", key: "product.products.form.menu.costs", icon: <WorkOutlineOutlinedIcon sx={{ color: "#E91E63" }} /> },
+        //{ name: "Suppliers", path: "/productSuppliers", key: "product.products.form.menu.suppliers", icon: <LocalShippingOutlinedIcon sx={{ color: "#9C27B0" }} /> },
+        //{ name: "Inventory", path: "/facilityInventories", key: "product.products.form.menu.inventory", icon: <InventoryOutlinedIcon sx={{ color: "#FF5722" }} /> },
+        //{ name: "Costs", path: "/productCosts", key: "product.products.form.menu.costs", icon: <WorkOutlineOutlinedIcon sx={{ color: "#E91E63" }} /> },
     ];
 
     return (

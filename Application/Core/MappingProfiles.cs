@@ -24,11 +24,7 @@ public class MappingProfiles : Profile
 
 
         CreateMap<RoleType, RoleTypeDto>();
-        CreateMap<ProductCategoryMember, ProductCategoryMemberDto>()
-            .ForMember(d => d.Description, o => o.MapFrom(s => s.ProductCategory.Description))
-            .ForMember(d => d.FromDate,
-                o => o.MapFrom(
-                    s => DateTime.SpecifyKind(s.FromDate.Truncate(TimeSpan.FromSeconds(1)), DateTimeKind.Utc)));
+       
         CreateMap<ProductFacility, ProductFacilityDto>()
             .ForMember(d => d.FacilityName, o => o.MapFrom(s => s.Facility.FacilityName));
 

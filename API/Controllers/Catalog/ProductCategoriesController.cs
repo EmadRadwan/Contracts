@@ -1,4 +1,5 @@
 using Application.Catalog.ProductCategories;
+using Application.ProductCategories;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -39,9 +40,18 @@ public class ProductCategoriesController : BaseApiController
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateProductCategory(ProductCategoryMember productCategoryMember)
+    public async Task<IActionResult> CreateProductCategory(ProductCategoryMemberDto dto)
     {
         return HandleResult(await Mediator.Send(new CreateProductCategory.Command
-            { ProductCategoryMember = productCategoryMember }));
+        { 
+            Member = dto 
+        }));
+    }
+
+    [HttpDelete("{productCategoryId}/{productId}/{fromDate}")]
+    public async Task<IActionResult> DeleteProductCategory(string productCategoryId, string productId, DateTime fromDate)
+    {
+        return HandleResult(await Mediator.Send(new DeleteProductCategory.Command
+            { ProductCategoryId = productCategoryId, ProductId = productId, FromDate = fromDate }));
     }
 }

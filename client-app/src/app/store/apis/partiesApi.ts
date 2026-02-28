@@ -12,6 +12,7 @@ interface ListResponse<T> {
 const partiesApi = createApi({
     reducerPath: "parties",
     tagTypes: ["Parties", "EmplPositionTypes", "Employee", "Party", "Parties", "Supplier", "Contractor", "Customer", "EmployeeAdvance"],
+    refetchOnMountOrArgChange: true,
     baseQuery: fetchBaseQuery({
         baseUrl: import.meta.env.VITE_API_URL,
         prepareHeaders: (headers, {getState}) => {

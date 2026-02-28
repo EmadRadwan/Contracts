@@ -4,7 +4,6 @@ import {
     requiredValidator
 } from "../../../../app/common/form/Validators";
 import {Field, Form, FormElement, FormRenderProps,} from "@progress/kendo-react-form";
-import {MemoizedFormDropDownList} from "../../../../app/common/form/MemoizedFormDropDownList";
 import {Alert, Box, Button, Grid, Skeleton, Typography} from "@mui/material";
 import FormNumericTextBox from "../../../../app/common/form/FormNumericTextBox";
 import FormTextArea from "../../../../app/common/form/FormTextArea";

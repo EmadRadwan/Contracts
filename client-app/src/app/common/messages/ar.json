@@ -421,6 +421,7 @@
         "startDateRequired": "تاريخ البدء مطلوب عندما يكون عدد الأقساط أكبر من الصفر.",
         "created": "تم إنشاء سلفة الموظف بنجاح",
         "updated": "تم تحديث سلفة الموظف بنجاح",
+        "processingAdvance": "جاري معالجة السلفة",
         "error": "فشل في حفظ سلفة الموظف"
       },
       "list": {
@@ -470,6 +471,11 @@
         "gardenPricePerM2": "سعر الحديقة لكل متر مربع",
         "apartmentStatus": "حالة الشقة",
         "buildingNumber": "رقم البناية",
+        "createNew": "إخلاء الاستمارة",
+        "manageCategories": "إدارة التصنيفات الإضافية",
+        "updateSuccess": "تم تحديث المنتج بنجاح",
+        "createSuccess": "تم إنشاء المنتج بنجاح",
+        "error": "فشل في معالجة المنتج",
         "menu": {
           "associations": "المنتجات المتصلة",
           "prices": "الأسعار",
@@ -480,6 +486,24 @@
           "costs": "التكاليف",
           "locations": "المواقع"
         }
+      }
+    },
+    "category": {
+      "members": {
+        "manageTitle": "إدارة عضويات التصنيف لـ",
+        "addTitle": "إضافة إلى تصنيف",
+        "selectCategory": "اختر التصنيف",
+        "currentMemberships": "العضويات الحالية",
+        "categoryId": "كود التصنيف",
+        "categoryName": "اسم التصنيف",
+        "fromDate": "من تاريخ",
+        "noMemberships": "لا توجد عضويات إضافية"
+      },
+      "member": {
+        "addedSuccess": "تم إضافة عضو التصنيف بنجاح",
+        "addedError": "فشل في إضافة عضو التصنيف",
+        "deletedSuccess": "تم حذف عضو التصنيف بنجاح",
+        "deletedError": "فشل في حذف عضو التصنيف"
       }
     },
     "promos": {

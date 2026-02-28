@@ -3,7 +3,7 @@ import { toast } from "react-toastify";
 import { Payment } from "../../../../app/models/accounting/payment";
 import {
   useCreatePaymentAndFinAccountTransMutation, useDuplicatePaymentMutation, useResetPaymentMutation,
-  useSetPaymentStatusToReceivedMutation,
+  useSetPaymentStatusMutation,
   useUpdatePaymentMutation,
 } from "../../../../app/store/apis";
 import {useAppDispatch, useAppSelector} from "../../../../app/store/configureStore";
@@ -93,7 +93,7 @@ export default function usePayment({
       useCreatePaymentAndFinAccountTransMutation();
   const [updatePayment, { isLoading: isUpdateLoading }] = useUpdatePaymentMutation();
   const [setPaymentStatus, { isLoading: isStatusLoading }] =
-      useSetPaymentStatusToReceivedMutation();
+      useSetPaymentStatusMutation();
   const [duplicatePayment, { isLoading: isDuplicating }] = useDuplicatePaymentMutation();
   const [resetPayment, { isLoading: isResetting }] = useResetPaymentMutation();
   const {getTranslatedLabel} = useTranslationHelper();
