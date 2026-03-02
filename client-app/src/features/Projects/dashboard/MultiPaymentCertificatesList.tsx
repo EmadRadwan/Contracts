@@ -14,23 +14,71 @@ import { useAppDispatch } from "../../../app/store/configureStore";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import { MultiPaymentCertificate } from "../../../app/models/project/MultiPaymentCertificate";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
-import { useFetchMultiPaymentCertificatesQuery } from "../../../app/store/apis/multiPaymentCertificateApi";
+import {
+    useDeleteMultiPaymentCertificateMutation,
+    useFetchMultiPaymentCertificatesQuery
+} from "../../../app/store/apis/multiPaymentCertificateApi";
 import AccountingMenu from "../../accounting/invoice/menu/AccountingMenu";
 import {handleDatesArray} from "../../../app/util/utils";
 import ModalContainer from "../../../app/common/modals/ModalContainer";
 import WorkEffortTransactionsList from "../../accounting/transaction/dashboard/WorkEffortTransactionsList";
+import {Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle} from "@mui/material";
+import {toast} from "react-toastify";
 
 export default function MultiPaymentCertificatesList() {
     const [certificates, setCertificates] = useState<DataResult>({ data: [], total: 0 });
-    const [dataState, setDataState] = useState<State>({ take: 6, skip: 0 });
+    const [dataState, setDataState] = React.useState<State>({
+        sort: [
+            {
+                field: "lastUpdatedStamp",
+                dir: "desc",
+            },
+        ],
+        skip: 0,
+        take: 25,
+    });
     const [formEditMode, setFormEditMode] = useState<number>(0);
     const [viewMode, setViewMode] = useState<"list" | "form">("list");
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = "projects.multiPaymentCertificate.HeaderList";
     const [selectedWorkEffortIdForTransactions, setSelectedWorkEffortIdForTransactions] = useState<string | null>(null);
     const [paymentCertificate, setPaymentCertificate] = useState<MultiPaymentCertificate | null>(null);
-    const dispatch = useAppDispatch();
     const { data, isFetching } = useFetchMultiPaymentCertificatesQuery({ ...dataState });
+
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [certificateToDelete, setCertificateToDelete] = useState<string | null>(null);
+    const [deleteCertificate, { isLoading: isDeleting }] = useDeleteMultiPaymentCertificateMutation();
+
+    const handleDeleteClick = (workEffortId: string) => {
+        setCertificateToDelete(workEffortId);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!certificateToDelete) return;
+
+        try {
+            await deleteCertificate(certificateToDelete).unwrap();
+            toast.success(
+                getTranslatedLabel("projects.multiPaymentCertificate.list.deleteSuccess", "Certificate deleted successfully")
+            );
+        } catch (err: any) {
+            let errorMessage = getTranslatedLabel("projects.multiPaymentCertificate.list.deleteFailed", "Failed to delete certificate");
+            if (err?.data?.message) {
+                errorMessage = err.data.message;
+            }
+            toast.error(errorMessage);
+            console.error('Delete certificate failed:', err);
+        } finally {
+            setDeleteDialogOpen(false);
+            setCertificateToDelete(null);
+        }
+    };
+
+    const handleCancelDelete = () => {
+        setDeleteDialogOpen(false);
+        setCertificateToDelete(null);
+    };
 
     useEffect(() => {
         if (data) {
@@ -119,7 +167,9 @@ export default function MultiPaymentCertificatesList() {
         date: 150,
         description: 350,
         accountName: 250,
-        statusDescription: 120
+        statusDescription: 120,
+        notes: 100,
+        partyName: 200,
     };
 
     const handleShowTransactions = (workEffortId: string) => {
@@ -140,14 +190,25 @@ export default function MultiPaymentCertificatesList() {
                 {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
                 {...navigationAttributes}
             >
-                <Button
-                    size="small"
-                    color="info"
-                    variant="outlined"
-                    onClick={() => handleShowTransactions(props.dataItem.workEffortId)}
-                >
-                    {getTranslatedLabel("projects.multiPaymentCertificate.transactions", "Transactions")}
-                </Button>
+                <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                    <Button
+                        size="small"
+                        color="info"
+                        variant="outlined"
+                        onClick={() => handleShowTransactions(props.dataItem.workEffortId)}
+                    >
+                        {getTranslatedLabel("projects.multiPaymentCertificate.transactions", "Transactions")}
+                    </Button>
+                    <Button
+                        size="small"
+                        color="error"
+                        variant="outlined"
+                        onClick={() => handleDeleteClick(props.dataItem.workEffortId)}
+                        disabled={isDeleting}
+                    >
+                        {getTranslatedLabel("projects.multiPaymentCertificate.list.deleteButton", "Delete")}
+                    </Button>
+                </div>
             </td>
         );
     };
@@ -202,6 +263,16 @@ export default function MultiPaymentCertificatesList() {
                                 width={columnWidths.accountName}
                             />
                             <Column
+                                field="partyName"
+                                title={getTranslatedLabel(`${localizationKey}.paymentTo`, "Payment To")}
+                                width={columnWidths.partyName}
+                            />
+                            <Column
+                                field="notes"
+                                title={getTranslatedLabel(`${localizationKey}.referenceNum`, "Reference Number")}
+                                width={columnWidths.notes}
+                            />
+                            <Column
                                 field="statusDescription"
                                 title={getTranslatedLabel(`${localizationKey}.statusDescription`, "statusDescription")}
                                 width={columnWidths.statusDescription}
@@ -209,12 +280,49 @@ export default function MultiPaymentCertificatesList() {
 
                             <Column
                                 title={getTranslatedLabel(`${localizationKey}.actions`, "Actions")}
-                                width={160}
+                                width={220}
                                 cell={ActionsCell}
                                 locked={true}
                             />
                            
                         </KendoGrid>
+                        <Dialog
+                            open={deleteDialogOpen}
+                            onClose={handleCancelDelete}
+                            aria-labelledby="delete-certificate-dialog-title"
+                            aria-describedby="delete-certificate-dialog-description"
+                        >
+                            <DialogTitle id="delete-certificate-dialog-title">
+                                {getTranslatedLabel(
+                                    "projects.multiPaymentCertificate.list.deleteDialogTitle",
+                                    "Confirm Deletion"
+                                )}
+                            </DialogTitle>
+                            <DialogContent>
+                                <DialogContentText id="delete-certificate-dialog-description">
+                                    {getTranslatedLabel(
+                                        "projects.multiPaymentCertificate.list.deleteDialogMessage",
+                                        "Are you sure you want to delete certificate {0}? This action cannot be undone."
+                                    ).replace("{0}", certificateToDelete || "")}
+                                </DialogContentText>
+                            </DialogContent>
+                            <DialogActions>
+                                <Button onClick={handleCancelDelete} disabled={isDeleting}>
+                                    {getTranslatedLabel("global.cancel", "Cancel")}
+                                </Button>
+                                <Button
+                                    onClick={handleConfirmDelete}
+                                    color="error"
+                                    variant="contained"
+                                    disabled={isDeleting}
+                                    autoFocus
+                                >
+                                    {isDeleting
+                                        ? getTranslatedLabel("global.deleting", "Deleting...")
+                                        : getTranslatedLabel("projects.multiPaymentCertificate.list.deleteConfirm", "Delete")}
+                                </Button>
+                            </DialogActions>
+                        </Dialog>
                         {isFetching && (
                             <LoadingComponent
                                 message={getTranslatedLabel(

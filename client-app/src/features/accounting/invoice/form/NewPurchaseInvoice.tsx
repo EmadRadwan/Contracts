@@ -3,6 +3,7 @@ import { Form, FormElement, Field } from "@progress/kendo-react-form";
 import { Button, Grid } from "@mui/material";
 import { MemoizedFormDropDownList } from "../../../../app/common/form/MemoizedFormDropDownList";
 import { FormComboBoxVirtualParty } from "../../../../app/common/form/FormComboBoxVirtualParty";
+import { FormComboBoxVirtualPartyEmployee } from "../../../../app/common/form/FormComboBoxVirtualPartyEmployee";
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
 import {
      useFetchCompaniesQuery,
@@ -105,7 +106,11 @@ const NewPurchaseInvoice = ({ onClose }: Props) => {
                                     name="partyIdFrom"
                                     id="partyIdFrom"
                                     label={getTranslatedLabel(`${localizationKey}.from-party`, "From Party ID")}
-                                    component={FormComboBoxVirtualParty}
+                                    component={
+                                        formRenderProps.valueGetter("invoiceTypeId") === "PAYROL_INVOICE"
+                                            ? FormComboBoxVirtualPartyEmployee
+                                            : FormComboBoxVirtualParty
+                                    }
                                     validator={requiredValidator}
                                 />
                             </Grid>

@@ -1811,11 +1811,21 @@
         "date": "التاريخ *",
         "glAccount": "حساب دفتر الأستاذ *",
         "paymentMethod": "طريقة الدفع *",
+        "paymentTo": "الدفع إلى",
+        "referenceNum": "الرقم المرجعي",
         "description": "الوصف",
         "chequeNumber": "رقم الشيك",
         "chequeDate": "تاريخ الشيك",
         "create": "إنشاء شهادة",
-        "update": "تحديث الشهادة"
+        "update": "تحديث الشهادة",
+        "actions": "الإجراءات",
+        "approve": "الموافقة",
+        "resetConfirm": "إعادة تعيين الشهادة",
+        "reset": {
+          "dialogTitle": "تأكيد إعادة تعيين الشهادة",
+          "dialogMessage": "هل أنت متأكد من إعادة تعيين الشهادة {workEffortId}؟\n\nسيؤدي ذلك إلى:\n• حذف الحركات المحاسبية\n• إرجاع الحالة إلى \"تم الإنشاء\"\n\nهذا الإجراء لا يمكن التراجع عنه.",
+          "confirm": "إعادة تعيين الشهادة"
+        }
       },
       "itemForm": {
         "glAccountId": "حساب دفتر الأستاذ *",
@@ -1861,7 +1871,17 @@
         "date": "التاريخ",
         "accountName": "اسم الحساب",
         "statusDescription": "الحالة",
-        "description": "الوصف"
+        "paymentTo": "الدفع إلى",
+        "referenceNum": "الرقم المرجعي",
+        "description": "الوصف",
+        "actions": "الإجراءات",
+        "transactions": "الحركات",
+        "deleteButton": "حذف",
+        "deleteDialogTitle": "تأكيد الحذف",
+        "deleteDialogMessage": "هل أنت متأكد من حذف الشهادة {0}؟ هذا الإجراء لا يمكن التراجع عنه.",
+        "deleteConfirm": "حذف",
+        "deleteSuccess": "تم حذف الشهادة بنجاح",
+        "deleteFailed": "فشل حذف الشهادة"
       }
     }
   },

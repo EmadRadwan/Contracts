@@ -77,6 +77,20 @@ const multiPaymentCertificateApi = createApi({
                 }),
                 invalidatesTags: ['MultiPaymentCertificates', 'MultiPaymentItems'],
             }),
+            deleteMultiPaymentCertificate: builder.mutation<void, string>({
+                query: (workEffortId) => ({
+                    url: `/project/multiPaymentCertificate/${workEffortId}`,
+                    method: 'DELETE',
+                }),
+                invalidatesTags: ['MultiPaymentCertificates'],
+            }),
+            resetMultiPaymentCertificate: builder.mutation<MultiPaymentCertificate, string>({
+                query: (workEffortId) => ({
+                    url: `/project/resetMultiPaymentCertificate/${workEffortId}`,
+                    method: 'POST',
+                }),
+                invalidatesTags: ['MultiPaymentCertificates', 'MultiPaymentItems'],
+            }),
         };
     },
 });
@@ -84,7 +98,8 @@ const multiPaymentCertificateApi = createApi({
 export const { useFetchMultiPaymentCertificatesQuery,
     useGetMultiPaymentItemsQuery,
     useFetchSubProjectsQuery, useAddMultiPaymentCertificateMutation,
-    useApproveMultiPaymentCertificateMutation, useUpdateMultiPaymentCertificateMutation
+    useApproveMultiPaymentCertificateMutation, useUpdateMultiPaymentCertificateMutation,
+    useDeleteMultiPaymentCertificateMutation, useResetMultiPaymentCertificateMutation
 } = multiPaymentCertificateApi;
 export { multiPaymentCertificateApi };
 

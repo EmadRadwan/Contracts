@@ -24,6 +24,7 @@ import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import {FormComboBoxVirtualParty} from "../../../../app/common/form/FormComboBoxVirtualParty";
 import useDuplicateAcctgTrans from "../hook/useDuplicateAcctgTrans";
+import {MultiAcctgTransExcel} from "../report/MultiAcctgTransExcel";
 
 interface TransEntry {
     id: string;
@@ -45,6 +46,7 @@ export default function MultiAcctgTransEntryForm() {
     const {getTranslatedLabel} = useTranslationHelper();
     const localizationKey = "accounting.orgGL.accounting.trans.multi";
     const {user} = useAppSelector((state) => state.account);
+    const language = useAppSelector((state: RootState) => state.localization);
     const companyId = user?.organizationPartyId || "";
     const companyName = useAppSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
     const {
@@ -533,6 +535,20 @@ export default function MultiAcctgTransEntryForm() {
                                                     {getTranslatedLabel("general.save", "Save Transaction")}
                                                 </Button>
                                             </Grid>
+                                            {transactionId && (
+                                                <Grid item xs={2}>
+                                                    <MultiAcctgTransExcel
+                                                        companyName={companyName}
+                                                        transactionId={transactionId}
+                                                        headerValues={headerValues}
+                                                        entries={transEntries}
+                                                        acctgTransTypes={acctgTransTypes || []}
+                                                        accountMap={accountMap}
+                                                        getTranslatedLabel={getTranslatedLabel}
+                                                        language={language}
+                                                    />
+                                                </Grid>
+                                            )}
                                             {transactionId && (
                                                 <Grid item xs={2}>
                                                     <Button

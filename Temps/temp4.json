@@ -1,24 +1,50 @@
-"payments": {
-"form": {
-"actions": {
-"create": "إنشاء دفعة",
-"update": "تحديث الدفعة",
-"receive": "تغيير الحالة إلى مستلمة",
-"send": "تغيير الحالة إلى مدفوعة",
-"confirm": "تغيير الحالة إلى مؤكدة",
-"transactions": "القيود المحاسبية",
-"duplicate": "تكرار الدفعة",
-"applications": "تطبيقات الدفع",
-"reset": "إعادة تعيين الدفعة"           // ← NEW: menu item text
-},
-"reset": {                                   // ← NEW sub-node for dialog texts
-"dialogTitle": "تأكيد إعادة تعيين الدفعة",
-"dialogMessage": "هل أنت متأكد من إعادة تعيين الدفعة رقم {paymentId}؟\n\nسيؤدي ذلك إلى:\n• إرجاع الحالة إلى \"غير مدفوع\"\n• حذف جميع تطبيقات الدفعة\n• حذف الحركات المحاسبية المرتبطة\n\nهذا الإجراء لا يمكن التراجع عنه.",
-"resetConfirm": "إعادة تعيين الدفعة",
-"resetSuccess": "تم إعادة تعيين الدفعة بنجاح",
-"resetFailed": "فشل إعادة تعيين الدفعة"
-},
-// ... rest of "form" remains unchanged ...
-},
-// ... other sections (list, applications, transactions) remain unchanged ...
-}
+[
+  {
+    "INVOICE_ITEM_TYPE_ID": "PAYROL_ALLOWANCE",
+    "PARENT_TYPE_ID": "PAYROL_EARN_HOURS",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Allowances",
+    "DESCRIPTION_ARABIC": "البدلات",
+    "DEFAULT_GL_ACCOUNT_ID": "605000",
+    "LAST_UPDATED_STAMP": "2026-03-01 01:00:00.000",
+    "LAST_UPDATED_TX_STAMP": "2026-03-01 01:00:00.000",
+    "CREATED_STAMP": "2026-03-01 01:00:00.000",
+    "CREATED_TX_STAMP": "2026-03-01 01:00:00.000"
+  },
+  {
+    "INVOICE_ITEM_TYPE_ID": "PAYROL_OVERTIME",
+    "PARENT_TYPE_ID": "PAYROL_EARN_HOURS",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Overtime Value",
+    "DESCRIPTION_ARABIC": "قيمة الإضافي",
+    "DEFAULT_GL_ACCOUNT_ID": "605000",
+    "LAST_UPDATED_STAMP": "2026-03-01 01:00:00.000",
+    "LAST_UPDATED_TX_STAMP": "2026-03-01 01:00:00.000",
+    "CREATED_STAMP": "2026-03-01 01:00:00.000",
+    "CREATED_TX_STAMP": "2026-03-01 01:00:00.000"
+  },
+  {
+    "INVOICE_ITEM_TYPE_ID": "PAYROL_DD_ABSENCE",
+    "PARENT_TYPE_ID": "PAYROL_DD_FROM_GROSS",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Absence Deduction Value",
+    "DESCRIPTION_ARABIC": "قيمة الغياب",
+    "DEFAULT_GL_ACCOUNT_ID": "610000",
+    "LAST_UPDATED_STAMP": "2026-03-01 01:00:00.000",
+    "LAST_UPDATED_TX_STAMP": "2026-03-01 01:00:00.000",
+    "CREATED_STAMP": "2026-03-01 01:00:00.000",
+    "CREATED_TX_STAMP": "2026-03-01 01:00:00.000"
+  },
+  {
+    "INVOICE_ITEM_TYPE_ID": "PAYROL_DD_ADVANCE",
+    "PARENT_TYPE_ID": "PAYROL_DD_FROM_GROSS",
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Advance Deductions",
+    "DESCRIPTION_ARABIC": "استقطاعات السلفيات",
+    "DEFAULT_GL_ACCOUNT_ID": "140000",
+    "LAST_UPDATED_STAMP": "2026-03-01 01:00:00.000",
+    "LAST_UPDATED_TX_STAMP": "2026-03-01 01:00:00.000",
+    "CREATED_STAMP": "2026-03-01 01:00:00.000",
+    "CREATED_TX_STAMP": "2026-03-01 01:00:00.000"
+  }
+]

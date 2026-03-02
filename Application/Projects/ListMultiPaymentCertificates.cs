@@ -35,6 +35,8 @@ namespace Application.Projects
                 var query = from we in _context.WorkEfforts.AsNoTracking()
                     join gl in _context.GlAccounts on we.GlAccountId equals gl.GlAccountId into glGroup
                     from gl in glGroup.DefaultIfEmpty()
+                    join party in _context.Parties on we.PartyIdEmployee equals party.PartyId into p
+                    from party in p.DefaultIfEmpty()
                     where we.WorkEffortTypeId == "PAYMENT_CERTIFICATE"
                     select new MultiPaymentCertificateRecord
                     {
@@ -42,6 +44,9 @@ namespace Application.Projects
                         Code = we.CertificateNumber,
                         Date = (DateTime)we.EstimatedStartDate,
                         Description = we.Description,
+                        Notes = we.Notes,
+                        PartyIdEmployee = we.PartyIdEmployee,
+                        PartyName = party != null ? party.Description : we.PartyIdEmployee,
 
                         // REFACTOR: Status description logic unchanged – kept Arabic/English fallback based on Language
                         StatusDescription = language == "ar"
@@ -57,8 +62,8 @@ namespace Application.Projects
                         CurrentStatusId = we.CurrentStatusId,
                         GlAccountId = we.GlAccountId,
 
-                        // REFACTOR: New field – Arabic account name from GLAccounts table
-                        AccountName = gl != null ? gl.AccountNameArabic : null
+                        AccountName = gl != null ? gl.AccountNameArabic : null,
+                        LastUpdatedStamp = we.LastUpdatedStamp
                     };
 
                 return query;

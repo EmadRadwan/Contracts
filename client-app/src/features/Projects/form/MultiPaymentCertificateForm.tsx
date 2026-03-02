@@ -1,9 +1,9 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {Field, Form, FormElement} from "@progress/kendo-react-form";
-import {Box, Button, Collapse, Grid, IconButton, Menu, MenuItem, Paper, Typography} from "@mui/material";
+import {Box, Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, IconButton, Menu, MenuItem, Paper, Typography} from "@mui/material";
 import {Ribbon, RibbonContainer} from "react-ribbons";
 import useMultiPaymentCertificate from "../hook/useMultiPaymentCertificate";
-import {FormInitialValues, MultiPaymentCertificate} from "../../../app/models/project/MultiPaymentCertificate";
+import {FormInitialValues, MultiPaymentCertificate, MultiPaymentItem} from "../../../app/models/project/MultiPaymentCertificate";
 import {useAppSelector} from "../../../app/store/configureStore";
 import MultiPaymentItemsList from "../dashboard/MultiPaymentItemsList";
 import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
@@ -13,15 +13,18 @@ import {requiredValidator} from "../../../app/common/form/Validators";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import FormInput from "../../../app/common/form/FormInput";
+import {FormComboBoxVirtualPartyEmployee} from "../../../app/common/form/FormComboBoxVirtualPartyEmployee";
 
 import {MemoizedFormComboBox2} from "../../../app/common/form/FormComboBox2";
-import {useFetchGlAccountOrgCashOrEquivalentLovQuery} from "../../../app/store/apis";
+import {useFetchGlAccountOrgCashOrEquivalentLovQuery, useFetchWorkEffortAcctTransEntriesQuery} from "../../../app/store/apis";
+import {MultiPaymentCertificateExcel} from "../report/MultiPaymentCertificateExcel";
 
 
 interface CertificateActionsMenuProps {
     workEffortId: string | undefined;
     currentStatusId: string | undefined;
     handleApprove: () => void;
+    handleReset: () => void;
     disabled: boolean;
 }
 
@@ -29,12 +32,14 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
                                                                            workEffortId,
                                                                            currentStatusId,
                                                                            handleApprove,
+                                                                           handleReset,
                                                                            disabled,
                                                                        }) => {
     const {getTranslatedLabel} = useTranslationHelper();
     const localizationKey = "accounting.multiPaymentCertificate.form";
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
+    const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
@@ -44,13 +49,23 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
         setAnchorEl(null);
     };
 
+    const handleResetClick = () => {
+        setResetDialogOpen(true);
+        handleClose();
+    };
+
+    const handleConfirmReset = () => {
+        handleReset();
+        setResetDialogOpen(false);
+    };
+
     return (
         <>
             <Button
                 variant="contained"
                 color="primary"
                 onClick={handleClick}
-                disabled={disabled || !workEffortId || currentStatusId === "WEPR_APPROVED"}
+                disabled={disabled || !workEffortId}
                 sx={{mt: 2, mr: 2}}
             >
                 {getTranslatedLabel(`${localizationKey}.actions`, "Actions")}
@@ -67,11 +82,53 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
                         handleApprove();
                         handleClose();
                     }}
-                    disabled={!workEffortId || currentStatusId === "WEPR_APPROVED"}
+                    disabled={currentStatusId === "WEPR_APPROVED"}
                 >
                     {getTranslatedLabel(`${localizationKey}.approve`, "Approve")}
                 </MenuItem>
+                <MenuItem
+                    onClick={handleResetClick}
+                    disabled={currentStatusId !== "WEPR_APPROVED"}
+                    sx={{ color: '#d32f2f' }}
+                >
+                    {getTranslatedLabel(`${localizationKey}.resetConfirm`, "Reset Certificate")}
+                </MenuItem>
             </Menu>
+
+            <Dialog
+                open={resetDialogOpen}
+                onClose={() => setResetDialogOpen(false)}
+                aria-labelledby="reset-certificate-dialog-title"
+                aria-describedby="reset-certificate-dialog-description"
+            >
+                <DialogTitle id="reset-certificate-dialog-title">
+                    {getTranslatedLabel(
+                        `${localizationKey}.reset.dialogTitle`,
+                        "Confirm Certificate Reset"
+                    )}
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="reset-certificate-dialog-description">
+                        {getTranslatedLabel(
+                            `${localizationKey}.reset.dialogMessage`,
+                            "Are you sure you want to reset certificate {workEffortId}?\n\nThis will:\n• Delete accounting transactions\n• Reset status to Created\n\nThis action cannot be undone."
+                        ).replace("{workEffortId}", workEffortId || "")}
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setResetDialogOpen(false)}>
+                        {getTranslatedLabel("global.cancel", "Cancel")}
+                    </Button>
+                    <Button
+                        onClick={handleConfirmReset}
+                        color="error"
+                        variant="contained"
+                        autoFocus
+                    >
+                        {getTranslatedLabel(`${localizationKey}.reset.confirm`, "Reset Certificate")}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </>
     );
 };
@@ -100,12 +157,15 @@ export default function MultiPaymentCertificateForm({
     const formRef = useRef<any>(null);
     const {user} = useAppSelector((state) => state.account);
     const companyId = user?.organizationPartyId || "";
+    const companyName = user?.organizationPartyName || "";
     const {
         data: glAccounts,
         isLoading: isLoadingGlAccounts
     } = useFetchGlAccountOrgCashOrEquivalentLovQuery(companyId, {
         skip: !companyId,
     });
+
+    
 
 
     const {
@@ -117,12 +177,17 @@ export default function MultiPaymentCertificateForm({
         deleteItem,
         handleCreate,
         handleUpdate, setItems, handleApprove, itemsVersion,
+        handleDelete, handleReset,
         isLoading: apiLoading,
     } = useMultiPaymentCertificate({
         selectedCertificate,
         editMode,
         setFormKey,
         setEditMode, setParentCertificate
+    });
+
+    const { data: acctTransEntryData, isFetching: isFetchingTransactions, refetch: refetchTransactions } = useFetchWorkEffortAcctTransEntriesQuery(certificate?.workEffortId, {
+        skip: !certificate?.workEffortId,
     });
 
     // Whenever items change → update hidden field
@@ -141,6 +206,8 @@ export default function MultiPaymentCertificateForm({
             statusDescription: "Created",
             statusDescriptionArabic: "تم الإنشاء",
             glaccountId: "",
+            partyIdEmployee: null,
+            notes: "",
         };
 
         // REFACTOR: Only override default values if source exists and has valid properties
@@ -154,14 +221,14 @@ export default function MultiPaymentCertificateForm({
                 statusDescription: source.statusDescription || defaultValues.statusDescription,
                 statusDescriptionArabic: source.statusDescriptionArabic || defaultValues.statusDescriptionArabic,
                 glAccountId: source.glAccountId || defaultValues.glAccountId,
+                partyIdEmployee: source.partyIdEmployee ? { "fromPartyId": source.partyIdEmployee, "fromPartyName": source.partyName || source.partyIdEmployee } : defaultValues.partyIdEmployee,
+                notes: source.notes || defaultValues.notes,
             };
         }
 
         return defaultValues;
     }, [certificate, selectedCertificate]);
-
-    console.log('certificate', certificate)
-
+    
     const renderSwitchStatus = useCallback(() => {
         const status = certificate?.currentStatusId || "WEPR_CREATED";
         if (certificate?.statusDescription && certificate?.statusDescriptionArabic) {
@@ -197,6 +264,8 @@ export default function MultiPaymentCertificateForm({
             date: values.date instanceof Date ? values.date.toISOString() : new Date().toISOString(),
             description: values.description || "",
             glAccountId: values.glAccountId || "",
+            partyIdEmployee: values.partyIdEmployee?.fromPartyId,
+            notes: values.notes || "",
             items,
         };
         if (editMode === 1) {
@@ -240,9 +309,23 @@ export default function MultiPaymentCertificateForm({
             if (result.success && result.certificate) {
                 setEditMode(3); // Per your preference for post-approval
                 setParentCertificate(result.certificate);
+                refetchTransactions();
             }
         });
     }, [certificate, handleApprove, items, setEditMode, setParentCertificate]);
+
+    const handleResetCertificate = useCallback(() => {
+        if (!certificate?.workEffortId) {
+            return;
+        }
+        handleReset(certificate.workEffortId).then((result) => {
+            if (result.success && result.certificate) {
+                setEditMode(2);
+                setParentCertificate(result.certificate);
+                refetchTransactions();
+            }
+        });
+    }, [certificate, handleReset, setEditMode, setParentCertificate]);
 
 
     const status = renderSwitchStatus();
@@ -261,11 +344,12 @@ export default function MultiPaymentCertificateForm({
                             <IconButton onClick={() => setIsFormCollapsed(!isFormCollapsed)}>
                                 {isFormCollapsed ? <ExpandMoreIcon/> : <ExpandLessIcon/>}
                             </IconButton>
-                            {editMode === 2 && (
+                            {(editMode === 2 || editMode === 3) && (
                                 <CertificateActionsMenu
                                     workEffortId={certificate?.workEffortId}
                                     currentStatusId={certificate?.currentStatusId}
                                     handleApprove={handleApproveCertificate}
+                                    handleReset={handleResetCertificate}
                                     disabled={apiLoading || items.length === 0}
                                 />
                             )}
@@ -315,7 +399,7 @@ export default function MultiPaymentCertificateForm({
                                                 />
                                             </Grid>
 
-                                            <Grid item xs={3}>
+                                            <Grid item xs={2}>
                                                 <Field
                                                     id="glAccountId"
                                                     name="glAccountId"
@@ -336,10 +420,32 @@ export default function MultiPaymentCertificateForm({
                                                 />
                                             </Grid>
 
+                                            <Grid item xs={2}>
+                                                <Field
+                                                    id="partyIdEmployee"
+                                                    name="partyIdEmployee"
+                                                    component={FormComboBoxVirtualPartyEmployee}
+                                                    label={getTranslatedLabel(`${localizationKey}.paymentTo`, "Payment To")}
+                                                    valueField="fromPartyId"
+                                                    textField="fromPartyName"
+                                                    validator={requiredValidator}
+                                                />
+                                            </Grid>
+
+                                            <Grid item xs={2}>
+                                                <Field
+                                                    id="notes"
+                                                    name="notes"
+                                                    label={getTranslatedLabel(`${localizationKey}.referenceNum`, "Reference Number")}
+                                                    component={FormInput}
+                                                />
+                                            </Grid>
+
                                             <Grid container item spacing={2} sx={{
                                                 display: 'flex',
                                                 flexDirection: 'row',
                                                 justifyContent: 'flex-start',
+                                                alignItems: 'flex-end',
                                                 mt: 2
                                             }}>
                                                 {(editMode === 1 || (editMode === 2 && certificate?.currentStatusId !== "WEPR_APPROVED")) && (
@@ -355,6 +461,19 @@ export default function MultiPaymentCertificateForm({
                                                                 editMode === 1 ? "Create Certificate" : "Update Certificate"
                                                             )}
                                                         </Button>
+                                                    </Grid>
+                                                )}
+                                                {(editMode === 2 || editMode === 3) && certificate && (
+                                                    <Grid item>
+                                                        <MultiPaymentCertificateExcel
+                                                            companyName={companyName}
+                                                            certificate={certificate}
+                                                            items={items}
+                                                            transactions={acctTransEntryData || []}
+                                                            getTranslatedLabel={getTranslatedLabel}
+                                                            isFetching={isFetchingTransactions}
+                                                            language={language}
+                                                        />
                                                     </Grid>
                                                 )}
                                                 <Grid item>

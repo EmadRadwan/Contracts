@@ -1,59 +1,228 @@
-using Application.Interfaces;           // assuming Result<T> is here
-using Domain;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Persistence;
-
-namespace Application.Catalog.ProductCategories;
-
-public class ListProductCategories
+public async Task<Result<MultiPaymentCertificateDto>> Handle(Command request, CancellationToken cancellationToken)
 {
-    public class Query : IRequest<Result<List<ProductCategoryMemberDto>>>
+    await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+    try
     {
-        public string ProductId { get; set; } = string.Empty;
+        var certificate = await _context.WorkEfforts
+            .Where(w => w.WorkEffortId == request.WorkEffortId && w.WorkEffortTypeId == "PAYMENT_CERTIFICATE")
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (certificate == null)
+        {
+            return Result<MultiPaymentCertificateDto>.Failure("Certificate not found");
+        }
+
+        if (certificate.CurrentStatusId == "WEPR_APPROVED")
+        {
+            return Result<MultiPaymentCertificateDto>.Failure("Certificate is already approved");
+        }
+
+        // Update certificate status
+        certificate.CurrentStatusId = "WEPR_APPROVED";
+        certificate.LastUpdatedStamp = DateTime.UtcNow;
+
+        var items = await _context.WorkEfforts
+            .Where(w => w.WorkEffortParentId == request.WorkEffortId && w.WorkEffortTypeId == "PAYMENT_CERTIFICATE_ITEM")
+            .ToListAsync(cancellationToken);
+
+        foreach (var item in items)
+        {
+            item.CurrentStatusId = "WEPR_APPROVED";
+            item.LastUpdatedStamp = DateTime.UtcNow;
+        }
+
+        var totalAmount = items.Sum(i => i.TotalAmount ?? 0);
+
+        var updateResult = await _context.SaveChangesAsync(cancellationToken);
+        if (updateResult <= 0)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return Result<MultiPaymentCertificateDto>.Failure("Failed to approve certificate");
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Accounting transaction + entries only — no invoices
+        // ──────────────────────────────────────────────────────────────
+
+        var acctgTransId = await _utilityService.GetNextSequence("AcctgTrans");
+
+        var acctgTrans = new AcctgTran
+        {
+            AcctgTransId = acctgTransId,
+            AcctgTransTypeId = "DISBURSEMENT",
+            Description = $"مستند دفع متعدد {certificate.WorkEffortId}",
+            TransactionDate = DateTime.UtcNow,
+            WorkEffortId = certificate.WorkEffortId,
+            IsPosted = "Y",
+            PostedDate = DateTime.UtcNow,
+            GlFiscalTypeId = "ACTUAL",
+        };
+
+        _context.AcctgTrans.Add(acctgTrans);
+
+        // Credit entry (total)
+        var creditEntry = new AcctgTransEntry
+        {
+            AcctgTransId = acctgTransId,
+            AcctgTransEntrySeqId = "00001",
+            AcctgTransEntryTypeId = "_NA_",
+            Description = $"مستند دفع متعدد {certificate.WorkEffortId}",
+            GlAccountId = certificate.GlAccountId,
+            OrganizationPartyId = request.CompanyId,
+            Amount = totalAmount,
+            CurrencyUomId = "EGP",
+            OrigAmount = totalAmount,
+            OrigCurrencyUomId = "EGP",
+            DebitCreditFlag = "C",
+            ReconcileStatusId = "AES_NOT_RECONCILED"
+        };
+
+        _context.AcctgTransEntries.Add(creditEntry);
+
+        // Debit entries — one per certificate item
+        int entrySeq = 2;
+
+        foreach (var item in items)
+        {
+            if (string.IsNullOrEmpty(item.GlAccountId))
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return Result<MultiPaymentCertificateDto>.Failure(
+                    $"GL Account missing on certificate item {item.WorkEffortId}");
+            }
+
+            var partyId = item.PartyIdSupplier ?? item.PartyIdContractor;
+            bool hasParty = !string.IsNullOrWhiteSpace(partyId);
+
+            var debitEntry = new AcctgTransEntry
+            {
+                AcctgTransId = acctgTransId,
+                AcctgTransEntrySeqId = entrySeq.ToString("D5"),
+                AcctgTransEntryTypeId = "_NA_",
+                Description = item.Description,
+                GlAccountId = item.GlAccountId,
+                PartyId = hasParty ? partyId : null,           // still useful for reporting / reconciliation
+                OrganizationPartyId = request.CompanyId,
+                Amount = item.TotalAmount ?? 0,
+                CurrencyUomId = "EGP",
+                OrigAmount = item.TotalAmount ?? 0,
+                OrigCurrencyUomId = "EGP",
+                DebitCreditFlag = "D",
+                ReconcileStatusId = "AES_NOT_RECONCILED"
+            };
+
+            _context.AcctgTransEntries.Add(debitEntry);
+            entrySeq++;
+        }
+
+        var acctgSaveResult = await _context.SaveChangesAsync(cancellationToken);
+        if (acctgSaveResult <= 0)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return Result<MultiPaymentCertificateDto>.Failure("Failed to create accounting transactions");
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+
+        // ──────────────────────────────────────────────────────────────
+        // Prepare result DTO (unchanged)
+        // ──────────────────────────────────────────────────────────────
+
+        var resultItems = new List<MultiPaymentItemDto>();
+
+        foreach (var item in items)
+        {
+            var supplier = item.PartyIdSupplier != null
+                ? await _context.Parties
+                    .Where(p => p.PartyId == item.PartyIdSupplier)
+                    .Select(p => new { p.Description })
+                    .FirstOrDefaultAsync(cancellationToken)
+                : null;
+
+            var contractor = item.PartyIdContractor != null
+                ? await _context.Parties
+                    .Where(p => p.PartyId == item.PartyIdContractor)
+                    .Select(p => new { p.Description })
+                    .FirstOrDefaultAsync(cancellationToken)
+                : null;
+
+            var service = item.ServiceId != null
+                ? await _context.Products
+                    .Where(s => s.ProductId == item.ServiceId)
+                    .Select(s => new { s.ProductName })
+                    .FirstOrDefaultAsync(cancellationToken)
+                : null;
+
+            var product = item.ProductId != null
+                ? await _context.Products
+                    .Where(pr => pr.ProductId == item.ProductId)
+                    .Select(pr => new { pr.ProductName })
+                    .FirstOrDefaultAsync(cancellationToken)
+                : null;
+
+            var itemTypeDescriptions = new Dictionary<string, string>
+            {
+                { "MATERIALS", "المواد" },
+                { "LABOR", "العمالة" },
+                { "EQUIPMENT", "المعدات" },
+                { "EXPENSES", "المصروفات" }
+            };
+
+            var itemTypeDescription = itemTypeDescriptions.ContainsKey(item.CostType ?? "")
+                ? itemTypeDescriptions[item.CostType]
+                : "";
+
+            resultItems.Add(new MultiPaymentItemDto
+            {
+                WorkEffortId = item.WorkEffortId,
+                GlAccountId = item.GlAccountId,
+                ItemType = item.CostType,
+                ItemTypeDescription = itemTypeDescription,
+                ServiceId = item.ServiceId,
+                ServiceName = service?.ProductName ?? "",
+                ProductId = item.ProductId,
+                ProductName = product?.ProductName ?? "",
+                Description = item.Description,
+                Amount = item.Amount,
+                Discount = item.Discount,
+                DiscountMode = item.Discount != null && item.Discount > 0 ? "value" : "percentage",
+                TransportationExpenses = item.TransportationExpenses,
+                Gratuities = item.Gratuities,
+                Total = item.TotalAmount,
+                PartyIdSupplier = item.PartyIdSupplier,
+                PartyIdSupplierName = supplier?.Description ?? "",
+                PartyIdContractor = item.PartyIdContractor,
+                PartyIdContractorName = contractor?.Description ?? ""
+            });
+        }
+
+        var statusDescriptions = new Dictionary<string, (string English, string Arabic)>
+        {
+            { "WEPR_CREATED",   ("Created",   "تم الإنشاء") },
+            { "WEPR_APPROVED",  ("Approved",  "تمت الموافقة") },
+            { "WEPR_COMPLETE",  ("Complete",  "مكتمل") }
+        };
+
+        var (statusDescription, statusDescriptionArabic) = statusDescriptions.ContainsKey(certificate.CurrentStatusId)
+            ? statusDescriptions[certificate.CurrentStatusId]
+            : ("Unknown", "غير معروف");
+
+        var resultDto = new MultiPaymentCertificateDto
+        {
+            WorkEffortId = certificate.WorkEffortId,
+            Date = certificate.EstimatedStartDate,
+            Description = certificate.Description,
+            CurrentStatusId = certificate.CurrentStatusId,
+            StatusDescription = statusDescription,
+            StatusDescriptionArabic = statusDescriptionArabic,
+            Items = resultItems
+        };
+
+        return Result<MultiPaymentCertificateDto>.Success(resultDto);
     }
-
-    public class Handler : IRequestHandler<Query, Result<List<ProductCategoryMemberDto>>>
+    catch (Exception ex)
     {
-        private readonly DataContext _context;
-
-        public Handler(DataContext context)
-        {
-            _context = context;
-        }
-
-        public async Task<Result<List<ProductCategoryMemberDto>>> Handle(
-            Query request,
-            CancellationToken cancellationToken)
-        {
-            var productCategoryMembers = await _context.ProductCategoryMembers
-                .Where(z => z.ProductId == request.ProductId)
-                // Optional: include only active/current categories
-                // .Where(z => z.FromDate <= DateTime.UtcNow && (z.ThruDate == null || z.ThruDate > DateTime.UtcNow))
-                .Join(
-                    _context.ProductCategories,
-                    member => member.ProductCategoryId,
-                    category => category.ProductCategoryId,
-                    (member, category) => new { member, category }
-                )
-                .Select(x => new ProductCategoryMemberDto
-                {
-                    ProductId         = x.member.ProductId,
-                    ProductCategoryId = x.member.ProductCategoryId,
-                    FromDate          = x.member.FromDate,
-                    ThruDate          = x.member.ThruDate,
-                    Comments          = x.member.Comments,
-                    SequenceNum       = x.member.SequenceNum,
-                    Quantity          = x.member.Quantity,
-
-                    // ← New fields from joined ProductCategory
-                    CategoryDescriptionArabic = x.category.DescriptionArabic,
-                    // CategoryName           = x.category.CategoryName,           // if you want English too
-                    // CategoryDescription    = x.category.Description,           // if needed
-                })
-                .ToListAsync(cancellationToken);
-
-            return Result<List<ProductCategoryMemberDto>>.Success(productCategoryMembers);
-        }
+        await transaction.RollbackAsync(cancellationToken);
+        return Result<MultiPaymentCertificateDto>.Failure($"Failed to approve certificate: {ex.Message}");
     }
 }

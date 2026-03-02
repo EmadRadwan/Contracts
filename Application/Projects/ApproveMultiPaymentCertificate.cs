@@ -92,7 +92,12 @@ namespace Application.Projects
                         return Result<MultiPaymentCertificateDto>.Failure("Failed to approve certificate");
                     }
 
+                    // ──────────────────────────────────────────────────────────────
+                    // Accounting transaction + entries only — no invoices
+                    // ──────────────────────────────────────────────────────────────
+
                     var acctgTransId = await _utilityService.GetNextSequence("AcctgTrans");
+
                     var acctgTrans = new AcctgTran
                     {
                         AcctgTransId = acctgTransId,
@@ -104,8 +109,10 @@ namespace Application.Projects
                         PostedDate = DateTime.UtcNow,
                         GlFiscalTypeId = "ACTUAL",
                     };
+
                     _context.AcctgTrans.Add(acctgTrans);
 
+                    // Credit entry (total)
                     var creditEntry = new AcctgTransEntry
                     {
                         AcctgTransId = acctgTransId,
@@ -121,135 +128,23 @@ namespace Application.Projects
                         DebitCreditFlag = "C",
                         ReconcileStatusId = "AES_NOT_RECONCILED"
                     };
+
                     _context.AcctgTransEntries.Add(creditEntry);
 
-                    // ──────────────────────────────────────────────────────────────
-                    // Debit entries + optional invoices
-                    // ──────────────────────────────────────────────────────────────
-                    int entrySeq = 2; // 00002, 00003, ...
-
-                    var currentUsername = _userAccessor.GetUsername();
-                    var user = await _context.Users
-                        .FirstOrDefaultAsync(u => u.UserName == currentUsername, cancellationToken);
-
-                    var partyAcctgPreference = await _acctgMiscService.GetPartyAccountingPreferences(
-                        user?.OrganizationPartyId ?? "");
+                    // Debit entries — one per certificate item
+                    int entrySeq = 2;
 
                     foreach (var item in items)
                     {
-                        var partyId = item.PartyIdSupplier ?? item.PartyIdContractor;
-                        bool hasParty = !string.IsNullOrWhiteSpace(partyId);
-
-                        string invoiceId = null;
-
-                        // ─── Create Invoice + Invoice Items only when there is a valid party ───
-                        if (hasParty)
-                        {
-                            var newInvoiceSequence = _invoiceUtilityService.GetNextInvoiceNumber(partyAcctgPreference);
-                            invoiceId = partyAcctgPreference.InvoiceIdPrefix + newInvoiceSequence;
-
-                            var invoice = new Invoice
-                            {
-                                InvoiceId = invoiceId,
-                                InvoiceTypeId = "PURCHASE_INVOICE",
-                                PartyIdFrom = partyId,
-                                PartyId = request.CompanyId,
-                                StatusId = "INVOICE_PAID",
-                                InvoiceDate = DateTime.UtcNow,
-                                CurrencyUomId = "EGP",
-                                Description = $"مستند دفع متعدد {certificate.WorkEffortId}",
-                                CreatedStamp = DateTime.UtcNow,
-                                LastUpdatedStamp = DateTime.UtcNow
-                            };
-                            _context.Invoices.Add(invoice);
-
-                            int invoiceItemSeq = 1;
-
-                            var adjustmentTypeDescriptions = new Dictionary<string, string>
-                            {
-                                { "BASE_AMOUNT", "المبلغ الأساسي" },
-                                { "DISCOUNT", "الخصم" },
-                                { "TRANSPORTATION", "مصاريف النقل" },
-                                { "GRATUITIES", "الإكراميات" }
-                            };
-
-                            if (item.Amount != null && item.Amount != 0)
-                            {
-                                var baseAmountItem = new InvoiceItem
-                                {
-                                    InvoiceId = invoiceId,
-                                    InvoiceItemSeqId = invoiceItemSeq++.ToString("D5"),
-                                    InvoiceItemTypeId = "PINV_SPROD_ITEM",
-                                    ProductId = item.ProductId,
-                                    Quantity = 1,
-                                    Amount = Math.Abs(item.Amount.Value),
-                                    Description = $"{item.Description} - {adjustmentTypeDescriptions["BASE_AMOUNT"]}",
-                                    CreatedStamp = DateTime.UtcNow,
-                                    LastUpdatedStamp = DateTime.UtcNow
-                                };
-                                _context.InvoiceItems.Add(baseAmountItem);
-                            }
-
-                            if (item.Discount != null && item.Discount != 0)
-                            {
-                                var discountItem = new InvoiceItem
-                                {
-                                    InvoiceId = invoiceId,
-                                    InvoiceItemSeqId = invoiceItemSeq++.ToString("D5"),
-                                    InvoiceItemTypeId = "INVOICE_ITM_ADJ",
-                                    ProductId = item.ProductId,
-                                    Quantity = 1,
-                                    Amount = -Math.Abs(item.Discount.Value),
-                                    Description = $"{item.Description} - {adjustmentTypeDescriptions["DISCOUNT"]}",
-                                    CreatedStamp = DateTime.UtcNow,
-                                    LastUpdatedStamp = DateTime.UtcNow
-                                };
-                                _context.InvoiceItems.Add(discountItem);
-                            }
-
-                            if (item.TransportationExpenses != null && item.TransportationExpenses != 0)
-                            {
-                                var transportItem = new InvoiceItem
-                                {
-                                    InvoiceId = invoiceId,
-                                    InvoiceItemSeqId = invoiceItemSeq++.ToString("D5"),
-                                    InvoiceItemTypeId = "INVOICE_ITM_ADJ",
-                                    ProductId = item.ProductId,
-                                    Quantity = 1,
-                                    Amount = Math.Abs(item.TransportationExpenses.Value),
-                                    Description =
-                                        $"{item.Description} - {adjustmentTypeDescriptions["TRANSPORTATION"]}",
-                                    CreatedStamp = DateTime.UtcNow,
-                                    LastUpdatedStamp = DateTime.UtcNow
-                                };
-                                _context.InvoiceItems.Add(transportItem);
-                            }
-
-                            if (item.Gratuities != null && item.Gratuities != 0)
-                            {
-                                var gratuityItem = new InvoiceItem
-                                {
-                                    InvoiceId = invoiceId,
-                                    InvoiceItemSeqId = invoiceItemSeq++.ToString("D5"),
-                                    InvoiceItemTypeId = "INVOICE_ITM_ADJ",
-                                    ProductId = item.ProductId,
-                                    Quantity = 1,
-                                    Amount = Math.Abs(item.Gratuities.Value),
-                                    Description = $"{item.Description} - {adjustmentTypeDescriptions["GRATUITIES"]}",
-                                    CreatedStamp = DateTime.UtcNow,
-                                    LastUpdatedStamp = DateTime.UtcNow
-                                };
-                                _context.InvoiceItems.Add(gratuityItem);
-                            }
-                        }
-
-                        // ─── Always create debit entry ───
                         if (string.IsNullOrEmpty(item.GlAccountId))
                         {
                             await transaction.RollbackAsync(cancellationToken);
                             return Result<MultiPaymentCertificateDto>.Failure(
                                 $"GL Account missing on certificate item {item.WorkEffortId}");
                         }
+
+                        var partyId = item.PartyIdSupplier ?? item.PartyIdContractor;
+                        bool hasParty = !string.IsNullOrWhiteSpace(partyId);
 
                         var debitEntry = new AcctgTransEntry
                         {
@@ -258,7 +153,7 @@ namespace Application.Projects
                             AcctgTransEntryTypeId = "_NA_",
                             Description = item.Description,
                             GlAccountId = item.GlAccountId,
-                            PartyId = hasParty ? partyId : null, // ← null when no party
+                            PartyId = hasParty ? partyId : null, // still useful for reporting / reconciliation
                             OrganizationPartyId = request.CompanyId,
                             Amount = item.TotalAmount ?? 0,
                             CurrencyUomId = "EGP",
@@ -267,8 +162,8 @@ namespace Application.Projects
                             DebitCreditFlag = "D",
                             ReconcileStatusId = "AES_NOT_RECONCILED"
                         };
-                        _context.AcctgTransEntries.Add(debitEntry);
 
+                        _context.AcctgTransEntries.Add(debitEntry);
                         entrySeq++;
                     }
 
@@ -282,9 +177,11 @@ namespace Application.Projects
                     await transaction.CommitAsync(cancellationToken);
 
                     // ──────────────────────────────────────────────────────────────
-                    // Prepare result DTO (unchanged from original)
+                    // Prepare result DTO (unchanged)
                     // ──────────────────────────────────────────────────────────────
+
                     var resultItems = new List<MultiPaymentItemDto>();
+
                     foreach (var item in items)
                     {
                         var supplier = item.PartyIdSupplier != null
@@ -322,6 +219,7 @@ namespace Application.Projects
                             { "EQUIPMENT", "المعدات" },
                             { "EXPENSES", "المصروفات" }
                         };
+
                         var itemTypeDescription = itemTypeDescriptions.ContainsKey(item.CostType ?? "")
                             ? itemTypeDescriptions[item.CostType]
                             : "";
@@ -362,11 +260,20 @@ namespace Application.Projects
                             ? statusDescriptions[certificate.CurrentStatusId]
                             : ("Unknown", "غير معروف");
 
+                    var employeeParty = certificate.PartyIdEmployee != null
+                        ? await _context.Parties
+                            .Where(p => p.PartyId == certificate.PartyIdEmployee)
+                            .Select(p => new { p.PartyId, p.Description })
+                            .FirstOrDefaultAsync(cancellationToken)
+                        : null;
+
                     var resultDto = new MultiPaymentCertificateDto
                     {
                         WorkEffortId = certificate.WorkEffortId,
                         Date = certificate.EstimatedStartDate,
                         Description = certificate.Description,
+                        PartyIdEmployee = certificate.PartyIdEmployee,
+                        PartyName = employeeParty?.Description,
                         CurrentStatusId = certificate.CurrentStatusId,
                         StatusDescription = statusDescription,
                         StatusDescriptionArabic = statusDescriptionArabic,

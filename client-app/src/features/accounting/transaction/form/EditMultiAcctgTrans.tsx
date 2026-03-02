@@ -3,7 +3,7 @@ import {Grid, Paper, Typography, Button, Skeleton, Chip} from "@mui/material";
 import { Form, FormElement, Field } from "@progress/kendo-react-form";
 import { Grid as KendoGrid, GridColumn as Column, GridSortChangeEvent, GridPageChangeEvent, GridRowProps, GridCellProps, GridToolbar } from "@progress/kendo-react-grid";
 import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
-import { RootState, useAppSelector, useFetchGeneralAcctTransEntriesQuery } from "../../../../app/store/configureStore";
+import { RootState, useAppSelector, useFetchGeneralAcctTransEntriesQuery, useFetchAcctgTransTypesQuery } from "../../../../app/store/configureStore";
 import { useFetchGlAccountOrganizationHierarchyLovQuery } from "../../../../app/store/apis";
 import { requiredValidator } from "../../../../app/common/form/Validators";
 import FormNumericTextBox from "../../../../app/common/form/FormNumericTextBox";
@@ -21,6 +21,7 @@ import useMultiAcctgTrans from "../hook/useMultiAcctgTrans";
 import {FormComboBoxVirtualParty} from "../../../../app/common/form/FormComboBoxVirtualParty";
 import useDuplicateAcctgTrans from "../hook/useDuplicateAcctgTrans";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
+import {MultiAcctgTransExcel} from "../report/MultiAcctgTransExcel";
 
 interface TransEntry {
     id: string;
@@ -44,6 +45,8 @@ export default function EditMultiAcctgTrans() {
     const localizationKey = "accounting.orgGL.accounting.trans.multi";
     const {user} = useAppSelector((state) => state.account);
     const companyId = user?.organizationPartyId || "";
+    const companyName = useAppSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
+    
     const location = useLocation();
     const { acctgTransId: currentTransId } = useParams<{ acctgTransId: string }>();
 
@@ -51,7 +54,10 @@ export default function EditMultiAcctgTrans() {
 
 
     
+    const { language } = useAppSelector((state) => state.localization);
     const { data: glAccounts, isLoading: isLoadingGlAccounts } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, { skip: !companyId });
+
+    const { data: acctgTransTypes } = useFetchAcctgTransTypesQuery(undefined);
 
     const { data: transEntriesData, isLoading: isLoadingEntries } = useFetchGeneralAcctTransEntriesQuery(currentTransId, {
         skip: !currentTransId,
@@ -99,6 +105,20 @@ export default function EditMultiAcctgTrans() {
     useEffect(() => {
         setJustPosted(false);
     }, [currentTransId]);
+
+    const accountMap = useMemo(() => {
+        const map = new Map<string, any>();
+        const flatten = (items: any[]) => {
+            items.forEach((item) => {
+                map.set(item.glAccountId, item);
+                if (item.items && item.items.length > 0) {
+                    flatten(item.items);
+                }
+            });
+        };
+        if (glAccounts) flatten(glAccounts);
+        return map;
+    }, [glAccounts]);
 
     const initialFormValues: FormValues = useMemo(
         () => ({
@@ -475,6 +495,23 @@ export default function EditMultiAcctgTrans() {
                                                     {getTranslatedLabel("general.save", "Save Transaction")}
                                                 </Button>
                                             </Grid>
+                                            {currentTransId && (
+                                                <Grid item xs={2}>
+                                                    <MultiAcctgTransExcel
+                                                        companyName={companyName}
+                                                        transactionId={currentTransId}
+                                                        headerValues={{
+                                                            ...headerValues,
+                                                            acctgTransTypeId: initialTransFromState?.acctgTransTypeId || null
+                                                        }}
+                                                        entries={transEntries}
+                                                        acctgTransTypes={acctgTransTypes || []}
+                                                        accountMap={accountMap}
+                                                        getTranslatedLabel={getTranslatedLabel}
+                                                        language={language}
+                                                    />
+                                                </Grid>
+                                            )}
                                             {currentTransId && (
                                                 <Grid item xs={2}>
                                                     <Button

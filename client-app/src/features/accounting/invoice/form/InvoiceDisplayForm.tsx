@@ -9,6 +9,7 @@ import Grid from "@mui/material/Grid";
 import {Paper, Typography} from "@mui/material";
 import {Menu, MenuItem, MenuSelectEvent} from "@progress/kendo-react-layout";
 import InvoiceItemsList from "../dashboard/InvoiceItemsList";
+import PayrollInvoiceItemsList from "../payroll/PayrollInvoiceItemsList";
 import useInvoice from "../hook/useInvoice";
 import AccountingMenu from "../menu/AccountingMenu";
 import ModalContainer from "../../../../app/common/modals/ModalContainer";
@@ -561,11 +562,21 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
 
                     <Grid container mt={2}>
                         <Grid item xs={10}>
-                            <InvoiceItemsList
-                                invoiceId={invoice?.invoiceId}
-                                canEdit={permissions.canEditInvoiceItems}
-                                refreshTotal={refreshTotal}
-                            />
+                            {invoice?.invoiceTypeId === "PAYROL_INVOICE" ? (
+                                <PayrollInvoiceItemsList
+                                    invoiceId={invoice?.invoiceId}
+                                    canEdit={permissions.canEditInvoiceItems}
+                                    refreshTotal={refreshTotal}
+                                    employeeId={invoice?.partyIdFrom}
+                                    invoiceDate={invoice?.invoiceDate}
+                                />
+                            ) : (
+                                <InvoiceItemsList
+                                    invoiceId={invoice?.invoiceId}
+                                    canEdit={permissions.canEditInvoiceItems}
+                                    refreshTotal={refreshTotal}
+                                />
+                            )}
                         </Grid>
                         <Grid item xs={2}>
                             <Menu onSelect={handleMenuSelect} vertical>

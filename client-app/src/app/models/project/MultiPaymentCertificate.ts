@@ -13,6 +13,9 @@ export interface MultiPaymentCertificate {
     statusDescription?: string;
     statusDescriptionArabic?: string;
     glAccountId?: string;
+    partyIdEmployee?: string;
+    partyName?: string;
+    notes?: string;
     items: MultiPaymentItem[];
 }
 
@@ -24,6 +27,8 @@ export interface FormInitialValues {
     statusDescription: string;
     statusDescriptionArabic: string;
     glAccountId: string;
+    partyIdEmployee?: any;
+    notes?: string;
 }
 
 export interface CertificateActionResult {

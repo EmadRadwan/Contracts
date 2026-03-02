@@ -29,7 +29,8 @@ public class List
                 "CUST_RTN_INVOICE",
                 "PURC_RTN_INVOICE",
                 "PURCHASE_INVOICE",
-                "SALES_INVOICE"
+                "SALES_INVOICE",
+                "PAYROL_INVOICE"
             };
 
             // REFACTOR: Add filter for allowed invoice types

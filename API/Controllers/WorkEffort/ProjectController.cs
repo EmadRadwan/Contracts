@@ -138,6 +138,18 @@ public class ProjectController : BaseApiController
         });
         return HandleResult(result);
     }
+
+    [HttpDelete("multiPaymentCertificate/{workEffortId}")]
+    public async Task<ActionResult> DeleteMultiPaymentCertificate(string workEffortId)
+    {
+        return HandleResult(await Mediator.Send(new DeleteMultiPaymentCertificate.Command { WorkEffortId = workEffortId }));
+    }
+
+    [HttpPost("resetMultiPaymentCertificate/{workEffortId}")]
+    public async Task<ActionResult<MultiPaymentCertificateDto>> ResetMultiPaymentCertificate(string workEffortId)
+    {
+        return HandleResult(await Mediator.Send(new ResetMultiPaymentCertificate.Command { WorkEffortId = workEffortId }));
+    }
     
     [HttpPost("review", Name = "ReviewProjectCertificate")]
     public async Task<ActionResult<ProjectCertificateDto>> ReviewProjectCertificate([FromBody] ReviewProjectCertificate.Command command)

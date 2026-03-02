@@ -74,23 +74,18 @@ namespace Application.Accounting.Invoices
                         "PITM_FEE"
                     }
                 },
-                {
-                    "PAYROL_INVOICE",
-                    new List<string>
+                { 
+                    "PAYROL_INVOICE", 
+                    new List<string> 
                     {
-                        "PAYROL_EARN_HOURS",
-                        "PAYROL_SALARY",
-                        "PAYROL_HRLY_RATE",
-                        "PAYROL_BONUS",
-                        "PAYROL_COMMISSION",
-                        "PAYROL_DD_FROM_GROSS",
-                        "PAYROL_DD_401K",
-                        "PAYROL_DD_MISC",
-                        "PAYROL_TAXES",
-                        "PAYROL_TAX_FEDERAL",
-                        "PAYROL_TAX_MED_EMPL",
-                        "PAYROL_SOC_SEC_EMPL"
-                    }
+                        "PAYROL_SALARY",          // الراتب الأساسي
+                        "PAYROL_ALLOWANCE",       // البدلات
+                        "PAYROL_BONUS",           // المكافآت والحوافز
+                        "PAYROL_OVERTIME",        // قيمة الإضافي
+                        "PAYROL_DD_ABSENCE",      // قيمة الغياب
+                        "PAYROL_DD_ADVANCE",      // استقطاعات السلفيات
+                        "PAYROL_DD_MISC"          // خصومات متنوعة (catch-all)
+                    } 
                 },
                 {
                     "COMMISSION_INVOICE",

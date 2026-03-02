@@ -48,7 +48,7 @@ namespace Application.Projects
                 {
                     var stamp = DateTime.UtcNow;
                     var certificate = request.Certificate!;
-                    var newWorkEffortSerial = await _utilityService.GetNextSequence("WorkEffort");
+                    var newWorkEffortSerial = await _utilityService.GetNextSequence("Payment");
                     _logger.LogInformation("Received certificate items: {Items}",
                         JsonSerializer.Serialize(certificate.Items));
 
@@ -59,6 +59,8 @@ namespace Application.Projects
                         WorkEffortTypeId = "PAYMENT_CERTIFICATE",
                         EstimatedStartDate = certificate.Date,
                         Description = certificate.Description,
+                        Notes = certificate.Notes,
+                        PartyIdEmployee = certificate.PartyIdEmployee,
                         CurrentStatusId = "WEPR_CREATED",
                         GlAccountId = certificate.GlAccountId,
                         CreatedDate = stamp,
@@ -254,11 +256,21 @@ namespace Application.Projects
                             : ("Unknown", "غير معروف");
 
 
+                    var employeeParty = workEffort.PartyIdEmployee != null
+                        ? await _context.Parties
+                            .Where(p => p.PartyId == workEffort.PartyIdEmployee)
+                            .Select(p => new { p.PartyId, p.Description })
+                            .FirstOrDefaultAsync(cancellationToken)
+                        : null;
+
                     var resultDto = new MultiPaymentCertificateDto
                     {
                         WorkEffortId = workEffort.WorkEffortId,
                         Date = workEffort.EstimatedStartDate,
                         Description = workEffort.Description,
+                        Notes = workEffort.Notes,
+                        PartyIdEmployee = workEffort.PartyIdEmployee,
+                        PartyName = employeeParty?.Description,
                         CurrentStatusId = workEffort.CurrentStatusId,
                         StatusDescription = statusDescription,
                         StatusDescriptionArabic = statusDescriptionArabic,

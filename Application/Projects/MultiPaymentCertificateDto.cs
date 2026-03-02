@@ -13,6 +13,9 @@ namespace Application.Projects
         public string? StatusDescription { get; set; }
         public string? StatusDescriptionArabic { get; set; }
         public string? GlAccountId { get; set; }
+        public string? PartyIdEmployee { get; set; }
+        public string? PartyName { get; set; }
+        public string? Notes { get; set; }
         public List<MultiPaymentItemDto> Items { get; set; }
     }
 

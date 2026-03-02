@@ -13,4 +13,9 @@ public class MultiPaymentCertificateRecord
 
     public string GlAccountId { get; init; }
     public string AccountName { get; init; }
+    public string? PartyIdEmployee { get; init; }
+    public string? PartyName { get; init; }
+    public string? Notes { get; init; }
+    public DateTime? LastUpdatedStamp { get; init; }
+    
 }

@@ -66,6 +66,8 @@ namespace Application.Projects
 
                     existingWorkEffort.EstimatedStartDate = certificate.Date;
                     existingWorkEffort.Description = certificate.Description;
+                    existingWorkEffort.Notes = certificate.Notes;
+                    existingWorkEffort.PartyIdEmployee = certificate.PartyIdEmployee;
                     existingWorkEffort.GlAccountId = certificate.GlAccountId;
                     existingWorkEffort.LastUpdatedStamp = stamp;
 
@@ -246,6 +248,9 @@ namespace Application.Projects
                         WorkEffortId = existingWorkEffort.WorkEffortId,
                         Date = existingWorkEffort.EstimatedStartDate,
                         Description = existingWorkEffort.Description,
+                        Notes = existingWorkEffort.Notes,
+                        PartyIdEmployee = existingWorkEffort.PartyIdEmployee,
+                        PartyName = employeeParty?.Description,
                         CurrentStatusId = existingWorkEffort.CurrentStatusId,
                         StatusDescription = statusDescription,
                         StatusDescriptionArabic = statusDescriptionArabic,

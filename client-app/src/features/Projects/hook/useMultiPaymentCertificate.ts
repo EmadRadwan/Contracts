@@ -4,7 +4,8 @@ import { MultiPaymentItem } from "../../../app/models/project/MultiPaymentItem";
 import { toast } from "react-toastify";
 import {
     useAddMultiPaymentCertificateMutation, useApproveMultiPaymentCertificateMutation,
-    useGetMultiPaymentItemsQuery, useUpdateMultiPaymentCertificateMutation
+    useGetMultiPaymentItemsQuery, useUpdateMultiPaymentCertificateMutation,
+    useDeleteMultiPaymentCertificateMutation, useResetMultiPaymentCertificateMutation
 } from "../../../app/store/apis/multiPaymentCertificateApi";
 import {useAppSelector} from "../../../app/store/configureStore";
 
@@ -29,6 +30,8 @@ export default function useMultiPaymentCertificate({
     const [addMultiPaymentCertificate, { isLoading: addLoading }] = useAddMultiPaymentCertificateMutation();
     const [updateMultiPaymentCertificate, { isLoading: updateLoading }] = useUpdateMultiPaymentCertificateMutation();
     const [approveMultiPaymentCertificate, { isLoading: approveLoading }] = useApproveMultiPaymentCertificateMutation();
+    const [deleteMultiPaymentCertificate, { isLoading: deleteLoading }] = useDeleteMultiPaymentCertificateMutation();
+    const [resetMultiPaymentCertificate, { isLoading: resetLoading }] = useResetMultiPaymentCertificateMutation();
     const { user } = useAppSelector((state) => state.account);
     const companyId = user?.organizationPartyId || "";
     const [itemsVersion, setItemsVersion] = useState(0);
@@ -206,6 +209,44 @@ export default function useMultiPaymentCertificate({
         [certificate, items, approveMultiPaymentCertificate, validateCertificate]
     );
 
+    const handleDelete = useCallback(
+        async (workEffortId: string) => {
+            setIsLoading(true);
+            try {
+                await deleteMultiPaymentCertificate(workEffortId).unwrap();
+                toast.success("Certificate deleted successfully");
+                return { success: true };
+            } catch (error: any) {
+                toast.error("Error deleting certificate: " + (error?.data?.message || error.message));
+                return { success: false };
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [deleteMultiPaymentCertificate]
+    );
+
+    const handleReset = useCallback(
+        async (workEffortId: string) => {
+            setIsLoading(true);
+            try {
+                const response = await resetMultiPaymentCertificate(workEffortId).unwrap();
+                setCertificate(response);
+                setParentCertificate?.(response);
+                setEditMode?.(2); // Set back to edit mode
+                setFormKey(prev => prev + 1); // Refresh form
+                toast.success("Certificate reset successfully");
+                return { success: true, certificate: response };
+            } catch (error: any) {
+                toast.error("Error resetting certificate: " + (error?.data?.message || error.message));
+                return { success: false };
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [resetMultiPaymentCertificate, setParentCertificate, setEditMode, setFormKey]
+    );
+
     return {
         certificate,
         setCertificate,
@@ -216,7 +257,9 @@ export default function useMultiPaymentCertificate({
         handleCreate,
         handleUpdate,
         handleApprove,
+        handleDelete,
+        handleReset,
         setItems, itemsVersion,
-        isLoading: isLoading || itemsLoading || addLoading || approveLoading,
+        isLoading: isLoading || itemsLoading || addLoading || approveLoading || deleteLoading || resetLoading,
     };
 }
