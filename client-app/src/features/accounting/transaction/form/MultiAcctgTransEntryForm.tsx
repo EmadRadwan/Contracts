@@ -1,5 +1,5 @@
 import React, {useState, useCallback, useMemo, useEffect} from "react";
-import {Grid, Paper, Typography, Button, Skeleton, TextField, Chip, Autocomplete} from "@mui/material";
+import {Grid, Paper, Typography, Button, Skeleton, TextField, Chip, Autocomplete, Menu, MenuItem} from "@mui/material";
 import {Form, FormElement, Field} from "@progress/kendo-react-form";
 import {
     Grid as KendoGrid,
@@ -25,6 +25,7 @@ import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import {FormComboBoxVirtualParty} from "../../../../app/common/form/FormComboBoxVirtualParty";
 import useDuplicateAcctgTrans from "../hook/useDuplicateAcctgTrans";
 import {MultiAcctgTransExcel} from "../report/MultiAcctgTransExcel";
+import {Can} from "../../../account/Can";
 
 interface TransEntry {
     id: string;
@@ -60,8 +61,11 @@ export default function MultiAcctgTransEntryForm() {
     const [formResetCounter, setFormResetCounter] = useState(0);
     const [sort, setSort] = useState<SortDescriptor[]>([{field: "id", dir: "asc"}]);
     const [page, setPage] = useState<State>({skip: 0, take: 10});
-    const {isLoading, saveMultiAcctgTransWithEntries, postTransaction} = useMultiAcctgTrans();
+    const {isLoading, saveMultiAcctgTransWithEntries, postTransaction, unpostTransaction} = useMultiAcctgTrans();
     const [justPosted, setJustPosted] = useState(false);
+
+    const isPosted = justPosted;
+
     const { data: acctgTransTypes, isLoading: isLoadingTransTypes } = useFetchAcctgTransTypesQuery(undefined);
     const { duplicate, isDuplicating } = useDuplicateAcctgTrans();
     // REFACTOR: Manage header-level fields outside the form to persist across resets
@@ -78,6 +82,17 @@ export default function MultiAcctgTransEntryForm() {
     // REFACTOR: Add state for transactionId to display after save
     const [transactionId, setTransactionId] = useState<string | null>(null);
     const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
+
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const openActions = Boolean(anchorEl);
+
+    const handleActionsClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleActionsClose = () => {
+        setAnchorEl(null);
+    };
     let formRenderProps: any;
 
 
@@ -202,8 +217,8 @@ export default function MultiAcctgTransEntryForm() {
                 // REFACTOR: Set transactionId and keep form data intact
                 setTransactionId(result.acctgTransId);
                 toast.success(getTranslatedLabel("general.success", "Transaction saved successfully"));
-            } catch (error) {
-                toast.error(getTranslatedLabel("general.error", "Failed to save transaction"));
+            } catch (error: any) {
+                toast.error(getTranslatedLabel("general.error", `Failed to save transaction: ${error?.message || "Unknown error"}`));
             }
         },
         [transEntries, companyId, saveMultiAcctgTransWithEntries, getTranslatedLabel, headerValues]
@@ -304,12 +319,12 @@ export default function MultiAcctgTransEntryForm() {
         ({dataItem}: GridCellProps) => (
             <td>
                 <Button variant="text" color="error" onClick={() => handleRemoveEntry(dataItem.id)}
-                        disabled={isLoading}>
+                        disabled={isLoading || isPosted}>
                     {getTranslatedLabel("general.remove", "Remove")}
                 </Button>
             </td>
         ),
-        [handleRemoveEntry, getTranslatedLabel, isLoading]
+        [handleRemoveEntry, getTranslatedLabel, isLoading, isPosted]
     );
 
     // REFACTOR: Calculate totals for footer
@@ -321,6 +336,18 @@ export default function MultiAcctgTransEntryForm() {
         () => transEntries.filter((e) => e.debitCreditFlag === "C").reduce((sum, e) => sum + (e.amount || 0), 0),
         [transEntries]
     );
+
+    const handleUnpostTransaction = useCallback(async () => {
+        if (!transactionId) return;
+        try {
+            await unpostTransaction(transactionId);
+            setJustPosted(false);
+            handleActionsClose();
+        } catch (error) {
+            // handled in hook
+        }
+    }, [transactionId, unpostTransaction]);
+
 
     const handlePostTransaction = useCallback(async () => {
         if (!transactionId) return;
@@ -336,35 +363,76 @@ export default function MultiAcctgTransEntryForm() {
             // Warnings / Errors
             else if (Array.isArray(messages)) {
                 messages.forEach((msg: string) => {
-                    if (msg.includes("Error Journal")) toast.warn(msg);
-                    else toast.error(msg);
+                    const translatedMsg = getTranslatedLabel(`accounting.messages.${msg}`, msg);
+                    if (msg.includes("Error Journal") || msg.toLowerCase().includes("failed") || msg.toLowerCase().includes("error")) {
+                        toast.error(translatedMsg);
+                    } else {
+                        toast.warn(translatedMsg);
+                    }
                 });
             }
         } catch {
             
         }
-    }, [transactionId, postTransaction]);
+    }, [transactionId, postTransaction, getTranslatedLabel]);
     
     return (
         <>
             <AccountingMenu selectedMenuItem={"orgGl"}/>
             <Paper elevation={5} sx={{p: 2, borderRadius: 2}}>
-                <Typography variant="h5" sx={{mb: 2}}>
-                    {getTranslatedLabel(`${localizationKey}.title`, "Create Accounting Transaction")}
-                    {transactionId && (
-                        <span style={{marginLeft: 8, color: "#1976d2", fontWeight: 600}}>
+                <Grid container justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                    <Grid item>
+                        <Typography variant="h5">
+                            {getTranslatedLabel(`${localizationKey}.title`, "Create Accounting Transaction")}
+                            {transactionId && (
+                                <span style={{marginLeft: 8, color: "#1976d2", fontWeight: 600}}>
                             #{transactionId}
                         </span>
+                            )}
+                            {isPosted && (
+                                <Chip
+                                    label={getTranslatedLabel("general.posted", "Posted")}
+                                    color="success"
+                                    size="small"
+                                    sx={{ ml: 2 }}
+                                />
+                            )}
+                        </Typography>
+                    </Grid>
+                    {transactionId && (
+                        <Grid item>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={handleActionsClick}
+                                disabled={isLoading}
+                            >
+                                {getTranslatedLabel("general.actions", "Actions")}
+                            </Button>
+                            <Menu
+                                anchorEl={anchorEl}
+                                open={openActions}
+                                onClose={handleActionsClose}
+                            >
+                                {isPosted && (
+                                    <Can perform="Unpost_Transaction">
+                                        <MenuItem onClick={handleUnpostTransaction} sx={{ color: 'error.main' }}>
+                                            {getTranslatedLabel(`${localizationKey}.unpostTransaction`, "Un-post Transaction")}
+                                        </MenuItem>
+                                    </Can>
+                                )}
+                                {!isPosted && (
+                                    <MenuItem onClick={handlePostTransaction}>
+                                        {getTranslatedLabel(`${localizationKey}.postTransaction`, "Post Transaction")}
+                                    </MenuItem>
+                                )}
+                                <MenuItem onClick={() => { duplicate(transactionId); handleActionsClose(); }}>
+                                    {getTranslatedLabel(`${localizationKey}.duplicateAcctgTrans`, "Duplicate")}
+                                </MenuItem>
+                            </Menu>
+                        </Grid>
                     )}
-                    {justPosted && (
-                        <Chip
-                            label={getTranslatedLabel("general.posted", "Posted")}
-                            color="success"
-                            size="small"
-                            sx={{ ml: 2 }}
-                        />
-                    )}
-                </Typography>
+                </Grid>
                 {/* REFACTOR: Move header-level fields outside the Form to prevent resetting, add transactionId */}
                 <Grid container spacing={2} sx={{mb: 2}} alignItems={"flex-end"}>
                     <Grid item xs={3}>
@@ -377,6 +445,7 @@ export default function MultiAcctgTransEntryForm() {
                                 transactionDate: e.value || new Date()
                             }))}
                             validator={requiredValidator}
+                            disabled={isPosted}
                         />
                     </Grid>
                     <Grid item xs={2}>
@@ -408,6 +477,7 @@ export default function MultiAcctgTransEntryForm() {
                                 loading={isLoadingTransTypes}
                                 fullWidth
                                 disableClearable={false}
+                                disabled={isPosted}
                             />
                         )}
                     </Grid>
@@ -418,6 +488,7 @@ export default function MultiAcctgTransEntryForm() {
                             value={headerValues.headerDescription}
                             onChange={(e) => setHeaderValues((prev) => ({...prev, headerDescription: e.value}))}
                             autoComplete="off"
+                            disabled={isPosted}
                         />
                     </Grid>
                     <Grid item xs={3}>
@@ -431,6 +502,7 @@ export default function MultiAcctgTransEntryForm() {
                             }))}
                             valueField="fromPartyId"
                             textField="fromPartyName"
+                            disabled={isPosted}
                         />
                     </Grid>
 
@@ -462,6 +534,7 @@ export default function MultiAcctgTransEntryForm() {
                                                         textField="text"
                                                         selectField="selected"
                                                         expandField="expanded"
+                                                        disabled={isPosted}
                                                     />
                                                 )}
                                             </Grid>
@@ -480,6 +553,7 @@ export default function MultiAcctgTransEntryForm() {
                                                         textField="text"
                                                         selectField="selected"
                                                         expandField="expanded"
+                                                        disabled={isPosted}
                                                     />
                                                 )}
                                             </Grid>
@@ -492,6 +566,7 @@ export default function MultiAcctgTransEntryForm() {
                                                     min={0}
                                                     component={FormNumericTextBox}
                                                     validator={requiredValidator}
+                                                    disabled={isPosted}
                                                 />
                                             </Grid>
                                             <Grid item xs={3}>
@@ -501,6 +576,7 @@ export default function MultiAcctgTransEntryForm() {
                                                     label={getTranslatedLabel(`${localizationKey}.description`, "Description")}
                                                     component={FormInput}
                                                     autoComplete="off"
+                                                    disabled={isPosted}
                                                 />
                                             </Grid>
                                             <Grid item xs={1}>
@@ -511,7 +587,8 @@ export default function MultiAcctgTransEntryForm() {
                                                     disabled={
                                                         !formRenderProps.allowSubmit ||
                                                         (!formRenderProps.valueGetter("debitGlAccountId") && !formRenderProps.valueGetter("creditGlAccountId")) ||
-                                                        isLoading
+                                                        isLoading ||
+                                                        isPosted
                                                     }
                                                 >
                                                     {selectedEntryId
@@ -530,7 +607,7 @@ export default function MultiAcctgTransEntryForm() {
                                                     variant="contained"
                                                     color="primary"
                                                     onClick={handleSaveTransaction}
-                                                    disabled={transEntries.length === 0 || totalDebit !== totalCredit || isLoading}
+                                                    disabled={transEntries.length === 0 || totalDebit !== totalCredit || isLoading || isPosted}
                                                 >
                                                     {getTranslatedLabel("general.save", "Save Transaction")}
                                                 </Button>
@@ -549,19 +626,6 @@ export default function MultiAcctgTransEntryForm() {
                                                     />
                                                 </Grid>
                                             )}
-                                            {transactionId && (
-                                                <Grid item xs={2}>
-                                                    <Button
-                                                        variant="outlined"
-                                                        color="secondary"
-                                                        onClick={() => duplicate(transactionId)}
-                                                        disabled={isDuplicating}
-                                                    >
-                                                        {isDuplicating ? "Duplicating..." : getTranslatedLabel(`${localizationKey}.duplicateAcctgTrans`, "Duplicate")}
-                                                        
-                                                    </Button>
-                                                </Grid>
-                                            )}
                                             <Grid item xs={2}>
                                                 <Button
                                                     variant="contained"
@@ -572,19 +636,6 @@ export default function MultiAcctgTransEntryForm() {
                                                     {getTranslatedLabel(`${localizationKey}.newTransaction`, "New Transaction")}
                                                 </Button>
                                             </Grid>
-
-                                            {transactionId && (
-                                                <Grid item xs={3} container justifyContent="flex-end">
-                                                    <Button
-                                                        variant="contained"
-                                                        color="info"
-                                                        onClick={handlePostTransaction}
-                                                        disabled={isLoading || justPosted}
-                                                    >
-                                                        {getTranslatedLabel(`${localizationKey}.postTransaction`, "Post Transaction")}
-                                                    </Button>
-                                                </Grid>
-                                            )}
                                             
                                             <Grid item xs={12}>
                                                 <KendoGrid

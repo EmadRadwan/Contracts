@@ -192,6 +192,12 @@ public class TransactionsController : BaseApiController
         return HandleResult(await Mediator.Send(command));
     }
 
+    [HttpPost("unpostAcctgTrans/{acctgTransId}")]
+    public async Task<IActionResult> UnpostAcctgTrans(string acctgTransId)
+    {
+        return HandleResult(await Mediator.Send(new UnpostAcctgTrans.Command { AcctgTransId = acctgTransId }));
+    }
+
     [HttpPost("createInitialBalanceTrans")]
     public async Task<IActionResult> CreateInitialBalanceTrans([FromBody] CreateInitialBalanceTrans.Command command)
     {

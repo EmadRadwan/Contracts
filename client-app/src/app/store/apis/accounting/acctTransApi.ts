@@ -181,7 +181,15 @@ const acctTransApi = createApi({
                     method: 'POST',
                     body: {acctgTransId, verifyOnly},
                 }),
-                invalidatesTags: ["Transactions", "ITransactions", "PTransactions"],
+                invalidatesTags: ["Transactions", "ITransactions", "PTransactions", "MultiTransactions"],
+            }),
+
+            unpostAcctgTrans: builder.mutation<void, string>({
+                query: (acctgTransId) => ({
+                    url: `/transactions/unpostAcctgTrans/${acctgTransId}`,
+                    method: 'POST',
+                }),
+                invalidatesTags: ["Transactions", "ITransactions", "PTransactions", "MultiTransactions"],
             }),
 
             createMultiAcctgTransWithEntries: builder.mutation({
@@ -247,7 +255,7 @@ export const {
     useCreateMultiAcctgTransWithEntriesMutation,
     useUpdateMultiAcctgTransWithEntriesMutation,
     useCreateInitialBalanceTransMutation,
-    useDeleteAcctgTransMutation, useDuplicateAcctgTransMutation
+    useDeleteAcctgTransMutation, useDuplicateAcctgTransMutation, useUnpostAcctgTransMutation,
 } = acctTransApi;
 
 export {acctTransApi};

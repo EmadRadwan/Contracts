@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { useAppDispatch } from "../../../../app/store/configureStore";
-import {useCreateMultiAcctgTransWithEntriesMutation, usePostAcctgTransMutation} from "../../../../app/store/apis";
+import {
+    useCreateMultiAcctgTransWithEntriesMutation,
+    usePostAcctgTransMutation,
+    useUnpostAcctgTransMutation
+} from "../../../../app/store/apis";
 
 // REFACTOR: Update interface to match backend Command structure
 export interface CreateMultiAcctgTransWithEntriesParams {
@@ -35,6 +39,7 @@ const useMultiAcctgTrans = () => {
     const dispatch = useAppDispatch();
     const [createMultiAcctgTransWithEntries] = useCreateMultiAcctgTransWithEntriesMutation();
     const [postAcctgTransTrigger] = usePostAcctgTransMutation(); // REFACTOR: Post mutation
+    const [unpostAcctgTransTrigger] = useUnpostAcctgTransMutation();
 
     const [isLoading, setIsLoading] = useState(false);
 
@@ -76,8 +81,27 @@ const useMultiAcctgTrans = () => {
         }
     }
 
+    async function unpostTransaction(acctgTransId: string) {
+        if (!acctgTransId) {
+            toast.error("No transaction ID provided for un-posting");
+            return;
+        }
 
-    return { isLoading, saveMultiAcctgTransWithEntries, postTransaction };
+        setIsLoading(true);
+        try {
+            await unpostAcctgTransTrigger(acctgTransId).unwrap();
+            toast.success("Accounting Transaction Un-posted Successfully");
+        } catch (error: any) {
+            console.error(error);
+            toast.error("Failed to un-post Accounting Transaction");
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+
+    return { isLoading, saveMultiAcctgTransWithEntries, postTransaction, unpostTransaction };
 };
 
 

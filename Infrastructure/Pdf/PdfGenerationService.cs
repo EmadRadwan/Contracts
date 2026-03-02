@@ -70,16 +70,20 @@ namespace Infrastructure.Pdf
                                     titleText = "إيصال صرف";
                                 }
 
-                                titleCol.Item().AlignCenter().Text(titleText).FontSize(16).Bold().FontFamily("Lato", "Noto Sans Arabic");
+                                titleCol.Item().AlignCenter().Text(titleText).FontSize(16).Bold()
+                                    .FontFamily("Lato", "Noto Sans Arabic");
                                 titleCol.Item().AlignCenter().Text(data.PaymentId).FontSize(16).Bold();
                             });
 
                             // Right: Company Name in Arabic
                             headerRow.RelativeItem(2).AlignRight().AlignMiddle().Column(companyCol =>
                             {
-                                companyCol.Item().AlignRight().Text("جولدن لاند").FontSize(12).Bold().FontFamily("Lato", "Noto Sans Arabic");
-                                companyCol.Item().AlignRight().Text("للتطوير العقارى").FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
-                                companyCol.Item().AlignRight().Text("ش.م.م").FontSize(7).FontFamily("Lato", "Noto Sans Arabic");
+                                companyCol.Item().AlignRight().Text("جولدن لاند").FontSize(12).Bold()
+                                    .FontFamily("Lato", "Noto Sans Arabic");
+                                companyCol.Item().AlignRight().Text("للتطوير العقارى").FontSize(9)
+                                    .FontFamily("Lato", "Noto Sans Arabic");
+                                companyCol.Item().AlignRight().Text("ش.م.م").FontSize(7)
+                                    .FontFamily("Lato", "Noto Sans Arabic");
                             });
                         });
 
@@ -93,7 +97,8 @@ namespace Infrastructure.Pdf
                             {
                                 r.AutoItem().Border(1).Width(9).Height(9).AlignCenter().AlignMiddle()
                                     .Text(isBankTransfer ? "X" : "").FontSize(7);
-                                r.AutoItem().PaddingLeft(2).Text("تحويل بنكى").FontSize(7).FontFamily("Lato", "Noto Sans Arabic");
+                                r.AutoItem().PaddingLeft(2).Text("تحويل بنكى").FontSize(7)
+                                    .FontFamily("Lato", "Noto Sans Arabic");
                             });
 
                             // Cheque checkbox
@@ -101,7 +106,8 @@ namespace Infrastructure.Pdf
                             {
                                 r.AutoItem().Border(1).Width(9).Height(9).AlignCenter().AlignMiddle()
                                     .Text(isCheque ? "X" : "").FontSize(7);
-                                r.AutoItem().PaddingLeft(2).Text("شيكات").FontSize(7).FontFamily("Lato", "Noto Sans Arabic");
+                                r.AutoItem().PaddingLeft(2).Text("شيكات").FontSize(7)
+                                    .FontFamily("Lato", "Noto Sans Arabic");
                             });
 
                             // Cash checkbox
@@ -109,7 +115,8 @@ namespace Infrastructure.Pdf
                             {
                                 r.AutoItem().Border(1).Width(9).Height(9).AlignCenter().AlignMiddle()
                                     .Text(isCash ? "X" : "").FontSize(7);
-                                r.AutoItem().PaddingLeft(2).Text("نقدية").FontSize(7).FontFamily("Lato", "Noto Sans Arabic");
+                                r.AutoItem().PaddingLeft(2).Text("نقدية").FontSize(7)
+                                    .FontFamily("Lato", "Noto Sans Arabic");
                             });
                         });
 
@@ -126,19 +133,50 @@ namespace Infrastructure.Pdf
                             // Amount boxes (RTL: [amount box] جنيه [piasters box] قرش)
                             r.AutoItem().AlignMiddle().Text("قرش").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
                             r.AutoItem().PaddingHorizontal(4).Border(1).BorderColor(Colors.Grey.Medium).Padding(2)
-                                .Text(ToArabicNumerals(((int)((data.Amount - (int)data.Amount) * 100)).ToString("00"))).FontSize(8);
-                            r.AutoItem().PaddingLeft(8).AlignMiddle().Text("جنيه").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
+                                .Text(ToArabicNumerals(((int)((data.Amount - (int)data.Amount) * 100)).ToString("00")))
+                                .FontSize(8);
+                            r.AutoItem().PaddingLeft(8).AlignMiddle().Text("جنيه").FontSize(8)
+                                .FontFamily("Lato", "Noto Sans Arabic");
                             r.AutoItem().PaddingHorizontal(4).Border(1).BorderColor(Colors.Grey.Medium).Padding(2)
                                 .Text(ToArabicNumerals(((int)data.Amount).ToString("N0"))).FontSize(8);
                         });
 
                         // ===== RECIPIENT ROW =====
-                        mainCol.Item().PaddingTop(6).Row(r =>
+                        mainCol.Item().PaddingTop(6).AlignRight().Row(r =>
                         {
-                            r.RelativeItem().BorderBottom(1).BorderColor(Colors.Grey.Medium);
-                            r.AutoItem().AlignMiddle().BorderBottom(1).BorderColor(Colors.Grey.Medium)
-                                .Text(data.ToPartyName ?? "").FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
-                            r.AutoItem().AlignMiddle().Text(" : صرفنا إلى السيد / السادة").FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
+                            bool isReceipt = string.Equals(data.PaymentParentTypeDescription?.Trim(),
+                                "RECEIPT",
+                                StringComparison.OrdinalIgnoreCase);
+
+                            if (isReceipt)
+                            {
+                                // Logical order (left → right in code) = visual right → left in PDF
+                                // استلمنا ...   من السيد/السادة   [FromPartyName]
+
+                                r.RelativeItem(1).BorderBottom(1).BorderColor(Colors.Grey.Medium).PaddingHorizontal(6)
+                                    .AlignMiddle().AlignRight()
+                                    .Text(data.FromPartyName ?? "")
+                                    .FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
+
+                                r.AutoItem().AlignMiddle().PaddingHorizontal(8).Text("من السيد / السادة")
+                                    .FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
+
+                                r.AutoItem().AlignMiddle().Text("استلمنا نحن / جولدن لاند للتطوير العقاري")
+                                    .FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
+                            }
+                            else
+                            {
+                                // Payment style (original):
+                                // صرفنا إلى السيد / السادة   [ToPartyName]
+
+                                r.RelativeItem(1).BorderBottom(1).BorderColor(Colors.Grey.Medium).PaddingHorizontal(6)
+                                    .AlignMiddle().AlignRight()
+                                    .Text(data.ToPartyName ?? "")
+                                    .FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
+
+                                r.AutoItem().AlignMiddle().PaddingLeft(8).Text("صرفنا إلى السيد / السادة :")
+                                    .FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
+                            }
                         });
 
                         // ===== AMOUNT IN WORDS ROW =====
@@ -147,7 +185,8 @@ namespace Infrastructure.Pdf
                             r.RelativeItem().BorderBottom(1).BorderColor(Colors.Grey.Medium);
                             r.AutoItem().AlignMiddle().BorderBottom(1).BorderColor(Colors.Grey.Medium)
                                 .Text(amountInWords).FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
-                            r.AutoItem().AlignMiddle().Text(" : فقط وقدره").FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
+                            r.AutoItem().AlignMiddle().Text(" : فقط وقدره").FontSize(9)
+                                .FontFamily("Lato", "Noto Sans Arabic");
                         });
 
                         // ===== CHEQUE DETAILS ROW 1 =====
@@ -155,15 +194,18 @@ namespace Infrastructure.Pdf
                         {
                             // Payment type
                             r.RelativeItem().BorderBottom(1).BorderColor(Colors.Grey.Medium)
-                                .AlignCenter().AlignMiddle().Text(isCash ? "نقداً" : (isCheque ? "شيك" : "")).FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
-                            r.AutoItem().AlignMiddle().Text(" : نقداً / بموجب").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
+                                .AlignCenter().AlignMiddle().Text(isCash ? "نقداً" : (isCheque ? "شيك" : ""))
+                                .FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
+                            r.AutoItem().AlignMiddle().Text(" : نقداً / بموجب").FontSize(8)
+                                .FontFamily("Lato", "Noto Sans Arabic");
                         });
 
                         // ===== CHEQUE DETAILS ROW 2 (Bank) =====
                         mainCol.Item().PaddingTop(4).Row(r =>
                         {
                             r.RelativeItem().BorderBottom(1).BorderColor(Colors.Grey.Medium);
-                            r.AutoItem().AlignMiddle().Text(" مسحوب على بنك").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
+                            r.AutoItem().AlignMiddle().Text(" مسحوب على بنك").FontSize(8)
+                                .FontFamily("Lato", "Noto Sans Arabic");
                         });
 
                         // ===== CHEQUE DETAILS ROW 3 (Number & Date) =====
@@ -178,7 +220,8 @@ namespace Infrastructure.Pdf
 
                             // Cheque number
                             r.AutoItem().BorderBottom(1).BorderColor(Colors.Grey.Medium).PaddingHorizontal(10)
-                                .Text(ToArabicNumerals(data.ChequeNumber ?? "")).FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
+                                .Text(ToArabicNumerals(data.ChequeNumber ?? "")).FontSize(8)
+                                .FontFamily("Lato", "Noto Sans Arabic");
                             r.AutoItem().Text(" رقم").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
                         });
 
@@ -187,8 +230,10 @@ namespace Infrastructure.Pdf
                         {
                             r.RelativeItem().BorderBottom(1).BorderColor(Colors.Grey.Medium);
                             r.AutoItem().AlignMiddle().BorderBottom(1).BorderColor(Colors.Grey.Medium)
-                                .Text(isCheque ? (data.PaymentMethodDescription ?? "") : "").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
-                            r.AutoItem().AlignMiddle().Text(" : تحويل ( بنكى ، اون لاين )").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
+                                .Text(isCheque ? (data.PaymentMethodDescription ?? "") : "").FontSize(8)
+                                .FontFamily("Lato", "Noto Sans Arabic");
+                            r.AutoItem().AlignMiddle().Text(" : تحويل ( بنكى ، اون لاين )").FontSize(8)
+                                .FontFamily("Lato", "Noto Sans Arabic");
                         });
 
                         // ===== PURPOSE ROW =====
@@ -222,29 +267,34 @@ namespace Infrastructure.Pdf
                             // Center: Accountant
                             sigRow.RelativeItem().PaddingHorizontal(10).AlignCenter().Column(c =>
                             {
-                                c.Item().AlignCenter().Text("المحاسب").FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
+                                c.Item().AlignCenter().Text("المحاسب").FontSize(9)
+                                    .FontFamily("Lato", "Noto Sans Arabic");
                                 c.Item().PaddingTop(20).AlignCenter().BorderBottom(1);
                             });
 
                             // Right: Recipient
                             sigRow.RelativeItem().AlignRight().Column(c =>
                             {
-                                c.Item().AlignRight().Text("المستلم").FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
+                                c.Item().AlignRight().Text("المستلم").FontSize(9)
+                                    .FontFamily("Lato", "Noto Sans Arabic");
                                 c.Item().PaddingTop(8).Row(r =>
                                 {
                                     r.RelativeItem().BorderBottom(1);
-                                    r.AutoItem().PaddingLeft(3).Text("الاسم").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
+                                    r.AutoItem().PaddingLeft(3).Text("الاسم").FontSize(8)
+                                        .FontFamily("Lato", "Noto Sans Arabic");
                                 });
                                 c.Item().PaddingTop(8).Row(r =>
                                 {
                                     r.RelativeItem().BorderBottom(1);
-                                    r.AutoItem().PaddingLeft(3).Text("التوقيع").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
+                                    r.AutoItem().PaddingLeft(3).Text("التوقيع").FontSize(8)
+                                        .FontFamily("Lato", "Noto Sans Arabic");
                                 });
                             });
                         });
 
                         // ===== PAYMENT ID (small reference) =====
-                        mainCol.Item().PaddingTop(5).AlignLeft().Text($"مرجع: {data.PaymentId}").FontSize(6).FontColor(Colors.Grey.Medium);
+                        mainCol.Item().PaddingTop(5).AlignLeft().Text($"مرجع: {data.PaymentId}").FontSize(6)
+                            .FontColor(Colors.Grey.Medium);
                     });
                 });
             });
@@ -313,11 +363,15 @@ namespace Infrastructure.Pdf
         {
             if (number == 0) return "صفر";
 
-            string[] ones = { "", "واحد", "اثنان", "ثلاثة", "أربعة", "خمسة", "ستة", "سبعة", "ثمانية", "تسعة",
-                             "عشرة", "أحد عشر", "اثنا عشر", "ثلاثة عشر", "أربعة عشر", "خمسة عشر",
-                             "ستة عشر", "سبعة عشر", "ثمانية عشر", "تسعة عشر" };
+            string[] ones =
+            {
+                "", "واحد", "اثنان", "ثلاثة", "أربعة", "خمسة", "ستة", "سبعة", "ثمانية", "تسعة",
+                "عشرة", "أحد عشر", "اثنا عشر", "ثلاثة عشر", "أربعة عشر", "خمسة عشر",
+                "ستة عشر", "سبعة عشر", "ثمانية عشر", "تسعة عشر"
+            };
             string[] tens = { "", "", "عشرون", "ثلاثون", "أربعون", "خمسون", "ستون", "سبعون", "ثمانون", "تسعون" };
-            string[] hundreds = { "", "مائة", "مائتان", "ثلاثمائة", "أربعمائة", "خمسمائة", "ستمائة", "سبعمائة", "ثمانمائة", "تسعمائة" };
+            string[] hundreds =
+                { "", "مائة", "مائتان", "ثلاثمائة", "أربعمائة", "خمسمائة", "ستمائة", "سبعمائة", "ثمانمائة", "تسعمائة" };
 
             if (number < 0) return "سالب " + ConvertNumberToArabicWords(-number);
             if (number < 20) return ones[number];
@@ -328,6 +382,7 @@ namespace Infrastructure.Pdf
                 if (remainder == 0) return tens[ten];
                 return ones[remainder] + " و " + tens[ten];
             }
+
             if (number < 1000)
             {
                 var remainder = number % 100;
@@ -335,6 +390,7 @@ namespace Infrastructure.Pdf
                 if (remainder == 0) return hundreds[hundred];
                 return hundreds[hundred] + " و " + ConvertNumberToArabicWords(remainder);
             }
+
             if (number < 1000000)
             {
                 var thousands = number / 1000;
@@ -342,12 +398,14 @@ namespace Infrastructure.Pdf
                 string thousandWord;
                 if (thousands == 1) thousandWord = "ألف";
                 else if (thousands == 2) thousandWord = "ألفان";
-                else if (thousands >= 3 && thousands <= 10) thousandWord = ConvertNumberToArabicWords(thousands) + " آلاف";
+                else if (thousands >= 3 && thousands <= 10)
+                    thousandWord = ConvertNumberToArabicWords(thousands) + " آلاف";
                 else thousandWord = ConvertNumberToArabicWords(thousands) + " ألف";
 
                 if (remainder == 0) return thousandWord;
                 return thousandWord + " و " + ConvertNumberToArabicWords(remainder);
             }
+
             if (number < 1000000000)
             {
                 var millions = number / 1000000;
@@ -355,7 +413,8 @@ namespace Infrastructure.Pdf
                 string millionWord;
                 if (millions == 1) millionWord = "مليون";
                 else if (millions == 2) millionWord = "مليونان";
-                else if (millions >= 3 && millions <= 10) millionWord = ConvertNumberToArabicWords(millions) + " ملايين";
+                else if (millions >= 3 && millions <= 10)
+                    millionWord = ConvertNumberToArabicWords(millions) + " ملايين";
                 else millionWord = ConvertNumberToArabicWords(millions) + " مليون";
 
                 if (remainder == 0) return millionWord;
