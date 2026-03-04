@@ -1,3 +1,4 @@
+using Application.Accounting.Payments;
 using Application.Accounting.Services;
 using Application.Catalog.ProductStores;
 using Application.Core;
@@ -228,6 +229,20 @@ public class UpdateEmployeeAdvance
             // ────────────────────────────────────────────────────────────────
             // 5. Apply changes
             // ────────────────────────────────────────────────────────────────
+            var companyPartyId = await _productStoreService.GetProductStorePayToPartId();
+            CreatePaymentParam paymentsToUpdate = new CreatePaymentParam
+            {
+                PaymentId = advance.PaymentId,
+                PartyIdFrom = companyPartyId,
+                PartyIdTo = dto.PartyId,
+                Amount = dto.Amount,
+                EffectiveDate = dto.AdvanceDate,
+                PaymentTypeId = dto.AdvanceTypeId,
+                StatusId = "PMNT_NOT_PAID",
+                Comments = dto.Description,
+            };
+            await _paymentHelperService.UpdatePayment(paymentsToUpdate);
+
             advance.PartyId = dto.PartyId;
             advance.AdvanceDate = dto.AdvanceDate;
             advance.Amount = (decimal)dto.Amount;

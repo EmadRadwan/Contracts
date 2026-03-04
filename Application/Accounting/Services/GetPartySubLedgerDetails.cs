@@ -43,14 +43,18 @@ public class GetPartySubLedgerDetails
 
                 // 1. Fetch all relevant PartyGlAccount mappings
                 var partyGlAccounts = await _context.PartyGlAccounts
-                    .Where(pga => pga.PartyId == request.PartyId
-                                  && pga.OrganizationPartyId == orgId)
-                    .Select(pga => new
-                    {
-                        pga.RoleTypeId,
-                        pga.GlAccountTypeId,
-                        pga.GlAccountId
-                    })
+                    .Where(pga => pga.PartyId == request.PartyId && pga.OrganizationPartyId == orgId)
+                    .Join(
+                        _context.GlAccounts,
+                        pga => pga.GlAccountId,
+                        gla => gla.GlAccountId,
+                        (pga, gla) => new
+                        {
+                            pga.RoleTypeId,
+                            pga.GlAccountTypeId,
+                            pga.GlAccountId,
+                            AccountNameArabic = gla.AccountNameArabic
+                        })
                     .Distinct()
                     .ToListAsync(ct);
 
@@ -72,7 +76,7 @@ public class GetPartySubLedgerDetails
                         {
                             TransactionDate = ate.AcctgTrans.TransactionDate,
                             TransactionId = ate.AcctgTrans.AcctgTransId,
-                            Description = ate.AcctgTrans.Description ?? ate.AcctgTrans.AcctgTransTypeId,
+                            Description = ate.Description,
                             DebitCreditFlag = ate.DebitCreditFlag,
                             Amount = (decimal)ate.Amount,
                             CurrencyUomId = ate.CurrencyUomId ?? ate.OrigCurrencyUomId ?? currencyUomId,
@@ -112,6 +116,7 @@ public class GetPartySubLedgerDetails
                         RoleTypeId = pga.RoleTypeId,
                         GlAccountId = pga.GlAccountId,
                         GlAccountTypeId = pga.GlAccountTypeId,
+                        AccountNameArabic = pga.AccountNameArabic,
                         Entries = detailedRows,
                         FinalBalance = runningBalance
                     });
@@ -165,6 +170,7 @@ public class SubLedgerGroup
     public string? RoleTypeId { get; set; }
     public string GlAccountId { get; set; } = string.Empty;
     public string? GlAccountTypeId { get; set; }
+    public string? AccountNameArabic { get; set; }
     public List<SubLedgerEntry> Entries { get; set; } = new();
     public decimal FinalBalance { get; set; }
 }

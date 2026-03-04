@@ -27,7 +27,7 @@ export const PartySubLedgerExcel: React.FC<SubLedgerExcelProps> = ({
             const ws = wb.addWorksheet(sheetName, { views: [{ rightToLeft: true }] });
 
             // Title
-            ws.addRow([`دفتر الأستاذ الفرعي - ${party.partyName} - حساب ${group.glAccountId} (${group.glAccountTypeId || group.roleTypeId})`]);
+            ws.addRow([`دفتر الأستاذ الفرعي - ${party.partyName} - حساب ${group.glAccountId} (${group.accountNameArabic || group.roleTypeId})`]);
             ws.mergeCells('A1:F1');
             ws.getRow(1).font = { size: 16, bold: true };
 
@@ -96,6 +96,7 @@ export interface SubLedgerGroup {
     roleTypeId: string | null;
     glAccountId: string;
     glAccountTypeId: string | null;
+    accountNameArabic: string | null;
     entries: SubLedgerEntry[];
     finalBalance: number;
 }
