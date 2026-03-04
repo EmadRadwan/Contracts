@@ -22,6 +22,9 @@ public class SalesRequestRecord
 
     public string? Comments { get; set; }
     public decimal? AdvancePayment { get; set; }
+    public decimal? MaintenanceDeposit { get; set; }
+    public decimal? AdvancePercent { get; set; }
+    public decimal? MaintenancePercent { get; set; }
     public int? NumberOfInstallments { get; set; }
     public DateTime? DateOfFirstInstallment { get; set; }
     public int? MonthsBetweenInstallments { get; set; }
@@ -31,7 +34,6 @@ public class SalesRequestRecord
     public decimal? GardenSpaceM2 { get; set; }
     public string ApartmentStatusDescription { get; set; } = string.Empty;
     
-    public decimal? MaintenanceDeposit { get; set; }
     public string StatusId { get; set; } = string.Empty;
     public bool? IsChequesDelivered { get; set; }
 

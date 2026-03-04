@@ -39,7 +39,16 @@ function SalesRequestsList() {
     // -----------------------------------------------------------------
     // Grid data
     // -----------------------------------------------------------------
-    const [dataState, setDataState] = useState<State>({ take: 9, skip: 0 });
+    const [dataState, setDataState] = React.useState<State>({
+        sort: [
+            {
+                field: "createdStamp",
+                dir: "desc",
+            },
+        ],
+        skip: 0,
+        take: 9,
+    });
     const { data, isFetching } = useFetchSalesRequestsQuery({...dataState});
 
     React.useEffect(() => {

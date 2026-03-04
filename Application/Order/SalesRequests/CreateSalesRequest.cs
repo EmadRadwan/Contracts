@@ -42,6 +42,8 @@ public class CreateSalesRequest
         public decimal? GardenPricePerM2 { get; set; }
         public decimal ApartmentPricePerM2 { get; set; }
         public decimal? MaintenanceDeposit { get; set; }
+        public decimal? AdvancePercent { get; set; }
+        public decimal? MaintenancePercent { get; set; }
         public bool? IsChequesDelivered { get; set; }
 
 
@@ -143,6 +145,8 @@ public class CreateSalesRequest
                 Discount = dto.Discount,
                 TotalPrice = dto.TotalPrice,
                 IsChequesDelivered = dto.IsChequesDelivered,
+                AdvancePercent = dto.AdvancePercent,
+                MaintenancePercent = dto.MaintenancePercent,
                 AdvancePayment = dto.AdvancePayment,
                 NumberOfInstallments = dto.NumberOfInstallments,
                 DateOfFirstInstallment = dto.DateOfFirstInstallment,
@@ -275,6 +279,8 @@ public class CreateSalesRequest
                 TotalPrice = (decimal)dto.TotalPrice,
                 Discount = dto.Discount,
                 AdvancePayment = (decimal)dto.AdvancePayment,
+                AdvancePercent = dto.AdvancePercent,
+                MaintenancePercent = dto.MaintenancePercent,
                 NumberOfInstallments = (int)dto.NumberOfInstallments,
                 DateOfFirstInstallment = dto.DateOfFirstInstallment,
                 MonthsBetweenInstallments = (int)dto.MonthsBetweenInstallments,

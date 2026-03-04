@@ -35,6 +35,8 @@ export interface SalesRequest {
     comments?: string | null;
     statusId?: string | null;
     statusDescription?: string | null;
+    advancePercent?: number | null;
+    maintenancePercent?: number | null;
 
     lastUpdatedStamp?: string | null;
     createdStamp?: string | null;

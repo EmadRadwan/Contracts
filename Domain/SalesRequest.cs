@@ -37,6 +37,8 @@ public class SalesRequest
     public string? Comments { get; set; }
     public decimal? AdvancePayment { get; set; }
     public decimal? MaintenanceDeposit { get; set; }
+    public decimal? AdvancePercent { get; set; }
+    public decimal? MaintenancePercent { get; set; }
     public int? NumberOfInstallments { get; set; }
     public DateTime? DateOfFirstInstallment { get; set; }
     public int? MonthsBetweenInstallments { get; set; }

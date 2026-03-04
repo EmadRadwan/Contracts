@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {Form, FormElement, FormRenderProps, KeyValue} from "@progress/kendo-react-form";
 
-import {Paper} from "@mui/material";
+import {Box, Paper} from "@mui/material";
 import {toast} from "react-toastify";
 import {SalesRequest} from "../../../../../app/models/order/SalesRequest";
 import {
@@ -23,6 +23,7 @@ import {PaymentFieldsSection} from "./PaymentFieldsSection";
 import {FormActionsSection} from "./FormActionsSection";
 import {SalesRequestHeader} from "./SalesRequestHeader";
 import {useSalesRequestCalculations} from "../hook/useSalesRequestCalculations";
+import {SalesRequestExcel} from "../report/SalesRequestExcel";
 
 const APARTMENT_AVAILABLE = "APARTMENT_AVAILABLE";
 
@@ -81,11 +82,29 @@ function SalesRequestForm({
         defaultMaintenancePercent,
     });
 
+    const handleAdvanceChangeWithRecalc = useCallback((formRenderProps: FormRenderProps, value: number | null) => {
+        handleAdvanceChange(formRenderProps, value);
+        
+        const totalPrice = formRenderProps.valueGetter("totalPrice") || 0;
+        if (totalPrice > 0 && value != null) {
+            const newPercent = value / totalPrice;
+            setDefaultAdvancePercent(newPercent);
+            formRenderProps.onChange("advancePercent", { value: newPercent });
+        }
+    }, [handleAdvanceChange, defaultAdvancePercent]);
+
     // -----------------------------------------------------------------
     // Internal ref for party input (no longer passed from parent)
     // -----------------------------------------------------------------
     const partyInputRef = useRef<HTMLInputElement>(null);
    
+    useEffect(() => {
+        if (salesRequest) {
+            setDefaultAdvancePercent(salesRequest.advancePercent ?? 0.10);
+            setDefaultMaintenancePercent(salesRequest.maintenancePercent ?? 0.08);
+        }
+    }, [salesRequest]);
+
     useEffect(() => {
         if (savedInstallments.length > 0) {
             const mapped = savedInstallments.map(inst => ({
@@ -112,6 +131,17 @@ function SalesRequestForm({
 
         const currentMaintenance = formRef.current.valueGetter("maintenanceDeposit") || 0;
         const expectedMaintenance = finalTotal * defaultMaintenancePercent;
+
+        // Check if custom plan exists and its advance sum matches the current (about to be changed) value
+        if (customInstallments.length > 0) {
+            const planAdvanceSum = customInstallments
+                .filter(inst => inst.isAdvance)
+                .reduce((sum, inst) => sum + inst.amount, 0);
+
+            if (Math.abs(planAdvanceSum - expectedAdvance) > 0.01) {
+                toast.warn(getTranslatedLabel("salesRequest.form.validation.planAdvanceMismatchNotice", "Payment plan advance sum differs from the new default. Please review the payment plan."));
+            }
+        }
 
         // Only update if values are significantly different
         if (
@@ -144,6 +174,8 @@ function SalesRequestForm({
                 advancePayment: null,
                 totalPrice: null,
                 isChequesDelivered: true,
+                advancePercent: 0.10,
+                maintenancePercent: 0.08,
             };
         }
 
@@ -237,6 +269,8 @@ function SalesRequestForm({
             statusId: sr.statusId ?? null,
             statusDescription: sr.statusDescription ?? null,
             isChequesDelivered: sr.isChequesDelivered ?? null,
+            advancePercent: sr.advancePercent ?? defaultAdvancePercent,
+            maintenancePercent: sr.maintenancePercent ?? defaultMaintenancePercent,
         };
     }, [editMode, salesRequest]);
 
@@ -278,10 +312,19 @@ function SalesRequestForm({
 
         if (formRef.current) {
             const currentAdvance = formRef.current.valueGetter("advancePayment");
+            const totalPrice = formRef.current.valueGetter("totalPrice") || 0;
+
             // Only update if different (prevents re-render loop)
             const roundedAdvanceSum = Math.round(actualAdvanceSum);
             if (Math.abs(roundedAdvanceSum - (currentAdvance || 0)) > 0.01) {
                 formRef.current.onChange("advancePayment", { value: roundedAdvanceSum });
+
+                // Also update the percentage in header and form state if price exists
+                if (totalPrice > 0) {
+                    const newPercent = roundedAdvanceSum / totalPrice;
+                    setDefaultAdvancePercent(newPercent);
+                    formRef.current.onChange("advancePercent", { value: newPercent });
+                }
             }
         }
 
@@ -402,6 +445,8 @@ function SalesRequestForm({
                     "numberOfInstallments",
                     "monthsBetweenInstallments",
                     "maintenanceDeposit",
+                    "advancePercent",
+                    "maintenancePercent",
                 ] as const;
                 numericFields.forEach(field => {
                     if (copy[field] === "" || copy[field] == null) copy[field] = null;
@@ -599,6 +644,7 @@ function SalesRequestForm({
                                     onSalesRequestDeleted={cancelEdit}
                                     disabledActions={isCreating || isUpdating || buttonFlag}
                                 />
+                                
                                 <FormElement>
                                     <fieldset className="k-form-fieldset">
 
@@ -624,7 +670,7 @@ function SalesRequestForm({
                                         />
                                         <PaymentFieldsSection
                                             formRenderProps={formRenderProps}
-                                            onAdvanceChange={handleAdvanceChange}
+                                            onAdvanceChange={handleAdvanceChangeWithRecalc}
                                             getTranslatedLabel={getTranslatedLabel}
                                         />
 
@@ -640,7 +686,16 @@ function SalesRequestForm({
                                             onCancel={cancelEdit}
                                             getTranslatedLabel={getTranslatedLabel}
                                         />
-
+                                        {salesRequest?.salesRequestId && (
+                                            <Box display="flex" justifyContent="flex-end" sx={{ mb: 1, mr: 2 }}>
+                                                <SalesRequestExcel
+                                                    salesRequest={currentFormValues}
+                                                    installments={customInstallments}
+                                                    getTranslatedLabel={getTranslatedLabel}
+                                                    language={language}
+                                                />
+                                            </Box>
+                                        )}
 
                                         {showPaymentPlan && (
                                             <ModalContainer show={showPaymentPlan}
@@ -665,6 +720,10 @@ function SalesRequestForm({
                                                 onSave={(adv, maint) => {
                                                     setDefaultAdvancePercent(adv);
                                                     setDefaultMaintenancePercent(maint);
+                                                    if (formRef.current) {
+                                                        formRef.current.onChange("advancePercent", { value: adv });
+                                                        formRef.current.onChange("maintenancePercent", { value: maint });
+                                                    }
                                                 }}
                                             />
                                         )}

@@ -97,6 +97,8 @@ public class UpdateSalesRequest
                 sr.ApartmentPricePerM2 = dto.ApartmentPricePerM2;
                 sr.GardenPricePerM2 = dto.GardenPricePerM2;
                 sr.IsChequesDelivered = dto.IsChequesDelivered;
+                sr.AdvancePercent = dto.AdvancePercent;
+                sr.MaintenancePercent = dto.MaintenancePercent;
                 sr.Discount = dto.Discount;
                 sr.TotalPrice = dto.TotalPrice;
                 sr.AdvancePayment = dto.AdvancePayment;
@@ -224,6 +226,8 @@ public class UpdateSalesRequest
                     DateOfFirstInstallment = dto.DateOfFirstInstallment,
                     MonthsBetweenInstallments = (int)dto.MonthsBetweenInstallments,
                     MaintenanceDeposit = dto.MaintenanceDeposit,
+                    AdvancePercent = dto.AdvancePercent,
+                    MaintenancePercent = dto.MaintenancePercent,
                     IsChequesDelivered = dto.IsChequesDelivered,
 
                     SaleDate = dto.SaleDate!.Value,
