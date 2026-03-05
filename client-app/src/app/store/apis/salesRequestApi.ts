@@ -169,6 +169,18 @@ const salesRequestApi = createApi({
                 query: (salesRequestId) => `salesRequests/${salesRequestId}/installments`,
                 providesTags: ["SalesRequestInstallments"],
             }),
+
+            fetchSalesRequestsByDateRange: builder.query<
+                SalesRequest[],
+                { fromDate: string; toDate: string }
+            >({
+                query: ({ fromDate, toDate }) => ({
+                    url: `/salesRequests/by-date-range`,
+                    method: 'GET',
+                    params: { fromDate, toDate },
+                }),
+                providesTags: ['SalesRequest'],
+            }),
         };
     },
 });
@@ -186,6 +198,7 @@ export const {
     useFetchReserveRequestsQuery,
     useAddReserveRequestMutation,
     useUpdateReserveRequestMutation, useGetSalesRequestInstallmentsQuery,
+    useLazyFetchSalesRequestsByDateRangeQuery,
 } = salesRequestApi;
 
 export { salesRequestApi };

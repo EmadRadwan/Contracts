@@ -59,4 +59,21 @@ public class SalesRequestsController : BaseApiController
         return Ok(installments);
     }
 
+    [HttpGet("by-date-range")]
+    public async Task<ActionResult<List<SalesRequestRecord>>> GetSalesRequestsByDateRange(
+        [FromQuery] string fromDate,
+        [FromQuery] string toDate,
+        CancellationToken ct = default)
+    {
+        var language = GetLanguage();
+        var query = new ListSalesRequestsByDateRange.Query
+        {
+            FromDate = DateTime.ParseExact(fromDate, "yyyy-MM-dd", null),
+            ToDate = DateTime.ParseExact(toDate, "yyyy-MM-dd", null).AddDays(1).AddTicks(-1), // end of day
+            Language = language
+        };
+
+        var result = await Mediator.Send(query, ct);
+        return Ok(result);
+    }
 }

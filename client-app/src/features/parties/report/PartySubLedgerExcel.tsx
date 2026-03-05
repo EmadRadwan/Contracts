@@ -28,15 +28,15 @@ export const PartySubLedgerExcel: React.FC<SubLedgerExcelProps> = ({
 
             // Title
             ws.addRow([`دفتر الأستاذ الفرعي - ${party.partyName} - حساب ${group.glAccountId} (${group.accountNameArabic || group.roleTypeId})`]);
-            ws.mergeCells('A1:F1');
+            ws.mergeCells('A1:G1');
             ws.getRow(1).font = { size: 16, bold: true };
 
             // Headers
-            const headers = ['التاريخ', 'البيان', 'رقم القيد', 'مدين', 'دائن', 'الرصيد'];
+            const headers = ['التاريخ', 'البيان', 'رقم القيد', 'رقم الدفعة', 'مدين', 'دائن', 'الرصيد'];
             ws.addRow(headers);
             ws.getRow(2).font = { bold: true };
             ws.columns = [
-                { width: 14 }, { width: 50 }, { width: 18 },
+                { width: 14 }, { width: 50 }, { width: 18 }, { width: 18 },
                 { width: 16, style: { numFmt: '#,##0.00' } },
                 { width: 16, style: { numFmt: '#,##0.00' } },
                 { width: 18, style: { numFmt: '#,##0.00' } },
@@ -51,6 +51,7 @@ export const PartySubLedgerExcel: React.FC<SubLedgerExcelProps> = ({
                     e.transactionDate?.split('T')[0] ?? '',
                     e.description,
                     e.transactionId,
+                    e.paymentId || '',
                     debit,
                     credit,
                     e.runningBalance
@@ -58,7 +59,7 @@ export const PartySubLedgerExcel: React.FC<SubLedgerExcelProps> = ({
             });
 
             // Final row
-            const lastRow = ws.addRow(['', 'الرصيد النهائي', '', '', '', group.finalBalance]);
+            const lastRow = ws.addRow(['', 'الرصيد النهائي', '', '', '', '', group.finalBalance]);
             lastRow.font = { bold: true, size: 13 };
         });
 
@@ -87,6 +88,7 @@ export interface SubLedgerEntry {
     amount: number;
     currencyUomId: string;
     glAccountId: string;
+    paymentId: string | null;
     glAccountTypeId: string | null;
     roleTypeId: string | null;
     runningBalance: number;

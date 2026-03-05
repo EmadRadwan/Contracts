@@ -196,37 +196,7 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
     );
   };
 
-  const DeleteCell = (props: any) => {
-    const navigationAttributes = useTableKeyboardNavigation(props.id);
-    return (
-        <td
-            className={props.className}
-            style={{ ...props.style }}
-            colSpan={props.colSpan}
-            role="gridcell"
-            aria-colindex={props.ariaColumnIndex}
-            aria-selected={props.isSelected}
-            {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
-            {...navigationAttributes}
-        >
-          <Can perform="deletePayment">
-            <Button
-                size="small"
-                color="error"
-                variant="outlined"
-                onClick={() => handleDeleteClick(props.dataItem.paymentId)}
-                disabled={isDeleting}
-            >
-              {getTranslatedLabel(
-                  "accounting.payments.list.deleteButton",
-                  "Delete"
-              )}
-            </Button>
-          </Can>
-        </td>
-    );
-  };
-
+ 
   const handleNewPayment = () => {
     dispatch(setPaymentType(paymentType === "incoming" ? 1 : 2));
     dispatch(setSelectedPayment(undefined));

@@ -20,6 +20,7 @@ import SalesRequestMenu from "../menu/SalesRequestMenu";
 import {handleDatesArray} from "../../../../../app/util/utils";
 import InstallmentPriceCalculatorModal from "./InstallmentPriceCalculatorModal";
 import ModalContainer from "../../../../../app/common/modals/ModalContainer";
+import {SalesRequestsDateRangeExcel} from "../report/SalesRequestsDateRangeExcel";
 
 function SalesRequestsList() {
     // -----------------------------------------------------------------
@@ -188,6 +189,9 @@ function SalesRequestsList() {
                                             >
                                                 {getTranslatedLabel("installmentCalculator.open", "حاسبة سعر المتر بالتقسيط")}
                                             </Button>
+                                        </Grid>
+                                        <Grid item xs={2}>
+                                            <SalesRequestsDateRangeExcel getTranslatedLabel={getTranslatedLabel} />
                                         </Grid>
                                     </Grid>
 

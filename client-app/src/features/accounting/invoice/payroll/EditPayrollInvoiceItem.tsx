@@ -88,7 +88,7 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
             logic: "and",
             filters: [
                 { field: "partyId", operator: "eq", value: employeeId },
-                { field: "statusId", operator: "eq", value: "ADVANCE_ACTIVE" }
+                { field: "statusId", operator: "eq", value: "ADVANCE_APPROVED" }
             ]
         }
     } as any, { skip: !employeeId });
@@ -110,7 +110,7 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
         return employeeAdvancesData.data.filter((adv: EmployeeAdvance) => {
             if (adv.advanceTypeId === "EMPLOYEE_ADVANCE") {
                 const advDate = new Date(adv.advanceDate);
-                return advDate.getMonth() === invMonth && advDate.getFullYear() === invYear;
+                return advDate.getMonth() === invMonth - 1 && advDate.getFullYear() === invYear;
             } else if (adv.advanceTypeId === "EMPLOYEE_LONG_TERM_ADVANCE") {
                 const startDate = new Date(adv.startDate);
                 return startDate <= invDate;

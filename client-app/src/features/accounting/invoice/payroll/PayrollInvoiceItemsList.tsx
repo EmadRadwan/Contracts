@@ -41,6 +41,7 @@ export default function PayrollInvoiceItemsList({ invoiceId, canEdit, refreshTot
         setPage(event.page);
     };
     
+    
     const [invoiceItem, setInvoiceItem] = useState<InvoiceItem | undefined>(undefined);
     const uiInvoiceItems: any = useSelector(nonDeletedInvoiceItemsSelector);
     const [editMode, setEditMode] = useState(0);
@@ -135,7 +136,7 @@ export default function PayrollInvoiceItemsList({ invoiceId, canEdit, refreshTot
                         onClose={handleCloseModal}
                         invoiceId={invoiceId}
                         refreshTotal={refreshTotal}
-                        employeeId={employeeId}
+                        employeeId={employeeId?.fromPartyId}
                         invoiceDate={invoiceDate}
                     />
                 </ModalContainer>

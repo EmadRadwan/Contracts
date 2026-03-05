@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
 import {
     Grid as KendoGrid,
@@ -10,7 +10,6 @@ import {
 import { DataResult, State } from "@progress/kendo-data-query";
 import { Button, Grid, Paper } from "@mui/material";
 import MultiPaymentCertificateForm from "../form/MultiPaymentCertificateForm";
-import { useAppDispatch } from "../../../app/store/configureStore";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import { MultiPaymentCertificate } from "../../../app/models/project/MultiPaymentCertificate";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
@@ -170,6 +169,7 @@ export default function MultiPaymentCertificatesList() {
         statusDescription: 120,
         notes: 100,
         partyName: 200,
+        acctgTransId: 150
     };
 
     const handleShowTransactions = (workEffortId: string) => {
@@ -261,6 +261,11 @@ export default function MultiPaymentCertificatesList() {
                                 field="accountName"
                                 title={getTranslatedLabel(`${localizationKey}.accountName`, "accountName")}
                                 width={columnWidths.accountName}
+                            />
+                            <Column
+                                field="acctgTransId"
+                                title={getTranslatedLabel(`${localizationKey}.acctgTransId`, "acctgTransId")}
+                                width={columnWidths.acctgTransId}
                             />
                             <Column
                                 field="partyName"

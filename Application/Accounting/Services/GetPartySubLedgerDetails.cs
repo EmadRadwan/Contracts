@@ -81,6 +81,7 @@ public class GetPartySubLedgerDetails
                             Amount = (decimal)ate.Amount,
                             CurrencyUomId = ate.CurrencyUomId ?? ate.OrigCurrencyUomId ?? currencyUomId,
                             GlAccountId = ate.GlAccountId,
+                            PaymentId = ate.AcctgTrans.PaymentId,
                             GlAccountTypeId = ate.GlAccountTypeId,
                             RoleTypeId = pga.RoleTypeId
                         })
@@ -184,6 +185,7 @@ public class SubLedgerEntry
     public decimal Amount { get; set; }
     public string CurrencyUomId { get; set; } = string.Empty;
     public string GlAccountId { get; set; } = string.Empty;
+    public string? PaymentId { get; set; }
     public string? GlAccountTypeId { get; set; }
     public string? RoleTypeId { get; set; }
     public decimal RunningBalance { get; set; }

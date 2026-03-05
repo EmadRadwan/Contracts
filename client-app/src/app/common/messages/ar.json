@@ -115,11 +115,18 @@
       "apartment": "الشقة",
       "customer": "العميل",
       "employee": "موظف المبيعات",
+      "status": "الحالة",
       "saleDate": "تاريخ البيع",
       "total": "الإجمالي",
       "advance": "المقدم",
       "project": "المشروع",
       "comments": "التعليقات"
+    },
+    "report": {
+      "daterange": {
+        "title": "طلبات المبيعات ({0} - {1})",
+        "excel": "تصدير حسب نطاق التاريخ"
+      }
     },
     "menu": {
       "salesRequests": "طلبات المبيعات",
@@ -1870,6 +1877,7 @@
         "workEffortId": "رقم المستند",
         "date": "التاريخ",
         "accountName": "اسم الحساب",
+        "acctgTransId": "رقم القيد",
         "statusDescription": "الحالة",
         "paymentTo": "الدفع إلى",
         "referenceNum": "الرقم المرجعي",

@@ -32,19 +32,11 @@ namespace Application.Projects
         {
             private readonly DataContext _context;
             private readonly IUtilityService _utilityService;
-            private readonly IUserAccessor _userAccessor;
-            private readonly IAcctgMiscService _acctgMiscService;
-            private readonly IInvoiceUtilityService _invoiceUtilityService;
 
-
-            public Handler(DataContext context, IUtilityService utilityService, IUserAccessor userAccessor,
-                IAcctgMiscService acctgMiscService, IInvoiceUtilityService invoiceUtilityService)
+            public Handler(DataContext context, IUtilityService utilityService)
             {
                 _context = context;
                 _utilityService = utilityService;
-                _userAccessor = userAccessor;
-                _acctgMiscService = acctgMiscService;
-                _invoiceUtilityService = invoiceUtilityService;
             }
 
             public async Task<Result<MultiPaymentCertificateDto>> Handle(Command request,
