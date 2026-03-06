@@ -54,6 +54,50 @@
     "ms": "جزء من الثانية",
     "mins": "دقيقة"
   },
+    "common": {
+    "startDate": "تاريخ البداية",
+    "endDate": "تاريخ النهاية",
+    "fromDate": "من تاريخ",
+    "toDate": "إلى تاريخ",
+    "exportToExcel": "تصدير إلى إكسل",
+    "exporting": "جاري التصدير...",
+    "generating": "جاري التحميل...",
+    "download": "تحميل",
+    "cancel": "إلغاء",
+    "total": "الإجمالي",
+    "dateRangeError": "يرجى اختيار التواريخ"
+  },
+  "projects": {
+    "certificate": {
+      "list": {
+        "new": "شهادة جديدة",
+        "supplyProcurement": "شهادة توريد",
+        "workmanshipContracting": "شهادة مصنعية",
+        "companySupplySale": "شهادة بيع توريد شركة",
+        "certificateNumber": "رقم الشهادة",
+        "projectName": "اسم المشروع",
+        "certificateType": "نوع الشهادة",
+        "statusDescription": "الحالة",
+        "totalAmount": "الإجمالي",
+        "supplierPartyId": "رقم المورد",
+        "supplierPartyName": "المورد",
+        "contractorPartyId": "رقم المقاول",
+        "contractorPartyName": "المقاول",
+        "description": "الوصف",
+        "startDate": "من تاريخ",
+        "completionDate": "إلى تاريخ",
+        "facilityName": "المخزن/الموقع",
+        "loading": "جاري تحميل الشهادات..."
+      },
+      "excel": {
+        "success": "تم إنشاء ملف الإكسل بنجاح",
+        "error": "فشل في إنشاء ملف الإكسل",
+        "noData": "لا توجد بيانات للفترة المختارة",
+        "title": "شهادات المشروع",
+        "dialogTitle": "اختر الفترة الزمنية لتقرير شهادات المشروع"
+      }
+    }
+  },
   "salesRequest": {
     "form": {
       "new": "طلب مبيعات جديد",

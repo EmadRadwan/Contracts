@@ -50,10 +50,9 @@ interface PayrollRow {
     invoiceItemTypeId: string;
     description: string; // Label from type
     amount: number;
-    quantity: number;
-    overrideGlAccountId?: string;
     invoiceItemSeqId?: string; // If already on invoice
     itemDescription?: string; // Custom description for item
+    absenceDays?: number; // Special case for PAYROL_DD_ABSENCE
 }
 
 const EditPayrollInvoiceItem: React.FC<Props> = ({
@@ -140,10 +139,9 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                         invoiceItemTypeId: type.invoiceItemTypeId,
                         description: type.description,
                         amount: existingItem.amount || 0,
-                        quantity: existingItem.quantity || 1,
-                        overrideGlAccountId: existingItem.overrideGlAccountId,
                         invoiceItemSeqId: existingItem.invoiceItemSeqId,
-                        itemDescription: existingItem.description || ""
+                        itemDescription: existingItem.description || "",
+                        absenceDays: type.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' ? (existingItem.quantity || 0) : undefined
                     });
                 } else {
                     // Pre-population logic
@@ -161,8 +159,8 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                         invoiceItemTypeId: type.invoiceItemTypeId,
                         description: type.description,
                         amount: initialAmount,
-                        quantity: 1,
-                        itemDescription: initialDesc
+                        itemDescription: initialDesc,
+                        absenceDays: type.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' ? 0 : undefined
                     });
                 }
             });
@@ -173,7 +171,16 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
 
     const handleRowChange = (index: number, field: keyof PayrollRow, value: any) => {
         const newRows = [...rows];
-        newRows[index] = { ...newRows[index], [field]: value };
+        const updatedRow = { ...newRows[index], [field]: value };
+
+        // Special logic for PAYROL_DD_ABSENCE
+        if (field === 'absenceDays' && updatedRow.invoiceItemTypeId === 'PAYROL_DD_ABSENCE') {
+            const basicSalary = employeeData?.monthlyBaseSalary || 0;
+            const absenceDays = parseFloat(value) || 0;
+            updatedRow.amount = (basicSalary / 30) * absenceDays;
+        }
+
+        newRows[index] = updatedRow;
         setRows(newRows);
     };
 
@@ -201,9 +208,8 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                         invoiceId,
                         invoiceItemTypeId: row.invoiceItemTypeId,
                         amount: row.amount,
-                        quantity: row.quantity,
+                        quantity: row.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' ? (row.absenceDays || 0) : 1,
                         description: row.itemDescription,
-                        overrideGlAccountId: row.overrideGlAccountId,
                     };
 
                     if (row.invoiceItemSeqId) {
@@ -246,11 +252,10 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                 <Table size="small">
                     <TableHead sx={{ bgcolor: '#f5f5f5' }}>
                         <TableRow>
-                            <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>Item Type</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>Item Type</TableCell>
                             <TableCell sx={{ fontWeight: 'bold', width: '15%' }}>Amount *</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold', width: '10%' }}>Quantity</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>Override GL Account</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>Description</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>Absence Days</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '30%' }}>Description</TableCell>
                             <TableCell sx={{ fontWeight: 'bold', width: '10%', textAlign: 'center' }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
@@ -271,29 +276,20 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                                         onChange={(e) => handleRowChange(index, 'amount', parseFloat(e.target.value) || 0)}
                                         error={row.amount === 0 && row.invoiceItemTypeId === 'PAYROL_SALARY'}
                                         InputProps={{ inputProps: { min: 0, step: "0.01" } }}
+                                        disabled={row.invoiceItemTypeId === 'PAYROL_DD_ABSENCE'} // Disabled as it's computed
                                     />
                                 </TableCell>
                                 <TableCell>
-                                    <TextField
-                                        type="number"
-                                        size="small"
-                                        fullWidth
-                                        value={row.quantity}
-                                        onChange={(e) => handleRowChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-                                        InputProps={{ inputProps: { min: 0 } }}
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <FormDropDownTreeGlAccount2
-                                        id={`gl-${row.invoiceItemTypeId}`}
-                                        name={`gl-${row.invoiceItemTypeId}`}
-                                        label=""
-                                        data={glAccounts || []}
-                                        value={row.overrideGlAccountId}
-                                        onChange={(e) => handleRowChange(index, 'overrideGlAccountId', e.value)}
-                                        dataItemKey="glAccountId"
-                                        textField="text"
-                                    />
+                                    {row.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' && (
+                                        <TextField
+                                            type="number"
+                                            size="small"
+                                            fullWidth
+                                            value={row.absenceDays || 0}
+                                            onChange={(e) => handleRowChange(index, 'absenceDays', parseFloat(e.target.value) || 0)}
+                                            InputProps={{ inputProps: { min: 0, step: "0.5" } }}
+                                        />
+                                    )}
                                 </TableCell>
                                 <TableCell>
                                     <TextField

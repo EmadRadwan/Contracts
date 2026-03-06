@@ -138,6 +138,12 @@ const projectsApi = createApi({
                 }),
                 invalidatesTags: ['ProjectCertificates'], // or whatever tag you use for list invalidation
             }),
+            fetchProjectCertificatesByDateRange: builder.query<WorkEffort[], { startDate?: string; endDate?: string }>({
+                query: ({ startDate, endDate }) => ({
+                    url: "/project/by-date-range",
+                    params: { startDate, endDate },
+                }),
+            }),
             reviewCertificate: builder.mutation<
                 { success: boolean; certificate?: any },
                 {

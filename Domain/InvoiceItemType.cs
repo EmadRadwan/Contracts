@@ -23,6 +23,8 @@ public class InvoiceItemType
     public string? DescriptionArabic { get; set; }
 
     public string? DefaultGlAccountId { get; set; }
+    public bool? IsPositiveAmount { get; set; } = true;
+    
     public DateTime? LastUpdatedStamp { get; set; }
     public DateTime? LastUpdatedTxStamp { get; set; }
     public DateTime? CreatedStamp { get; set; }

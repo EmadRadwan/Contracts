@@ -79,7 +79,6 @@ namespace Application.Accounting.Invoices
                     new List<string> 
                     {
                         "PAYROL_SALARY",          // الراتب الأساسي
-                        "PAYROL_ALLOWANCE",       // البدلات
                         "PAYROL_BONUS",           // المكافآت والحوافز
                         "PAYROL_OVERTIME",        // قيمة الإضافي
                         "PAYROL_DD_ABSENCE",      // قيمة الغياب

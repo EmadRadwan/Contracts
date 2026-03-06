@@ -89,6 +89,24 @@ public class ProjectController : BaseApiController
         return HandleResult(result);
     }
     
+    [HttpGet("by-date-range")]
+    public async Task<IActionResult> GetProjectCertificatesByDateRange(
+        [FromQuery] DateTime? startDate, 
+        [FromQuery] DateTime? endDate)
+    {
+        var language = GetLanguage();
+
+        var list = await Mediator.Send(new ListProjectCertificatesByDateRange.Query
+        {
+            StartDate = startDate,
+            EndDate   = endDate,
+            Language  = language
+        });
+
+        // Option A – if you use Ardalis.Result / similar
+        return HandleResult(Result<List<ProjectCertificateRecord>>.Success(list));
+    }
+    
     [HttpGet("getProjectsLov", Name = "GetProjectsLov")]
     public async Task<IActionResult> GetProjectsLov([FromQuery] PartyLovParams param)
     {

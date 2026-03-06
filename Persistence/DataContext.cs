@@ -22064,6 +22064,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .IsUnicode(false)
                     .HasColumnName("HAS_TABLE")
                     .IsFixedLength();
+                    
+                    entity.Property(e => e.IsPositiveAmount)
+                        .HasColumnName("IS_POSITIVE_AMOUNT")
+                        .HasColumnType("tinyint(1)")     // ← preferred for boolean flags in MySQL
+                        .IsRequired(false);              // still nullable
 
                 entity.Property(e => e.LastUpdatedStamp)
                     .HasColumnType("datetime")

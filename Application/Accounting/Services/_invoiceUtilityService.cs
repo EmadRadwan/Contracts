@@ -472,6 +472,36 @@ public class InvoiceUtilityService : IInvoiceUtilityService
         return invoiceApplied;
     }
 
+    // ────────────────────────────────────────────────────────────────
+// Helper: Returns signed amount for one invoice item
+// ────────────────────────────────────────────────────────────────
+    private async Task<decimal> GetSignedItemAmount(InvoiceItem item)
+    {
+        try
+        {
+            var quantity = item.Quantity ?? 1m;
+            var baseAmount = item.Amount ?? 0m;
+
+            // Load the type classification (include navigation property)
+            // Assumption: InvoiceItem has navigation property InvoiceItemType (or you eager-load it)
+            var itemType = await _context.InvoiceItemTypes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.InvoiceItemTypeId == item.InvoiceItemTypeId);
+
+            bool isPositive = itemType?.IsPositiveAmount ?? true; // ← default to positive when null/old
+
+            var signedAmount = isPositive ? baseAmount : -baseAmount;
+
+            var lineTotal = quantity * signedAmount;
+
+            return decimal.Round(lineTotal, 2, MidpointRounding.AwayFromZero);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error determining signed amount for item {item.InvoiceItemSeqId}");
+            throw;
+        }
+    }
 
     public async Task<decimal> GetInvoiceTotal(string invoiceId, bool actualCurrency)
     {
@@ -481,15 +511,21 @@ public class InvoiceUtilityService : IInvoiceUtilityService
         {
             var taxableItemTypeIds = await GetTaxableInvoiceItemTypeIds();
 
-            var invoiceItems = await _utilityService.FindLocalOrDatabaseListAsync<InvoiceItem>(
-                q => q.Where(ii => ii.InvoiceId == invoiceId
-                                   && !taxableItemTypeIds.Contains(ii.InvoiceItemTypeId))
-                    .Select(ii => new InvoiceItem
-                    {
-                        InvoiceItemTypeId = ii.InvoiceItemTypeId,
-                        Quantity          = ii.Quantity,
-                        Amount            = ii.Amount
-                    }));
+            var invoiceItems = await _context.InvoiceItems
+                .AsNoTracking()
+                .Where(ii => ii.InvoiceId == invoiceId 
+                             && !taxableItemTypeIds.Contains(ii.InvoiceItemTypeId))
+                .Include(ii => ii.InvoiceItemType)  // ← add this if navigation exists
+                .Select(ii => new 
+                {
+                    ii.InvoiceItemTypeId,
+                    ii.Quantity,
+                    ii.Amount,
+                    IsPositiveAmount = ii.InvoiceItemType != null 
+                        ? ii.InvoiceItemType.IsPositiveAmount 
+                        : (bool?)null
+                })
+                .ToListAsync();
             
             if (invoiceItems?.Any() == true)
             {
@@ -504,24 +540,27 @@ public class InvoiceUtilityService : IInvoiceUtilityService
                     // Rule 1 – Certificate invoice: certificate amount(s) MINUS everything else
                     var certificateTotal = invoiceItems
                         .Where(ii => ii.InvoiceItemTypeId == "PINV_CERTIFICATE_ITEM")
-                        .Sum(GetInvoiceItemTotal);
+                        .Sum(ii => (ii.Quantity ?? 1m) * (ii.Amount ?? 0m) * ((ii.IsPositiveAmount ?? true) ? 1m : -1m));
 
                     var otherTotal = invoiceItems
                         .Where(ii => ii.InvoiceItemTypeId != "PINV_CERTIFICATE_ITEM")
-                        .Sum(GetInvoiceItemTotal);
+                        .Sum(ii => (ii.Quantity ?? 1m) * (ii.Amount ?? 0m) * ((ii.IsPositiveAmount ?? true) ? 1m : -1m));
 
                     baseTotal = certificateTotal - otherTotal;
                 }
                 else if (hasCertificateSupplyItem)
                 {
-                    // Rule 2 – Certificate-Supply invoice: normal sum (amounts already signed correctly)
-                    baseTotal = invoiceItems.Sum(GetInvoiceItemTotal);
+                    // Rule 2 – Certificate-Supply: normal signed sum
+                    baseTotal = invoiceItems.Sum(ii => 
+                        (ii.Quantity ?? 1m) * (ii.Amount ?? 0m) * ((ii.IsPositiveAmount ?? true) ? 1m : -1m));
                 }
                 else
                 {
-                    // Rule 3 – Regular invoice: normal sum of all non-taxable items
-                    baseTotal = invoiceItems.Sum(GetInvoiceItemTotal);
+                    // Rule 3 – Regular: normal signed sum of non-taxable items
+                    baseTotal = invoiceItems.Sum(ii => 
+                        (ii.Quantity ?? 1m) * (ii.Amount ?? 0m) * ((ii.IsPositiveAmount ?? true) ? 1m : -1m));
                 }
+
 
                 invoiceTotal = baseTotal;
             }
