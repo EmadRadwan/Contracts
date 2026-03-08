@@ -314,20 +314,15 @@ public class InvoiceHelperService : IInvoiceHelperService
         if (!string.IsNullOrWhiteSpace(parameters.InvoiceItemTypeId))
             invoiceItem.InvoiceItemTypeId = parameters.InvoiceItemTypeId;
 
-        if (!string.IsNullOrWhiteSpace(parameters.OverrideGlAccountId))
-            invoiceItem.OverrideGlAccountId = parameters.OverrideGlAccountId;
+        invoiceItem.OverrideGlAccountId = parameters.OverrideGlAccountId;
 
-        if (!string.IsNullOrWhiteSpace(parameters.Description))
-            invoiceItem.Description = parameters.Description;
+        invoiceItem.Description = parameters.Description;
 
-        if (parameters.Amount.HasValue)
-            invoiceItem.Amount = parameters.Amount;
+        invoiceItem.Amount = parameters.Amount;
 
-        if (!string.IsNullOrWhiteSpace(parameters.ProductId))
-            invoiceItem.ProductId = parameters.ProductId;
+        invoiceItem.ProductId = parameters.ProductId;
 
-        if (parameters.Quantity.HasValue)
-            invoiceItem.Quantity = parameters.Quantity.Value;
+        invoiceItem.Quantity = parameters.Quantity.Value;
 
         // add other updatable fields as needed...
 
@@ -1386,15 +1381,16 @@ public class InvoiceHelperService : IInvoiceHelperService
             }
 
             // Get a list of the payment method pref
-            var orderPaymentPreferences = await _utilityService.FindLocalOrDatabaseListAsync<OrderPaymentPreference>(
-                query => query.Where(opp => opp.OrderId == orderId && opp.StatusId != "PAYMENT_CANCELLED")
-            );
+            var orderPaymentPreferences =
+                await _utilityService.FindLocalOrDatabaseListAsync<OrderPaymentPreference>(query =>
+                    query.Where(opp => opp.OrderId == orderId && opp.StatusId != "PAYMENT_CANCELLED")
+                );
 
             var currentPayments = new List<Payment>();
             foreach (var paymentPref in orderPaymentPreferences)
             {
-                var payments = await _utilityService.FindLocalOrDatabaseListAsync<Payment>(
-                    query => query.Where(p => p.PaymentPreferenceId == paymentPref.OrderPaymentPreferenceId)
+                var payments = await _utilityService.FindLocalOrDatabaseListAsync<Payment>(query =>
+                    query.Where(p => p.PaymentPreferenceId == paymentPref.OrderPaymentPreferenceId)
                 );
 
                 currentPayments.AddRange(payments);
@@ -1712,8 +1708,9 @@ public class InvoiceHelperService : IInvoiceHelperService
             else if (dropShipmentFound)
             {
                 // Use utility function for Shipment list
-                var dropShipments = await _utilityService.RetrieveLocalOrDatabaseListAsync<Shipment>(
-                    query => query.Where(s => shipmentIds.Contains(s.ShipmentId)));
+                var dropShipments =
+                    await _utilityService.RetrieveLocalOrDatabaseListAsync<Shipment>(query =>
+                        query.Where(s => shipmentIds.Contains(s.ShipmentId)));
 
                 var purchaseOrderIds = dropShipments
                     .Select(s => s.PrimaryOrderId)
@@ -1723,28 +1720,28 @@ public class InvoiceHelperService : IInvoiceHelperService
                 if (createSalesInvoicesForDropShipments)
                 {
                     // Use utility function for OrderItemAssoc list
-                    orderItemAssocs = await _utilityService.RetrieveLocalOrDatabaseListAsync<OrderItemAssoc>(
-                        query => query.Where(oia => purchaseOrderIds.Contains(oia.ToOrderId)));
+                    orderItemAssocs = await _utilityService.RetrieveLocalOrDatabaseListAsync<OrderItemAssoc>(query =>
+                        query.Where(oia => purchaseOrderIds.Contains(oia.ToOrderId)));
 
                     // Materialize the list of FromOrderId values in memory
                     var fromOrderIds = orderItemAssocs.Select(oia => oia.OrderId).ToList();
 
                     // Use utility function for OrderItem list
-                    orderItems = await _utilityService.RetrieveLocalOrDatabaseListAsync<OrderItem>(
-                        query => query.Where(oi => fromOrderIds.Contains(oi.OrderId)));
+                    orderItems = await _utilityService.RetrieveLocalOrDatabaseListAsync<OrderItem>(query =>
+                        query.Where(oi => fromOrderIds.Contains(oi.OrderId)));
                 }
                 else
                 {
                     // Use utility function for OrderItem list
-                    orderItems = await _utilityService.RetrieveLocalOrDatabaseListAsync<OrderItem>(
-                        query => query.Where(oi => purchaseOrderIds.Contains(oi.OrderId)));
+                    orderItems = await _utilityService.RetrieveLocalOrDatabaseListAsync<OrderItem>(query =>
+                        query.Where(oi => purchaseOrderIds.Contains(oi.OrderId)));
                 }
             }
             else
             {
                 // Use utility function for ItemIssuance list
-                itemIssuances = await _utilityService.RetrieveLocalOrDatabaseListAsync<ItemIssuance>(
-                    query => query.Where(ii => shipmentIds.Contains(ii.ShipmentId)));
+                itemIssuances = await _utilityService.RetrieveLocalOrDatabaseListAsync<ItemIssuance>(query =>
+                    query.Where(ii => shipmentIds.Contains(ii.ShipmentId)));
             }
         }
         catch (Exception ex)
@@ -1961,8 +1958,9 @@ public class InvoiceHelperService : IInvoiceHelperService
         decimal totalAdditionalShippingCharges = 0m;
 
         // Use utility function for Shipment list
-        var invoiceableShipments = await _utilityService.RetrieveLocalOrDatabaseListAsync<Shipment>(
-            query => query.Where(s => shipmentIds.Contains(s.ShipmentId)));
+        var invoiceableShipments =
+            await _utilityService.RetrieveLocalOrDatabaseListAsync<Shipment>(query =>
+                query.Where(s => shipmentIds.Contains(s.ShipmentId)));
 
         foreach (var shipment in invoiceableShipments)
         {
@@ -2245,13 +2243,13 @@ public class InvoiceHelperService : IInvoiceHelperService
         // -------------------------------
         return SetInvoicesToReadyFromShipmentResult.ReturnSuccess();
     }
-    
+
     public async Task<ServiceResult> DeleteInvoiceItem(string invoiceId, string seqId)
     {
         var item = await _context.InvoiceItems
             .FirstOrDefaultAsync(i =>
                 i.InvoiceId == invoiceId &&
-                i.InvoiceItemSeqId == seqId );
+                i.InvoiceItemSeqId == seqId);
 
         if (item == null)
         {
@@ -2262,14 +2260,14 @@ public class InvoiceHelperService : IInvoiceHelperService
                 Data = null
             };
         }
-        
+
         _context.InvoiceItems.Remove(item);
 
         return new ServiceResult
         {
             IsError = false,
             ErrorMessage = null,
-            Data = null                     // ← or new { Deleted = true } if frontend wants it
+            Data = null // ← or new { Deleted = true } if frontend wants it
             // Data = new { InvoiceId = invoiceId }   // example alternative
         };
     }

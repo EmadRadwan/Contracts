@@ -17,4 +17,4 @@ This will:
 
 This action cannot be undone.`
     ).replace("{invoiceId}", invoice?.invoiceId || "")}
-</DialogContentText>
+</DialogContentText>    

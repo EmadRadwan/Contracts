@@ -32,7 +32,6 @@ import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import {toast} from "react-toastify";
 import {Ribbon, RibbonContainer} from "react-ribbons";
 import {useInvoiceTotal} from "../hook/useInvoiceTotal";
-import {Can} from "../../../account/Can";
 
 interface Props {
     invoiceId?: string;
