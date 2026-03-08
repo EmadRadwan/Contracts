@@ -148,6 +148,16 @@ const invoicesApi = createApi({
         query: (invoiceId) => `/invoices/${invoiceId}`,
         providesTags: (result, error, invoiceId) => [{ type: "invoices", id: invoiceId }],
       }),
+      resetInvoice: builder.mutation<Invoice, string>({
+        query: (invoiceId) => ({
+          url: `/invoices/reset/${invoiceId}`,
+          method: "POST",
+        }),
+        invalidatesTags: (result, error, invoiceId) => [
+          { type: "invoices", id: invoiceId },
+          "invoices",
+        ],
+      }),
     };
   },
 });
@@ -160,6 +170,8 @@ export const {
   useCreateInvoiceMutation,
   useUpdateInvoiceMutation,
   useCalculateInvoiceTotalMutation,
-  useChangeInvoiceStatusMutation, useFetchInvoiceByIdQuery
+  useChangeInvoiceStatusMutation,
+  useFetchInvoiceByIdQuery,
+  useResetInvoiceMutation,
 } = invoicesApi;
 export { invoicesApi };

@@ -971,8 +971,15 @@
             "writeoff": "Status to 'Writeoff'",
             "in-process": "Status to 'In Process'",
             "cancel": "Status to 'Cancelled'",
+            "reset": "Reset Invoice",
             "transactions": "Transactions",
             "payment-applications": "Payment Applications"
+          },
+          "reset-success": "Invoice reset successfully",
+          "reset": {
+            "dialogTitle": "Confirm Invoice Reset",
+            "dialogMessage": "Are you sure you want to reset invoice {invoiceId}?\n\nThis will:\n• Return status to 'In Process'\n• Delete all payment applications\n• Delete related accounting transactions\n\nThis action cannot be undone.",
+            "resetConfirm": "Reset Invoice"
           },
           "status": {
             "new": "New",

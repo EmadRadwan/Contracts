@@ -132,6 +132,15 @@ public class InvoicesController : BaseApiController
         return HandleResult(
             await Mediator.Send(new GetInvoiceById.Query { InvoiceId = invoiceId, Language = language }));
     }
+
+    [HttpPost("reset/{invoiceId}")]
+    public async Task<IActionResult> ResetInvoice(string invoiceId)
+    {
+        return HandleResults(await Mediator.Send(new ResetInvoice.Command
+        {
+            InvoiceId = invoiceId
+        }));
+    }
     
     [HttpGet("getInvoiceItemTypesByInvoiceId")]
     public async Task<IActionResult> GetInvoiceItemTypesByInvoiceId(

@@ -167,6 +167,7 @@ public class Party
     public string? MainRole { get; set; }
     public string? ExternalId { get; set; }
     public string? PreferredCurrencyUomId { get; set; }
+    public string? PreferredPayrollPaymentMethodId { get; set; }
     public string? Description { get; set; }
     public string? StatusId { get; set; }
     public DateTime? CreatedDate { get; set; }

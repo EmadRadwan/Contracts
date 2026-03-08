@@ -59,4 +59,6 @@ public class PartyDto2
     public decimal? MonthlyBaseSalary { get; set; } 
     public FromPartyDto? ReportingTo { get; set; }
     public string? ReportingToPartyId { get; set; }
+    public string? GlAccountIdAdvancedPayment { get; set; }
+    public string? PreferredPayrollPaymentMethodId { get; set; }
 }

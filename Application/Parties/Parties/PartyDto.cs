@@ -60,6 +60,8 @@ public class PartyDto
     public string? ContactType { get; set; }
     public FromPartyDto? ReportingTo { get; set; }
     public string? ReportingToPartyId { get; set; }
+    public string? GlAccountIdAdvancedPayment { get; set; }
+    public string? PreferredPayrollPaymentMethodId { get; set; }
     public DateTime? LastUpdatedStamp { get; set; }
     
     public List<PartyGlAccountSimpleDto>? LinkedGlAccounts { get; set; } = new();

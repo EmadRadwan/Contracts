@@ -139,7 +139,9 @@ public class GetEmployee
                     EmplPositionType = ept,
                     RateAmount = ra,
                     ReportingToPartyId = epfRep.PartyId,
-                    ReportingToPartyName = managerParty.Description
+                    ReportingToPartyName = managerParty.Description,
+                    GlAccountIdAdvancedPayment = prty.GlAccountIdAdvancedPayment,
+                    PreferredPayrollPaymentMethodId = prty.PreferredPayrollPaymentMethodId
                 };
 
             var rawResults = await query
@@ -189,7 +191,9 @@ public class GetEmployee
                     FromPartyPhone = ""
                 } : null,
                 ReportingToPartyId = firstRecord.ReportingToPartyId,
-
+                GlAccountIdAdvancedPayment = firstRecord.GlAccountIdAdvancedPayment,
+                PreferredPayrollPaymentMethodId = firstRecord.PreferredPayrollPaymentMethodId,
+ 
                 // All linked GL accounts
                 LinkedGlAccounts = rawResults
                     .Where(r => r.Pga != null && r.Gla != null)

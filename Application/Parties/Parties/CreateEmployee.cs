@@ -80,6 +80,8 @@ public class CreateEmployee
                 Status = partyStatusPartyEnabled,
                 MainRole = roleTypeEmployee.RoleTypeId,
                 Description = request.PartyDto.FirstName,
+                GlAccountIdAdvancedPayment = request.PartyDto.GlAccountIdAdvancedPayment,
+                PreferredPayrollPaymentMethodId = request.PartyDto.PreferredPayrollPaymentMethodId,
                 CreatedStamp = stamp,
                 LastUpdatedStamp = stamp
             };

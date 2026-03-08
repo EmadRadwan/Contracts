@@ -169,6 +169,8 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
         }
     }, [isTypesLoading, isItemsLoading, isEmployeeLoading, isAdvancesLoading, invoiceItemTypes, currentInvoiceItems, employeeData, payrollAdvances]);
 
+    const roundTo2 = (n: number): number => Math.round(n * 100) / 100;
+    
     const handleRowChange = (index: number, field: keyof PayrollRow, value: any) => {
         const newRows = [...rows];
         const updatedRow = { ...newRows[index], [field]: value };
@@ -177,7 +179,7 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
         if (field === 'absenceDays' && updatedRow.invoiceItemTypeId === 'PAYROL_DD_ABSENCE') {
             const basicSalary = employeeData?.monthlyBaseSalary || 0;
             const absenceDays = parseFloat(value) || 0;
-            updatedRow.amount = (basicSalary / 30) * absenceDays;
+            updatedRow.amount = roundTo2((basicSalary / 30) * absenceDays);
         }
 
         newRows[index] = updatedRow;

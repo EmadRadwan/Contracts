@@ -8,21 +8,24 @@ import { FormComboBox } from '../../../app/common/form/FormComboBox';
 import { Party } from '../../../app/models/party/party';
 import {
     useAppDispatch,
+    useAppSelector,
     useFetchCountriesQuery
 } from '../../../app/store/configureStore';
 import LoadingComponent from '../../../app/layout/LoadingComponent';
 import { setParty } from '../slice/partySlice';
 import { setSingleParty } from '../slice/singlePartySlice';
 import { Box, Paper, Typography } from '@mui/material';
-import { phoneValidator, requiredValidator } from '../../../app/common/form/Validators';
+import { requiredValidator } from '../../../app/common/form/Validators';
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import {
     useCreateEmployeeMutation,
     useFetchEmployeeQuery,
+    useFetchGlAccountOrganizationHierarchyLovQuery,
     useGetEmplPositionTypesQuery,
     useUpdateEmployeeMutation
 } from "../../../app/store/apis";
 import {MemoizedFormComboBox2} from "../../../app/common/form/FormComboBox2";
+import {FormDropDownTreeGlAccount2} from "../../../app/common/form/FormDropDownTreeGlAccount2";
 import FormNumericTextBox from "../../../app/common/form/FormNumericTextBox";
 import {FormComboBoxVirtualPartyEmployee} from "../../../app/common/form/FormComboBoxVirtualPartyEmployee";
 
@@ -63,7 +66,23 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
 
 
     const { getTranslatedLabel } = useTranslationHelper();
+
+    const paymentPreferenceOptions = [
+      { preferredPayrollPaymentMethodId: "CASH", description: "Cash" },
+      { preferredPayrollPaymentMethodId: "BANK_TRANSFER", description: "Bank Transfer" },
+    ];
+
     const dispatch = useAppDispatch();
+
+    const user = useAppSelector((state) => state.account.user);
+    const companyId = user?.organizationPartyId || "";
+
+    const {
+      data: glAccounts = [],
+      isLoading: isLoadingGlAccounts,
+    } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
+      skip: !companyId,
+    });
 
     async function handleSubmitData(data: any) {
         setButtonFlag(true);
@@ -253,6 +272,34 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
                                                 name="reportingTo"
                                                 label={getTranslatedLabel("party.employees.form.reportingToPartyId", "Reporting To")}
                                                 component={FormComboBoxVirtualPartyEmployee}
+                                            />
+                                        </Grid>
+                                        
+
+                                        <Grid item xs={6}>
+                                            <Field
+                                                id="glAccountIdAdvancedPayment"
+                                                name="glAccountIdAdvancedPayment"
+                                                label={getTranslatedLabel("party.employees.form.glAccountIdAdvancedPayment", "GL Account for Advanced Payment")}
+                                                component={FormDropDownTreeGlAccount2}
+                                                data={glAccounts || []}
+                                                dataItemKey="glAccountId"
+                                                textField="text"
+                                                selectField="selected"
+                                                expandField="expanded"
+                                            />
+                                        </Grid>
+
+                                        <Grid item xs={6}>
+                                            <Field
+                                                id="preferredPayrollPaymentMethodId"
+                                                name="preferredPayrollPaymentMethodId"
+                                                label={getTranslatedLabel("party.employees.form.preferredPayrollPaymentMethodId", "Preferred Payroll Payment Method")}
+                                                component={MemoizedFormComboBox2}
+                                                data={paymentPreferenceOptions}
+                                                dataItemKey="preferredPayrollPaymentMethodId"
+                                                textField="description"
+                                                validator={requiredValidator}
                                             />
                                         </Grid>
 

@@ -3,10 +3,18 @@ import {
     useAppDispatch,
     useAppSelector,
     useChangeInvoiceStatusMutation,
-    useFetchInvoiceAcctTransEntriesQuery,
+    useFetchInvoiceAcctTransEntriesQuery, useResetInvoiceMutation,
 } from "../../../../app/store/configureStore";
 import Grid from "@mui/material/Grid";
-import {Paper, Typography} from "@mui/material";
+import {
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    Paper,
+    Typography
+} from "@mui/material";
 import {Menu, MenuItem, MenuSelectEvent} from "@progress/kendo-react-layout";
 import InvoiceItemsList from "../dashboard/InvoiceItemsList";
 import PayrollInvoiceItemsList from "../payroll/PayrollInvoiceItemsList";
@@ -14,6 +22,7 @@ import useInvoice from "../hook/useInvoice";
 import AccountingMenu from "../menu/AccountingMenu";
 import ModalContainer from "../../../../app/common/modals/ModalContainer";
 import InvoiceTransactionsList from "../../transaction/dashboard/InvoiceTransactionsList";
+import EditInvoice from "./EditInvoice";
 import {useNavigate, useOutletContext} from "react-router";
 import Button from "@mui/material/Button";
 import {setSelectedInvoice} from "../../slice/accountingSharedUiSlice";
@@ -23,6 +32,7 @@ import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import {toast} from "react-toastify";
 import {Ribbon, RibbonContainer} from "react-ribbons";
 import {useInvoiceTotal} from "../hook/useInvoiceTotal";
+import {Can} from "../../../account/Can";
 
 interface Props {
     invoiceId?: string;
@@ -49,11 +59,12 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
 
     const [showTransactionsList, setShowTransactionsList] = useState(false);
     const [showPaymentsList, setShowPaymentsList] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
     const [changeStatus, {isLoading: isChangingStatus}] = useChangeInvoiceStatusMutation();
-    // REFACTOR: Destructure both total and outstandingAmount from enhanced hook
-// Purpose: Display accurate invoice financial status
-// Improvement: Shows real outstanding balance instead of assuming total = unpaid
+    const [resetInvoice, { isLoading: isResetting }] = useResetInvoiceMutation();
+
     const {
         total: iTotal,
         outstandingAmount: iOutstanding,
@@ -69,7 +80,7 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
         return iTotal === 0 || iTotal === null;
     }, [iTotal, isTotalLoading]);
     
-    console.log('isEmptyInvoice', isEmptyInvoice)
+    console.log('invoice', invoice)
     
     const invoiceSource = useMemo(() => selectedInvoice || invoice, [selectedInvoice, invoice]);
     const invoiceType = useMemo(() => invoiceSource?.invoiceTypeId, [invoiceSource]);
@@ -184,11 +195,7 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
         },
         [invoice, iTotal, changeStatus, setInvoice, getTranslatedLabel, totalError]
     );
-
-
-    const handleBackClick = () => {
-        navigate("/invoices");
-    };
+    
 
     // Purpose: Aligns navigation with nested routes (/invoices/:invoiceId/edit, /invoices/new)
     // Improvement: Adds support for transactions/payments routes and improves UX
@@ -217,12 +224,12 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                 }
                 break;
             case "update":
-                if (invoice?.statusId === "INVOICE_IN_PROCESS") {
-                    navigate(`/invoices/${invoice?.invoiceId}/edit`);
-                } else {
-                    toast.error(getTranslatedLabel(`${localizationKey}.error`, "Cannot edit: Invalid status"));
-                }
-                break;
+                        if (invoice?.statusId === "INVOICE_IN_PROCESS") {
+                            setShowEditModal(true);
+                        } else {
+                            toast.error(getTranslatedLabel(`${localizationKey}.error`, "Cannot edit: Invalid status"));
+                        }
+                        break;
             case "approve":
                 handleChangeInvoiceStatus("INVOICE_APPROVED");
                 break;
@@ -238,9 +245,36 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
             case "cancel":
                 handleChangeInvoiceStatus("INVOICE_CANCELLED");
                 break;
+            case "reset":
+                setResetDialogOpen(true);
+                break;
             default:
                 console.warn(`Unhandled menu item: ${menuData}`);
         }
+    };
+
+    const handleConfirmReset = async () => {
+        if (!invoice?.invoiceId) return;
+        try {
+            await resetInvoice(invoice.invoiceId).unwrap();
+            setInvoice((prev) => prev ? ({
+                ...prev,
+                statusId: "INVOICE_IN_PROCESS",
+                statusDescription: "In Process",
+            }) : prev);
+            toast.success(getTranslatedLabel(`${localizationKey}.reset-success`, "Invoice reset successfully"));
+            setResetDialogOpen(false);
+            refreshTotal();
+            refetchInvoiceEntries();
+            refetchPaymentAppEntries();
+        } catch (e) {
+            toast.error(getTranslatedLabel(`${localizationKey}.error`, "Something went wrong during reset"));
+            console.error(e);
+        }
+    };
+
+    const handleCancelReset = () => {
+        setResetDialogOpen(false);
     };
 
     // Purpose: Ensures consistent status rendering with fallback
@@ -323,20 +357,19 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                     text: getTranslatedLabel(`${localizationKey}.actions.new`, "Create New Invoice"),
                     data: "new",
                 },
+                ...(invoice?.statusId === "INVOICE_IN_PROCESS"
+                    ? [
+                        {
+                            text: getTranslatedLabel(`${localizationKey}.actions.update`, "Edit"),
+                            data: "update",
+                        },
+                    ]
+                    : []),
                 // ────────────────────────────────────────────────
-                // Only show edit & status changes when invoice is not empty
+                // Only show status changes when invoice is not empty
                 // ────────────────────────────────────────────────
                 ...(!isEmptyInvoice
                     ? [
-                        // Edit – only when in process
-                        ...(invoice?.statusId === "INVOICE_IN_PROCESS"
-                            ? [
-                                {
-                                    text: getTranslatedLabel(`${localizationKey}.actions.update`, "Edit"),
-                                    data: "update",
-                                },
-                            ]
-                            : []),
 
                         // Approve – from In Process
                         ...(getAvailableStatusTransitions().toApproved
@@ -361,6 +394,14 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                                     ),
                                     data: "ready",
                                 },
+                            ]
+                            : []),
+                        ...(invoice?.statusId === "INVOICE_READY"
+                            ? [
+                                {
+                                    text: getTranslatedLabel(`${localizationKey}.actions.reset`, "Reset Invoice"),
+                                    data: "reset"
+                                }
                             ]
                             : []),
                     ]
@@ -389,6 +430,15 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                 >
                     <InvoicePaymentApplicationsList invoiceId={effectiveInvoiceId}
                                                     onClose={() => setShowPaymentsList(false)} canEdit={false}
+                    />
+                </ModalContainer>
+            )}
+            {showEditModal && (
+                <ModalContainer show={showEditModal} onClose={() => setShowEditModal(false)} width={900}>
+                    <EditInvoice
+                        invoiceId={effectiveInvoiceId}
+                        onClose={() => setShowEditModal(false)}
+                        onSuccess={() => setShowEditModal(false)}
                     />
                 </ModalContainer>
             )}
@@ -591,34 +641,76 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                                     )}
                                     data="payment-applications"
                                 />
+
+                                {permissions.canEditInvoice && (
+                                    <MenuItem
+                                        text={getTranslatedLabel(`${localizationKey}.actions.update`, "Edit Invoice")}
+                                        data="update"
+                                    />
+                                )}
                             </Menu>
                         </Grid>
                     </Grid>
 
-                    <Grid container mt={3} spacing={1}>
-                        <Grid item xs={2}>
-                            {mode === "items" && permissions.canEditInvoice && (
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    onClick={() => navigate(`/invoices/${invoice?.invoiceId}/edit`)}
-                                    //sx={{ mr: 2 }}
-                                >
-                                    {getTranslatedLabel(`${localizationKey}.edit-invoice`, "Edit Invoice")}
-                                </Button>
-                            )}
-                        </Grid>
-                        
-
-                    </Grid>
+                    
 
                     {isChangingStatus && (
                         <LoadingComponent
                             message={getTranslatedLabel(`${localizationKey}.processing`, "Processing Invoice...")}
                         />
                     )}
+                    {isResetting && (
+                        <LoadingComponent
+                            message={getTranslatedLabel(`${localizationKey}.resetting`, "Resetting Invoice...")}
+                        />
+                    )}
                 </Paper>
             </RibbonContainer>
+
+            <Dialog
+                open={resetDialogOpen}
+                onClose={handleCancelReset}
+                aria-labelledby="reset-invoice-dialog-title"
+                aria-describedby="reset-invoice-dialog-description"
+            >
+                <DialogTitle id="reset-invoice-dialog-title">
+                    {getTranslatedLabel(
+                        `${localizationKey}.reset.dialogTitle`,
+                        "Confirm Invoice Reset"
+                    )}
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="reset-invoice-dialog-description"
+                                       dir={isArabic ? "rtl" : "ltr"}
+                                       sx={{
+                                           textAlign: isArabic ? "right" : "left",
+                                           whiteSpace: "pre-line"
+                                       }}
+                    >
+                        {getTranslatedLabel(
+                            `${localizationKey}.reset.dialogMessage`,
+                            "Are you sure you want to reset invoice {invoiceId}?\n\nThis will:\n• Return status to 'In Process'\n• Delete all payment applications\n• Delete related accounting transactions\n\nThis action cannot be undone."
+                        ).replace("{invoiceId}", invoice?.invoiceId || "")}
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        onClick={handleCancelReset}
+                        disabled={isResetting}
+                    >
+                        {getTranslatedLabel("global.cancel", "Cancel")}
+                    </Button>
+                    <Button
+                        onClick={handleConfirmReset}
+                        color="error"
+                        variant="contained"
+                        autoFocus
+                        disabled={isResetting}
+                    >
+                        {getTranslatedLabel(`${localizationKey}.reset.resetConfirm`, "Reset Invoice")}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </>
     );
 }

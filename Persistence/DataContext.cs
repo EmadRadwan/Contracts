@@ -28464,6 +28464,12 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasMaxLength(36)
                     .IsUnicode(false)
                     .HasColumnName("PREFERRED_CURRENCY_UOM_ID");
+                    
+                    entity.Property(e => e.PreferredPayrollPaymentMethodId)
+                        .HasMaxLength(36)
+                        .HasColumnName("PREFERRED_PAYROLL_PMT_METHOD")
+                        .IsUnicode(false)
+                        .IsRequired(false);
 
                 entity.Property(e => e.StatusId)
                     .HasMaxLength(36)

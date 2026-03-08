@@ -43,6 +43,8 @@ public class UpdateEmployee
 
             party.LastUpdatedStamp = stamp;
             party.Description = request.PartyDto.FirstName;
+            party.GlAccountIdAdvancedPayment = request.PartyDto.GlAccountIdAdvancedPayment;
+            party.PreferredPayrollPaymentMethodId = request.PartyDto.PreferredPayrollPaymentMethodId;
 
             if (party.Person != null)
             {
@@ -411,9 +413,20 @@ public class UpdateEmployee
                     {
                         if (existingReporting != null)
                         {
-                            existingReporting.EmplPositionIdReportingTo = managerPosition.EmplPositionId;
-                            existingReporting.LastUpdatedStamp = stamp;
-                            existingReporting.FromDate = stamp; // reset from date as we don't keep history
+                            _context.EmplPositionReportingStructs.Remove(existingReporting);
+                        }
+
+                        if (managerPosition != null)  // only if we actually have a new manager
+                        {
+                            var newStruct = new EmplPositionReportingStruct
+                            {
+                                EmplPositionIdManagedBy  = currentPosition.EmplPositionId,
+                                EmplPositionIdReportingTo = managerPosition.EmplPositionId,
+                                FromDate                 = stamp,
+                                CreatedStamp             = stamp,
+                                LastUpdatedStamp         = stamp
+                            };
+                            _context.EmplPositionReportingStructs.Add(newStruct);
                         }
                         else
                         {
