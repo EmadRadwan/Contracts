@@ -339,6 +339,15 @@ export default function AccountingTransactionsList() {
                   )}
                   width={150}
                 />
+                <Column
+                  field="debitTotal"
+                  title={getTranslatedLabel(
+                      "accounting.orgGL.accounting.summary.txns.debitTotal",
+                      "Total Debit"
+                  )}
+                  width={150}
+                  format="{0:n}"
+                />
                 <Column field="description" title={getTranslatedLabel(
                     "accounting.orgGL.accounting.summary.txns.description",
                     "Description"

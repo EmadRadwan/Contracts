@@ -13,11 +13,13 @@ import {requiredValidator} from "../../../app/common/form/Validators";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import FormInput from "../../../app/common/form/FormInput";
-import {FormComboBoxVirtualPartyEmployee} from "../../../app/common/form/FormComboBoxVirtualPartyEmployee";
 
 import {MemoizedFormComboBox2} from "../../../app/common/form/FormComboBox2";
 import {useFetchGlAccountOrgCashOrEquivalentLovQuery, useFetchWorkEffortAcctTransEntriesQuery} from "../../../app/store/apis";
 import {MultiPaymentCertificateExcel} from "../report/MultiPaymentCertificateExcel";
+import {FormComboBoxVirtualParty} from "../../../app/common/form/FormComboBoxVirtualParty";
+import ModalContainer from "../../../app/common/modals/ModalContainer";
+import CreatePartyModalForm from "../../parties/form/CreatePartyModalForm";
 
 
 interface CertificateActionsMenuProps {
@@ -152,6 +154,7 @@ export default function MultiPaymentCertificateForm({
     const localizationKey = "projects.multiPaymentCertificate.form";
     const [isFormCollapsed, setIsFormCollapsed] = useState(false);
     const {language} = useAppSelector((state) => state.localization);
+    const [showNewCustomer, setShowNewCustomer] = useState(false);
 
     const [formKey, setFormKey] = useState<number>(1);
     const formRef = useRef<any>(null);
@@ -387,7 +390,7 @@ export default function MultiPaymentCertificateForm({
                                 <FormElement>
                                     <fieldset className="k-form-fieldset">
                                         <Grid container spacing={2}
-                                              sx={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
+                                              sx={{display: 'flex', flexDirection: 'row', alignItems: 'flex-end'}}>
                                             <Field name="workEffortId" component="input" type="hidden"/>
                                             <Grid item xs={2}>
                                                 <Field
@@ -424,12 +427,22 @@ export default function MultiPaymentCertificateForm({
                                                 <Field
                                                     id="partyIdEmployee"
                                                     name="partyIdEmployee"
-                                                    component={FormComboBoxVirtualPartyEmployee}
+                                                    component={FormComboBoxVirtualParty}
                                                     label={getTranslatedLabel(`${localizationKey}.paymentTo`, "Payment To")}
                                                     valueField="fromPartyId"
                                                     textField="fromPartyName"
                                                     validator={requiredValidator}
                                                 />
+                                            </Grid>
+
+                                            <Grid item xs={1}>
+                                                <Button
+                                                    color="secondary"
+                                                    onClick={() => setShowNewCustomer(true)}
+                                                    variant="outlined"
+                                                >
+                                                    +
+                                                </Button>
                                             </Grid>
 
                                             <Grid item xs={2}>
@@ -441,53 +454,54 @@ export default function MultiPaymentCertificateForm({
                                                 />
                                             </Grid>
 
-                                            <Grid container item spacing={2} sx={{
-                                                display: 'flex',
-                                                flexDirection: 'row',
-                                                justifyContent: 'flex-start',
-                                                alignItems: 'flex-end',
-                                                mt: 2
-                                            }}>
-                                                {(editMode === 1 || (editMode === 2 && certificate?.currentStatusId !== "WEPR_APPROVED")) && (
-                                                    <Grid item>
-                                                        <Button
-                                                            type="submit"
-                                                            variant="contained"
-                                                            disabled={!formRenderProps.valid || !formRenderProps.modified || apiLoading}
-                                                            sx={{mr: 2}}
-                                                        >
-                                                            {getTranslatedLabel(
-                                                                `${localizationKey}.${editMode === 1 ? "create" : "update"}`,
-                                                                editMode === 1 ? "Create Certificate" : "Update Certificate"
-                                                            )}
-                                                        </Button>
-                                                    </Grid>
-                                                )}
-                                                {(editMode === 2 || editMode === 3) && certificate && (
-                                                    <Grid item>
-                                                        <MultiPaymentCertificateExcel
-                                                            companyName={companyName}
-                                                            certificate={certificate}
-                                                            items={items}
-                                                            transactions={acctTransEntryData || []}
-                                                            getTranslatedLabel={getTranslatedLabel}
-                                                            isFetching={isFetchingTransactions}
-                                                            language={language}
-                                                        />
-                                                    </Grid>
-                                                )}
-                                                <Grid item>
-                                                    <Button
-                                                        onClick={handleCancelForm}
-                                                        color="error"
-                                                        variant="contained"
-                                                        disabled={apiLoading}
-                                                    >
-                                                        {getTranslatedLabel("general.cancel", "Cancel")}
-                                                    </Button>
-                                                </Grid>
+                                            
+                                        </Grid><Grid container item spacing={2} sx={{
+                                        display: 'flex',
+                                        flexDirection: 'row',
+                                        justifyContent: 'flex-start',
+                                        alignItems: 'flex-end',
+                                        mt: 2
+                                    }}>
+                                        {(editMode === 1 || (editMode === 2 && certificate?.currentStatusId !== "WEPR_APPROVED")) && (
+                                            <Grid item>
+                                                <Button
+                                                    type="submit"
+                                                    variant="contained"
+                                                    disabled={!formRenderProps.valid || !formRenderProps.modified || apiLoading}
+                                                    sx={{mr: 2}}
+                                                >
+                                                    {getTranslatedLabel(
+                                                        `${localizationKey}.${editMode === 1 ? "create" : "update"}`,
+                                                        editMode === 1 ? "Create Certificate" : "Update Certificate"
+                                                    )}
+                                                </Button>
                                             </Grid>
+                                        )}
+                                        {(editMode === 2 || editMode === 3) && certificate && (
+                                            <Grid item>
+                                                <MultiPaymentCertificateExcel
+                                                    companyName={companyName}
+                                                    certificate={certificate}
+                                                    items={items}
+                                                    transactions={acctTransEntryData || []}
+                                                    getTranslatedLabel={getTranslatedLabel}
+                                                    isFetching={isFetchingTransactions}
+                                                    language={language}
+                                                />
+                                            </Grid>
+                                        )}
+                                        <Grid item>
+                                            <Button
+                                                onClick={handleCancelForm}
+                                                color="error"
+                                                variant="contained"
+                                                disabled={apiLoading}
+                                            >
+                                                {getTranslatedLabel("general.cancel", "Cancel")}
+                                            </Button>
                                         </Grid>
+                                    </Grid>
+                                        
                                     </fieldset>
                                 </FormElement>
                                 
@@ -502,6 +516,17 @@ export default function MultiPaymentCertificateForm({
                     updateItem={updateItem}
                     deleteItem={deleteItem}
                 />
+                {showNewCustomer && (
+                    <ModalContainer
+                        show={showNewCustomer}
+                        onClose={() => setShowNewCustomer(false)}
+                        width={500}
+                    >
+                        <CreatePartyModalForm
+                            onClose={() => setShowNewCustomer(false)}
+                        />
+                    </ModalContainer>
+                )}
             </Paper>
         </>
     );

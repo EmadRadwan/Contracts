@@ -53,7 +53,8 @@ namespace Application.Accounting.Invoices
                         "ITM_SALES_TAX",
                         "ITM_SHIPPING_CHARGES",
                         "ITM_DISCOUNT_ADJ",
-                        "ITM_FEE"
+                        "ITM_FEE",
+                        "INV_LAND_ITEM"
                     }
                 },
                 {
@@ -71,7 +72,8 @@ namespace Application.Accounting.Invoices
                         "PITM_SALES_TAX",
                         "PITM_SHIP_CHARGES",
                         "PITM_DISCOUNT_ADJ",
-                        "PITM_FEE"
+                        "PITM_FEE",
+                        "INV_LAND_ITEM"
                     }
                 },
                 { 

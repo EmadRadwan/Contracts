@@ -36,6 +36,8 @@ import {Can} from "../../account/Can";
 import {ReviewCommentsDialog} from "./ReviewCommentsDialog";
 import {useDeleteProjectCertificateMutation} from "../../../app/store/apis/projectsApi";
 import {ConfirmDialog} from "./ConfirmDialog";
+import ModalContainer from "../../../app/common/modals/ModalContainer";
+import CreatePartyModalForm from "../../parties/form/CreatePartyModalForm";
 
 interface ProjectCertificateFormProps {
     editMode: number; // 0: view, 1: create, 2: edit (CREATED), 3: edit (APPROVED), 4: edit (COMPLETED)
@@ -218,6 +220,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
         ?? state.certificateUi.selectedCertificate.facilityId
     );
     const [deliverToSite, setDeliverToSite] = useState(false);
+    const [showNewCustomer, setShowNewCustomer] = useState(false);
 
     const handleFacilityChange = useCallback((event: any, formRenderProps: FormRenderProps) => {
         const newFacilityId = event.value;
@@ -691,7 +694,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                 <FormElement>
                                     <fieldset className="k-form-fieldset">
                                         <Grid container alignItems="start" justifyContent="start" spacing={1}>
-                                            <Grid container spacing={1} alignItems="center" justifyContent="flex-start"
+                                            <Grid container spacing={1} alignItems="flex-end" justifyContent="flex-start"
                                                   sx={{paddingLeft: 3}}>
                                                 <Grid item xs={2}
                                                       className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
@@ -739,6 +742,15 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                                         />
                                                     </Grid>
                                                 )}
+                                                <Grid item xs={1}>
+                                                    <Button
+                                                        color="secondary"
+                                                        onClick={() => setShowNewCustomer(true)}
+                                                        variant="outlined"
+                                                    >
+                                                        +
+                                                    </Button>
+                                                </Grid>
                                                 {["SUPPLY_PROCUREMENT_CERTIFICATE", "COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE"].includes(currentCertificateType) && (
                                                     <Grid item xs={2}
                                                           className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
@@ -872,6 +884,18 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                 }}
                 onConfirm={handleReviewConfirm}
             />
+
+            {showNewCustomer && (
+                <ModalContainer
+                    show={showNewCustomer}
+                    onClose={() => setShowNewCustomer(false)}
+                    width={500}
+                >
+                    <CreatePartyModalForm
+                        onClose={() => setShowNewCustomer(false)}
+                    />
+                </ModalContainer>
+            )}
         </>
     );
 }

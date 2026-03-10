@@ -1443,6 +1443,7 @@
             "productName": "اسم المنتج",
             "salesRequestId": "رقم طلب المبيعات",
             "isPosted": "تم الترحيل",
+            "debitTotal": "الاجمالى",
             "postedDate": "تاريخ الترحيل",
             "deleteButton": "حذف",
             "deleteDialogTitle": "تأكيد الحذف",

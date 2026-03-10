@@ -80,7 +80,8 @@ const EditInvoiceItem: React.FC<Props> = ({ invoiceItem, editMode, onClose, invo
         "PINV_FPROD_ITEM",
         "PINV_INVPRD_ITEM",
         "PINV_SPROD_ITEM",
-        "PINV_SUPLPRD_ITEM"
+        "PINV_SUPLPRD_ITEM",
+        "INV_LAND_ITEM"
     ];
 
     // REFACTOR: Updated useInvoiceItem call to pass invoiceId prop
@@ -152,7 +153,7 @@ const EditInvoiceItem: React.FC<Props> = ({ invoiceItem, editMode, onClose, invo
                                 textField="description"
                                 data={invoiceItemTypes || []}
                                 validator={requiredValidator}
-                                disabled={editMode === 2}
+                                //disabled={editMode === 2}
                             />
                         </Grid>
 
