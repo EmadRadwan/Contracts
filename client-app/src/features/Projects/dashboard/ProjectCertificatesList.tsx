@@ -4,7 +4,7 @@ import {
     Grid as KendoGrid,
     GRID_COL_INDEX_ATTRIBUTE,
     GridColumn as Column,
-    GridDataStateChangeEvent, GridToolbar,
+    GridDataStateChangeEvent,
 } from "@progress/kendo-react-grid";
 import { DataResult, State } from "@progress/kendo-data-query";
 import Button from "@mui/material/Button";
@@ -57,7 +57,7 @@ export default function ProjectCertificatesList() {
     const [dataState, setDataState] = React.useState<State>({
         sort: [
             {
-                field: "createdStamp",
+                field: "createdDate",
                 dir: "desc",
             },
         ],

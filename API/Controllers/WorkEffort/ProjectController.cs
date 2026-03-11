@@ -175,6 +175,13 @@ public class ProjectController : BaseApiController
         var result = await Mediator.Send(command);
         return HandleResult(result);
     }
+
+    [HttpPost("resetCertificate/{workEffortId}", Name = "ResetProjectCertificate")]
+    public async Task<ActionResult> ResetProjectCertificate(string workEffortId)
+    {
+        var result = await Mediator.Send(new ResetProjectCertificate.Command { WorkEffortId = workEffortId });
+        return HandleResult(result);
+    }
     
 }
 

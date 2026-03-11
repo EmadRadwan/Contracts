@@ -169,6 +169,13 @@ const projectsApi = createApi({
                     REVIEW_CERTIFICATE_TAG,
                 ],
             }),
+            resetProjectCertificate: builder.mutation<void, string>({
+                query: (workEffortId) => ({
+                    url: `/project/resetCertificate/${workEffortId}`,
+                    method: 'POST',
+                }),
+                invalidatesTags: ['ProjectCertificates', 'ProjectCertificate'],
+            }),
         };
         
     },
@@ -187,6 +194,7 @@ export const {
     useReviewCertificateMutation,
     useApprovePOForCertificateMutation,
     useDeleteProjectCertificateMutation,
+    useResetProjectCertificateMutation,
 } = projectsApi;
 export {projectsApi};
 

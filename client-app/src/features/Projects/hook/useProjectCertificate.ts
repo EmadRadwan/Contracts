@@ -7,7 +7,8 @@ import {
     useFetchProjectCertificatesQuery,
     useIssueMaterialsForCertificateMutation,
     useProcessWorkEffortCertificateMutation, useReviewCertificateMutation,
-    useUpdateProjectCertificateMutation
+    useUpdateProjectCertificateMutation,
+    useResetProjectCertificateMutation
 } from "../../../app/store/apis/projectsApi";
 import {setProcessedCertificateItems} from "../slice/certificateItemsUiSlice";
 import {setCertificateFormEditMode, setSelectedCertificate} from "../slice/certificateUiSlice";
@@ -46,6 +47,7 @@ const useProjectCertificate = ({
     const [issueMaterialsForCertificate, {isLoading: isIssueMaterialsLoading}] = useIssueMaterialsForCertificateMutation(); // REFACTOR: Added mutation hook for issuing materials
     const [reviewCertificate, {isLoading: isReviewLoading}] = useReviewCertificateMutation();
     const [approvePOForCertificate, { isLoading: isApprovingPO }] = useApprovePOForCertificateMutation();
+    const [resetProjectCertificate, { isLoading: isResetLoading }] = useResetProjectCertificateMutation();
     
     const formEditMode = certificateFormEditMode;
     const setFormEditMode = useCallback((mode: number) => {
@@ -438,7 +440,25 @@ const useProjectCertificate = ({
                     }));
 
                     toast.success(`Certificate marked as ${newStatus}`);
-                }else {
+                } else if (action === "Reset Certificate") {
+                    if (!selectedCertificate?.workEffortId) {
+                        toast.error("Work Effort ID is required for resetting certificate");
+                        return { success: false };
+                    }
+                    await resetProjectCertificate(selectedCertificate.workEffortId).unwrap();
+                    dispatch(
+                        setSelectedCertificate({
+                            ...selectedCertificate,
+                            currentStatusId: CertificateStatus.CREATED,
+                            statusDescription: "Created",
+                            statusDescriptionArabic: "تم الإنشاء",
+                        })
+                    );
+                    dispatch(setCertificateFormEditMode(2));
+                    formRef2.current = !formRef2.current;
+                    toast.success("Certificate reset successfully");
+                    return { success: true };
+                } else {
                     toast.error("Invalid action type");
                     return { success: false };
                 }
@@ -471,6 +491,7 @@ const useProjectCertificate = ({
         isAddCertificateLoading,
         isUpdateCertificateLoading,
         isProcessCertificateLoading,
+        isResetLoading,
         formEditMode,
         setFormEditMode,
         handleCreate,

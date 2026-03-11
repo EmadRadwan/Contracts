@@ -110,7 +110,7 @@ namespace Application.Projects
                         FacilityId = we.FacilityId,
                         FacilityName = fac != null ? fac.FacilityName : null,
                         TotalAmount = total != null ? total.TotalAmount : 0m,
-                        CreatedStamp = we.CreatedStamp
+                        CreatedDate = we.CreatedDate
                     };
 
                 if (request.StartDate.HasValue)

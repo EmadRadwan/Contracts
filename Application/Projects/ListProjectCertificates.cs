@@ -114,7 +114,7 @@ namespace Application.Projects
                         FacilityId = we.FacilityId,
                         FacilityName = fac != null ? fac.FacilityName : null,
                         TotalAmount = total != null ? total.TotalAmount : 0m,
-                        CreatedStamp = we.CreatedStamp
+                        CreatedDate = we.CreatedDate
                     };
 
                 var result = query.Select(record => new ProjectCertificateRecord
@@ -138,7 +138,7 @@ namespace Application.Projects
                     FacilityId = record.FacilityId,
                     FacilityName = record.FacilityName,
                     TotalAmount = record.TotalAmount,
-                    CreatedStamp = record.CreatedStamp
+                    CreatedDate = record.CreatedDate
                 });
 
                 return result;

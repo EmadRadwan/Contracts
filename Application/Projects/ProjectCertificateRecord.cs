@@ -11,7 +11,7 @@ public class ProjectCertificateRecord
     public string? ProjectId { get; set; }
     public string? ProjectName { get; set; }
     public string? Description { get; set; }
-    public DateTime? CreatedStamp { get; set; }
+    public DateTime? CreatedDate { get; set; }
     public DateTime? EstimatedStartDate { get; set; }
     public DateTime? EstimatedCompletionDate { get; set; }
     public string? StatusDescription { get; set; }

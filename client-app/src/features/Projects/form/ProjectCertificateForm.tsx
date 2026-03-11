@@ -81,6 +81,11 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
         handleClose();
     };
 
+    const handleReset = () => {
+        handleStatusUpdate('Reset Certificate');
+        handleClose();
+    };
+
     const handleComplete = () => {
         handleStatusUpdate('Complete Certificate');
         handleClose();
@@ -88,6 +93,7 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
 
     // Determine if actions are disabled based on certificate status
     const isApproveDisabled = !workEffortId || currentStatusId === CertificateStatus.APPROVED || currentStatusId === CertificateStatus.COMPLETE;
+    const isResetDisabled = !workEffortId || currentStatusId === CertificateStatus.CREATED;
     const isCompleteDisabled = !workEffortId || currentStatusId === CertificateStatus.COMPLETE;
 
     const handleDeleteClick = () => {
@@ -165,7 +171,13 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
                     </MenuItem>
                 </Can>
 
-                {/*<Can perform="DeleteCertificate">   ← Add permission if you use CASL or similar 
+                <Can perform="ResetCertificate">
+                    <MenuItem onClick={handleReset} disabled={isResetDisabled}>
+                        {getTranslatedLabel('projects.certificate.reset', 'Reset Certificate')}
+                    </MenuItem>
+                </Can>
+
+                {/*<Can perform="DeleteCertificate">
                         <MenuItem
                             onClick={() => {
                                 handleClose();
@@ -395,7 +407,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
             }
 
             // Direct actions (Approve / Complete) – no comments needed
-            if (action === "Approve Certificate" || action === "Complete Certificate") {
+            if (action === "Approve Certificate" || action === "Complete Certificate" || action === "Reset Certificate") {
                 setIsSubmitting(true);
                 setSelectedMenuItem(action);
 
@@ -403,7 +415,9 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                     values: {
                         workEffortId: selectedCertificate.workEffortId,
                         currentStatusId:
-                            action === "Approve Certificate" ? CertificateStatus.APPROVED : CertificateStatus.COMPLETE,
+                            action === "Approve Certificate" ? CertificateStatus.APPROVED : 
+                            action === "Complete Certificate" ? CertificateStatus.COMPLETE :
+                            CertificateStatus.CREATED,
                         deliverToSite:
                             currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE" ? deliverToSite : undefined,
                     },
