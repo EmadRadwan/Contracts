@@ -82,7 +82,7 @@ public class ResetProjectCertificate
                     _context.OrderRoles.RemoveRange(orderRoles);*/
 
                     // 2c. Revert Order Item Ship Group Assocs and Ship Groups
-                    var oisga = await _context.Set<OrderItemShipGroupAssoc>()
+                    /*var oisga = await _context.Set<OrderItemShipGroupAssoc>()
                         .Where(x => x.OrderId == relatedOrderId)
                         .ToListAsync(cancellationToken);
                     _context.RemoveRange(oisga);
@@ -90,7 +90,7 @@ public class ResetProjectCertificate
                     var oisg = await _context.OrderItemShipGroups
                         .Where(x => x.OrderId == relatedOrderId)
                         .ToListAsync(cancellationToken);
-                    _context.OrderItemShipGroups.RemoveRange(oisg);
+                    _context.OrderItemShipGroups.RemoveRange(oisg);*/
 
                     // 2d. Revert Payments and Payment Preferences associated with the order
                     var paymentPrefs = await _context.OrderPaymentPreferences
@@ -109,11 +109,13 @@ public class ResetProjectCertificate
                     if (paymentIds.Any())
                     {
                         var paymentTransEntries = await _context.AcctgTransEntries
-                            .Where(ate => _context.AcctgTrans.Any(at => at.AcctgTransId == ate.AcctgTransId && paymentIds.Contains(at.PaymentId)))
+                            .Where(ate => _context.AcctgTrans.Any(at =>
+                                at.AcctgTransId == ate.AcctgTransId && paymentIds.Contains(at.PaymentId)))
                             .ToListAsync(cancellationToken);
                         _context.AcctgTransEntries.RemoveRange(paymentTransEntries);
 
-                        var paymentTrans = await _context.AcctgTrans.Where(at => paymentIds.Contains(at.PaymentId)).ToListAsync(cancellationToken);
+                        var paymentTrans = await _context.AcctgTrans.Where(at => paymentIds.Contains(at.PaymentId))
+                            .ToListAsync(cancellationToken);
                         _context.AcctgTrans.RemoveRange(paymentTrans);
                     }
 
@@ -139,68 +141,40 @@ public class ResetProjectCertificate
 
                         foreach (var linkedCert in linkedSaleCertificates)
                         {
-                            // Revert Material Issuances for the linked certificate
-                            var linkedIssuances = await _context.ItemIssuances
-                                .Where(ii => _context.InventoryItemDetails.Any(iid =>
-                                    iid.ItemIssuanceId == ii.ItemIssuanceId && iid.WorkEffortId == linkedCert.WorkEffortId))
+                            // 1. Identify all InventoryItemDetails linked to this certificate
+                            var details = await _context.InventoryItemDetails
+                                .Where(iid => iid.WorkEffortId == linkedCert.WorkEffortId)
                                 .ToListAsync(cancellationToken);
 
-                            foreach (var issuance in linkedIssuances)
+                            foreach (var detail in details)
                             {
-                                var details = await _context.InventoryItemDetails
-                                    .Where(iid => iid.ItemIssuanceId == issuance.ItemIssuanceId)
-                                    .ToListAsync(cancellationToken);
+                                var inventoryItem = await _context.InventoryItems
+                                    .FirstOrDefaultAsync(ii => ii.InventoryItemId == detail.InventoryItemId,
+                                        cancellationToken);
 
-                                foreach (var detail in details)
+                                if (inventoryItem != null)
                                 {
-                                    var inventoryItem = await _context.InventoryItems
-                                        .FirstOrDefaultAsync(ii => ii.InventoryItemId == detail.InventoryItemId,
-                                            cancellationToken);
-
-                                    if (inventoryItem != null)
-                                    {
-                                        inventoryItem.QuantityOnHandTotal -= detail.QuantityOnHandDiff ?? 0;
-                                        inventoryItem.AvailableToPromiseTotal -= detail.AvailableToPromiseDiff ?? 0;
-                                    }
+                                    // Add back the issued quantity (diff is negative for issuances)
+                                    inventoryItem.QuantityOnHandTotal -= detail.QuantityOnHandDiff ?? 0;
+                                    inventoryItem.AvailableToPromiseTotal -= detail.AvailableToPromiseDiff ?? 0;
                                 }
-
-                                // 3a. Remove Billing and Accounting for linked issuance
-                                var oibs = await _context.OrderItemBillings.Where(o => o.ItemIssuanceId == issuance.ItemIssuanceId).ToListAsync(cancellationToken);
-                                var sibs = await _context.ShipmentItemBillings.Where(s => s.ShipmentId == issuance.ShipmentId && s.ShipmentItemSeqId == issuance.ShipmentItemSeqId).ToListAsync(cancellationToken);
-                                var invoiceIds = oibs.Select(o => o.InvoiceId).Union(sibs.Select(s => s.InvoiceId)).Distinct().ToList();
-
-                                _context.OrderItemBillings.RemoveRange(oibs);
-
-                                if (invoiceIds.Any())
-                                {
-                                    await CleanupInvoices(invoiceIds, cancellationToken);
-                                }
-
-                                _context.ShipmentItemBillings.RemoveRange(sibs);
-
-                                var trans = await _context.AcctgTrans.Where(at => at.ShipmentId == issuance.ShipmentId || at.WorkEffortId == linkedCert.WorkEffortId).ToListAsync(cancellationToken);
-                                foreach (var tran in trans)
-                                {
-                                    var entries = await _context.AcctgTransEntries.Where(e => e.AcctgTransId == tran.AcctgTransId).ToListAsync(cancellationToken);
-                                    _context.AcctgTransEntries.RemoveRange(entries);
-                                }
-                                _context.AcctgTrans.RemoveRange(trans);
-
-                                var shipmentStatuses = await _context.ShipmentStatuses.Where(ss => ss.ShipmentId == issuance.ShipmentId).ToListAsync(cancellationToken);
-                                _context.ShipmentStatuses.RemoveRange(shipmentStatuses);
-
-                                var rs = await _context.ShipmentRouteSegments.Where(r => r.ShipmentId == issuance.ShipmentId).ToListAsync(cancellationToken);
-                                var rsIds = rs.Select(r => r.ShipmentRouteSegmentId).ToList();
-                                var sprs = await _context.ShipmentPackageRouteSegs.Where(s => s.ShipmentId == issuance.ShipmentId && rsIds.Contains(s.ShipmentRouteSegmentId)).ToListAsync(cancellationToken);
-                                _context.ShipmentPackageRouteSegs.RemoveRange(sprs);
-                                _context.ShipmentRouteSegments.RemoveRange(rs);
-
-                                _context.InventoryItemDetails.RemoveRange(details);
                             }
 
-                            _context.ItemIssuances.RemoveRange(linkedIssuances);
+                            // 4. Remove Accounting Transactions for the linked certificate
+                            var trans = await _context.AcctgTrans
+                                .Where(at => at.WorkEffortId == linkedCert.WorkEffortId).ToListAsync(cancellationToken);
+                            foreach (var tran in trans)
+                            {
+                                var entries = await _context.AcctgTransEntries
+                                    .Where(e => e.AcctgTransId == tran.AcctgTransId).ToListAsync(cancellationToken);
+                                _context.AcctgTransEntries.RemoveRange(entries);
+                            }
 
-                            // Delete the linked certificate items and the certificate itself
+                            _context.AcctgTrans.RemoveRange(trans);
+
+                            _context.InventoryItemDetails.RemoveRange(details);
+
+                            // 5. Delete the linked certificate items and the certificate itself
                             var linkedCertItems = await _context.WorkEfforts
                                 .Where(we => we.WorkEffortParentId == linkedCert.WorkEffortId)
                                 .ToListAsync(cancellationToken);
@@ -234,7 +208,9 @@ public class ResetProjectCertificate
                                         .ToList();
 
                                     // 3b. Remove Billing and Accounting for receipt
-                                    var oibs = await _context.OrderItemBillings.Where(o => o.ShipmentReceiptId == receipt.ReceiptId).ToListAsync(cancellationToken);
+                                    var oibs = await _context.OrderItemBillings
+                                        .Where(o => o.ShipmentReceiptId == receipt.ReceiptId)
+                                        .ToListAsync(cancellationToken);
                                     var invoiceIds = oibs.Select(o => o.InvoiceId).Distinct().ToList();
 
                                     _context.OrderItemBillings.RemoveRange(oibs);
@@ -244,12 +220,16 @@ public class ResetProjectCertificate
                                         await CleanupInvoices(invoiceIds, cancellationToken);
                                     }
 
-                                    var trans = await _context.AcctgTrans.Where(at => at.ReceiptId == receipt.ReceiptId).ToListAsync(cancellationToken);
+                                    var trans = await _context.AcctgTrans.Where(at => at.ReceiptId == receipt.ReceiptId)
+                                        .ToListAsync(cancellationToken);
                                     foreach (var tran in trans)
                                     {
-                                        var entries = await _context.AcctgTransEntries.Where(e => e.AcctgTransId == tran.AcctgTransId).ToListAsync(cancellationToken);
+                                        var entries = await _context.AcctgTransEntries
+                                            .Where(e => e.AcctgTransId == tran.AcctgTransId)
+                                            .ToListAsync(cancellationToken);
                                         _context.AcctgTransEntries.RemoveRange(entries);
                                     }
+
                                     _context.AcctgTrans.RemoveRange(trans);
 
                                     _context.InventoryItemDetails.RemoveRange(details);
@@ -281,11 +261,11 @@ public class ResetProjectCertificate
                         var orderBillings = await _context.OrderItemBillings
                             .Where(oib => oib.OrderId == relatedOrderId)
                             .ToListAsync(cancellationToken);
-                        
+
                         var invoiceIds = orderBillings.Select(oib => oib.InvoiceId).Distinct().ToList();
-                        
+
                         _context.OrderItemBillings.RemoveRange(orderBillings);
-                        
+
                         if (invoiceIds.Any())
                         {
                             await CleanupInvoices(invoiceIds, cancellationToken);
@@ -308,23 +288,31 @@ public class ResetProjectCertificate
                             .ToListAsync(cancellationToken);
 
                         // 3c. Final cleanup for shipments (Billing/Accounting that might have been missed)
-                        var sibs = await _context.ShipmentItemBillings.Where(s => shipmentIds.Contains(s.ShipmentId)).ToListAsync(cancellationToken);
+                        var sibs = await _context.ShipmentItemBillings.Where(s => shipmentIds.Contains(s.ShipmentId))
+                            .ToListAsync(cancellationToken);
                         _context.ShipmentItemBillings.RemoveRange(sibs);
 
-                        var shipTrans = await _context.AcctgTrans.Where(at => shipmentIds.Contains(at.ShipmentId)).ToListAsync(cancellationToken);
+                        var shipTrans = await _context.AcctgTrans.Where(at => shipmentIds.Contains(at.ShipmentId))
+                            .ToListAsync(cancellationToken);
                         foreach (var tran in shipTrans)
                         {
-                            var entries = await _context.AcctgTransEntries.Where(e => e.AcctgTransId == tran.AcctgTransId).ToListAsync(cancellationToken);
+                            var entries = await _context.AcctgTransEntries
+                                .Where(e => e.AcctgTransId == tran.AcctgTransId).ToListAsync(cancellationToken);
                             _context.AcctgTransEntries.RemoveRange(entries);
                         }
+
                         _context.AcctgTrans.RemoveRange(shipTrans);
 
-                        var shipmentStatuses = await _context.ShipmentStatuses.Where(ss => shipmentIds.Contains(ss.ShipmentId)).ToListAsync(cancellationToken);
+                        var shipmentStatuses = await _context.ShipmentStatuses
+                            .Where(ss => shipmentIds.Contains(ss.ShipmentId)).ToListAsync(cancellationToken);
                         _context.ShipmentStatuses.RemoveRange(shipmentStatuses);
 
-                        var rs = await _context.ShipmentRouteSegments.Where(r => shipmentIds.Contains(r.ShipmentId)).ToListAsync(cancellationToken);
+                        var rs = await _context.ShipmentRouteSegments.Where(r => shipmentIds.Contains(r.ShipmentId))
+                            .ToListAsync(cancellationToken);
                         var rsIds = rs.Select(r => r.ShipmentRouteSegmentId).ToList();
-                        var sprs = await _context.ShipmentPackageRouteSegs.Where(s => shipmentIds.Contains(s.ShipmentId) && rsIds.Contains(s.ShipmentRouteSegmentId)).ToListAsync(cancellationToken);
+                        var sprs = await _context.ShipmentPackageRouteSegs
+                            .Where(s => shipmentIds.Contains(s.ShipmentId) && rsIds.Contains(s.ShipmentRouteSegmentId))
+                            .ToListAsync(cancellationToken);
                         _context.ShipmentPackageRouteSegs.RemoveRange(sprs);
                         _context.ShipmentRouteSegments.RemoveRange(rs);
 
@@ -338,45 +326,51 @@ public class ResetProjectCertificate
                 }
                 else if (category == "COMPANY_SUPPLY_SALE_CERTIFICATE")
                 {
-                    // Revert Material Issuances
-                    var issuances = await _context.ItemIssuances
-                        .Where(ii => (relatedOrderId != null && (ii.OrderId == relatedOrderId || ii.ShipmentId != null &&
-                            _context.Shipments.Any(s =>
-                                s.ShipmentId == ii.ShipmentId && s.PrimaryOrderId == relatedOrderId))))
+                    // 1. Identify all InventoryItemDetails linked to this certificate
+                    var details = await _context.InventoryItemDetails
+                        .Where(iid => iid.WorkEffortId == request.WorkEffortId)
                         .ToListAsync(cancellationToken);
 
-                    // Fallback search if no RelatedOrderId or it's not enough (some sale certificates use WorkEffortId directly in issuances)
-                    var issuancesByWorkEffort = await _context.ItemIssuances
-                        .Where(ii => _context.InventoryItemDetails.Any(iid =>
-                            iid.ItemIssuanceId == ii.ItemIssuanceId && iid.WorkEffortId == request.WorkEffortId))
-                        .ToListAsync(cancellationToken);
-
-                    var allIssuances = issuances.Union(issuancesByWorkEffort).ToList();
-
-                    foreach (var issuance in allIssuances)
+                    foreach (var detail in details)
                     {
-                        var details = await _context.InventoryItemDetails
-                            .Where(iid => iid.ItemIssuanceId == issuance.ItemIssuanceId)
-                            .ToListAsync(cancellationToken);
+                        var inventoryItem = await _context.InventoryItems
+                            .FirstOrDefaultAsync(ii => ii.InventoryItemId == detail.InventoryItemId,
+                                cancellationToken);
 
-                        foreach (var detail in details)
+                        if (inventoryItem != null)
                         {
-                            var inventoryItem = await _context.InventoryItems
-                                .FirstOrDefaultAsync(ii => ii.InventoryItemId == detail.InventoryItemId,
-                                    cancellationToken);
-
-                            if (inventoryItem != null)
-                            {
-                                // Add back the issued quantity (diff is negative for issuances)
-                                inventoryItem.QuantityOnHandTotal -= detail.QuantityOnHandDiff ?? 0;
-                                inventoryItem.AvailableToPromiseTotal -= detail.AvailableToPromiseDiff ?? 0;
-                            }
+                            // Add back the issued quantity (diff is negative for issuances)
+                            inventoryItem.QuantityOnHandTotal -= detail.QuantityOnHandDiff ?? 0;
+                            inventoryItem.AvailableToPromiseTotal -= detail.AvailableToPromiseDiff ?? 0;
                         }
+                    }
 
-                        // 3d. Remove Billing and Accounting for sale issuance
-                        var oibs = await _context.OrderItemBillings.Where(o => o.ItemIssuanceId == issuance.ItemIssuanceId).ToListAsync(cancellationToken);
-                        var sibs = await _context.ShipmentItemBillings.Where(s => s.ShipmentId == issuance.ShipmentId && s.ShipmentItemSeqId == issuance.ShipmentItemSeqId).ToListAsync(cancellationToken);
-                        var invoiceIds = oibs.Select(o => o.InvoiceId).Union(sibs.Select(s => s.InvoiceId)).Distinct().ToList();
+                    // 2. Identify and remove ItemIssuances linked via details or RelatedOrderId
+                    var issuanceIdsFromDetails = details.Where(d => !string.IsNullOrEmpty(d.ItemIssuanceId))
+                        .Select(d => d.ItemIssuanceId!)
+                        .Distinct()
+                        .ToList();
+
+                    var issuances = await _context.ItemIssuances
+                        .Where(ii => issuanceIdsFromDetails.Contains(ii.ItemIssuanceId) ||
+                                     (relatedOrderId != null && (ii.OrderId == relatedOrderId ||
+                                                                 ii.ShipmentId != null &&
+                                                                 _context.Shipments.Any(s =>
+                                                                     s.ShipmentId == ii.ShipmentId &&
+                                                                     s.PrimaryOrderId == relatedOrderId))))
+                        .ToListAsync(cancellationToken);
+
+                    foreach (var issuance in issuances)
+                    {
+                        // 3a. Remove Billing and Accounting for sale issuance
+                        var oibs = await _context.OrderItemBillings
+                            .Where(o => o.ItemIssuanceId == issuance.ItemIssuanceId).ToListAsync(cancellationToken);
+                        var sibs = await _context.ShipmentItemBillings
+                            .Where(s => s.ShipmentId == issuance.ShipmentId &&
+                                        s.ShipmentItemSeqId == issuance.ShipmentItemSeqId)
+                            .ToListAsync(cancellationToken);
+                        var invoiceIds = oibs.Select(o => o.InvoiceId).Union(sibs.Select(s => s.InvoiceId)).Distinct()
+                            .ToList();
 
                         _context.OrderItemBillings.RemoveRange(oibs);
                         _context.ShipmentItemBillings.RemoveRange(sibs);
@@ -386,36 +380,43 @@ public class ResetProjectCertificate
                             await CleanupInvoices(invoiceIds, cancellationToken);
                         }
 
-                        var trans = await _context.AcctgTrans.Where(at => at.ShipmentId == issuance.ShipmentId || at.WorkEffortId == request.WorkEffortId).ToListAsync(cancellationToken);
-                        foreach (var tran in trans)
+                        // Remove Shipment artifacts if present
+                        if (!string.IsNullOrEmpty(issuance.ShipmentId))
                         {
-                            var entries = await _context.AcctgTransEntries.Where(e => e.AcctgTransId == tran.AcctgTransId).ToListAsync(cancellationToken);
-                            _context.AcctgTransEntries.RemoveRange(entries);
+                            var shipmentStatuses = await _context.ShipmentStatuses
+                                .Where(ss => ss.ShipmentId == issuance.ShipmentId).ToListAsync(cancellationToken);
+                            _context.ShipmentStatuses.RemoveRange(shipmentStatuses);
+
+                            var rs = await _context.ShipmentRouteSegments
+                                .Where(r => r.ShipmentId == issuance.ShipmentId).ToListAsync(cancellationToken);
+                            var rsIds = rs.Select(r => r.ShipmentRouteSegmentId).ToList();
+                            var sprs = await _context.ShipmentPackageRouteSegs
+                                .Where(s => s.ShipmentId == issuance.ShipmentId &&
+                                            rsIds.Contains(s.ShipmentRouteSegmentId)).ToListAsync(cancellationToken);
+                            _context.ShipmentPackageRouteSegs.RemoveRange(sprs);
+                            _context.ShipmentRouteSegments.RemoveRange(rs);
                         }
-                        _context.AcctgTrans.RemoveRange(trans);
-
-                        var rs = await _context.ShipmentRouteSegments.Where(r => r.ShipmentId == issuance.ShipmentId).ToListAsync(cancellationToken);
-                        var rsIds = rs.Select(r => r.ShipmentRouteSegmentId).ToList();
-                        var sprs = await _context.ShipmentPackageRouteSegs.Where(s => s.ShipmentId == issuance.ShipmentId && rsIds.Contains(s.ShipmentRouteSegmentId)).ToListAsync(cancellationToken);
-                        _context.ShipmentPackageRouteSegs.RemoveRange(sprs);
-                        _context.ShipmentRouteSegments.RemoveRange(rs);
-
-                        _context.InventoryItemDetails.RemoveRange(details);
                     }
 
-                    _context.ItemIssuances.RemoveRange(allIssuances);
+                    _context.ItemIssuances.RemoveRange(issuances);
 
-                    // Final check for accounting transactions that may be linked only to the work effort and not specific issuances
-                    var remainingTrans = await _context.AcctgTrans
-                        .Where(at => at.WorkEffortId == request.WorkEffortId)
+                    // 4. Remove Accounting Transactions for the certificate
+                    var trans = await _context.AcctgTrans
+                        .Where(at =>
+                            at.WorkEffortId == request.WorkEffortId || (at.ShipmentId != null &&
+                                                                        issuances.Any(i =>
+                                                                            i.ShipmentId == at.ShipmentId)))
                         .ToListAsync(cancellationToken);
-                    
-                    foreach (var tran in remainingTrans)
+                    foreach (var tran in trans)
                     {
-                        var entries = await _context.AcctgTransEntries.Where(e => e.AcctgTransId == tran.AcctgTransId).ToListAsync(cancellationToken);
+                        var entries = await _context.AcctgTransEntries.Where(e => e.AcctgTransId == tran.AcctgTransId)
+                            .ToListAsync(cancellationToken);
                         _context.AcctgTransEntries.RemoveRange(entries);
                     }
-                    _context.AcctgTrans.RemoveRange(remainingTrans);
+
+                    _context.AcctgTrans.RemoveRange(trans);
+
+                    _context.InventoryItemDetails.RemoveRange(details);
                 }
 
                 await _context.SaveChangesAsync(cancellationToken);
@@ -432,48 +433,63 @@ public class ResetProjectCertificate
 
         private async Task CleanupInvoices(List<string> invoiceIds, CancellationToken cancellationToken)
         {
-            var oabs = await _context.OrderAdjustmentBillings.Where(oab => invoiceIds.Contains(oab.InvoiceId)).ToListAsync(cancellationToken);
+            var oabs = await _context.OrderAdjustmentBillings.Where(oab => invoiceIds.Contains(oab.InvoiceId))
+                .ToListAsync(cancellationToken);
             _context.OrderAdjustmentBillings.RemoveRange(oabs);
 
-            var invoiceRoles = await _context.InvoiceRoles.Where(ir => invoiceIds.Contains(ir.InvoiceId)).ToListAsync(cancellationToken);
+            var invoiceRoles = await _context.InvoiceRoles.Where(ir => invoiceIds.Contains(ir.InvoiceId))
+                .ToListAsync(cancellationToken);
             _context.InvoiceRoles.RemoveRange(invoiceRoles);
 
-            var invoiceStatuses = await _context.InvoiceStatuses.Where(isat => invoiceIds.Contains(isat.InvoiceId)).ToListAsync(cancellationToken);
+            var invoiceStatuses = await _context.InvoiceStatuses.Where(isat => invoiceIds.Contains(isat.InvoiceId))
+                .ToListAsync(cancellationToken);
             _context.InvoiceStatuses.RemoveRange(invoiceStatuses);
 
-            var pAs = await _context.PaymentApplications.Where(pa => invoiceIds.Contains(pa.InvoiceId)).ToListAsync(cancellationToken);
+            var pAs = await _context.PaymentApplications.Where(pa => invoiceIds.Contains(pa.InvoiceId))
+                .ToListAsync(cancellationToken);
             _context.PaymentApplications.RemoveRange(pAs);
 
-            var invAttrs = await _context.InvoiceAttributes.Where(ia => invoiceIds.Contains(ia.InvoiceId)).ToListAsync(cancellationToken);
+            var invAttrs = await _context.InvoiceAttributes.Where(ia => invoiceIds.Contains(ia.InvoiceId))
+                .ToListAsync(cancellationToken);
             _context.InvoiceAttributes.RemoveRange(invAttrs);
 
-            var invCMS = await _context.InvoiceContactMeches.Where(icm => invoiceIds.Contains(icm.InvoiceId)).ToListAsync(cancellationToken);
+            var invCMS = await _context.InvoiceContactMeches.Where(icm => invoiceIds.Contains(icm.InvoiceId))
+                .ToListAsync(cancellationToken);
             _context.InvoiceContactMeches.RemoveRange(invCMS);
 
-            var invContents = await _context.InvoiceContents.Where(ic => invoiceIds.Contains(ic.InvoiceId)).ToListAsync(cancellationToken);
+            var invContents = await _context.InvoiceContents.Where(ic => invoiceIds.Contains(ic.InvoiceId))
+                .ToListAsync(cancellationToken);
             _context.InvoiceContents.RemoveRange(invContents);
 
-            var invTerms = await _context.InvoiceTerms.Where(it => invoiceIds.Contains(it.InvoiceId)).ToListAsync(cancellationToken);
+            var invTerms = await _context.InvoiceTerms.Where(it => invoiceIds.Contains(it.InvoiceId))
+                .ToListAsync(cancellationToken);
             var invTermIds = invTerms.Select(it => it.InvoiceTermId).ToList();
-            var invTermAttrs = await _context.InvoiceTermAttributes.Where(ita => invTermIds.Contains(ita.InvoiceTermId)).ToListAsync(cancellationToken);
+            var invTermAttrs = await _context.InvoiceTermAttributes.Where(ita => invTermIds.Contains(ita.InvoiceTermId))
+                .ToListAsync(cancellationToken);
             _context.InvoiceTermAttributes.RemoveRange(invTermAttrs);
             _context.InvoiceTerms.RemoveRange(invTerms);
 
-            var invoiceItems = await _context.InvoiceItems.Where(ii => invoiceIds.Contains(ii.InvoiceId)).ToListAsync(cancellationToken);
-            var invItemAttrs = await _context.InvoiceItemAttributes.Where(iia => invoiceIds.Contains(iia.InvoiceId)).ToListAsync(cancellationToken);
+            var invoiceItems = await _context.InvoiceItems.Where(ii => invoiceIds.Contains(ii.InvoiceId))
+                .ToListAsync(cancellationToken);
+            var invItemAttrs = await _context.InvoiceItemAttributes.Where(iia => invoiceIds.Contains(iia.InvoiceId))
+                .ToListAsync(cancellationToken);
             _context.InvoiceItemAttributes.RemoveRange(invItemAttrs);
 
             // From ResetInvoice.cs: Accounting Transactions for Invoice
             var invoiceTransEntries = await _context.AcctgTransEntries
-                .Where(ate => _context.AcctgTrans.Any(at => at.AcctgTransId == ate.AcctgTransId && invoiceIds.Contains(at.InvoiceId)))
+                .Where(ate =>
+                    _context.AcctgTrans.Any(at =>
+                        at.AcctgTransId == ate.AcctgTransId && invoiceIds.Contains(at.InvoiceId)))
                 .ToListAsync(cancellationToken);
             _context.AcctgTransEntries.RemoveRange(invoiceTransEntries);
 
-            var invoiceTrans = await _context.AcctgTrans.Where(at => invoiceIds.Contains(at.InvoiceId)).ToListAsync(cancellationToken);
+            var invoiceTrans = await _context.AcctgTrans.Where(at => invoiceIds.Contains(at.InvoiceId))
+                .ToListAsync(cancellationToken);
             _context.AcctgTrans.RemoveRange(invoiceTrans);
 
             _context.InvoiceItems.RemoveRange(invoiceItems);
-            var invoices = await _context.Invoices.Where(i => invoiceIds.Contains(i.InvoiceId)).ToListAsync(cancellationToken);
+            var invoices = await _context.Invoices.Where(i => invoiceIds.Contains(i.InvoiceId))
+                .ToListAsync(cancellationToken);
             _context.Invoices.RemoveRange(invoices);
         }
     }
