@@ -60,9 +60,9 @@ export default function PaymentTransactionsList({ onClose, paymentId }: Props) {
             acc[entry.acctgTransId] = { debit: 0, credit: 0 };
         }
         if (entry.debitCreditFlag === "C") {
-            acc[entry.acctgTransId].credit = entry.origAmount || 0;
+            acc[entry.acctgTransId].credit = entry.amount || 0;
         } else {
-            acc[entry.acctgTransId].debit = entry.origAmount || 0;
+            acc[entry.acctgTransId].debit = entry.amount || 0;
         }
         return acc;
     }, {} as Record<string, { debit: number; credit: number }>);
@@ -153,7 +153,7 @@ export default function PaymentTransactionsList({ onClose, paymentId }: Props) {
                                 footerCell={() => null}
                             />
                             <Column
-                                field="origAmount"
+                                field="amount"
                                 title={getTranslatedLabel(`${localizationKey}.columns.origAmount`, "Orig Amount")}
                                 width={100}
                                 footerCell={() => null}

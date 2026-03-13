@@ -47,4 +47,7 @@ public class SalesOpportunity
     public ICollection<SalesOpportunityRole> SalesOpportunityRoles { get; set; }
     public ICollection<SalesOpportunityTrckCode> SalesOpportunityTrckCodes { get; set; }
     public ICollection<SalesOpportunityWorkEffort> SalesOpportunityWorkEfforts { get; set; }
+    
+    public virtual ICollection<SalesOpportunityProduct> SalesOpportunityProducts { get; set; } 
+        = new HashSet<SalesOpportunityProduct>();
 }

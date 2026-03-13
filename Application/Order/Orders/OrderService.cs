@@ -545,7 +545,7 @@ public class OrderService : BaseService, IOrderService
             ProductId = orderItem.ProductId,
             UomId = orderItem.UomId,
             ProductFeatureId = orderItem.ProductFeatureId,
-            ItemDescription = orderItem.ProductName,
+            ItemDescription = orderItem.ItemDescription,
             Quantity = orderItem.Quantity,
             UnitPrice = orderItem.UnitPrice,
             OrderItemTypeId = orderItem.OrderItemTypeId ?? "PRODUCT_ORDER_ITEM",

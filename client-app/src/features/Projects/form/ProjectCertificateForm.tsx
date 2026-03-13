@@ -177,7 +177,7 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
                     </MenuItem>
                 </Can>
 
-                {/*<Can perform="DeleteCertificate">
+                <Can perform="DeleteCertificate">
                         <MenuItem
                             onClick={() => {
                                 handleClose();
@@ -187,7 +187,7 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
                         >
                             {getTranslatedLabel('projects.certificate.delete', 'Delete Certificate')}
                         </MenuItem>
-                </Can>*/}
+                </Can>
                
             </Menu>
 
