@@ -3,14 +3,14 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 
-namespace Application.CRM.Contacts;
+namespace Application.CRM.Leads;
 
 /// <summary>
-/// Lists Contacts (People) with filtering and search.
+/// Lists Leads (People) with filtering and search.
 /// </summary>
-public class ListContacts
+public class ListLeads
 {
-    public record Query : IRequest<Result<List<ContactDto>>>
+    public record Query : IRequest<Result<List<LeadDto>>>
     {
         public string? SearchTerm { get; init; }
         public string? DataSourceId { get; init; }
@@ -18,7 +18,7 @@ public class ListContacts
         public bool SortDescending { get; init; } = false;
     }
 
-    public class Handler : IRequestHandler<Query, Result<List<ContactDto>>>
+    public class Handler : IRequestHandler<Query, Result<List<LeadDto>>>
     {
         private readonly DataContext _context;
 
@@ -27,7 +27,7 @@ public class ListContacts
             _context = context;
         }
 
-        public async Task<Result<List<ContactDto>>> Handle(Query request, CancellationToken ct)
+        public async Task<Result<List<LeadDto>>> Handle(Query request, CancellationToken ct)
         {
             // Get all parties that are PERSON type with CONTACT or LEAD role
             var query = _context.Parties
@@ -106,7 +106,7 @@ public class ListContacts
                 var firstName = p.Person?.FirstName ?? "";
                 var lastName = p.Person?.LastName ?? "";
 
-                return new ContactDto
+                return new LeadDto
                 {
                     PartyId = p.PartyId,
                     FirstName = firstName,
@@ -128,23 +128,23 @@ public class ListContacts
                 };
             }).ToList();
 
-            return Result<List<ContactDto>>.Success(result);
+            return Result<List<LeadDto>>.Success(result);
         }
     }
 }
 
 /// <summary>
-/// Lists Contacts for LOV/Picker dropdowns (lightweight).
+/// Lists Leads for LOV/Picker dropdowns (lightweight).
 /// </summary>
-public class ListContactsLov
+public class ListLeadsLov
 {
-    public record Query : IRequest<Result<List<ContactLovDto>>>
+    public record Query : IRequest<Result<List<LeadLovDto>>>
     {
         public string? SearchTerm { get; init; }
         public int Take { get; init; } = 20;
     }
 
-    public class Handler : IRequestHandler<Query, Result<List<ContactLovDto>>>
+    public class Handler : IRequestHandler<Query, Result<List<LeadLovDto>>>
     {
         private readonly DataContext _context;
 
@@ -153,7 +153,7 @@ public class ListContactsLov
             _context = context;
         }
 
-        public async Task<Result<List<ContactLovDto>>> Handle(Query request, CancellationToken ct)
+        public async Task<Result<List<LeadLovDto>>> Handle(Query request, CancellationToken ct)
         {
             var query = _context.Parties
                 .Include(p => p.Person)
@@ -194,7 +194,7 @@ public class ListContactsLov
                 var firstName = p.Person?.FirstName ?? "";
                 var lastName = p.Person?.LastName ?? "";
 
-                return new ContactLovDto
+                return new LeadLovDto
                 {
                     PartyId = p.PartyId,
                     FullName = $"{firstName} {lastName}".Trim(),
@@ -203,7 +203,7 @@ public class ListContactsLov
                 };
             }).ToList();
 
-            return Result<List<ContactLovDto>>.Success(result);
+            return Result<List<LeadLovDto>>.Success(result);
         }
     }
 }

@@ -14,7 +14,7 @@ import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
 import CRMMenu from '../menu/CRMMenu';
 import SalesOpportunityBoard from './SalesOpportunityBoard';
 import SalesOpportunityList from './SalesOpportunityList';
-import LeadForm from './SalesOpportunityForm';
+import OpportunityForm from './SalesOpportunityForm';
 import { SalesOpportunity } from '../models/salesOpportunity';
 
 type ViewMode = 'board' | 'list';
@@ -22,7 +22,7 @@ type EditMode = 'none' | 'create' | 'edit';
 
 const SalesOpportunityDashboard: React.FC = () => {
     const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = 'crm.leads';
+    const localizationKey = 'crm.opportunities';
 
     const [viewMode, setViewMode] = useState<ViewMode>('board');
     const [editMode, setEditMode] = useState<EditMode>('none');
@@ -114,7 +114,7 @@ const SalesOpportunityDashboard: React.FC = () => {
 
                 {/* Content Area */}
                 {editMode !== 'none' ? (
-                    <LeadForm
+                    <OpportunityForm
                         opportunity={selectedOpportunity}
                         editMode={editMode}
                         onClose={handleCloseForm}

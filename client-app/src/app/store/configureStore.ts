@@ -136,7 +136,7 @@ import {certificateItemsApi} from "./apis/certificateItemsApi";
 import {multiPaymentCertificateApi} from "./apis/multiPaymentCertificateApi";
 import {salesRequestApi} from "./apis/salesRequestApi";
 import {salesOpportunitiesApi} from "./apis/crm/salesOpportunitiesApi";
-import {contactsApi} from "./apis/crm/contactsApi";
+import {leadsApi} from "./apis/crm/leadsApi";
 import {dataSourcesApi} from "./apis/crm/dataSourcesApi";
 import {usersApi} from "./apis/users/usersApi";
 
@@ -327,7 +327,7 @@ export const store = configureStore({
         [paymentGroupTypesApi.reducerPath]: paymentGroupTypesApi.reducer,
         [usersApi.reducerPath]: usersApi.reducer,
         [salesOpportunitiesApi.reducerPath]: salesOpportunitiesApi.reducer,
-        [contactsApi.reducerPath]: contactsApi.reducer,
+        [leadsApi.reducerPath]: leadsApi.reducer,
         [dataSourcesApi.reducerPath]: dataSourcesApi.reducer
     },
     middleware: (getDefaultMiddleware) => {
@@ -426,7 +426,7 @@ export const store = configureStore({
             .concat(paymentGroupsApi.middleware)
             .concat(paymentGroupTypesApi.middleware)
             .concat(salesOpportunitiesApi.middleware)
-            .concat(contactsApi.middleware)
+            .concat(leadsApi.middleware)
             .concat(dataSourcesApi.middleware)
             .concat(usersApi.middleware);
     },
@@ -706,7 +706,7 @@ export * from "./apis/payment/paymentGroupTypesApi"
 
 // CRM - Sales Opportunities, Contacts & Data Sources
 export * from "./apis/crm/salesOpportunitiesApi"
-export * from "./apis/crm/contactsApi"
+export * from "./apis/crm/leadsApi"
 export * from "./apis/crm/dataSourcesApi"
 
 

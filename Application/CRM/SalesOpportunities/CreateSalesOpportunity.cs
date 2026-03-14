@@ -13,9 +13,9 @@ namespace Application.CRM.SalesOpportunities;
 ///
 /// KEY CONCEPT:
 /// - A Lead is NOT a person. A Lead is a business opportunity (potential sale).
-/// - People (Contacts) are linked to Leads via SalesOpportunityRole.
-/// - One Lead can involve multiple Contacts.
-/// - One Contact can be involved in multiple Leads.
+/// - People (Leads) are linked to business opportunities via SalesOpportunityRole.
+/// - One business opportunity can involve multiple Leads.
+/// - One Lead can be involved in multiple business opportunities.
 /// </summary>
 public class CreateSalesOpportunity
 {
@@ -114,21 +114,21 @@ public class CreateSalesOpportunity
                     });
                 }
 
-                // Link Contacts via SalesOpportunityRole
-                foreach (var contact in dto.Contacts)
+                // Link Leads via SalesOpportunityRole
+                foreach (var lead in dto.Leads)
                 {
-                    if (string.IsNullOrEmpty(contact.PartyId))
+                    if (string.IsNullOrEmpty(lead.PartyId))
                         continue;
 
-                    var roleTypeId = contact.RoleTypeId ?? "LEAD_CONTACT";
+                    var roleTypeId = lead.RoleTypeId ?? "LEAD_CONTACT";
 
                     // Ensure the party has the required role
-                    await EnsurePartyRoleExists(contact.PartyId, roleTypeId, stamp, ct);
+                    await EnsurePartyRoleExists(lead.PartyId, roleTypeId, stamp, ct);
 
                     _context.SalesOpportunityRoles.Add(new SalesOpportunityRole
                     {
                         SalesOpportunity = opportunity,
-                        PartyId = contact.PartyId,
+                        PartyId = lead.PartyId,
                         RoleTypeId = roleTypeId,
                         CreatedStamp = stamp,
                         LastUpdatedStamp = stamp
@@ -183,7 +183,7 @@ public class CreateSalesOpportunity
                     DataSourceId = opportunity.DataSourceId,
                     MarketingCampaignId = opportunity.MarketingCampaignId,
                     TypeEnumId = opportunity.TypeEnumId,
-                    Contacts = dto.Contacts
+                    Leads = dto.Leads
                 };
 
                 return Result<SalesOpportunityDto>.Success(result);

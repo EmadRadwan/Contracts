@@ -6,31 +6,31 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 
-namespace Application.CRM.Contacts;
+namespace Application.CRM.Leads;
 
 /// <summary>
-/// Updates an existing Contact (Person).
+/// Updates an existing Lead (Person).
 /// </summary>
-public class UpdateContact
+public class UpdateLead
 {
-    public record Command : IRequest<Result<ContactDto>>
+    public record Command : IRequest<Result<LeadDto>>
     {
-        public ContactDto Contact { get; init; } = null!;
+        public LeadDto Lead { get; init; } = null!;
     }
 
     public class CommandValidator : AbstractValidator<Command>
     {
         public CommandValidator()
         {
-            RuleFor(x => x.Contact.PartyId)
+            RuleFor(x => x.Lead.PartyId)
                 .NotEmpty().WithMessage("Party ID is required");
 
-            RuleFor(x => x.Contact.FirstName)
+            RuleFor(x => x.Lead.FirstName)
                 .NotEmpty().WithMessage("First name is required");
         }
     }
 
-    public class Handler : IRequestHandler<Command, Result<ContactDto>>
+    public class Handler : IRequestHandler<Command, Result<LeadDto>>
     {
         private readonly DataContext _context;
         private readonly IUtilityService _utilityService;
@@ -41,14 +41,14 @@ public class UpdateContact
             _utilityService = utilityService;
         }
 
-        public async Task<Result<ContactDto>> Handle(Command request, CancellationToken ct)
+        public async Task<Result<LeadDto>> Handle(Command request, CancellationToken ct)
         {
             await using var transaction = await _context.Database.BeginTransactionAsync(ct);
 
             try
             {
                 var stamp = DateTime.UtcNow;
-                var dto = request.Contact;
+                var dto = request.Lead;
 
                 var party = await _context.Parties
                     .Include(p => p.Person)
@@ -62,7 +62,7 @@ public class UpdateContact
                     .FirstOrDefaultAsync(p => p.PartyId == dto.PartyId, ct);
 
                 if (party == null)
-                    return Result<ContactDto>.Failure("Contact not found");
+                    return Result<LeadDto>.Failure("Lead not found");
 
                 var fullName = $"{dto.FirstName} {dto.LastName}".Trim();
 
@@ -263,12 +263,12 @@ public class UpdateContact
                 if (!saved)
                 {
                     await transaction.RollbackAsync(ct);
-                    return Result<ContactDto>.Failure("Failed to update contact");
+                    return Result<LeadDto>.Failure("Failed to update lead");
                 }
 
                 await transaction.CommitAsync(ct);
 
-                var result = new ContactDto
+                var result = new LeadDto
                 {
                     PartyId = party.PartyId,
                     FirstName = dto.FirstName,
@@ -289,12 +289,12 @@ public class UpdateContact
                     CreatedStamp = party.CreatedStamp
                 };
 
-                return Result<ContactDto>.Success(result);
+                return Result<LeadDto>.Success(result);
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync(ct);
-                return Result<ContactDto>.Failure($"Error updating contact: {ex.Message}");
+                return Result<LeadDto>.Failure($"Error updating lead: {ex.Message}");
             }
         }
     }

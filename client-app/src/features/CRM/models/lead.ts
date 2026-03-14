@@ -1,11 +1,11 @@
 /**
- * Contact (Person) in the CRM.
+ * Lead (Person) in the CRM.
  *
  * KEY CONCEPT:
- * A Contact is a PERSON (who you know).
- * Contacts are linked to Sales Opportunities via SalesOpportunityRole.
+ * A Lead is a PERSON (who you know).
+ * Leads are linked to Sales Opportunities via SalesOpportunityRole.
  */
-export interface Contact {
+export interface Lead {
     partyId?: string;
 
     // Identity
@@ -48,7 +48,7 @@ export interface Contact {
 /**
  * Lightweight DTO for dropdowns/pickers.
  */
-export interface ContactLov {
+export interface LeadLov {
     partyId: string;
     fullName?: string;
     email?: string;
@@ -56,9 +56,9 @@ export interface ContactLov {
 }
 
 /**
- * Query parameters for listing contacts.
+ * Query parameters for listing leads.
  */
-export interface ContactQueryParams {
+export interface LeadQueryParams {
     search?: string;
     dataSourceId?: string;
     sortBy?: string;

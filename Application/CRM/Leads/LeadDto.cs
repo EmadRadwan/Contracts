@@ -1,13 +1,13 @@
-namespace Application.CRM.Contacts;
+namespace Application.CRM.Leads;
 
 /// <summary>
-/// DTO representing a Contact (Person) in the CRM.
+/// DTO representing a Lead (Person) in the CRM.
 ///
 /// KEY CONCEPT:
-/// A Contact is a PERSON (who you know).
-/// Contacts are linked to Sales Opportunities via SalesOpportunityRole.
+/// A Lead is a PERSON (who you know).
+/// Leads are linked to Sales Opportunities via SalesOpportunityRole.
 /// </summary>
-public class ContactDto
+public class LeadDto
 {
     public string? PartyId { get; set; }
 
@@ -45,7 +45,7 @@ public class ContactDto
     public DateTime? CreatedStamp { get; set; }
     public DateTime? LastContactedTime { get; set; }
 
-    // Organization (if contact belongs to a company)
+    // Organization (if lead belongs to a company)
     public string? OrganizationPartyId { get; set; }
     public string? OrganizationName { get; set; }
 }
@@ -53,7 +53,7 @@ public class ContactDto
 /// <summary>
 /// Lightweight DTO for dropdowns/pickers.
 /// </summary>
-public class ContactLovDto
+public class LeadLovDto
 {
     public string PartyId { get; set; } = null!;
     public string? FullName { get; set; }

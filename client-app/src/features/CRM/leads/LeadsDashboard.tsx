@@ -7,7 +7,7 @@ import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
 import CRMMenu from '../menu/CRMMenu';
 import LeadsList from './LeadsList';
 import LeadsForm from './LeadsForm'
-import { Contact } from '../models/contact';
+import { Lead } from '../models/lead';
 import ExcelUploadDialog from './ExcelUploadDialog'
 import ImportedDataGrid from './ImportedDataGrid'
 
@@ -15,10 +15,10 @@ type EditMode = 'none' | 'create' | 'edit';
 
 const LeadsDashboard: React.FC = () => {
     const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = 'crm.contacts';
+    const localizationKey = 'crm.leads';
 
     const [editMode, setEditMode] = useState<number>(0);
-    const [selectedLead, setSelectedLead] = useState<Contact | undefined>();
+    const [selectedLead, setSelectedLead] = useState<Lead | undefined>();
     const [uploadOpen, setUploadOpen] = useState(false);
     const [importedData, setImportedData] = useState<any[]>([]);
     const [importedFileName, setImportedFileName] = useState('');
@@ -46,7 +46,7 @@ const LeadsDashboard: React.FC = () => {
         setEditMode(1);
     }, []);
 
-    const handleEditContact = useCallback((lead: Contact) => {
+    const handleEditLead = useCallback((lead: Lead) => {
         setSelectedLead(lead);
         setEditMode(2);
     }, []);
@@ -100,7 +100,7 @@ const LeadsDashboard: React.FC = () => {
                                     onClick={handleCreateNew}
                                 >
                                     <AddIcon />
-                                    {getTranslatedLabel(`${localizationKey}.createNew`, 'New Contact')}
+                                    {getTranslatedLabel(`${localizationKey}.createNew`, 'New Lead')}
                                 </Button>
                                 <Button
                                     variant="contained"
@@ -144,7 +144,7 @@ const LeadsDashboard: React.FC = () => {
                 ) : (
                     <LeadsList
                         onCreateNew={handleCreateNew}
-                        onEditContact={handleEditContact}
+                        onEditLead={handleEditLead}
                     />
                 )}
             </Paper>

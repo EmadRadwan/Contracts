@@ -95,8 +95,8 @@ const CRMDashboard = () => {
                                         locked={true}
                                     />
                                     <Column
-                                        field="mobileContactNumber"
-                                        title={getTranslatedLabel(`${localizationKey}.contactNumber`, "Contact Number")}
+                                        field="mobileLeadNumber"
+                                        title={getTranslatedLabel(`${localizationKey}.leadNumber`, "Lead Number")}
                                     />
                                     <Column
                                         field="address1"

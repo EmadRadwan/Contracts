@@ -41,15 +41,15 @@ public class SalesOpportunityDto
     // Type
     public string? TypeEnumId { get; set; }
 
-    // Linked contacts (for create/update)
-    public List<SalesOpportunityContactDto> Contacts { get; set; } = new();
+    // Linked leads (for create/update)
+    public List<SalesOpportunityLeadDto> Leads { get; set; } = new();
 }
 
 /// <summary>
-/// DTO for contacts linked to a sales opportunity.
+/// DTO for leads linked to a sales opportunity.
 /// Enables many-to-many relationship between opportunities and people.
 /// </summary>
-public class SalesOpportunityContactDto
+public class SalesOpportunityLeadDto
 {
     public string? PartyId { get; set; }
     public string? PartyName { get; set; }

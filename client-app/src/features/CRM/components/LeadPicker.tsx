@@ -8,21 +8,20 @@ import {
     CircularProgress
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
-import { useFetchContactsLovQuery } from '../../../app/store/configureStore';
-import { ContactLov } from '../models/contact';
-import { SalesOpportunityContact } from '../models/salesOpportunity';
-import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
+import { useFetchLeadsLovQuery } from '../../../app/store/configureStore';
+import { LeadLov } from '../models/lead';
+import { SalesOpportunityLead } from '../models/salesOpportunity';
 
-interface ContactPickerProps {
+interface LeadPickerProps {
     label?: string;
-    value: SalesOpportunityContact[];
-    onChange: (contacts: SalesOpportunityContact[]) => void;
+    value: SalesOpportunityLead[];
+    onChange: (leads: SalesOpportunityLead[]) => void;
     multiple?: boolean;
     placeholder?: string;
     disabled?: boolean;
 }
 
-const ContactPicker: React.FC<ContactPickerProps> = ({
+const LeadPicker: React.FC<LeadPickerProps> = ({
     label,
     value,
     onChange,
@@ -34,11 +33,11 @@ const ContactPicker: React.FC<ContactPickerProps> = ({
     const [inputValue, setInputValue] = useState('');
     const [open, setOpen] = useState(false);
 
-    const defaultLabel = label || getTranslatedLabel('crm.contactPicker.label', 'Contacts');
-    const defaultPlaceholder = placeholder || getTranslatedLabel('crm.contactPicker.placeholder', 'Search contacts...');
+    const defaultLabel = label || getTranslatedLabel('crm.leadPicker.label', 'Leads');
+    const defaultPlaceholder = placeholder || getTranslatedLabel('crm.leadPicker.placeholder', 'Search leads...');
 
-    // Fetch contacts - query runs when dropdown is open
-    const { data: contacts, isLoading, isFetching } = useFetchContactsLovQuery(
+    // Fetch leads - query runs when dropdown is open
+    const { data: leads, isLoading, isFetching } = useFetchLeadsLovQuery(
         { search: inputValue || undefined, take: 20 },
         { skip: !open }
     );
@@ -54,10 +53,10 @@ const ContactPicker: React.FC<ContactPickerProps> = ({
         }
     }, []);
 
-    const handleChange = useCallback((_: any, newValue: ContactLov | ContactLov[] | null) => {
+    const handleChange = useCallback((_: any, newValue: LeadLov | LeadLov[] | null) => {
         if (multiple) {
             onChange([])
-            // const selectedContacts = (newValue as ContactLov[] || []).map(c => ({
+            // const selectedLeads = (newValue as LeadLov[] || []).map(c => ({
             //     partyId: c.partyId,
             //     partyName: c.fullName,
             //     email: c.email,
@@ -65,20 +64,20 @@ const ContactPicker: React.FC<ContactPickerProps> = ({
             //     roleTypeId: 'LEAD_CONTACT'
             // }));
             onChange([{
-                    partyId: (newValue as ContactLov[])[newValue?.length - 1].partyId,
-                    partyName: (newValue as ContactLov[])[newValue?.length - 1].fullName,
-                    email: (newValue as ContactLov[])[newValue?.length - 1].email,
-                    phone: (newValue as ContactLov[])[newValue?.length - 1].phone,
+                    partyId: (newValue as LeadLov[])[newValue?.length - 1].partyId,
+                    partyName: (newValue as LeadLov[])[newValue?.length - 1].fullName,
+                    email: (newValue as LeadLov[])[newValue?.length - 1].email,
+                    phone: (newValue as LeadLov[])[newValue?.length - 1].phone,
                     roleTypeId: 'LEAD_CONTACT'
                 }]);
         } else {
-            const contact = newValue as ContactLov | null;
-            if (contact) {
+            const lead = newValue as LeadLov | null;
+            if (lead) {
                 onChange([{
-                    partyId: contact.partyId,
-                    partyName: contact.fullName,
-                    email: contact.email,
-                    phone: contact.phone,
+                    partyId: lead.partyId,
+                    partyName: lead.fullName,
+                    email: lead.email,
+                    phone: lead.phone,
                     roleTypeId: 'LEAD_CONTACT'
                 }]);
             } else {
@@ -87,8 +86,8 @@ const ContactPicker: React.FC<ContactPickerProps> = ({
         }
     }, [multiple, onChange]);
 
-    // Convert SalesOpportunityContact[] to ContactLov[] for the Autocomplete value
-    const selectedValues: ContactLov[] = value.map(v => ({
+    // Convert SalesOpportunityLead[] to LeadLov[] for the Autocomplete value
+    const selectedValues: LeadLov[] = value.map(v => ({
         partyId: v.partyId!,
         fullName: v.partyName,
         email: v.email,
@@ -100,7 +99,7 @@ const ContactPicker: React.FC<ContactPickerProps> = ({
     return (
         <Autocomplete
             multiple={multiple}
-            options={contacts || []}
+            options={leads || []}
             loading={loading}
             disabled={disabled}
             // value={multiple ? selectedValues : ([...selectedValues[0]] || [])}
@@ -111,10 +110,10 @@ const ContactPicker: React.FC<ContactPickerProps> = ({
             onClose={() => setOpen(false)}
             onChange={handleChange}
             onInputChange={handleInputChange}
-            getOptionLabel={(option: ContactLov) => option.fullName || option.partyId || ''}
+            getOptionLabel={(option: LeadLov) => option.fullName || option.partyId || ''}
             isOptionEqualToValue={(option, val) => option.partyId === val.partyId}
             filterOptions={(x) => x} // Disable client-side filtering, server handles it
-            noOptionsText={loading ? getTranslatedLabel('crm.contactPicker.loading', 'Loading...') : getTranslatedLabel('crm.contactPicker.noContacts', 'No contacts found')}
+            noOptionsText={loading ? getTranslatedLabel('crm.leadPicker.loading', 'Loading...') : getTranslatedLabel('crm.leadPicker.noLeads', 'No leads found')}
             renderInput={(params) => (
                 <TextField
                     {...params}
@@ -162,4 +161,4 @@ const ContactPicker: React.FC<ContactPickerProps> = ({
     );
 };
 
-export default ContactPicker;
+export default LeadPicker;

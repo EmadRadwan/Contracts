@@ -102,9 +102,9 @@ public class ListSalesOpportunities
             var result = opportunities.Select(o =>
             {
                 var ownerRole = o.SalesOpportunityRoles.FirstOrDefault(r => r.RoleTypeId == "OWNER");
-                var contacts = o.SalesOpportunityRoles
+                var leads = o.SalesOpportunityRoles
                     .Where(r => r.RoleTypeId != "OWNER")
-                    .Select(r => new SalesOpportunityContactDto
+                    .Select(r => new SalesOpportunityLeadDto
                     {
                         PartyId = r.PartyId,
                         PartyName = GetPartyName(r.Party),
@@ -133,7 +133,7 @@ public class ListSalesOpportunities
                     DataSourceId = o.DataSourceId,
                     MarketingCampaignId = o.MarketingCampaignId,
                     TypeEnumId = o.TypeEnumId,
-                    Contacts = contacts
+                    Leads = leads
                 };
             }).ToList();
 

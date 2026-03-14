@@ -8,7 +8,7 @@ namespace API.Controllers.CRM;
 ///
 /// KEY CONCEPT:
 /// A Sales Opportunity (Lead) is NOT a person - it's a business opportunity.
-/// People are linked to opportunities via the Contacts array.
+/// Leads (People) are linked to opportunities via the Leads array.
 /// </summary>
 public class SalesOpportunitiesController : BaseApiController
 {

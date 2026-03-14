@@ -1,12 +1,12 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { store } from "../../configureStore";
-import { Contact, ContactLov, ContactQueryParams } from "../../../../features/CRM/models/contact";
+import { Lead, LeadLov, LeadQueryParams } from "../../../../features/CRM/models/lead";
 
 /**
- * RTK Query API for CRM Contacts (People).
+ * RTK Query API for CRM Leads (People).
  */
-const contactsApi = createApi({
-    reducerPath: "contacts",
+const leadsApi = createApi({
+    reducerPath: "leads",
     baseQuery: fetchBaseQuery({
         baseUrl: import.meta.env.VITE_API_URL,
         prepareHeaders: (headers) => {
@@ -17,12 +17,12 @@ const contactsApi = createApi({
             return headers;
         },
     }),
-    tagTypes: ["Contact"],
+    tagTypes: ["Lead"],
 
     endpoints(builder) {
         return {
-            // Fetch all contacts with optional filtering
-            fetchContacts: builder.query<Contact[], ContactQueryParams | void>({
+            // Fetch all leads with optional filtering
+            fetchLeads: builder.query<Lead[], LeadQueryParams | void>({
                 query: (params) => {
                     const searchParams = new URLSearchParams();
                     if (params?.search) searchParams.append('search', params.search);
@@ -31,7 +31,7 @@ const contactsApi = createApi({
                     if (params?.sortDesc !== undefined) searchParams.append('sortDesc', String(params.sortDesc));
 
                     return {
-                        url: `/contacts?${searchParams.toString()}`,
+                        url: `/leads?${searchParams.toString()}`,
                         method: "GET",
                     };
                 },
@@ -39,50 +39,50 @@ const contactsApi = createApi({
                     result
                         ? [
                             ...result.map(({ partyId }) => ({
-                                type: "Contact" as const,
+                                type: "Lead" as const,
                                 id: partyId,
                             })),
-                            { type: "Contact", id: "LIST" },
+                            { type: "Lead", id: "LIST" },
                         ]
-                        : [{ type: "Contact", id: "LIST" }],
+                        : [{ type: "Lead", id: "LIST" }],
             }),
 
-            // Fetch contacts for LOV/picker (lightweight)
-            fetchContactsLov: builder.query<ContactLov[], { search?: string; take?: number } | void>({
+            // Fetch leads for LOV/picker (lightweight)
+            fetchLeadsLov: builder.query<LeadLov[], { search?: string; take?: number } | void>({
                 query: (params) => {
                     const searchParams = new URLSearchParams();
                     if (params?.search) searchParams.append('search', params.search);
                     if (params?.take) searchParams.append('take', String(params.take));
 
                     return {
-                        url: `/contacts/lov?${searchParams.toString()}`,
+                        url: `/leads/lov?${searchParams.toString()}`,
                         method: "GET",
                     };
                 },
-                providesTags: [{ type: "Contact", id: "LOV" }],
+                providesTags: [{ type: "Lead", id: "LOV" }],
             }),
 
-            // Create a new contact
-            createContact: builder.mutation<Contact, Contact>({
-                query: (contact) => ({
-                    url: `/contacts`,
+            // Create a new lead
+            createLead: builder.mutation<Lead, Lead>({
+                query: (lead) => ({
+                    url: `/leads`,
                     method: "POST",
-                    body: contact,
+                    body: lead,
                 }),
-                invalidatesTags: [{ type: "Contact", id: "LIST" }, { type: "Contact", id: "LOV" }],
+                invalidatesTags: [{ type: "Lead", id: "LIST" }, { type: "Lead", id: "LOV" }],
             }),
 
-            // Update an existing contact
-            updateContact: builder.mutation<Contact, { id: string; contact: Contact }>({
-                query: ({ id, contact }) => ({
-                    url: `/contacts/${id}`,
+            // Update an existing lead
+            updateLead: builder.mutation<Lead, { id: string; lead: Lead }>({
+                query: ({ id, lead }) => ({
+                    url: `/leads/${id}`,
                     method: "PUT",
-                    body: contact,
+                    body: lead,
                 }),
                 invalidatesTags: (result, error, { id }) => [
-                    { type: "Contact", id },
-                    { type: "Contact", id: "LIST" },
-                    { type: "Contact", id: "LOV" },
+                    { type: "Lead", id },
+                    { type: "Lead", id: "LIST" },
+                    { type: "Lead", id: "LOV" },
                 ],
             }),
         };
@@ -90,10 +90,10 @@ const contactsApi = createApi({
 });
 
 export const {
-    useFetchContactsQuery,
-    useFetchContactsLovQuery,
-    useCreateContactMutation,
-    useUpdateContactMutation,
-} = contactsApi;
+    useFetchLeadsQuery,
+    useFetchLeadsLovQuery,
+    useCreateLeadMutation,
+    useUpdateLeadMutation,
+} = leadsApi;
 
-export { contactsApi };
+export { leadsApi };

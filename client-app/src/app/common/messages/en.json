@@ -1031,6 +1031,44 @@
       "salesOpportunities": "Sales Opportunities",
       "leads": "Leads",
       "accounts": "Accounts"
+    },
+    "leads": {
+      "list": {
+        "title": "Leads",
+        "name": "Name",
+        "email": "Email",
+        "phone": "Phone",
+        "address": "Address",
+        "status": "Status",
+        "created": "Created",
+        "loading": "Loading leads...",
+        "createNew": "New Lead",
+        "uploadExcel": "Upload Excel",
+        "submitLeads": "Create Leads"
+      },
+      "form": {
+        "editTitle": "Edit Lead",
+        "createTitle": "Create New Lead",
+        "title": "Title",
+        "titlePlaceholder": "Mr/Mrs/Dr",
+        "firstName": "First Name *",
+        "lastName": "Last Name *",
+        "email": "Email",
+        "phone": "Phone",
+        "mobile": "Mobile",
+        "address1": "Address Line 1",
+        "address2": "Address Line 2",
+        "city": "City",
+        "postalCode": "Postal Code",
+        "country": "Country",
+        "source": "Lead Source",
+        "update": "Update",
+        "create": "Create",
+        "cancel": "Cancel",
+        "processing": "Processing...",
+        "loading": "Loading...",
+        "saveError": "Failed to save lead"
+      }
     }
   },
   "project": {

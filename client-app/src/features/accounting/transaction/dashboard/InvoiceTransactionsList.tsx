@@ -198,7 +198,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                                         width={100}
                                         footerCell={PaymentTotalsFooterCell}
                                     />
-                                    <Column field="origAmount" title={getTranslatedLabel("accounting.transactions.origAmount", "Orig Amount")} width={100} />
+                                    <Column field="amount" title={getTranslatedLabel("accounting.transactions.origAmount", "Orig Amount")} width={100} />
                                     <Column field="debitCreditFlag" title={getTranslatedLabel("accounting.transactions.debitCredit", "Debit/Credit")} width={90} />
                                     <Column field="glAccountId" title={getTranslatedLabel("accounting.transactions.glAccountId", "GL Account")} width={100} />
                                     <Column field="glAccountTypeDescription" title={getTranslatedLabel("accounting.transactions.accountName", "Account Name")} width={300} />

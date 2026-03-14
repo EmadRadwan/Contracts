@@ -10,20 +10,20 @@ import { State, process } from '@progress/kendo-data-query';
 import { Grid, Typography, Chip, Box } from '@mui/material';
 import Button from '@mui/material/Button';
 import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
-import { useFetchContactsQuery } from '../../../app/store/configureStore';
-import { Contact } from '../models/contact';
+import { useFetchLeadsQuery } from '../../../app/store/configureStore';
+import { Lead } from '../models/lead';
 import LoadingComponent from '../../../app/layout/LoadingComponent';
 
-interface ContactsListProps {
+interface LeadsListProps {
     onCreateNew: () => void;
-    onEditContact: (contact: Contact) => void;
+    onEditLead: (lead: Lead) => void;
 }
 
-const LeadsList: React.FC<ContactsListProps> = ({ onCreateNew, onEditContact }) => {
+const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
     const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = 'crm.contacts.list';
+    const localizationKey = 'crm.leads.list';
 
-    const { data: contacts, isLoading } = useFetchContactsQuery();
+    const { data: leads, isLoading } = useFetchLeadsQuery();
 
     const [dataState, setDataState] = React.useState<State>({
         take: 10,
@@ -35,8 +35,8 @@ const LeadsList: React.FC<ContactsListProps> = ({ onCreateNew, onEditContact }) 
         setDataState(e.dataState);
     };
 
-    const processedData = contacts
-        ? process(contacts, dataState)
+    const processedData = leads
+        ? process(leads, dataState)
         : { data: [], total: 0 };
 
     // Custom cell for name (clickable)
@@ -46,7 +46,7 @@ const LeadsList: React.FC<ContactsListProps> = ({ onCreateNew, onEditContact }) 
                 <Button
                     variant="text"
                     color="primary"
-                    onClick={() => onEditContact(props.dataItem)}
+                    onClick={() => onEditLead(props.dataItem)}
                     sx={{ textTransform: 'none', justifyContent: 'flex-start', p: 0 }}
                 >
                     {props.dataItem.fullName || `${props.dataItem.firstName} ${props.dataItem.lastName}`.trim()}
@@ -138,7 +138,7 @@ const LeadsList: React.FC<ContactsListProps> = ({ onCreateNew, onEditContact }) 
     };
 
     if (isLoading) {
-        return <LoadingComponent message={getTranslatedLabel(`${localizationKey}.loading`, 'Loading contacts...')} />;
+        return <LoadingComponent message={getTranslatedLabel(`${localizationKey}.loading`, 'Loading leads...')} />;
     }
 
     return (
@@ -160,7 +160,7 @@ const LeadsList: React.FC<ContactsListProps> = ({ onCreateNew, onEditContact }) 
                     <Grid container justifyContent="space-between" alignItems="center">
                         <Grid item>
                             <Typography variant="h6">
-                                {getTranslatedLabel(`${localizationKey}.title`, 'Contacts')}
+                                {getTranslatedLabel(`${localizationKey}.title`, 'Leads')}
                             </Typography>
                         </Grid>
                     </Grid>

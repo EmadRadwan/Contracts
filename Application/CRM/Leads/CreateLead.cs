@@ -6,32 +6,32 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 
-namespace Application.CRM.Contacts;
+namespace Application.CRM.Leads;
 
 /// <summary>
-/// Creates a Contact (Person) in the CRM.
+/// Creates a Lead (Person) in the CRM.
 /// This is the proper "People" entity - stable identity, not tied to revenue.
 /// </summary>
-public class CreateContact
+public class CreateLead
 {
-    public record Command : IRequest<Result<ContactDto>>
+    public record Command : IRequest<Result<LeadDto>>
     {
-        public ContactDto Contact { get; init; } = null!;
+        public LeadDto Lead { get; init; } = null!;
     }
 
     public class CommandValidator : AbstractValidator<Command>
     {
         public CommandValidator()
         {
-            RuleFor(x => x.Contact.FirstName)
+            RuleFor(x => x.Lead.FirstName)
                 .NotEmpty().WithMessage("First name is required");
 
-            RuleFor(x => x.Contact.LastName)
+            RuleFor(x => x.Lead.LastName)
                 .NotEmpty().WithMessage("Last name is required");
         }
     }
 
-    public class Handler : IRequestHandler<Command, Result<ContactDto>>
+    public class Handler : IRequestHandler<Command, Result<LeadDto>>
     {
         private readonly DataContext _context;
         private readonly IUserAccessor _userAccessor;
@@ -44,20 +44,20 @@ public class CreateContact
             _utilityService = utilityService;
         }
 
-        public async Task<Result<ContactDto>> Handle(Command request, CancellationToken ct)
+        public async Task<Result<LeadDto>> Handle(Command request, CancellationToken ct)
         {
             await using var transaction = await _context.Database.BeginTransactionAsync(ct);
 
             try
             {
                 var stamp = DateTime.UtcNow;
-                var dto = request.Contact;
+                var dto = request.Lead;
 
                 // Load lookup data
                 var partyTypePerson = await _context.PartyTypes.SingleAsync(x => x.PartyTypeId == "PERSON", ct);
                 var statusEnabled = await _context.StatusItems.SingleAsync(x => x.StatusId == "PARTY_ENABLED", ct);
-                var roleTypeContact = await _context.RoleTypes.FirstOrDefaultAsync(x => x.RoleTypeId == "CONTACT", ct)
-                    ?? await _context.RoleTypes.FirstAsync(x => x.RoleTypeId == "LEAD", ct);
+                var roleTypeLead = await _context.RoleTypes.FirstOrDefaultAsync(x => x.RoleTypeId == "LEAD", ct)
+                    ?? await _context.RoleTypes.FirstAsync(x => x.RoleTypeId == "CONTACT", ct);
 
                 var contactMechTypes = await _context.ContactMechTypes
                     .Where(cmt => new[] { "TELECOM_NUMBER", "EMAIL_ADDRESS", "POSTAL_ADDRESS" }.Contains(cmt.ContactMechTypeId))
@@ -97,11 +97,11 @@ public class CreateContact
                 // Create PartyGroup (required by OFBiz schema)
                 _context.PartyGroups.Add(new PartyGroup { Party = party });
 
-                // Assign CONTACT role
+                // Assign LEAD role
                 _context.PartyRoles.Add(new PartyRole
                 {
                     Party = party,
-                    RoleType = roleTypeContact,
+                    RoleType = roleTypeLead,
                     CreatedStamp = stamp,
                     LastUpdatedStamp = stamp
                 });
@@ -264,13 +264,13 @@ public class CreateContact
                 if (!saved)
                 {
                     await transaction.RollbackAsync(ct);
-                    return Result<ContactDto>.Failure("Failed to create contact");
+                    return Result<LeadDto>.Failure("Failed to create lead");
                 }
 
                 await transaction.CommitAsync(ct);
 
-                // Return created contact
-                var result = new ContactDto
+                // Return created lead
+                var result = new LeadDto
                 {
                     PartyId = party.PartyId,
                     FirstName = dto.FirstName,
@@ -291,12 +291,12 @@ public class CreateContact
                     CreatedStamp = stamp
                 };
 
-                return Result<ContactDto>.Success(result);
+                return Result<LeadDto>.Success(result);
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync(ct);
-                return Result<ContactDto>.Failure($"Error creating contact: {ex.Message}");
+                return Result<LeadDto>.Failure($"Error creating lead: {ex.Message}");
             }
         }
     }

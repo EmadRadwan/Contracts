@@ -132,14 +132,14 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditOpportunity })
         );
     };
 
-    // Custom cell for contacts
-    const ContactsCell = (props: GridCellProps) => {
-        const contacts = props.dataItem.contacts || [];
+    // Custom cell for leads
+    const LeadsCell = (props: GridCellProps) => {
+        const leads = props.dataItem.leads || [];
         return (
             <td className={props.className} style={props.style}>
-                {contacts.length > 0 ? (
+                {leads.length > 0 ? (
                     <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                        {contacts.slice(0, 2).map((c: any, idx: number) => (
+                        {leads.slice(0, 2).map((c: any, idx: number) => (
                             <Chip
                                 key={idx}
                                 label={c.partyName}
@@ -148,9 +148,9 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditOpportunity })
                                 sx={{ maxWidth: 100 }}
                             />
                         ))}
-                        {contacts.length > 2 && (
+                        {leads.length > 2 && (
                             <Chip
-                                label={`+${contacts.length - 2}`}
+                                label={`+${leads.length - 2}`}
                                 size="small"
                                 color="default"
                             />
@@ -238,9 +238,9 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditOpportunity })
                     width={120}
                 />
                 <Column
-                    field="contacts"
-                    title={getTranslatedLabel(`${localizationKey}.contacts`, 'Contacts')}
-                    cell={ContactsCell}
+                    field="leads"
+                    title={getTranslatedLabel(`${localizationKey}.leads`, 'Leads')}
+                    cell={LeadsCell}
                     width={200}
                     filterable={false}
                     sortable={false}

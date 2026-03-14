@@ -2,8 +2,8 @@
  * Sales Opportunity (Lead/Deal) - the proper CRM Lead entity.
  *
  * KEY CONCEPT:
- * A Lead is NOT a person. A Lead is a business opportunity (potential sale).
- * People (Contacts) are linked to Leads via the contacts array.
+ * A Lead is a business opportunity (potential sale).
+ * People (Leads) are linked to business opportunities via the leads array.
  */
 export interface SalesOpportunity {
     salesOpportunityId?: string;
@@ -41,15 +41,15 @@ export interface SalesOpportunity {
     // Type
     typeEnumId?: string;
 
-    // Linked contacts
-    contacts: SalesOpportunityContact[];
+    // Linked leads
+    leads: SalesOpportunityLead[];
 }
 
 /**
- * Contact linked to a Sales Opportunity.
+ * Lead linked to a Sales Opportunity.
  * Enables many-to-many relationship between opportunities and people.
  */
-export interface SalesOpportunityContact {
+export interface SalesOpportunityLead {
     partyId?: string;
     partyName?: string;
     roleTypeId?: string;  // e.g., "LEAD_CONTACT", "DECISION_MAKER", "INFLUENCER"

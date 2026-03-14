@@ -5,30 +5,30 @@ import CloseIcon from '@mui/icons-material/Close';
 import { Field, Form, FormElement } from '@progress/kendo-react-form';
 import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
 import {
-    useCreateContactMutation,
-    useUpdateContactMutation,
+    useCreateLeadMutation,
+    useUpdateLeadMutation,
     useFetchDataSourcesQuery,
     useFetchCountriesQuery
 } from '../../../app/store/configureStore';
-import { Contact } from '../models/contact';
+import { Lead } from '../models/lead';
 import LoadingComponent from '../../../app/layout/LoadingComponent';
 import FormInput from '../../../app/common/form/FormInput';
 import { MemoizedFormDropDownList } from '../../../app/common/form/MemoizedFormDropDownList';
 import { requiredValidator } from '../../../app/common/form/Validators';
 
-interface ContactFormProps {
-    lead?: Contact;
+interface LeadFormProps {
+    lead?: Lead;
     editMode: 1 | 2;
     onClose: () => void;
     onSuccess: () => void;
 }
 
-const ContactForm: React.FC<ContactFormProps> = ({ lead, editMode, onClose, onSuccess }) => {
+const LeadForm: React.FC<LeadFormProps> = ({ lead, editMode, onClose, onSuccess }) => {
     const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = 'crm.contacts.form';
+    const localizationKey = 'crm.leads.form';
 
-    const [createContact, { isLoading: creating }] = useCreateContactMutation();
-    const [updateContact, { isLoading: updating }] = useUpdateContactMutation();
+    const [createLead, { isLoading: creating }] = useCreateLeadMutation();
+    const [updateLead, { isLoading: updating }] = useUpdateLeadMutation();
 
     // Fetch dropdown data
     const { data: dataSources, isLoading: loadingDataSources } = useFetchDataSourcesQuery();
@@ -39,7 +39,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ lead, editMode, onClose, onSu
     const isProcessing = creating || updating;
     const isLoading = loadingDataSources || loadingCountries;
 
-    const initialValues: Partial<Contact> = editMode === 'edit' && lead
+    const initialValues: Partial<Lead> = editMode === 'edit' && lead
         ? { ...lead }
         : {
             firstName: '',
@@ -59,18 +59,18 @@ const ContactForm: React.FC<ContactFormProps> = ({ lead, editMode, onClose, onSu
     const handleSubmit = async (values: any) => {
         setSubmitError(null);
 
-        const contactData: Contact = {
+        const leadData: Lead = {
             ...values
         };
 
         try {
             if (editMode === 2 && lead?.partyId) {
-                await updateContact({
+                await updateLead({
                     id: lead.partyId,
-                    contact: contactData
+                    lead: leadData
                 }).unwrap();
             } else {
-                await createContact(contactData).unwrap();
+                await createLead(leadData).unwrap();
             }
             onSuccess();
             onClose();
@@ -263,4 +263,4 @@ const ContactForm: React.FC<ContactFormProps> = ({ lead, editMode, onClose, onSu
     );
 };
 
-export default ContactForm;
+export default LeadForm;

@@ -5684,7 +5684,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 pga.PartyId == employeePartyId &&
                 pga.RoleTypeId == "EMPLOYEE" &&
                 pga.GlAccountTypeId == "ACCOUNTS_RECEIVABLE")
-            .Select(pga => pga.GlAccountId) 
+            .Select(pga => pga.GlAccountId)
             .FirstOrDefaultAsync();
 
         if (string.IsNullOrEmpty(employeeAccruedGl))
@@ -5770,13 +5770,33 @@ public class GeneralLedgerService : IGeneralLedgerService
         if (invoice == null)
             throw new Exception($"Invoice {invoiceId} not found");
 
-        var totalAmount = await _invoiceUtilityService.GetInvoiceTotal(invoiceId, false);
-        var advanceAmount = invoice.InvoiceItems
-            .Where(ii => ii.InvoiceItemTypeId == "PAYROL_DD_ADVANCE")
-            .Sum(ii => (ii.Quantity ?? 1m) * (ii.Amount ?? 0m));
-
         var employeePartyId = invoice.PartyIdFrom;
         var organizationPartyId = invoice.PartyId;
+
+        // Categorize invoice items
+        // Additions: Basic salary, overtime, bonuses, etc. (IsPositiveAmount == true)
+        // Expense-Reducing Deductions: Absence, Penalties (PAYROL_DD_ABSENCE, PAYROL_DD_MISC, etc. and IsPositiveAmount == false)
+        // Loan Deductions: PAYROL_DD_ADVANCE (IsPositiveAmount == false)
+
+        var additions = invoice.InvoiceItems
+            .Where(ii => ii.InvoiceItemType != null && ii.InvoiceItemType.IsPositiveAmount == true)
+            .Sum(ii => (ii.Quantity ?? 1m) * (ii.Amount ?? 0m));
+
+        var expenseReducingDeductions = invoice.InvoiceItems
+            .Where(ii => ii.InvoiceItemType != null && ii.InvoiceItemType.IsPositiveAmount == false &&
+                         (ii.InvoiceItemTypeId == "PAYROL_DD_ABSENCE" || ii.InvoiceItemTypeId == "PAYROL_DD_MISC"))
+            .Sum(ii => (ii.Quantity ?? 1m) * (ii.Amount ?? 0m));
+
+        var loanDeductions = invoice.InvoiceItems
+            .Where(ii => ii.InvoiceItemType != null && ii.InvoiceItemType.IsPositiveAmount == false &&
+                         ii.InvoiceItemTypeId == "PAYROL_DD_ADVANCE")
+            .Sum(ii => (ii.Quantity ?? 1m) * (ii.Amount ?? 0m));
+
+        // Note: Amount in InvoiceItems for deductions is typically stored as positive, but IsPositiveAmount flag is false.
+        // We ensure we treat them as absolute values for calculation.
+
+        var debitAmount = additions - expenseReducingDeductions;
+        var netSalary = debitAmount - loanDeductions;
 
         var employee = await _context.Parties.FirstOrDefaultAsync(p => p.PartyId == employeePartyId);
         if (employee == null)
@@ -5785,18 +5805,18 @@ public class GeneralLedgerService : IGeneralLedgerService
         // Get employee's Loan account (ACCOUNTS_RECEIVABLE)
         var loanGlAccountId = await _context.PartyGlAccounts
             .Where(pga => pga.PartyId == employeePartyId &&
-                         pga.OrganizationPartyId == organizationPartyId &&
-                         pga.RoleTypeId == "EMPLOYEE" &&
-                         pga.GlAccountTypeId == "ACCOUNTS_RECEIVABLE")
+                          pga.OrganizationPartyId == organizationPartyId &&
+                          pga.RoleTypeId == "EMPLOYEE" &&
+                          pga.GlAccountTypeId == "ACCOUNTS_RECEIVABLE")
             .Select(pga => pga.GlAccountId)
             .FirstOrDefaultAsync();
 
         // Get employee's Accrued account (ACCOUNTS_PAYABLE)
         var accruedGlAccountId = await _context.PartyGlAccounts
             .Where(pga => pga.PartyId == employeePartyId &&
-                         pga.OrganizationPartyId == organizationPartyId &&
-                         pga.RoleTypeId == "EMPLOYEE" &&
-                         pga.GlAccountTypeId == "ACCOUNTS_PAYABLE")
+                          pga.OrganizationPartyId == organizationPartyId &&
+                          pga.RoleTypeId == "EMPLOYEE" &&
+                          pga.GlAccountTypeId == "ACCOUNTS_PAYABLE")
             .Select(pga => pga.GlAccountId)
             .FirstOrDefaultAsync();
 
@@ -5819,25 +5839,29 @@ public class GeneralLedgerService : IGeneralLedgerService
         var seq = 0;
 
         // 1. Debit: Salaries and Wages (601000)
-        var debitEntry = new AcctgTransEntry
+        // This is actual cost for the company: Additions - (Absence + Penalties)
+        if (debitAmount > 0)
         {
-            AcctgTransId = acctgTransId,
-            AcctgTransEntrySeqId = (++seq).ToString("D3"),
-            GlAccountId = "601000",
-            DebitCreditFlag = "D",
-            AcctgTransEntryTypeId = "_NA_",
-            Amount = totalAmount,
-            ReconcileStatusId = "AES_NOT_RECONCILED",
-            Description = $"Salaries and Wages - Invoice {invoice.InvoiceId}",
-            OrganizationPartyId = organizationPartyId,
-            PartyId = employeePartyId,
-            CreatedStamp = stamp,
-            LastUpdatedStamp = stamp
-        };
-        await _acctgTransService.CreateAcctgTransEntry(debitEntry);
+            var debitEntry = new AcctgTransEntry
+            {
+                AcctgTransId = acctgTransId,
+                AcctgTransEntrySeqId = (++seq).ToString("D3"),
+                GlAccountId = "601000",
+                DebitCreditFlag = "D",
+                AcctgTransEntryTypeId = "_NA_",
+                Amount = debitAmount,
+                ReconcileStatusId = "AES_NOT_RECONCILED",
+                Description = $"Salaries and Wages - Invoice {invoice.InvoiceId}",
+                OrganizationPartyId = organizationPartyId,
+                PartyId = employeePartyId,
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            };
+            await _acctgTransService.CreateAcctgTransEntry(debitEntry);
+        }
 
         // 2. Credit: Loan/Advance (if exists)
-        if (advanceAmount > 0 && !string.IsNullOrEmpty(loanGlAccountId))
+        if (loanDeductions > 0 && !string.IsNullOrEmpty(loanGlAccountId))
         {
             var advanceEntry = new AcctgTransEntry
             {
@@ -5846,7 +5870,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 GlAccountId = loanGlAccountId,
                 DebitCreditFlag = "C",
                 AcctgTransEntryTypeId = "_NA_",
-                Amount = advanceAmount,
+                Amount = loanDeductions,
                 ReconcileStatusId = "AES_NOT_RECONCILED",
                 Description = $"Deduction for Advance - Invoice {invoice.InvoiceId}",
                 OrganizationPartyId = organizationPartyId,
@@ -5858,7 +5882,6 @@ public class GeneralLedgerService : IGeneralLedgerService
         }
 
         // 3. Credit: Net Salary (Accrued Salaries or Advanced Payment Account)
-        var netSalary = totalAmount - advanceAmount;
         if (netSalary > 0 && !string.IsNullOrEmpty(netSalaryGlAccountId))
         {
             var accruedEntry = new AcctgTransEntry

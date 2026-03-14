@@ -13,25 +13,25 @@ import {
     useAppSelector
 } from '../../../app/store/configureStore';
 import { currenciesSelectors, fetchCurrenciesAsync } from '../../catalog/slice/currencySlice';
-import { SalesOpportunity, SalesOpportunityContact } from '../models/salesOpportunity';
+import { SalesOpportunity, SalesOpportunityLead } from '../models/salesOpportunity';
 import LoadingComponent from '../../../app/layout/LoadingComponent';
 import FormInput from '../../../app/common/form/FormInput';
 import FormNumericTextBox from '../../../app/common/form/FormNumericTextBox';
 import FormDatePicker from '../../../app/common/form/FormDatePicker';
 import { MemoizedFormDropDownList } from '../../../app/common/form/MemoizedFormDropDownList';
 import { requiredValidator } from '../../../app/common/form/Validators';
-import ContactPicker from '../components/ContactPicker';
+import LeadPicker from '../components/LeadPicker';
 
-interface LeadFormProps {
+interface OpportunityFormProps {
     opportunity?: SalesOpportunity;
     editMode: 'create' | 'edit';
     onClose: () => void;
     onSuccess: () => void;
 }
 
-const LeadForm: React.FC<LeadFormProps> = ({ opportunity, editMode, onClose, onSuccess }) => {
+const OpportunityForm: React.FC<OpportunityFormProps> = ({ opportunity, editMode, onClose, onSuccess }) => {
     const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = 'crm.leads.form';
+    const localizationKey = 'crm.opportunities.form';
     const dispatch = useAppDispatch();
 
     const { data: stages, isLoading: loadingStages } = useFetchOpportunityStagesQuery();
@@ -50,14 +50,14 @@ const LeadForm: React.FC<LeadFormProps> = ({ opportunity, editMode, onClose, onS
     }, [currenciesLoaded, dispatch]);
 
     const [submitError, setSubmitError] = useState<string | null>(null);
-    const [selectedContacts, setSelectedContacts] = useState<SalesOpportunityContact[]>(
-        opportunity?.contacts || []
+    const [selectedLeads, setSelectedLeads] = useState<SalesOpportunityLead[]>(
+        opportunity?.leads || []
     );
-    const [contactsModified, setContactsModified] = useState(false);
+    const [leadsModified, setLeadsModified] = useState(false);
 
-    const handleContactsChange = (contacts: SalesOpportunityContact[]) => {
-        setSelectedContacts(contacts);
-        setContactsModified(true);
+    const handleLeadsChange = (leads: SalesOpportunityLead[]) => {
+        setSelectedLeads(leads);
+        setLeadsModified(true);
     };
 
     const isProcessing = creating || updating;
@@ -86,7 +86,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ opportunity, editMode, onClose, onS
             estimatedProbability: 0,
             currencyUomId: 'USD',
             opportunityStageId: stages?.[0]?.opportunityStageId || '',
-            contacts: []
+            leads: []
         };
 
     const handleSubmit = async (values: any) => {
@@ -94,7 +94,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ opportunity, editMode, onClose, onS
 
         const opportunityData: SalesOpportunity = {
             ...values,
-            contacts: selectedContacts
+            leads: selectedLeads
         };
 
         try {
@@ -248,21 +248,21 @@ const LeadForm: React.FC<LeadFormProps> = ({ opportunity, editMode, onClose, onS
                                 </Grid>
 
                                 {/* Divider */}
-                                <Grid item xs={12}>
+                               <Grid item xs={12}>
                                     <Divider sx={{ my: 1 }} />
                                     <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                                        {getTranslatedLabel(`${localizationKey}.linkedContacts`, 'Linked Contacts')}
+                                        {getTranslatedLabel(`${localizationKey}.linkedLeads`, 'Linked Leads')}
                                     </Typography>
                                 </Grid>
 
-                                {/* Row 6: Contact Picker */}
+                                {/* Row 6: Lead Picker */}
                                 <Grid item xs={12}>
-                                    <ContactPicker
-                                        label={getTranslatedLabel(`${localizationKey}.contacts`, 'Contacts')}
-                                        value={selectedContacts}
-                                        onChange={handleContactsChange}
+                                    <LeadPicker
+                                        label={getTranslatedLabel(`${localizationKey}.leads`, 'Leads')}
+                                        value={selectedLeads}
+                                        onChange={handleLeadsChange}
                                         multiple={true}
-                                        placeholder={getTranslatedLabel(`${localizationKey}.searchContacts`, 'Search and add contacts...')}
+                                        placeholder={getTranslatedLabel(`${localizationKey}.searchLeads`, 'Search and add leads...')}
                                     />
                                 </Grid>
                             </Grid>
@@ -281,12 +281,12 @@ const LeadForm: React.FC<LeadFormProps> = ({ opportunity, editMode, onClose, onS
                                     color="primary"
                                     type={formRenderProps.allowSubmit ? "submit" : "button"}
                                     onClick={() => {
-                                        // If form hasn't changed but contacts have, submit with initial values
-                                        if (!formRenderProps.allowSubmit && contactsModified) {
+                                        // If form hasn't changed but leads have, submit with initial values
+                                        if (!formRenderProps.allowSubmit && leadsModified) {
                                             handleSubmit(initialValues);
                                         }
                                     }}
-                                    disabled={(!formRenderProps.allowSubmit && !contactsModified) || isProcessing}
+                                    disabled={(!formRenderProps.allowSubmit && !leadsModified) || isProcessing}
                                 >
                                     {editMode === 'edit'
                                         ? getTranslatedLabel(`${localizationKey}.update`, 'Update')
@@ -313,4 +313,4 @@ const LeadForm: React.FC<LeadFormProps> = ({ opportunity, editMode, onClose, onS
     );
 };
 
-export default LeadForm;
+export default OpportunityForm;

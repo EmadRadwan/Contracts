@@ -143,32 +143,32 @@ public class UpdateSalesOpportunity
                     }
                 }
 
-                // Update contacts
-                if (dto.Contacts.Any())
+                // Update leads
+                if (dto.Leads.Any())
                 {
                     // Remove existing non-owner roles
-                    var existingContactRoles = opportunity.SalesOpportunityRoles
+                    var existingLeadRoles = opportunity.SalesOpportunityRoles
                         .Where(r => r.RoleTypeId != "OWNER")
                         .ToList();
 
-                    foreach (var role in existingContactRoles)
+                    foreach (var role in existingLeadRoles)
                     {
                         _context.SalesOpportunityRoles.Remove(role);
                     }
 
-                    // Add new contacts
-                    foreach (var contact in dto.Contacts)
+                    // Add new leads
+                    foreach (var lead in dto.Leads)
                     {
-                        if (string.IsNullOrEmpty(contact.PartyId))
+                        if (string.IsNullOrEmpty(lead.PartyId))
                             continue;
 
-                        var roleTypeId = contact.RoleTypeId ?? "LEAD_CONTACT";
-                        await EnsurePartyRoleExists(contact.PartyId, roleTypeId, stamp, ct);
+                        var roleTypeId = lead.RoleTypeId ?? "LEAD_CONTACT";
+                        await EnsurePartyRoleExists(lead.PartyId, roleTypeId, stamp, ct);
 
                         _context.SalesOpportunityRoles.Add(new SalesOpportunityRole
                         {
                             SalesOpportunityId = opportunity.SalesOpportunityId,
-                            PartyId = contact.PartyId,
+                            PartyId = lead.PartyId,
                             RoleTypeId = roleTypeId,
                             CreatedStamp = stamp,
                             LastUpdatedStamp = stamp
@@ -231,7 +231,7 @@ public class UpdateSalesOpportunity
                     CreatedStamp = opportunity.CreatedStamp,
                     NextStep = opportunity.NextStep,
                     NextStepDate = opportunity.NextStepDate,
-                    Contacts = dto.Contacts
+                    Leads = dto.Leads
                 };
 
                 return Result<SalesOpportunityDto>.Success(result);
