@@ -11,9 +11,9 @@ interface CRMMenuProps {
 }
 
 const links = [
-    { title: "Leads", key: "leads", path: "/leads", icon: <ManageAccountsIcon sx={{ color: "#fabd52" }} /> },
-    { title: "Contacts", key: "contacts", path: "/contacts", icon: <PersonIcon sx={{ color: "#FFA500" }} /> },
-    { title: "Accounts", key: "accounts", path: "/accounts", icon: <LinkIcon sx={{ color: "#FF4081" }} /> },
+    { title: "Sales Opportunities", key: "salesOpportunities", path: "/sales-opportunities", icon: <ManageAccountsIcon sx={{ color: "#fabd52" }} /> },
+    { title: "Leads", key: "leads", path: "/leads", icon: <PersonIcon sx={{ color: "#FFA500" }} /> },
+    // { title: "Accounts", key: "accounts", path: "/accounts", icon: <LinkIcon sx={{ color: "#FF4081" }} /> },
 ];
 
 const normalizePath = (path: string) => path.replace(/^\//, '').toLowerCase();

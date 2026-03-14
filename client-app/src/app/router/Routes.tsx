@@ -151,8 +151,8 @@ import ReserveRequestsList from "../../features/orders/form/request/dashboard/Re
 import RequireRole from "./RequireRole";
 import ChangePasswordPage from "../../features/account/ChangePasswordPage";
 import CRMDashboard from "../../features/CRM/dashboard/CRMDashboard";
-import LeadsDashboard from "../../features/CRM/leads/LeadsDashboard";
-import ContactsDashboard from "../../features/CRM/contacts/ContactsDashboard";
+import SalesOpportunityDashboard from "../../features/CRM/sales-opportunities/SalesOpportunityDashboard";
+import LeadsDashboard from "../../features/CRM/leads/LeadsDashboard"
 import MultiAcctgTransEntryForm from "../../features/accounting/transaction/form/MultiAcctgTransEntryForm";
 import UsersList from "../../features/account/users/UsersList";
 import RolesList from "../../features/account/users/RolesList";
@@ -229,8 +229,8 @@ export const routes: RouteObject[] = [
                     {
                         element: <RequireRole allowedRoles="CRM_View"/>,
                         children: [
+                            {path: "sales-opportunities", element: <SalesOpportunityDashboard/>},
                             {path: "leads", element: <LeadsDashboard/>},
-                            {path: "contacts", element: <ContactsDashboard/>},
                             {path: "crm", element: <CRMDashboard/>},
                         ],
                     },

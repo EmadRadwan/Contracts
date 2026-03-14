@@ -1028,8 +1028,8 @@
   },
   "crm": {
     "menu": {
+      "salesOpportunities": "Sales Opportunities",
       "leads": "Leads",
-      "contacts": "Contacts",
       "accounts": "Accounts"
     }
   },

@@ -128,9 +128,9 @@ const LeadForm: React.FC<LeadFormProps> = ({ opportunity, editMode, onClose, onS
                         : getTranslatedLabel(`${localizationKey}.createTitle`, 'Create New Opportunity')
                     }
                 </Typography>
-                <IconButton onClick={onClose} size="small">
+                {/* <IconButton onClick={onClose} size="small">
                     <CloseIcon />
-                </IconButton>
+                </IconButton> */}
             </Box>
 
             <Form
@@ -175,7 +175,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ opportunity, editMode, onClose, onS
                                         min={0}
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={4}>
+                                {/* <Grid item xs={12} md={4}>
                                     <Field
                                         id="currencyUomId"
                                         name="currencyUomId"
@@ -185,7 +185,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ opportunity, editMode, onClose, onS
                                         textField="description"
                                         data={currencies}
                                     />
-                                </Grid>
+                                </Grid> */}
                                 <Grid item xs={12} md={4}>
                                     <Field
                                         id="estimatedProbability"
@@ -199,7 +199,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ opportunity, editMode, onClose, onS
                                 </Grid>
 
                                 {/* Row 3: Close Date and Description */}
-                                <Grid item xs={12} md={6}>
+                                <Grid item xs={4} >
                                     <Field
                                         id="estimatedCloseDate"
                                         name="estimatedCloseDate"
@@ -207,7 +207,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ opportunity, editMode, onClose, onS
                                         component={FormDatePicker}
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                {/* <Grid item xs={12} md={6}>
                                     <Field
                                         id="dataSourceId"
                                         name="dataSourceId"
@@ -217,7 +217,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ opportunity, editMode, onClose, onS
                                         textField="description"
                                         data={dataSources || []}
                                     />
-                                </Grid>
+                                </Grid> */}
 
                                 {/* Row 4: Description */}
                                 <Grid item xs={12}>

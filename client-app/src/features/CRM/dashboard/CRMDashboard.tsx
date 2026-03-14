@@ -58,7 +58,7 @@ const CRMDashboard = () => {
     }
     return (
         <>
-            <CRMMenu selectedMenuItem='leads' />
+            <CRMMenu selectedMenuItem='sales-opportunities' />
             <Paper elevation={5} className={`div-container-withBorderCurved`} style={{ marginTop: 15 }}>
                 <Grid container columnSpacing={1} alignItems="center">
                     <Grid item xs={8}>

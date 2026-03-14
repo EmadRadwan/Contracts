@@ -2025,8 +2025,8 @@
   },
   "crm": {
     "menu": {
+      "salesOpportunities": "فرص البيع",
       "leads": "العملاء المحتملون",
-      "contacts": "جهات الاتصال",
       "accounts": "الحسابات"
     },
     "contactPicker": {
@@ -2091,8 +2091,10 @@
       }
     },
     "contacts": {
-      "title": "الأشخاص",
+      "title": "العملاء",
       "createNew": "جهة اتصال جديدة",
+      "submitLeads": "انشاء عملاء جدد",
+      "uploadExcel": "تحميل ملف Excel",
       "list": {
         "loading": "جاري تحميل جهات الاتصال...",
         "title": "جهات الاتصال",

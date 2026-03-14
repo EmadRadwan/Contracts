@@ -49,7 +49,7 @@ const midLinks = [
         key: "sales",
         icon: <ReceiptIcon sx={{ color: "#4CAF50" }} />, // Green for sales
     },
-    { title: "CRM", path: "/leads", key: "crm", icon: <ManageAccountsIcon sx={{ color: "#fabd52" }} /> },
+    { title: "CRM", path: "/sales-opportunities", key: "crm", icon: <ManageAccountsIcon sx={{ color: "#fabd52" }} /> },
 ,
     { title: "hr", path: "/humanResources", key: "hr", icon: <SupervisorAccountIcon sx={{ color: "#fabd52" }} /> },
 

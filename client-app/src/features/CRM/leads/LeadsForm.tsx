@@ -17,13 +17,13 @@ import { MemoizedFormDropDownList } from '../../../app/common/form/MemoizedFormD
 import { requiredValidator } from '../../../app/common/form/Validators';
 
 interface ContactFormProps {
-    contact?: Contact;
+    lead?: Contact;
     editMode: 1 | 2;
     onClose: () => void;
     onSuccess: () => void;
 }
 
-const ContactForm: React.FC<ContactFormProps> = ({ contact, editMode, onClose, onSuccess }) => {
+const ContactForm: React.FC<ContactFormProps> = ({ lead, editMode, onClose, onSuccess }) => {
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = 'crm.contacts.form';
 
@@ -39,8 +39,8 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, editMode, onClose, o
     const isProcessing = creating || updating;
     const isLoading = loadingDataSources || loadingCountries;
 
-    const initialValues: Partial<Contact> = editMode === 'edit' && contact
-        ? { ...contact }
+    const initialValues: Partial<Contact> = editMode === 'edit' && lead
+        ? { ...lead }
         : {
             firstName: '',
             lastName: '',
@@ -64,9 +64,9 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, editMode, onClose, o
         };
 
         try {
-            if (editMode === 2 && contact?.partyId) {
+            if (editMode === 2 && lead?.partyId) {
                 await updateContact({
-                    id: contact.partyId,
+                    id: lead.partyId,
                     contact: contactData
                 }).unwrap();
             } else {
@@ -75,8 +75,8 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, editMode, onClose, o
             onSuccess();
             onClose();
         } catch (error: any) {
-            console.error('Failed to save contact:', error);
-            setSubmitError(error?.data?.title || getTranslatedLabel(`${localizationKey}.saveError`, 'Failed to save contact'));
+            console.error('Failed to save lead:', error);
+            setSubmitError(error?.data?.title || getTranslatedLabel(`${localizationKey}.saveError`, 'Failed to save lead'));
         }
     };
 
@@ -90,8 +90,8 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, editMode, onClose, o
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Typography variant="h6">
                     {editMode === 2
-                        ? getTranslatedLabel(`${localizationKey}.editTitle`, 'Edit Contact')
-                        : getTranslatedLabel(`${localizationKey}.createTitle`, 'Create New Contact')
+                        ? getTranslatedLabel(`${localizationKey}.editTitle`, 'Edit Lead')
+                        : getTranslatedLabel(`${localizationKey}.createTitle`, 'Create New Lead')
                     }
                 </Typography>
                 <IconButton onClick={onClose} size="small">
