@@ -1,35 +1,35 @@
-import {Party} from "../models/party/party";
-import {toast} from "react-toastify";
-import axios, {AxiosError, AxiosResponse} from "axios";
-import {User, UserFormValues} from "../models/party/user";
-import {store} from "../store/configureStore";
-import {ProductType} from "../models/product/productType";
-import {Product, ProductLov, ServiceLov} from "../models/product/product";
-import {ProductPriceType} from "../models/product/productPriceType";
-import {ProductPrice} from "../models/product/productPrice";
-import {ProductCategory} from "../models/product/productCategory";
-import {Facility} from "../models/facility/facility";
-import {ProductCategoryMember} from "../models/product/productCategoryMember";
-import {ProductFacility} from "../models/product/productFacility";
-import {PartyContact} from "../models/party/partyContact";
-import {ContactMechPurposeType} from "../models/party/contactMechPurposeType";
-import {SupplierProduct} from "../models/product/supplierProduct";
-import {CustomerRequest} from "../models/order/customerRequest";
-import {Quote} from "../models/order/quote";
-import {QuoteAdjustmentType} from "../models/order/quoteAdjustmentType";
-import {Order} from "../models/order/order";
-import {OrderAdjustmentType} from "../models/order/orderAdjustmentType";
-import {FacilityType} from "../models/facility/facilityType";
-import {FacilityInventory} from "../models/facility/facilityInventory";
-import {PaymentMethodType} from "../models/accounting/paymentMethodType";
-import {PaginatedResponse} from "../models/pagination";
-import {InvoiceType} from "../models/accounting/invoiceType";
-import {InvoiceItemType} from "../models/accounting/invoiceItemType";
-import {PaymentType} from "../models/accounting/paymentType";
-import {Payment} from "../models/accounting/payment";
-import {VehicleContent} from "../models/content/vehicleContent";
-import {VehicleLov} from "../models/service/vehicle";
-import {Invoice} from "../models/accounting/invoice";
+import { Party } from "../models/party/party";
+import { toast } from "react-toastify";
+import axios, { AxiosError, AxiosResponse } from "axios";
+import { User, UserFormValues } from "../models/party/user";
+import { store } from "../store/configureStore";
+import { ProductType } from "../models/product/productType";
+import { Product, ProductLov, ServiceLov } from "../models/product/product";
+import { ProductPriceType } from "../models/product/productPriceType";
+import { ProductPrice } from "../models/product/productPrice";
+import { ProductCategory } from "../models/product/productCategory";
+import { Facility } from "../models/facility/facility";
+import { ProductCategoryMember } from "../models/product/productCategoryMember";
+import { ProductFacility } from "../models/product/productFacility";
+import { PartyContact } from "../models/party/partyContact";
+import { ContactMechPurposeType } from "../models/party/contactMechPurposeType";
+import { SupplierProduct } from "../models/product/supplierProduct";
+import { CustomerRequest } from "../models/order/customerRequest";
+import { Quote } from "../models/order/quote";
+import { QuoteAdjustmentType } from "../models/order/quoteAdjustmentType";
+import { Order } from "../models/order/order";
+import { OrderAdjustmentType } from "../models/order/orderAdjustmentType";
+import { FacilityType } from "../models/facility/facilityType";
+import { FacilityInventory } from "../models/facility/facilityInventory";
+import { PaymentMethodType } from "../models/accounting/paymentMethodType";
+import { PaginatedResponse } from "../models/pagination";
+import { InvoiceType } from "../models/accounting/invoiceType";
+import { InvoiceItemType } from "../models/accounting/invoiceItemType";
+import { PaymentType } from "../models/accounting/paymentType";
+import { Payment } from "../models/accounting/payment";
+import { VehicleContent } from "../models/content/vehicleContent";
+import { VehicleLov } from "../models/service/vehicle";
+import { Invoice } from "../models/accounting/invoice";
 
 axios.defaults.baseURL = import.meta.env.VITE_API_URL;
 axios.defaults.withCredentials = true;
@@ -57,7 +57,7 @@ axios.interceptors.response.use(
         return response;
     },
     (error: AxiosError) => {
-        const {data, status} = error.response!;
+        const { data, status } = error.response!;
         switch (status) {
             case 400:
                 if (data.errors) {
@@ -103,7 +103,7 @@ const Uoms = {
     listQuantity: () => requests.get("/uoms/quantity"),
     getCertificateUOMsLov: (params: URLSearchParams) =>
         axios
-            .get<UomLov>(`/uoms/getUOMsLov`, {params})
+            .get<UomLov>(`/uoms/getUOMsLov`, { params })
             .then(responseBody),
 };
 
@@ -176,38 +176,42 @@ const ProductCategories = {
 
 const Products = {
     list: (params: URLSearchParams) =>
-        axios.get<Product[]>("/products", {params}).then(responseBody),
+        axios.get<Product[]>("/products", { params }).then(responseBody),
     getSalesProductsLov: (params: URLSearchParams) =>
         axios
-            .get<ProductLov>(`/products/getSalesProductsLov`, {params})
+            .get<ProductLov>(`/products/getSalesProductsLov`, { params })
             .then(responseBody),
     getFinishedProductsLov: (params: URLSearchParams) =>
         axios
-            .get<ProductLov>(`/products/getFinishedProductsLov`, {params})
+            .get<ProductLov>(`/products/getFinishedProductsLov`, { params })
             .then(responseBody),
     getPhysicalInventoryProductsLov: (params: URLSearchParams) =>
         axios
-            .get<ProductLov>(`/products/getPhysicalInventoryProductsLov`, {params})
+            .get<ProductLov>(`/products/getPhysicalInventoryProductsLov`, { params })
             .then(responseBody),
     getJobQuoteProductsLov: (params: URLSearchParams) =>
         axios
-            .get<ProductLov>(`/products/getJobQuoteProductsLov`, {params})
+            .get<ProductLov>(`/products/getJobQuoteProductsLov`, { params })
             .then(responseBody),
     getPurchaseProductsLov: (params: URLSearchParams) =>
         axios
-            .get<ProductLov>(`/products/getPurchaseProductsLov`, {params})
+            .get<ProductLov>(`/products/getPurchaseProductsLov`, { params })
             .then(responseBody),
     getSimplePurchaseProductsLov: (params: URLSearchParams) =>
         axios
-            .get<ProductLov>(`/products/getSimplePurchaseProductsLov`, {params})
+            .get<ProductLov>(`/products/getSimplePurchaseProductsLov`, { params })
             .then(responseBody),
     getSimpleProductsLov: (params: URLSearchParams) =>
         axios
-            .get<ProductLov>(`/products/getSimpleProductsLov`, {params})
+            .get<ProductLov>(`/products/getSimpleProductsLov`, { params })
             .then(responseBody),
     getSimpleApartmentsLov: (params: URLSearchParams): Promise<any> =>
         axios
             .get<any>("/products/getSimpleApartmentsLov", { params })
+            .then((res: AxiosResponse<any>) => res.data),
+    getSimpleApartmentsByProjectLov: (projectId: string, params: URLSearchParams): Promise<any> =>
+        axios
+            .get<any>(`/products/${projectId}/getSimpleApartmentsByProjectLov`, { params })
             .then((res: AxiosResponse<any>) => res.data),
     getRawMaterialProductsLov: (params: URLSearchParams) =>
         axios.get(`/products/getRawMaterialProductsLov`, { params }).then(responseBody),
@@ -215,27 +219,27 @@ const Products = {
         axios.get(`/products/getServiceProductsLov`, { params }).then(responseBody),
     getInventoryItemProductsLov: (params: URLSearchParams) =>
         axios
-            .get<ProductLov>(`/products/getInventoryItemProductsLov`, {params})
+            .get<ProductLov>(`/products/getInventoryItemProductsLov`, { params })
             .then(responseBody),
     getFacilityProductsLov: (params: URLSearchParams) =>
         axios
-            .get<ProductLov>(`/products/getFacilityProductsLov`, {params})
+            .get<ProductLov>(`/products/getFacilityProductsLov`, { params })
             .then(responseBody),
     getAssocsProductsLov: (params: URLSearchParams) =>
         axios
-            .get<ProductLov>(`/products/getAssocsProductsLov`, {params})
+            .get<ProductLov>(`/products/getAssocsProductsLov`, { params })
             .then(responseBody),
     getProductsLov: (params: URLSearchParams) =>
         axios
-            .get<ProductLov>(`/products/getProductsLov`, {params})
+            .get<ProductLov>(`/products/getProductsLov`, { params })
             .then(responseBody),
     getFinishedProductsLov: (params: URLSearchParams) =>
         axios
-            .get<ProductLov>(`/products/getFinishedProductsLov2`, {params})
+            .get<ProductLov>(`/products/getFinishedProductsLov2`, { params })
             .then(responseBody),
     getServiceLov: (params: URLSearchParams) =>
         axios
-            .get<ServiceLov[]>(`/products/getServicesLov`, {params})
+            .get<ServiceLov[]>(`/products/getServicesLov`, { params })
             .then(responseBody),
     getProduct: (productId: string) =>
         requests.get<Product>(`/products/${productId}`),
@@ -262,15 +266,15 @@ const Products = {
 const WorkEfforts = {
     getRoutingTasksLov: (params: URLSearchParams) =>
         axios
-            .get<ProductLov>(`/workEffort/getRoutingTasksLov`, {params})
+            .get<ProductLov>(`/workEffort/getRoutingTasksLov`, { params })
             .then(responseBody),
-    
+
 };
 
 const Services = {
     getVehiclesLov: (params: URLSearchParams) =>
         axios
-            .get<VehicleLov>(`/vehicles/getVehiclesLov`, {params})
+            .get<VehicleLov>(`/vehicles/getVehiclesLov`, { params })
             .then(responseBody),
 };
 
@@ -279,14 +283,14 @@ const Facilities = {
         axios
             .get<FacilityInventory[]>(
                 "/facilityInventories/listFacilityInventoriesByProduct",
-                {params},
+                { params },
             )
             .then(responseBody),
     listFacilityInventoriesByInventoryItem: (params: URLSearchParams) =>
         axios
             .get<FacilityInventory[]>(
                 "/facilityInventories/listFacilityInventoriesByInventoryItem",
-                {params},
+                { params },
             )
             .then(responseBody),
     list: () => requests.get<Facility[]>("/facilities"),
@@ -305,38 +309,38 @@ const Facilities = {
 
 const Parties = {
     list: (params: URLSearchParams) =>
-        axios.get<Party[]>("/parties", {params}).then(responseBody),
+        axios.get<Party[]>("/parties", { params }).then(responseBody),
     getCustomersLov: (params: URLSearchParams) =>
         axios
-            .get<Party[]>(`/parties/getCustomersLov`, {params})
+            .get<Party[]>(`/parties/getCustomersLov`, { params })
             .then(responseBody),
     getSuppliersLov: (params: URLSearchParams) =>
         axios
-            .get<Party[]>(`/parties/getSuppliersLov`, {params})
+            .get<Party[]>(`/parties/getSuppliersLov`, { params })
             .then(responseBody),
     getContractorsLov: (params: URLSearchParams) =>
         axios
-            .get<Party[]>(`/parties/getContractorsLov`, {params})
+            .get<Party[]>(`/parties/getContractorsLov`, { params })
             .then(responseBody),
     getContractorsAndSuppliersLov: (params: URLSearchParams) =>
         axios
-            .get<Party[]>(`/parties/getContractorsAndSuppliersLov`, {params})
+            .get<Party[]>(`/parties/getContractorsAndSuppliersLov`, { params })
             .then(responseBody),
     getPartiesLov: (params: URLSearchParams) =>
         axios
-            .get<Party[]>(`/parties/getPartiesLov`, {params})
+            .get<Party[]>(`/parties/getPartiesLov`, { params })
             .then(responseBody),
     getAllPartiesLov: (params: URLSearchParams) =>
         axios
-            .get<Party[]>(`/parties/getAllPartiesLov`, {params})
+            .get<Party[]>(`/parties/getAllPartiesLov`, { params })
             .then(responseBody),
     getPartiesWithEmployeesLov: (params: URLSearchParams) =>
         axios
-            .get<Party[]>(`/parties/getPartiesWithEmployeesLov`, {params})
+            .get<Party[]>(`/parties/getPartiesWithEmployeesLov`, { params })
             .then(responseBody),
     getPartiesEmployeesLov: (params: URLSearchParams) =>
         axios
-            .get<Party[]>(`/parties/getPartiesEmployeesLov`, {params})
+            .get<Party[]>(`/parties/getPartiesEmployeesLov`, { params })
             .then(responseBody),
     createCustomer: (customer: any) =>
         requests.post("/parties/createCustomer", customer),
@@ -372,7 +376,7 @@ const Parties = {
 const BillingAccounts = {
     getBillingAccountsLov: (params: URLSearchParams) =>
         axios
-            .get<Party[]>(`/billingAccounts/getBillingAccountsLov`, {params})
+            .get<Party[]>(`/billingAccounts/getBillingAccountsLov`, { params })
             .then(responseBody),
 };
 
@@ -388,7 +392,7 @@ const GlAccountClasses = {
 
 const Orders = {
     listQuotes: (params: URLSearchParams) =>
-        axios.get<Quote[]>("/quotes", {params}).then(responseBody),
+        axios.get<Quote[]>("/quotes", { params }).then(responseBody),
     getQuote: (quoteId: string) =>
         requests.get<Quote>(`/quotes/${quoteId}/getQuote`),
     createQuote: (quote: any) => requests.post("/quotes/createQuote", quote),
@@ -400,7 +404,7 @@ const Orders = {
         ),
 
     listOrders: (params: URLSearchParams) =>
-        axios.get<Order[]>("/orders", {params}).then(responseBody),
+        axios.get<Order[]>("/orders", { params }).then(responseBody),
     getSalesOrder: (orderId: string) =>
         requests.get<Order>(`/orders/${orderId}/getSalesOrder`),
     getPurchaseOrder: (orderId: string) =>
@@ -424,7 +428,7 @@ const Orders = {
 
     listCustomerRequests: (params: URLSearchParams) =>
         axios
-            .get<CustomerRequest[]>("/customerRequests", {params})
+            .get<CustomerRequest[]>("/customerRequests", { params })
             .then(responseBody),
     getCustomerRequest: (custRequestId: string) =>
         requests.get<CustomerRequest>(
@@ -438,7 +442,7 @@ const Orders = {
 
 const Accounting = {
     listInvoices: (params: URLSearchParams) =>
-        axios.get<Invoice[]>("/invoices", {params}).then(responseBody),
+        axios.get<Invoice[]>("/invoices", { params }).then(responseBody),
     getInvoice: (invoiceId: string) =>
         requests.get<Invoice>(`/invoices/${invoiceId}/getInvoice`),
     createSalesInvoice: (invoice: any) =>
@@ -451,20 +455,20 @@ const Accounting = {
         requests.put("/invoices/completeSalesInvoice", invoice),
 
     listPayments: (params: URLSearchParams) =>
-        axios.get<Payment[]>("/payments", {params}).then(responseBody),
+        axios.get<Payment[]>("/payments", { params }).then(responseBody),
     listIncomingPayments: (params: URLSearchParams) =>
-        axios.get<Payment[]>("/payments/getPaymentsIncoming", {params}).then(responseBody),
+        axios.get<Payment[]>("/payments/getPaymentsIncoming", { params }).then(responseBody),
     listOutgoingPayments: (params: URLSearchParams) =>
-        axios.get<Payment[]>("/payments/getPaymentsOutgoing", {params}).then(responseBody),
+        axios.get<Payment[]>("/payments/getPaymentsOutgoing", { params }).then(responseBody),
     getPayment: (paymentId: string) =>
         requests.get<Payment>(`/payments/${paymentId}/getPayment`),
     createPayment: (payment: any) =>
         requests.post("/payments/createPayment", payment),
     updatePayment: (payment: any) =>
         requests.put("/payments/updatePayment", payment),
-    getPaymentApplications: (params: URLSearchParams) => 
-        axios.get<Payment[]>("/payments/getPaymentApplicationsLov", {params}).then(responseBody),
-    
+    getPaymentApplications: (params: URLSearchParams) =>
+        axios.get<Payment[]>("/payments/getPaymentApplicationsLov", { params }).then(responseBody),
+
 };
 
 const Geos = {
@@ -485,7 +489,7 @@ const VehicleContents = {
         const formData = new FormData();
         formData.append("File", file);
         return axios.post<VehicleContent>(`contents/${vehicleId}`, formData, {
-            headers: {"Content-type": "multipart/form-data"},
+            headers: { "Content-type": "multipart/form-data" },
         });
     },
     deleteFile: (id: string) => requests.del(`/content/${id}`),

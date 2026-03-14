@@ -2091,7 +2091,7 @@
         "saveError": "فشل في حفظ الفرصة"
       }
     },
-    "contacts": {
+    "leads": {
       "title": "العملاء",
       "createNew": "جهة اتصال جديدة",
       "submitLeads": "انشاء عملاء جدد",

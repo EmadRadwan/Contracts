@@ -75,6 +75,13 @@ public class ProductsController : BaseApiController
         // REFACTOR: Route to the new MediatR handler
         return HandleResult(await Mediator.Send(new GetSimpleApartmentsLov.Query { Params = param }));
     }
+
+    [HttpGet("{projectId}/getSimpleApartmentsByProjectLov", Name = "GetSimpleApartmentsByProjectLov")]
+    public async Task<IActionResult> GetSimpleApartmentsByProjectLov(string projectId, [FromQuery] ApartmentLovParams param)
+    {
+        // REFACTOR: Route to the new MediatR handler
+        return HandleResult(await Mediator.Send(new GetSimpleApartmentsByProjectLov.Query { ProjectId = projectId, Params = param }));
+    }
     
     [HttpGet("getRawMaterialProductsLov")]
     public async Task<IActionResult> GetRawMaterialProductsLov([FromQuery] ProductLovParams param)

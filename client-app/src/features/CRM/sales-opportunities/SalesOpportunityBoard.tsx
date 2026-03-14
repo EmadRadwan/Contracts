@@ -85,9 +85,9 @@ const LeadsBoard: React.FC<LeadsBoardProps> = ({ onEditOpportunity }) => {
     };
 
     const formatCurrency = (amount: number, currency?: string) => {
-        return new Intl.NumberFormat('en-US', {
+        return new Intl.NumberFormat('ar-EG', {
             style: 'currency',
-            currency: currency || 'USD',
+            currency: 'EGP',
             minimumFractionDigits: 0,
             maximumFractionDigits: 0
         }).format(amount);
