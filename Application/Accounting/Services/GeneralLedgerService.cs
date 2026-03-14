@@ -55,6 +55,7 @@ public interface IGeneralLedgerService
     Task<string> CreatePostdatedChequeAccountingTransaction(string paymentId);
     Task<string> CreatePostdatedChequeIssuedAccountingTransaction(string paymentId);
     Task<string> CreateAccountingTransactionForEmployeeAdvance(string paymentId);
+    Task<string> CreateAcctgTransForPayrollInvoice(string invoiceId);
 }
 
 public class GeneralLedgerService : IGeneralLedgerService
@@ -5753,8 +5754,130 @@ public class GeneralLedgerService : IGeneralLedgerService
         await _acctgTransService.CreateAcctgTransEntry(creditEntry);
 
         _logger.LogInformation(
-            "Created employee advance accounting trans {TransId} for payment {PaymentId} → Debit GL {AccruedGl} / Credit GL {BankGl}",
+            "Created employee advance accounting trans {TransId} for payment {PaymentId} \u2192 Debit GL {AccruedGl} / Credit GL {BankGl}",
             acctgTransId, paymentId, employeeAccruedGl, debitGlAccountId);
+
+        return acctgTransId;
+    }
+
+    public async Task<string> CreateAcctgTransForPayrollInvoice(string invoiceId)
+    {
+        var invoice = await _context.Invoices
+            .Include(i => i.InvoiceItems)
+            .ThenInclude(ii => ii.InvoiceItemType)
+            .FirstOrDefaultAsync(i => i.InvoiceId == invoiceId);
+
+        if (invoice == null)
+            throw new Exception($"Invoice {invoiceId} not found");
+
+        var totalAmount = await _invoiceUtilityService.GetInvoiceTotal(invoiceId, false);
+        var advanceAmount = invoice.InvoiceItems
+            .Where(ii => ii.InvoiceItemTypeId == "PAYROL_DD_ADVANCE")
+            .Sum(ii => (ii.Quantity ?? 1m) * (ii.Amount ?? 0m));
+
+        var employeePartyId = invoice.PartyIdFrom;
+        var organizationPartyId = invoice.PartyId;
+
+        var employee = await _context.Parties.FirstOrDefaultAsync(p => p.PartyId == employeePartyId);
+        if (employee == null)
+            throw new Exception($"Employee {employeePartyId} not found");
+
+        // Get employee's Loan account (ACCOUNTS_RECEIVABLE)
+        var loanGlAccountId = await _context.PartyGlAccounts
+            .Where(pga => pga.PartyId == employeePartyId &&
+                         pga.OrganizationPartyId == organizationPartyId &&
+                         pga.RoleTypeId == "EMPLOYEE" &&
+                         pga.GlAccountTypeId == "ACCOUNTS_RECEIVABLE")
+            .Select(pga => pga.GlAccountId)
+            .FirstOrDefaultAsync();
+
+        // Get employee's Accrued account (ACCOUNTS_PAYABLE)
+        var accruedGlAccountId = await _context.PartyGlAccounts
+            .Where(pga => pga.PartyId == employeePartyId &&
+                         pga.OrganizationPartyId == organizationPartyId &&
+                         pga.RoleTypeId == "EMPLOYEE" &&
+                         pga.GlAccountTypeId == "ACCOUNTS_PAYABLE")
+            .Select(pga => pga.GlAccountId)
+            .FirstOrDefaultAsync();
+
+        // Exception logic: if GlAccountIdAdvancedPayment is not null, use it instead of accruedGlAccountId
+        var netSalaryGlAccountId = employee.GlAccountIdAdvancedPayment ?? accruedGlAccountId;
+
+        var acctgTransParams = new CreateAcctgTransParams
+        {
+            AcctgTransTypeId = "PAYROL_INVOICE",
+            TransactionDate = invoice.InvoiceDate ?? DateTime.UtcNow,
+            IsPosted = "Y",
+            Description = $"Payroll Invoice - {invoice.InvoiceId}",
+            GlFiscalTypeId = "ACTUAL",
+            InvoiceId = invoice.InvoiceId,
+            PartyId = employeePartyId
+        };
+
+        var acctgTransId = await _acctgTransService.CreateAcctgTrans(acctgTransParams);
+        var stamp = DateTime.UtcNow;
+        var seq = 0;
+
+        // 1. Debit: Salaries and Wages (601000)
+        var debitEntry = new AcctgTransEntry
+        {
+            AcctgTransId = acctgTransId,
+            AcctgTransEntrySeqId = (++seq).ToString("D3"),
+            GlAccountId = "601000",
+            DebitCreditFlag = "D",
+            AcctgTransEntryTypeId = "_NA_",
+            Amount = totalAmount,
+            ReconcileStatusId = "AES_NOT_RECONCILED",
+            Description = $"Salaries and Wages - Invoice {invoice.InvoiceId}",
+            OrganizationPartyId = organizationPartyId,
+            PartyId = employeePartyId,
+            CreatedStamp = stamp,
+            LastUpdatedStamp = stamp
+        };
+        await _acctgTransService.CreateAcctgTransEntry(debitEntry);
+
+        // 2. Credit: Loan/Advance (if exists)
+        if (advanceAmount > 0 && !string.IsNullOrEmpty(loanGlAccountId))
+        {
+            var advanceEntry = new AcctgTransEntry
+            {
+                AcctgTransId = acctgTransId,
+                AcctgTransEntrySeqId = (++seq).ToString("D3"),
+                GlAccountId = loanGlAccountId,
+                DebitCreditFlag = "C",
+                AcctgTransEntryTypeId = "_NA_",
+                Amount = advanceAmount,
+                ReconcileStatusId = "AES_NOT_RECONCILED",
+                Description = $"Deduction for Advance - Invoice {invoice.InvoiceId}",
+                OrganizationPartyId = organizationPartyId,
+                PartyId = employeePartyId,
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            };
+            await _acctgTransService.CreateAcctgTransEntry(advanceEntry);
+        }
+
+        // 3. Credit: Net Salary (Accrued Salaries or Advanced Payment Account)
+        var netSalary = totalAmount - advanceAmount;
+        if (netSalary > 0 && !string.IsNullOrEmpty(netSalaryGlAccountId))
+        {
+            var accruedEntry = new AcctgTransEntry
+            {
+                AcctgTransId = acctgTransId,
+                AcctgTransEntrySeqId = (++seq).ToString("D3"),
+                GlAccountId = netSalaryGlAccountId,
+                DebitCreditFlag = "C",
+                AcctgTransEntryTypeId = "_NA_",
+                Amount = netSalary,
+                ReconcileStatusId = "AES_NOT_RECONCILED",
+                Description = $"Net Salary Payable - Invoice {invoice.InvoiceId}",
+                OrganizationPartyId = organizationPartyId,
+                PartyId = employeePartyId,
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            };
+            await _acctgTransService.CreateAcctgTransEntry(accruedEntry);
+        }
 
         return acctgTransId;
     }

@@ -33,11 +33,14 @@ const NewSalesInvoice = ({ onClose }: Props) => {
         ) || [];
 
     const handleSubmit = async (values: any) => {
+        setIsLoading(true);
         try {
             await handleCreate({ ...values, statusId: "INVOICE_IN_PROCESS" });
             onClose();
         } catch (e) {
             console.error("Error creating sales invoice:", e);
+        } finally {
+            setIsLoading(false);
         }
     };
 

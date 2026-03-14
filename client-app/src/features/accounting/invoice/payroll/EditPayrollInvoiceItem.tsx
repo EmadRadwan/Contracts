@@ -17,9 +17,7 @@ import {
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { LoadingButton } from "@mui/lab";
-import { FormDropDownTreeGlAccount2 } from "../../../../app/common/form/FormDropDownTreeGlAccount2";
 import {
-    useFetchGlAccountOrganizationHierarchyLovQuery,
     useFetchEmployeeAdvancesQuery,
     useFetchEmployeeQuery,
 } from "../../../../app/store/apis";
@@ -80,7 +78,6 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
     );
 
     const { data: employeeData, isLoading: isEmployeeLoading } = useFetchEmployeeQuery(employeeId, { skip: !employeeId });
-    const { data: glAccounts } = useFetchGlAccountOrganizationHierarchyLovQuery(companyId);
 
     const { data: employeeAdvancesData, isLoading: isAdvancesLoading } = useFetchEmployeeAdvancesQuery({
         filter: {
@@ -106,15 +103,33 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
         const invMonth = invDate.getMonth();
         const invYear = invDate.getFullYear();
 
-        return employeeAdvancesData.data.filter((adv: EmployeeAdvance) => {
+        const filtered = employeeAdvancesData.data.filter((adv: EmployeeAdvance) => {
             if (adv.advanceTypeId === "EMPLOYEE_ADVANCE") {
                 const advDate = new Date(adv.advanceDate);
+                // Standard advance: deduct in the next month? 
+                // Existing logic: return advDate.getMonth() === invMonth - 1 && advDate.getFullYear() === invYear;
                 return advDate.getMonth() === invMonth - 1 && advDate.getFullYear() === invYear;
             } else if (adv.advanceTypeId === "EMPLOYEE_LONG_TERM_ADVANCE") {
-                const startDate = new Date(adv.startDate);
-                return startDate <= invDate;
+                // Check if any schedule matches the current invoice month/year
+                return adv.schedules?.some(s => {
+                    const dueDate = new Date(s.dueDate);
+                    return dueDate.getMonth() === invMonth && dueDate.getFullYear() === invYear && s.statusId === "SCHEDULED";
+                });
             }
             return false;
+        });
+
+        // Map to include the correct amount for this month
+        return filtered.map(adv => {
+            let amountToDeduct = adv.amount;
+            if (adv.advanceTypeId === "EMPLOYEE_LONG_TERM_ADVANCE") {
+                const schedule = adv.schedules?.find(s => {
+                    const dueDate = new Date(s.dueDate);
+                    return dueDate.getMonth() === invMonth && dueDate.getFullYear() === invYear && s.statusId === "SCHEDULED";
+                });
+                amountToDeduct = schedule ? schedule.scheduledAmount : 0;
+            }
+            return { ...adv, amountToDeduct };
         });
     }, [employeeAdvancesData, invoiceDate]);
 
@@ -151,7 +166,7 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                     if (type.invoiceItemTypeId === "PAYROL_SALARY") {
                         initialAmount = employeeData?.monthlyBaseSalary || 0;
                     } else if (type.invoiceItemTypeId === "PAYROL_DD_ADVANCE") {
-                        initialAmount = payrollAdvances.reduce((sum, adv) => sum + adv.amount, 0);
+                        initialAmount = payrollAdvances.reduce((sum, adv) => sum + adv.amountToDeduct, 0);
                         initialDesc = payrollAdvances.map(adv => `Adv #${adv.advanceId}`).join(", ");
                     }
 
@@ -191,9 +206,9 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
         if (row.invoiceItemSeqId) {
             try {
                 await deleteItem({ invoiceId, invoiceItemSeqId: row.invoiceItemSeqId }).unwrap();
-                toast.success(`Removed ${row.description}`);
+                toast.success(getTranslatedLabel("accounting.invoices.payroll.removed-item", `Removed ${row.description}`, [row.description]));
             } catch (err) {
-                toast.error("Failed to delete item from server");
+                toast.error(getTranslatedLabel("accounting.invoices.payroll.delete-item-server-failed", "Failed to delete item from server"));
                 return;
             }
         }
@@ -222,12 +237,12 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                     }
                 }
             }
-            toast.success("Payroll items saved successfully");
+            toast.success(getTranslatedLabel("accounting.invoices.payroll.save-success", "Payroll items saved successfully"));
             refreshTotal?.();
             onClose();
         } catch (err) {
             console.error("Failed to save payroll items", err);
-            toast.error("Failed to save payroll items");
+            toast.error(getTranslatedLabel("accounting.invoices.payroll.save-failed", "Failed to save payroll items"));
         } finally {
             setIsSaving(false);
         }
@@ -246,7 +261,7 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
             <Typography variant="h5" gutterBottom sx={{ mb: 3, fontWeight: 'bold', color: 'primary.main' }}>
                 {getTranslatedLabel("accounting.invoices.payroll.edit-items", "Payroll Items Management")}
                 <Typography variant="subtitle2" color="textSecondary">
-                    Employee: {employeeData?.firstName} | Date: {new Date(invoiceDate).toLocaleDateString()}
+                    {getTranslatedLabel("accounting.invoices.payroll.employee", "Employee")}: {employeeData?.firstName} | {getTranslatedLabel("accounting.invoices.payroll.date", "Date")}: {new Date(invoiceDate).toLocaleDateString()}
                 </Typography>
             </Typography>
 
@@ -254,11 +269,11 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                 <Table size="small">
                     <TableHead sx={{ bgcolor: '#f5f5f5' }}>
                         <TableRow>
-                            <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>Item Type</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold', width: '15%' }}>Amount *</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>Absence Days</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold', width: '30%' }}>Description</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold', width: '10%', textAlign: 'center' }}>Actions</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>{getTranslatedLabel("accounting.invoices.payroll.item-type", "Item Type")}</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '15%' }}>{getTranslatedLabel("accounting.invoices.payroll.amount", "Amount")} *</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>{getTranslatedLabel("accounting.invoices.payroll.absence-days", "Absence Days")}</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '30%' }}>{getTranslatedLabel("accounting.invoices.payroll.description", "Description")}</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '10%', textAlign: 'center' }}>{getTranslatedLabel("accounting.invoices.payroll.actions", "Actions")}</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -299,7 +314,7 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                                         fullWidth
                                         value={row.itemDescription || ""}
                                         onChange={(e) => handleRowChange(index, 'itemDescription', e.target.value)}
-                                        placeholder="Notes..."
+                                        placeholder={getTranslatedLabel("accounting.invoices.payroll.notes-placeholder", "Notes...")}
                                     />
                                 </TableCell>
                                 <TableCell sx={{ textAlign: 'center' }}>
@@ -308,7 +323,7 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                                             color="error"
                                             size="small"
                                             onClick={() => handleDeleteRow(index)}
-                                            title="Remove item"
+                                            title={getTranslatedLabel("accounting.invoices.payroll.remove-item", "Remove item")}
                                         >
                                             <DeleteIcon fontSize="small" />
                                         </IconButton>
@@ -322,7 +337,7 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
 
             <Box display="flex" justifyContent="flex-end" gap={2} mt={4}>
                 <Button onClick={onClose} variant="outlined" color="inherit" size="large">
-                    Cancel
+                    {getTranslatedLabel("accounting.invoices.payroll.cancel", "Cancel")}
                 </Button>
                 <LoadingButton
                     loading={isSaving}
@@ -332,18 +347,18 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                     onClick={handleSubmit}
                     sx={{ minWidth: 150 }}
                 >
-                    Save Payroll
+                    {getTranslatedLabel("accounting.invoices.payroll.save-payroll", "Save Payroll")}
                 </LoadingButton>
             </Box>
 
             {payrollAdvances.length > 0 && (
                 <Box mt={3}>
                     <Alert severity="info" variant="outlined">
-                        <Typography variant="subtitle2" fontWeight="bold">Advances being deducted:</Typography>
+                        <Typography variant="subtitle2" fontWeight="bold">{getTranslatedLabel("accounting.invoices.payroll.advances-deducted", "Advances being deducted:")}</Typography>
                         <Box component="ul" sx={{ m: 0, pl: 2 }}>
                             {payrollAdvances.map(adv => (
                                 <li key={adv.advanceId}>
-                                    Advance #{adv.advanceId} ({adv.advanceTypeId}): <b>{adv.amount} {adv.currencyUomId}</b>
+                                    {getTranslatedLabel("accounting.invoices.payroll.advance", "Advance")} #{adv.advanceId} ({adv.advanceTypeId}): <b>{adv.amountToDeduct} {adv.currencyUomId}</b>
                                 </li>
                             ))}
                         </Box>

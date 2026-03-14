@@ -39,6 +39,7 @@ interface DeductionPlanModalProps {
     initialSchedules?: DeductionRow[];   // for edit/preview
     onApply: (schedules: Array<{ dueDate: string; scheduledAmount: number }>) => void;
     isPreview?: boolean;
+    isReadOnly?: boolean;
 }
 
 export default function DeductionPlanModal({
@@ -49,6 +50,7 @@ export default function DeductionPlanModal({
                                                initialSchedules = [],
                                                onApply,
                                                isPreview = false,
+                                               isReadOnly = false,
                                            }: DeductionPlanModalProps) {
     const { getTranslatedLabel } = useTranslationHelper();
 
@@ -198,69 +200,77 @@ export default function DeductionPlanModal({
 
     return (
         <Grid container spacing={2} sx={{ p: 3, minWidth: 800 }}>
-            {isPreview && (
+            {isReadOnly && (
                 <Grid item xs={12}>
-                    <Alert severity="info">Preview mode – changes will apply on form submit</Alert>
+                    <Alert severity="info">{getTranslatedLabel("general.readOnlyMode", "Read-only mode")}</Alert>
+                </Grid>
+            )}
+
+            {isPreview && !isReadOnly && (
+                <Grid item xs={12}>
+                    <Alert severity="info">{getTranslatedLabel("party.employeeAdvance.deductionPlan.previewMode", "Preview mode – changes will apply on form submit")}</Alert>
                 </Grid>
             )}
 
             <Grid item xs={12}>
                 <Typography variant="h6">
-                    {getTranslatedLabel("employeeAdvance.deductionPlan.title", "Deduction / Repayment Schedule")}
+                    {getTranslatedLabel("party.employeeAdvance.deductionPlan.deductionRepaymentSchedule", "Deduction / Repayment Schedule")}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    Total to deduct: {totalAdvance.toLocaleString(undefined, { minimumFractionDigits: 2 })} EGP
+                    {getTranslatedLabel("party.employeeAdvance.deductionPlan.totalToDeduct", "Total to deduct")}: {totalAdvance.toLocaleString(undefined, { minimumFractionDigits: 2 })} {getTranslatedLabel("general.currency.egp", "EGP")}
                 </Typography>
             </Grid>
 
             {/* Quick generation controls */}
-            <Grid item xs={12}>
-                <Box
-                    display="flex"
-                    alignItems="center"
-                    gap={2.5}
-                    flexWrap="wrap"
-                    sx={{ mb: 2 }}
-                >
-                    <TextField
-                        label={getTranslatedLabel("employeeAdvance.form.installmentCount", "Number of Installments")}
-                        type="number"
-                        size="small"
-                        value={installmentCountHint}
-                        onChange={(e) => {
-                            const val = Number(e.target.value);
-                            if (!isNaN(val) && val >= 0) setInstallmentCountHint(val);
-                        }}
-                        sx={{ width: 160 }}
-                        InputProps={{ inputProps: { min: 1, step: 1 } }}
-                    />
-
-                    <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => {
-                            const firstDate = rows.length > 0 ? rows[0].dueDate : null;
-                            const effectiveDate = firstDate ||
-                                (initialStartDate ? initialStartDate.toISOString().split("T")[0] : null) ||
-                                new Date().toISOString().split("T")[0];
-                            generateEqualPlan(installmentCountHint, effectiveDate);
-                        }}
-                        disabled={totalAdvance <= 0 || installmentCountHint < 1}
+            {!isReadOnly && (
+                <Grid item xs={12}>
+                    <Box
+                        display="flex"
+                        alignItems="center"
+                        gap={2.5}
+                        flexWrap="wrap"
+                        sx={{ mb: 2 }}
                     >
-                        {getTranslatedLabel("employeeAdvance.deductionPlan.generateEqual", "Generate Equal Plan")}
-                    </Button>
+                        <TextField
+                            label={getTranslatedLabel("party.employeeAdvance.form.installmentCount", "Number of Installments")}
+                            type="number"
+                            size="small"
+                            value={installmentCountHint}
+                            onChange={(e) => {
+                                const val = Number(e.target.value);
+                                if (!isNaN(val) && val >= 0) setInstallmentCountHint(val);
+                            }}
+                            sx={{ width: 160 }}
+                            InputProps={{ inputProps: { min: 1, step: 1 } }}
+                        />
 
-                    <Button
-                        variant="outlined"
-                        color="secondary"
-                        size="small"
-                        startIcon={<AddIcon />}
-                        onClick={addRow}
-                    >
-                        {getTranslatedLabel("general.addRow", "Add Row")}
-                    </Button>
-                </Box>
-            </Grid>
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => {
+                                const firstDate = rows.length > 0 ? rows[0].dueDate : null;
+                                const effectiveDate = firstDate ||
+                                    (initialStartDate ? initialStartDate.toISOString().split("T")[0] : null) ||
+                                    new Date().toISOString().split("T")[0];
+                                generateEqualPlan(installmentCountHint, effectiveDate);
+                            }}
+                            disabled={totalAdvance <= 0 || installmentCountHint < 1}
+                        >
+                            {getTranslatedLabel("party.employeeAdvance.deductionPlan.generateEqual", "Generate Equal Plan")}
+                        </Button>
+
+                        <Button
+                            variant="outlined"
+                            color="secondary"
+                            size="small"
+                            startIcon={<AddIcon />}
+                            onClick={addRow}
+                        >
+                            {getTranslatedLabel("general.addRow", "Add Row")}
+                        </Button>
+                    </Box>
+                </Grid>
+            )}
             {/* Grid */}
             <Grid item xs={12}>
                 <div style={{ height: "420px", overflow: "auto", border: "1px solid #ddd" }}>
@@ -268,34 +278,36 @@ export default function DeductionPlanModal({
                         <Column field="number" title="#" width="60" />
                         <Column
                             field="dueDate"
-                            title={getTranslatedLabel("employeeAdvance.deductionPlan.dueDate", "Due Date")}
+                            title={getTranslatedLabel("party.employeeAdvance.deductionPlan.dueDate", "Due Date")}
                             width="160"
                             format="{0:dd/MM/yyyy}"
                         />
                         <Column
                             field="scheduledAmount"
-                            title={getTranslatedLabel("employeeAdvance.deductionPlan.scheduledAmount", "Amount")}
+                            title={getTranslatedLabel("party.employeeAdvance.deductionPlan.scheduledAmount", "Amount")}
                             width="160"
                             format="{0:n2}"
                         />
-                        <Column
-                            title="Actions"
-                            width="120"
-                            cell={(props) => (
-                                <td style={{ textAlign: "center" }}>
-                                    <IconButton size="small" onClick={() => openEdit(props.dataItem)}>
-                                        <EditIcon fontSize="small" />
-                                    </IconButton>
-                                    <IconButton
-                                        size="small"
-                                        color="error"
-                                        onClick={() => deleteRow(props.dataItem.id)}
-                                    >
-                                        <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                </td>
-                            )}
-                        />
+                        {!isReadOnly && (
+                            <Column
+                                title={getTranslatedLabel("general.actions", "Actions")}
+                                width="120"
+                                cell={(props) => (
+                                    <td style={{ textAlign: "center" }}>
+                                        <IconButton size="small" onClick={() => openEdit(props.dataItem)}>
+                                            <EditIcon fontSize="small" />
+                                        </IconButton>
+                                        <IconButton
+                                            size="small"
+                                            color="error"
+                                            onClick={() => deleteRow(props.dataItem.id)}
+                                        >
+                                            <DeleteIcon fontSize="small" />
+                                        </IconButton>
+                                    </td>
+                                )}
+                            />
+                        )}
                     </KendoGrid>
                 </div>
             </Grid>
@@ -304,28 +316,32 @@ export default function DeductionPlanModal({
             <Grid item xs={12}>
                 <Box display="flex" justifyContent="space-between" alignItems="center">
                     <Typography>
-                        Scheduled: {totalScheduled.toLocaleString(undefined, { minimumFractionDigits: 2 })} EGP
+                        {getTranslatedLabel("party.employeeAdvance.deductionPlan.scheduled", "Scheduled")}: {totalScheduled.toLocaleString(undefined, { minimumFractionDigits: 2 })} {getTranslatedLabel("general.currency.egp", "EGP")}
                     </Typography>
                     <Typography fontWeight="bold" color={isValid ? "success.main" : "error.main"}>
-                        {isValid ? "✓ Matches total" : `Difference: ${(totalAdvance - totalScheduled).toFixed(2)} EGP`}
+                        {isValid 
+                            ? getTranslatedLabel("party.employeeAdvance.deductionPlan.matchesTotal", "✓ Matches total") 
+                            : `${getTranslatedLabel("party.employeeAdvance.deductionPlan.difference", "Difference")}: ${(totalAdvance - totalScheduled).toFixed(2)} ${getTranslatedLabel("general.currency.egp", "EGP")}`}
                     </Typography>
                 </Box>
 
                 {!isValid && totalScheduled > 0 && (
                     <Alert severity="warning" sx={{ mt: 1 }}>
-                        Total scheduled must equal advance amount to apply.
+                        {getTranslatedLabel("party.employeeAdvance.deductionPlan.mustMatchTotal", "Total scheduled must equal advance amount to apply.")}
                     </Alert>
                 )}
             </Grid>
 
             {/* Buttons */}
             <Grid item xs={12} sx={{ mt: 2, textAlign: "right" }}>
-                <Button onClick={onClose} sx={{ mr: 2 }}>
-                    Cancel
+                <Button onClick={onClose} variant={isReadOnly ? "contained" : "text"} sx={{ mr: 2 }}>
+                    {isReadOnly ? getTranslatedLabel("general.close", "Close") : getTranslatedLabel("general.cancel", "Cancel")}
                 </Button>
-                <Button variant="contained" disabled={!isValid || rows.length === 0} onClick={handleApply}>
-                    Apply to Form
-                </Button>
+                {!isReadOnly && (
+                    <Button variant="contained" disabled={!isValid || rows.length === 0} onClick={handleApply}>
+                        {getTranslatedLabel("party.employeeAdvance.deductionPlan.applyToForm", "Apply to Form")}
+                    </Button>
+                )}
             </Grid>
 
             {/* Edit Dialog */}
@@ -336,7 +352,7 @@ export default function DeductionPlanModal({
                         <Grid container spacing={2} sx={{ mt: 1 }}>
                             <Grid item xs={12}>
                                 <TextField
-                                    label="Due Date"
+                                    label={getTranslatedLabel("party.employeeAdvance.deductionPlan.dueDate", "Due Date")}
                                     type="date"
                                     fullWidth
                                     value={editModal.row.dueDate}
@@ -353,7 +369,7 @@ export default function DeductionPlanModal({
                             </Grid>
                             <Grid item xs={12}>
                                 <TextField
-                                    label="Amount"
+                                    label={getTranslatedLabel("party.employeeAdvance.deductionPlan.scheduledAmount", "Amount")}
                                     type="number"
                                     fullWidth
                                     value={editModal.row.scheduledAmount}
@@ -364,7 +380,7 @@ export default function DeductionPlanModal({
                                         })
                                     }
                                     InputProps={{
-                                        startAdornment: <InputAdornment position="start">EGP</InputAdornment>,
+                                        startAdornment: <InputAdornment position="start">{getTranslatedLabel("general.currency.egp", "EGP")}</InputAdornment>,
                                         inputProps: { step: "0.01", min: "0.01" },
                                     }}
                                     error={!!amountError}
@@ -375,9 +391,9 @@ export default function DeductionPlanModal({
                     )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setEditModal(null)}>Cancel</Button>
+                    <Button onClick={() => setEditModal(null)}>{getTranslatedLabel("general.cancel", "Cancel")}</Button>
                     <Button variant="contained" onClick={saveEdit} disabled={!!dateError || !!amountError}>
-                        Save
+                        {getTranslatedLabel("general.save", "Save")}
                     </Button>
                 </DialogActions>
             </Dialog>

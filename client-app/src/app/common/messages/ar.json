@@ -52,9 +52,12 @@
       "completed": "مكتمل"
     },
     "ms": "جزء من الثانية",
-    "mins": "دقيقة"
+    "currency": {
+      "egp": "ج.م"
+    },
+    "readOnlyMode": "وضع القراءة فقط"
   },
-    "common": {
+  "common": {
     "startDate": "تاريخ البداية",
     "endDate": "تاريخ النهاية",
     "fromDate": "من تاريخ",
@@ -475,7 +478,18 @@
         "created": "تم إنشاء سلفة الموظف بنجاح",
         "updated": "تم تحديث سلفة الموظف بنجاح",
         "processingAdvance": "جاري معالجة السلفة",
-        "error": "فشل في حفظ سلفة الموظف"
+        "error": "فشل في حفظ سلفة الموظف",
+        "customDeductionPlan": "خطة خصم مخصصة",
+        "installments": "أقساط",
+        "noDeductionPlan": "لم يتم تحديد خطة خصم بعد",
+        "viewPlan": "عرض الخطة",
+        "editPlan": "تعديل الخطة",
+        "createDeductionPlan": "إنشاء خطة خصم",
+        "totalScheduled": "إجمالي المجدول",
+        "existingPlanLoaded": "هذه السلفة لها خطة خصم موجودة مسبقاً تم تحميلها من السيرفر."
+      },
+      "status": {
+        "active": "نشط"
       },
       "list": {
         "create": "إنشاء سلفة",
@@ -490,6 +504,21 @@
       },
       "menu": {
         "advances": "السلف"
+      },
+      "deductionPlan": {
+        "title": "جدول الخصم / السداد",
+        "deductionRepaymentSchedule": "جدول الخصم / السداد",
+        "applied": "تم تطبيق خطة الخصم",
+        "previewMode": "وضع المعاينة - سيتم تطبيق التغييرات عند حفظ الاستمارة",
+        "totalToDeduct": "إجمالي المبلغ المطلوب خصمه",
+        "generateEqual": "إنشاء خطة متساوية",
+        "dueDate": "تاريخ الاستحقاق",
+        "scheduledAmount": "المبلغ",
+        "scheduled": "المجدول",
+        "matchesTotal": "✓ يطابق الإجمالي",
+        "difference": "الفرق",
+        "mustMatchTotal": "يجب أن يتساوى إجمالي المبلغ المجدول مع مبلغ السلفة للتطبيق.",
+        "applyToForm": "تطبيق على الاستمارة"
       }
     }
   },
@@ -1385,7 +1414,7 @@
           "acctgTransId": "رقم القيد",
           "acctgTransEntrySeqId": "مسلسل القيد",
           "amount": "المبلغ",
-          "origAmount": "المبلغ الأصلي",
+          "origAmount": "المبلغ",
           "debitCreditFlag": "مدين/دائن",
           "glAccountId": "كود الحساب",
           "glAccountTypeDescription": "اسم الحساب",
@@ -1610,6 +1639,23 @@
             "thruDate": "حتى التاريخ"
           }
         },
+        "transactions": {
+          "acctgTransId": "رقم القيد",
+          "origAmount": "المبلغ الأصلي",
+          "debitCredit": "مدين/دائن",
+          "glAccountId": "رقم الحساب",
+          "accountName": "اسم الحساب",
+          "productName": "المنتج",
+          "isPosted": "مرحل؟",
+          "glFiscalType": "نوع السنة المالية",
+          "acctgTransType": "نوع القيد",
+          "transactionDate": "تاريخ القيد",
+          "postedDate": "تاريخ الترحيل",
+          "accountClass": "تصنيف الحساب",
+          "currency": "العملة",
+          "totalDebit": "إجمالي المدين",
+          "totalCredit": "إجمالي الدائن"
+        },
         "gl-trial-balance": {
           "title": "ميزان مراجعة حساب الأستاذ العام لـ: ",
           "glAccount": "حساب الأستاذ العام",
@@ -1619,6 +1665,34 @@
       }
     },
     "invoices": {
+      "payroll": {
+        "edit-items": "إدارة بنود الرواتب",
+        "employee": "الموظف",
+        "date": "التاريخ",
+        "item-type": "نوع البند",
+        "amount": "المبلغ",
+        "absence-days": "أيام الغياب",
+        "description": "الوصف",
+        "actions": "الإجراءات",
+        "notes-placeholder": "ملاحظات...",
+        "remove-item": "إزالة البند",
+        "cancel": "إلغاء",
+        "save-payroll": "حفظ الرواتب",
+        "advances-deducted": "السلف التي يتم خصمها:",
+        "advance": "سلفة",
+        "manage-items": "إدارة بنود الرواتب",
+        "quantity": "الكمية",
+        "delete-confirm-title": "تأكيد الحذف",
+        "delete-confirm-msg": "هل أنت متأكد من أنك تريد حذف هذا البند من الرواتب؟",
+        "delete-success": "تم حذف البند بنجاح",
+        "delete-failed": "فشل حذف البند",
+        "save-success": "تم حفظ بنود الرواتب بنجاح",
+        "save-failed": "فشل حفظ بنود الرواتب",
+        "delete-item-server-failed": "فشل حذف البند من الخادم",
+        "removed-item": "تمت إزالة {0}",
+        "loading": "جاري تحميل بنود الرواتب...",
+        "no-invoice-selected": "لم يتم اختيار فاتورة"
+      },
       "list": {
         "new": "فاتورة جديدة",
         "invoiceId": "رقم الفاتورة",
@@ -1678,6 +1752,8 @@
             "cancel": "تغيير الحالة إلى 'ملغاة'",
             "reset": "إعادة تعيين الفاتورة",
             "transactions": "القيود المحاسبية",
+            "salesInvoice": "فاتورة مبيعات",
+            "invoice": "الفاتورة",
             "payment-applications": "تطبيقات الدفع",
             "deleteItem": "حذف الصنف"
           },

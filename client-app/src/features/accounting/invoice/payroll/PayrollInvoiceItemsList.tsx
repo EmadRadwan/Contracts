@@ -1,5 +1,5 @@
 import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useMemo } from "react";
 import {
     Grid as KendoGrid,
     GridColumn as Column,
@@ -71,15 +71,15 @@ export default function PayrollInvoiceItemsList({ invoiceId, canEdit, refreshTot
                 invoiceItemSeqId: invoiceItemToDelete.invoiceItemSeqId,
             }).unwrap();
 
-            toast.success("Item deleted successfully");
+            toast.success(getTranslatedLabel("accounting.invoices.payroll.delete-success", "Item deleted successfully"));
             refreshTotal?.();
         } catch (err: any) {
-            toast.error("Failed to delete item");
+            toast.error(getTranslatedLabel("accounting.invoices.payroll.delete-failed", "Failed to delete item"));
         } finally {
             setDeleteDialogOpen(false);
             setInvoiceItemToDelete(null);
         }
-    }, [deleteInvoiceItem, invoiceItemToDelete, refreshTotal]);
+    }, [deleteInvoiceItem, invoiceItemToDelete, refreshTotal, getTranslatedLabel]);
 
     const handleSelectInvoiceItem = useCallback(
         (dataItem: InvoiceItem) => {
@@ -115,7 +115,7 @@ export default function PayrollInvoiceItemsList({ invoiceId, canEdit, refreshTot
                         onClick={() => handleDeleteClick(dataItem.invoiceId, dataItem.invoiceItemSeqId)}
                         disabled={isDeleting}
                     >
-                        Delete
+                        {getTranslatedLabel("general.delete", "Delete")}
                     </Button>
                 )}
             </td>
@@ -123,8 +123,26 @@ export default function PayrollInvoiceItemsList({ invoiceId, canEdit, refreshTot
     };
 
     if (!invoiceId) {
-        return <div>No invoice selected</div>;
+        return <div>{getTranslatedLabel("accounting.invoices.payroll.no-invoice-selected", "No invoice selected")}</div>;
     }
+
+    const sortedItems = useMemo(() => {
+        const items = [...(uiInvoiceItems || [])];
+        const sorted = items.sort((a, b) => {
+            if (a.invoiceItemTypeId === "PAYROL_SALARY") return -1;
+            if (b.invoiceItemTypeId === "PAYROL_SALARY") return 1;
+            return 0;
+        });
+
+        // Apply Kendo's sort but always keep PAYROL_SALARY first
+        const ordered = orderBy(sorted, sort);
+        const salaryIndex = ordered.findIndex(item => item.invoiceItemTypeId === "PAYROL_SALARY");
+        if (salaryIndex > 0) {
+            const [salaryItem] = ordered.splice(salaryIndex, 1);
+            ordered.unshift(salaryItem);
+        }
+        return ordered;
+    }, [uiInvoiceItems, sort]);
 
     return (
         <>
@@ -143,8 +161,8 @@ export default function PayrollInvoiceItemsList({ invoiceId, canEdit, refreshTot
             )}
             <Grid container direction="column" alignItems="flex-start">
                 <KendoGrid
-                    style={{ height: "40vh" }}
-                    data={orderBy(uiInvoiceItems || [], sort).slice(page.skip, page.take + page.skip)}
+                    style={{ minHeight: "300px" }}
+                    data={sortedItems.slice(page.skip, page.take + page.skip)}
                     sortable={true}
                     sort={sort}
                     onSortChange={(e: GridSortChangeEvent) => setSort(e.sort)}
@@ -166,13 +184,13 @@ export default function PayrollInvoiceItemsList({ invoiceId, canEdit, refreshTot
                             disabled={!canEdit}
                             color="secondary"
                         >
-                            Manage Payroll Items
+                            {getTranslatedLabel("accounting.invoices.payroll.manage-items", "Manage Payroll Items")}
                         </Button>
                     </GridToolbar>
 
                     <Column
                         field="invoiceItemTypeDescription"
-                        title="Item Type"
+                        title={getTranslatedLabel("accounting.invoices.payroll.item-type", "Item Type")}
                         width={250}
                         cell={(props) => (
                             <td>
@@ -189,31 +207,13 @@ export default function PayrollInvoiceItemsList({ invoiceId, canEdit, refreshTot
                         )}
                     />
 
-                    <Column field="description" title="Description" width={300} />
-                    <Column field="quantity" title="Quantity/Hrs" width={120} format="{0:n2}" />
-                    <Column field="amount" title="Amount" width={120} format="{0:n2}" />
+                    <Column field="description" title={getTranslatedLabel("accounting.invoices.payroll.description", "Description")} width={300} />
+                    <Column field="quantity" title={getTranslatedLabel("accounting.invoices.payroll.quantity", "Quantity/Hrs")} width={120} format="{0:n2}" />
+                    <Column field="amount" title={getTranslatedLabel("accounting.invoices.payroll.amount", "Amount")} width={120} format="{0:n2}" />
                     
-                    <Column
-                        title="Actions"
-                        width={110}
-                        cell={actionCell}
-                    />
                 </KendoGrid>
 
-                <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-                    <DialogTitle>Confirm Delete</DialogTitle>
-                    <DialogContent>
-                        <DialogContentText>
-                            Are you sure you want to delete this payroll item?
-                        </DialogContentText>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => setDeleteDialogOpen(false)} color="inherit">Cancel</Button>
-                        <Button onClick={handleConfirmDelete} color="error" variant="contained">Delete</Button>
-                    </DialogActions>
-                </Dialog>
-
-                {isLoading && <LoadingComponent message="Loading Payroll Items..." />}
+                {isLoading && <LoadingComponent message={getTranslatedLabel("accounting.invoices.payroll.loading", "Loading Payroll Items...")} />}
             </Grid>
         </>
     );

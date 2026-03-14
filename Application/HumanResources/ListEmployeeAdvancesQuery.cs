@@ -43,6 +43,17 @@ public class ListEmployeeAdvancesQuery
                     StatusId          = adv.StatusId,
                     StatusDescription = status != null ? (language == "ar" ? status.DescriptionArabic : status.Description) : adv.StatusId,
                     Description       = adv.Description,
+                    Schedules = adv.EmployeeAdvanceSchedules.Select(s => new EmployeeAdvanceScheduleRecord
+                    {
+                        ScheduleId = s.ScheduleId,
+                        InstallmentNumber = s.InstallmentNumber,
+                        DueDate = s.DueDate,
+                        ScheduledAmount = s.ScheduledAmount,
+                        DeductedAmount = s.DeductedAmount,
+                        StatusId = s.StatusId,
+                        PayrolInvoiceId = s.PayrolInvoiceId,
+                        Notes = s.Notes
+                    }).ToList()
                 };
 
             return query;

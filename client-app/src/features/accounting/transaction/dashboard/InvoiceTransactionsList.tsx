@@ -21,6 +21,7 @@ import { handleDatesArray } from "../../../../app/util/utils";
 import { AcctgTransEntry } from "../../../../app/models/accounting/acctgTransEntry";
 import ModalContainer from "../../../../app/common/modals/ModalContainer";
 import MermaidChart from "../../../manufacturing/dashboard/MermaidChart";
+import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
 
 interface Props {
     onClose: () => void;
@@ -39,6 +40,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
     const [selectedAcctgTransId, setSelectedAcctgTransId] = useState<string | null>(null);
     const [showDiagramModal, setShowDiagramModal] = useState(false);
     const [tabValue, setTabValue] = useState("1");
+    const { getTranslatedLabel } = useTranslationHelper();
 
     // ───────────────────── Data Fetching ─────────────────────────────
     const { data: acctTransEntryDataInvoice } = useFetchInvoiceAcctTransEntriesQuery(
@@ -92,7 +94,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
 
     const TotalsFooterCell = () => (
         <td colSpan={15} style={{ fontWeight: "bold", color: "#1565C0" }}>
-            Total Debit: {totalDebit.toFixed(2)} | Total Credit: {totalCredit.toFixed(2)}
+            {getTranslatedLabel("accounting.transactions.totalDebit", "Total Debit")}: {totalDebit.toFixed(2)} | {getTranslatedLabel("accounting.transactions.totalCredit", "Total Credit")}: {totalCredit.toFixed(2)}
         </td>
     );
 
@@ -113,7 +115,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
 
     const PaymentTotalsFooterCell = () => (
         <td colSpan={15} style={{ fontWeight: "bold", color: "#1565C0" }}>
-            Total Debit: {totalDebitPayment.toFixed(2)} | Total Credit: {totalCreditPayment.toFixed(2)}
+            {getTranslatedLabel("accounting.transactions.totalDebit", "Total Debit")}: {totalDebitPayment.toFixed(2)} | {getTranslatedLabel("accounting.transactions.totalCredit", "Total Credit")}: {totalCreditPayment.toFixed(2)}
         </td>
     );
 
@@ -127,8 +129,8 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
             <Box sx={{ width: "100%", p: 2 }}>
                 <TabContext value={tabValue}>
                     <StyledTabs value={tabValue} onChange={handleTabChange}>
-                        <StyledTab label="Sales Invoice" value="1" />
-                        <StyledTab label="Payment Application" value="2" />
+                        <StyledTab label={getTranslatedLabel("accounting.invoices.display.form.actions.invoice", "Sales Invoice")} value="1" />
+                        <StyledTab label={getTranslatedLabel("accounting.invoices.display.form.actions.payment-applications", "Payment Application")} value="2" />
                     </StyledTabs>
                     <TabPanel value="1">
                         <Grid container>
@@ -145,32 +147,31 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                                 >
                                     <Column
                                         field="acctgTransId"
-                                        title="Acctg Trans"
+                                        title={getTranslatedLabel("accounting.payments.transactions.columns.acctgTransId", "Acctg Trans")}
                                         width={100}
                                         footerCell={TotalsFooterCell}
                                     />
-                                    <Column field="origAmount" title="Orig Amount" width={100} />
-                                    <Column field="debitCreditFlag" title="Debit/Credit" width={90} />
-                                    <Column field="glAccountId" title="GL Account" width={100} />
-                                    <Column field="glAccountTypeDescription" title="Account Name" width={300} />
-                                    <Column field="productName" title="Product" width={200} />
-                                    <Column field="isPosted" title="Posted?" width={80} />
-                                    <Column field="glFiscalTypeId" title="Fiscal Type" width={100} />
-                                    <Column field="acctgTransTypeDescription" title="Trans Type" width={130} />
+                                    <Column field="amount" title={getTranslatedLabel("accounting.payments.transactions.columns.origAmount", "Orig Amount")} width={100} />
+                                    <Column field="debitCreditFlag" title={getTranslatedLabel("accounting.payments.transactions.columns.debitCreditFlag", "Debit/Credit")} width={90} />
+                                    <Column field="glAccountId" title={getTranslatedLabel("accounting.payments.transactions.columns.glAccountId", "GL Account")} width={100} />
+                                    <Column field="glAccountTypeDescription" title={getTranslatedLabel("accounting.payments.transactions.columns.glAccountTypeDescription", "Account Name")} width={400} />
+                                    <Column field="productName" title={getTranslatedLabel("accounting.payments.transactions.columns.productName", "Product")} width={200} />
+                                    <Column field="isPosted" title={getTranslatedLabel("accounting.payments.transactions.columns.isPosted", "Posted?")} width={80} />
+                                    <Column field="acctgTransTypeDescription" title={getTranslatedLabel("accounting.payments.transactions.columns.acctgTransType", "Trans Type")} width={130} />
                                     <Column
                                         field="transactionDate"
-                                        title="Trans Date"
+                                        title={getTranslatedLabel("accounting.transactions.transactionDate", "Trans Date")}
                                         width={130}
                                         format="{0:dd/MM/yyyy}"
                                     />
                                     <Column
                                         field="postedDate"
-                                        title="Posted Date"
+                                        title={getTranslatedLabel("accounting.transactions.postedDate", "Posted Date")}
                                         width={130}
                                         format="{0:dd/MM/yyyy}"
                                     />
-                                    <Column field="glAccountClassDescription" title="Account Class" width={140} />
-                                    <Column field="origCurrencyUomId" title="Currency" width={90} />
+                                    <Column field="glAccountClassDescription" title={getTranslatedLabel("accounting.transactions.accountClass", "Account Class")} width={140} />
+                                    <Column field="origCurrencyUomId" title={getTranslatedLabel("accounting.transactions.currency", "Currency")} width={90} />
                                     
                                 </KendoGrid>
                             </Grid>
@@ -193,32 +194,32 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                                     {/* ───── Columns ───── */}
                                     <Column
                                         field="acctgTransId"
-                                        title="Acctg Trans"
+                                        title={getTranslatedLabel("accounting.transactions.acctgTransId", "Acctg Trans")}
                                         width={100}
                                         footerCell={PaymentTotalsFooterCell}
                                     />
-                                    <Column field="origAmount" title="Orig Amount" width={100} />
-                                    <Column field="debitCreditFlag" title="Debit/Credit" width={90} />
-                                    <Column field="glAccountId" title="GL Account" width={100} />
-                                    <Column field="glAccountTypeDescription" title="Account Name" width={300} />
-                                    <Column field="productName" title="Product" width={200} />
-                                    <Column field="isPosted" title="Posted?" width={80} />
-                                    <Column field="glFiscalTypeId" title="Fiscal Type" width={100} />
-                                    <Column field="acctgTransTypeDescription" title="Trans Type" width={130} />
+                                    <Column field="origAmount" title={getTranslatedLabel("accounting.transactions.origAmount", "Orig Amount")} width={100} />
+                                    <Column field="debitCreditFlag" title={getTranslatedLabel("accounting.transactions.debitCredit", "Debit/Credit")} width={90} />
+                                    <Column field="glAccountId" title={getTranslatedLabel("accounting.transactions.glAccountId", "GL Account")} width={100} />
+                                    <Column field="glAccountTypeDescription" title={getTranslatedLabel("accounting.transactions.accountName", "Account Name")} width={300} />
+                                    <Column field="productName" title={getTranslatedLabel("accounting.transactions.productName", "Product")} width={200} />
+                                    <Column field="isPosted" title={getTranslatedLabel("accounting.transactions.isPosted", "Posted?")} width={80} />
+                                    <Column field="glFiscalTypeId" title={getTranslatedLabel("accounting.transactions.glFiscalType", "Fiscal Type")} width={100} />
+                                    <Column field="acctgTransTypeDescription" title={getTranslatedLabel("accounting.transactions.acctgTransType", "Trans Type")} width={130} />
                                     <Column
                                         field="transactionDate"
-                                        title="Trans Date"
+                                        title={getTranslatedLabel("accounting.transactions.transactionDate", "Trans Date")}
                                         width={130}
                                         format="{0:dd/MM/yyyy}"
                                     />
                                     <Column
                                         field="postedDate"
-                                        title="Posted Date"
+                                        title={getTranslatedLabel("accounting.transactions.postedDate", "Posted Date")}
                                         width={130}
                                         format="{0:dd/MM/yyyy}"
                                     />
-                                    <Column field="glAccountClassDescription" title="Account Class" width={140} />
-                                    <Column field="origCurrencyUomId" title="Currency" width={90} />
+                                    <Column field="glAccountClassDescription" title={getTranslatedLabel("accounting.transactions.accountClass", "Account Class")} width={140} />
+                                    <Column field="origCurrencyUomId" title={getTranslatedLabel("accounting.transactions.currency", "Currency")} width={90} />
                                 </KendoGrid>
                             </Grid>
                         </Grid>

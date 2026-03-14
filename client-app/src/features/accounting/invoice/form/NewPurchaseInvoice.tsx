@@ -36,6 +36,7 @@ const NewPurchaseInvoice = ({ onClose }: Props) => {
     ) || [];
 
     const handleSubmit = async (values) => {
+        setIsLoading(true);
         try {
             await handleCreate({
                 ...values,
@@ -44,6 +45,8 @@ const NewPurchaseInvoice = ({ onClose }: Props) => {
             onClose();
         } catch (e) {
             console.error("Error creating purchase invoice:", e);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -154,7 +157,7 @@ const NewPurchaseInvoice = ({ onClose }: Props) => {
                                             variant="contained"
                                             type="submit"
                                             color="success"
-                                            disabled={!formRenderProps.allowSubmit}
+                                            disabled={!formRenderProps.allowSubmit || isLoading}
                                         >
                                             {getTranslatedLabel(`${localizationKey}.create`, "Create")}
                                         </Button>
@@ -164,6 +167,7 @@ const NewPurchaseInvoice = ({ onClose }: Props) => {
                                             variant="contained"
                                             color="error"
                                             onClick={onClose}
+                                            disabled={isLoading}
                                         >
                                             {getTranslatedLabel(`${localizationKey}.back`, "Back")}
                                         </Button>

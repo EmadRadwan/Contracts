@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import { Form, FormElement, FormRenderProps, Field } from "@progress/kendo-react-form";
-import {Paper, Grid, Button, Typography, Box, Alert} from "@mui/material";
+import {Paper, Grid, Button, Typography, Box} from "@mui/material";
 import { toast } from "react-toastify";
 
 
@@ -221,7 +221,6 @@ function EmployeeAdvanceForm({
 
                         return (
                             <FormElement>
-                                <fieldset disabled={isReadOnly || isSubmitting}>
                                     <Grid container spacing={2}>
                                         {/* Employee, Type, Date, Amount */}
                                         <Grid item xs={12} sm={6} md={4}>
@@ -233,6 +232,7 @@ function EmployeeAdvanceForm({
                                                 valueField="fromPartyId"
                                                 textField="fromPartyName"
                                                 validator={requiredValidator}
+                                                disabled={isReadOnly || isSubmitting}
                                             />
                                         </Grid>
                                         <Grid item xs={12} sm={6} md={4}>
@@ -245,6 +245,7 @@ function EmployeeAdvanceForm({
                                                 textField="description"
                                                 data={employeeAdvanceTypes}
                                                 validator={requiredValidator}
+                                                disabled={isReadOnly || isSubmitting}
                                             />
                                         </Grid>
                                         <Grid item xs={12} sm={6} md={4}>
@@ -253,6 +254,7 @@ function EmployeeAdvanceForm({
                                                 label={getTranslatedLabel("party.employeeAdvance.form.advanceDate", "Advance Date *")}
                                                 component={FormDatePicker}
                                                 validator={requiredValidator}
+                                                disabled={isReadOnly || isSubmitting}
                                             />
                                         </Grid>
                                         <Grid item xs={12} sm={6} md={4}>
@@ -262,6 +264,7 @@ function EmployeeAdvanceForm({
                                                 component={FormNumericTextBox}
                                                 format="n2"
                                                 validator={requiredValidator}
+                                                disabled={isReadOnly || isSubmitting}
                                             />
                                         </Grid>
 
@@ -273,7 +276,7 @@ function EmployeeAdvanceForm({
                                                 component={FormNumericTextBox}
                                                 min={0}
                                                 format="n0"
-                                                disabled={isInstallmentDisabled}
+                                                disabled={isInstallmentDisabled || isReadOnly || isSubmitting}
                                             />
                                         </Grid>
                                         <Grid item xs={12} sm={6} md={4}>
@@ -281,7 +284,7 @@ function EmployeeAdvanceForm({
                                                 name="startDate"
                                                 label={getTranslatedLabel("party.employeeAdvance.form.startDate", "First Installment Date")}
                                                 component={FormDatePicker}
-                                                disabled={isInstallmentDisabled}
+                                                disabled={isInstallmentDisabled || isReadOnly || isSubmitting}
                                             />
                                         </Grid>
 
@@ -293,46 +296,45 @@ function EmployeeAdvanceForm({
                                                 component={FormInput}
                                                 multiline
                                                 rows={3}
+                                                disabled={isReadOnly || isSubmitting}
                                             />
                                         </Grid>
 
                                         {/* Long-term deduction plan section */}
                                         {isLongTermAdvance && (
                                             <Grid item xs={12} sx={{ mt: 2 }}>
-                                                <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
-                                                    <Typography variant="subtitle1">
-                                                        {customSchedules.length > 0
-                                                            ? `Custom deduction plan (${customSchedules.length} installments)`
-                                                            : "No deduction plan defined yet"}
-                                                    </Typography>
+                                                    <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
+                                                        <Typography variant="subtitle1">
+                                                            {customSchedules.length > 0
+                                                                ? `${getTranslatedLabel("party.employeeAdvance.form.customDeductionPlan", "Custom deduction plan")} (${customSchedules.length} ${getTranslatedLabel("party.employeeAdvance.form.installments", "installments")})`
+                                                                : getTranslatedLabel("party.employeeAdvance.form.noDeductionPlan", "No deduction plan defined yet")}
+                                                        </Typography>
 
-                                                    {!isReadOnly && (
                                                         <Button
                                                             variant="outlined"
                                                             size="small"
                                                             onClick={() => setShowDeductionPlan(true)}
                                                             disabled={!canOpenPlan}
                                                         >
-                                                            {customSchedules.length > 0 ? "Edit Plan" : "Create Deduction Plan"}
+                                                            {isReadOnly
+                                                                ? getTranslatedLabel("party.employeeAdvance.form.viewPlan", "View Plan")
+                                                                : customSchedules.length > 0
+                                                                    ? getTranslatedLabel("party.employeeAdvance.form.editPlan", "Edit Plan")
+                                                                    : getTranslatedLabel("party.employeeAdvance.form.createDeductionPlan", "Create Deduction Plan")}
                                                         </Button>
-                                                    )}
-                                                </Box>
+                                                    </Box>
 
                                                 {customSchedules.length > 0 && (
                                                     <>
                                                         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
-                                                            Total scheduled:{" "}
+                                                            {getTranslatedLabel("party.employeeAdvance.form.totalScheduled", "Total scheduled")}:{" "}
                                                             {customSchedules
                                                                 .reduce((s, r) => s + r.scheduledAmount, 0)
                                                                 .toLocaleString(undefined, { minimumFractionDigits: 2 })}{" "}
-                                                            EGP
+                                                            {getTranslatedLabel("general.currency.egp", "EGP")}
                                                         </Typography>
 
-                                                        {hasExistingPlan && isEdit && (
-                                                            <Alert severity="info" sx={{ mt: 1 }}>
-                                                                This advance has an existing deduction plan loaded from the server.
-                                                            </Alert>
-                                                        )}
+                                                        
                                                     </>
                                                 )}
                                             </Grid>
@@ -342,11 +344,10 @@ function EmployeeAdvanceForm({
                                         <Grid item xs={12} sm={6}>
                                             <Typography variant="caption" color="text.secondary">
                                                 {getTranslatedLabel("party.employeeAdvance.form.status", "Status")}:{" "}
-                                                {advance?.statusDescription || "Active"}
+                                                {advance?.statusDescription || getTranslatedLabel("party.employeeAdvance.status.active", "Active")}
                                             </Typography>
                                         </Grid>
                                     </Grid>
-                                </fieldset>
 
                                 {/* Actions */}
                                 <Box sx={{ mt: 4, display: "flex", justifyContent: "flex-end", gap: 2 }}>
@@ -405,6 +406,7 @@ function EmployeeAdvanceForm({
                                                 }
                                             }}
                                             isPreview={isReadOnly || customSchedules.length > 0}
+                                            isReadOnly={isReadOnly}
                                         />
                                     </ModalContainer>
                                 )}

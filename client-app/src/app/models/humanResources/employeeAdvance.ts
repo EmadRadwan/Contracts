@@ -19,8 +19,7 @@ export interface EmployeeAdvance {
     createdStamp: string;
     lastUpdatedStamp: string;
 
-    // Optional: if you later want to include schedules or more details
-    // employeeAdvanceSchedules?: EmployeeAdvanceScheduleRecord[];
+    schedules?: Schedule[];
 }
 
 // app/models/humanResources/employeeAdvance.ts  (extend existing type)

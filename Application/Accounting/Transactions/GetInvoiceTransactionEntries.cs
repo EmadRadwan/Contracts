@@ -28,7 +28,8 @@ namespace Application.Shipments.Transactions
                 _mapper = mapper;
             }
 
-            public async Task<Result<List<AcctgTransEntryDto>>> Handle(Query request, CancellationToken cancellationToken)
+            public async Task<Result<List<AcctgTransEntryDto>>> Handle(Query request,
+                CancellationToken cancellationToken)
             {
                 try
                 {
@@ -36,47 +37,51 @@ namespace Application.Shipments.Transactions
                     // Ensures consistent language handling and prevents null reference issues
                     var language = request.Language?.ToLower() ?? "en";
 
-                    var query = _context.AcctgTransEntries
-                        .Join(_context.AcctgTrans,
-                            acctgTransEntry => acctgTransEntry.AcctgTransId,
-                            acctgTrans => acctgTrans.AcctgTransId,
-                            (acctgTransEntry, acctgTrans) => new { AcctgTransEntry = acctgTransEntry, AcctgTrans = acctgTrans })
-                        .GroupJoin(_context.Products,
-                            joinedData => joinedData.AcctgTransEntry.ProductId,
-                            product => product.ProductId,
-                            (joinedData, products) => new { joinedData, Products = products.DefaultIfEmpty() })
-                        .Where(c =>
-                            c.joinedData.AcctgTrans.InvoiceId == request.InvoiceId &&
-                            c.joinedData.AcctgTrans.AcctgTransTypeId == request.AcctgTransTypeId)
-                        .Select(c => new AcctgTransEntryDto
+                    var query =
+                        from ate in _context.AcctgTransEntries
+                        join at in _context.AcctgTrans
+                            on ate.AcctgTransId equals at.AcctgTransId // inner join - usually safe
+                        join att in _context.AcctgTransTypes
+                            on at.AcctgTransTypeId equals att.AcctgTransTypeId into attGroup
+                        from att in attGroup.DefaultIfEmpty() // LEFT JOIN AcctgTransType
+                        join p in _context.Products
+                            on ate.ProductId equals p.ProductId into pGroup
+                        from p in pGroup.DefaultIfEmpty() // LEFT JOIN Product
+                        join ga in _context.GlAccounts
+                            on ate.GlAccountId equals ga.GlAccountId into gaGroup
+                        from ga in gaGroup.DefaultIfEmpty() // LEFT JOIN GlAccount
+                        where at.InvoiceId == request.InvoiceId
+                              && at.AcctgTransTypeId == request.AcctgTransTypeId
+                        let lang = (request.Language ?? "en").ToLower()
+                        select new AcctgTransEntryDto
                         {
-                            AcctgTransId = c.joinedData.AcctgTransEntry.AcctgTransId,
-                            AcctgTransEntrySeqId = c.joinedData.AcctgTransEntry.AcctgTransEntrySeqId,
-                            AcctgTransTypeDescription = c.joinedData.AcctgTrans.AcctgTransType.Description,
-                            Description = c.joinedData.AcctgTransEntry.Description,
-                            PartyId = c.joinedData.AcctgTransEntry.PartyId,
-                            ProductId = c.joinedData.AcctgTransEntry.ProductId,
-                            GlAccountTypeId = c.joinedData.AcctgTransEntry.GlAccountTypeId,
-                            // REFACTOR: Add Arabic support for GlAccountTypeDescription
-                            // Selects AccountNameArabic for "ar" language, falls back to AccountName if null or language is "en"
-                            GlAccountTypeDescription = c.joinedData.AcctgTransEntry.GlAccount != null
-                                ? (language == "ar"
-                                    ? c.joinedData.AcctgTransEntry.GlAccount.AccountNameArabic ?? c.joinedData.AcctgTransEntry.GlAccount.AccountName
-                                    : c.joinedData.AcctgTransEntry.GlAccount.AccountName)
+                            AcctgTransId = ate.AcctgTransId,
+                            AcctgTransEntrySeqId = ate.AcctgTransEntrySeqId,
+                            AcctgTransTypeDescription = att != null ? att.Description : null,
+                            Description = ate.Description,
+                            PartyId = ate.PartyId,
+                            ProductId = ate.ProductId,
+                            GlAccountTypeId = ate.GlAccountTypeId,
+                            GlAccountId = ate.GlAccountId,
+                            OrganizationPartyId = ate.OrganizationPartyId,
+
+                            GlAccountTypeDescription = ga != null
+                                ? (lang == "ar" ? ga.AccountNameArabic ?? ga.AccountName : ga.AccountName)
                                 : "N/A",
-                            GlAccountId = c.joinedData.AcctgTransEntry.GlAccountId,
-                            OrganizationPartyId = c.joinedData.AcctgTransEntry.OrganizationPartyId,
-                            Amount = c.joinedData.AcctgTransEntry.Amount,
-                            CurrencyUomId = c.joinedData.AcctgTransEntry.CurrencyUomId,
-                            OrigAmount = c.joinedData.AcctgTransEntry.OrigAmount,
-                            OrigCurrencyUomId = c.joinedData.AcctgTransEntry.OrigCurrencyUomId,
-                            DebitCreditFlag = c.joinedData.AcctgTransEntry.DebitCreditFlag,
-                            DueDate = c.joinedData.AcctgTransEntry.DueDate,
-                            IsPosted = c.joinedData.AcctgTrans.IsPosted,
-                            TransactionDate = c.joinedData.AcctgTrans.TransactionDate,
-                            PostedDate = c.joinedData.AcctgTrans.PostedDate,
-                            ProductName = c.Products.FirstOrDefault() != null ? c.Products.First().ProductName : null
-                        });
+
+                            Amount = ate.Amount,
+                            CurrencyUomId = ate.CurrencyUomId,
+                            OrigAmount = ate.OrigAmount,
+                            OrigCurrencyUomId = ate.OrigCurrencyUomId,
+                            DebitCreditFlag = ate.DebitCreditFlag,
+                            DueDate = ate.DueDate,
+
+                            IsPosted = at.IsPosted,
+                            TransactionDate = at.TransactionDate,
+                            PostedDate = at.PostedDate,
+
+                            ProductName = p != null ? p.ProductName : null
+                        };
 
                     var invoiceTransactionEntries = await query.ToListAsync(cancellationToken);
 

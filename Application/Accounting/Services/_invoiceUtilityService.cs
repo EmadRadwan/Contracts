@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Persistence;
 using Application.Accounting.Invoices;
 using Application.Accounting.Payments;
+using Application.Accounting.Services.Models;
 
 namespace Application.Accounting.Services;
 
@@ -125,45 +126,10 @@ public class InvoiceUtilityService : IInvoiceUtilityService
                 _utilityService.CreateInvoiceStatus(invoice.InvoiceId, statusId);
 
 
-                // If the invoice is a payroll invoice and the new status is "INVOICE_APPROVED" or "INVOICE_READY"
-                if (invoiceTypeId == "PAYROL_INVOICE" &&
-                    (statusId == "INVOICE_APPROVED" || statusId == "INVOICE_READY"))
+                // If the invoice is a payroll invoice and the new status is "INVOICE_READY"
+                if (invoiceTypeId == "PAYROL_INVOICE" && statusId == "INVOICE_READY" && oldStatusId != "INVOICE_READY")
                 {
-                    // Check if there are no existing payment applications
-                    bool noPaymentApplications = !await _context.PaymentApplications
-                        .AnyAsync(pa => pa.InvoiceId == invoice.InvoiceId);
-
-                    if (noPaymentApplications)
-                    {
-                        // Calculate the payment amount
-                        var amount = await GetInvoiceTotal(invoice.InvoiceId, actualCurrency);
-
-                        // Create payment parameters
-                        var paymentParams = new CreatePaymentParam
-                        {
-                            PartyIdFrom = invoice.PartyId,
-                            PartyIdTo = invoice.PartyIdFrom,
-                            PaymentMethodTypeId = "COMPANY_CHECK",
-                            PaymentTypeId = "PAYROL_PAYMENT",
-                            StatusId = "PMNT_NOT_PAID",
-                            Amount = amount,
-                            EffectiveDate = DateTime.UtcNow
-                        };
-
-                        // Create the payment
-                        var newPayment = await _paymentHelperService.Value.CreatePayment(paymentParams);
-
-                        // Create payment application parameters
-                        var paymentApplicationParams = new PaymentApplicationParam
-                        {
-                            PaymentId = newPayment.PaymentId,
-                            InvoiceId = invoice.InvoiceId,
-                            AmountApplied = amount
-                        };
-
-                        // Create the payment application
-                        await _paymentApplicationService.Value.CreatePaymentApplication(paymentApplicationParams);
-                    }
+                    await _generalLedgerService.Value.CreateAcctgTransForPayrollInvoice(invoice.InvoiceId);
                 }
             }
 
