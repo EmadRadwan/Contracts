@@ -13,25 +13,6 @@ namespace API.Controllers.CRM;
 public class LeadsController : BaseApiController
 {
     /// <summary>
-    /// Get all leads with optional filtering.
-    /// </summary>
-    [HttpGet]
-    public async Task<IActionResult> GetLeads(
-        [FromQuery] string? search,
-        [FromQuery] string? dataSourceId,
-        [FromQuery] string? sortBy,
-        [FromQuery] bool sortDesc = false)
-    {
-        return HandleResult(await Mediator.Send(new ListLeads.Query
-        {
-            SearchTerm = search,
-            DataSourceId = dataSourceId,
-            SortBy = sortBy,
-            SortDescending = sortDesc
-        }));
-    }
-
-    /// <summary>
     /// Get leads for LOV/picker (lightweight).
     /// </summary>
     [HttpGet("lov")]

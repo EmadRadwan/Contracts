@@ -23,21 +23,19 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = 'crm.leads.list';
 
-    const { data: leads, isLoading } = useFetchLeadsQuery();
-
     const [dataState, setDataState] = React.useState<State>({
         take: 10,
         skip: 0,
         sort: [{ field: 'fullName', dir: 'asc' }]
     });
 
+    const { data: leads, isLoading } = useFetchLeadsQuery(dataState);
+
     const dataStateChange = (e: GridDataStateChangeEvent) => {
         setDataState(e.dataState);
     };
 
-    const processedData = leads
-        ? process(leads, dataState)
-        : { data: [], total: 0 };
+    const processedData = leads || { data: [], total: 0 };
 
     // Custom cell for name (clickable)
     const NameCell = (props: GridCellProps) => {
@@ -138,7 +136,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
     };
 
     if (isLoading) {
-        return <LoadingComponent message={getTranslatedLabel(`${localizationKey}.loading`, 'Loading leads...')} />;
+        return <LoadingComponent message={getTranslatedLabel(`${localizationKey}.loadingLeads`, 'Loading leads...')} />;
     }
 
     return (
@@ -154,17 +152,10 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
                     buttonCount: 5
                 }}
                 {...dataState}
+                total={processedData.total}
                 onDataStateChange={dataStateChange}
             >
-                <GridToolbar>
-                    <Grid container justifyContent="space-between" alignItems="center">
-                        <Grid item>
-                            <Typography variant="h6">
-                                {getTranslatedLabel(`${localizationKey}.title`, 'Leads')}
-                            </Typography>
-                        </Grid>
-                    </Grid>
-                </GridToolbar>
+                
 
                 <Column
                     field="fullName"

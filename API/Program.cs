@@ -26,6 +26,7 @@ using Application.Order.Orders.Returns;
 using Application.Order.Quotes;
 using Application.Order.SalesRequests;
 using Application.Parties.Parties;
+using Application.CRM.Leads;
 using Application.Projects;
 using Microsoft.AspNetCore.OData;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -214,6 +215,7 @@ static IEdmModel GetEdmModel()
     modelBuilder.EntitySet<SalesRequestRecord>("SalesRequestRecords");
     modelBuilder.EntitySet<PartyRecord>("PartyRecords");
     modelBuilder.EntitySet<QuoteRecord>("QuoteRecords");
+    modelBuilder.EntitySet<LeadRecord>("LeadRecords");
     modelBuilder.EntitySet<ReturnRecord>("ReturnRecords");
     modelBuilder.EntitySet<ProductRecord>("ProductRecords");
     modelBuilder.EntitySet<ProductStoreRecord>("ProductStoreRecords");

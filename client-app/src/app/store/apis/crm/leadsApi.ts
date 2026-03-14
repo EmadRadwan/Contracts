@@ -1,6 +1,12 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { store } from "../../configureStore";
-import { Lead, LeadLov, LeadQueryParams } from "../../../../features/CRM/models/lead";
+import { Lead, LeadLov } from "../../../../features/CRM/models/lead";
+import { State, toODataString } from "@progress/kendo-data-query";
+
+interface ListResponse<T> {
+    data: T[];
+    total: number;
+}
 
 /**
  * RTK Query API for CRM Leads (People).
@@ -21,30 +27,30 @@ const leadsApi = createApi({
 
     endpoints(builder) {
         return {
-            // Fetch all leads with optional filtering
-            fetchLeads: builder.query<Lead[], LeadQueryParams | void>({
-                query: (params) => {
-                    const searchParams = new URLSearchParams();
-                    if (params?.search) searchParams.append('search', params.search);
-                    if (params?.dataSourceId) searchParams.append('dataSourceId', params.dataSourceId);
-                    if (params?.sortBy) searchParams.append('sortBy', params.sortBy);
-                    if (params?.sortDesc !== undefined) searchParams.append('sortDesc', String(params.sortDesc));
-
-                    return {
-                        url: `/leads?${searchParams.toString()}`,
-                        method: "GET",
-                    };
+            // Fetch all leads with OData
+            fetchLeads: builder.query<ListResponse<Lead>, State>({
+                query: (queryArgs) => {
+                    const url = `/odata/leadRecords?$count=true&${toODataString(queryArgs)}`;
+                    return { url, method: "GET" };
                 },
                 providesTags: (result) =>
                     result
                         ? [
-                            ...result.map(({ partyId }) => ({
+                            ...result.data.map(({ partyId }) => ({
                                 type: "Lead" as const,
                                 id: partyId,
                             })),
                             { type: "Lead", id: "LIST" },
                         ]
                         : [{ type: "Lead", id: "LIST" }],
+                transformResponse: (response: any, meta) => {
+                    const countHeader = meta?.response?.headers.get("count");
+                    const totalCount = countHeader ? JSON.parse(countHeader).totalCount : 0;
+                    return {
+                        data: response,
+                        total: totalCount,
+                    };
+                },
             }),
 
             // Fetch leads for LOV/picker (lightweight)
