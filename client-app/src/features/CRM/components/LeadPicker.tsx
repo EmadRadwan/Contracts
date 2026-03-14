@@ -11,6 +11,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import { useFetchLeadsLovQuery } from '../../../app/store/configureStore';
 import { LeadLov } from '../models/lead';
 import { SalesOpportunityLead } from '../models/salesOpportunity';
+import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
 
 interface LeadPickerProps {
     label?: string;

@@ -69,7 +69,7 @@ export const FormComboBoxVirtualProject = (fieldRenderProps: FieldRenderProps) =
         facilityId: "0", // Default value for facilityId
     };
 
-    const pageSize = 10;
+    const pageSize = 20;
     const loadingData: ProjectItem[] = [];
     while (loadingData.length < pageSize) {
         loadingData.push({ ...emptyItem });

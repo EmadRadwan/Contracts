@@ -21,6 +21,8 @@ import FormDatePicker from '../../../app/common/form/FormDatePicker';
 import { MemoizedFormDropDownList } from '../../../app/common/form/MemoizedFormDropDownList';
 import { requiredValidator } from '../../../app/common/form/Validators';
 import LeadPicker from '../components/LeadPicker';
+import { FormSimpleComboBoxVirtualApartmentsByProject } from '../../../app/common/form/FormSimpleComboBoxVirtualApartmentsByProject';
+import { FormComboBoxVirtualProject } from '../../../app/common/form/FormComboBoxVirtualProject';
 
 interface OpportunityFormProps {
     opportunity?: SalesOpportunity;
@@ -33,6 +35,8 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({ opportunity, editMode
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = 'crm.opportunities.form';
     const dispatch = useAppDispatch();
+    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+    const [key, setKey] = useState(0); // Used to reset form when opportunity changes
 
     const { data: stages, isLoading: loadingStages } = useFetchOpportunityStagesQuery();
     const [createOpportunity, { isLoading: creating }] = useCreateOpportunityMutation();
@@ -134,7 +138,7 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({ opportunity, editMode
             </Box>
 
             <Form
-                key={opportunity?.salesOpportunityId || 'new'}
+                key={key}
                 initialValues={initialValues}
                 onSubmit={handleSubmit}
                 render={(formRenderProps) => (
@@ -142,7 +146,7 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({ opportunity, editMode
                         <fieldset className="k-form-fieldset">
                             <Grid container spacing={3}>
                                 {/* Row 1: Name and Stage */}
-                                <Grid item xs={12} md={6}>
+                                <Grid item xs={3}>
                                     <Field
                                         id="opportunityName"
                                         name="opportunityName"
@@ -151,7 +155,7 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({ opportunity, editMode
                                         validator={requiredValidator}
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                <Grid item xs={3}>
                                     <Field
                                         id="opportunityStageId"
                                         name="opportunityStageId"
@@ -164,14 +168,41 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({ opportunity, editMode
                                     />
                                 </Grid>
 
+                                <Grid item xs={3}>
+                                    <Field
+                                        id="projectId"
+                                        name="projectId"
+                                        component={FormComboBoxVirtualProject}
+                                        label={getTranslatedLabel("projects.certificate.form.project", "Project")}
+                                        dataItemKey="projectId"
+                                        textField="ProjectName"
+                                        // validator={requiredValidator}
+                                        disabled={editMode > 3}
+                                        onChange={(e: any) => {
+                                            formRenderProps.onChange("workEffortId", {value :null})
+                                        }}
+                                    />
+                                </Grid>
+
+
+                                <Grid item xs={3}>
+                                    <Field
+                                        id="workEffortId"
+                                        name="workEffortId"
+                                        label={getTranslatedLabel(`${localizationKey}.unit`, 'Unit')}
+                                        component={FormSimpleComboBoxVirtualApartmentsByProject}
+                                        projectId={formRenderProps.valueGetter ? formRenderProps.valueGetter("projectId")?.projectId : null}
+                                    />
+                                </Grid>
+
                                 {/* Row 2: Amount and Probability */}
-                                <Grid item xs={12} md={4}>
+                                <Grid item xs={12} md={3}>
                                     <Field
                                         id="estimatedAmount"
                                         name="estimatedAmount"
                                         label={getTranslatedLabel(`${localizationKey}.amount`, 'Estimated Amount')}
                                         component={FormNumericTextBox}
-                                        format="c0"
+                                        format="n2"
                                         min={0}
                                     />
                                 </Grid>
