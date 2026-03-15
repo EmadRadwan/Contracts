@@ -80,6 +80,7 @@ public class CreateLead
                     PartyType = partyTypePerson,
                     Status = statusEnabled,
                     MainRole = "LEAD",
+                    DataSourceId = dto.DataSourceId,
                     Description = fullName,
                     CreatedStamp = stamp,
                     LastUpdatedStamp = stamp
@@ -214,19 +215,6 @@ public class CreateLead
                             LastUpdatedStamp = stamp
                         });
                     }
-                }
-
-                // Data Source
-                if (!string.IsNullOrWhiteSpace(dto.DataSourceId))
-                {
-                    _context.PartyDataSources.Add(new PartyDataSource
-                    {
-                        Party = party,
-                        DataSourceId = dto.DataSourceId,
-                        FromDate = stamp,
-                        CreatedStamp = stamp,
-                        LastUpdatedStamp = stamp
-                    });
                 }
 
                 var saved = await _context.SaveChangesAsync(ct) > 0;

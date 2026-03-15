@@ -71,6 +71,7 @@ public class UpdateLead
                 var lastName = nameParts.Length > 1 ? nameParts[1] : "";
 
                 // Update Party
+                party.DataSourceId = dto.DataSourceId;
                 party.Description = fullName;
                 party.LastUpdatedStamp = stamp;
 

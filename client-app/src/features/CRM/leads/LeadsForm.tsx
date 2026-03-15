@@ -39,7 +39,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ lead, editMode, onClose, onSuccess 
     const isProcessing = creating || updating;
     const isLoading = loadingDataSources || loadingCountries;
 
-    const initialValues: Partial<Lead> = editMode === 'edit' && lead
+    const initialValues: Partial<Lead> = editMode === 2 && lead
         ? { ...lead }
         : {
             fullName: '',
@@ -53,6 +53,8 @@ const LeadForm: React.FC<LeadFormProps> = ({ lead, editMode, onClose, onSuccess 
             countryGeoId: '',
             dataSourceId: ''
         };
+    
+    console.log('lead', lead)
 
     const handleSubmit = async (values: any) => {
         setSubmitError(null);
@@ -109,7 +111,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ lead, editMode, onClose, onSuccess 
                                     <Field
                                         id="fullName"
                                         name="fullName"
-                                        label={getTranslatedLabel(`${localizationKey}.fullName`, 'Full Name *')}
+                                        label={getTranslatedLabel(`${localizationKey}.firstName`, 'Full Name *')}
                                         component={FormInput}
                                         validator={requiredValidator}
                                     />

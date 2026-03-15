@@ -2,7 +2,6 @@ import React from 'react';
 import {
     Grid as KendoGrid,
     GridColumn as Column,
-    GridToolbar,
     GridDataStateChangeEvent,
     GridCellProps
 } from '@progress/kendo-react-grid';

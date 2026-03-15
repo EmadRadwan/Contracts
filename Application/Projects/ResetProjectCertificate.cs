@@ -346,7 +346,7 @@ public class ResetProjectCertificate
                     }
 
                     // 2. Identify and remove ItemIssuances linked via details or RelatedOrderId
-                    var issuanceIdsFromDetails = details.Where(d => !string.IsNullOrEmpty(d.ItemIssuanceId))
+                    /*var issuanceIdsFromDetails = details.Where(d => !string.IsNullOrEmpty(d.ItemIssuanceId))
                         .Select(d => d.ItemIssuanceId!)
                         .Distinct()
                         .ToList();
@@ -399,13 +399,12 @@ public class ResetProjectCertificate
                     }
 
                     _context.ItemIssuances.RemoveRange(issuances);
+                    */
 
                     // 4. Remove Accounting Transactions for the certificate
                     var trans = await _context.AcctgTrans
                         .Where(at =>
-                            at.WorkEffortId == request.WorkEffortId || (at.ShipmentId != null &&
-                                                                        issuances.Any(i =>
-                                                                            i.ShipmentId == at.ShipmentId)))
+                            at.WorkEffortId == request.WorkEffortId )
                         .ToListAsync(cancellationToken);
                     foreach (var tran in trans)
                     {

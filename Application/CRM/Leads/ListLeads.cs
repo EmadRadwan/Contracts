@@ -38,6 +38,7 @@ public class ListLeads
 
                     // Identity
                     FirstName = p.Person != null ? p.Person.FirstName : null,
+                    DataSourceId = p.DataSourceId,
                     LastName = p.Person != null ? p.Person.LastName : null,
                     FullName = p.Person != null
                         ? (p.Person.FirstName + " " + p.Person.LastName).Trim()
@@ -91,10 +92,7 @@ public class ListLeads
                         .OrderByDescending(pcm => pcm.FromDate)
                         .Select(pcm => pcm.ContactMech!.PostalAddress!.CountryGeoId)
                         .FirstOrDefault(),
-
-                    // CRM metadata
-                    DataSourceId = p.PartyDataSources.Select(pds => pds.DataSourceId).FirstOrDefault(),
-
+                    
                     // Status
                     StatusId = p.StatusId,
                     StatusDescription = p.Status != null ? p.Status.Description : null,
