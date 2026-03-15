@@ -14,7 +14,6 @@ public class LeadDto
     // Identity
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
-    public string? PersonalTitle { get; set; }  // Mr, Mrs, Dr, etc.
 
     // Display name (computed)
     public string? FullName { get; set; }

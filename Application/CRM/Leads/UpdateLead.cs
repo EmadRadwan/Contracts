@@ -25,8 +25,8 @@ public class UpdateLead
             RuleFor(x => x.Lead.PartyId)
                 .NotEmpty().WithMessage("Party ID is required");
 
-            RuleFor(x => x.Lead.FirstName)
-                .NotEmpty().WithMessage("First name is required");
+            RuleFor(x => x.Lead.FullName)
+                .NotEmpty().WithMessage("Full name is required");
         }
     }
 
@@ -64,7 +64,11 @@ public class UpdateLead
                 if (party == null)
                     return Result<LeadDto>.Failure("Lead not found");
 
-                var fullName = $"{dto.FirstName} {dto.LastName}".Trim();
+                // Split FullName into FirstName and LastName
+                var fullName = dto.FullName ?? "";
+                var nameParts = fullName.Split(' ', 2);
+                var firstName = nameParts[0];
+                var lastName = nameParts.Length > 1 ? nameParts[1] : "";
 
                 // Update Party
                 party.Description = fullName;
@@ -73,9 +77,8 @@ public class UpdateLead
                 // Update Person
                 if (party.Person != null)
                 {
-                    party.Person.FirstName = dto.FirstName;
-                    party.Person.LastName = dto.LastName ?? "";
-                    party.Person.PersonalTitle = dto.PersonalTitle;
+                    party.Person.FirstName = firstName;
+                    party.Person.LastName = lastName;
                     party.Person.LastUpdatedStamp = stamp;
                 }
 
@@ -88,62 +91,9 @@ public class UpdateLead
                     .Where(cmp => new[] { "PRIMARY_PHONE", "PRIMARY_EMAIL", "GENERAL_LOCATION" }.Contains(cmp.ContactMechPurposeTypeId))
                     .ToDictionaryAsync(x => x.ContactMechPurposeTypeId, ct);
 
-                // Update Phone
-                var existingPhoneCm = party.PartyContactMeches
-                    .FirstOrDefault(pcm => pcm.ContactMech?.TelecomNumber != null);
-
-                if (!string.IsNullOrWhiteSpace(dto.Phone) || !string.IsNullOrWhiteSpace(dto.MobilePhone))
-                {
-                    var phoneNumber = dto.MobilePhone ?? dto.Phone;
-
-                    if (existingPhoneCm?.ContactMech?.TelecomNumber != null)
-                    {
-                        existingPhoneCm.ContactMech.TelecomNumber.ContactNumber = phoneNumber;
-                        existingPhoneCm.ContactMech.TelecomNumber.LastUpdatedStamp = stamp;
-                    }
-                    else
-                    {
-                        var cmId = await _utilityService.GetNextSequence("ContactMech");
-                        var cm = new ContactMech
-                        {
-                            ContactMechId = cmId.ToString(),
-                            ContactMechType = contactMechTypes["TELECOM_NUMBER"],
-                            CreatedStamp = stamp,
-                            LastUpdatedStamp = stamp
-                        };
-                        _context.ContactMeches.Add(cm);
-
-                        _context.TelecomNumbers.Add(new TelecomNumber
-                        {
-                            ContactMech = cm,
-                            ContactNumber = phoneNumber,
-                            CreatedStamp = stamp,
-                            LastUpdatedStamp = stamp
-                        });
-
-                        _context.PartyContactMeches.Add(new PartyContactMech
-                        {
-                            Party = party,
-                            ContactMech = cm,
-                            FromDate = stamp,
-                            CreatedStamp = stamp,
-                            LastUpdatedStamp = stamp
-                        });
-
-                        if (purposeTypes.ContainsKey("PRIMARY_PHONE"))
-                        {
-                            _context.PartyContactMechPurposes.Add(new PartyContactMechPurpose
-                            {
-                                Party = party,
-                                ContactMech = cm,
-                                ContactMechPurposeType = purposeTypes["PRIMARY_PHONE"],
-                                FromDate = stamp,
-                                CreatedStamp = stamp,
-                                LastUpdatedStamp = stamp
-                            });
-                        }
-                    }
-                }
+                // Update Phone Numbers
+                await UpdatePhone(party, dto.Phone, "PRIMARY_PHONE", stamp);
+                await UpdatePhone(party, dto.MobilePhone, "PHONE_MOBILE", stamp);
 
                 // Update Email
                 var existingEmailCm = party.PartyContactMeches
@@ -271,9 +221,8 @@ public class UpdateLead
                 var result = new LeadDto
                 {
                     PartyId = party.PartyId,
-                    FirstName = dto.FirstName,
-                    LastName = dto.LastName,
-                    PersonalTitle = dto.PersonalTitle,
+                    FirstName = firstName,
+                    LastName = lastName,
                     FullName = fullName,
                     Email = dto.Email,
                     Phone = dto.Phone,
@@ -295,6 +244,71 @@ public class UpdateLead
             {
                 await transaction.RollbackAsync(ct);
                 return Result<LeadDto>.Failure($"Error updating lead: {ex.Message}");
+            }
+        }
+
+        private async Task UpdatePhone(Party party, string? phoneNumber, string purposeTypeId, DateTime stamp)
+        {
+            var existingPcm = await _context.PartyContactMechPurposes
+                .Include(pcmp => pcmp.ContactMech)
+                    .ThenInclude(cm => cm!.TelecomNumber)
+                .FirstOrDefaultAsync(pcmp => pcmp.PartyId == party.PartyId && pcmp.ContactMechPurposeTypeId == purposeTypeId);
+
+            if (string.IsNullOrWhiteSpace(phoneNumber))
+            {
+                // If phone is cleared, we could remove it, but often we just leave it or clear the number.
+                // For now, if it exists and new value is empty, let's clear it.
+                if (existingPcm?.ContactMech?.TelecomNumber != null)
+                {
+                    existingPcm.ContactMech.TelecomNumber.ContactNumber = "";
+                    existingPcm.ContactMech.TelecomNumber.LastUpdatedStamp = stamp;
+                }
+                return;
+            }
+
+            if (existingPcm?.ContactMech?.TelecomNumber != null)
+            {
+                existingPcm.ContactMech.TelecomNumber.ContactNumber = phoneNumber;
+                existingPcm.ContactMech.TelecomNumber.LastUpdatedStamp = stamp;
+            }
+            else
+            {
+                var cmId = await _utilityService.GetNextSequence("ContactMech");
+                var cm = new ContactMech
+                {
+                    ContactMechId = cmId.ToString(),
+                    ContactMechTypeId = "TELECOM_NUMBER",
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp
+                };
+                _context.ContactMeches.Add(cm);
+
+                _context.TelecomNumbers.Add(new TelecomNumber
+                {
+                    ContactMech = cm,
+                    ContactNumber = phoneNumber,
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp
+                });
+
+                _context.PartyContactMeches.Add(new PartyContactMech
+                {
+                    Party = party,
+                    ContactMech = cm,
+                    FromDate = stamp,
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp
+                });
+
+                _context.PartyContactMechPurposes.Add(new PartyContactMechPurpose
+                {
+                    Party = party,
+                    ContactMech = cm,
+                    ContactMechPurposeTypeId = purposeTypeId,
+                    FromDate = stamp,
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp
+                });
             }
         }
     }

@@ -11,7 +11,6 @@ export interface Lead {
     // Identity
     firstName?: string;
     lastName?: string;
-    personalTitle?: string;  // Mr, Mrs, Dr, etc.
     fullName?: string;
 
     // Communication

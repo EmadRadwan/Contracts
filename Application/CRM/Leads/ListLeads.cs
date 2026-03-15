@@ -39,7 +39,6 @@ public class ListLeads
                     // Identity
                     FirstName = p.Person != null ? p.Person.FirstName : null,
                     LastName = p.Person != null ? p.Person.LastName : null,
-                    PersonalTitle = p.Person != null ? p.Person.PersonalTitle : null,
                     FullName = p.Person != null
                         ? (p.Person.FirstName + " " + p.Person.LastName).Trim()
                         : p.Description,
@@ -54,12 +53,14 @@ public class ListLeads
                     // Communication - Primary Phone
                     Phone = p.PartyContactMeches
                         .Where(pcm => pcm.ContactMech!.TelecomNumber != null)
+                        .Where(pcm => pcm.ContactMech!.PartyContactMechPurposes.Any(pcmp => pcmp.ContactMechPurposeTypeId == "PRIMARY_PHONE"))
                         .OrderByDescending(pcm => pcm.FromDate)
                         .Select(pcm => pcm.ContactMech!.TelecomNumber!.ContactNumber)
                         .FirstOrDefault(),
 
                     MobilePhone = p.PartyContactMeches
                         .Where(pcm => pcm.ContactMech!.TelecomNumber != null)
+                        .Where(pcm => pcm.ContactMech!.PartyContactMechPurposes.Any(pcmp => pcmp.ContactMechPurposeTypeId == "PHONE_MOBILE"))
                         .OrderByDescending(pcm => pcm.FromDate)
                         .Select(pcm => pcm.ContactMech!.TelecomNumber!.ContactNumber)
                         .FirstOrDefault(),
@@ -163,7 +164,7 @@ public class ListLeadsLov
                 var emailCm = p.PartyContactMeches
                     .FirstOrDefault(pcm => pcm.ContactMech?.InfoString != null);
                 var phoneCm = p.PartyContactMeches
-                    .FirstOrDefault(pcm => pcm.ContactMech?.TelecomNumber != null);
+                    .FirstOrDefault(pcm => pcm.ContactMech?.TelecomNumber != null && pcm.ContactMech.PartyContactMechPurposes.Any(pcmp => pcmp.ContactMechPurposeTypeId == "PRIMARY_PHONE"));
 
                 var firstName = p.Person?.FirstName ?? "";
                 var lastName = p.Person?.LastName ?? "";

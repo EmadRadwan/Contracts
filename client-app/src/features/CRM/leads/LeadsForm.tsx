@@ -42,9 +42,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ lead, editMode, onClose, onSuccess 
     const initialValues: Partial<Lead> = editMode === 'edit' && lead
         ? { ...lead }
         : {
-            firstName: '',
-            lastName: '',
-            personalTitle: '',
+            fullName: '',
             email: '',
             phone: '',
             mobilePhone: '',
@@ -106,30 +104,12 @@ const LeadForm: React.FC<LeadFormProps> = ({ lead, editMode, onClose, onSuccess 
                     <FormElement>
                         <fieldset className="k-form-fieldset">
                             <Grid container spacing={3}>
-                                {/* Row 1: Title, First Name, Last Name */}
-                                <Grid item xs={12} md={2}>
+                                {/* Row 1: Full Name */}
+                                <Grid item xs={12} md={12}>
                                     <Field
-                                        id="personalTitle"
-                                        name="personalTitle"
-                                        label={getTranslatedLabel(`${localizationKey}.title`, 'Title')}
-                                        component={FormInput}
-                                        placeholder={getTranslatedLabel(`${localizationKey}.titlePlaceholder`, 'Mr/Mrs/Dr')}
-                                    />
-                                </Grid>
-                                <Grid item xs={12} md={5}>
-                                    <Field
-                                        id="firstName"
-                                        name="firstName"
-                                        label={getTranslatedLabel(`${localizationKey}.firstName`, 'First Name *')}
-                                        component={FormInput}
-                                        validator={requiredValidator}
-                                    />
-                                </Grid>
-                                <Grid item xs={12} md={5}>
-                                    <Field
-                                        id="lastName"
-                                        name="lastName"
-                                        label={getTranslatedLabel(`${localizationKey}.lastName`, 'Last Name *')}
+                                        id="fullName"
+                                        name="fullName"
+                                        label={getTranslatedLabel(`${localizationKey}.fullName`, 'Full Name *')}
                                         component={FormInput}
                                         validator={requiredValidator}
                                     />

@@ -23,11 +23,8 @@ public class CreateLead
     {
         public CommandValidator()
         {
-            RuleFor(x => x.Lead.FirstName)
-                .NotEmpty().WithMessage("First name is required");
-
-            RuleFor(x => x.Lead.LastName)
-                .NotEmpty().WithMessage("Last name is required");
+            RuleFor(x => x.Lead.FullName)
+                .NotEmpty().WithMessage("Full name is required");
         }
     }
 
@@ -69,7 +66,12 @@ public class CreateLead
 
                 // Generate ID
                 var partyId = await _utilityService.GetNextSequence("Party");
-                var fullName = $"{dto.FirstName} {dto.LastName}".Trim();
+
+                // Split FullName into FirstName and LastName
+                var fullName = dto.FullName ?? "";
+                var nameParts = fullName.Split(' ', 2);
+                var firstName = nameParts[0];
+                var lastName = nameParts.Length > 1 ? nameParts[1] : "";
 
                 // Create Party
                 var party = new Party
@@ -77,6 +79,7 @@ public class CreateLead
                     PartyId = partyId.ToString(),
                     PartyType = partyTypePerson,
                     Status = statusEnabled,
+                    MainRole = "LEAD",
                     Description = fullName,
                     CreatedStamp = stamp,
                     LastUpdatedStamp = stamp
@@ -87,9 +90,8 @@ public class CreateLead
                 _context.Persons.Add(new Person
                 {
                     Party = party,
-                    FirstName = dto.FirstName,
-                    LastName = dto.LastName ?? "",
-                    PersonalTitle = dto.PersonalTitle,
+                    FirstName = firstName,
+                    LastName = lastName,
                     CreatedStamp = stamp,
                     LastUpdatedStamp = stamp
                 });
@@ -117,48 +119,15 @@ public class CreateLead
                 });
 
                 // Phone
-                if (!string.IsNullOrWhiteSpace(dto.Phone) || !string.IsNullOrWhiteSpace(dto.MobilePhone))
+                if (!string.IsNullOrWhiteSpace(dto.Phone))
                 {
-                    var phoneNumber = dto.MobilePhone ?? dto.Phone;
-                    var cmId = await _utilityService.GetNextSequence("ContactMech");
-                    var cm = new ContactMech
-                    {
-                        ContactMechId = cmId.ToString(),
-                        ContactMechType = contactMechTypes["TELECOM_NUMBER"],
-                        CreatedStamp = stamp,
-                        LastUpdatedStamp = stamp
-                    };
-                    _context.ContactMeches.Add(cm);
+                    await AddPhone(party, dto.Phone, "PRIMARY_PHONE", stamp);
+                }
 
-                    _context.TelecomNumbers.Add(new TelecomNumber
-                    {
-                        ContactMech = cm,
-                        ContactNumber = phoneNumber,
-                        CreatedStamp = stamp,
-                        LastUpdatedStamp = stamp
-                    });
-
-                    _context.PartyContactMeches.Add(new PartyContactMech
-                    {
-                        Party = party,
-                        ContactMech = cm,
-                        FromDate = stamp,
-                        CreatedStamp = stamp,
-                        LastUpdatedStamp = stamp
-                    });
-
-                    if (purposeTypes.ContainsKey("PRIMARY_PHONE"))
-                    {
-                        _context.PartyContactMechPurposes.Add(new PartyContactMechPurpose
-                        {
-                            Party = party,
-                            ContactMech = cm,
-                            ContactMechPurposeType = purposeTypes["PRIMARY_PHONE"],
-                            FromDate = stamp,
-                            CreatedStamp = stamp,
-                            LastUpdatedStamp = stamp
-                        });
-                    }
+                // Mobile Phone
+                if (!string.IsNullOrWhiteSpace(dto.MobilePhone))
+                {
+                    await AddPhone(party, dto.MobilePhone, "PHONE_MOBILE", stamp);
                 }
 
                 // Email
@@ -273,9 +242,8 @@ public class CreateLead
                 var result = new LeadDto
                 {
                     PartyId = party.PartyId,
-                    FirstName = dto.FirstName,
-                    LastName = dto.LastName,
-                    PersonalTitle = dto.PersonalTitle,
+                    FirstName = firstName,
+                    LastName = lastName,
                     FullName = fullName,
                     Email = dto.Email,
                     Phone = dto.Phone,
@@ -298,6 +266,46 @@ public class CreateLead
                 await transaction.RollbackAsync(ct);
                 return Result<LeadDto>.Failure($"Error creating lead: {ex.Message}");
             }
+        }
+
+        private async Task AddPhone(Party party, string phoneNumber, string purposeTypeId, DateTime stamp)
+        {
+            var cmId = await _utilityService.GetNextSequence("ContactMech");
+            var cm = new ContactMech
+            {
+                ContactMechId = cmId.ToString(),
+                ContactMechTypeId = "TELECOM_NUMBER",
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            };
+            _context.ContactMeches.Add(cm);
+
+            _context.TelecomNumbers.Add(new TelecomNumber
+            {
+                ContactMech = cm,
+                ContactNumber = phoneNumber,
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            });
+
+            _context.PartyContactMeches.Add(new PartyContactMech
+            {
+                Party = party,
+                ContactMech = cm,
+                FromDate = stamp,
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            });
+
+            _context.PartyContactMechPurposes.Add(new PartyContactMechPurpose
+            {
+                Party = party,
+                ContactMech = cm,
+                ContactMechPurposeTypeId = purposeTypeId,
+                FromDate = stamp,
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            });
         }
     }
 }
