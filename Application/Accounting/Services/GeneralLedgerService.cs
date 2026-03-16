@@ -4673,7 +4673,8 @@ public class GeneralLedgerService : IGeneralLedgerService
             var certificateItem = await _context.WorkEfforts
                 .FirstOrDefaultAsync(w => w.WorkEffortParentId == workEffortId
                                           && w.WorkEffortTypeId == "CERTIFICATE_ITEM"
-                                          && w.ProductId == inventoryItem.ProductId);
+                                          && w.ProductId == inventoryItem.ProductId
+                                          && w.QuantityUomId == inventoryItem.UomId);
             if (certificateItem == null)
                 throw new Exception($"No valid certificate item found for WorkEffortId {workEffortId}.");
 
