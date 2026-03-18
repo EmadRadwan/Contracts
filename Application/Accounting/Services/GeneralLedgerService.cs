@@ -5821,8 +5821,15 @@ public class GeneralLedgerService : IGeneralLedgerService
             .Select(pga => pga.GlAccountId)
             .FirstOrDefaultAsync();
 
-        // Exception logic: if GlAccountIdAdvancedPayment is not null, use it instead of accruedGlAccountId
-        var netSalaryGlAccountId = employee.GlAccountIdAdvancedPayment ?? accruedGlAccountId;
+        // We need to check if both accounts are available for the employee and raise an exception if either is not available
+        if (string.IsNullOrEmpty(loanGlAccountId))
+            throw new Exception($"Loan account (ACCOUNTS_RECEIVABLE) not found for employee {employeePartyId}");
+
+        if (string.IsNullOrEmpty(accruedGlAccountId))
+            throw new Exception($"Accrued account (ACCOUNTS_PAYABLE) not found for employee {employeePartyId}");
+
+        // GlAccountIdAdvancedPayment - if available - is to be used in the debit side in place of glAccountId '601000'
+        var debitGlAccountId = employee.GlAccountIdAdvancedPayment ?? "601000";
 
         var acctgTransParams = new CreateAcctgTransParams
         {
@@ -5839,7 +5846,7 @@ public class GeneralLedgerService : IGeneralLedgerService
         var stamp = DateTime.UtcNow;
         var seq = 0;
 
-        // 1. Debit: Salaries and Wages (601000)
+        // 1. Debit: Salaries and Wages (601000 or GlAccountIdAdvancedPayment)
         // This is actual cost for the company: Additions - (Absence + Penalties)
         if (debitAmount > 0)
         {
@@ -5847,7 +5854,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             {
                 AcctgTransId = acctgTransId,
                 AcctgTransEntrySeqId = (++seq).ToString("D3"),
-                GlAccountId = "601000",
+                GlAccountId = debitGlAccountId,
                 DebitCreditFlag = "D",
                 AcctgTransEntryTypeId = "_NA_",
                 Amount = debitAmount,
@@ -5882,14 +5889,14 @@ public class GeneralLedgerService : IGeneralLedgerService
             await _acctgTransService.CreateAcctgTransEntry(advanceEntry);
         }
 
-        // 3. Credit: Net Salary (Accrued Salaries or Advanced Payment Account)
-        if (netSalary > 0 && !string.IsNullOrEmpty(netSalaryGlAccountId))
+        // 3. Credit: Net Salary (Accrued Salaries)
+        if (netSalary > 0 && !string.IsNullOrEmpty(accruedGlAccountId))
         {
             var accruedEntry = new AcctgTransEntry
             {
                 AcctgTransId = acctgTransId,
                 AcctgTransEntrySeqId = (++seq).ToString("D3"),
-                GlAccountId = netSalaryGlAccountId,
+                GlAccountId = accruedGlAccountId,
                 DebitCreditFlag = "C",
                 AcctgTransEntryTypeId = "_NA_",
                 Amount = netSalary,

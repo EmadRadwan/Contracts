@@ -1,50 +1,51 @@
-var query = 
-    from ate in _context.AcctgTransEntries
-    join at in _context.AcctgTrans 
-        on ate.AcctgTransId equals at.AcctgTransId     // inner join - usually safe
-    join att in _context.AcctgTransTypes
-        on at.AcctgTransTypeId equals att.AcctgTransTypeId into attGroup
-    from att in attGroup.DefaultIfEmpty()               // LEFT JOIN AcctgTransType
+SELECT 
+'Before 31-Dec-2025'                          AS period,
+    SUM(CASE WHEN e.DEBIT_CREDIT_FLAG = 'D' THEN e.AMOUNT ELSE 0 END)   AS total_debit,
+    SUM(CASE WHEN e.DEBIT_CREDIT_FLAG = 'C' THEN e.AMOUNT ELSE 0 END)   AS total_credit,
+    SUM(CASE 
+WHEN e.DEBIT_CREDIT_FLAG = 'D' THEN e.AMOUNT 
+    WHEN e.DEBIT_CREDIT_FLAG = 'C' THEN -e.AMOUNT 
+ELSE 0 
+END)                                           AS net_movement,
+    
+-- Opening balance from the very first entry (usually the only one with description like 'الرصيد الافتتاحي')
+MAX(CASE WHEN e.DESCRIPTION = 'الرصيد الافتتاحي' 
+THEN e.AMOUNT 
+    ELSE 0 END)                               AS opening_balance
+    
+FROM acctg_trans h
+    INNER JOIN acctg_trans_entry e 
+    ON h.ACCTG_TRANS_ID = e.ACCTG_TRANS_ID
+    
+WHERE e.GL_ACCOUNT_ID = '111010'
+AND h.TRANSACTION_DATE < '2025-12-31'     -- strict before 31-Dec-2025
+    -- Optional: AND h.IS_POSTED = 'Y'        -- uncomment if you only want posted transactions
+    ;
 
-    join p in _context.Products
-        on ate.ProductId equals p.ProductId into pGroup
-    from p in pGroup.DefaultIfEmpty()                   // LEFT JOIN Product
+-- Alternative version: separate rows for clarity (easier to read in some tools)
+SELECT 'Opening balance' AS item, 
+    SUM(e.AMOUNT)     AS amount
+    FROM acctg_trans h
+INNER JOIN acctg_trans_entry e ON h.ACCTG_TRANS_ID = e.ACCTG_TRANS_ID
+WHERE e.GL_ACCOUNT_ID = '111010'
+AND e.DESCRIPTION = 'الرصيد الافتتاحي'
 
-    join ga in _context.GlAccounts
-        on ate.GlAccountId equals ga.GlAccountId into gaGroup
-    from ga in gaGroup.DefaultIfEmpty()                 // LEFT JOIN GlAccount
+UNION ALL
 
-    where at.InvoiceId == request.InvoiceId
-       && at.AcctgTransTypeId == request.AcctgTransTypeId
+SELECT 'Total Debit before 31-Dec-2025', 
+SUM(e.AMOUNT)
+FROM acctg_trans h
+    INNER JOIN acctg_trans_entry e ON h.ACCTG_TRANS_ID = e.ACCTG_TRANS_ID
+WHERE e.GL_ACCOUNT_ID = '111010'
+AND e.DEBIT_CREDIT_FLAG = 'D'
+AND h.TRANSACTION_DATE < '2025-12-31'
 
-    let lang = (request.Language ?? "en").ToLower()
+UNION ALL
 
-    select new AcctgTransEntryDto
-    {
-        AcctgTransId             = ate.AcctgTransId,
-        AcctgTransEntrySeqId     = ate.AcctgTransEntrySeqId,
-        AcctgTransTypeDescription = att != null ? att.Description : null,
-        Description              = ate.Description,
-        PartyId                  = ate.PartyId,
-        ProductId                = ate.ProductId,
-        GlAccountTypeId          = ate.GlAccountTypeId,
-        GlAccountId              = ate.GlAccountId,
-        OrganizationPartyId      = ate.OrganizationPartyId,
-
-        GlAccountTypeDescription = ga != null
-            ? (lang == "ar" ? ga.AccountNameArabic ?? ga.AccountName : ga.AccountName)
-            : "N/A",
-
-        Amount                   = ate.Amount,
-        CurrencyUomId            = ate.CurrencyUomId,
-        OrigAmount               = ate.OrigAmount,
-        OrigCurrencyUomId        = ate.OrigCurrencyUomId,
-        DebitCreditFlag          = ate.DebitCreditFlag,
-        DueDate                  = ate.DueDate,
-
-        IsPosted                 = at.IsPosted,
-        TransactionDate          = at.TransactionDate,
-        PostedDate               = at.PostedDate,
-
-        ProductName              = p != null ? p.ProductName : null
-    };
+SELECT 'Total Credit before 31-Dec-2025', 
+SUM(e.AMOUNT)
+FROM acctg_trans h
+    INNER JOIN acctg_trans_entry e ON h.ACCTG_TRANS_ID = e.ACCTG_TRANS_ID
+WHERE e.GL_ACCOUNT_ID = '111010'
+AND e.DEBIT_CREDIT_FLAG = 'C'
+AND h.TRANSACTION_DATE < '2025-12-31';

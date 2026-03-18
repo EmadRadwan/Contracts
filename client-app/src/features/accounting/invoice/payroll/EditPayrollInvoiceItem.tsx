@@ -50,7 +50,7 @@ interface PayrollRow {
     amount: number;
     invoiceItemSeqId?: string; // If already on invoice
     itemDescription?: string; // Custom description for item
-    absenceDays?: number; // Special case for PAYROL_DD_ABSENCE
+    quantity?: number; // Special case for PAYROL_DD_ABSENCE and PAYROL_OVERTIME
 }
 
 const EditPayrollInvoiceItem: React.FC<Props> = ({
@@ -156,7 +156,7 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                         amount: existingItem.amount || 0,
                         invoiceItemSeqId: existingItem.invoiceItemSeqId,
                         itemDescription: existingItem.description || "",
-                        absenceDays: type.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' ? (existingItem.quantity || 0) : undefined
+                        quantity: (type.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' || type.invoiceItemTypeId === 'PAYROL_OVERTIME') ? (existingItem.quantity || 0) : undefined
                     });
                 } else {
                     // Pre-population logic
@@ -175,7 +175,7 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                         description: type.description,
                         amount: initialAmount,
                         itemDescription: initialDesc,
-                        absenceDays: type.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' ? 0 : undefined
+                        quantity: (type.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' || type.invoiceItemTypeId === 'PAYROL_OVERTIME') ? 0 : undefined
                     });
                 }
             });
@@ -190,11 +190,22 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
         const newRows = [...rows];
         const updatedRow = { ...newRows[index], [field]: value };
 
-        // Special logic for PAYROL_DD_ABSENCE
-        if (field === 'absenceDays' && updatedRow.invoiceItemTypeId === 'PAYROL_DD_ABSENCE') {
+        // Special logic for PAYROL_DD_ABSENCE and PAYROL_OVERTIME
+        if (field === 'quantity') {
             const basicSalary = employeeData?.monthlyBaseSalary || 0;
-            const absenceDays = parseFloat(value) || 0;
-            updatedRow.amount = roundTo2((basicSalary / 30) * absenceDays);
+            const quantity = parseFloat(value) || 0;
+            if (updatedRow.invoiceItemTypeId === 'PAYROL_DD_ABSENCE') {
+                updatedRow.amount = Math.round((basicSalary / 30) * quantity);
+            } else if (updatedRow.invoiceItemTypeId === 'PAYROL_OVERTIME') {
+                // Assuming standard 1.5x rate for overtime, or same calculation as absence if specified?
+                // The issue description says "calculated the same way" (as PAYROL_DD_ABSENCE)
+                // If it's the same way: (basicSalary / 30) * overtime_days
+                updatedRow.amount = Math.round((basicSalary / 30) * quantity);
+            }
+        }
+
+        if (field === 'amount') {
+            updatedRow.amount = Math.round(parseFloat(value) || 0);
         }
 
         newRows[index] = updatedRow;
@@ -225,7 +236,7 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                         invoiceId,
                         invoiceItemTypeId: row.invoiceItemTypeId,
                         amount: row.amount,
-                        quantity: row.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' ? (row.absenceDays || 0) : 1,
+                        quantity: (row.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' || row.invoiceItemTypeId === 'PAYROL_OVERTIME') ? (row.quantity || 0) : 1,
                         description: row.itemDescription,
                     };
 
@@ -271,7 +282,7 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                         <TableRow>
                             <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>{getTranslatedLabel("accounting.invoices.payroll.item-type", "Item Type")}</TableCell>
                             <TableCell sx={{ fontWeight: 'bold', width: '15%' }}>{getTranslatedLabel("accounting.invoices.payroll.amount", "Amount")} *</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>{getTranslatedLabel("accounting.invoices.payroll.absence-days", "Absence Days")}</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>{getTranslatedLabel("accounting.invoices.payroll.quantity", "Quantity")}</TableCell>
                             <TableCell sx={{ fontWeight: 'bold', width: '30%' }}>{getTranslatedLabel("accounting.invoices.payroll.description", "Description")}</TableCell>
                             <TableCell sx={{ fontWeight: 'bold', width: '10%', textAlign: 'center' }}>{getTranslatedLabel("accounting.invoices.payroll.actions", "Actions")}</TableCell>
                         </TableRow>
@@ -292,18 +303,18 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                                         value={row.amount}
                                         onChange={(e) => handleRowChange(index, 'amount', parseFloat(e.target.value) || 0)}
                                         error={row.amount === 0 && row.invoiceItemTypeId === 'PAYROL_SALARY'}
-                                        InputProps={{ inputProps: { min: 0, step: "0.01" } }}
-                                        disabled={row.invoiceItemTypeId === 'PAYROL_DD_ABSENCE'} // Disabled as it's computed
+                                        InputProps={{ inputProps: { min: 0, step: "1" } }}
+                                        disabled={row.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' || row.invoiceItemTypeId === 'PAYROL_OVERTIME'} // Disabled as it's computed
                                     />
                                 </TableCell>
                                 <TableCell>
-                                    {row.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' && (
+                                    {(row.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' || row.invoiceItemTypeId === 'PAYROL_OVERTIME') && (
                                         <TextField
                                             type="number"
                                             size="small"
                                             fullWidth
-                                            value={row.absenceDays || 0}
-                                            onChange={(e) => handleRowChange(index, 'absenceDays', parseFloat(e.target.value) || 0)}
+                                            value={row.quantity || 0}
+                                            onChange={(e) => handleRowChange(index, 'quantity', parseFloat(e.target.value) || 0)}
                                             InputProps={{ inputProps: { min: 0, step: "0.5" } }}
                                         />
                                     )}
