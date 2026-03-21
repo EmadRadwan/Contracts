@@ -125,10 +125,10 @@ namespace Application.Accounting.FinAccounts
                 }
 
                 // Filter by FinAccountTransId null condition if explicitly requested
-                if (request.CheckFinAccountTransNull)
+                /*if (request.CheckFinAccountTransNull)
                 {
                     baseQuery = baseQuery.Where(x => x.Payment.FinAccountTransId == null);
-                }
+                }*/
 
                 // Execute the query
                 var joinedData = await baseQuery.ToListAsync(cancellationToken);
@@ -153,7 +153,7 @@ namespace Application.Accounting.FinAccounts
                         PaymentTypeId = x.Payment.PaymentTypeId,
                         StatusId = x.Payment.StatusId,
                         EffectiveDate = x.Payment.EffectiveDate,
-                        FinAccountTransId = x.Payment.FinAccountTransId,
+                        //FinAccountTransId = x.Payment.FinAccountTransId,
                         PaymentMethodTypeDesc = x.PaymentMethodType?.Description,
                         PaymentTypeDesc = x.PaymentType?.Description,
                         ParentPaymentTypeId = x.PaymentType?.ParentTypeId,

@@ -125,11 +125,7 @@ public class FinAccountService : IFinAccountService
         {
             paymentRunningTotal += payment.Amount;
 
-            if (!string.IsNullOrEmpty(payment.FinAccountTransId))
-            {
-                return Result<DepositWithdrawResultDto>.Failure(
-                    $"Payment {payment.PaymentId} is already linked to a FinAcctTrans.");
-            }
+            
 
             if (payment.StatusId != "PMNT_SENT" && payment.StatusId != "PMNT_RECEIVED")
             {

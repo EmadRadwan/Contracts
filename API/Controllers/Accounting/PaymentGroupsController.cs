@@ -23,12 +23,12 @@ public class PaymentGroupsController : BaseApiController
         return Ok(result);
     }
 
-    [HttpPost("{paymentGroupId}/cancelCheckRun")]
+    /*[HttpPost("{paymentGroupId}/cancelCheckRun")]
     public async Task<IActionResult> CancelCheckRun(string paymentGroupId)
     {
         var result = await Mediator.Send(new CancelCheckRun.Command { PaymentGroupId = paymentGroupId });
         return Ok(result);
-    }
+    }*/
 
     [HttpPost("expirePaymentGroupMember")]
     public async Task<IActionResult> ExpirePaymentGroupMember([FromBody] ExpirePaymentGroupMemberInput input)

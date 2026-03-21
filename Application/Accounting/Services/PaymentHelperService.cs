@@ -31,7 +31,7 @@ public interface IPaymentHelperService
     Task<Result<CreatePaymentAndFinAccountTransResponse>> CreatePaymentAndFinAccountTrans(
         CreatePaymentAndFinAccountTransRequest request);
 
-    Task<GeneralServiceResult<object>> CancelCheckRunPayments(string paymentGroupId);
+    //Task<GeneralServiceResult<object>> CancelCheckRunPayments(string paymentGroupId);
 
     Task<ExpirePaymentGroupMemberResult> ExpirePaymentGroupMember(ExpirePaymentGroupMemberInput input);
 }
@@ -182,14 +182,14 @@ public class PaymentHelperService : IPaymentHelperService
                 StatusId = payment.StatusId,
                 Comments = payment.Comments,
                 PaymentRefNum = payment.PaymentRefNum,
-                FinAccountTransId = payment.FinAccountTransId
+                //FinAccountTransId = payment.FinAccountTransId
             };
             var newPayment = new Payment
             {
                 StatusId = param.StatusId ?? payment.StatusId,
                 Comments = param.Comments ?? payment.Comments,
                 PaymentRefNum = param.PaymentRefNum,
-                FinAccountTransId = param.FinAccountTransId
+                //FinAccountTransId = param.FinAccountTransId
             };
         }
 
@@ -199,7 +199,7 @@ public class PaymentHelperService : IPaymentHelperService
         // Update non-PK fields (OFBiz: setNonPKFields)
         payment.Comments = param.Comments ?? payment.Comments;
         payment.PaymentRefNum = param.PaymentRefNum;
-        payment.FinAccountTransId = param.FinAccountTransId;
+        //payment.FinAccountTransId = param.FinAccountTransId;
         payment.EffectiveDate = param.EffectiveDate;
         payment.IsBankTransfer = param.IsBankTransfer;
         payment.PaymentPreferenceId = param.PaymentPreferenceId ?? payment.PaymentPreferenceId;
@@ -1427,7 +1427,7 @@ public class PaymentHelperService : IPaymentHelperService
         }
     }
 
-    public async Task<GeneralServiceResult<object>> CancelCheckRunPayments(string paymentGroupId)
+    /*public async Task<GeneralServiceResult<object>> CancelCheckRunPayments(string paymentGroupId)
     {
         try
         {
@@ -1516,6 +1516,7 @@ public class PaymentHelperService : IPaymentHelperService
                 "An unexpected error occurred while canceling the payment group.");
         }
     }
+    */
 
     public async Task<GeneralServiceResult<VoidPaymentResult>> VoidPayment(string paymentId)
     {
@@ -1622,7 +1623,7 @@ public class PaymentHelperService : IPaymentHelperService
             // Business Purpose: Confirms payment voided and transaction canceled
             return GeneralServiceResult<VoidPaymentResult>.Success(new VoidPaymentResult
             {
-                FinAccountTransId = payment.FinAccountTransId,
+                //FinAccountTransId = payment.FinAccountTransId,
                 StatusId = "FINACT_TRNS_CANCELED"
             });
         }

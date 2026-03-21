@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
-using Application.Accounting.Services;
 
 namespace Application.Order.SalesRequests;
 
@@ -21,19 +20,12 @@ public class DeleteSalesRequest
     public class Handler : IRequestHandler<Command, Result<Unit>>
     {
         private readonly DataContext _context;
-        private readonly IAcctgTransService _acctgTransService;
-        private readonly IPaymentHelperService _paymentHelperService;
 
         private const string ApartmentAvailableStatusId = "APARTMENT_AVAILABLE"; // adjust if needed
 
-        public Handler(
-            DataContext context,
-            IAcctgTransService acctgTransService,
-            IPaymentHelperService paymentHelperService)
+        public Handler(DataContext context)
         {
             _context = context;
-            _acctgTransService = acctgTransService;
-            _paymentHelperService = paymentHelperService;
         }
 
         public async Task<Result<Unit>> Handle(Command request, CancellationToken ct)
@@ -46,7 +38,7 @@ public class DeleteSalesRequest
             {
                 // 1. Load SalesRequest
                 var sr = await _context.SalesRequests
-                    .Include(s => s.Installments)      // ← NEW: Load custom installments
+                    .Include(s => s.Installments) // ← NEW: Load custom installments
                     .FirstOrDefaultAsync(x => x.SalesRequestId == salesRequestId, ct);
 
                 if (sr == null)
@@ -67,13 +59,25 @@ public class DeleteSalesRequest
                 // -----------------------------------------------------------------
                 if (sr.StatusId == "SALES_REQUEST_APPROVED")
                 {
-                    // Delete generated payments (identified via Comments)
+                    // Delete generated payments
                     var payments = await _context.Payments
                         .Where(p => p.SalesRequestId == sr.SalesRequestId)
                         .ToListAsync(ct);
 
                     if (payments.Any())
+                    {
+                        var paymentIds = payments.Select(p => p.PaymentId).ToList();
+
+                        // Delete related FinAccountTran
+                        var finAccountTrans = await _context.FinAccountTrans
+                            .Where(fat => fat.PaymentId != null && paymentIds.Contains(fat.PaymentId))
+                            .ToListAsync(ct);
+
+                        if (finAccountTrans.Any())
+                            _context.FinAccountTrans.RemoveRange(finAccountTrans);
+
                         _context.Payments.RemoveRange(payments);
+                    }
 
                     // Delete accounting transaction + entries
                     var acctgTransList = await _context.AcctgTrans
@@ -94,7 +98,7 @@ public class DeleteSalesRequest
                         _context.AcctgTrans.RemoveRange(acctgTransList);
                     }
                 }
-                
+
                 if (sr.Installments.Any())
                 {
                     _context.SalesRequestInstallments.RemoveRange(sr.Installments);

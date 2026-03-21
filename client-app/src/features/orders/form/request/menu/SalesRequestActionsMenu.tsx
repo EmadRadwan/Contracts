@@ -3,7 +3,8 @@ import React, {useState} from "react";
 import {useTranslationHelper} from "../../../../../app/hooks/useTranslationHelper";
 import {
     useApproveSalesRequestMutation,
-    useDeleteSalesRequestMutation
+    useDeleteSalesRequestMutation,
+    useResetSalesRequestMutation
 } from "../../../../../app/store/apis/salesRequestApi";
 import {useNavigate} from "react-router";
 import {toast} from "react-toastify";
@@ -37,7 +38,9 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
     const {getTranslatedLabel} = useTranslationHelper();
     const [approveSR, {isLoading}] = useApproveSalesRequestMutation();
     const [deleteSR, { isLoading: isDeleting }] = useDeleteSalesRequestMutation();  // ← new mutation
+    const [resetSR, { isLoading: isResetting }] = useResetSalesRequestMutation();
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);  // ← NEW: Confirmation state
+    const [confirmResetOpen, setConfirmResetOpen] = useState(false);
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
@@ -87,7 +90,27 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
         }
     };
 
+    const handleResetClick = () => {
+        setConfirmResetOpen(true);
+        handleClose();
+    };
+
+    const handleResetConfirm = async () => {
+        if (!salesRequestId) return;
+
+        try {
+            const updatedSalesRequest = await resetSR(salesRequestId).unwrap();
+            toast.success(getTranslatedLabel("salesRequest.form.resetSuccess", "Sales Request Reset Successfully"));
+            onSalesRequestUpdated?.(updatedSalesRequest as unknown as SalesRequest);
+        } catch (error) {
+            toast.error(getTranslatedLabel("salesRequest.form.resetError", "Failed to reset sales request"));
+        } finally {
+            setConfirmResetOpen(false);
+        }
+    };
+
     const isApproveDisabled = !salesRequestId || currentStatusId === "SALES_REQUEST_APPROVED";
+    const isResetDisabled = !salesRequestId || currentStatusId !== "SALES_REQUEST_APPROVED";
 
     return (
         <>
@@ -111,6 +134,15 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
                 <MenuItem onClick={handleApprove} disabled={isApproveDisabled || isLoading}>
                     {getTranslatedLabel('salesRequest.form.approve', 'Approve Sales Request')}
                 </MenuItem>
+
+                <Can perform="ResetSalesRequest">
+                    <MenuItem
+                        onClick={handleResetClick}
+                        disabled={isResetDisabled || isResetting}
+                    >
+                        {getTranslatedLabel('salesRequest.form.reset', 'Reset Sales Request')}
+                    </MenuItem>
+                </Can>
 
                 <Can perform="DeleteSalesRequest">
                     <MenuItem
@@ -155,6 +187,43 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
                         {isDeleting
                             ? getTranslatedLabel('salesRequest.form.deleting', 'Deleting...')
                             : getTranslatedLabel('salesRequest.form.delete', 'Delete')
+                        }
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog
+                open={confirmResetOpen}
+                onClose={() => setConfirmResetOpen(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>
+                    {getTranslatedLabel('salesRequest.form.resetConfirmTitle', 'Confirm Reset')}
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        {getTranslatedLabel('salesRequest.form.resetConfirmMessage',
+                            'Are you sure you want to reset this Sales Request? ' +
+                            'This will delete all payments and accounting entries generated during approval, ' +
+                            'and set the status back to Created.'
+                        )}
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setConfirmResetOpen(false)} disabled={isResetting}>
+                        {getTranslatedLabel('general.cancel', 'Cancel')}
+                    </Button>
+                    <Button
+                        onClick={handleResetConfirm}
+                        variant="contained"
+                        color="primary"
+                        disabled={isResetting}
+                        startIcon={isResetting ? <CircularProgress size={16} /> : null}
+                    >
+                        {isResetting
+                            ? getTranslatedLabel('salesRequest.form.resetting', 'Resetting...')
+                            : getTranslatedLabel('salesRequest.form.reset', 'Reset')
                         }
                     </Button>
                 </DialogActions>

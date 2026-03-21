@@ -43,7 +43,7 @@ grep -Ev 'Permission|ConfigXMLReader|ScreenFactory|LoginWorker|ServerHitBin|Pers
 "DefaultConnection": "server=localhost;user=root;password=baba1934;database=erp"
 dotnet ef database drop -p Persistence -s API
 dotnet ef migrations add "Added uom to orderitem" -p Persistence -s API
-dotnet ef migrations add CreateInvoiceRecordsView -p Persistence -s API
+dotnet ef migrations add AddCreatedStampToInvoiceRecordsView -p Persistence -s API
 //Migrations for database views:
 dotnet ef migrations add AddPaymentLinkToEmployeeAdvance -p Persistence -s API
     - then add the database view creation code to the newly created migration file
@@ -240,10 +240,10 @@ cd ~/mysql-backups/contracts-golden
     > ~/mysql-backups/contracts-golden/erp_contracts_no_definer_$(date +%Y-%m-%d_%H-%M-%S).sql
 
 gzip ~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-02-01_11-35-20.sql
-scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-03-15_21-17-06.sql ~/Desktop/
+scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-03-19_18-32-12.sql ~/Desktop/
 gunzip ~/Desktop/erp_contracts_no_definer_2026-02-01_11-35-20.sql.gz
 
-mysql -u root -p erp_contracts < erp_contracts_no_definer_2026-03-15_21-17-06.sql
+mysql -u root -p erp_contracts < erp_contracts_no_definer_2026-03-19_18-32-12.sql
 
 
 

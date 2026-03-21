@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence;
 
@@ -10,9 +11,11 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20260318202025_AddCreatedStampToInvoiceRecordsView")]
+    partial class AddCreatedStampToInvoiceRecordsView
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -20638,10 +20641,6 @@ namespace Persistence.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("CertificateNumber");
 
-                    b.Property<DateTime?>("CreatedStamp")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("CreatedStamp");
-
                     b.Property<string>("Description")
                         .HasColumnType("longtext")
                         .HasColumnName("Description");
@@ -28918,6 +28917,12 @@ namespace Persistence.Migrations
                         .HasColumnType("datetime")
                         .HasColumnName("EFFECTIVE_DATE");
 
+                    b.Property<string>("FinAccountTransId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("FIN_ACCOUNT_TRANS_ID");
+
                     b.Property<bool?>("IsBankTransfer")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
@@ -29021,6 +29026,8 @@ namespace Persistence.Migrations
                     b.HasIndex(new[] { "ActualCurrencyUomId" }, "PAYMENT_ACUOM");
 
                     b.HasIndex(new[] { "CurrencyUomId" }, "PAYMENT_CUOM");
+
+                    b.HasIndex(new[] { "FinAccountTransId" }, "PAYMENT_FACTX");
 
                     b.HasIndex(new[] { "PartyIdFrom" }, "PAYMENT_FPTY");
 
@@ -64976,6 +64983,12 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("FIN_ACT_TX_PARTY");
 
+                    b.HasOne("Domain.Payment", "Payment")
+                        .WithMany("FinAccountTrans")
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FIN_ACT_TX_PMT");
+
                     b.HasOne("Domain.Party", "PerformedByParty")
                         .WithMany("FinAccountTranPerformedByParties")
                         .HasForeignKey("PerformedByPartyId")
@@ -65009,6 +65022,8 @@ namespace Persistence.Migrations
                     b.Navigation("OrderI");
 
                     b.Navigation("Party");
+
+                    b.Navigation("Payment");
 
                     b.Navigation("PerformedByParty");
 
@@ -69897,6 +69912,12 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("PAYMENT_CUOM");
 
+                    b.HasOne("Domain.FinAccountTran", "FinAccountTransNavigation")
+                        .WithMany("Payments")
+                        .HasForeignKey("FinAccountTransId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("PAYMENT_FACTX");
+
                     b.HasOne("Domain.GlAccount", "OverrideGlAccount")
                         .WithMany("Payments")
                         .HasForeignKey("OverrideGlAccountId")
@@ -69974,6 +69995,8 @@ namespace Persistence.Migrations
                     b.Navigation("CostCenter");
 
                     b.Navigation("CurrencyUom");
+
+                    b.Navigation("FinAccountTransNavigation");
 
                     b.Navigation("OverrideGlAccount");
 
@@ -80788,6 +80811,8 @@ namespace Persistence.Migrations
 
                     b.Navigation("FinAccountTransAttributes");
 
+                    b.Navigation("Payments");
+
                     b.Navigation("ReturnItemResponses");
                 });
 
@@ -82187,6 +82212,8 @@ namespace Persistence.Migrations
                     b.Navigation("Deductions");
 
                     b.Navigation("EmployeeAdvances");
+
+                    b.Navigation("FinAccountTrans");
 
                     b.Navigation("PaymentApplicationPayments");
 

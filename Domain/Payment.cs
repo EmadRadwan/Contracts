@@ -6,7 +6,6 @@ public class Payment
     {
         AcctgTrans = new HashSet<AcctgTran>();
         Deductions = new HashSet<Deduction>();
-        FinAccountTrans = new HashSet<FinAccountTran>();
         PaymentApplicationPayments = new HashSet<PaymentApplication>();
         PaymentApplicationToPayments = new HashSet<PaymentApplication>();
         PaymentAttributes = new HashSet<PaymentAttribute>();
@@ -34,7 +33,6 @@ public class Payment
     public decimal Amount { get; set; }
     public string? CurrencyUomId { get; set; }
     public string? Comments { get; set; }
-    public string? FinAccountTransId { get; set; }
     public string? OverrideGlAccountId { get; set; }
     public decimal? ActualCurrencyAmount { get; set; }
     public bool? IsBankTransfer { get; set; }
@@ -52,7 +50,6 @@ public class Payment
 
     public Uom? ActualCurrencyUom { get; set; }
     public Uom? CurrencyUom { get; set; }
-    public FinAccountTran? FinAccountTransNavigation { get; set; }
     public GlAccount? OverrideGlAccount { get; set; }
     public Party? PartyIdFromNavigation { get; set; }
     public Party? PartyIdToNavigation { get; set; }
@@ -71,7 +68,6 @@ public class Payment
     public StatusItem? Status { get; set; }
     public ICollection<AcctgTran> AcctgTrans { get; set; }
     public ICollection<Deduction> Deductions { get; set; }
-    public ICollection<FinAccountTran> FinAccountTrans { get; set; }
     public ICollection<PaymentApplication> PaymentApplicationPayments { get; set; }
     public ICollection<PaymentApplication> PaymentApplicationToPayments { get; set; }
     public ICollection<PaymentAttribute> PaymentAttributes { get; set; }

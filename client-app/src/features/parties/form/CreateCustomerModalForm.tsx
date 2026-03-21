@@ -10,7 +10,7 @@ import {
 } from '../../../app/store/configureStore';
 import agent from '../../../app/api/agent';
 import LoadingComponent from '../../../app/layout/LoadingComponent';
-import { phoneValidator, requiredValidator } from '../../../app/common/form/Validators';
+import {requiredValidator } from '../../../app/common/form/Validators';
 import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
 
 interface Props {

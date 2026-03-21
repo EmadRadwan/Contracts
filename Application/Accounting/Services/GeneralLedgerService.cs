@@ -1292,7 +1292,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 OrigAmount = totalOrigAmount,
                 OrigCurrencyUomId = invoice.CurrencyUomId,
                 PartyId = invoice.PartyId,
-                RoleTypeId = "BILL_TO_CUSTOMER"
+                RoleTypeId = "BILL_TO_CUSTOMER",
             };
 
             acctgTransEntries.Add(debitEntry);

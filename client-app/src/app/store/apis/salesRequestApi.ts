@@ -137,6 +137,16 @@ const salesRequestApi = createApi({
                 }),
                 invalidatesTags: ['SalesRequest'],
             }),
+            resetSalesRequest: builder.mutation<
+                CreateSalesRequest.SalesRequestResponseDto,
+                string
+                >({
+                query: (salesRequestId) => ({
+                    url: `salesRequests/${salesRequestId}/reset`,
+                    method: 'POST',
+                }),
+                invalidatesTags: ['SalesRequest'],
+            }),
             // -----------------------------------------------------------------
             // DELETE – optional (not used in current UI but kept for completeness)
             // -----------------------------------------------------------------
@@ -194,6 +204,7 @@ export const {
     useUpdateSalesRequestMutation,
     useDeleteSalesRequestMutation,
     useApproveSalesRequestMutation,
+    useResetSalesRequestMutation,
     useCalculateInstallmentPriceMutation,
     useFetchReserveRequestsQuery,
     useAddReserveRequestMutation,

@@ -1,3 +1,4 @@
+/*
 using Application.Accounting.PaymentGroup;
 using Application.Accounting.Services;
 using Application.Accounting.Services.Models;
@@ -63,3 +64,4 @@ namespace Application.Accounting.PaymentGroup
         }
     }
 }
+*/

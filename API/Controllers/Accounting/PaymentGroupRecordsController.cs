@@ -1,4 +1,4 @@
-using API.Controllers.OData;
+/*using API.Controllers.OData;
 using Application.Accounting.Payments;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Query;
@@ -15,4 +15,4 @@ public class PaymentGroupRecordsController : BaseODataController<PaymentGroupRec
         var query = await Mediator.Send(new ListPaymentGroups.Query { Options = options, Language = language });
         return await HandleODataQueryAsync(query, options);
     }
-}
+}*/

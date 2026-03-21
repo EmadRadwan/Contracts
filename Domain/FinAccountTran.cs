@@ -11,7 +11,6 @@ public class FinAccountTran
     {
         AcctgTrans = new HashSet<AcctgTran>();
         FinAccountTransAttributes = new HashSet<FinAccountTransAttribute>();
-        Payments = new HashSet<Payment>();
         ReturnItemResponses = new HashSet<ReturnItemResponse>();
     }
 
@@ -40,12 +39,10 @@ public class FinAccountTran
     public GlReconciliation? GlReconciliation { get; set; }
     public OrderItem? OrderI { get; set; }
     public Party? Party { get; set; }
-    public Payment? Payment { get; set; }
     public Party? PerformedByParty { get; set; }
     public Enumeration? ReasonEnum { get; set; }
     public StatusItem? Status { get; set; }
     public ICollection<AcctgTran> AcctgTrans { get; set; }
     public ICollection<FinAccountTransAttribute> FinAccountTransAttributes { get; set; }
-    public ICollection<Payment> Payments { get; set; }
     public ICollection<ReturnItemResponse> ReturnItemResponses { get; set; }
 }

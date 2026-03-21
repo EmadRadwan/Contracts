@@ -98,7 +98,7 @@ public class ListPayments
                     ActualCurrencyAmount = pyt.ActualCurrencyAmount ?? pyt.Amount,
                     CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
 
-                    FinAccountTransId = pyt.FinAccountTransId,
+                    //FinAccountTransId = pyt.FinAccountTransId,
                     OverrideGlAccountId = pyt.OverrideGlAccountId,
 
                     FromPartyId = new OrderPartyDto

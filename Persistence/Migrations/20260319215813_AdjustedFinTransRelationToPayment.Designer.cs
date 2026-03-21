@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence;
 
@@ -10,9 +11,11 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20260319215813_AdjustedFinTransRelationToPayment")]
+    partial class AdjustedFinTransRelationToPayment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -28918,6 +28921,9 @@ namespace Persistence.Migrations
                         .HasColumnType("datetime")
                         .HasColumnName("EFFECTIVE_DATE");
 
+                    b.Property<string>("FinAccountTransId")
+                        .HasColumnType("varchar(36)");
+
                     b.Property<bool?>("IsBankTransfer")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
@@ -29011,6 +29017,8 @@ namespace Persistence.Migrations
                         .HasColumnName("WORK_EFFORT_ID");
 
                     b.HasKey("PaymentId");
+
+                    b.HasIndex("FinAccountTransId");
 
                     b.HasIndex(new[] { "CostCenterId" }, "IX_PAYMENT_COST_CENTER_ID");
 
@@ -64976,6 +64984,12 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("FIN_ACT_TX_PARTY");
 
+                    b.HasOne("Domain.Payment", "Payment")
+                        .WithMany()
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FIN_ACT_TX_PMT");
+
                     b.HasOne("Domain.Party", "PerformedByParty")
                         .WithMany("FinAccountTranPerformedByParties")
                         .HasForeignKey("PerformedByPartyId")
@@ -65009,6 +65023,8 @@ namespace Persistence.Migrations
                     b.Navigation("OrderI");
 
                     b.Navigation("Party");
+
+                    b.Navigation("Payment");
 
                     b.Navigation("PerformedByParty");
 
@@ -69896,6 +69912,11 @@ namespace Persistence.Migrations
                         .HasForeignKey("CurrencyUomId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("PAYMENT_CUOM");
+
+                    b.HasOne("Domain.FinAccountTran", null)
+                        .WithMany("Payments")
+                        .HasForeignKey("FinAccountTransId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Domain.GlAccount", "OverrideGlAccount")
                         .WithMany("Payments")
@@ -80787,6 +80808,8 @@ namespace Persistence.Migrations
                     b.Navigation("AcctgTrans");
 
                     b.Navigation("FinAccountTransAttributes");
+
+                    b.Navigation("Payments");
 
                     b.Navigation("ReturnItemResponses");
                 });

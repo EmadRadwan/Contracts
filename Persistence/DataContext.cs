@@ -16364,10 +16364,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasForeignKey(d => d.PartyId)
                     .HasConstraintName("FIN_ACT_TX_PARTY");
 
-                entity.HasOne(d => d.Payment)
-                    .WithMany(p => p.FinAccountTrans)
-                    .HasForeignKey(d => d.PaymentId)
-                    .HasConstraintName("FIN_ACT_TX_PMT");
+         
 
                 entity.HasOne(d => d.PerformedByParty)
                     .WithMany(p => p.FinAccountTranPerformedByParties)
@@ -32068,7 +32065,6 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
 
                 entity.HasIndex(e => e.CurrencyUomId, "PAYMENT_CUOM");
 
-                entity.HasIndex(e => e.FinAccountTransId, "PAYMENT_FACTX");
 
                 entity.HasIndex(e => e.PartyIdFrom, "PAYMENT_FPTY");
 
@@ -32143,10 +32139,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnType("datetime")
                     .HasColumnName("EFFECTIVE_DATE");
 
-                entity.Property(e => e.FinAccountTransId)
-                    .HasMaxLength(36)
-                    .IsUnicode(false)
-                    .HasColumnName("FIN_ACCOUNT_TRANS_ID");
+              
                     
                      entity.Property(e => e.WorkEffortId)
                     .HasMaxLength(20)                    // WorkEffort.WorkEffortId is varchar(20) in OFBiz
@@ -32241,10 +32234,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasForeignKey(d => d.CurrencyUomId)
                     .HasConstraintName("PAYMENT_CUOM");
 
-                entity.HasOne(d => d.FinAccountTransNavigation)
-                    .WithMany(p => p.Payments)
-                    .HasForeignKey(d => d.FinAccountTransId)
-                    .HasConstraintName("PAYMENT_FACTX");
+              
 
                 entity.HasOne(d => d.OverrideGlAccount)
                     .WithMany(p => p.Payments)
@@ -32312,8 +32302,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .OnDelete(DeleteBehavior.ClientSetNull)  // Optional: explicit for clarity; allows deleting SalesRequest without cascading
                     .HasConstraintName("FK_PAYMENT_SALES_REQUEST");
 
-                
-                    
+              
             });
 
             modelBuilder.Entity<PaymentApplication>(entity =>
@@ -65451,6 +65440,7 @@ entity.Property(e => e.BuildingNumber)
         entity.Property(e => e.InvoiceTypeDescription).HasColumnName("InvoiceTypeDescription");
         entity.Property(e => e.InvoiceDate).HasColumnName("InvoiceDate");
         entity.Property(e => e.DueDate).HasColumnName("DueDate");
+        entity.Property(e => e.CreatedStamp).HasColumnName("CreatedStamp");
         entity.Property(e => e.PaidDate).HasColumnName("PaidDate");
         entity.Property(e => e.StatusId).HasColumnName("StatusId");
         entity.Property(e => e.StatusDescription).HasColumnName("StatusDescription");

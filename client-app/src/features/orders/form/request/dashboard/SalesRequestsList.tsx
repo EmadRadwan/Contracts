@@ -110,7 +110,9 @@ function SalesRequestsList() {
                 onSalesRequestCreated={handleSalesRequestCreated}
                 onSalesRequestUpdated={(updated) => {
                     setSelectedSR(updated);   // Update the object with fresh data (new status, timestamps, etc.)
-                    setEditMode(3);           // Switch to read-only "Approved" mode
+                    // Decide edit mode based on status
+                    const isApproved = updated.statusId === "SALES_REQUEST_APPROVED";
+                    setEditMode(isApproved ? 3 : 2);
                 }}
             />
         );

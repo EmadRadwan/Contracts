@@ -94,7 +94,7 @@ public class ListPaymentsDaily
                     OrganizationPartyId = ptt.ParentTypeId == "DISBURSEMENT" ? pyt.PartyIdFrom : pyt.PartyIdTo,
                     Amount = pyt.Amount,
                     CurrencyUomId = pyt.CurrencyUomId,
-                    FinAccountTransId = pyt.FinAccountTransId,
+                    //FinAccountTransId = pyt.FinAccountTransId,
                     IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
                     ChequeNumber = pyt.ChequeNumber,
                     ChequeDate = pyt.ChequeDate,

@@ -228,8 +228,8 @@ public class UpdatePayment
 
                     await _context.SaveChangesAsync(cancellationToken);
 
-                    if (addedFinAccountTran != null) addedFinAccountTran.Entity.PaymentId = payment.PaymentId;
-                    payment.FinAccountTransId = finAccountTransId;
+                    /*if (addedFinAccountTran != null) addedFinAccountTran.Entity.PaymentId = payment.PaymentId;
+                    payment.FinAccountTransId = finAccountTransId;*/
                 }
                 
                 // Create accounting entry for postdated cheques when applicable
@@ -279,7 +279,7 @@ public class UpdatePayment
                     PaymentId = payment.PaymentId,
                     StatusId = payment.StatusId,
                     StatusDescription = "Not Paid",
-                    FinAccountTransId = payment.FinAccountTransId,
+                    //FinAccountTransId = payment.FinAccountTransId,
                     Comments = payment.Comments,
                     Amount = payment.Amount,
                     IsBankTransfer = payment.IsBankTransfer,

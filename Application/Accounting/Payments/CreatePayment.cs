@@ -122,7 +122,7 @@ public class CreatePayment
                     await _context.SaveChangesAsync(cancellationToken);
 
                     if (addedFinAccountTran != null) addedFinAccountTran.Entity.PaymentId = payment.PaymentId;
-                    payment.FinAccountTransId = finAccountTransId;
+                    //payment.FinAccountTransId = finAccountTransId;
                 }
 
                 await _context.SaveChangesAsync(cancellationToken);

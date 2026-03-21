@@ -28,6 +28,13 @@ public class SalesRequestsController : BaseApiController
         var command = new ApproveSalesRequest.Command { SalesRequestId = id };
         return HandleResult(await Mediator.Send(command));
     }
+
+    [HttpPost("{id}/reset")]
+    public async Task<IActionResult> Reset(string id)
+    {
+        var command = new ResetSalesRequest.Command { SalesRequestId = id };
+        return HandleResult(await Mediator.Send(command));
+    }
     
     [HttpPost("calculate-meter-price")]
     public async Task<IActionResult> CalculateMeterPrice([FromBody] CalculateMeterPrice.Query query)

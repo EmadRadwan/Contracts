@@ -1,4 +1,4 @@
-using Application.Interfaces;
+/*using Application.Interfaces;
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.OData.Query;
@@ -62,4 +62,4 @@ public class ListPaymentGroups
             return query.AsQueryable();
         }
     }
-}
+}*/

@@ -12,6 +12,7 @@ public class InvoiceView
     public DateTime? InvoiceDate { get; set; }
     public DateTime? DueDate { get; set; }
     public DateTime? PaidDate { get; set; }
+    public DateTime? CreatedStamp { get; set; }
 
     public string StatusId { get; set; } = null!;
 
