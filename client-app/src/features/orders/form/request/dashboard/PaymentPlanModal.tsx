@@ -354,24 +354,32 @@ export default function PaymentPlanModal({
         const { dataItem } = props;
 
         return (
-            <td className="k-command-cell" style={{ textAlign: "center" }}>
+            <td className="k-command-cell" style={{ textAlign: "center", padding: "8px" }}>
                 <IconButton
-                    size="small"
+                    size="medium"
                     color="primary"
                     title={getTranslatedLabel("salesRequest.paymentPlan.edit", "Edit")}
                     onClick={() => openEditModal(dataItem)}
+                    sx={{
+                        p: 1, // Add padding to increase click area
+                        '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.04)' }
+                    }}
                 >
-                    <EditIcon fontSize="small" />
+                    <EditIcon fontSize="medium" />
                 </IconButton>
 
                 {dataItem.isAdvance && advanceSplitCount > 1 && (
                     <IconButton
-                        size="small"
+                        size="medium"
                         color="error"
                         title={getTranslatedLabel("salesRequest.paymentPlan.delete", "Delete")}
                         onClick={() => deleteAdvanceRow(dataItem.id)}
+                        sx={{
+                            p: 1, // Add padding to increase click area
+                            '&:hover': { backgroundColor: 'rgba(211, 47, 47, 0.04)' }
+                        }}
                     >
-                        <DeleteIcon fontSize="small" />
+                        <DeleteIcon fontSize="medium" />
                     </IconButton>
                 )}
             </td>
@@ -483,7 +491,11 @@ export default function PaymentPlanModal({
                                 ))}
                             </TextField>
                             {advanceSplitCount < 3 && (
-                                <IconButton color="primary" onClick={addAdvanceRow}>
+                                <IconButton 
+                                    color="primary" 
+                                    onClick={addAdvanceRow}
+                                    sx={{ p: 1 }} // Increase hit area
+                                >
                                     <AddIcon />
                                 </IconButton>
                             )}
