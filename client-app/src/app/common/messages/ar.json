@@ -2065,7 +2065,11 @@
         "contactNumber": "رقم الاتصال",
         "address": "العنوان",
         "email": "البريد الإلكتروني",
-        "partyType": "نوع الطرف"
+        "partyType": "نوع الطرف",
+        "deleteSuccess": "تم حذف الطرف بنجاح",
+        "deleteFailed": "فشل حذف الطرف",
+        "deleteDialogTitle": "تأكيد الحذف",
+        "deleteDialogMessage": "هل أنت متأكد من رغبتك في حذف الطرف {0}؟ لا يمكن التراجع عن هذا الإجراء."
       },
       "board": {
         "loading": "جاري تحميل خط المبيعات...",

@@ -140,10 +140,22 @@ public class PartiesController : BaseApiController
         return HandleResult(await Mediator.Send(new UpdateContractor.Command { PartyDto = partyDto }));
     }
 
+    [HttpDelete("deleteParty/{partyId}")]
+    public async Task<IActionResult> DeleteParty(string partyId)
+    {
+        return HandleResult(await Mediator.Send(new DeleteParty.Command { PartyId = partyId }));
+    }
+
     [HttpGet("getCompanies")]
     public async Task<IActionResult> GetCompanies()
     {
         return HandleResult(await Mediator.Send(new ListCompanies.Query()));
+    }
+
+    [HttpGet("listAllParties")]
+    public async Task<IActionResult> ListAllParties()
+    {
+        return HandleResult(await Mediator.Send(new ListAllParties.Query()));
     }
 
     [HttpGet("listRoles")]

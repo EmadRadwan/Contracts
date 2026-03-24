@@ -33,6 +33,10 @@ import CreateContractorForm from "../form/CreateContractorForm";
 import CreateEmployeeForm from "../form/CreateEmployeeForm";
 import {toast} from "react-toastify";
 import ManageRolesModal from "./ManageRolesModal";
+import {PartiesExcel} from "../report/PartiesExcel";
+import {Can} from "../../account/Can";
+import {useDeletePartyMutation} from "../../../app/store/apis";
+import {DialogContentText} from "@mui/material";
 
 
 export default function PartiesList() {
@@ -58,6 +62,40 @@ export default function PartiesList() {
     const [newRole, setNewRole] = useState<string>("");
 
     const [updateMainRole, {isLoading: isUpdatingRole}] = useUpdatePartyMainRoleMutation();
+    const [deleteParty, {isLoading: isDeleting}] = useDeletePartyMutation();
+
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [partyToDelete, setPartyToDelete] = useState<string | null>(null);
+
+    const handleDeleteClick = (partyId: string) => {
+        setPartyToDelete(partyId);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!partyToDelete) return;
+
+        try {
+            await deleteParty(partyToDelete).unwrap();
+            toast.success(getTranslatedLabel("party.parties.list.deleteSuccess", "Party deleted successfully"));
+        } catch (err: any) {
+            let errorMessage = getTranslatedLabel("party.parties.list.deleteFailed", "Failed to delete party");
+            if (err?.data) {
+                errorMessage = err.data.title;
+            } else if (typeof err?.data === "string") {
+                errorMessage = err.data;
+            }
+            toast.error(errorMessage);
+        } finally {
+            setDeleteDialogOpen(false);
+            setPartyToDelete(null);
+        }
+    };
+
+    const handleCancelDelete = () => {
+        setDeleteDialogOpen(false);
+        setPartyToDelete(null);
+    };
 
     function handleSelectParty(partyId: string, formValue: string) {
         const selectedParty: Party | undefined = parties?.data.find((party: any) => party.partyId === partyId);
@@ -98,6 +136,17 @@ export default function PartiesList() {
                     >
                         {getTranslatedLabel("party.parties.list.manageRoles", "Manage Roles")}
                     </Button>
+                    <Can perform="deleteParty">
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            color="error"
+                            disabled={isDeleting}
+                            onClick={() => handleDeleteClick(props.dataItem.partyId)}
+                        >
+                            {getTranslatedLabel("common.delete", "Delete")}
+                        </Button>
+                    </Can>
                 </Box>
             </td>
         );
@@ -217,6 +266,10 @@ export default function PartiesList() {
                                                 </Button>
                                             </Grid>
 
+                                            <Grid item xs={2}>
+                                                <PartiesExcel getTranslatedLabel={getTranslatedLabel} />
+                                            </Grid>
+
                                         </Grid>
 
 
@@ -333,7 +386,45 @@ export default function PartiesList() {
                                                 : getTranslatedLabel("common.save", "Save")}
                                         </Button>
                                     </DialogActions>
-                                </Dialog>{isFetching && <LoadingComponent
+                                </Dialog>
+                                <Dialog
+                                    open={deleteDialogOpen}
+                                    onClose={handleCancelDelete}
+                                    aria-labelledby="delete-party-dialog-title"
+                                    aria-describedby="delete-party-dialog-description"
+                                >
+                                    <DialogTitle id="delete-party-dialog-title">
+                                        {getTranslatedLabel(
+                                            "party.parties.list.deleteDialogTitle",
+                                            "Confirm Deletion"
+                                        )}
+                                    </DialogTitle>
+                                    <DialogContent>
+                                        <DialogContentText id="delete-party-dialog-description">
+                                            {getTranslatedLabel(
+                                                "party.parties.list.deleteDialogMessage",
+                                                "Are you sure you want to delete party {0}? This action cannot be undone."
+                                            ).replace("{0}", partyToDelete || "")}
+                                        </DialogContentText>
+                                    </DialogContent>
+                                    <DialogActions>
+                                        <Button onClick={handleCancelDelete} disabled={isDeleting}>
+                                            {getTranslatedLabel("common.cancel", "Cancel")}
+                                        </Button>
+                                        <Button
+                                            onClick={handleConfirmDelete}
+                                            color="error"
+                                            variant="contained"
+                                            disabled={isDeleting}
+                                            autoFocus
+                                        >
+                                            {isDeleting
+                                                ? getTranslatedLabel("common.deleting", "Deleting...")
+                                                : getTranslatedLabel("common.delete", "Delete")}
+                                        </Button>
+                                    </DialogActions>
+                                </Dialog>
+                                {isFetching && <LoadingComponent
                                 message={getTranslatedLabel("party.parties.list.loading", "Loading Parties...")}/>}
                             </div>
 

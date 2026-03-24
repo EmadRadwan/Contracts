@@ -260,6 +260,19 @@ const partiesApi = createApi({
                 }),
                 invalidatesTags: ['PartyRole'],
             }),
+            deleteParty: builder.mutation<void, string>({
+                query: (partyId) => ({
+                    url: `/parties/deleteParty/${partyId}`,
+                    method: 'DELETE',
+                }),
+                invalidatesTags: ['Parties'],
+            }),
+            fetchAllPartiesForReport: builder.query<any[], void>({
+                query: () => ({
+                    url: '/parties/listAllParties',
+                    method: 'GET',
+                }),
+            }),
         };
     },
 });
@@ -278,5 +291,7 @@ export const {
     useCreateEmployeeAdvanceMutation,
     useUpdateEmployeeAdvanceMutation, useDeleteEmployeeAdvanceMutation, useLazyGetEmployeeAdvanceDetailQuery,
     useFetchRolesTypesQuery, useFetchPartyRolesQuery, useAddPartyRoleMutation, useDeletePartyRoleMutation,
+    useDeletePartyMutation,
+    useLazyFetchAllPartiesForReportQuery,
 } = partiesApi;
 export {partiesApi};
