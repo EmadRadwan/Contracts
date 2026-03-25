@@ -50,6 +50,7 @@ export const PaymentFieldsSection: React.FC<PaymentFieldsSectionProps> = React.m
                         name="dateOfFirstInstallment"
                         label={getTranslatedLabel("salesRequest.form.firstInstallmentDate", "First")}
                         component={FormDatePicker}
+                        hint={getTranslatedLabel("salesRequest.form.dateUpdateHint", "Changes will update the payment schedule dates immediately")}
                     />
                 </Grid>
 
@@ -60,6 +61,7 @@ export const PaymentFieldsSection: React.FC<PaymentFieldsSectionProps> = React.m
                         label={getTranslatedLabel("salesRequest.form.duration", "Months")}
                         min={0}
                         component={FormNumericTextBox}
+                        hint={getTranslatedLabel("salesRequest.form.dateUpdateHint", "Changes will update the payment schedule dates immediately")}
                     />
                 </Grid>
 

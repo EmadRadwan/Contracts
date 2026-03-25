@@ -78,6 +78,9 @@ export default function PaymentPlanModal({
 
     const [advanceSplitCount, setAdvanceSplitCount] = useState(1);
     const [rows, setRows] = useState<InstallmentRow[]>([]);
+    const [originalRows, setOriginalRows] = useState<InstallmentRow[]>([]);
+    const [showRecreateConfirm, setShowRecreateConfirm] = useState(false);
+    const [pendingRecreate, setPendingRecreate] = useState<InstallmentRow[] | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [roundingMode, setRoundingMode] = useState<'100' | '1000'>('100');
     const [bulkEditOpen, setBulkEditOpen] = useState(false);
@@ -101,8 +104,49 @@ export default function PaymentPlanModal({
     };
 
     useEffect(() => {
+        const generateSchedule = (): InstallmentRow[] => {
+            const advanceRowsLocal: InstallmentRow[] = [];
+            const regularRowsLocal: InstallmentRow[] = [];
+
+            if (advancePayment > 0) {
+                const singleAdvanceDate = new Date();
+                singleAdvanceDate.setDate(singleAdvanceDate.getDate() + 7);
+                advanceRowsLocal.push({
+                    id: "adv-1",
+                    number: 1,
+                    dueDate: singleAdvanceDate.toISOString().split("T")[0],
+                    amount: applyRounding(advancePayment, roundingMode),
+                    isAdvance: true,
+                });
+            }
+
+            if ((totalPrice - advancePayment) > 0 && numberOfInstallments > 0 && dateOfFirstInstallment) {
+                const totalToSplit = totalPrice - (advanceRowsLocal.length > 0 ? advanceRowsLocal[0].amount : advancePayment);
+                const installmentAmount = applyRounding(totalToSplit / numberOfInstallments, roundingMode);
+                let currentDate = new Date(dateOfFirstInstallment);
+
+                for (let i = 1; i <= numberOfInstallments; i++) {
+                    regularRowsLocal.push({
+                        id: `inst-${i}`,
+                        number: i,
+                        dueDate: currentDate.toISOString().split("T")[0],
+                        amount: i === 1 ? 0 : installmentAmount,
+                        isAdvance: false,
+                    });
+                    currentDate.setMonth(currentDate.getMonth() + monthsBetweenInstallments);
+                }
+
+                if (regularRowsLocal.length > 0) {
+                    const totalAdvance = advanceRowsLocal.reduce((s, r) => s + r.amount, 0);
+                    const otherRegularsSum = regularRowsLocal.slice(1).reduce((s, r) => s + r.amount, 0);
+                    regularRowsLocal[0].amount = totalPrice - totalAdvance - otherRegularsSum;
+                }
+            }
+            return [...advanceRowsLocal, ...regularRowsLocal];
+        };
+
         if (initialInstallments && initialInstallments.length > 0) {
-            const mapped: InstallmentRow[] = initialInstallments.map((inst, idx) => ({
+            let mapped: InstallmentRow[] = initialInstallments.map((inst, idx) => ({
                 id: `custom-${idx}`,
                 number: idx + 1,
                 dueDate: inst.dueDate,
@@ -110,55 +154,52 @@ export default function PaymentPlanModal({
                 isAdvance: inst.isAdvance,
             }));
 
-            const advanceCount = mapped.filter(r => r.isAdvance).length;
+            const advanceRowsIdx = mapped.filter(r => r.isAdvance);
+            const regularRowsIdx = mapped.filter(r => !r.isAdvance);
+            
+            advanceRowsIdx.forEach((r, idx) => r.number = idx + 1);
+            regularRowsIdx.forEach((r, idx) => r.number = idx + 1);
+
+            const advanceCount = advanceRowsIdx.length;
             setAdvanceSplitCount(advanceCount > 0 ? advanceCount : 1);
 
+            // SPECIAL REQ: Detect changes that require recreation vs date shifting
+            if (dateOfFirstInstallment) {
+                const firstRegular = regularRowsIdx[0];
+                const currentAdvanceSum = advanceRowsIdx.reduce((s, r) => s + r.amount, 0);
+
+                const countChanged = regularRowsIdx.length !== numberOfInstallments;
+                const advanceChanged = Math.abs(currentAdvanceSum - advancePayment) > 0.01;
+                const monthsChanged = originalRows.length > 0 && monthsBetweenInstallments !== salesRequest.monthsBetweenInstallments; // Actually we compare with what we have
+
+                // If major fields changed, we should recreate.
+                if (countChanged || advanceChanged) {
+                    const newSchedule = generateSchedule();
+                    setPendingRecreate(newSchedule);
+                    setShowRecreateConfirm(true);
+                    setRows(mapped); // Load custom anyway, wait for confirm
+                    return;
+                }
+
+                // If only dateOfFirstInstallment changed, shift dates
+                if (firstRegular && firstRegular.dueDate !== dateOfFirstInstallment) {
+                    let currentDate = new Date(dateOfFirstInstallment);
+                    regularRowsIdx.forEach((r) => {
+                        r.dueDate = currentDate.toISOString().split("T")[0];
+                        currentDate.setMonth(currentDate.getMonth() + monthsBetweenInstallments);
+                    });
+                    mapped = [...advanceRowsIdx, ...regularRowsIdx];
+                }
+            }
+
             setRows(mapped);
+            if (originalRows.length === 0) setOriginalRows(mapped);
             return;
         }
 
-        // Default generation
-        const advanceRowsLocal: InstallmentRow[] = [];
-        const regularRowsLocal: InstallmentRow[] = [];
-
-        if (advancePayment > 0) {
-            const singleAdvanceDate = new Date();
-            singleAdvanceDate.setDate(singleAdvanceDate.getDate() + 7);
-            advanceRowsLocal.push({
-                id: "adv-1",
-                number: 1,
-                dueDate: singleAdvanceDate.toISOString().split("T")[0],
-                amount: applyRounding(advancePayment, roundingMode),
-                isAdvance: true,
-            });
-        }
-
-        if ((totalPrice - advancePayment) > 0 && numberOfInstallments > 0 && dateOfFirstInstallment) {
-            const totalToSplit = totalPrice - (advanceRowsLocal.length > 0 ? advanceRowsLocal[0].amount : advancePayment);
-            const installmentAmount = applyRounding(totalToSplit / numberOfInstallments, roundingMode);
-            let currentDate = new Date(dateOfFirstInstallment);
-
-            for (let i = 1; i <= numberOfInstallments; i++) {
-                regularRowsLocal.push({
-                    id: `inst-${i}`,
-                    number: i + advanceRowsLocal.length,
-                    dueDate: currentDate.toISOString().split("T")[0],
-                    amount: i === 1 ? 0 : installmentAmount, // Will fix first installment below
-                    isAdvance: false,
-                });
-                currentDate.setMonth(currentDate.getMonth() + monthsBetweenInstallments);
-            }
-
-            // Adjust first regular installment to take the remainder
-            if (regularRowsLocal.length > 0) {
-                const totalAdvance = advanceRowsLocal.reduce((s, r) => s + r.amount, 0);
-                const otherRegularsSum = regularRowsLocal.slice(1).reduce((s, r) => s + r.amount, 0);
-                regularRowsLocal[0].amount = totalPrice - totalAdvance - otherRegularsSum;
-            }
-        }
-
-        setRows([...advanceRowsLocal, ...regularRowsLocal]);
-        setAdvanceSplitCount(advanceRowsLocal.length);
+        const newRows = generateSchedule();
+        setRows(newRows);
+        setAdvanceSplitCount(newRows.filter(r => r.isAdvance).length);
     }, [
         initialInstallments,
         advancePayment,
@@ -188,7 +229,7 @@ export default function PaymentPlanModal({
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             /*if (selected < today) {
-                dateError = "Due date cannot be in the past";
+                dateError = getTranslatedLabel("salesRequest.paymentPlan.pastDateError", "Due date cannot be in the past");
             }*/
         }
 
@@ -214,9 +255,10 @@ export default function PaymentPlanModal({
 
         if (diff > 0) {
             // Adding new rows
-            const updatedCurrent = currentAdvanceRows.map((row) => ({
+            const updatedCurrent = currentAdvanceRows.map((row, idx) => ({
                 ...row,
                 amount: equalAmount,
+                number: idx + 1
             }));
 
             const newAdvanceRows = Array.from({ length: diff }, (_, i) => ({
@@ -237,9 +279,10 @@ export default function PaymentPlanModal({
             setRows([...combinedAdvance, ...rows.filter((r) => !r.isAdvance)]);
         } else {
             // Removing rows
-            const keptAdvanceRows = currentAdvanceRows.slice(0, count).map((row) => ({
+            const keptAdvanceRows = currentAdvanceRows.slice(0, count).map((row, idx) => ({
                 ...row,
                 amount: equalAmount,
+                number: idx + 1
             }));
 
             if (keptAdvanceRows.length > 0) {
@@ -338,9 +381,10 @@ export default function PaymentPlanModal({
             const newCount = remainingAdvance.length;
             const equalAmount = advancePayment / newCount;
 
-            const updatedAdvance = remainingAdvance.map((row) => ({
+            const updatedAdvance = remainingAdvance.map((row, idx) => ({
                 ...row,
                 amount: equalAmount,
+                number: idx + 1
             }));
 
             // Update state and split count
@@ -702,6 +746,36 @@ export default function PaymentPlanModal({
                     <Button onClick={() => setBulkEditOpen(false)}>{getTranslatedLabel("salesRequest.paymentPlan.cancel", "Cancel")}</Button>
                     <Button variant="contained" onClick={handleBulkApply} disabled={!bulkAmount}>
                         {getTranslatedLabel("salesRequest.paymentPlan.apply", "Apply")}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Recreate Confirm Dialog */}
+            <Dialog open={showRecreateConfirm} onClose={() => setShowRecreateConfirm(false)} maxWidth="xs" fullWidth>
+                <DialogTitle>{getTranslatedLabel("salesRequest.paymentPlan.recreateTitle", "Recreate Payment Schedule?")}</DialogTitle>
+                <DialogContent>
+                    <Typography>
+                        {getTranslatedLabel("salesRequest.paymentPlan.recreateWarning", "Major changes were detected in the form. Proceeding will recreate the payment schedule and overwrite your manual adjustments.")}
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setShowRecreateConfirm(false)}>
+                        {getTranslatedLabel("salesRequest.paymentPlan.keepCustom", "Keep My Adjustments")}
+                    </Button>
+                    <Button 
+                        variant="contained" 
+                        color="warning"
+                        onClick={() => {
+                            if (pendingRecreate) {
+                                setRows(pendingRecreate);
+                                setOriginalRows(pendingRecreate);
+                                setAdvanceSplitCount(pendingRecreate.filter(r => r.isAdvance).length);
+                            }
+                            setShowRecreateConfirm(false);
+                            setPendingRecreate(null);
+                        }}
+                    >
+                        {getTranslatedLabel("salesRequest.paymentPlan.recreateProceed", "Proceed & Recreate")}
                     </Button>
                 </DialogActions>
             </Dialog>

@@ -49,7 +49,7 @@ function SalesRequestForm({
     const {getTranslatedLabel} = useTranslationHelper();
     const [showPaymentPlan, setShowPaymentPlan] = useState(false);
     const [showCalculatorModal, setShowCalculatorModal] = useState(false);
-    const [customInstallments, setCustomInstallments] = useState<Array<{ dueDate: string; amount: number }>>([]);
+    const [customInstallments, setCustomInstallments] = useState<Array<{ dueDate: string; amount: number; isAdvance: boolean }>>([]);
 
     const dispatch = useAppDispatch();
     const formRef = useRef<FormRenderProps | null>(null);
@@ -97,6 +97,8 @@ function SalesRequestForm({
     // Internal ref for party input (no longer passed from parent)
     // -----------------------------------------------------------------
     const partyInputRef = useRef<HTMLInputElement>(null);
+    const prevDateRef = useRef<Date | null>(null);
+    const prevMonthsRef = useRef<number | null>(null);
    
     useEffect(() => {
         if (salesRequest) {
@@ -151,6 +153,66 @@ function SalesRequestForm({
             autoSetDerivedFields(formRef.current, finalTotal);
         }
     }, [defaultAdvancePercent, defaultMaintenancePercent]);
+
+    useEffect(() => {
+        if (!formRef.current || customInstallments.length === 0) return;
+
+        const dateOfFirstInstallment = formRef.current.valueGetter("dateOfFirstInstallment");
+        const monthsBetweenInstallments = formRef.current.valueGetter("monthsBetweenInstallments") || 0;
+
+        if (!dateOfFirstInstallment) return;
+
+        // Skip if modal is open to avoid conflict with its own logic
+        if (showPaymentPlan) return;
+
+        // Check if values actually changed in the form, otherwise don't trigger the logic
+        // This prevents the effect from running on initial load when customInstallments is first populated
+        const dateChanged = prevDateRef.current && 
+            dateOfFirstInstallment instanceof Date && 
+            prevDateRef.current.getTime() !== dateOfFirstInstallment.getTime();
+        
+        const monthsChanged = prevMonthsRef.current !== null && 
+            prevMonthsRef.current !== monthsBetweenInstallments;
+
+        // Always update refs for future changes
+        prevDateRef.current = dateOfFirstInstallment;
+        prevMonthsRef.current = monthsBetweenInstallments;
+
+        if (!dateChanged && !monthsChanged) return;
+
+        const advanceRowsIdx = customInstallments.filter(r => r.isAdvance);
+        const regularRowsIdx = customInstallments.filter(r => !r.isAdvance);
+
+        if (regularRowsIdx.length === 0) return;
+
+        const firstRegular = regularRowsIdx[0];
+        const formattedFirstDate = new Date(dateOfFirstInstallment).toISOString().split("T")[0];
+
+        // Check if either the first date or the month interval has changed
+        let needsUpdate = firstRegular.dueDate !== formattedFirstDate;
+
+        if (!needsUpdate && regularRowsIdx.length > 1) {
+            const secondRegular = regularRowsIdx[1];
+            const expectedSecondDate = new Date(dateOfFirstInstallment);
+            expectedSecondDate.setMonth(expectedSecondDate.getMonth() + monthsBetweenInstallments);
+            const formattedExpectedSecondDate = expectedSecondDate.toISOString().split("T")[0];
+            if (secondRegular.dueDate !== formattedExpectedSecondDate) {
+                needsUpdate = true;
+            }
+        }
+
+        if (needsUpdate) {
+            let currentDate = new Date(dateOfFirstInstallment);
+            const updatedRegulars = regularRowsIdx.map((r) => {
+                const newDate = currentDate.toISOString().split("T")[0];
+                currentDate.setMonth(currentDate.getMonth() + monthsBetweenInstallments);
+                return { ...r, dueDate: newDate };
+            });
+
+            setCustomInstallments([...advanceRowsIdx, ...updatedRegulars]);
+            toast.info(getTranslatedLabel("salesRequest.form.notification.datesUpdated", "Payment schedule dates updated based on the new first installment date or duration. Please save to persist changes."));
+        }
+    }, [getTranslatedLabel, customInstallments]);
 
     const isoToDate = (iso: string | null | undefined): Date | null => {
         if (!iso) return null;
@@ -329,7 +391,7 @@ function SalesRequestForm({
         }
 
         setShowPaymentPlan(false);
-        toast.success("Payment plan applied and advance updated");
+        toast.success(getTranslatedLabel("salesRequest.form.notification.planApplied", "Payment plan applied and advance updated"));
     }, [getTranslatedLabel]);
 
 
@@ -352,18 +414,18 @@ function SalesRequestForm({
                 const missingFields: string[] = [];
 
                 if (!numberOfInstallments || numberOfInstallments <= 0) {
-                    missingFields.push("Number of Installments");
+                    missingFields.push(getTranslatedLabel("salesRequest.form.installments", "Number of Installments"));
                 }
                 if (!dateOfFirstInstallment) {
-                    missingFields.push("Date of First Installment");
+                    missingFields.push(getTranslatedLabel("salesRequest.form.firstInstallmentDate", "Date of First Installment"));
                 }
                 if (!monthsBetweenInstallments || monthsBetweenInstallments <= 0) {
-                    missingFields.push("Months Between Installments");
+                    missingFields.push(getTranslatedLabel("salesRequest.form.duration", "Months Between Installments"));
                 }
 
                 if (missingFields.length > 0) {
                     toast.error(
-                        `For installment-based sales, please fill in: ${missingFields.join(", ")}.`
+                        `${getTranslatedLabel("salesRequest.form.validation.missingFieldsPrefix", "For installment-based sales, please fill in:")} ${missingFields.join(", ")}.`
                     );
                     setButtonFlag(false);
                     return;
