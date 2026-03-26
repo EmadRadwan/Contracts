@@ -14,7 +14,6 @@ import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import { useAppSelector } from "../../../../app/store/configureStore";
 import { useFetchGlAccountOrganizationHierarchyLovQuery } from "../../../../app/store/apis";
 import {FormDropDownList} from "../../../../app/common/form/FormDropDownList";
-import {FormComboBoxVirtualPartyEmployee} from "../../../../app/common/form/FormComboBoxVirtualPartyEmployee";
 import {FormComboBoxVirtualParty} from "../../../../app/common/form/FormComboBoxVirtualParty";
 
 interface FormValues {

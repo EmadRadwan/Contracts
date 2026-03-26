@@ -70,8 +70,8 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
     ) ?? { totalDebit: 0, totalCredit: 0 };
 
     const excelRows = useMemo(() => {
-        if (!data?.transactions) return [];
-        return data.transactions.map(t => ({
+        if (!accountingTransEntries) return [];
+        return accountingTransEntries.map(t => ({
             acctgTransId: t.acctgTransId ?? '',
             acctgTransEntrySeqId: t.acctgTransEntrySeqId ?? '',
             transactionDate: t.transactionDate ?? '',
@@ -83,13 +83,12 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
             partyName: t.partyName,
             productName: t.productName,
             isPosted: t.isPosted ?? false,
-            postedDate: t.postedDate,
             debitCreditFlag: t.debitCreditFlag ?? 'C',
             amount: t.amount ?? 0,
             description: t.description,
             projectName: t.projectName ?? '',
         }));
-    }, [data?.transactions]);
+    }, [accountingTransEntries]);
 
     // Row Coloring
     const rowRender = (trElement: React.ReactElement<HTMLTableRowElement>, props: GridRowProps) => {
@@ -253,12 +252,6 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                     field="isPosted"
                                     title={getTranslatedLabel(`${localizationKey}.isPosted`, 'Is Posted')}
                                     width={80}
-                                />
-                                <Column
-                                    field="postedDate"
-                                    title={getTranslatedLabel(`${localizationKey}.postedDate`, 'Posted Date')}
-                                    width={150}
-                                    format="{0:dd/MM/yyyy}"
                                 />
                                
                                 <Column

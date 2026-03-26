@@ -42,7 +42,7 @@ public class AcctgTransService : IAcctgTransService
             AcctgTransTypeId = parameters.AcctgTransTypeId,
             TransactionDate = parameters.TransactionDate,
             IsPosted = parameters.IsPosted,
-            PostedDate = parameters.PostedDate,
+            PostedDate = parameters.PostedDate ?? parameters.TransactionDate,
             GlFiscalTypeId = parameters.GlFiscalTypeId,
             InvoiceId = parameters.InvoiceId,
             PaymentId = parameters.PaymentId,

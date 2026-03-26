@@ -48,7 +48,7 @@ public class DuplicatePayment
                 PaymentTypeId = original.PaymentTypeId,
                 PaymentMethodId = original.PaymentMethodId,
                 Amount = original.Amount,
-                PaymentDate = DateTime.UtcNow, // or original.EffectiveDate ?
+                PaymentDate = original.EffectiveDate,
                 Comments = original.Comments != null
                     ? $"نسخة من دفعة {original.PaymentId} – {original.Comments}"
                     : $"نسخة من دفعة {original.PaymentId}",
