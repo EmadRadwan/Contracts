@@ -135,6 +135,7 @@ public class GetGlAccountTransactionDetails
                           && act.IsPosted == "Y"
                           && ate.DebitCreditFlag == "D"
                           && act.GlFiscalTypeId == "ACTUAL"
+                      && act.AcctgTransTypeId == "OPENING_BALANCE"
                           && act.TransactionDate <= openingCutoff
                     select ate.Amount
                 ).SumAsync(cancellationToken);
@@ -147,6 +148,7 @@ public class GetGlAccountTransactionDetails
                           && act.IsPosted == "Y"
                           && ate.DebitCreditFlag == "C"
                           && act.GlFiscalTypeId == "ACTUAL"
+                      && act.AcctgTransTypeId == "OPENING_BALANCE"
                           && act.TransactionDate <= openingCutoff
                     select ate.Amount
                 ).SumAsync(cancellationToken);

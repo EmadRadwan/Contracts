@@ -34,6 +34,9 @@ export const PricingSection: React.FC<PricingSectionProps> = React.memo(
          setShowCalculatorModal,
          getTranslatedLabel,
      }) => {
+        const formRenderPropsRef = React.useRef(formRenderProps);
+        formRenderPropsRef.current = formRenderProps;
+
         const { valueGetter, onChange } = formRenderProps;
 
         // ────────────────────────────────────────────────
@@ -48,20 +51,45 @@ export const PricingSection: React.FC<PricingSectionProps> = React.memo(
 
         const totalPrice = valueGetter("totalPrice");
 
-        const openCalculator = () => {
-            if (totalPrice && totalPrice > 0) {
+        const handlePricePerM2ChangeInternal = React.useCallback(
+            (field: "apartmentPricePerM2" | "gardenPricePerM2", value: number | null) => {
+                onPricePerM2Change(formRenderPropsRef.current, field, value);
+            },
+            [onPricePerM2Change]
+        );
+
+        const handleDiscountChangeInternal = React.useCallback(
+            (value: number | null) => {
+                onDiscountChange(formRenderPropsRef.current, value);
+            },
+            [onDiscountChange]
+        );
+
+        const aptPriceValidator = React.useCallback(
+            () => (formRenderPropsRef.current.valueGetter("apartmentPricePerM2") ? undefined : "Required"),
+            []
+        );
+
+        const totalPriceValidator = React.useCallback(
+            () => (formRenderPropsRef.current.valueGetter("totalPrice") ? undefined : "Required"),
+            []
+        );
+
+        const openCalculator = React.useCallback(() => {
+            const currentPrice = formRenderPropsRef.current.valueGetter("totalPrice");
+            if (currentPrice && currentPrice > 0) {
                 setShowCalculatorModal(true);
             }
-        };
+        }, [setShowCalculatorModal]);
 
-        const handleCalculatorApply = (totalDiscount: number, finalPrice: number) => {
+        const handleCalculatorApply = React.useCallback((totalDiscount: number, finalPrice: number) => {
             const roundedDiscount = Math.round(totalDiscount);
             const roundedPrice = Math.round(finalPrice);
-            onChange("discount", { value: roundedDiscount });
-            onChange("totalPrice", { value: roundedPrice });
-            autoSetDerivedFields(formRenderProps, roundedPrice);
+            formRenderPropsRef.current.onChange("discount", { value: roundedDiscount });
+            formRenderPropsRef.current.onChange("totalPrice", { value: roundedPrice });
+            autoSetDerivedFields(formRenderPropsRef.current, roundedPrice);
             setShowCalculatorModal(false);
-        };
+        }, [autoSetDerivedFields, setShowCalculatorModal]);
 
         return (
             <>
@@ -73,8 +101,8 @@ export const PricingSection: React.FC<PricingSectionProps> = React.memo(
                             format="n2"
                             min={0}
                             component={FormNumericTextBox}
-                            validator={() => (valueGetter("apartmentPricePerM2") ? undefined : "Required")}
-                            onChange={(e) => onPricePerM2Change(formRenderProps, "apartmentPricePerM2", e.value)}
+                            validator={aptPriceValidator}
+                            onChange={(e) => handlePricePerM2ChangeInternal("apartmentPricePerM2", e.value)}
                         />
                     </Grid>
 
@@ -87,7 +115,7 @@ export const PricingSection: React.FC<PricingSectionProps> = React.memo(
                                 min={0}
                                 component={FormNumericTextBox}
                                 // No longer disabled based on floor
-                                onChange={(e) => onPricePerM2Change(formRenderProps, "gardenPricePerM2", e.value)}
+                                onChange={(e) => handlePricePerM2ChangeInternal("gardenPricePerM2", e.value)}
                             />
                         ) : (
                             <Field
@@ -109,7 +137,7 @@ export const PricingSection: React.FC<PricingSectionProps> = React.memo(
                             format="n2"
                             min={0}
                             component={FormNumericTextBox}
-                            onChange={(e) => onDiscountChange(formRenderProps, e.value)}
+                            onChange={handleDiscountChangeInternal}
                         />
                     </Grid>
 
@@ -141,7 +169,7 @@ export const PricingSection: React.FC<PricingSectionProps> = React.memo(
                             format="n2"
                             component={FormNumericTextBox}
                             disabled={true}
-                            validator={() => (totalPrice ? undefined : "Required")}
+                            validator={totalPriceValidator}
                         />
                     </Grid>
                 </Grid>

@@ -75,7 +75,7 @@ export const FormSimpleComboBoxVirtualApartment = (fieldRenderProps: FieldRender
 
     const pageSize = 10;
 
-    const columns = [
+    const columns = React.useMemo(() => [
         { field: "apartmentId", header: "ID", width: "100px" },
         { field: "projectName", header: "Project", width: "180px" },
         { field: "apartmentName", header: "Apartment", width: "200px" },
@@ -111,7 +111,7 @@ export const FormSimpleComboBoxVirtualApartment = (fieldRenderProps: FieldRender
                 );
             },
         },
-    ];
+    ], []);
 
     // REFACTOR: Loading placeholder – reuse the same pattern as the product version
     const loadingData: ApartmentItem[] = [];
@@ -267,7 +267,7 @@ export const FormSimpleComboBoxVirtualApartment = (fieldRenderProps: FieldRender
                     onBlur={handleOnBlur}
                     filterable={true}
                     onFilterChange={onFilterChange}
-                    virtual={{ pageSize, skip: skipRef.current, total }}
+                    virtual={React.useMemo(() => ({ pageSize, skip: skipRef.current, total }), [total])}
                     onPageChange={pageChange}
                 />
 

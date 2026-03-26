@@ -30,13 +30,13 @@ export const FormMultiColumnComboBoxVirtualSalesProduct = (fieldRenderProps: Fie
     const [focused, setFocused] = React.useState(false);
     const dispatch = useAppDispatch();
 
-    const columns = [
+    const columns = React.useMemo(() => [
         {field: "productName", header: "Product", width: "170px"},
         {field: "colorDescription", header: "Color", width: "100px"},
         {field: "uomDescription", header: "UOM", width: "100px"},
         {field: "quantityOnHandTotal", header: "QOH", width: "90px"},
         {field: "availableToPromiseTotal", header: "ATP", width: "90px"},
-    ];
+    ], []);
 
     const position = {
         topLeft: {
@@ -257,7 +257,7 @@ export const FormMultiColumnComboBoxVirtualSalesProduct = (fieldRenderProps: Fie
             }
             onChange({value: event.value && event.value})
         },
-        [onChange, value]
+        [onChange, dispatch]
     );
 
     return (
@@ -282,11 +282,11 @@ export const FormMultiColumnComboBoxVirtualSalesProduct = (fieldRenderProps: Fie
                 onBlur={handleOnBlur}
                 filterable={true}
                 onFilterChange={onFilterChange}
-                virtual={{
+                virtual={React.useMemo(() => ({
                     pageSize: pageSize,
                     skip: skipRef.current,
                     total: total,
-                }}
+                }), [total])}
                 onPageChange={pageChange}
             />
             {

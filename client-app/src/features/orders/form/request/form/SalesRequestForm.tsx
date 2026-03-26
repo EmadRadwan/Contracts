@@ -602,6 +602,14 @@ function SalesRequestForm({
     }, [getTranslatedLabel]);
 
 
+    const onProductChange = useCallback((form: FormRenderProps, e: any) => {
+        handleProductChange(form, e, setSelectedApartment);
+    }, [handleProductChange, setSelectedApartment]);
+
+    const onOpenPaymentPlan = useCallback(() => {
+        setShowPaymentPlan(true);
+    }, []);
+
     return (
         <>
             <SalesRequestMenu
@@ -713,7 +721,7 @@ function SalesRequestForm({
                                         <ApartmentHeaderSection
                                             formRenderProps={formRenderProps}
                                             selectedApartment={selectedApartment}
-                                            onProductChange={(form, e) => handleProductChange(form, e, setSelectedApartment)}
+                                            onProductChange={onProductChange}
                                             showNewCustomer={showNewCustomer}
                                             setShowNewCustomer={setShowNewCustomer}
                                             getTranslatedLabel={getTranslatedLabel}
@@ -740,7 +748,7 @@ function SalesRequestForm({
                                             formRenderProps={formRenderProps}
                                             customInstallmentsLength={customInstallments.length}
                                             canOpenPaymentPlan={canOpenPaymentPlan}
-                                            onOpenPaymentPlan={() => setShowPaymentPlan(true)}
+                                            onOpenPaymentPlan={onOpenPaymentPlan}
                                             buttonFlag={buttonFlag}
                                             isCreating={isCreating}
                                             isUpdating={isUpdating}

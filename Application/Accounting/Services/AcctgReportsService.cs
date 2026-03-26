@@ -302,6 +302,7 @@ public class AcctgReportsService : IAcctgReportsService
                       && act.IsPosted == "Y"
                       && ate.DebitCreditFlag == "D"
                       && act.GlFiscalTypeId == "ACTUAL"
+                      && act.AcctgTransTypeId == "OPENING_BALANCE"
                       && act.TransactionDate <= openingCutoff
                 select (decimal?)ate.Amount).SumAsync() ?? 0m;
 
@@ -313,6 +314,7 @@ public class AcctgReportsService : IAcctgReportsService
                       && act.IsPosted == "Y"
                       && ate.DebitCreditFlag == "C"
                       && act.GlFiscalTypeId == "ACTUAL"
+                      && act.AcctgTransTypeId == "OPENING_BALANCE"
                       && act.TransactionDate <= openingCutoff
                 select (decimal?)ate.Amount).SumAsync() ?? 0m;
 

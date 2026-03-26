@@ -18,6 +18,16 @@ export const PaymentFieldsSection: React.FC<PaymentFieldsSectionProps> = React.m
                                                                                          onAdvanceChange,
                                                                                          getTranslatedLabel,
                                                                                      }) => {
+    const formRenderPropsRef = React.useRef(formRenderProps);
+    formRenderPropsRef.current = formRenderProps;
+
+    const handleAdvanceChange = React.useCallback(
+        (e: any) => {
+            onAdvanceChange(formRenderPropsRef.current, e.value);
+        },
+        [onAdvanceChange]
+    );
+
     return (
         <>
             <Grid container spacing={1}>
@@ -30,7 +40,7 @@ export const PaymentFieldsSection: React.FC<PaymentFieldsSectionProps> = React.m
                         min={0}
                         validator={requiredValidator}
                         component={FormNumericTextBox}
-                        onChange={(e: any) => onAdvanceChange(formRenderProps, e.value)}
+                        onChange={handleAdvanceChange}
                     />
                 </Grid>
 

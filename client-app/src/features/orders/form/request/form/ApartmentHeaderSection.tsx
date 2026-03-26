@@ -31,6 +31,23 @@ export const ApartmentHeaderSection: React.FC<ApartmentHeaderSectionProps> = Rea
      }) => {
         const apt = formRenderProps.valueGetter("productId");
 
+        const formRenderPropsRef = React.useRef(formRenderProps);
+        formRenderPropsRef.current = formRenderProps;
+
+        const handleProductChange = React.useCallback(
+            (e: any) => {
+                onProductChange(formRenderPropsRef.current, e);
+            },
+            [onProductChange]
+        );
+
+        const productValidator = React.useCallback(
+            (value: any) => {
+                return requiredValidator(value) || apartmentSelectionValidator(value, getTranslatedLabel);
+            },
+            [getTranslatedLabel]
+        );
+
         // Helper: should we show garden area?
         const hasGardenArea =
             selectedApartment?.gardenSpaceM2 != null &&
@@ -76,10 +93,8 @@ export const ApartmentHeaderSection: React.FC<ApartmentHeaderSectionProps> = Rea
                             label={getTranslatedLabel("salesRequest.form.product", "Product *")}
                             component={FormSimpleComboBoxVirtualApartment}
                             autoComplete="off"
-                            validator={(value) =>
-                                requiredValidator(value) || apartmentSelectionValidator(value, getTranslatedLabel)
-                            }
-                            onChange={(e) => onProductChange(formRenderProps, e)}
+                            validator={productValidator}
+                            onChange={handleProductChange}
                         />
                         {formRenderProps.visited?.productId && formRenderProps.errors?.productId && (
                             <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>

@@ -32,9 +32,9 @@ export const FormMultiColumnComboBoxVirtualAssocsProduct = (fieldRenderProps: Fi
 
 
 
-    const columns = [
+    const columns = React.useMemo(() => [
         {field: "productName", header: "Product", width: "200px"},
-    ];
+    ], []);
 
     const position = {
         topLeft: {
@@ -190,7 +190,7 @@ export const FormMultiColumnComboBoxVirtualAssocsProduct = (fieldRenderProps: Fi
             skipRef.current = 0;
             setFilter(filter);
         },
-        [value]
+        [requestData]
     );
 
     const shouldRequestData = React.useCallback((skip) => {
@@ -229,7 +229,7 @@ export const FormMultiColumnComboBoxVirtualAssocsProduct = (fieldRenderProps: Fi
 
     const onChangeHandler = React.useCallback(
         (event) => onChange({value: event.value && event.value}),
-        [onChange, value]
+        [onChange]
     );
 
     return (
@@ -254,13 +254,12 @@ export const FormMultiColumnComboBoxVirtualAssocsProduct = (fieldRenderProps: Fi
                 onBlur={handleOnBlur}
                 filterable={true}
                 onFilterChange={onFilterChange}
-                virtual={{
+                virtual={React.useMemo(() => ({
                     pageSize: pageSize,
                     skip: skipRef.current,
                     total: total,
-                }}
+                }), [total])}
                 onPageChange={pageChange}
-                style={{width: "auto"}}
             />
             {
                 showHint &&

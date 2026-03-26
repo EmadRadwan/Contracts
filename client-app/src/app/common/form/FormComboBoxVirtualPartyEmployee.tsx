@@ -215,7 +215,7 @@ export const FormComboBoxVirtualPartyEmployee = (fieldRenderProps: FieldRenderPr
         (event) => {
             onChange({value: event.value && event.value})
         },
-        [onChange, value]
+        [onChange]
     );
 
     return (
@@ -239,11 +239,11 @@ export const FormComboBoxVirtualPartyEmployee = (fieldRenderProps: FieldRenderPr
                 onBlur={handleOnBlur}
                 filterable={true}
                 onFilterChange={onFilterChange}
-                virtual={{
+                virtual={React.useMemo(() => ({
                     pageSize: pageSize,
                     skip: skipRef.current,
                     total: total,
-                }}
+                }), [total])}
                 onPageChange={pageChange}
                 //style={{width: "200px"}}
             />

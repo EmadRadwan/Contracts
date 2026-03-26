@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, {useState, useEffect, useCallback, useMemo} from "react";
 import {
     Grid,
     Typography,
@@ -7,7 +7,6 @@ import {
     MenuItem,
     Alert,
     Box,
-    IconButton,
     Dialog,
     DialogTitle,
     DialogContent,
@@ -17,12 +16,9 @@ import {
     Radio,
     Checkbox,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
 import { Grid as KendoGrid, GridColumn as Column, GridToolbar } from "@progress/kendo-react-grid";
 import { SalesRequest } from "../../../../../app/models/order/SalesRequest";
 import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHelper";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 
 interface InstallmentRow {
     id: string;
@@ -293,12 +289,15 @@ export default function PaymentPlanModal({
             setRows([...keptAdvanceRows, ...rows.filter((r) => !r.isAdvance)]);
         }
     };
-    
-    
-    const openEditModal = (dataItem: InstallmentRow) => {
-        const index = rows.findIndex((r) => r.id === dataItem.id);
-        setEditModal({ row: { ...dataItem }, index });
-    };
+
+
+    const openEditModal = useCallback((dataItem: InstallmentRow) => {
+        setRows(currentRows => {
+            const index = currentRows.findIndex((r) => r.id === dataItem.id);
+            setEditModal({ row: { ...dataItem }, index });
+            return currentRows;
+        });
+    }, []);
 
     const saveEdit = () => {
         if (!editModal) return;
@@ -368,15 +367,14 @@ export default function PaymentPlanModal({
         handleSplitChange(advanceSplitCount + 1);
     };
 
-    // REFACTOR: Delete advance row
-    const deleteAdvanceRow = (id: string) => {
+    const deleteAdvanceRow = useCallback((id: string) => {
         if (advanceSplitCount <= 1) return;
 
         setRows((prev) => {
             const remainingAdvance = prev
                 .filter((r) => r.isAdvance && r.id !== id);
 
-            if (remainingAdvance.length === 0) return prev; // Safety (should not happen)
+            if (remainingAdvance.length === 0) return prev;
 
             const newCount = remainingAdvance.length;
             const equalAmount = advancePayment / newCount;
@@ -387,48 +385,100 @@ export default function PaymentPlanModal({
                 number: idx + 1
             }));
 
-            // Update state and split count
-            setAdvanceSplitCount(newCount);
-
+            setAdvanceSplitCount(newCount); // Safe to call inside setter
             return [...updatedAdvance, ...prev.filter((r) => !r.isAdvance)];
         });
-    };
-    
-    const ActionsCell = (props: any) => {
-        const { dataItem } = props;
+    }, [advanceSplitCount, advancePayment]);
 
-        return (
-            <td className="k-command-cell" style={{ textAlign: "center", padding: "8px" }}>
-                <IconButton
-                    size="medium"
-                    color="primary"
-                    title={getTranslatedLabel("salesRequest.paymentPlan.edit", "Edit")}
-                    onClick={() => openEditModal(dataItem)}
-                    sx={{
-                        p: 1, // Add padding to increase click area
-                        '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.04)' }
-                    }}
-                >
-                    <EditIcon fontSize="medium" />
-                </IconButton>
-
-                {dataItem.isAdvance && advanceSplitCount > 1 && (
-                    <IconButton
-                        size="medium"
-                        color="error"
-                        title={getTranslatedLabel("salesRequest.paymentPlan.delete", "Delete")}
-                        onClick={() => deleteAdvanceRow(dataItem.id)}
-                        sx={{
-                            p: 1, // Add padding to increase click area
-                            '&:hover': { backgroundColor: 'rgba(211, 47, 47, 0.04)' }
-                        }}
+    const ActionsCell = useMemo(() => {
+        const CellComponent = ({ dataItem }: { dataItem: InstallmentRow }) => {
+            return (
+                <td className="k-command-cell" style={{ textAlign: "center", padding: "8px" }}>
+                    <Button
+                        size="small"
+                        variant="text"
+                        color="primary"
+                        onClick={() => openEditModal(dataItem)}
                     >
-                        <DeleteIcon fontSize="medium" />
-                    </IconButton>
-                )}
+                        {getTranslatedLabel("salesRequest.paymentPlan.edit", "Edit")}
+                    </Button>
+
+                    {dataItem.isAdvance && advanceSplitCount > 1 && (
+                        <Button
+                            size="small"
+                            variant="text"
+                            color="error"
+                            onClick={() => deleteAdvanceRow(dataItem.id)}
+                        >
+                            {getTranslatedLabel("salesRequest.paymentPlan.delete", "Delete")}
+                        </Button>
+                    )}
+                </td>
+            );
+        };
+
+        // Attach displayName for better debugging
+        CellComponent.displayName = 'ActionsCell';
+        return CellComponent;
+    }, [getTranslatedLabel, openEditModal, deleteAdvanceRow, advanceSplitCount]);
+
+    const toggleSelectAll = useCallback(() => {
+        setSelectedIds(prevSelection => {
+            if (prevSelection.size === rows.length) {
+                return new Set();
+            } else {
+                return new Set(rows.map(r => r.id));
+            }
+        });
+    }, [rows]);
+
+    const SelectionHeaderCell = useMemo(() => {
+        const HeaderCell = () => (
+            <Checkbox
+                size="small"
+                checked={selectedIds.size === rows.length && rows.length > 0}
+                indeterminate={selectedIds.size > 0 && selectedIds.size < rows.length}
+                onChange={toggleSelectAll}
+            />
+        );
+        HeaderCell.displayName = 'SelectionHeaderCell';
+        return HeaderCell;
+    }, [selectedIds.size, rows.length, toggleSelectAll]);
+
+    const toggleSelection = useCallback((id: string) => {
+        setSelectedIds(prevSelection => {
+            const newSelection = new Set(prevSelection);
+            if (newSelection.has(id)) {
+                newSelection.delete(id);
+            } else {
+                newSelection.add(id);
+            }
+            return newSelection;
+        });
+    }, []);
+
+    const SelectionCell = useMemo(() => {
+        const Cell = (props: any) => (
+            <td>
+                <Checkbox
+                    size="small"
+                    checked={selectedIds.has(props.dataItem.id)}
+                    onChange={() => toggleSelection(props.dataItem.id)}
+                />
             </td>
         );
-    };
+        Cell.displayName = 'SelectionCell';
+        return Cell;
+    }, [selectedIds, toggleSelection]);
+
+    const NumberCell = useMemo(() => {
+        const Cell = (props: any) => (
+            <td>{props.dataItem.isAdvance ? `A${props.dataItem.number}` : props.dataItem.number}</td>
+        );
+        Cell.displayName = 'NumberCell';
+        return Cell;
+    }, []);
+
     
     const handleBulkApply = () => {
         if (bulkAmount === "" || bulkAmount <= 0) return;
@@ -460,23 +510,9 @@ export default function PaymentPlanModal({
         setSelectedIds(new Set());
     };
 
-    const toggleSelection = (id: string) => {
-        const newSelection = new Set(selectedIds);
-        if (newSelection.has(id)) {
-            newSelection.delete(id);
-        } else {
-            newSelection.add(id);
-        }
-        setSelectedIds(newSelection);
-    };
 
-    const toggleSelectAll = () => {
-        if (selectedIds.size === rows.length) {
-            setSelectedIds(new Set());
-        } else {
-            setSelectedIds(new Set(rows.map(r => r.id)));
-        }
-    };
+
+
 
     const handleApply = () => {
         if (!isValid) return;
@@ -535,13 +571,14 @@ export default function PaymentPlanModal({
                                 ))}
                             </TextField>
                             {advanceSplitCount < 3 && (
-                                <IconButton 
-                                    color="primary" 
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    color="primary"
                                     onClick={addAdvanceRow}
-                                    sx={{ p: 1 }} // Increase hit area
                                 >
-                                    <AddIcon />
-                                </IconButton>
+                                    {getTranslatedLabel("salesRequest.paymentPlan.addAdvance", "Add Advance")}
+                                </Button>
                             )}
                         </Box>
                     )}
@@ -580,31 +617,14 @@ export default function PaymentPlanModal({
                         </GridToolbar>
                         <Column
                             width="50"
-                            headerCell={() => (
-                                <Checkbox
-                                    size="small"
-                                    checked={selectedIds.size === rows.length && rows.length > 0}
-                                    indeterminate={selectedIds.size > 0 && selectedIds.size < rows.length}
-                                    onChange={toggleSelectAll}
-                                />
-                            )}
-                            cell={(props) => (
-                                <td>
-                                    <Checkbox
-                                        size="small"
-                                        checked={selectedIds.has(props.dataItem.id)}
-                                        onChange={() => toggleSelection(props.dataItem.id)}
-                                    />
-                                </td>
-                            )}
+                            headerCell={SelectionHeaderCell}
+                            cell={SelectionCell}
                         />
                         <Column
                             field="number"
                             title="#"
                             width="60"
-                            cell={(props) => (
-                                <td>{props.dataItem.isAdvance ? `A${props.dataItem.number}` : props.dataItem.number}</td>
-                            )}
+                            cell={NumberCell}
                         />
                     <Column
                         field="dueDate"

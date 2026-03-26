@@ -221,7 +221,7 @@ export const FormComboBoxVirtualCustomer = (fieldRenderProps: FieldRenderProps) 
             }
             onChange({value: event.value && event.value})
         },
-        [onChange, value]   
+        [onChange, dispatch]
     );
     
 
@@ -246,11 +246,11 @@ export const FormComboBoxVirtualCustomer = (fieldRenderProps: FieldRenderProps) 
                 onBlur={handleOnBlur}
                 filterable={true}
                 onFilterChange={onFilterChange}
-                virtual={{
+                virtual={React.useMemo(() => ({
                     pageSize: pageSize,
                     skip: skipRef.current,
                     total: total,
-                }}
+                }), [total])}
                 onPageChange={pageChange}
                 //style={{width: "200px"}}
             />
