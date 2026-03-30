@@ -177,4 +177,10 @@ public class InvoicesController : BaseApiController
         return StatusCode(500, new { error = result.Error });
     }
 
+    [HttpPost("batchCreatePayrollInvoices")]
+    public async Task<IActionResult> BatchCreatePayrollInvoices(BatchCreatePayrollInvoices.Command command)
+    {
+        return HandleResult(await Mediator.Send(command));
+    }
+
 }

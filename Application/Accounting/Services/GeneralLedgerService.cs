@@ -4682,7 +4682,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             // Calculate amount (Quantity * UnitCost)
             // REFACTOR: Uses certificate item quantity and InventoryItem UnitCost;
             // replaces WorkEffortInventoryAssign dependency from production runs.
-            var origAmount = certificateItem.Quantity * (decimal?)inventoryItem.UnitCost;
+            var origAmount = certificateItem.Quantity * (decimal?)certificateItem.Rate;
             if (origAmount == null)
                 throw new Exception($"UnitCost missing for InventoryItem {inventoryItemId}.");
 
@@ -4735,7 +4735,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 GlFiscalTypeId = "ACTUAL",
                 AcctgTransTypeId = "INVENTORY",
                 WorkEffortId = workEffortId,
-                TransactionDate = stamp,
+                TransactionDate = certificateItem.ProcurementDate,
                 AcctgTransEntries = acctgTransEntries,
             };
 

@@ -1195,6 +1195,24 @@
     }
   },
   "accounting": {
+    "payroll": {
+      "run": {
+        "employee-name": "اسم الموظف",
+        "base-salary": "الراتب الأساسي",
+        "absence-days": "أيام الغياب",
+        "absence-value": "قيمة الغياب",
+        "overtime-days": "أيام الإضافي",
+        "overtime-value": "قيمة الإضافي",
+        "advances": "السلف",
+        "salary-account": "حساب الراتب",
+        "advance-account-id": "كود حساب السلف",
+        "advance-account-name": "حساب السلف",
+        "calculate": "احسب",
+        "submit": "تشغيل الرواتب",
+        "success": "تم تشغيل الرواتب بنجاح",
+        "failed": "فشل تشغيل الرواتب"
+      }
+    },
     "menu": {
       "salesOrders": "طلبات المبيعات",
       "orders": "الطلبات",
@@ -1217,7 +1235,8 @@
       "transactions": "القيود المحاسبية",
       "transactions-entries": "تفاصيل القيود المحاسبية",
       "create-transactions": "إنشاء قيد محاسبي",
-      "trialBalance": "ميزان المراجعة"
+      "trialBalance": "ميزان المراجعة",
+      "payrollRun": "تشغيل الرواتب"
     },
     "chartOfAccounts": {
       "excel": "تصدير إلى Excel"
@@ -1786,6 +1805,21 @@
           "deleteConfirm": "حذف",
           "deleteSuccess": "تم حذف الصنف بنجاح",
           "deleteFailed": "فشل حذف الصنف",
+          "payroll": {
+            "run": {
+              "employee-name": "اسم الموظف",
+              "base-salary": "الراتب الأساسي",
+              "absence-days": "أيام الغياب",
+              "absence-value": "قيمة الغياب",
+              "overtime-days": "أيام الإضافي",
+              "overtime-value": "قيمة الإضافي",
+              "advances": "السلف",
+              "submit": "تشغيل الرواتب",
+              "calculate": "احسب",
+              "success": "تم تشغيل الرواتب بنجاح",
+              "failed": "فشل تشغيل الرواتب"
+            }
+          },
           "status": {
             "new": "جديد",
             "in-process": "قيد المعالجة",
@@ -1875,7 +1909,7 @@
         "create": "إنشاء المستخلص",
         "update": "تحديث المستخلص",
         "cancel": "إلغاء",
-        "saving": "جاري حفظ المستخلص...",
+        "saving": "جاري معالجة المستخلص...",
         "error": "فشل في حفظ المستخلص",
         "invalid": "النموذج غير صالح"
       },
@@ -1911,7 +1945,8 @@
       "markAsRequiresEdit": " يتطلب تعديل",
       "deliverToSite": "تسليم المواد إلى موقع المشروع مباشرة",
       "approved": "تمت الموافقة على المستخلص",
-      "complete": "إكمال الشهادة",
+      "reset": "إعادة تعيين الشهادة",
+      "delete": "حذف الشهادة",
       "completed": "تم إكمال الشهادة",
       "noWorkEffortId": "لم يتم اختيار شهادة",
       "statusUpdate": {

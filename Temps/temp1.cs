@@ -1,10 +1,1 @@
--- 1. Drop the foreign key
-    ALTER TABLE PAYMENT
-DROP FOREIGN KEY PAYMENT_FACTX;
-
--- 2. Drop the index (if still exists)
-DROP INDEX PAYMENT_FACTX ON PAYMENT;
-
--- 3. Drop the column
-ALTER TABLE PAYMENT
-    DROP COLUMN FIN_ACCOUNT_TRANS_ID;
+f5c9aa43-8438-40c8-8085-04740dab158a

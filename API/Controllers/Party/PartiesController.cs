@@ -92,6 +92,12 @@ public class PartiesController : BaseApiController
             { PartyId = partyId, MainRole = dto.MainRole }));
     }
 
+    [HttpGet("listEmployeesWithSalary", Name = "ListEmployeesWithSalary")]
+    public async Task<IActionResult> ListEmployeesWithSalary()
+    {
+        return HandleResult(await Mediator.Send(new ListEmployeesWithSalary.Query()));
+    }
+
     [HttpGet("getSuppliers", Name = "GetSuppliers")]
     public async Task<IActionResult> GetSuppliers()
     {

@@ -495,7 +495,7 @@ const useProjectCertificate = ({
         formEditMode,
         setFormEditMode,
         handleCreate,
-        isReceiveLoading: isReceiveLoading
+        isReceiveLoading: isReceiveLoading, isIssueMaterialsLoading
     };
 };
 

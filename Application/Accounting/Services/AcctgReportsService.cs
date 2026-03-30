@@ -163,11 +163,11 @@ public class AcctgReportsService : IAcctgReportsService
                 //    using our equivalent of the 'computeGlAccountBalanceForTimePeriod' service.
                 foreach (var organizationGlAccount in organizationGlAccounts)
                 {
-                    /*if (organizationGlAccount.GlAccountId != "111010")
+                    if (organizationGlAccount.GlAccountId != "124424")
                     {
                         Console.WriteLine($"Skipping GlAccountId: {organizationGlAccount.GlAccountId}");
                         continue;
-                    }*/
+                    }
 
                     var accountBalance = await ComputeGlAccountBalanceForTimePeriod(
                         organizationGlAccount.OrganizationPartyId,
@@ -176,8 +176,8 @@ public class AcctgReportsService : IAcctgReportsService
                     );
 
                     // Only accumulate if there are real posted debits or credits.
-                    if (accountBalance.EndingBalance != 0 || 
-                        accountBalance.PostedDebits != 0 || 
+                    if (accountBalance.EndingBalance != 0 ||
+                        accountBalance.PostedDebits != 0 ||
                         accountBalance.PostedCredits != 0)
                     {
                         var balance = new AccountBalance
@@ -535,96 +535,104 @@ public class AcctgReportsService : IAcctgReportsService
         }
     }
 
-    /// <summary>
-    /// Mirrors OFBiz findLastClosedDate. 
-    /// Returns the last closed time period on or before findDate (if specified), 
-    /// else earliest fromDate if none closed.
-    /// </summary>
     public async Task<LastClosedTimePeriodResult> FindLastClosedDate(
         string organizationPartyId,
         DateTime? findDate,
-        string? periodTypeId)
+        string? periodTypeId = null)
     {
         try
         {
-            // Default findDate to now if not provided
             if (!findDate.HasValue)
-            {
                 findDate = DateTime.Now;
-            }
 
             DateTime? lastClosedDate = null;
             CustomTimePeriod lastClosedTimePeriod = null;
 
-            // Step 1: Attempt to find the most recent closed period before `findDate`
-            var closedTimePeriodQuery = _context.CustomTimePeriods
+            // Step 1: Try to find the most recent CLOSED period (IS_CLOSED = "Y")
+            var closedQuery = _context.CustomTimePeriods
                 .Where(tp => tp.OrganizationPartyId == organizationPartyId
                              && tp.ThruDate <= findDate
                              && tp.IsClosed == "Y");
 
             if (!string.IsNullOrEmpty(periodTypeId))
-            {
-                closedTimePeriodQuery = closedTimePeriodQuery.Where(tp => tp.PeriodTypeId == periodTypeId);
-            }
+                closedQuery = closedQuery.Where(tp => tp.PeriodTypeId == periodTypeId);
 
-            var closedTimePeriod = await closedTimePeriodQuery
+            var closedPeriod = await closedQuery
                 .OrderByDescending(tp => tp.ThruDate)
                 .FirstOrDefaultAsync();
 
-            if (closedTimePeriod != null)
+            if (closedPeriod != null)
             {
-                // Found a closed period
-                lastClosedTimePeriod = new CustomTimePeriod
-                {
-                    CustomTimePeriodId = closedTimePeriod.CustomTimePeriodId,
-                    PeriodTypeId = closedTimePeriod.PeriodTypeId,
-                    IsClosed = closedTimePeriod.IsClosed,
-                    FromDate = closedTimePeriod.FromDate,
-                    ThruDate = closedTimePeriod.ThruDate
-                };
-                lastClosedDate = closedTimePeriod.ThruDate;
+                // Found a closed period → use its ThruDate as fromDate (original behavior)
+                lastClosedTimePeriod = MapToCustomTimePeriod(closedPeriod);
+                lastClosedDate = closedPeriod.ThruDate;
             }
             else
             {
-                // Step 2: If no closed periods, find the earliest available period
-                var timePeriodQuery = _context.CustomTimePeriods
-                    .Where(tp => tp.OrganizationPartyId == organizationPartyId);
+                // Step 2: NO closed periods → Find the fiscal year that contains the findDate
+                // We prefer FISCAL_YEAR, but fall back to any period if needed
+                var openPeriodQuery = _context.CustomTimePeriods
+                    .Where(tp => tp.OrganizationPartyId == organizationPartyId
+                                 && tp.FromDate <= findDate
+                                 && tp.ThruDate >= findDate); // Period that contains today
 
                 if (!string.IsNullOrEmpty(periodTypeId))
+                    openPeriodQuery = openPeriodQuery.Where(tp => tp.PeriodTypeId == periodTypeId);
+                else
                 {
-                    timePeriodQuery = timePeriodQuery.Where(tp => tp.PeriodTypeId == periodTypeId);
+                    // If no periodTypeId specified, prefer FISCAL_YEAR
+                    openPeriodQuery = openPeriodQuery.OrderByDescending(tp =>
+                        tp.PeriodTypeId == "FISCAL_YEAR" ? 1 : 0);
                 }
 
-                var earliestTimePeriod = await timePeriodQuery
-                    .OrderBy(tp => tp.FromDate)
+                var currentOpenPeriod = await openPeriodQuery
+                    .OrderBy(tp => tp.FromDate) // In case multiple match, take the earliest start
                     .FirstOrDefaultAsync();
 
-                if (earliestTimePeriod != null)
+                if (currentOpenPeriod != null)
                 {
-                    // Fallback to the earliest available period
-                    lastClosedTimePeriod = new CustomTimePeriod
+                    lastClosedTimePeriod = MapToCustomTimePeriod(currentOpenPeriod);
+                    lastClosedDate = currentOpenPeriod.FromDate; // ← This gives 2026-01-01
+                }
+                else
+                {
+                    // Final fallback: absolute earliest period (very rare)
+                    var earliest = await _context.CustomTimePeriods
+                        .Where(tp => tp.OrganizationPartyId == organizationPartyId)
+                        .OrderBy(tp => tp.FromDate)
+                        .FirstOrDefaultAsync();
+
+                    if (earliest != null)
                     {
-                        CustomTimePeriodId = earliestTimePeriod.CustomTimePeriodId,
-                        PeriodTypeId = earliestTimePeriod.PeriodTypeId,
-                        IsClosed = earliestTimePeriod.IsClosed,
-                        FromDate = earliestTimePeriod.FromDate,
-                        ThruDate = earliestTimePeriod.ThruDate
-                    };
-                    lastClosedDate = earliestTimePeriod.FromDate;
+                        lastClosedTimePeriod = MapToCustomTimePeriod(earliest);
+                        lastClosedDate = earliest.FromDate;
+                    }
                 }
             }
 
-            // Step 3: Return results (even if no periods exist)
             return new LastClosedTimePeriodResult
             {
-                LastClosedDate = lastClosedDate, // Could be null if no periods exist
-                LastClosedTimePeriod = lastClosedTimePeriod // Could be null if no periods exist
+                LastClosedDate = lastClosedDate,
+                LastClosedTimePeriod = lastClosedTimePeriod
             };
         }
         catch (Exception ex)
         {
             throw new Exception("Error in FindLastClosedDate", ex);
         }
+    }
+
+// Helper method to avoid code duplication
+    private CustomTimePeriod MapToCustomTimePeriod(CustomTimePeriod entity)
+    {
+        return new CustomTimePeriod
+        {
+            CustomTimePeriodId = entity.CustomTimePeriodId,
+            PeriodTypeId = entity.PeriodTypeId,
+            IsClosed = entity.IsClosed,
+            FromDate = entity.FromDate,
+            ThruDate = entity.ThruDate
+        };
     }
 
 
@@ -2139,7 +2147,7 @@ public class AcctgReportsService : IAcctgReportsService
             // 6) Build a base EF query for posted transactions in [fromDate, thruDate)
             //    excluding PERIOD_CLOSING, glFiscalTypeId = input, isPosted = true.
             //    We'll do a single query in a helper so we can filter out each class set.
-            // Now the result type is IQueryable<AcctgTransEntryJoin> instead of an anonymous type
+            //    Now the result type is IQueryable<AcctgTransEntryJoin> instead of an anonymous type
             var baseQuery = _context.AcctgTransEntries
                 .Join(_context.AcctgTrans,
                     ate => ate.AcctgTransId,
@@ -2158,7 +2166,6 @@ public class AcctgReportsService : IAcctgReportsService
                     x.Act.TransactionDate >= fromDate &&
                     x.Act.TransactionDate < thruDate.Value
                 );
-
 
             // 7) Calculate final balances for each major category,
             //    merging the opening list + new transactions.
@@ -2231,6 +2238,26 @@ public class AcctgReportsService : IAcctgReportsService
             // 9) Liabilities + Equity combined
             var liabilityEquityBalanceTotal = liabilityBalanceTotal + equityBalanceTotal;
 
+            // === FIXED: Negate Contra Assets (matches original Groovy logic) ===
+            foreach (var item in contraAssets)
+                item.Balance = -item.Balance;
+
+            foreach (var item in accumDepreciation)
+                item.Balance = -item.Balance;
+
+            foreach (var item in accumAmortization)
+                item.Balance = -item.Balance;
+
+            // Recalculate contra totals after negation
+            contraAssetBalanceTotal = contraAssets.Sum(a => a.Balance);
+            accumDepreciationBalanceTotal = accumDepreciation.Sum(a => a.Balance);
+            accumAmortizationBalanceTotal = accumAmortization.Sum(a => a.Balance);
+
+            // Net Asset Total (Assets - Contra Assets)
+            var netAssetBalanceTotal = assetBalanceTotal + contraAssetBalanceTotal
+                                                         + accumDepreciationBalanceTotal
+                                                         + accumAmortizationBalanceTotal;
+
             // 10) Build final view model
             var model = new BalanceSheetViewModel
             {
@@ -2244,7 +2271,7 @@ public class AcctgReportsService : IAcctgReportsService
                 EquityAccountBalanceList = equities,
 
                 // Totals
-                AssetBalanceTotal = assetBalanceTotal,
+                AssetBalanceTotal = netAssetBalanceTotal, // Fixed: Now shows net assets
                 LiabilityBalanceTotal = liabilityBalanceTotal,
                 EquityBalanceTotal = equityBalanceTotal,
                 LiabilityEquityBalanceTotal = liabilityEquityBalanceTotal,
@@ -2269,7 +2296,6 @@ public class AcctgReportsService : IAcctgReportsService
                         TotalName = "Accounting Long Term Assets",
                         Balance = longtermAssetBalanceTotal
                     },
-                    // Combine all contra accounts in your total or list them separately:
                     new BalanceLineItem
                     {
                         TotalName = "Accounting Total Contra Assets",
@@ -2288,12 +2314,7 @@ public class AcctgReportsService : IAcctgReportsService
                     new BalanceLineItem
                     {
                         TotalName = "Accounting Total Assets",
-                        // If you want to show net assets after subtracting contra accounts:
-                        // (Here we sum them directly, so "contra" accounts reduce totals.)
-                        Balance = assetBalanceTotal + currentAssetBalanceTotal + longtermAssetBalanceTotal
-                                  + contraAssetBalanceTotal
-                                  + accumDepreciationBalanceTotal
-                                  + accumAmortizationBalanceTotal
+                        Balance = netAssetBalanceTotal // Fixed: Correct net total
                     },
                     new BalanceLineItem
                     {
@@ -2328,46 +2349,42 @@ public class AcctgReportsService : IAcctgReportsService
         }
     }
 
-    /// <summary>
-    /// Sums new transactions in [fromDate, thruDate) for a given set of glAccountClassIds,
-    /// merges them with the "opening" list, and finalizes the net balance for each account.
-    /// 
-    /// If isDebitBased = true => finalBalance = D - C,
-    /// else => finalBalance = C - D.
-    /// 
-    /// Returns a new list of GlAccountBalance objects in ascending order by AccountCode.
-    /// </summary>
     private async Task<List<GlAccountBalance>> CalculateCategoryBalances(
-        IQueryable<AcctgTransEntryJoin> baseQuery, // Now strongly-typed
+        IQueryable<AcctgTransEntryJoin> baseQuery,
         List<string> glAccountClassIds,
         List<GlAccountBalance> openingBalances,
         bool isDebitBased)
     {
-        // 1) Filter further by glAccountClassId via join to GlAccounts
-        //    Because 'baseQuery' is typed, we can do x.Ate.* and x.Act.* safely.
-        var query = baseQuery
+        if (!glAccountClassIds.Any())
+            return openingBalances.OrderBy(a => a.AccountCode).ToList();
+
+        // Performance fix: Aggregate in DB instead of loading every transaction row
+        var transactionQuery = baseQuery
             .Join(_context.GlAccounts,
                 x => x.Ate.GlAccountId,
                 gla => gla.GlAccountId,
-                (x, gla) => new { x, gla })
+                (x, gla) => new { x.Ate, gla })
             .Where(z => glAccountClassIds.Contains(z.gla.GlAccountClassId))
-            .Select(z => new
+            .GroupBy(z => new
             {
-                z.x.Ate.GlAccountId, // from typed property x.Ate
+                z.Ate.GlAccountId,
                 z.gla.AccountCode,
-                z.gla.AccountName,
-                z.x.Ate.DebitCreditFlag,
-                z.x.Ate.Amount
+                z.gla.AccountName
+            })
+            .Select(g => new
+            {
+                g.Key.GlAccountId,
+                g.Key.AccountCode,
+                g.Key.AccountName,
+                TotalDebit = g.Sum(x => x.Ate.DebitCreditFlag == "D" ? x.Ate.Amount : 0),
+                TotalCredit = g.Sum(x => x.Ate.DebitCreditFlag == "C" ? x.Ate.Amount : 0)
             });
 
-        // 2) Execute to get new transactions in memory
-        var rows = await query.ToListAsync();
+        var transSums = await transactionQuery.ToListAsync();
 
-        // 3) Clone "openingBalances" into a new list so we can merge
-        var resultList = new List<GlAccountBalance>();
-        foreach (var ob in openingBalances)
-        {
-            resultList.Add(new GlAccountBalance
+        // Clone opening balances
+        var result = openingBalances
+            .Select(ob => new GlAccountBalance
             {
                 GlAccountId = ob.GlAccountId,
                 AccountCode = ob.AccountCode,
@@ -2375,56 +2392,40 @@ public class AcctgReportsService : IAcctgReportsService
                 D = ob.D,
                 C = ob.C,
                 Balance = ob.Balance
-            });
-        }
+            })
+            .ToList();
 
-        // 4) Merge the new transactions:
-        //    If the glAccountId doesn't exist in resultList, create it.
-        foreach (var row in rows)
+        // Merge transaction sums
+        foreach (var ts in transSums)
         {
-            var existing = resultList.FirstOrDefault(a => a.GlAccountId == row.GlAccountId);
+            var existing = result.FirstOrDefault(a => a.GlAccountId == ts.GlAccountId);
             if (existing == null)
             {
                 existing = new GlAccountBalance
                 {
-                    GlAccountId = row.GlAccountId,
-                    AccountCode = row.AccountCode,
-                    AccountName = row.AccountName,
+                    GlAccountId = ts.GlAccountId,
+                    AccountCode = ts.AccountCode,
+                    AccountName = ts.AccountName,
                     D = 0,
                     C = 0,
                     Balance = 0
                 };
-                resultList.Add(existing);
+                result.Add(existing);
             }
 
-            // Tally the new amounts
-            if (row.DebitCreditFlag == "D")
-            {
-                existing.D += (decimal)row.Amount;
-            }
-            else
-            {
-                existing.C += (decimal)row.Amount;
-            }
+            existing.D += (decimal)ts.TotalDebit;
+            existing.C += (decimal)ts.TotalCredit;
         }
 
-        // 5) Compute final "Balance"
-        //    For debit-based accounts => final = D - C
-        //    For credit-based => final = C - D
-        foreach (var acct in resultList)
+        // Final balance calculation
+        foreach (var acct in result)
         {
-            if (isDebitBased)
-            {
-                acct.Balance = acct.D - acct.C;
-            }
-            else
-            {
-                acct.Balance = acct.C - acct.D;
-            }
+            acct.Balance = isDebitBased
+                ? acct.D - acct.C
+                : acct.C - acct.D;
         }
 
-        // 6) Sort by AccountCode for consistency
-        return resultList.OrderBy(a => a.AccountCode).ToList();
+        return result.OrderBy(a => a.AccountCode).ToList();
     }
 
     /// <summary>

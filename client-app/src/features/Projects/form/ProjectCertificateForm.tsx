@@ -86,15 +86,9 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
         handleClose();
     };
 
-    const handleComplete = () => {
-        handleStatusUpdate('Complete Certificate');
-        handleClose();
-    };
-
     // Determine if actions are disabled based on certificate status
     const isApproveDisabled = !workEffortId || currentStatusId === CertificateStatus.APPROVED || currentStatusId === CertificateStatus.COMPLETE;
     const isResetDisabled = !workEffortId || currentStatusId === CertificateStatus.CREATED;
-    const isCompleteDisabled = !workEffortId || currentStatusId === CertificateStatus.COMPLETE;
 
     const handleDeleteClick = () => {
         setDeleteDialogOpen(true);
@@ -266,7 +260,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
         formEditMode,
         setFormEditMode,
         handleCreate,
-        isAddCertificateLoading,
+        isAddCertificateLoading, isResetLoading, isIssueMaterialsLoading,
         isUpdateCertificateLoading, isReceiveLoading
     } = useProjectCertificate({
         selectedMenuItem,
@@ -873,13 +867,9 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                     {renderCertificateItems()}
                 </Grid>
             </Paper>
-            {(isAddCertificateLoading || isUpdateCertificateLoading) && (
+            {(isAddCertificateLoading || isUpdateCertificateLoading || isReceiveLoading || isIssueMaterialsLoading || isResetLoading) && (
                 <LoadingComponent
                     message={getTranslatedLabel("projects.certificate.form.saving", "Saving Certificate...")}/>
-            )}
-            {isReceiveLoading && (
-                <LoadingComponent
-                    message={getTranslatedLabel("projects.certificate.form.saving", "Approving Certificate...")}/>
             )}
             <CertificatesListModal
                 show={showCertificatesModal}

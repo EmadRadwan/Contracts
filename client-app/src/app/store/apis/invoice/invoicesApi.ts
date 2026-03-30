@@ -158,6 +158,14 @@ const invoicesApi = createApi({
           "invoices",
         ],
       }),
+      batchCreatePayrollInvoices: builder.mutation<void, any>({
+        query: (command) => ({
+          url: "/invoices/batchCreatePayrollInvoices",
+          method: "POST",
+          body: command,
+        }),
+        invalidatesTags: ["invoices"],
+      }),
     };
   },
 });
@@ -173,5 +181,6 @@ export const {
   useChangeInvoiceStatusMutation,
   useFetchInvoiceByIdQuery,
   useResetInvoiceMutation,
+  useBatchCreatePayrollInvoicesMutation,
 } = invoicesApi;
 export { invoicesApi };

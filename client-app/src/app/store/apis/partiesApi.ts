@@ -273,6 +273,18 @@ const partiesApi = createApi({
                     method: 'GET',
                 }),
             }),
+            fetchEmployeesWithSalary: builder.query<ListResponse<any>, void>({
+                query: () => ({
+                    url: '/parties/listEmployeesWithSalary',
+                    method: 'GET',
+                }),
+                transformResponse: (response: any) => {
+                    return {
+                        data: response,
+                        total: response.length,
+                    };
+                },
+            }),
         };
     },
 });
@@ -293,5 +305,6 @@ export const {
     useFetchRolesTypesQuery, useFetchPartyRolesQuery, useAddPartyRoleMutation, useDeletePartyRoleMutation,
     useDeletePartyMutation,
     useLazyFetchAllPartiesForReportQuery,
+    useFetchEmployeesWithSalaryQuery,
 } = partiesApi;
 export {partiesApi};
