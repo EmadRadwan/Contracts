@@ -137,7 +137,7 @@ export const PricingSection: React.FC<PricingSectionProps> = React.memo(
                             format="n2"
                             min={0}
                             component={FormNumericTextBox}
-                            onChange={handleDiscountChangeInternal}
+                            onChange={(e) => handleDiscountChangeInternal(e.value)}
                         />
                     </Grid>
 
