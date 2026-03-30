@@ -114,7 +114,7 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
         { title: "Outgoing Payments", key: "outgoingPayments", path: "/payments/outgoing", icon: <PaymentOutlinedIcon sx={{ color: "#F44336" }} />, requiredRole: "Accounting_Payments_View", isPayment: true },
         { title: "Due Payments", key: "duePayments", path: "/duePayments", icon: <PaymentOutlinedIcon sx={{ color: "#F44336" }} />, requiredRole: "Accounting_Payments_Due_View", isPayment: true },
         { title: 'Invoices', key: 'invoices', path: '/invoices', icon: <ReceiptOutlinedIcon sx={{ color: "#FFA500" }} />, requiredRole: "Accounting_Invoices_View" },
-        { title: 'Payroll Run', key: 'payrollRun', path: '/invoices/payroll-run', icon: <PaidIcon sx={{ color: "#4CAF50" }} />, requiredRole: "Accounting_Invoices_View" },
+        { title: 'Payroll Run', key: 'payrollRun', path: '/invoices/payroll-run', icon: <PaidIcon sx={{ color: "#4CAF50" }} />, requiredRole: "Accounting_Payroll_Run_View" },
         { title: 'Billing Accounts', key: 'creditLimitFormAdvancePayments', path: '/billingAccounts', icon: <BatteryCharging60Icon sx={{ color: "#03A9F4" }} />, requiredRole: "Accounting_BillingAccounts_View" },
         { title: "Multi-Payment Certificates", key: "multiPaymentCertificates", path: "/multiPaymentCertificates", icon: <AccountBalanceWalletOutlinedIcon sx={{ color: "#3F51B5" }} />, requiredRole: "Accounting_MultiPaymentCertificates_View" },
     ];
