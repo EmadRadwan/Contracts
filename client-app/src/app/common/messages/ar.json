@@ -1203,14 +1203,22 @@
         "absence-value": "قيمة الغياب",
         "overtime-days": "أيام الإضافي",
         "overtime-value": "قيمة الإضافي",
+        "net-salary": "صافي الراتب",
         "advances": "السلف",
         "salary-account": "حساب الراتب",
         "advance-account-id": "كود حساب السلف",
         "advance-account-name": "حساب السلف",
+        "payment-method": "طريقة الدفع",
         "calculate": "احسب",
         "submit": "تشغيل الرواتب",
         "success": "تم تشغيل الرواتب بنجاح",
-        "failed": "فشل تشغيل الرواتب"
+        "failed": "فشل تشغيل الرواتب",
+        "invalid-data-warning": "لا يمكن المتابعة: بعض الموظفين لديهم بيانات غير مكتملة (الراتب 0 أو حساب الراتب غير موجود). يرجى تصحيح البيانات أولاً.",
+        "bank-transfer": "تحويل بنكي",
+        "cash": "نقدي",
+        "included": "مدرج",
+        "invalid-data": "بيانات غير صالحة",
+        "no-employees-selected": "لم يتم اختيار موظفين"
       }
     },
     "menu": {

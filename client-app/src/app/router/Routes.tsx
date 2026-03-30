@@ -269,7 +269,12 @@ export const routes: RouteObject[] = [
                                         children: [
                                             {index: true, element: <InvoicesList/>},
                                             {path: "new", element: <NewInvoice/>},
-                                            {path: "payroll-run", element: <PayrollRun/>},
+                                            {
+                                                element: <RequireRole allowedRoles="Accounting_Payroll_Run_View"/>,
+                                                children: [
+                                                    {path: "payroll-run", element: <PayrollRun/>},
+                                                ]
+                                            },
                                             {
                                                 path: ":invoiceId",
                                                 element: <InvoiceWrapper/>,

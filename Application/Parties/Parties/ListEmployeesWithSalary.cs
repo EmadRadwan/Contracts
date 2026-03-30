@@ -20,6 +20,7 @@ public class ListEmployeesWithSalary
         public string SalaryAccountNameArabic { get; set; }
         public string GlAccountIdAdvancedPayment { get; set; }
         public string AdvancedPaymentAccountNameArabic { get; set; }
+        public string PreferredPayrollPaymentMethodId { get; set; }
     }
 
     public class Handler : IRequestHandler<Query, Result<List<EmployeeSalaryDto>>>
@@ -61,7 +62,8 @@ public class ListEmployeesWithSalary
                     RateAmount = ra,
                     SalaryAccountNameArabic = gla.AccountNameArabic,
                     GlAccountIdAdvancedPayment = prty.GlAccountIdAdvancedPayment,
-                    AdvancedPaymentAccountNameArabic = glaAdv.AccountNameArabic
+                    AdvancedPaymentAccountNameArabic = glaAdv.AccountNameArabic,
+                    PreferredPayrollPaymentMethodId = prty.PreferredPayrollPaymentMethodId
                 };
 
             var rawResults = await query
@@ -83,7 +85,8 @@ public class ListEmployeesWithSalary
                         MonthlyBaseSalary = latestRate.RateAmount?.Amount ?? 0,
                         SalaryAccountNameArabic = latestRate.SalaryAccountNameArabic,
                         GlAccountIdAdvancedPayment = latestRate.GlAccountIdAdvancedPayment,
-                        AdvancedPaymentAccountNameArabic = latestRate.AdvancedPaymentAccountNameArabic
+                        AdvancedPaymentAccountNameArabic = latestRate.AdvancedPaymentAccountNameArabic,
+                        PreferredPayrollPaymentMethodId = latestRate.PreferredPayrollPaymentMethodId
                     };
                 })
                 .ToList();
