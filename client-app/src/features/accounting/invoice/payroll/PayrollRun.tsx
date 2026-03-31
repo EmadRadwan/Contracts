@@ -7,6 +7,7 @@ import {
     TableBody,
     TableCell,
     TableContainer,
+    TableFooter,
     TableHead,
     TableRow,
     TextField,
@@ -52,6 +53,25 @@ const PayrollRun: React.FC = () => {
     
     const [invoiceDate, setInvoiceDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [payrollData, setPayrollData] = useState<EmployeePayrollData[]>([]);
+
+    const totals = useMemo(() => {
+        return payrollData.reduce((acc, emp) => {
+            if (emp.isSelected) {
+                acc.baseSalary += emp.baseSalary;
+                acc.advances += emp.advances.reduce((sum, adv) => sum + adv.amount, 0);
+                acc.absenceValue += emp.absenceValue;
+                acc.overtimeValue += emp.overtimeValue;
+                acc.netSalary += emp.netSalary;
+            }
+            return acc;
+        }, {
+            baseSalary: 0,
+            advances: 0,
+            absenceValue: 0,
+            overtimeValue: 0,
+            netSalary: 0
+        });
+    }, [payrollData]);
 
     // Fetch Employees with Salary
     const { data: employeesResponse, isLoading: isEmployeesLoading } = useFetchEmployeesWithSalaryQuery();
@@ -149,6 +169,10 @@ const PayrollRun: React.FC = () => {
         setPayrollData(newData);
     };
 
+    const handleSelectAll = (checked: boolean) => {
+        setPayrollData(prev => prev.map(emp => ({ ...emp, isSelected: checked })));
+    };
+
     const isEmployeeInvalid = (emp: EmployeePayrollData) => {
         const hasAccount = emp.advancedPaymentAccountNameArabic || emp.salaryAccountNameArabic;
         return emp.baseSalary <= 0 || !hasAccount;
@@ -223,7 +247,16 @@ const PayrollRun: React.FC = () => {
                 <Table size="small">
                     <TableHead>
                         <TableRow>
-                            <TableCell>{getTranslatedLabel("accounting.payroll.run.included", "Incl.")}</TableCell>
+                            <TableCell>
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={payrollData.length > 0 && payrollData.every(emp => emp.isSelected)}
+                                        onChange={(e) => handleSelectAll(e.target.checked)}
+                                    />
+                                    {getTranslatedLabel("accounting.payroll.run.included", "Incl.")}
+                                </Box>
+                            </TableCell>
                             <TableCell>{getTranslatedLabel("accounting.payroll.run.employee-name", "Employee Name")}</TableCell>
                             <TableCell align="center">{getTranslatedLabel("accounting.payroll.run.base-salary", "Base Salary")}</TableCell>
                             <TableCell>{getTranslatedLabel("accounting.payroll.run.salary-account", "Salary Account")}</TableCell>
@@ -317,6 +350,20 @@ const PayrollRun: React.FC = () => {
                             );
                         })}
                     </TableBody>
+                    <TableFooter>
+                        <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                            <TableCell colSpan={2} align="right" sx={{ fontWeight: 'bold' }}>
+                                {getTranslatedLabel("accounting.payroll.run.total", "Total")}
+                            </TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>{totals.baseSalary}</TableCell>
+                            <TableCell colSpan={3} />
+                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>{totals.absenceValue}</TableCell>
+                            <TableCell align="center" />
+                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>{totals.overtimeValue}</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>{totals.netSalary}</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold' }}>{totals.advances}</TableCell>
+                        </TableRow>
+                    </TableFooter>
                 </Table>
             </TableContainer>
 

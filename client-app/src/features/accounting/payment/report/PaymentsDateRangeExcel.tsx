@@ -90,7 +90,7 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
             )
         );
         ws.getCell(`A${startRow}`).value = title;
-        ws.mergeCells(`A${startRow}:M${startRow}`); // Adjusted to 13 columns
+        ws.mergeCells(`A${startRow}:O${startRow}`); // Adjusted to 15 columns
         ws.getRow(startRow).font = { name: 'Amiri', size: 18, bold: true };
         ws.getRow(startRow).alignment = { horizontal: 'center', vertical: 'middle' };
         ws.getRow(startRow).height = 40;
@@ -101,6 +101,8 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
             getTranslatedLabel('accounting.payments.list.paymentRefNum', 'Reference Number'),
             getTranslatedLabel('accounting.payments.list.paymentType', 'Payment Type'),
             getTranslatedLabel('accounting.payments.list.orderId', 'Order ID'),
+            getTranslatedLabel('accounting.payments.list.productId', 'Product ID'),
+            getTranslatedLabel('accounting.payments.list.buildingNumber', 'Building Number'),
             getTranslatedLabel('accounting.payments.list.certificateNumber', 'Certificate Number'),
             getTranslatedLabel('projects.certificate.form.project', 'Project'),
             getTranslatedLabel('accounting.payments.form.costCenter', 'Cost Center'),
@@ -125,6 +127,8 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
                 utils.rtlEmbed(utils.safeString(payment.paymentRefNum ?? '')),
                 utils.rtlEmbed(utils.safeString(payment.paymentTypeDescription)),
                 utils.rtlEmbed(utils.safeString(payment.orderId ?? '')),
+                utils.rtlEmbed(utils.safeString(payment.productId ?? '')),
+                utils.rtlEmbed(utils.safeString(payment.buildingNumber ?? '')),
                 utils.rtlEmbed(utils.safeString(payment.certificateNumber ?? '')),
                 utils.rtlEmbed(utils.safeString(payment.projectName ?? '')),
                 utils.rtlEmbed(utils.safeString(payment.costCenterDescription ?? '')),
@@ -144,13 +148,13 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
             const totalAmount = data.data.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
             const totalRowNum = dataStartRow + data.data.length;
             ws.addRow([
-                '', '', '', '', '',
+                '', '', '', '', '', '', '',
                 utils.rtlEmbed(getTranslatedLabel('common.total', 'Total')),
                 '', '', '', '', '', utils.formatNumber(totalAmount), ''
             ]);
-            ws.mergeCells(`F${totalRowNum}:K${totalRowNum}`);
+            ws.mergeCells(`H${totalRowNum}:M${totalRowNum}`);
             ws.getRow(totalRowNum).font = { name: 'Amiri', size: 12, bold: true };
-            ws.getCell(`L${totalRowNum}`).font = { bold: true };
+            ws.getCell(`N${totalRowNum}`).font = { bold: true };
         }
 
         ws.columns = [
@@ -158,17 +162,19 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
             { width: 20 }, // B Ref Num
             { width: 22 }, // C Type
             { width: 15 }, // D Order ID
-            { width: 20 }, // E Cert
-            { width: 30 }, // F Project
-            { width: 28 }, // G Cost Center
-            { width: 28 }, // H From
-            { width: 28 }, // I To
-            { width: 15 }, // J Date
-            { width: 15 }, // K Status
-            { width: 16 }, // L Amount
-            { width: 35 }  // M Comments
+            { width: 15 }, // E Product ID
+            { width: 18 }, // F Building Number
+            { width: 20 }, // G Cert
+            { width: 30 }, // H Project
+            { width: 28 }, // I Cost Center
+            { width: 28 }, // J From
+            { width: 28 }, // K To
+            { width: 15 }, // L Date
+            { width: 15 }, // M Status
+            { width: 16 }, // N Amount
+            { width: 35 }  // O Comments
         ];
-        ws.getColumn(12).numFmt = '#,##0.00'; // Column L (index 12)
+        ws.getColumn(14).numFmt = '#,##0.00'; // Column N (index 14)
 
         return await workbook.xlsx.writeBuffer();
     }, [getTranslatedLabel, paymentType, startDate, endDate]);

@@ -205,12 +205,9 @@ public class ListReserveRequestsQuery
             }).AsQueryable();
 
             // -------------------------------------------------------------
-            // 5. Apply OData ($filter, $orderby, $skip, $top, etc.)
+            // 5. Return filtered IQueryable (controller handles paging/counting)
             // -------------------------------------------------------------
-            var final = request.Options.ApplyTo(records) as IQueryable<ReserveRequestRecord>
-                        ?? records;
-
-            return final;
+            return records;
         }
     }
 }

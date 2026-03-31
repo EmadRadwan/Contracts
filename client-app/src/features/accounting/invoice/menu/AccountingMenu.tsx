@@ -18,6 +18,7 @@ import withFloatingLabelFlexible from '../../../../app/components/FloatingLabel'
 import { useTranslationHelper } from '../../../../app/hooks/useTranslationHelper';
 import React, { useState } from "react";
 import {Can} from "../../../account/Can";
+import PayrollReport2 from "../payroll/PayrollReport2";
 
 interface AccountingMenuProps {
     selectedMenuItem?: string;
@@ -107,6 +108,16 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
                 { title: 'Trial Balance', key: 'trialBalance', path: '/trialBalance', icon: <BalanceIcon sx={{ color: "#E91E63" }} /> },
             ],
         },
+        {
+            groupKey: "payroll",
+            title: "Payroll",
+            icon: <PaidIcon sx={{ color: "#4CAF50" }} />,
+            requiredRole: "Accounting_Payroll_Run_View", // Base role for the group
+            subItems: [
+                { title: 'Payroll Run', key: 'payrollRun', path: '/invoices/payroll-run', icon: <PaidIcon sx={{ color: "#4CAF50" }} /> },
+                { title: 'Payroll Report', key: 'payrollReport', path: '/invoices/payroll-report', icon: <ReceiptLongIcon sx={{ color: "#FF4081" }} /> },
+            ],
+        },
     ];
 
     const standaloneItems = [
@@ -114,10 +125,14 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
         { title: "Outgoing Payments", key: "outgoingPayments", path: "/payments/outgoing", icon: <PaymentOutlinedIcon sx={{ color: "#F44336" }} />, requiredRole: "Accounting_Payments_View", isPayment: true },
         { title: "Due Payments", key: "duePayments", path: "/duePayments", icon: <PaymentOutlinedIcon sx={{ color: "#F44336" }} />, requiredRole: "Accounting_Payments_Due_View", isPayment: true },
         { title: 'Invoices', key: 'invoices', path: '/invoices', icon: <ReceiptOutlinedIcon sx={{ color: "#FFA500" }} />, requiredRole: "Accounting_Invoices_View" },
-        { title: 'Payroll Run', key: 'payrollRun', path: '/invoices/payroll-run', icon: <PaidIcon sx={{ color: "#4CAF50" }} />, requiredRole: "Accounting_Payroll_Run_View" },
         { title: 'Billing Accounts', key: 'creditLimitFormAdvancePayments', path: '/billingAccounts', icon: <BatteryCharging60Icon sx={{ color: "#03A9F4" }} />, requiredRole: "Accounting_BillingAccounts_View" },
         { title: "Multi-Payment Certificates", key: "multiPaymentCertificates", path: "/multiPaymentCertificates", icon: <AccountBalanceWalletOutlinedIcon sx={{ color: "#3F51B5" }} />, requiredRole: "Accounting_MultiPaymentCertificates_View" },
     ];
+
+    const [payrollReportOpen, setPayrollReportOpen] = useState(false);
+
+    const handlePayrollReportOpen = () => setPayrollReportOpen(true);
+    const handlePayrollReportClose = () => setPayrollReportOpen(false);
 
     return (
         <Toolbar sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', paddingLeft: 0 }}>
@@ -157,13 +172,18 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
                                         >
                                             {group.subItems.map((sub) => {
                                                 const isSubSelected = normalizePath(sub.path) === normalizedSelectedMenuItem;
+                                                const isPayrollReport = sub.key === 'payrollReport';
                                                 return (
                                                     <MenuItem
                                                         key={sub.key}
-                                                        component={NavLink}
-                                                        to={sub.path}
+                                                        component={isPayrollReport ? 'div' : NavLink}
+                                                        {...(!isPayrollReport ? { to: sub.path } : {})}
                                                         onClick={() => {
-                                                            handleClick(sub.key);
+                                                            if (isPayrollReport) {
+                                                                handlePayrollReportOpen();
+                                                            } else {
+                                                                handleClick(sub.key);
+                                                            }
                                                             handleMenuClose();
                                                         }}
                                                         selected={isSubSelected}
@@ -210,6 +230,7 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
                     
                 </List>
             </Box>
+            <PayrollReport2 open={payrollReportOpen} onClose={handlePayrollReportClose} />
         </Toolbar>
     );
 }

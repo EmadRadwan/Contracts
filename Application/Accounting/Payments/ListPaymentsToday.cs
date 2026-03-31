@@ -66,6 +66,11 @@ public class ListPaymentsDaily
                     on pyt.CostCenterId equals cc.CostCenterId into ccJoin
                 from cc in ccJoin.DefaultIfEmpty()
 
+                join sr in _context.SalesRequests on pyt.SalesRequestId equals sr.SalesRequestId into srJoin
+                from sr in srJoin.DefaultIfEmpty()
+                join prod in _context.Products on sr.ProductId equals prod.ProductId into prodJoin
+                from prod in prodJoin.DefaultIfEmpty()
+
                 from pmt in pmtGroup.DefaultIfEmpty() 
                 where pyt.CreatedStamp >= startOfDayEgypt
                       && pyt.CreatedStamp < endOfDayEgypt
@@ -101,6 +106,8 @@ public class ListPaymentsDaily
                     CertificateNumber = we != null ? we.CertificateNumber : null,
                     ProjectName = proj != null ? proj.ProjectName : null,
                     CostCenterDescription = cc != null ? cc.Description : null,
+                    ProductId = prod != null ? prod.ProductId : null,
+                    BuildingNumber = prod != null ? prod.BuildingNumber : null,
                 };
 
             var data = await query.ToListAsync(ct);
@@ -149,6 +156,8 @@ public class PaymentRecordDto
     public string? CertificateNumber { get; set; }       // From WorkEffort via Order chain
     public string? ProjectName { get; set; }             // Direct from Payment.WorkEffortId
     public string? CostCenterDescription { get; set; }
+    public string? ProductId { get; set; }
+    public string? BuildingNumber { get; set; }
 }
 
 public class PaymentsDailyResponse

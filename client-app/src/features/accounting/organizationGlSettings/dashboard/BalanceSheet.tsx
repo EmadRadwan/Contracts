@@ -1,22 +1,24 @@
 import { Grid, Paper, Typography, Box, Button } from '@mui/material'
-import { useState } from 'react'
+import {useMemo, useState} from 'react'
 import { router } from '../../../../app/router/Routes'
 import { useAppDispatch, useAppSelector } from '../../../../app/store/configureStore'
 import AccountingMenu from '../../invoice/menu/AccountingMenu'
 import BalanceSheetForm from '../form/BalanceSheetForm'
 import AccountingReportBreadcrumbs from '../menu/AccountingReportBreadcrumbs'
 import { useTranslationHelper } from '../../../../app/hooks/useTranslationHelper'
-import { useFetchBalanceSheetReportQuery } from '../../../../app/store/apis/accounting/accountingReportsApi'
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import {
-  Grid as KendoGrid,
-  GridColumn as Column,
-  GridToolbar,
-  GRID_COL_INDEX_ATTRIBUTE,
+    Grid as KendoGrid,
+    GridColumn as Column,
+    GridToolbar,
+    GRID_COL_INDEX_ATTRIBUTE, GridPageChangeEvent, GridFilterChangeEvent,
 } from "@progress/kendo-react-grid";
 import { formatCurrency } from '../../../../app/util/utils'
 import { useTableKeyboardNavigation } from '@progress/kendo-react-data-tools'
-import { setSeletedCustomTimePeriodId } from '../../slice/accountingSharedUiSlice'
+import {CompositeFilterDescriptor, filterBy, orderBy, SortDescriptor, State} from "@progress/kendo-data-query";
+import {useLazyFetchBalanceSheetReportQuery} from "../../../../app/store/apis/accounting/accountingReportsApi";
+import ModalContainer from "../../../../app/common/modals/ModalContainer";
+import BalanceSheetGlAccountTransactionsModal from "./BalanceSheetGlAccountTransactionsModal";
 
 type ReportData = {
   glFiscalTypeId: string;
@@ -27,6 +29,23 @@ const BalanceSheet = () => {
   const dispatch = useAppDispatch()
   const { getTranslatedLabel } = useTranslationHelper();
   const localizationKey = "accounting.orgGL.reports.balance-sheet.list";
+  const [filter, setFilter] = useState<CompositeFilterDescriptor | undefined>(undefined);
+  const [showTransactionsModal, setShowTransactionsModal] = useState(false);
+  const [selectedGlAccountId, setSelectedGlAccountId] = useState<string | null>(null);
+
+  const initialSort: Array<SortDescriptor> = [
+      { field: "accountCode", dir: "asc" },
+  ];
+  const [sort, setSort] = useState(initialSort);
+  const initialDataState: State = { skip: 0, take: 25 };
+  const [page, setPage] = useState<State>(initialDataState);
+  const pageChange = (event: GridPageChangeEvent) => {
+      setPage(event.page);
+  };
+
+    const onFilterChange = (event: GridFilterChangeEvent) => {
+        setFilter(event.filter);
+    };
     const { selectedAccountingCompanyName, selectedAccountingCompanyId } =
     useAppSelector((state) => state.accountingSharedUi);
   if (!selectedAccountingCompanyId) {
@@ -34,35 +53,88 @@ const BalanceSheet = () => {
   }
 
   const initialData = {
-      glFiscalTypeId: "",
+      glFiscalTypeId: "ACTUAL",
       thruDate: undefined,
     };
     const [reportData, setReportData] = useState<ReportData>(initialData);
-    const {
+    
+    const [trigger, {
       data: balanceSheetReportData,
       isFetching,
       isSuccess,
       isLoading,
-    } = useFetchBalanceSheetReportQuery(
-      {
-        organizationPartyId: selectedAccountingCompanyId!,
-        glFiscalTypeId: reportData!.glFiscalTypeId,
-        thruDate: reportData!.thruDate,
-      },
-      {
-        skip: !reportData.glFiscalTypeId,
-      }
-    );
+    }] = useLazyFetchBalanceSheetReportQuery();
 
-  const onSubmit = (values: any) => {
-    console.log(values);
-    const { thruDate, glFiscalTypeId } = values;
-    setReportData({
-      glFiscalTypeId,
-      thruDate: new Date(thruDate).toLocaleDateString(),
-    });
-  }
+    const processedDataAssets = useMemo(() => {
+        const filtered = filterBy(balanceSheetReportData?.assetAccountBalanceList  ?? [], filter);
 
+        const sorted = orderBy(filtered, sort);
+
+        return sorted.slice(page.skip, page.skip + page.take);
+    }, [balanceSheetReportData?.assetAccountBalanceList , filter, sort, page.skip, page.take]);
+    const totalAssets = filter ? filterBy(balanceSheetReportData?.assetAccountBalanceList ?? [], filter).length : balanceSheetReportData?.assetAccountBalanceList?.length ?? 0;
+
+    const processedDataLiabilities = useMemo(() => {
+      const filtered = filterBy(balanceSheetReportData?.liabilityAccountBalanceList ?? [], filter);
+      const sorted = orderBy(filtered, sort);
+      return sorted.slice(page.skip, page.skip + page.take);
+    }, [balanceSheetReportData?.liabilityAccountBalanceList, filter, sort, page.skip, page.take]);
+    const totalLiabilities = filter ? filterBy(balanceSheetReportData?.liabilityAccountBalanceList ?? [], filter).length : balanceSheetReportData?.liabilityAccountBalanceList?.length ?? 0;
+
+    const processedDataEquities = useMemo(() => {
+      const filtered = filterBy(balanceSheetReportData?.equityAccountBalanceList ?? [], filter);
+      const sorted = orderBy(filtered, sort);
+      return sorted.slice(page.skip, page.skip + page.take);
+    }, [balanceSheetReportData?.equityAccountBalanceList, filter, sort, page.skip, page.take]);
+    const totalEquities = filter ? filterBy(balanceSheetReportData?.equityAccountBalanceList ?? [], filter).length : balanceSheetReportData?.equityAccountBalanceList?.length ?? 0;
+
+
+    const onSubmit = (values: any) => {
+        console.log("Form Values:", values);   // ← Check this in console
+
+        const glFiscalTypeId = values.glFiscalTypeId || "ACTUAL"; // Fallback
+
+        let formattedThruDate: string;
+
+        const rawDate = values.thruDate;
+
+        if (rawDate instanceof Date && !isNaN(rawDate.getTime())) {
+            formattedThruDate = rawDate.toISOString().split('T')[0];
+        }
+        else if (typeof rawDate === 'string') {
+            const parsed = new Date(rawDate);
+            formattedThruDate = !isNaN(parsed.getTime())
+                ? parsed.toISOString().split('T')[0]
+                : new Date().toISOString().split('T')[0];
+        }
+        else {
+            formattedThruDate = new Date().toISOString().split('T')[0];
+        }
+
+        console.log("Sending to API:", {
+            glFiscalTypeId,
+            thruDate: formattedThruDate
+        });
+
+        setReportData({
+            glFiscalTypeId,
+            thruDate: formattedThruDate
+        });
+
+        trigger({
+            organizationPartyId: selectedAccountingCompanyId!,
+            glFiscalTypeId: glFiscalTypeId,
+            thruDate: formattedThruDate,
+        });
+    };
+
+    const formatNumber = (value: number | undefined) => {
+        return value?.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) || '0.00';
+    };
+    
   const AccountCodeCell = (props: any) => {
     const navigationAttributes = useTableKeyboardNavigation(props.id);
   return (
@@ -80,11 +152,11 @@ const BalanceSheet = () => {
     >
       <Button
         onClick={() => {
-          dispatch(setSeletedCustomTimePeriodId(undefined))
-          router.navigate("/accountingTransactionEntries", {state: {glAccountId: props.dataItem.glAccountId}});
+          setSelectedGlAccountId(props.dataItem.glAccountId);
+          setShowTransactionsModal(true);
         }}
       >
-        {props.dataItem.glAccountId}
+        {props.dataItem.accountCode}
       </Button>
     </td>
   );
@@ -97,7 +169,7 @@ const BalanceSheet = () => {
       <AccountingReportBreadcrumbs />
 
         <Typography variant="h4" margin={3}>
-          Balance Sheet For: {selectedAccountingCompanyName}
+          {getTranslatedLabel(`${localizationKey}.title-for`, "Balance Sheet For")}: {selectedAccountingCompanyName}
         </Typography>
         <Grid item xs={12} sx={{margin: 3}}>
             <BalanceSheetForm onSubmit={onSubmit}/>
@@ -107,14 +179,26 @@ const BalanceSheet = () => {
               <Grid item xs={12}>
                 <div className="div-container">
                   <KendoGrid
-                    style={{ height: "250px", flex: 1 }}
+                    style={{ height: "500px", flex: 1 }}
+                    data={processedDataAssets}           // ← now use processedData
+                    sortable={true}
                     resizable={true}
+                    sort={sort}
+                    onSortChange={(e) => setSort(e.sort)}
+
+                    filterable={true}              // ← enable filter row
+                    filter={filter}                // ← controlled filter
+                    onFilterChange={onFilterChange}
+
+                    skip={page.skip}
+                    take={page.take}
+                    total={totalAssets}                  // ← important!
                     pageable={true}
-                    data={balanceSheetReportData?.assetAccountBalanceList ?? []}
+                    onPageChange={pageChange}
                   >
                     <GridToolbar>
                       <Typography variant="body1">
-                        Assets
+                        {getTranslatedLabel(`${localizationKey}.assets`, "Assets")}
                       </Typography>
                     </GridToolbar>
                     <Column
@@ -138,7 +222,7 @@ const BalanceSheet = () => {
                         `${localizationKey}.balance`,
                         "Balance"
                       )}
-                      format="{0:c2}"
+                      format="{0:n2}"
                     />
                   </KendoGrid>
                 </div>
@@ -146,14 +230,26 @@ const BalanceSheet = () => {
               <Grid item xs={12}>
               <div className="div-container">
                 <KendoGrid
-                  style={{ height: "250px", flex: 1 }}
+                  style={{ height: "500px", flex: 1 }}
+                  sortable={true}
                   resizable={true}
+                  sort={sort}
+                  onSortChange={(e) => setSort(e.sort)}
+
+                  filterable={true}
+                  filter={filter}
+                  onFilterChange={onFilterChange}
+
+                  skip={page.skip}
+                  take={page.take}
+                  total={totalLiabilities}
                   pageable={true}
-                  data={balanceSheetReportData?.liabilityAccountBalanceList ?? []}
+                  onPageChange={pageChange}
+                  data={processedDataLiabilities}
                 >
                   <GridToolbar>
                     <Typography variant="body1">
-                      Liabilities
+                      {getTranslatedLabel(`${localizationKey}.liabilities`, "Liabilities")}
                     </Typography>
                   </GridToolbar>
                   <Column
@@ -177,7 +273,7 @@ const BalanceSheet = () => {
                       `${localizationKey}.balance`,
                       "Balance"
                     )}
-                    format="{0:c2}"
+                    format="{0:n2}"
                   />
                 </KendoGrid>
               </div>
@@ -185,14 +281,26 @@ const BalanceSheet = () => {
               <Grid item xs={12}>
               <div className="div-container">
                 <KendoGrid
-                  style={{ height: "250px", flex: 1 }}
+                  style={{ height: "500px", flex: 1 }}
+                  sortable={true}
                   resizable={true}
+                  sort={sort}
+                  onSortChange={(e) => setSort(e.sort)}
+
+                  filterable={true}
+                  filter={filter}
+                  onFilterChange={onFilterChange}
+
+                  skip={page.skip}
+                  take={page.take}
+                  total={totalEquities}
                   pageable={true}
-                  data={balanceSheetReportData?.equityAccountBalanceList ?? []}
+                  onPageChange={pageChange}
+                  data={processedDataEquities}
                 >
                   <GridToolbar>
                     <Typography variant="body1">
-                      Equities
+                      {getTranslatedLabel(`${localizationKey}.equities`, "Equities")}
                     </Typography>
                   </GridToolbar>
                   <Column
@@ -216,14 +324,14 @@ const BalanceSheet = () => {
                       `${localizationKey}.balance`,
                       "Balance"
                     )}
-                    format="{0:c2}"
+                    format="{0:n2}"
                   />
                 </KendoGrid>
               </div>
               </Grid>
               <Grid item xs={12}/>
               <Typography variant="h5" ml={2} mt={3}>
-                Totals
+                {getTranslatedLabel(`${localizationKey}.totals`, "Totals")}
               </Typography>
               <Grid item xs={6} ml={2}>
                 <Box sx={{
@@ -236,84 +344,84 @@ const BalanceSheet = () => {
                     <Grid item container xs={12}>
                       <Grid item xs={6}>
                         <Typography variant="body1">
-                          Current Assets
+                          {getTranslatedLabel(`${localizationKey}.current-assets`, "Current Assets")}
                         </Typography>
                       </Grid>
                       <Grid item xs={6}>
                         <Typography variant="body1">
-                          {formatCurrency(balanceSheetReportData?.currentAssetBalanceTotal)}
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                    <Grid item container xs={12}>
-                      <Grid item xs={6}>
-                        <Typography variant="body1">
-                          Long Term Assets
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Typography variant="body1">
-                          {formatCurrency(balanceSheetReportData?.longtermAssetBalanceTotal)}
+                          {formatNumber(balanceSheetReportData?.currentAssetBalanceTotal)}
                         </Typography>
                       </Grid>
                     </Grid>
                     <Grid item container xs={12}>
                       <Grid item xs={6}>
                         <Typography variant="body1">
-                          Total Accumulated Depriciation
+                          {getTranslatedLabel(`${localizationKey}.long-term-assets`, "Long Term Assets")}
                         </Typography>
                       </Grid>
                       <Grid item xs={6}>
                         <Typography variant="body1">
-                          {formatCurrency(balanceSheetReportData?.accumDepreciationBalanceTotal)}
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                    <Grid item container xs={12}>
-                      <Grid item xs={6}>
-                        <Typography variant="body1">
-                          Total Assets
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Typography variant="body1">
-                          {formatCurrency(balanceSheetReportData?.assetBalanceTotal)}
+                          {formatNumber(balanceSheetReportData?.longtermAssetBalanceTotal)}
                         </Typography>
                       </Grid>
                     </Grid>
                     <Grid item container xs={12}>
                       <Grid item xs={6}>
                         <Typography variant="body1">
-                          Current Liabilities
+                          {getTranslatedLabel(`${localizationKey}.accumulated-depreciation`, "Total Accumulated Depriciation")}
                         </Typography>
                       </Grid>
                       <Grid item xs={6}>
                         <Typography variant="body1">
-                          {formatCurrency(balanceSheetReportData?.currentLiabilityBalanceTotal)}
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                    <Grid item container xs={12}>
-                      <Grid item xs={6}>
-                        <Typography variant="body1">
-                          Equities
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Typography variant="body1">
-                          {formatCurrency(balanceSheetReportData?.equityBalanceTotal)}
+                          {formatNumber(balanceSheetReportData?.accumDepreciationBalanceTotal)}
                         </Typography>
                       </Grid>
                     </Grid>
                     <Grid item container xs={12}>
                       <Grid item xs={6}>
                         <Typography variant="body1">
-                          Total Liabilities and Equities
+                          {getTranslatedLabel(`${localizationKey}.total-assets`, "Total Assets")}
                         </Typography>
                       </Grid>
                       <Grid item xs={6}>
                         <Typography variant="body1">
-                          {formatCurrency(balanceSheetReportData?.liabilityEquityBalanceTotal)}
+                          {formatNumber(balanceSheetReportData?.assetBalanceTotal)}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                    <Grid item container xs={12}>
+                      <Grid item xs={6}>
+                        <Typography variant="body1">
+                          {getTranslatedLabel(`${localizationKey}.current-liabilities`, "Current Liabilities")}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="body1">
+                          {formatNumber(balanceSheetReportData?.currentLiabilityBalanceTotal)}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                    <Grid item container xs={12}>
+                      <Grid item xs={6}>
+                        <Typography variant="body1">
+                          {getTranslatedLabel(`${localizationKey}.total-equities`, "Equities")}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="body1">
+                          {formatNumber(balanceSheetReportData?.equityBalanceTotal)}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                    <Grid item container xs={12}>
+                      <Grid item xs={6}>
+                        <Typography variant="body1">
+                          {getTranslatedLabel(`${localizationKey}.total-liabilities-equities`, "Total Liabilities and Equities")}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="body1">
+                          {formatNumber(balanceSheetReportData?.liabilityEquityBalanceTotal)}
                         </Typography>
                       </Grid>
                     </Grid>
@@ -332,6 +440,21 @@ const BalanceSheet = () => {
           )}
       </Paper>
       </Grid>
+      {showTransactionsModal && (
+          <ModalContainer
+              show={showTransactionsModal}
+              onClose={() => setShowTransactionsModal(false)}
+              width={950}
+          >
+            <BalanceSheetGlAccountTransactionsModal
+                onClose={() => setShowTransactionsModal(false)}
+                organizationPartyId={selectedAccountingCompanyId!}
+                thruDate={reportData.thruDate || new Date().toISOString().split('T')[0]}
+                glFiscalTypeId={reportData.glFiscalTypeId}
+                glAccountId={selectedGlAccountId!}
+            />
+          </ModalContainer>
+      )}
     </>
   )
 }

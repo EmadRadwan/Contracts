@@ -183,4 +183,15 @@ public class InvoicesController : BaseApiController
         return HandleResult(await Mediator.Send(command));
     }
 
+    [HttpGet("listPayrollData")]
+    public async Task<IActionResult> ListPayrollData([FromQuery] DateTime fromDate, [FromQuery] DateTime toDate, [FromQuery] string organizationPartyId)
+    {
+        return HandleResult(await Mediator.Send(new ListPayrollData2.Query
+        {
+            FromDate = fromDate,
+            ToDate = toDate,
+            OrganizationPartyId = organizationPartyId
+        }));
+    }
+
 }

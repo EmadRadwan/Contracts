@@ -5,11 +5,10 @@ using Microsoft.AspNetCore.OData.Query;
 
 namespace API.Controllers.Accounting;
 
-public class PaymentRecordsWithDueStatusController : BaseODataController<PaymentRecord>
+public class PaymentRecordsWithDueStatusController : BaseODataController2<PaymentRecord>
 {
     // REFACTOR: Updated Get method to accept paymentType query parameter
     [HttpGet]
-    [EnableQuery]
     public async Task<IActionResult> Get(ODataQueryOptions<PaymentRecord> options, [FromQuery] string? paymentType = null)
     {
         var language = GetLanguage();

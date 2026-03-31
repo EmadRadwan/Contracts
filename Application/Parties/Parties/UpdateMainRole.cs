@@ -34,7 +34,7 @@ namespace Application.Parties.Parties
                     return Result<Unit>.Failure("Party not found");
 
                 // Optional: Validate allowed roles
-                var allowedRoles = new[] { "CUSTOMER", "SUPPLIER", "EMPLOYEE", "CONTRACTOR" };
+                var allowedRoles = new[] { "CUSTOMER", "SUPPLIER", "EMPLOYEE", "CONTRACTOR", "PREVIOUS_EMPLOYEE" };
                 if (!allowedRoles.Contains(request.MainRole))
                     return Result<Unit>.Failure("Invalid main role");
 

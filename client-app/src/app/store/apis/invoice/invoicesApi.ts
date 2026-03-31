@@ -166,6 +166,13 @@ const invoicesApi = createApi({
         }),
         invalidatesTags: ["invoices"],
       }),
+      fetchPayrollData: builder.query<any[], { fromDate: string; toDate: string; organizationPartyId: string }>({
+        query: ({ fromDate, toDate, organizationPartyId }) => ({
+          url: "/invoices/listPayrollData",
+          method: "GET",
+          params: { fromDate, toDate, organizationPartyId },
+        }),
+      }),
     };
   },
 });
@@ -182,5 +189,7 @@ export const {
   useFetchInvoiceByIdQuery,
   useResetInvoiceMutation,
   useBatchCreatePayrollInvoicesMutation,
+  useFetchPayrollDataQuery,
+  useLazyFetchPayrollDataQuery,
 } = invoicesApi;
 export { invoicesApi };

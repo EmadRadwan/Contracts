@@ -348,6 +348,9 @@ export default function PartiesList() {
                                                 <MenuItem value="CONTRACTOR">
                                                     {getTranslatedLabel("party.roles.contractor", "Contractor")}
                                                 </MenuItem>
+                                                <MenuItem value="PREVIOUS_EMPLOYEE">
+                                                    {getTranslatedLabel("party.roles.previousEmployee", "Previous Employee")}
+                                                </MenuItem>
                                             </Select>
                                         </FormControl>
                                     </DialogContent>

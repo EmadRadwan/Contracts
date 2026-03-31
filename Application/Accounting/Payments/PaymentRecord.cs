@@ -49,4 +49,5 @@ public class PaymentRecord
     public string? CostCenterId { get; set; }
     public string? CostCenterDescription { get; set; }
     public int DaysUntilDue { get; set; }
+    public string? DueStatusArabic { get; set; }
 }

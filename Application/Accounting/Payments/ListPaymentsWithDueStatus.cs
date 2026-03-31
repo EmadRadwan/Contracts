@@ -130,8 +130,6 @@ public class ListPaymentsWithDueStatus
                 }
             ).AsQueryable();
 
-            // REFACTOR: Removed PaymentType filter – this query returns both incoming and outgoing payments
-
             // Apply OData querying ($filter, $orderby, etc.)
             if (request.Options.Filter != null)
                 query = request.Options.Filter.ApplyTo(query, new ODataQuerySettings()) as IQueryable<PaymentRecord>;
@@ -139,7 +137,49 @@ public class ListPaymentsWithDueStatus
             if (request.Options.OrderBy != null)
                 query = request.Options.OrderBy.ApplyTo(query, new ODataQuerySettings()) as IQueryable<PaymentRecord>;
 
-            return await Task.FromResult(query);
+            var finalQuery = await query.ToListAsync();
+            foreach (var record in finalQuery)
+            {
+                var date = record.EffectiveDate;
+                var quarterNum = (date.Month - 1) / 3 + 1;
+                var quarterArabic = quarterNum switch
+                {
+                    1 => "الأول",
+                    2 => "الثاني",
+                    3 => "الثالث",
+                    4 => "الرابع",
+                    _ => string.Empty
+                };
+                var quarterAndYear = $"(الربع {quarterArabic} {date.Year})";
+
+                if (record.StatusId == "PMNT_NOT_PAID")
+                {
+                    var type = record.IsDisbursement ? "دفعة" : "مستحق";
+                    var typePaid = record.IsDisbursement ? "دفعة مستحقة" : "مستحق";
+
+                    if (record.DaysUntilDue < 0)
+                    {
+                        var daysOverdue = Math.Abs(record.DaysUntilDue);
+                        if (daysOverdue <= 30)
+                            record.DueStatusArabic = $"{type} متأخرة منذ {daysOverdue} يوم";
+                        else
+                            record.DueStatusArabic = $"{type} متأخرة جداً {quarterAndYear}";
+                    }
+                    else if (record.DaysUntilDue == 0) record.DueStatusArabic = $"{typePaid} اليوم";
+                    else if (record.DaysUntilDue == 1) record.DueStatusArabic = $"{typePaid} غداً";
+                    else if (record.DaysUntilDue <= 3) record.DueStatusArabic = $"{typePaid} بعد {record.DaysUntilDue} أيام";
+                    else if (record.DaysUntilDue <= 7) record.DueStatusArabic = $"{typePaid} هذا الأسبوع";
+                    else if (record.DaysUntilDue <= 30) record.DueStatusArabic = $"{typePaid} خلال الشهر";
+                    else if (record.DaysUntilDue <= 90) record.DueStatusArabic = $"{typePaid} خلال 3 أشهر {quarterAndYear}";
+                    else record.DueStatusArabic = $"{typePaid} لاحقاً {quarterAndYear}";
+                }
+                else
+                {
+                    record.DueStatusArabic = record.StatusDescription;
+                }
+            }
+
+            return finalQuery.AsQueryable();
         }
     }
 }

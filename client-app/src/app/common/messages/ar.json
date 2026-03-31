@@ -307,6 +307,7 @@
       "customer": "عميل",
       "supplier": "مورد",
       "employee": "موظف",
+      "previousEmployee": "موظف سابق",
       "contractor": "مقاول"
     },
     "customers": {
@@ -1218,7 +1219,12 @@
         "cash": "نقدي",
         "included": "مدرج",
         "invalid-data": "بيانات غير صالحة",
-        "no-employees-selected": "لم يتم اختيار موظفين"
+        "no-employees-selected": "لم يتم اختيار موظفين",
+        "total": "الإجمالي"
+      },
+      "report": {
+        "title": "تقرير الرواتب",
+        "generate": "إنشاء التقرير"
       }
     },
     "menu": {
@@ -1244,7 +1250,9 @@
       "transactions-entries": "تفاصيل القيود المحاسبية",
       "create-transactions": "إنشاء قيد محاسبي",
       "trialBalance": "ميزان المراجعة",
-      "payrollRun": "تشغيل الرواتب"
+      "payroll": "الرواتب",
+      "payrollRun": "تشغيل الرواتب",
+      "payrollReport": "تقرير الرواتب"
     },
     "chartOfAccounts": {
       "excel": "تصدير إلى Excel"
@@ -1706,6 +1714,29 @@
           "glAccount": "حساب الأستاذ العام",
           "timePeriod": "الفترة الزمنية",
           "isPosted": "تم الترحيل"
+        },
+        "balance-sheet": {
+          "form": {
+            "thru-date": "إلى تاريخ",
+            "generate-report": "إنشاء التقرير"
+          },
+          "list": {
+            "title-for": "قائمة المركز المالي لـ",
+            "assets": "الأصول",
+            "liabilities": "الالتزامات",
+            "equities": "حقوق الملكية",
+            "code": "كود الحساب",
+            "name": "اسم الحساب",
+            "balance": "الرصيد",
+            "totals": "الإجماليات",
+            "current-assets": "الأصول المتداولة",
+            "long-term-assets": "الأصول طويلة الأجل",
+            "accumulated-depreciation": "مجمع الإهلاك",
+            "total-assets": "إجمالي الأصول",
+            "current-liabilities": "الالتزامات المتداولة",
+            "total-equities": "إجمالي حقوق الملكية",
+            "total-liabilities-equities": "إجمالي الالتزامات وحقوق الملكية"
+          }
         }
       }
     },

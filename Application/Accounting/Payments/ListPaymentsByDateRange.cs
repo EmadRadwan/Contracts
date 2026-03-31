@@ -59,6 +59,11 @@ public class ListPaymentsByDateRange
                             on pyt.CostCenterId equals cc.CostCenterId into ccJoin
                         from cc in ccJoin.DefaultIfEmpty()
 
+                        join sr in _context.SalesRequests on pyt.SalesRequestId equals sr.SalesRequestId into srJoin
+                        from sr in srJoin.DefaultIfEmpty()
+                        join prod in _context.Products on sr.ProductId equals prod.ProductId into prodJoin
+                        from prod in prodJoin.DefaultIfEmpty()
+
                         where pyt.CreatedStamp >= request.FromDate
                               && pyt.CreatedStamp <= request.ToDate
                               && (isOutgoing ? ptt.ParentTypeId == "DISBURSEMENT" : ptt.ParentTypeId != "DISBURSEMENT")
@@ -78,7 +83,8 @@ public class ListPaymentsByDateRange
                             CertificateNumber = we != null ? we.CertificateNumber : null,
                             ProjectName = proj != null ? proj.ProjectName : null,
                             CostCenterDescription = cc != null ? cc.Description : null,
-                            // ... include all other fields you need exactly as in the daily version
+                            ProductId = prod != null ? prod.ProductId : null,
+                            BuildingNumber = prod != null ? prod.BuildingNumber : null,
                         };
 
             var data = await query.ToListAsync(ct);

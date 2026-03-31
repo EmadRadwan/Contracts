@@ -112,6 +112,25 @@ public class OrganizationGlReportsController : BaseApiController
         }));
     }
 
+    [HttpGet("{selectedAccountingCompanyId}/getBalanceSheetGlAccountTransactionDetails")]
+    public async Task<IActionResult> GetBalanceSheetGlAccountTransactionDetails(
+        string selectedAccountingCompanyId,
+        [FromQuery] DateTime? thruDate,
+        [FromQuery] string glFiscalTypeId,
+        [FromQuery] string glAccountId,
+        [FromQuery] bool includePrePeriodTransactions
+    )
+    {
+        return HandleResult(await Mediator.Send(new GetBalanceSheetGlAccountTransactionDetails.Query
+        {
+            OrganizationPartyId = selectedAccountingCompanyId,
+            ThruDate = thruDate,
+            GlFiscalTypeId = glFiscalTypeId,
+            GlAccountId = glAccountId,
+            IncludePrePeriodTransactions = includePrePeriodTransactions
+        }));
+    }
+
     [HttpGet("{selectedAccountingCompanyId}/generateComparativeBalanceSheet")]
     public async Task<IActionResult> GenerateComparativeBalanceSheet(
         string selectedAccountingCompanyId, 

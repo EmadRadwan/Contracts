@@ -8,7 +8,6 @@ namespace API.Controllers.Order.SalesRequest;
 public class ReserveRequestRecordsController : BaseODataController2<ListReserveRequestsQuery.ReserveRequestRecord>
 {
     [HttpGet]
-    [EnableQuery]
     public async Task<IActionResult> Get(ODataQueryOptions<ListReserveRequestsQuery.ReserveRequestRecord> options)
     {
         var language = GetLanguage();

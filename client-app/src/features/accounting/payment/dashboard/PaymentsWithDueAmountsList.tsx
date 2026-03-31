@@ -114,30 +114,7 @@ export default function PaymentsWithDueAmountsList() {
     }
 
     const getDueStatusArabic = (dataItem: any): string => {
-        const { statusId, statusDescription, daysUntilDue, isDisbursement } = dataItem;
-
-        if (statusId !== "PMNT_NOT_PAID") {
-            return statusDescription || "";
-        }
-
-        // Existing logic for unpaid payments only
-        const type = isDisbursement ? "دفعة" : "مستحق";
-        const typePaid = isDisbursement ? "دفعة مستحقة" : "مستحق";
-
-        if (daysUntilDue < 0) {
-            const daysOverdue = Math.abs(daysUntilDue);
-            if (daysOverdue <= 30) {
-                return `${type} متأخرة منذ ${daysOverdue} يوم`;
-            }
-            return `${type} متأخرة جداً`;
-        }
-        if (daysUntilDue === 0) return `${typePaid} اليوم`;
-        if (daysUntilDue === 1) return `${typePaid} غداً`;
-        if (daysUntilDue <= 3) return `${typePaid} بعد ${daysUntilDue} أيام`;
-        if (daysUntilDue <= 7) return `${typePaid} هذا الأسبوع`;
-        if (daysUntilDue <= 30) return `${typePaid} خلال الشهر`;
-        if (daysUntilDue <= 90) return `${typePaid} خلال 3 أشهر`;
-        return `${typePaid} لاحقاً`;
+        return dataItem.dueStatusArabic || "";
     };
 
 

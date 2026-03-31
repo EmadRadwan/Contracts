@@ -85,7 +85,7 @@ export const PaymentsDailyExcel: React.FC<PaymentsDailyExcelProps> = ({
             )
         );
         ws.getCell(`A${startRow}`).value = title;
-        ws.mergeCells(`A${startRow}:K${startRow}`);
+        ws.mergeCells(`A${startRow}:O${startRow}`);
         ws.getRow(startRow).font = { name: 'Amiri', size: 18, bold: true };
         ws.getRow(startRow).alignment = { horizontal: 'center', vertical: 'middle' };
         ws.getRow(startRow).height = 40;
@@ -97,6 +97,8 @@ export const PaymentsDailyExcel: React.FC<PaymentsDailyExcelProps> = ({
             getTranslatedLabel('accounting.payments.list.paymentRefNum', 'Reference Number'), // ← NEW
             getTranslatedLabel('accounting.payments.list.paymentType', 'Payment Type'),
             getTranslatedLabel('accounting.payments.list.orderId', 'Order ID'),
+            getTranslatedLabel('accounting.payments.list.productId', 'Product ID'),
+            getTranslatedLabel('accounting.payments.list.buildingNumber', 'Building Number'),
             getTranslatedLabel('accounting.payments.list.certificateNumber', 'Certificate Number'),
             getTranslatedLabel('projects.certificate.form.project', 'Project'),
             getTranslatedLabel('accounting.payments.form.costCenter', 'Cost Center'),
@@ -122,6 +124,8 @@ export const PaymentsDailyExcel: React.FC<PaymentsDailyExcelProps> = ({
                 utils.rtlEmbed(utils.safeString(payment.paymentRefNum ?? '')), // ← NEW
                 utils.rtlEmbed(utils.safeString(payment.paymentTypeDescription)),
                 utils.rtlEmbed(utils.safeString(payment.orderId ?? '')),
+                utils.rtlEmbed(utils.safeString(payment.productId ?? '')),
+                utils.rtlEmbed(utils.safeString(payment.buildingNumber ?? '')),
                 utils.rtlEmbed(utils.safeString(payment.certificateNumber ?? '')),
                 utils.rtlEmbed(utils.safeString(payment.projectName ?? '')),
                 utils.rtlEmbed(utils.safeString(payment.costCenterDescription ?? '')),
@@ -142,13 +146,13 @@ export const PaymentsDailyExcel: React.FC<PaymentsDailyExcelProps> = ({
             const totalAmount = data.data.reduce((sum, p) => sum + (p.amount || 0), 0);
             const totalRowNum = dataStartRow + data.data.length;
             ws.addRow([
-                '', '', '', '', '',
+                '', '', '', '', '', '', '',
                 utils.rtlEmbed(getTranslatedLabel('common.total', 'Total')),
-                '', '', utils.formatNumber(totalAmount), ''
+                '', '', '', '', '', utils.formatNumber(totalAmount), ''
             ]);
-            ws.mergeCells(`F${totalRowNum}:H${totalRowNum}`);
+            ws.mergeCells(`H${totalRowNum}:M${totalRowNum}`);
             ws.getRow(totalRowNum).font = { name: 'Amiri', size: 12, bold: true };
-            ws.getCell(`I${totalRowNum}`).font = { bold: true };
+            ws.getCell(`N${totalRowNum}`).font = { bold: true };
         }
 
         // === COLUMN WIDTHS ===
@@ -157,6 +161,8 @@ export const PaymentsDailyExcel: React.FC<PaymentsDailyExcelProps> = ({
             { width: 20 }, // Reference Number ← NEW
             { width: 22 }, // Type
             { width: 15 }, // Order ID
+            { width: 15 }, // Product ID
+            { width: 18 }, // Building Number
             { width: 20 }, // Certificate
             { width: 30 }, // Project (NEW)
             { width: 28 }, // Cost Center (NEW)
@@ -167,7 +173,7 @@ export const PaymentsDailyExcel: React.FC<PaymentsDailyExcelProps> = ({
             { width: 16 }, // Amount
             { width: 35 }  // Comments
         ];
-        ws.getColumn(11).numFmt = '#,##0.00';
+        ws.getColumn(14).numFmt = '#,##0.00';
 
         return await workbook.xlsx.writeBuffer();
     }, [companyName, paymentType, getTranslatedLabel]);

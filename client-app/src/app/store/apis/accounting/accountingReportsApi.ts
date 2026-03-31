@@ -1,6 +1,43 @@
 import {createApi, fetchBaseQuery} from "@reduxjs/toolkit/query/react";
 import {store} from "../../configureStore";
 
+export interface TransactionEntryDto {
+    acctgTransId: string;
+    acctgTransEntrySeqId: string;
+    transactionDate: string;
+    acctgTransTypeId: string;
+    acctgTransTypeDescription: string;
+    glFiscalTypeId: string;
+    invoiceId?: string;
+    paymentId?: string;
+    workEffortId?: string;
+    shipmentId?: string;
+    partyId?: string;
+    partyName?: string;
+    productId?: string;
+    productName?: string;
+    isPosted: string;
+    description?: string;
+    postedDate?: string;
+    debitCreditFlag: string;
+    currencyUomId?: string;
+    amount: number;
+    certificateNumber?: string;
+    projectName?: string;
+}
+
+export interface GlAccountTransactionDetails {
+    openingBalance: number;
+    postedDebits: number;
+    postedCredits: number;
+    endingBalance: number;
+    glAccountId: string;
+    accountCode: string;
+    accountName: string;
+    glAccountClassId?: string;
+    transactions: TransactionEntryDto[];
+}
+
 const accountingReportsApi = createApi({
     reducerPath: "accountingReports",
     keepUnusedDataFor: 0,
@@ -168,6 +205,13 @@ const accountingReportsApi = createApi({
               params: { includePrePeriodTransactions },
             }),
           }),
+          fetchBalanceSheetGlAccountTransactionDetails: builder.query<GlAccountTransactionDetails, { organizationPartyId: string; thruDate: string; glFiscalTypeId: string; glAccountId: string; includePrePeriodTransactions: boolean }>({
+            query: ({ organizationPartyId, thruDate, glFiscalTypeId, glAccountId, includePrePeriodTransactions }) => ({
+              url: `/organizationGlReports/${organizationPartyId}/getBalanceSheetGlAccountTransactionDetails`,
+              method: 'GET',
+              params: { thruDate, glFiscalTypeId, glAccountId, includePrePeriodTransactions },
+            }),
+          }),
         };
     },
 });
@@ -178,7 +222,9 @@ export const {
     useFetchIncomeStatementReportQuery,
     useFetchCashFlowStatementReportQuery,
     useFetchGlAccountTrialBalanceReportQuery,
-    useFetchBalanceSheetReportQuery,
-    useFetchComparativeBalanceSheetReportQuery, useFetchGlAccountTransactionDetailsQuery
+    useLazyFetchBalanceSheetReportQuery,
+    useFetchComparativeBalanceSheetReportQuery, 
+    useFetchGlAccountTransactionDetailsQuery,
+    useFetchBalanceSheetGlAccountTransactionDetailsQuery
 } = accountingReportsApi;
 export {accountingReportsApi};
