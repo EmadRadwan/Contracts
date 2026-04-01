@@ -1,7 +1,8 @@
 using Application.Accounting.Services;
-using Application.Core;
 using Application.Shipments.Invoices;
+using Domain;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Persistence;
 
 namespace Application.Accounting.Invoices;
@@ -39,11 +40,79 @@ public class BatchCreatePayrollInvoices
         private readonly IInvoiceHelperService _invoiceHelperService;
         private readonly IInvoiceUtilityService _invoiceUtilityService;
 
-        public Handler(DataContext context, IInvoiceHelperService invoiceHelperService, IInvoiceUtilityService invoiceUtilityService)
+        public Handler(DataContext context, IInvoiceHelperService invoiceHelperService,
+            IInvoiceUtilityService invoiceUtilityService)
         {
             _context = context;
             _invoiceHelperService = invoiceHelperService;
             _invoiceUtilityService = invoiceUtilityService;
+        }
+
+        /// <summary>
+        /// Reverts all deductions made by the given payroll invoices.
+        /// Used before re-running batch payroll for the same month to avoid double deduction.
+        /// </summary>
+        private async Task RevertPayrollDeductionsForInvoices(List<string> invoiceIds)
+        {
+            if (invoiceIds == null || !invoiceIds.Any())
+                return;
+
+            // 1. Revert Long-term Advance Schedules
+            await _context.EmployeeAdvanceSchedules
+                .Where(s => invoiceIds.Contains(s.PayrolInvoiceId))
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(x => x.DeductedAmount, 0m)
+                    .SetProperty(x => x.PayrolInvoiceId, (string?)null)
+                    .SetProperty(x => x.StatusId, "SCHEDULED")
+                    .SetProperty(x => x.LastUpdatedStamp, DateTime.UtcNow)
+                    .SetProperty(x => x.Notes, (string?)null));
+
+            // 2. Revert Short-term Advances (using correct property name: PayrolInvoiceId)
+            await _context.EmployeeAdvances
+                .Where(a => invoiceIds.Contains(a.PayrollInvoiceId)
+                            && a.AdvanceTypeId == "EMPLOYEE_ADVANCE")
+                .ExecuteUpdateAsync(a => a
+                    .SetProperty(x => x.PayrollInvoiceId, (string?)null)
+                    .SetProperty(x => x.StatusId, "ADVANCE_APPROVED")
+                    .SetProperty(x => x.LastUpdatedStamp, DateTime.UtcNow));
+        }
+
+        /// <summary>
+        /// Deletes payroll invoices and all related records using ExecuteDeleteAsync (EF Core 7+)
+        /// </summary>
+        private async Task DeletePayrollInvoicesSafelyAsync(List<string> invoiceIds, CancellationToken ct)
+        {
+            if (!invoiceIds.Any()) return;
+
+            // Delete child records first (order is important)
+            await _context.InvoiceItems
+                .Where(ii => invoiceIds.Contains(ii.InvoiceId))
+                .ExecuteDeleteAsync(ct);
+
+            await _context.Set<InvoiceRole>() // Assuming you have InvoiceRole entity
+                .Where(ir => invoiceIds.Contains(ir.InvoiceId))
+                .ExecuteDeleteAsync(ct);
+
+            await _context.Set<InvoiceStatus>()
+                .Where(isr => invoiceIds.Contains(isr.InvoiceId))
+                .ExecuteDeleteAsync(ct);
+
+            // Delete accounting entries first, then transactions
+            await _context.AcctgTransEntries
+                .Where(ate => _context.AcctgTrans
+                    .Where(at => invoiceIds.Contains(at.InvoiceId))
+                    .Select(at => at.AcctgTransId)
+                    .Contains(ate.AcctgTransId))
+                .ExecuteDeleteAsync(ct);
+
+            await _context.AcctgTrans
+                .Where(at => invoiceIds.Contains(at.InvoiceId))
+                .ExecuteDeleteAsync(ct);
+
+            // Finally delete the invoices
+            await _context.Invoices
+                .Where(i => invoiceIds.Contains(i.InvoiceId))
+                .ExecuteDeleteAsync(ct);
         }
 
         public async Task<Result<Unit>> Handle(Command request, CancellationToken cancellationToken)
@@ -51,6 +120,29 @@ public class BatchCreatePayrollInvoices
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
+                var monthStart = new DateTime(request.InvoiceDate.Year, request.InvoiceDate.Month, 1);
+                var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+
+                // ===================================================================
+                // STEP 1: Find existing payroll invoices for this month
+                // ===================================================================
+                var existingInvoiceIds = await _context.Invoices
+                    .Where(i => i.InvoiceTypeId == "PAYROL_INVOICE"
+                                && i.InvoiceDate >= monthStart
+                                && i.InvoiceDate <= monthEnd
+                                && request.Employees.Select(e => e.EmployeeId).Contains(i.PartyIdFrom))
+                    .Select(i => i.InvoiceId)
+                    .ToListAsync(cancellationToken);
+
+                if (existingInvoiceIds.Any())
+                {
+                    // Revert deductions on advances and schedules first
+                    await RevertPayrollDeductionsForInvoices(existingInvoiceIds);
+
+                    // Then safely delete old payroll invoices + all related artifacts using ExecuteDeleteAsync
+                    await DeletePayrollInvoicesSafelyAsync(existingInvoiceIds, cancellationToken);
+                }
+
                 foreach (var emp in request.Employees)
                 {
                     // 1. Create Invoice Header

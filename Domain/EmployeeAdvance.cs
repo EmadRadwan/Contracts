@@ -21,6 +21,8 @@ public class EmployeeAdvance
     public int? InstallmentCount { get; set; }
     public DateTime? StartDate { get; set; }
     public string StatusId { get; set; } 
+    public string? PayrollInvoiceId { get; set; }
+    
     public string? Description { get; set; }
 
     // Audit fields
@@ -32,5 +34,7 @@ public class EmployeeAdvance
     // Navigation properties
     public virtual Party Party { get; set; } = null!;
     public virtual Payment? Payment { get; set; }
+    public virtual Invoice? PayrollInvoice { get; set; }
+    
     public virtual ICollection<EmployeeAdvanceSchedule> EmployeeAdvanceSchedules { get; set; }
 }

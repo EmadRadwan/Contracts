@@ -130,6 +130,8 @@ public class InvoiceUtilityService : IInvoiceUtilityService
                 if (invoiceTypeId == "PAYROL_INVOICE" && statusId == "INVOICE_READY" && oldStatusId != "INVOICE_READY")
                 {
                     await _generalLedgerService.Value.CreateAcctgTransForPayrollInvoice(invoice.InvoiceId);
+                    // NEW: Apply full deductions to advances and schedules
+                    await ApplyPayrollDeductionsToAdvances(invoice.InvoiceId);
                 }
             }
 
@@ -479,25 +481,26 @@ public class InvoiceUtilityService : IInvoiceUtilityService
 
             var invoiceItems = await _context.InvoiceItems
                 .AsNoTracking()
-                .Where(ii => ii.InvoiceId == invoiceId 
+                .Where(ii => ii.InvoiceId == invoiceId
                              && !taxableItemTypeIds.Contains(ii.InvoiceItemTypeId))
-                .Include(ii => ii.InvoiceItemType)  // ← add this if navigation exists
-                .Select(ii => new 
+                .Include(ii => ii.InvoiceItemType) // ← add this if navigation exists
+                .Select(ii => new
                 {
                     ii.InvoiceItemTypeId,
                     ii.Quantity,
                     ii.Amount,
-                    IsPositiveAmount = ii.InvoiceItemType != null 
-                        ? ii.InvoiceItemType.IsPositiveAmount 
+                    IsPositiveAmount = ii.InvoiceItemType != null
+                        ? ii.InvoiceItemType.IsPositiveAmount
                         : (bool?)null
                 })
                 .ToListAsync();
-            
+
             if (invoiceItems?.Any() == true)
             {
                 // Detect the two certificate-specific item types
-                bool hasCertificateItem       = invoiceItems.Any(ii => ii.InvoiceItemTypeId == "PINV_CERTIFICATE_ITEM");
-                bool hasCertificateSupplyItem = invoiceItems.Any(ii => ii.InvoiceItemTypeId == "PINV_CERTIFICATE_SUPPLY_ITEM");
+                bool hasCertificateItem = invoiceItems.Any(ii => ii.InvoiceItemTypeId == "PINV_CERTIFICATE_ITEM");
+                bool hasCertificateSupplyItem =
+                    invoiceItems.Any(ii => ii.InvoiceItemTypeId == "PINV_CERTIFICATE_SUPPLY_ITEM");
 
                 decimal baseTotal;
 
@@ -506,24 +509,26 @@ public class InvoiceUtilityService : IInvoiceUtilityService
                     // Rule 1 – Certificate invoice: certificate amount(s) MINUS everything else
                     var certificateTotal = invoiceItems
                         .Where(ii => ii.InvoiceItemTypeId == "PINV_CERTIFICATE_ITEM")
-                        .Sum(ii => (ii.Quantity ?? 1m) * (ii.Amount ?? 0m) * ((ii.IsPositiveAmount ?? true) ? 1m : -1m));
+                        .Sum(ii => (ii.Quantity ?? 1m) * (ii.Amount ?? 0m) *
+                                   ((ii.IsPositiveAmount ?? true) ? 1m : -1m));
 
                     var otherTotal = invoiceItems
                         .Where(ii => ii.InvoiceItemTypeId != "PINV_CERTIFICATE_ITEM")
-                        .Sum(ii => (ii.Quantity ?? 1m) * (ii.Amount ?? 0m) * ((ii.IsPositiveAmount ?? true) ? 1m : -1m));
+                        .Sum(ii => (ii.Quantity ?? 1m) * (ii.Amount ?? 0m) *
+                                   ((ii.IsPositiveAmount ?? true) ? 1m : -1m));
 
                     baseTotal = certificateTotal - otherTotal;
                 }
                 else if (hasCertificateSupplyItem)
                 {
                     // Rule 2 – Certificate-Supply: normal signed sum
-                    baseTotal = invoiceItems.Sum(ii => 
+                    baseTotal = invoiceItems.Sum(ii =>
                         (ii.Quantity ?? 1m) * (ii.Amount ?? 0m) * ((ii.IsPositiveAmount ?? true) ? 1m : -1m));
                 }
                 else
                 {
                     // Rule 3 – Regular: normal signed sum of non-taxable items
-                    baseTotal = invoiceItems.Sum(ii => 
+                    baseTotal = invoiceItems.Sum(ii =>
                         (ii.Quantity ?? 1m) * (ii.Amount ?? 0m) * ((ii.IsPositiveAmount ?? true) ? 1m : -1m));
                 }
 
@@ -770,8 +775,8 @@ public class InvoiceUtilityService : IInvoiceUtilityService
                 .ToListAsync();
                 */
 
-            var invoiceTaxItems = await _utilityService.FindLocalOrDatabaseListAsync<InvoiceItem>(
-                query => query.Where(ii =>
+            var invoiceTaxItems = await _utilityService.FindLocalOrDatabaseListAsync<InvoiceItem>(query =>
+                query.Where(ii =>
                     ii.InvoiceId == invoiceId && taxableItemTypeIds.Contains(ii.InvoiceItemTypeId))
             );
             // Process each invoice item to build the taxAuthPartyId -> taxAuthGeoId mapping
@@ -814,11 +819,11 @@ public class InvoiceUtilityService : IInvoiceUtilityService
             var taxableItemTypeIds =
                 await GetTaxableInvoiceItemTypeIds(); // Assume this retrieves the taxable item types
 
-            var invoiceTaxItems = await _utilityService.FindLocalOrDatabaseListAsync<InvoiceItem>(
-                query => query.Where(ii => ii.InvoiceId == invoiceId
-                                           && taxableItemTypeIds.Contains(ii.InvoiceItemTypeId)
-                                           && ii.TaxAuthPartyId == taxAuthPartyId
-                                           && ii.TaxAuthGeoId == taxAuthGeoId)
+            var invoiceTaxItems = await _utilityService.FindLocalOrDatabaseListAsync<InvoiceItem>(query =>
+                query.Where(ii => ii.InvoiceId == invoiceId
+                                  && taxableItemTypeIds.Contains(ii.InvoiceItemTypeId)
+                                  && ii.TaxAuthPartyId == taxAuthPartyId
+                                  && ii.TaxAuthGeoId == taxAuthGeoId)
             );
 
             // Calculate the total tax for the filtered invoice items
@@ -883,10 +888,10 @@ public class InvoiceUtilityService : IInvoiceUtilityService
             var taxableItemTypeIds =
                 await GetTaxableInvoiceItemTypeIds(); // Assume this retrieves the taxable item types
 
-            var invoiceTaxItems = await _utilityService.FindLocalOrDatabaseListAsync<InvoiceItem>(
-                query => query.Where(ii => ii.InvoiceId == invoiceId
-                                           && taxableItemTypeIds.Contains(ii.InvoiceItemTypeId)
-                                           && ii.TaxAuthPartyId == null)
+            var invoiceTaxItems = await _utilityService.FindLocalOrDatabaseListAsync<InvoiceItem>(query =>
+                query.Where(ii => ii.InvoiceId == invoiceId
+                                  && taxableItemTypeIds.Contains(ii.InvoiceItemTypeId)
+                                  && ii.TaxAuthPartyId == null)
             );
 
             // Calculate the total tax for the unattributed invoice items
@@ -922,6 +927,72 @@ public class InvoiceUtilityService : IInvoiceUtilityService
 
             // Re-throw the exception or handle it as necessary
             throw new Exception($"Error calculating not-applied amount for invoice {invoiceId}.", ex);
+        }
+    }
+
+    /// <summary>
+    /// Fully deducts all due advances/schedules when a PAYROL_INVOICE is set to READY.
+    /// Called automatically after CreateAcctgTransForPayrollInvoice.
+    /// </summary>
+    public async Task ApplyPayrollDeductionsToAdvances(string invoiceId)
+    {
+        var invoice = await _context.Invoices
+            .Include(i => i.InvoiceItems)
+            .FirstOrDefaultAsync(i => i.InvoiceId == invoiceId);
+
+        if (invoice == null || invoice.InvoiceTypeId != "PAYROL_INVOICE")
+            return;
+
+        // Find the advance deduction item (we only care if it exists and has value)
+        var advanceItem = invoice.InvoiceItems
+            .FirstOrDefault(ii => ii.InvoiceItemTypeId == "PAYROL_DD_ADVANCE");
+
+        if (advanceItem == null || (advanceItem.Amount ?? 0m) <= 0)
+            return;
+
+        var employeeId = invoice.PartyIdFrom;
+        var invoiceDate = invoice.InvoiceDate?.Date ?? DateTime.UtcNow.Date;
+        var invMonth = invoiceDate.Month;
+        var invYear = invoiceDate.Year;
+
+        // Get all approved advances for this employee
+        var advances = await _context.EmployeeAdvances
+            .Include(a => a.EmployeeAdvanceSchedules)
+            .Where(a => a.PartyId == employeeId && a.StatusId == "ADVANCE_APPROVED")
+            .ToListAsync();
+
+        foreach (var advance in advances)
+        {
+            if (advance.AdvanceTypeId == "EMPLOYEE_ADVANCE")
+            {
+                // Short-term advance: was it given in the previous month?
+                var advDate = advance.AdvanceDate.Date;
+                if (advDate.Month == invMonth - 1 && advDate.Year == invYear)
+                {
+                    // Fully deduct it
+                    advance.PayrollInvoiceId = invoiceId;
+                    advance.StatusId = "ADVANCE_FULLY_PAID"; // or "ADVANCE_CLOSED" if you prefer
+                    advance.LastUpdatedStamp = DateTime.UtcNow;
+                }
+            }
+            else if (advance.AdvanceTypeId == "EMPLOYEE_LONG_TERM_ADVANCE")
+            {
+                // Long-term: find schedules due this month that are still SCHEDULED
+                var dueSchedules = advance.EmployeeAdvanceSchedules
+                    .Where(s => s.StatusId == "SCHEDULED"
+                                && s.DueDate.Month == invMonth
+                                && s.DueDate.Year == invYear)
+                    .ToList();
+
+                foreach (var schedule in dueSchedules)
+                {
+                    // Fully deduct the schedule
+                    schedule.DeductedAmount = schedule.ScheduledAmount;
+                    schedule.PayrolInvoiceId = invoiceId;
+                    schedule.StatusId = "SCHED_PAID";
+                    schedule.LastUpdatedStamp = DateTime.UtcNow;
+                }
+            }
         }
     }
 }

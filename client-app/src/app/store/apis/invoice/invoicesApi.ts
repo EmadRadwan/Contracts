@@ -173,6 +173,14 @@ const invoicesApi = createApi({
           params: { fromDate, toDate, organizationPartyId },
         }),
       }),
+      checkExistingPayrollInvoices: builder.query<boolean, { invoiceDate: string; organizationPartyId: string }>({
+        query: ({ invoiceDate, organizationPartyId }) => ({
+          url: "/invoices/checkExistingPayrollInvoices",
+          method: "GET",
+          params: { invoiceDate, organizationPartyId },
+        }),
+        providesTags: ["invoices"],
+      }),
     };
   },
 });
@@ -191,5 +199,6 @@ export const {
   useBatchCreatePayrollInvoicesMutation,
   useFetchPayrollDataQuery,
   useLazyFetchPayrollDataQuery,
+  useCheckExistingPayrollInvoicesQuery,
 } = invoicesApi;
 export { invoicesApi };

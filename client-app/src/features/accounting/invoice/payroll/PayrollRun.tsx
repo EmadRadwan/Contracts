@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Box,
     Typography,
@@ -18,7 +19,10 @@ import { LoadingButton } from "@mui/lab";
 import { toast } from "react-toastify";
 import { Alert, AlertTitle } from "@mui/material";
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
-import {useAppSelector, useBatchCreatePayrollInvoicesMutation} from "../../../../app/store/configureStore";
+import {
+    useAppSelector,
+    useBatchCreatePayrollInvoicesMutation, useCheckExistingPayrollInvoicesQuery
+} from "../../../../app/store/configureStore";
 import {
     useFetchEmployeesWithSalaryQuery,
     useFetchEmployeeAdvancesQuery
@@ -47,6 +51,7 @@ interface EmployeePayrollData {
 }
 
 const PayrollRun: React.FC = () => {
+    const navigate = useNavigate();
     const { getTranslatedLabel } = useTranslationHelper();
     const { user } = useAppSelector((state) => state.account);
     const companyId = user?.organizationPartyId || "Company";
@@ -84,6 +89,12 @@ const PayrollRun: React.FC = () => {
     } as any);
 
     const [batchCreate, { isLoading: isSubmitting }] = useBatchCreatePayrollInvoicesMutation();
+
+    // Check for existing invoices for this month
+    const { data: hasExistingInvoices, isLoading: isCheckingExisting } = useCheckExistingPayrollInvoicesQuery({
+        invoiceDate,
+        organizationPartyId: companyId
+    }, { skip: !invoiceDate || !companyId });
 
     // Process initial data
     useEffect(() => {
@@ -210,6 +221,7 @@ const PayrollRun: React.FC = () => {
 
             await batchCreate(command).unwrap();
             toast.success(getTranslatedLabel("accounting.payroll.run.success", "Payroll Run completed successfully"));
+            navigate("/invoicesDashboard");
         } catch (error) {
             console.error("Payroll Run failed", error);
             toast.error(getTranslatedLabel("accounting.payroll.run.failed", "Payroll Run failed"));
@@ -229,6 +241,15 @@ const PayrollRun: React.FC = () => {
                     <Alert severity="error">
                         <AlertTitle>{getTranslatedLabel("accounting.payroll.run.invalid-data", "Invalid Data")}</AlertTitle>
                         {getTranslatedLabel("accounting.payroll.run.invalid-data-warning", "Cannot proceed: Some employees have incomplete data (Salary is 0 or Salary Account is missing). Please fix the data first.")}
+                    </Alert>
+                </Box>
+            )}
+
+            {!isCheckingExisting && hasExistingInvoices && (
+                <Box mb={3}>
+                    <Alert severity="warning">
+                        <AlertTitle>{getTranslatedLabel("accounting.payroll.run.existing-invoices", "Existing Payroll Invoices Detected")}</AlertTitle>
+                        {getTranslatedLabel("accounting.payroll.run.existing-invoices-warning", "Payroll invoices already exist for the selected month. Proceeding will delete these invoices and all related data (Absence, Overtime, etc.). You will need to re-enter this information.")}
                     </Alert>
                 </Box>
             )}

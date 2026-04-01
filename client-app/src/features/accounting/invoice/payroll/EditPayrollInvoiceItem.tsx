@@ -11,11 +11,9 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    IconButton,
     TextField,
     CircularProgress
 } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { LoadingButton } from "@mui/lab";
 import {
     useFetchEmployeeAdvancesQuery,
@@ -50,7 +48,7 @@ interface PayrollRow {
     amount: number;
     invoiceItemSeqId?: string; // If already on invoice
     itemDescription?: string; // Custom description for item
-    quantity?: number; // Special case for PAYROL_DD_ABSENCE and PAYROL_OVERTIME
+    days?: number; // Special case for PAYROL_DD_ABSENCE and PAYROL_OVERTIME
 }
 
 const EditPayrollInvoiceItem: React.FC<Props> = ({
@@ -156,7 +154,7 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                         amount: existingItem.amount || 0,
                         invoiceItemSeqId: existingItem.invoiceItemSeqId,
                         itemDescription: existingItem.description || "",
-                        quantity: (type.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' || type.invoiceItemTypeId === 'PAYROL_OVERTIME') ? (existingItem.quantity || 0) : undefined
+                        days: (type.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' || type.invoiceItemTypeId === 'PAYROL_OVERTIME') ? (existingItem.quantity || 0) : undefined
                     });
                 } else {
                     // Pre-population logic
@@ -175,7 +173,7 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                         description: type.description,
                         amount: initialAmount,
                         itemDescription: initialDesc,
-                        quantity: (type.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' || type.invoiceItemTypeId === 'PAYROL_OVERTIME') ? 0 : undefined
+                        days: (type.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' || type.invoiceItemTypeId === 'PAYROL_OVERTIME') ? 0 : undefined
                     });
                 }
             });
@@ -190,17 +188,11 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
         const newRows = [...rows];
         const updatedRow = { ...newRows[index], [field]: value };
 
-        // Special logic for PAYROL_DD_ABSENCE and PAYROL_OVERTIME
-        if (field === 'quantity') {
+        if (field === 'days') {
             const basicSalary = employeeData?.monthlyBaseSalary || 0;
-            const quantity = parseFloat(value) || 0;
-            if (updatedRow.invoiceItemTypeId === 'PAYROL_DD_ABSENCE') {
-                updatedRow.amount = Math.round((basicSalary / 30) * quantity);
-            } else if (updatedRow.invoiceItemTypeId === 'PAYROL_OVERTIME') {
-                // Assuming standard 1.5x rate for overtime, or same calculation as absence if specified?
-                // The issue description says "calculated the same way" (as PAYROL_DD_ABSENCE)
-                // If it's the same way: (basicSalary / 30) * overtime_days
-                updatedRow.amount = Math.round((basicSalary / 30) * quantity);
+            const days = parseFloat(value) || 0;
+            if (updatedRow.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' || updatedRow.invoiceItemTypeId === 'PAYROL_OVERTIME') {
+                updatedRow.amount = Math.round((basicSalary / 30) * days);
             }
         }
 
@@ -212,31 +204,30 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
         setRows(newRows);
     };
 
-    const handleDeleteRow = async (index: number) => {
-        const row = rows[index];
-        if (row.invoiceItemSeqId) {
-            try {
-                await deleteItem({ invoiceId, invoiceItemSeqId: row.invoiceItemSeqId }).unwrap();
-                toast.success(getTranslatedLabel("accounting.invoices.payroll.removed-item", `Removed ${row.description}`, [row.description]));
-            } catch (err) {
-                toast.error(getTranslatedLabel("accounting.invoices.payroll.delete-item-server-failed", "Failed to delete item from server"));
-                return;
+
+    const netSalary = useMemo(() => {
+        return rows.reduce((acc, row) => {
+            if (row.invoiceItemTypeId.includes('_DD_')) {
+                return acc - row.amount;
             }
-        }
-        setRows(rows.filter((_, i) => i !== index));
-    };
+            return acc + row.amount;
+        }, 0);
+    }, [rows]);
 
     const handleSubmit = async () => {
         setIsSaving(true);
         try {
             for (const row of rows) {
-                // Only save if amount > 0 or it's an update
-                if (row.amount > 0 || row.invoiceItemSeqId) {
+                if (row.invoiceItemSeqId && row.amount === 0) {
+                    // Delete existing if value cleared
+                    await deleteItem({ invoiceId, invoiceItemSeqId: row.invoiceItemSeqId }).unwrap();
+                } else if (row.amount > 0) {
+                    // Create or Update
                     const payload: any = {
                         invoiceId,
                         invoiceItemTypeId: row.invoiceItemTypeId,
                         amount: row.amount,
-                        quantity: (row.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' || row.invoiceItemTypeId === 'PAYROL_OVERTIME') ? (row.quantity || 0) : 1,
+                        quantity: 1,
                         description: row.itemDescription,
                     };
 
@@ -282,9 +273,8 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                         <TableRow>
                             <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>{getTranslatedLabel("accounting.invoices.payroll.item-type", "Item Type")}</TableCell>
                             <TableCell sx={{ fontWeight: 'bold', width: '15%' }}>{getTranslatedLabel("accounting.invoices.payroll.amount", "Amount")} *</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>{getTranslatedLabel("accounting.invoices.payroll.quantity", "Quantity")}</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold', width: '30%' }}>{getTranslatedLabel("accounting.invoices.payroll.description", "Description")}</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold', width: '10%', textAlign: 'center' }}>{getTranslatedLabel("accounting.invoices.payroll.actions", "Actions")}</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>{getTranslatedLabel("accounting.invoices.payroll.days", "Days")}</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '40%' }}>{getTranslatedLabel("accounting.invoices.payroll.description", "Description")}</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -304,7 +294,7 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                                         onChange={(e) => handleRowChange(index, 'amount', parseFloat(e.target.value) || 0)}
                                         error={row.amount === 0 && row.invoiceItemTypeId === 'PAYROL_SALARY'}
                                         InputProps={{ inputProps: { min: 0, step: "1" } }}
-                                        disabled={row.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' || row.invoiceItemTypeId === 'PAYROL_OVERTIME'} // Disabled as it's computed
+                                        disabled={row.invoiceItemTypeId === 'PAYROL_SALARY' || row.invoiceItemTypeId === 'PAYROL_DD_ADVANCE' || row.invoiceItemTypeId === 'PAYROL_DD_ABSENCE' || row.invoiceItemTypeId === 'PAYROL_OVERTIME'}
                                     />
                                 </TableCell>
                                 <TableCell>
@@ -313,8 +303,8 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                                             type="number"
                                             size="small"
                                             fullWidth
-                                            value={row.quantity || 0}
-                                            onChange={(e) => handleRowChange(index, 'quantity', parseFloat(e.target.value) || 0)}
+                                            value={row.days || 0}
+                                            onChange={(e) => handleRowChange(index, 'days', parseFloat(e.target.value) || 0)}
                                             InputProps={{ inputProps: { min: 0, step: "0.5" } }}
                                         />
                                     )}
@@ -328,21 +318,20 @@ const EditPayrollInvoiceItem: React.FC<Props> = ({
                                         placeholder={getTranslatedLabel("accounting.invoices.payroll.notes-placeholder", "Notes...")}
                                     />
                                 </TableCell>
-                                <TableCell sx={{ textAlign: 'center' }}>
-                                    {row.invoiceItemTypeId !== 'PAYROL_SALARY' && (
-                                        <IconButton
-                                            color="error"
-                                            size="small"
-                                            onClick={() => handleDeleteRow(index)}
-                                            title={getTranslatedLabel("accounting.invoices.payroll.remove-item", "Remove item")}
-                                        >
-                                            <DeleteIcon fontSize="small" />
-                                        </IconButton>
-                                    )}
-                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
+                    <tfoot>
+                        <TableRow sx={{ bgcolor: '#fafafa' }}>
+                            <TableCell colSpan={1} sx={{ fontWeight: 'bold', textAlign: 'right' }}>
+                                {getTranslatedLabel("accounting.invoices.payroll.net-salary", "Net Salary")}:
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 'bold' }}>
+                                {netSalary.toLocaleString()}
+                            </TableCell>
+                            <TableCell colSpan={2} />
+                        </TableRow>
+                    </tfoot>
                 </Table>
             </TableContainer>
 

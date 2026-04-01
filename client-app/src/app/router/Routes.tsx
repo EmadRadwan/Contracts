@@ -114,7 +114,6 @@ import FacilityPickingList from "../../features/facilities/dashboard/FacilityPic
 import StockMovesList from "../../features/facilities/dashboard/StockMovesList";
 import ManagePicklists from "../../features/facilities/dashboard/ManagePicklists";
 import PayrollRun from "../../features/accounting/invoice/payroll/PayrollRun";
-import PayrollReport from "../../features/accounting/invoice/payroll/PayrollReport";
 import BillingAccountInvoicesList from "../../features/accounting/billingAccounts/dashboard/BillingAccountInvoicesList";
 import BillingAccountPayments from "../../features/accounting/billingAccounts/dashboard/BillingAccountPayments";
 import BillingAccountOrders from "../../features/accounting/billingAccounts/dashboard/BillingAccountOrders";

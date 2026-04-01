@@ -194,4 +194,14 @@ public class InvoicesController : BaseApiController
         }));
     }
 
+    [HttpGet("checkExistingPayrollInvoices")]
+    public async Task<IActionResult> CheckExistingPayrollInvoices([FromQuery] DateTime invoiceDate, [FromQuery] string organizationPartyId)
+    {
+        return HandleResult(await Mediator.Send(new CheckExistingPayrollInvoices.Query
+        {
+            InvoiceDate = invoiceDate,
+            OrganizationPartyId = organizationPartyId
+        }));
+    }
+
 }

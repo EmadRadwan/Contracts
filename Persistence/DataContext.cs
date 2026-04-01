@@ -13615,6 +13615,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
         entity.Property(e => e.LastUpdatedTxStamp)
               .HasColumnType("datetime")
               .HasColumnName("LAST_UPDATED_TX_STAMP");
+              
+              entity.Property(e => e.PayrollInvoiceId)
+                .HasMaxLength(40)
+                .IsUnicode(false)
+                .HasColumnName("PAYROLL_INVOICE_ID");
 
         entity.HasOne(d => d.Party)
               .WithMany(p => p.EmployeeAdvances)  // add this collection to Party if needed
@@ -13627,6 +13632,12 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
               .HasForeignKey(e => e.PaymentId)
               .OnDelete(DeleteBehavior.Restrict) // or Restrict / ClientSetNull
               .HasConstraintName("FK_EMPLOYEE_ADVANCE_PAYMENT");
+              
+              entity.HasOne(e => e.PayrollInvoice)
+                .WithMany(i => i.EmployeeAdvances)
+                .HasForeignKey(e => e.PayrollInvoiceId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_EMP_ADV_PAYROLL_INVOICE");
 
     });
 
