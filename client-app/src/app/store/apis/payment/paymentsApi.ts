@@ -75,6 +75,12 @@ const paymentsApi = createApi({
                     };
                 },
             }),
+            fetchPaymentsWithDueStatusByDateRange: builder.query<ListResponse<PaymentWithDueStatus>, { fromDate: string; toDate: string }>({
+                query: ({ fromDate, toDate }) => ({
+                    url: `/odata/paymentRecordsWithDueStatus/by-date-range?fromDate=${fromDate}&toDate=${toDate}`,
+                    method: 'GET',
+                }),
+            }),
             addSalesOrderPayments: builder.mutation({
                 invalidatesTags: ["Payments"],
                 query: (payments) => {
@@ -330,6 +336,7 @@ export const {
     useCreatePaymentApplicationMutation,
     useLazyFetchDailyPaymentsLazyQuery,
     useFetchPaymentsWithDueStatusQuery,
+    useLazyFetchPaymentsWithDueStatusByDateRangeQuery,
     useLazyGetPaymentReportPdfQuery,
     useLazyFetchPaymentsByDateRangeQuery,
     useDeletePaymentMutation,

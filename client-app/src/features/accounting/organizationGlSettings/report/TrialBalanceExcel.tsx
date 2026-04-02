@@ -69,7 +69,7 @@ export const TrialBalanceExcel: React.FC<TrialBalanceExcelProps> = ({
 
         // ---- logo rows --------------------------------------------------
         if (logoId) {
-            ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 100, height: 100 }, editAs: 'absolute' });
+            ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 120, height: 100 } });
             ws.getRow(1).height = 75; ws.getRow(2).height = 20; ws.getRow(3).height = 20;
             ws.addRow([]); ws.addRow([]); ws.addRow([]);
         } else {

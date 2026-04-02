@@ -22,6 +22,7 @@ import { useLocation, useNavigate } from "react-router";
 import { setSelectedPayment } from "../../slice/accountingSharedUiSlice";
 import { useSelector } from "react-redux";
 import {useFetchPaymentsWithDueStatusQuery} from "../../../../app/store/apis"; // Note: You may need to update or create a version of this report that handles both directions
+import { PaymentsWithDueStatusDateRangeExcel } from "../report/PaymentsWithDueStatusDateRangeExcel";
 
 // REFACTOR: Removed paymentType prop – this component now shows both incoming and outgoing payments with due status
 // This simplifies the UI and eliminates the need for separate incoming/outgoing lists
@@ -177,6 +178,16 @@ export default function PaymentsWithDueAmountsList() {
                                 {...dataState}
                                 onDataStateChange={dataStateChange}
                             >
+                                <GridToolbar>
+                                    <Grid container justifyContent="flex-start" alignItems="center">
+                                        <Grid item>
+                                            <PaymentsWithDueStatusDateRangeExcel
+                                                companyName={companyName}
+                                                getTranslatedLabel={getTranslatedLabel}
+                                            />
+                                        </Grid>
+                                    </Grid>
+                                </GridToolbar>
 
                                 <Column
                                     field="paymentId"

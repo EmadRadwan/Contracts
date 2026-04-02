@@ -7,6 +7,7 @@ import BalanceSheetForm from '../form/BalanceSheetForm'
 import AccountingReportBreadcrumbs from '../menu/AccountingReportBreadcrumbs'
 import {useTranslationHelper} from '../../../../app/hooks/useTranslationHelper'
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
+import {BalanceSheetExcel} from "../report/BalanceSheetExcel";
 import {
     Grid as KendoGrid,
     GRID_COL_INDEX_ATTRIBUTE,
@@ -192,8 +193,28 @@ const BalanceSheet = () => {
                     <Typography variant="h4" margin={3}>
                         {getTranslatedLabel(`${localizationKey}.title-for`, "Balance Sheet For")}: {selectedAccountingCompanyName}
                     </Typography>
-                    <Grid item xs={12} sx={{margin: 3}}>
+                    <Grid item xs={12} sx={{margin: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
                         <BalanceSheetForm onSubmit={onSubmit}/>
+                        {isSuccess && (
+                            <BalanceSheetExcel
+                                companyName={selectedAccountingCompanyName!}
+                                assetAccountBalanceList={balanceSheetReportData?.assetAccountBalanceList || []}
+                                liabilityAccountBalanceList={balanceSheetReportData?.liabilityAccountBalanceList || []}
+                                equityAccountBalanceList={balanceSheetReportData?.equityAccountBalanceList || []}
+                                totals={{
+                                    currentAssetBalanceTotal: balanceSheetReportData?.currentAssetBalanceTotal,
+                                    longtermAssetBalanceTotal: balanceSheetReportData?.longtermAssetBalanceTotal,
+                                    accumDepreciationBalanceTotal: balanceSheetReportData?.accumDepreciationBalanceTotal,
+                                    assetBalanceTotal: balanceSheetReportData?.assetBalanceTotal,
+                                    currentLiabilityBalanceTotal: balanceSheetReportData?.currentLiabilityBalanceTotal,
+                                    equityBalanceTotal: balanceSheetReportData?.equityBalanceTotal,
+                                    liabilityEquityBalanceTotal: balanceSheetReportData?.liabilityEquityBalanceTotal,
+                                }}
+                                getTranslatedLabel={getTranslatedLabel}
+                                isFetching={isFetching}
+                                thruDate={reportData?.thruDate}
+                            />
+                        )}
                     </Grid>
                     {isSuccess && (
                         <>

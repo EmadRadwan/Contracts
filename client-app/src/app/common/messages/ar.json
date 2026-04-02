@@ -1617,6 +1617,7 @@
             "totalDebit": "إجمالي المدين:",
             "totalCredit": "إجمالي الدائن:",
             "projectName": "المشروع",
+            "costCenter": "مركز التكلفة",
             "includePrePeriod": "تضمين الحركات قبل الفترة",
             "accountCode": "كود الحساب:",
             "accountName": "اسم الحساب:",

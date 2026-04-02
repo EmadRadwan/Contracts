@@ -22,7 +22,7 @@ const BalanceSheetForm = ({ onSubmit }: BalanceSheetFormProps) => {
           <fieldset className={"k-form-fieldset"}>
             <Grid container spacing={2} alignItems={"flex-end"}>
               <Grid container item xs={12} spacing={2}>
-                <Grid item xs={6}>
+                <Grid item xs={12}>
                   <Field
                     name={"thruDate"}
                     id={"thruDate"}

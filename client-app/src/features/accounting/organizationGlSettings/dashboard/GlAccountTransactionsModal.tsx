@@ -87,6 +87,7 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
             amount: t.amount ?? 0,
             description: t.description,
             projectName: t.projectName ?? '',
+            costCenterDescription: t.costCenterDescription ?? '',
         }));
     }, [accountingTransEntries]);
 
@@ -232,6 +233,11 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                     field="paymentId"
                                     title={getTranslatedLabel(`${localizationKey}.paymentId`, 'Payment ID')}
                                     width={100}
+                                />
+                                <Column
+                                    field="costCenterDescription"
+                                    title={getTranslatedLabel(`${localizationKey}.costCenter`, 'Cost Center')}
+                                    width={150}
                                 />
                                 <Column
                                     field="certificateNumber"

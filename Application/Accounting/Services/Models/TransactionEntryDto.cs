@@ -24,4 +24,5 @@ public class TransactionEntryDto
     public string DebitCreditFlag { get; set; }
     public string CurrencyUomId { get; set; }
     public decimal Amount { get; set; }
+    public string CostCenterDescription { get; set; }
 }

@@ -69,6 +69,10 @@ public class GetGlAccountTransactionDetails
                         on we.ProjectId equals project.WorkEffortId
                         into projects
                     from project in projects.DefaultIfEmpty()
+                    join pyt in _context.Payments on act.PaymentId equals pyt.PaymentId into payments
+                    from pyt in payments.DefaultIfEmpty()
+                    join cc in _context.CostCenters on pyt.CostCenterId equals cc.CostCenterId into costCenters
+                    from cc in costCenters.DefaultIfEmpty()
                     where ate.OrganizationPartyId == request.OrganizationPartyId
                           && ate.GlAccountId == request.GlAccountId
                           && act.IsPosted == "Y"
@@ -101,6 +105,7 @@ public class GetGlAccountTransactionDetails
                                 ? (we.ProjectName ?? we.Description ?? we.WorkEffortName)
                                 : (project != null ? (project.ProjectName ?? project.Description ?? project.WorkEffortName) : null))
                             : null,
+                        CostCenterDescription = cc != null ? cc.Description : null,
                     };
 
                 // 4. Filter transactions for display (respect IncludePrePeriodTransactions)
