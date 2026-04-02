@@ -27,6 +27,7 @@ import AccountingSummaryMenu from "../menu/AccountingSummaryMenu";
 import {useSelector} from "react-redux";
 import {router} from "../../../../app/router/Routes";
 import {useNavigate} from "react-router";
+import { AccountingTransactionEntriesDateRangeExcel } from "./AccountingTransactionEntriesDateRangeExcel";
 
 
 export default function AccountingTransactionEntriesList() {
@@ -148,6 +149,12 @@ export default function AccountingTransactionEntriesList() {
             <Grid container columnSpacing={1} alignItems="center">
                 <SetupAccountingMenu/>
                 <AccountingSummaryMenu/>
+                <Grid item>
+                    <AccountingTransactionEntriesDateRangeExcel
+                        companyId={companyId}
+                        getTranslatedLabel={getTranslatedLabel}
+                    />
+                </Grid>
 
                 <Grid item xs={12}>
                     <div className="div-container">

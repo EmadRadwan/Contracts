@@ -175,6 +175,14 @@ const acctTransApi = createApi({
                 },
             }),
 
+            fetchAcctTransEntriesByDateRange: builder.query<ListResponse<AcctgTransEntry>, { companyId: string; fromDate: string; toDate: string }>({
+                query: ({ companyId, fromDate, toDate }) => ({
+                    url: `/odata/accountingTransactionEntryRecords/getAcctTransEntriesByDateRange?companyId=${encodeURIComponent(companyId)}&fromDate=${fromDate}&toDate=${toDate}`,
+                    method: 'GET',
+                }),
+                providesTags: ["ITransactions"],
+            }),
+
             postAcctgTrans: builder.mutation<string[], { acctgTransId: string; verifyOnly: boolean }>({
                 query: ({acctgTransId, verifyOnly}) => ({
                     url: `/transactions/postAcctgTrans`,
@@ -249,7 +257,7 @@ export const {
     useUpdateAcctgTransEntryMutation, useDeleteAcctgTransEntryMutation,
     useFetchInvoiceAcctTransEntriesQuery,
     useFetchPaymentAcctTransEntriesQuery, useFetchWorkEffortAcctTransEntriesQuery,
-    useFetchAcctTransEntriesQuery,
+    useFetchAcctTransEntriesQuery, useLazyFetchAcctTransEntriesByDateRangeQuery,
     useFetchGeneralAcctTransEntriesQuery,
     usePostAcctgTransMutation,
     useCreateMultiAcctgTransWithEntriesMutation,

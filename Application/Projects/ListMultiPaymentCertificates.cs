@@ -71,6 +71,10 @@ namespace Application.Projects
                             AccountName           = gl != null ? gl.AccountNameArabic : null,
                             LastUpdatedStamp      = we.LastUpdatedStamp,
 
+                            Amount = _context.WorkEfforts
+                                .Where(item => item.WorkEffortParentId == we.WorkEffortId && item.WorkEffortTypeId == "PAYMENT_CERTIFICATE_ITEM")
+                                .Sum(item => (decimal?)item.Amount) ?? 0,
+
                             // ─── New field(s) ───────────────────────────────────────
                             AcctgTransId = trans != null ? trans.AcctgTransId : null
                         };

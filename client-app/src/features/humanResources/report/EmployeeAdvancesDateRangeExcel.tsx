@@ -14,11 +14,9 @@ import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs';
-import {useLazyFetchPaymentsByDateRangeQuery} from "../../../../app/store/apis";
+import {useLazyFetchEmployeeAdvancesByDateRangeQuery} from "../../../app/store/apis";
 
-interface PaymentsDateRangeExcelProps {
-    companyName: string;
-    paymentType: 'incoming' | 'outgoing';
+interface EmployeeAdvancesDateRangeExcelProps {
     getTranslatedLabel: (key: string, defaultValue: string) => string;
 }
 
@@ -30,21 +28,18 @@ const utils = {
     formatDate: (d: string | Date | undefined) => d ? new Date(d).toLocaleDateString('en-GB') : 'N/A',
 };
 
-export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
-                                                                                  companyName,
-                                                                                  paymentType,
-                                                                                  getTranslatedLabel,
-                                                                              }) => {
+export const EmployeeAdvancesDateRangeExcel: React.FC<EmployeeAdvancesDateRangeExcelProps> = ({
+                                                                                                  getTranslatedLabel,
+                                                                                              }) => {
     const [open, setOpen] = useState(false);
     const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf('month'));
     const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
-    const [trigger, { isFetching }] = useLazyFetchPaymentsByDateRangeQuery();
+    const [trigger, { isFetching }] = useLazyFetchEmployeeAdvancesByDateRangeQuery();
     const [isGenerating, setIsGenerating] = useState(false);
 
     const handleOpen = () => setOpen(true);
     const handleClose = () => {
         setOpen(false);
-        // Reset dates if needed, but optional
     };
 
     const generateExcel = useCallback(async (data: { data: any[]; total: number }) => {
@@ -63,7 +58,7 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
         }
 
         const period = `${startDate?.format('YYYY-MM-DD') || 'start'}_to_${endDate?.format('YYYY-MM-DD') || 'end'}`;
-        const safeSheetName = `${paymentType} Payments ${period}`.replace(/[*\?\\:\[\]\/]/g, '_').slice(0, 31);
+        const safeSheetName = `Employee Advances ${period}`.replace(/[*\?\\:\[\]\/]/g, '_').slice(0, 31);
         const ws = workbook.addWorksheet(safeSheetName);
         ws.pageSetup = { paperSize: 9, orientation: 'landscape' };
         ws.views = [{ rightToLeft: true }];
@@ -85,34 +80,25 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
 
         const title = utils.rtlEmbed(
             getTranslatedLabel(
-                'accounting.payments.report.daterange.title',
-                `${paymentType === 'incoming' ? 'Incoming' : 'Outgoing'} Payments (${startDate?.format('DD/MM/YYYY') || ''} - ${endDate?.format('DD/MM/YYYY') || ''})`
+                'party.employeeAdvance.report.daterange.title',
+                `Employee Advances (${startDate?.format('DD/MM/YYYY') || ''} - ${endDate?.format('DD/MM/YYYY') || ''})`
             )
         );
         ws.getCell(`A${startRow}`).value = title;
-        ws.mergeCells(`A${startRow}:P${startRow}`); // Adjusted to 16 columns
+        ws.mergeCells(`A${startRow}:G${startRow}`);
         ws.getRow(startRow).font = { name: 'Amiri', size: 18, bold: true };
         ws.getRow(startRow).alignment = { horizontal: 'center', vertical: 'middle' };
         ws.getRow(startRow).height = 40;
 
         const headerRowNum = startRow + 2;
         const headers = [
-            getTranslatedLabel('accounting.payments.list.paymentId', 'Payment Number'),
-            getTranslatedLabel('accounting.payments.list.paymentRefNum', 'Reference Number'),
-            getTranslatedLabel('accounting.payments.list.paymentType', 'Payment Type'),
-            getTranslatedLabel('accounting.payments.list.dueStatus', 'Due Status'),
-            getTranslatedLabel('accounting.payments.list.orderId', 'Order ID'),
-            getTranslatedLabel('accounting.payments.list.productId', 'Product ID'),
-            getTranslatedLabel('accounting.payments.list.buildingNumber', 'Building Number'),
-            getTranslatedLabel('accounting.payments.list.certificateNumber', 'Certificate Number'),
-            getTranslatedLabel('projects.certificate.form.project', 'Project'),
-            getTranslatedLabel('accounting.payments.form.costCenter', 'Cost Center'),
-            getTranslatedLabel('accounting.payments.list.from', 'From Party'),
-            getTranslatedLabel('accounting.payments.list.to', 'To Party'),
-            getTranslatedLabel('accounting.payments.list.date', 'Payment Date'),
-            getTranslatedLabel('accounting.payments.list.status', 'Status'),
-            getTranslatedLabel('accounting.payments.list.amount', 'Amount'),
-            getTranslatedLabel('accounting.payments.list.comments', 'Comments'),
+            getTranslatedLabel('party.employeeAdvance.list.id', 'ID'),
+            getTranslatedLabel('party.employeeAdvance.list.employee', 'Employee'),
+            getTranslatedLabel('party.employeeAdvance.list.date', 'Date'),
+            getTranslatedLabel('party.employeeAdvance.list.amount', 'Amount'),
+            getTranslatedLabel('party.employeeAdvance.list.advanceTypeDescription', 'Advance Type'),
+            getTranslatedLabel('party.employeeAdvance.list.status', 'Status'),
+            getTranslatedLabel('party.employeeAdvance.list.notes', 'Notes'),
         ];
 
         ws.addRow(headers.map(h => utils.rtlEmbed(h)));
@@ -121,66 +107,34 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
         headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
         headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
 
-        const dataStartRow = headerRowNum + 2;
-        data.data.forEach((payment: any) => {
+        data.data.forEach((entry: any) => {
             const row = ws.addRow([
-                utils.rtlEmbed(utils.safeString(payment.paymentId)),
-                utils.rtlEmbed(utils.safeString(payment.paymentRefNum ?? '')),
-                utils.rtlEmbed(utils.safeString(payment.paymentTypeDescription)),
-                utils.rtlEmbed(utils.safeString(payment.dueStatusArabic ?? '')),       // D ← Added
-                utils.rtlEmbed(utils.safeString(payment.orderId ?? '')),
-                utils.rtlEmbed(utils.safeString(payment.productId ?? '')),
-                utils.rtlEmbed(utils.safeString(payment.buildingNumber ?? '')),
-                utils.rtlEmbed(utils.safeString(payment.certificateNumber ?? '')),
-                utils.rtlEmbed(utils.safeString(payment.projectName ?? '')),
-                utils.rtlEmbed(utils.safeString(payment.costCenterDescription ?? '')),
-                utils.rtlEmbed(utils.safeString(payment.partyIdFromName)),
-                utils.rtlEmbed(utils.safeString(payment.partyIdToName)),
-                utils.formatDate(payment.effectiveDate),
-                utils.rtlEmbed(utils.safeString(payment.statusDescription)),
-                utils.formatNumber(payment.amount),
-                utils.rtlEmbed(utils.safeString(payment.comments ?? '')),
+                utils.rtlEmbed(utils.safeString(entry.advanceId)),
+                utils.rtlEmbed(utils.safeString(entry.employeeName)),
+                utils.formatDate(entry.advanceDate),
+                utils.formatNumber(entry.amount),
+                utils.rtlEmbed(utils.safeString(entry.advanceTypeDescription)),
+                utils.rtlEmbed(utils.safeString(entry.statusDescription)),
+                utils.rtlEmbed(utils.safeString(entry.description ?? '')),
             ]);
             row.font = { name: 'Amiri', size: 10 };
             row.alignment = { horizontal: 'right', wrapText: true };
             row.height = 22;
         });
 
-        if (data.data.length > 0) {
-            const totalAmount = data.data.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
-            const totalRowNum = dataStartRow + data.data.length;
-            ws.addRow([
-                '', '', '', '', '', '', '', '',
-                utils.rtlEmbed(getTranslatedLabel('common.total', 'Total')),
-                '', '', '', '', '', utils.formatNumber(totalAmount), ''
-            ]);
-            ws.mergeCells(`I${totalRowNum}:M${totalRowNum}`);
-            ws.getRow(totalRowNum).font = { name: 'Amiri', size: 12, bold: true };
-            ws.getCell(`N${totalRowNum}`).font = { bold: true };
-        }
-
         ws.columns = [
-            { width: 15 }, // A Payment ID
-            { width: 20 }, // B Ref Num
-            { width: 22 }, // C Type
-            { width: 25 }, // D Due Status
-            { width: 15 }, // E Order ID
-            { width: 15 }, // F Product ID
-            { width: 18 }, // G Building Number
-            { width: 20 }, // H Cert
-            { width: 30 }, // I Project
-            { width: 28 }, // J Cost Center
-            { width: 28 }, // K From
-            { width: 28 }, // L To
-            { width: 15 }, // M Date
-            { width: 15 }, // N Status
-            { width: 16 }, // O Amount
-            { width: 35 }  // P Comments
+            { width: 15 }, // ID
+            { width: 30 }, // Employee
+            { width: 15 }, // Date
+            { width: 15 }, // Amount
+            { width: 20 }, // Advance Type
+            { width: 15 }, // Status
+            { width: 40 }, // Notes
         ];
-        ws.getColumn(15).numFmt = '#,##0.00'; // Column O (index 15)
+        ws.getColumn(4).numFmt = '#,##0.00'; // Amount column
 
         return await workbook.xlsx.writeBuffer();
-    }, [getTranslatedLabel, paymentType, startDate, endDate]);
+    }, [getTranslatedLabel, startDate, endDate]);
 
     const handleDownload = useCallback(async () => {
         if (!startDate || !endDate) {
@@ -190,14 +144,13 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
         setIsGenerating(true);
         try {
             const result = await trigger({
-                paymentType,
                 fromDate: startDate.format('YYYY-MM-DD'),
                 toDate: endDate.format('YYYY-MM-DD'),
             }).unwrap();
 
             const buffer = await generateExcel(result);
             if (buffer) {
-                const fileName = `${paymentType}_Payments_${startDate.format('YYYYMMDD')}_to_${endDate.format('YYYYMMDD')}.xlsx`;
+                const fileName = `EmployeeAdvances_${startDate.format('YYYYMMDD')}_to_${endDate.format('YYYYMMDD')}.xlsx`;
                 const blob = new Blob([buffer], {
                     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 });
@@ -210,7 +163,7 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
         } finally {
             setIsGenerating(false);
         }
-    }, [trigger, generateExcel, paymentType, startDate, endDate]);
+    }, [trigger, generateExcel, startDate, endDate]);
 
     const isLoading = isFetching || isGenerating;
 

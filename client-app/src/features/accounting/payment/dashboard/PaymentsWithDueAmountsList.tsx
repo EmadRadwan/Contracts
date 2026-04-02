@@ -215,13 +215,24 @@ export default function PaymentsWithDueAmountsList() {
                                 <Column
                                     field="daysUntilDue"
                                     title={getTranslatedLabel(`${localizationKey}.dueStatus`, "Due Status")}
-                                    width={220}
+                                    width={260}
                                     cell={DueStatusCell} 
                                     filter={"numeric"}
                                 />
+                                
                                 <Column
                                     field="statusDescription"
                                     title={getTranslatedLabel(`${localizationKey}.status`, "Status")}
+                                    width={140}
+                                /> 
+                                <Column
+                                    field="buildingNumber"
+                                    title={getTranslatedLabel(`${localizationKey}.buildingNumber`, "Building Number")}
+                                    width={140}
+                                /> 
+                                <Column
+                                    field="productId"
+                                    title={getTranslatedLabel(`${localizationKey}.productId`, "Product ID")}
                                     width={140}
                                 /> 
                                 <Column

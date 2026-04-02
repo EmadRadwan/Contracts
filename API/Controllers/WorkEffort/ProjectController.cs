@@ -168,6 +168,21 @@ public class ProjectController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new ResetMultiPaymentCertificate.Command { WorkEffortId = workEffortId }));
     }
+
+    [HttpGet("multiPaymentCertificates/by-date-range")]
+    public async Task<IActionResult> GetMultiPaymentCertificatesByDateRange(
+        [FromQuery] DateTime startDate,
+        [FromQuery] DateTime endDate)
+    {
+        var language = GetLanguage();
+        var result = await Mediator.Send(new ListMultiPaymentCertificatesByDateRange.Query
+        {
+            StartDate = startDate,
+            EndDate = endDate,
+            Language = language
+        });
+        return HandleResult(result);
+    }
     
     [HttpPost("review", Name = "ReviewProjectCertificate")]
     public async Task<ActionResult<ProjectCertificateDto>> ReviewProjectCertificate([FromBody] ReviewProjectCertificate.Command command)

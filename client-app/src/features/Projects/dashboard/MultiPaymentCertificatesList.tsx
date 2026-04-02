@@ -23,6 +23,7 @@ import ModalContainer from "../../../app/common/modals/ModalContainer";
 import WorkEffortTransactionsList from "../../accounting/transaction/dashboard/WorkEffortTransactionsList";
 import {Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle} from "@mui/material";
 import {toast} from "react-toastify";
+import MultiPaymentCertificatesDateRangeExcel from "../report/MultiPaymentCertificatesDateRangeExcel";
 
 export default function MultiPaymentCertificatesList() {
     const [certificates, setCertificates] = useState<DataResult>({ data: [], total: 0 });
@@ -164,6 +165,7 @@ export default function MultiPaymentCertificatesList() {
     const columnWidths = {
         workEffortId: 150,
         date: 150,
+        amount: 120,
         description: 350,
         accountName: 250,
         statusDescription: 120,
@@ -239,6 +241,7 @@ export default function MultiPaymentCertificatesList() {
                                 >
                                     {getTranslatedLabel(`${localizationKey}.createNew`, "Create New Certificate")}
                                 </Button>
+                                <MultiPaymentCertificatesDateRangeExcel />
                             </GridToolbar>
                             <Column
                                 field="workEffortId"
@@ -251,6 +254,12 @@ export default function MultiPaymentCertificatesList() {
                                 title={getTranslatedLabel(`${localizationKey}.date`, "Date")}
                                 format="{0: dd/MM/yyyy}"
                                 width={columnWidths.date}
+                            />
+                            <Column
+                                field="amount"
+                                title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")}
+                                width={columnWidths.amount}
+                                format="{0:n2}"
                             />
                             <Column
                                 field="description"

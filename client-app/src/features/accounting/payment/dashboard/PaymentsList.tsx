@@ -224,6 +224,52 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
     setSelectedPaymentIdForTransactions(paymentId);
   };
 
+  const getDueStatusArabic = (dataItem: any): string => {
+    return dataItem.dueStatusArabic || "";
+  };
+
+
+// Custom cell for Due Status
+  const DueStatusCell = (props: any) => {
+    const dataItem = props.dataItem;
+    const displayText = getDueStatusArabic(dataItem);
+    const isUnpaid = dataItem.statusId === "PMNT_NOT_PAID";
+    const daysUntilDue = dataItem.daysUntilDue ?? 0;
+
+    const backgroundColor = isUnpaid
+        ? daysUntilDue < 0
+            ? "#ffebee"
+            : daysUntilDue <= 7
+                ? "#fff3e0"
+                : "#e8f5e8"
+        : "transparent";
+
+    const color = isUnpaid
+        ? daysUntilDue < 0
+            ? "#c62828"
+            : daysUntilDue <= 7
+                ? "#ef6c00"
+                : "#2e7d32"
+        : "inherit";
+
+    return (
+        <td style={{ ...props.style, textAlign: "center" }}>
+        <span
+            style={{
+              padding: "4px 8px",
+              borderRadius: "4px",
+              backgroundColor,
+              color,
+              fontWeight: isUnpaid ? "bold" : "normal",
+            }}
+        >
+          {displayText}
+        </span>
+        </td>
+    );
+  };
+
+
   const ActionsCell = (props: any) => {
     const navigationAttributes = useTableKeyboardNavigation(props.id);
 
@@ -289,6 +335,12 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
       field: "paymentMethodTypeDescription",
       title: getTranslatedLabel(`${localizationKey}.paymentMethodTypeDescription`, "Payment Method Type"),
       width: 150,
+    },
+    {
+      field: "daysUntilDue",
+      title: getTranslatedLabel(`${localizationKey}.dueStatus`, "Due Status"),
+      width: 260,
+      cell:DueStatusCell
     },
 
     // ── Incoming-only columns ──

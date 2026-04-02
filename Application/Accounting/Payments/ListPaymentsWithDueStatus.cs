@@ -70,6 +70,13 @@ public class ListPaymentsWithDueStatus
                 // LEFT JOIN for Project (WorkEffort)
                 join proj in _context.WorkEfforts on pyt.WorkEffortId equals proj.WorkEffortId into projJoin
                 from proj in projJoin.DefaultIfEmpty()
+                
+                join sr in _context.SalesRequests on pyt.SalesRequestId equals sr.SalesRequestId into srJoin
+                from sr in srJoin.DefaultIfEmpty()
+
+                join prod in _context.Products on sr.ProductId equals prod.ProductId into prodJoin
+                from prod in prodJoin.DefaultIfEmpty()
+
                 select new PaymentRecord
                 {
                     PaymentId = pyt.PaymentId,
@@ -125,6 +132,8 @@ public class ListPaymentsWithDueStatus
                     ProjectName = proj != null ? proj.ProjectName : null,
                     CostCenterId = pyt.CostCenterId,
                     CostCenterDescription = cc != null ? cc.Description : null,
+                    ProductId = prod != null ? prod.ProductId : null,
+                    BuildingNumber = prod != null ? prod.BuildingNumber : null,
                     CreatedStamp = (DateTime)pyt.CreatedStamp,
                     DaysUntilDue = EF.Functions.DateDiffDay(Today, (DateTime)pyt.EffectiveDate), // Positive = future, 0 = today, negative = overdue
                 }

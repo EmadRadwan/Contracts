@@ -2105,6 +2105,7 @@
         "referenceNum": "الرقم المرجعي",
         "description": "الوصف",
         "actions": "الإجراءات",
+        "amount": "المبلغ",
         "transactions": "الحركات",
         "deleteButton": "حذف",
         "deleteDialogTitle": "تأكيد الحذف",

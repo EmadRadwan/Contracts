@@ -21,4 +21,16 @@ public class AccountingTransactionEntryRecordsController : BaseODataController<A
         });
         return await HandleODataQueryAsync(query, options);
     }
+
+    [HttpGet("getAcctTransEntriesByDateRange")]
+    public async Task<ActionResult<AccountingTransactionEntriesResponse>> GetByDateRange([FromQuery] string companyId, [FromQuery] DateTime fromDate, [FromQuery] DateTime toDate)
+    {
+        return await Mediator.Send(new ListAccountingTransactionEntriesByDateRange.Query
+        {
+            CompanyId = companyId,
+            FromDate = fromDate,
+            ToDate = toDate,
+            Language = GetLanguage()
+        });
+    }
 }

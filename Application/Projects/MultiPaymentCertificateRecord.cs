@@ -17,6 +17,7 @@ public class MultiPaymentCertificateRecord
     public string? PartyIdEmployee { get; init; }
     public string? PartyName { get; init; }
     public string? Notes { get; init; }
+    public decimal? Amount { get; init; }
     public DateTime? LastUpdatedStamp { get; init; }
     
 }

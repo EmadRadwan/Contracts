@@ -237,6 +237,9 @@ const partiesApi = createApi({
             getEmployeeAdvanceDetail: builder.query<EmployeeAdvanceDetail, string>({
                 query: (advanceId) => `humanResources/${advanceId}`,
             }),
+            fetchEmployeeAdvancesByDateRange: builder.query<EmployeeAdvancesResponse, { fromDate: string, toDate: string }>({
+                query: ({ fromDate, toDate }) => `/humanResources/getEmployeeAdvancesByDateRange?fromDate=${fromDate}&toDate=${toDate}`,
+            }),
             fetchRolesTypes: builder.query<any[], void>({
                 query: () => '/parties/listRoleTypes',
                 providesTags: ['RoleType'],
@@ -289,6 +292,11 @@ const partiesApi = createApi({
     },
 });
 
+export interface EmployeeAdvancesResponse {
+    data: EmployeeAdvance[];
+    total: number;
+}
+
 export const {
     useFetchPartiesQuery,
     useFetchCustomerQuery,
@@ -302,6 +310,7 @@ export const {
     useUpdateContractorMutation, useGetPartySubLedgerQuery, useFetchEmployeeAdvancesQuery,
     useCreateEmployeeAdvanceMutation,
     useUpdateEmployeeAdvanceMutation, useDeleteEmployeeAdvanceMutation, useLazyGetEmployeeAdvanceDetailQuery,
+    useLazyFetchEmployeeAdvancesByDateRangeQuery,
     useFetchRolesTypesQuery, useFetchPartyRolesQuery, useAddPartyRoleMutation, useDeletePartyRoleMutation,
     useDeletePartyMutation,
     useLazyFetchAllPartiesForReportQuery,

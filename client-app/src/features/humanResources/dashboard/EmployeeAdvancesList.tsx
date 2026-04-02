@@ -21,6 +21,7 @@ import {
 } from "../../../app/store/apis";
 import EmployeeAdvanceForm from "../form/EmployeeAdvanceForm";
 import EmployeeAdvanceMenu from "../menu/EmployeeAdvanceMenu";
+import { EmployeeAdvancesDateRangeExcel } from "../report/EmployeeAdvancesDateRangeExcel";
 
 function EmployeeAdvancesList() {
     const [viewMode, setViewMode] = React.useState<"list" | "form">("list");
@@ -193,6 +194,9 @@ function EmployeeAdvancesList() {
                             >
                                 {getTranslatedLabel("party.employeeAdvance.list.create", "Create Advance")}
                             </Button>
+                            <EmployeeAdvancesDateRangeExcel
+                                getTranslatedLabel={getTranslatedLabel}
+                            />
                         </GridToolbar>
 
                         <Column field="advanceId" title={getTranslatedLabel("party.employeeAdvance.list.id", "ID")} cell={IdCell} width={130} />

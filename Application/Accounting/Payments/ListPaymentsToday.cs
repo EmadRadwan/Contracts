@@ -111,6 +111,57 @@ public class ListPaymentsDaily
                 };
 
             var data = await query.ToListAsync(ct);
+
+            var today = DateTime.Today;
+            foreach (var record in data)
+            {
+                record.DaysUntilDue = (record.EffectiveDate - today).Days;
+
+                var date = record.EffectiveDate;
+                var quarterNum = (date.Month - 1) / 3 + 1;
+                var quarterArabic = quarterNum switch
+                {
+                    1 => "الأول",
+                    2 => "الثاني",
+                    3 => "الثالث",
+                    4 => "الرابع",
+                    _ => string.Empty
+                };
+                var quarterAndYear = $"(الربع {quarterArabic} {date.Year})";
+
+                if (record.StatusId == "PMNT_NOT_PAID")
+                {
+                    var type = record.IsDisbursement ? "دفعة" : "مستحق";
+                    var typePaid = record.IsDisbursement ? "دفعة مستحقة" : "مستحق";
+
+                    if (record.DaysUntilDue < 0)
+                    {
+                        var daysOverdue = Math.Abs(record.DaysUntilDue);
+                        record.DueStatusArabic = daysOverdue <= 30
+                            ? $"{type} متأخرة منذ {daysOverdue} يوم"
+                            : $"{type} متأخرة جداً {quarterAndYear}";
+                    }
+                    else if (record.DaysUntilDue == 0)
+                        record.DueStatusArabic = $"{typePaid} اليوم";
+                    else if (record.DaysUntilDue == 1)
+                        record.DueStatusArabic = $"{typePaid} غداً";
+                    else if (record.DaysUntilDue <= 3)
+                        record.DueStatusArabic = $"{typePaid} بعد {record.DaysUntilDue} أيام";
+                    else if (record.DaysUntilDue <= 7)
+                        record.DueStatusArabic = $"{typePaid} هذا الأسبوع";
+                    else if (record.DaysUntilDue <= 30)
+                        record.DueStatusArabic = $"{typePaid} خلال الشهر";
+                    else if (record.DaysUntilDue <= 90)
+                        record.DueStatusArabic = $"{typePaid} خلال 3 أشهر {quarterAndYear}";
+                    else
+                        record.DueStatusArabic = $"{typePaid} لاحقاً {quarterAndYear}";
+                }
+                else
+                {
+                    record.DueStatusArabic = record.StatusDescription;
+                }
+            }
+
             var total = data.Count;
 
             return new PaymentsDailyResponse
@@ -158,6 +209,8 @@ public class PaymentRecordDto
     public string? CostCenterDescription { get; set; }
     public string? ProductId { get; set; }
     public string? BuildingNumber { get; set; }
+    public int DaysUntilDue { get; set; }
+    public string? DueStatusArabic { get; set; }
 }
 
 public class PaymentsDailyResponse

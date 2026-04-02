@@ -2269,7 +2269,7 @@ public class AcctgReportsService : IAcctgReportsService
                     .Concat(accumDepreciation)
                     .Concat(accumAmortization)
                     .ToList(),
-                LiabilityAccountBalanceList = liabilities.Concat(currentLiabilities).ToList(),
+                LiabilityAccountBalanceList = liabilities.ToList(),
                 EquityAccountBalanceList = equities,
 
                 // Totals
@@ -2465,7 +2465,7 @@ public class AcctgReportsService : IAcctgReportsService
             {
                 glah.GlAccountId,
                 gla.AccountCode,
-                gla.AccountName,
+                gla.AccountNameArabic,
                 glah.PostedDebits,
                 glah.PostedCredits,
                 glah.EndingBalance
@@ -2482,7 +2482,7 @@ public class AcctgReportsService : IAcctgReportsService
                 {
                     GlAccountId = r.GlAccountId,
                     AccountCode = r.AccountCode,
-                    AccountName = r.AccountName,
+                    AccountName = r.AccountNameArabic,
                     D = r.PostedDebits ?? 0,
                     C = r.PostedCredits ?? 0,
                     Balance = r.EndingBalance ?? 0
@@ -2516,14 +2516,14 @@ public class AcctgReportsService : IAcctgReportsService
             {
                 ate.GlAccountId,
                 gla.AccountCode,
-                gla.AccountName
+                gla.AccountNameArabic
             }
             into g
             select new
             {
                 g.Key.GlAccountId,
                 g.Key.AccountCode,
-                g.Key.AccountName,
+                g.Key.AccountNameArabic,
                 TotalDebit = g.Sum(x => x.ate.DebitCreditFlag == "D" ? x.ate.Amount : 0),
                 TotalCredit = g.Sum(x => x.ate.DebitCreditFlag == "C" ? x.ate.Amount : 0)
             };
@@ -2548,7 +2548,7 @@ public class AcctgReportsService : IAcctgReportsService
                 {
                     GlAccountId = row.GlAccountId,
                     AccountCode = row.AccountCode,
-                    AccountName = row.AccountName,
+                    AccountName = row.AccountNameArabic,
                     D = (decimal)row.TotalDebit,
                     C = (decimal)row.TotalCredit,
                     Balance = balance

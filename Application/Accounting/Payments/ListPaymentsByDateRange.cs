@@ -71,15 +71,32 @@ public class ListPaymentsByDateRange
                         {
                             // same mapping as in ListPaymentsDaily
                             PaymentId = pyt.PaymentId,
+                            PaymentTypeId = pyt.PaymentTypeId,
                             PaymentTypeDescription = request.Language == "ar" ? ptt.DescriptionArabic : ptt.Description,
-                            PaymentMethodTypeDescription = request.Language == "ar" ? pmt.DescriptionArabic : pmt.Description,
+                            PaymentMethodId = pyt.PaymentMethodId,
+                            PaymentMethodTypeId = pyt.PaymentMethodTypeId,
+                            PaymentMethodTypeDescription = pmt != null
+                                ? (request.Language == "ar" ? pmt.DescriptionArabic : pmt.Description)
+                                : null,
+                            PartyIdFrom = pyt.PartyIdFrom,
                             PartyIdFromName = ptyFrom.Description,
+                            PartyIdTo = pyt.PartyIdTo,
                             PartyIdToName = ptyTo.Description,
+                            StatusId = pyt.StatusId,
                             StatusDescription = request.Language == "ar" ? sts.DescriptionArabic : sts.Description,
+                            StatusDescriptionEnglish = sts.Description,
                             EffectiveDate = (DateTime)pyt.EffectiveDate,
                             Comments = pyt.Comments,
                             PaymentRefNum = pyt.PaymentRefNum,
+                            PaymentPreferenceId = pyt.PaymentPreferenceId,
+                            ActualCurrencyAmount = pyt.ActualCurrencyAmount ?? pyt.Amount,
+                            OverrideGlAccountId = pyt.OverrideGlAccountId,
+                            OrganizationPartyId = ptt.ParentTypeId == "DISBURSEMENT" ? pyt.PartyIdFrom : pyt.PartyIdTo,
                             Amount = pyt.Amount,
+                            CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
+                            IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
+                            ChequeNumber = pyt.ChequeNumber,
+                            ChequeDate = pyt.ChequeDate,
                             CertificateNumber = we != null ? we.CertificateNumber : null,
                             ProjectName = proj != null ? proj.ProjectName : null,
                             CostCenterDescription = cc != null ? cc.Description : null,
@@ -88,6 +105,56 @@ public class ListPaymentsByDateRange
                         };
 
             var data = await query.ToListAsync(ct);
+
+            var today = DateTime.Today;
+            foreach (var record in data)
+            {
+                record.DaysUntilDue = (record.EffectiveDate - today).Days;
+
+                var date = record.EffectiveDate;
+                var quarterNum = (date.Month - 1) / 3 + 1;
+                var quarterArabic = quarterNum switch
+                {
+                    1 => "الأول",
+                    2 => "الثاني",
+                    3 => "الثالث",
+                    4 => "الرابع",
+                    _ => string.Empty
+                };
+                var quarterAndYear = $"(الربع {quarterArabic} {date.Year})";
+
+                if (record.StatusId == "PMNT_NOT_PAID")
+                {
+                    var type = record.IsDisbursement ? "دفعة" : "مستحق";
+                    var typePaid = record.IsDisbursement ? "دفعة مستحقة" : "مستحق";
+
+                    if (record.DaysUntilDue < 0)
+                    {
+                        var daysOverdue = Math.Abs(record.DaysUntilDue);
+                        record.DueStatusArabic = daysOverdue <= 30
+                            ? $"{type} متأخرة منذ {daysOverdue} يوم"
+                            : $"{type} متأخرة جداً {quarterAndYear}";
+                    }
+                    else if (record.DaysUntilDue == 0)
+                        record.DueStatusArabic = $"{typePaid} اليوم";
+                    else if (record.DaysUntilDue == 1)
+                        record.DueStatusArabic = $"{typePaid} غداً";
+                    else if (record.DaysUntilDue <= 3)
+                        record.DueStatusArabic = $"{typePaid} بعد {record.DaysUntilDue} أيام";
+                    else if (record.DaysUntilDue <= 7)
+                        record.DueStatusArabic = $"{typePaid} هذا الأسبوع";
+                    else if (record.DaysUntilDue <= 30)
+                        record.DueStatusArabic = $"{typePaid} خلال الشهر";
+                    else if (record.DaysUntilDue <= 90)
+                        record.DueStatusArabic = $"{typePaid} خلال 3 أشهر {quarterAndYear}";
+                    else
+                        record.DueStatusArabic = $"{typePaid} لاحقاً {quarterAndYear}";
+                }
+                else
+                {
+                    record.DueStatusArabic = record.StatusDescription;
+                }
+            }
 
             return new PaymentsDailyResponse
             {
