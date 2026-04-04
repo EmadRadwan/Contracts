@@ -1,4 +1,7 @@
-namespace Application.Shipments.Reports;
+using Application.Accounting.Reports;
+using Application.Shipments.Reports;
+
+namespace Application.Accounting.Reports;
 
 public class TransactionTotalsViewModel
 {

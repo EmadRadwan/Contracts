@@ -50,4 +50,6 @@ public class SalesOpportunity
     
     public virtual ICollection<SalesOpportunityProduct> SalesOpportunityProducts { get; set; } 
         = new HashSet<SalesOpportunityProduct>();
+    public virtual ICollection<SalesOpportunityAction> SalesOpportunityActions { get; set; } 
+        = new HashSet<SalesOpportunityAction>();
 }

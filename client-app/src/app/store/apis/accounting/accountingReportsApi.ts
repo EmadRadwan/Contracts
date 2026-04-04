@@ -212,6 +212,13 @@ const accountingReportsApi = createApi({
               params: { thruDate, glFiscalTypeId, glAccountId, includePrePeriodTransactions },
             }),
           }),
+          fetchIncomeStatementGlAccountTransactionDetails: builder.query<GlAccountTransactionDetails, { organizationPartyId: string; fromDate?: string; thruDate?: string; selectedMonth?: number; glFiscalTypeId: string; glAccountId: string; includePrePeriodTransactions: boolean }>({
+            query: ({ organizationPartyId, fromDate, thruDate, selectedMonth, glFiscalTypeId, glAccountId, includePrePeriodTransactions }) => ({
+                url: `/organizationGlReports/${organizationPartyId}/getIncomeStatementGlAccountTransactionDetails`,
+                method: 'GET',
+                params: { fromDate, thruDate, selectedMonth, glFiscalTypeId, glAccountId, includePrePeriodTransactions },
+            }),
+          }),
         };
     },
 });
@@ -220,11 +227,13 @@ export const {
     useLazyFetchTrialBalanceReportQuery,
     useFetchTransactionTotalsReportQuery,
     useFetchIncomeStatementReportQuery,
+    useLazyFetchIncomeStatementReportQuery,
     useFetchCashFlowStatementReportQuery,
     useFetchGlAccountTrialBalanceReportQuery,
     useLazyFetchBalanceSheetReportQuery,
     useFetchComparativeBalanceSheetReportQuery, 
     useFetchGlAccountTransactionDetailsQuery,
-    useFetchBalanceSheetGlAccountTransactionDetailsQuery
+    useFetchBalanceSheetGlAccountTransactionDetailsQuery,
+    useFetchIncomeStatementGlAccountTransactionDetailsQuery
 } = accountingReportsApi;
 export {accountingReportsApi};

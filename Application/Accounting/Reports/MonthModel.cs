@@ -1,4 +1,4 @@
-namespace Application.Shipments.Reports;
+namespace Application.Accounting.Reports;
 
 public class MonthModel
 {

@@ -1,4 +1,4 @@
-namespace Application.Shipments.Reports;
+using Application.Accounting.Reports;
 
 public class CashFlowStatementViewModel
 {

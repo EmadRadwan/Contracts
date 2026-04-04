@@ -170,6 +170,7 @@ public class Party
     public string? PreferredPayrollPaymentMethodId { get; set; }
     public string? Description { get; set; }
     public string? StatusId { get; set; }
+    public string? LeadTemperatureId { get; set; }
     public DateTime? CreatedDate { get; set; }
     public string? CreatedByUserLogin { get; set; }
     public DateTime? LastModifiedDate { get; set; }

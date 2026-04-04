@@ -673,6 +673,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
         public DbSet<SalesForecastDetail> SalesForecastDetails { get; set; } = null!;
         public DbSet<SalesForecastHistory> SalesForecastHistories { get; set; } = null!;
         public DbSet<SalesOpportunity> SalesOpportunities { get; set; } = null!;
+        public DbSet<SalesOpportunityAction> SalesOpportunityActions { get; set; } = null!;
         public DbSet<SalesOpportunityProduct> SalesOpportunityProducts { get; set; } = null!;
         public DbSet<SalesOpportunityCompetitor> SalesOpportunityCompetitors { get; set; } = null!;
         public DbSet<SalesOpportunityHistory> SalesOpportunityHistories { get; set; } = null!;
@@ -28398,6 +28399,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 entity.HasIndex(e => e.CreatedTxStamp, "PARTY_TXCRTS");
 
                 entity.HasIndex(e => e.LastUpdatedTxStamp, "PARTY_TXSTMP");
+                entity.HasIndex(e => e.LeadTemperatureId, "PARTY_LEADTEMP");
 
                 entity.Property(e => e.PartyId)
                     .HasMaxLength(36)
@@ -28407,6 +28409,16 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     entity.Property(p => p.GlAccountIdAdvancedPayment)
                     .HasColumnName("GL_ACCOUNT_ID_ADVANCED_PAYMENT")
                         .HasMaxLength(20);
+                        
+                    entity.Property(p => p.LeadTemperatureId)
+                    .HasColumnName("LEAD_TEMPRATURE_ID")
+                        .HasMaxLength(1);
+                        
+                entity.Property(e => e.ExternalId)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("EXTERNAL_ID")
+                    .HasMaxLength(20);
 
                 entity.Property(e => e.CreatedByUserLogin)
                     .HasMaxLength(250)
@@ -50431,6 +50443,103 @@ entity.Property(e => e.BuildingNumber)
                     .HasForeignKey(d => d.TypeEnumId)
                     .HasConstraintName("SLSOPP_TYP_ENUM");
             });
+            
+            modelBuilder.Entity<SalesOpportunityAction>(entity =>
+            {
+                entity.ToTable("SALES_OPPORTUNITY_ACTION");
+            
+                // Primary Key (Surrogate key - recommended approach)
+                entity.HasKey(e => e.SalesOpportunityActionId);
+            
+                // Indexes (following your SLSOPP_... naming pattern)
+                entity.HasIndex(e => e.SalesOpportunityId, "SLSOPPACT_OPPID");
+                entity.HasIndex(e => e.ActionTypeId, "SLSOPPACT_ACTION_TYP");
+                entity.HasIndex(e => e.CancelReasonId, "SLSOPPACT_CANCEL_RSN");
+                entity.HasIndex(e => e.CreatedByUserLogin, "SLSOPPACT_USRLGN");
+                entity.HasIndex(e => e.CreatedStamp, "SLSOPPACT_CRTS");
+                entity.HasIndex(e => e.LastUpdatedStamp, "SLSOPPACT_UPDST");
+            
+                // Column Mappings
+                entity.Property(e => e.SalesOpportunityActionId)
+                      .HasMaxLength(36)
+                      .IsUnicode(false)
+                      .HasColumnName("SALES_OPPORTUNITY_ACTION_ID");
+            
+                entity.Property(e => e.SalesOpportunityId)
+                      .HasMaxLength(36)
+                      .IsUnicode(false)
+                      .HasColumnName("SALES_OPPORTUNITY_ID");
+            
+                entity.Property(e => e.ActionTypeId)
+                      .HasMaxLength(36)
+                      .IsUnicode(false)
+                      .HasColumnName("ACTION_TYPE_ID");
+            
+                entity.Property(e => e.IsAnswered)
+                      .HasColumnName("IS_ANSWERED");
+            
+                entity.Property(e => e.ActionDate)
+                      .HasColumnType("datetime")
+                      .HasColumnName("ACTION_DATE");
+            
+                entity.Property(e => e.CancelReasonId)
+                      .HasMaxLength(36)
+                      .IsUnicode(false)
+                      .HasColumnName("CANCEL_REASON_ID");
+            
+                entity.Property(e => e.Comment)
+                      .HasColumnType("text")
+                      .HasColumnName("COMMENT");
+            
+                entity.Property(e => e.CreatedByUserLogin)
+                      .HasMaxLength(250)
+                      .IsUnicode(false)
+                      .HasColumnName("CREATED_BY_USER_LOGIN");
+            
+                entity.Property(e => e.CreatedStamp)
+                      .HasColumnType("datetime")
+                      .HasColumnName("CREATED_STAMP");
+            
+                entity.Property(e => e.LastUpdatedStamp)
+                      .HasColumnType("datetime")
+                      .HasColumnName("LAST_UPDATED_STAMP");
+            
+                entity.Property(e => e.CreatedTxStamp)
+                      .HasColumnType("datetime")
+                      .HasColumnName("CREATED_TX_STAMP");
+            
+                entity.Property(e => e.LastUpdatedTxStamp)
+                      .HasColumnType("datetime")
+                      .HasColumnName("LAST_UPDATED_TX_STAMP");
+            
+                // Foreign Key Relationships
+                entity.HasOne(d => d.SalesOpportunity)
+                      .WithMany(p => p.SalesOpportunityActions)
+                      .HasForeignKey(d => d.SalesOpportunityId)
+                      .HasConstraintName("SLSOPPACT_SLSOPP")
+                      .OnDelete(DeleteBehavior.Cascade);
+            
+                entity.HasOne(d => d.ActionType)
+                      .WithMany()
+                      .HasForeignKey(d => d.ActionTypeId)
+                      .HasConstraintName("SLSOPPACT_ACTION_TYP")
+                      .OnDelete(DeleteBehavior.Restrict);
+            
+                entity.HasOne(d => d.CancelReason)
+                      .WithMany()
+                      .HasForeignKey(d => d.CancelReasonId)
+                      .HasConstraintName("SLSOPPACT_CANCEL_RSN")
+                      .OnDelete(DeleteBehavior.Restrict);
+            
+                entity.HasOne(d => d.CreatedByUserLoginNavigation)
+                      .WithMany()
+                      .HasForeignKey(d => d.CreatedByUserLogin)
+                      .HasConstraintName("SLSOPPACT_USRLGN")
+                      .OnDelete(DeleteBehavior.Restrict);
+});
+            
+            
+            
             
             modelBuilder.Entity<SalesOpportunityProduct>(entity =>
 {

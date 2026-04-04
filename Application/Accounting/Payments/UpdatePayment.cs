@@ -4,7 +4,6 @@ using Domain;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.Logging;
 using Persistence;
 
@@ -31,13 +30,14 @@ public class UpdatePayment
         private readonly IFinAccountService _finAccountService;
         private readonly IPaymentHelperService _paymentHelperService;
         private readonly IGeneralLedgerService _generalLedgerService;
-        private readonly ILogger _logger;
-        
+        private readonly ILogger<Handler> _logger;
 
-
-
-        public Handler(DataContext context, IFinAccountService finAccountService,
-            IPaymentHelperService paymentHelperService, IGeneralLedgerService generalLedgerService, ILogger<Handler> logger)
+        public Handler(
+            DataContext context,
+            IFinAccountService finAccountService,
+            IPaymentHelperService paymentHelperService,
+            IGeneralLedgerService generalLedgerService,
+            ILogger<Handler> logger)
         {
             _context = context;
             _finAccountService = finAccountService;
@@ -50,258 +50,216 @@ public class UpdatePayment
         {
             var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
-            var dto = request.PaymentDto;
-
-            // ────────────────────────────────────────────────────────────────
-            // 1. Load original payment (critical for comparisons)
-            // ────────────────────────────────────────────────────────────────
-            var original = await _context.Payments
-                .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.PaymentId == dto.PaymentId, cancellationToken);
-
-            if (original == null)
-                return Results<PaymentDto>.Failure("الدفعة غير موجودة", "PAYMENT_NOT_FOUND");
-
-            DateTime effectiveDate = dto.EffectiveDate ?? dto.ChequeDate ?? original.EffectiveDate ?? DateTime.UtcNow;
-
-           
-            string finAccountTransId = null!;
-            dto = request.PaymentDto;
-            effectiveDate = (DateTime)(dto.ChequeDate
-                                       ?? dto.EffectiveDate
-                                       ??
-                                       dto.EffectiveDate); // fallback preserves original if both are null (though unlikely)
-
-
             try
             {
-                // get payment method
-                var paymentMethod = await _context.PaymentMethods.SingleOrDefaultAsync(x =>
-                    x.PaymentMethodId == request.PaymentDto.PaymentMethodId, cancellationToken);
+                var dto = request.PaymentDto;
 
-                if (paymentMethod != null)
+                // Load original payment for reference
+                var original = await _context.Payments
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.PaymentId == dto.PaymentId, cancellationToken);
+
+                if (original == null)
+                    return Results<PaymentDto>.Failure("الدفعة غير موجودة", "PAYMENT_NOT_FOUND");
+
+                // Normalize effective date
+                var effectiveDate = dto.ChequeDate ?? dto.EffectiveDate ?? original.EffectiveDate ?? DateTime.UtcNow;
+
+                // Get payment type once
+                var paymentType = await _context.PaymentTypes
+                    .FirstOrDefaultAsync(pt => pt.PaymentTypeId == dto.PaymentTypeId, cancellationToken);
+
+                // Get payment method
+                var paymentMethod = await _context.PaymentMethods
+                    .SingleOrDefaultAsync(x => x.PaymentMethodId == dto.PaymentMethodId, cancellationToken);
+
+                string finAccountTransId = null;
+
+                // ────────────────────────────────────────────────────────────────
+                // 1. Handle Financial Account Transaction (FinAccountTrans)
+                // ────────────────────────────────────────────────────────────────
+                if (paymentMethod?.FinAccountId != null)
                 {
-                    // check if the payment method is related to a financial account
-                    if (paymentMethod.FinAccountId != null)
-                    {
-                        // check if a finAcctTrans exists for the payment
-                        var finAccountTrans = await _context.FinAccountTrans.SingleOrDefaultAsync(x =>
-                            x.PaymentId == request.PaymentDto.PaymentId, cancellationToken);
-                        finAccountTransId = finAccountTrans?.FinAccountTransId;
-                        if (finAccountTrans != null)
-                        {
-                            // populate a CreateFinAccountTransParam object
-                            var createFinAccountTransParam = new CreateFinAccountTransParam
-                            {
-                                FinAccountId = paymentMethod.FinAccountId,
-                                PartyId = finAccountTrans.FinAccountTransTypeId == "DEPOSIT"
-                                    ? request.PaymentDto.PartyIdFrom
-                                    : request.PaymentDto.PartyIdTo,
-                                Amount = request.PaymentDto.Amount,
-                                EffectiveDate = effectiveDate,
-                                FinAccountTransTypeId = finAccountTrans.FinAccountTransTypeId,
-                                FinAccountTransId = finAccountTrans.FinAccountTransId
-                            };
-                            await _finAccountService.UpdateFinAccountTrans(
-                                createFinAccountTransParam);
-                        }
-                        else
-                        {
-                            // populate a CreateFinAccountTransParam object
-                            // based on payment type, determine if its a deposit or withdrawal
-                            var incomingPaymentTypes = new List<string> { "CUSTOMER_DEPOSIT", "CUSTOMER_PAYMENT" };
-                            var outgoingPaymentTypes = new List<string>
-                            {
-                                "VENDOR_PAYMENT", "CUSTOMER_REFUND", "COMMISSION_PAYMENT", "INCOME_TAX_PAYMENT",
-                                "PAY_CHECK",
-                                "PAYROL_PAYMENT", "PAYROLL_TAX_PAYMENT", "SALES_TAX_PAYMENT", "TAX_PAYMENT",
-                                "COMMISSION_PAYMENT"
-                            };
-                            var paymentTypeId = request.PaymentDto.PaymentTypeId;
-                            var createFinAccountTransParam = new CreateFinAccountTransParam();
-                            if (incomingPaymentTypes.Contains(paymentTypeId))
-                                // deposit
-                                // prepare data for financial account transaction creation
-                                createFinAccountTransParam = new CreateFinAccountTransParam
-                                {
-                                    FinAccountId = paymentMethod.FinAccountId,
-                                    FinAccountTransTypeId = "DEPOSIT",
-                                    StatusId = "FINACT_TRNS_CREATED",
-                                    PartyId = request.PaymentDto.PartyIdFrom,
-                                    Amount = request.PaymentDto.Amount,
-                                    EffectiveDate = request.PaymentDto.EffectiveDate
-                                };
-                            else if (outgoingPaymentTypes.Contains(paymentTypeId))
-                                // withdrawal
-                                // prepare data for financial account transaction creation
-                                createFinAccountTransParam = new CreateFinAccountTransParam
-                                {
-                                    FinAccountId = paymentMethod.FinAccountId,
-                                    FinAccountTransTypeId = "WITHDRAWAL",
-                                    StatusId = "FINACT_TRNS_CREATED",
-                                    PartyId = request.PaymentDto.PartyIdTo,
-                                    Amount = request.PaymentDto.Amount,
-                                    EffectiveDate = request.PaymentDto.EffectiveDate
-                                };
+                    var existingFinTrans = await _context.FinAccountTrans
+                        .SingleOrDefaultAsync(x => x.PaymentId == dto.PaymentId, cancellationToken);
 
-                            finAccountTransId =
-                                await _finAccountService.CreateFinAccountTrans(createFinAccountTransParam);
-                        }
+                    if (existingFinTrans != null)
+                    {
+                        // Update existing FinAccountTrans
+                        var updateFinParam = new CreateFinAccountTransParam
+                        {
+                            FinAccountId = paymentMethod.FinAccountId,
+                            PaymentId = dto.PaymentId,
+                            FinAccountTransId = existingFinTrans.FinAccountTransId,
+                            FinAccountTransTypeId = existingFinTrans.FinAccountTransTypeId,
+                            PartyId = existingFinTrans.FinAccountTransTypeId == "DEPOSIT"
+                                ? dto.PartyIdFrom
+                                : dto.PartyIdTo,
+                            Amount = dto.Amount,
+                            EffectiveDate = effectiveDate
+                        };
+
+                        await _finAccountService.UpdateFinAccountTrans(updateFinParam);
+                        finAccountTransId = existingFinTrans.FinAccountTransId;
                     }
                     else
                     {
-                        // check if there was there a transaction from the add phase
-                        // in the database and if there is then delete it
-                        var finAcctTrans = _context.FinAccountTrans.SingleOrDefault(x =>
-                            x.PaymentId == request.PaymentDto.PaymentId);
-                        if (finAcctTrans != null) _context.FinAccountTrans.Remove(finAcctTrans);
+                        // Create new FinAccountTrans
+                        var isIncoming = new[] { "CUSTOMER_DEPOSIT", "CUSTOMER_PAYMENT" }
+                            .Contains(dto.PaymentTypeId);
+
+                        var createFinParam = new CreateFinAccountTransParam
+                        {
+                            FinAccountId = paymentMethod.FinAccountId,
+                            PaymentId = dto.PaymentId,
+                            FinAccountTransTypeId = isIncoming ? "DEPOSIT" : "WITHDRAWAL",
+                            StatusId = "FINACT_TRNS_CREATED",
+                            PartyId = isIncoming ? dto.PartyIdFrom : dto.PartyIdTo,
+                            Amount = dto.Amount,
+                            EffectiveDate = effectiveDate
+                        };
+
+                        finAccountTransId = await _finAccountService.CreateFinAccountTrans(createFinParam);
                     }
                 }
                 else
                 {
-                    // else only update the payment, populate a CreatePaymentParam object and ignore the financial account transaction
-                    var updatePaymentParam = new CreatePaymentParam
+                    // No FinAccount → remove any existing FinAccountTrans
+                    var existingFinTrans = await _context.FinAccountTrans
+                        .SingleOrDefaultAsync(x => x.PaymentId == dto.PaymentId, cancellationToken);
+
+                    if (existingFinTrans != null)
                     {
-                        PaymentId = request.PaymentDto.PaymentId,
-                        StatusId = request.PaymentDto.StatusId,
-                        PaymentMethodId = request.PaymentDto.PaymentMethodId,
-                        IsBankTransfer = request.PaymentDto.IsBankTransfer,
-                        PaymentMethodTypeId = paymentMethod.PaymentMethodTypeId,
-                        EffectiveDate = effectiveDate,
-                        Amount = request.PaymentDto.Amount,
-                        Comments = request.PaymentDto.Comments,
-                        ActualCurrencyAmount = request.PaymentDto.ActualCurrencyAmount,
-                        ActualCurrencyUomId = request.PaymentDto.ActualCurrencyUomId,
-                        PartyIdFrom = request.PaymentDto.PartyIdFrom,
-                        PartyIdTo = request.PaymentDto.PartyIdTo,
-                        PaymentTypeId = request.PaymentDto.PaymentTypeId,
-                        FinAccountTransId = finAccountTransId,
-                        OverrideGlAccountId = request.PaymentDto.OverrideGlAccountId,
-                        ProjectId = request.PaymentDto.ProjectId,
-                        CostCenterId = request.PaymentDto.CostCenterId,
-                        PaymentRefNum = request.PaymentDto.PaymentRefNum,
-                    };
-                    // update the payment itself
-                    await _paymentHelperService.UpdatePayment(updatePaymentParam);
+                        _context.FinAccountTrans.Remove(existingFinTrans);
+                    }
                 }
 
-
-                // populate a CreatePaymentParam object
-                var updatePaymentParam2 = new CreatePaymentParam
+                // ────────────────────────────────────────────────────────────────
+                // 2. Update the Payment itself
+                // ────────────────────────────────────────────────────────────────
+                var updatePaymentParam = new CreatePaymentParam
                 {
-                    PaymentId = request.PaymentDto.PaymentId,
-                    StatusId = request.PaymentDto.StatusId,
-                    PaymentMethodId = request.PaymentDto.PaymentMethodId,
-                    IsBankTransfer = request.PaymentDto.IsBankTransfer,
-                    PaymentMethodTypeId = paymentMethod.PaymentMethodTypeId,
+                    PaymentId = dto.PaymentId,
+                    PartyIdFrom = dto.PartyIdFrom,
+                    PartyIdTo = dto.PartyIdTo,
+                    Amount = dto.Amount,
+                    StatusId = dto.StatusId,
                     EffectiveDate = effectiveDate,
-                    Amount = request.PaymentDto.Amount,
-                    ActualCurrencyAmount = request.PaymentDto.ActualCurrencyAmount,
-                    ActualCurrencyUomId = request.PaymentDto.ActualCurrencyUomId == ""
-                        ? null
-                        : request.PaymentDto.ActualCurrencyUomId,
-                    Comments = request.PaymentDto.Comments,
-                    PaymentRefNum = request.PaymentDto.PaymentRefNum,
-                    PartyIdFrom = request.PaymentDto.PartyIdFrom,
-                    PartyIdTo = request.PaymentDto.PartyIdTo,
-                    PaymentTypeId = request.PaymentDto.PaymentTypeId,
-                    FinAccountTransId = finAccountTransId,
-                    OverrideGlAccountId = request.PaymentDto.OverrideGlAccountId,
-                    ProjectId = request.PaymentDto.ProjectId,
-                    CostCenterId = request.PaymentDto.CostCenterId,
-                    ChequeNumber = request.PaymentDto.ChequeNumber,
-                    ChequeDate = request.PaymentDto.ChequeDate
+                    PaymentTypeId = dto.PaymentTypeId,
+                    ChequeNumber = dto.ChequeNumber,
+                    ChequeDate = dto.ChequeDate,
+                    Comments = dto.Comments,
+                    IsBankTransfer = dto.IsBankTransfer,
+                    PaymentMethodId = dto.PaymentMethodId,
+                    PaymentMethodTypeId = paymentMethod?.PaymentMethodTypeId,
+                    OverrideGlAccountId = dto.OverrideGlAccountId,
+                    ProjectId = dto.ProjectId,
+                    CostCenterId = dto.CostCenterId,
+                    PaymentRefNum = dto.PaymentRefNum,
+                    FinAccountTransId = finAccountTransId
                 };
-                // update the payment itself
-                var payment = await _paymentHelperService.UpdatePayment(updatePaymentParam2);
 
+                var updatedPayment = await _paymentHelperService.UpdatePayment(updatePaymentParam);
 
-                var addedFinAccountTran = null as EntityEntry<FinAccountTran>;
+                // ────────────────────────────────────────────────────────────────
+                // 3. Handle Postdated Cheque Accounting Transaction (CHECK_ISSUED)
+                // ────────────────────────────────────────────────────────────────
+                var shouldHavePostdatedTrans =
+                    !string.IsNullOrEmpty(dto.OverrideGlAccountId) &&
+                    paymentType?.ParentTypeId == "DISBURSEMENT" &&
+                    (!string.IsNullOrEmpty(dto.ChequeNumber) || dto.ChequeDate.HasValue);
 
+                var hasExistingPostdatedTrans = await _context.AcctgTrans
+                    .AnyAsync(x => x.PaymentId == dto.PaymentId &&
+                                   x.AcctgTransTypeId == "CHECK_ISSUED",
+                        cancellationToken);
 
-                if (paymentMethod!.FinAccountId != null && finAccountTransId != null)
+                if (shouldHavePostdatedTrans)
                 {
-                    addedFinAccountTran = _context.ChangeTracker.Entries<FinAccountTran>()
-                        .FirstOrDefault(e =>
-                            e.Entity.FinAccountTransId == finAccountTransId &&
-                            e.State == EntityState.Added);
+                    // Delete existing one first (in case amount, GL account, cheque details changed)
+                    if (hasExistingPostdatedTrans)
+                    {
+                        await _generalLedgerService.DeletePostdatedChequeAccountingTransaction(dto.PaymentId);
+                    }
 
-                    await _context.SaveChangesAsync(cancellationToken);
-
-                    /*if (addedFinAccountTran != null) addedFinAccountTran.Entity.PaymentId = payment.PaymentId;
-                    payment.FinAccountTransId = finAccountTransId;*/
-                }
-                
-                // Create accounting entry for postdated cheques when applicable
-            
-                // get payment type
-                var paymentType = await _context.PaymentTypes
-                    .FirstOrDefaultAsync(pt => pt.PaymentTypeId == request.PaymentDto.PaymentTypeId, cancellationToken: cancellationToken);
-
-                if (
-                    !string.IsNullOrEmpty(request.PaymentDto.OverrideGlAccountId) && paymentType.ParentTypeId == "DISBURSEMENT" &&
-                    (!string.IsNullOrEmpty(request.PaymentDto.ChequeNumber) || request.PaymentDto.ChequeDate.HasValue))
-                {
+                    // Create new/updated transaction
                     try
                     {
-                        // check first that such transaction exists
-                        var isPostDatedCheckExists = _context.AcctgTrans.Any(x => x.PaymentId == request.PaymentDto.PaymentId && x.AcctgTransTypeId == "CHECK_ISSUED");
-                        if (!isPostDatedCheckExists)
-                        {
-                            var acctgTransId = await _generalLedgerService.CreatePostdatedChequeAccountingTransaction(request.PaymentDto.PaymentId);
-                        }
+                        var acctgTransId = await _generalLedgerService
+                            .CreatePostdatedChequeAccountingTransaction(dto.PaymentId);
+
+                        _logger.LogInformation(
+                            "Postdated cheque accounting transaction {AcctgTransId} created/updated for payment {PaymentId}",
+                            acctgTransId, dto.PaymentId);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Failed to create accounting transaction for postdated cheque");
-                        // Decide whether to fail the whole operation or just log
+                        _logger.LogError(ex, "Failed to create postdated cheque accounting for payment {PaymentId}",
+                            dto.PaymentId);
+                        // We continue (do not rollback) unless you want strict failure
+                    }
+                }
+                else if (hasExistingPostdatedTrans)
+                {
+                    // Conditions no longer met → remove the old transaction
+                    try
+                    {
+                        await _generalLedgerService.DeletePostdatedChequeAccountingTransaction(dto.PaymentId);
+                        _logger.LogInformation(
+                            "Removed obsolete CHECK_ISSUED transaction for payment {PaymentId}",
+                            dto.PaymentId);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex,
+                            "Failed to delete obsolete postdated cheque accounting for payment {PaymentId}",
+                            dto.PaymentId);
                     }
                 }
 
-
+                // ────────────────────────────────────────────────────────────────
+                // 4. Final Save + Commit
+                // ────────────────────────────────────────────────────────────────
                 await _context.SaveChangesAsync(cancellationToken);
-
                 await transaction.CommitAsync(cancellationToken);
 
+                // Load party names for response
                 var fromParty = await _context.Parties
-                    .Where(p => p.PartyId == request.PaymentDto.PartyIdFrom)
+                    .Where(p => p.PartyId == dto.PartyIdFrom)
                     .Select(p => p.Description)
-                    .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+                    .FirstOrDefaultAsync(cancellationToken);
 
                 var toParty = await _context.Parties
-                    .Where(p => p.PartyId == request.PaymentDto.PartyIdTo)
+                    .Where(p => p.PartyId == dto.PartyIdTo)
                     .Select(p => p.Description)
-                    .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+                    .FirstOrDefaultAsync(cancellationToken);
 
-
-                var paymentToReturn = new PaymentDto
+                var response = new PaymentDto
                 {
-                    PaymentId = payment.PaymentId,
-                    StatusId = payment.StatusId,
-                    StatusDescription = "Not Paid",
-                    //FinAccountTransId = payment.FinAccountTransId,
-                    Comments = payment.Comments,
-                    Amount = payment.Amount,
-                    IsBankTransfer = payment.IsBankTransfer,
-                    PaymentMethodId = payment.PaymentMethodId,
-                    PaymentTypeId = payment.PaymentTypeId,
-                    EffectiveDate = payment.EffectiveDate,
+                    PaymentId = updatedPayment.PaymentId,
+                    StatusId = updatedPayment.StatusId,
+                    StatusDescription = "Not Paid", // Adjust if you have proper status logic
+                    Amount = updatedPayment.Amount,
+                    IsBankTransfer = updatedPayment.IsBankTransfer,
+                    PaymentMethodId = updatedPayment.PaymentMethodId,
+                    PaymentTypeId = updatedPayment.PaymentTypeId,
+                    EffectiveDate = updatedPayment.EffectiveDate,
                     PartyIdFromName = fromParty,
                     PartyIdToName = toParty,
-                    OverrideGlAccountId = payment.OverrideGlAccountId,
-                    ChequeNumber = payment.ChequeNumber,
-                    ChequeDate = payment.ChequeDate,
-                    PaymentRefNum = payment.PaymentRefNum
+                    OverrideGlAccountId = updatedPayment.OverrideGlAccountId,
+                    ChequeNumber = updatedPayment.ChequeNumber,
+                    ChequeDate = updatedPayment.ChequeDate,
+                    PaymentRefNum = updatedPayment.PaymentRefNum,
+                    Comments = updatedPayment.Comments
                 };
 
-
-                return Results<PaymentDto>.Success(paymentToReturn);
+                return Results<PaymentDto>.Success(response);
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync(cancellationToken);
-
-                return Results<PaymentDto>.Failure("Error updating Payment");
+                _logger.LogError(ex, "Error updating payment {PaymentId}", request.PaymentDto.PaymentId);
+                return Results<PaymentDto>.Failure($"Error updating Payment: {ex.Message}");
             }
         }
     }

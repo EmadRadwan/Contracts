@@ -1,7 +1,10 @@
-namespace Application.Shipments.Reports;
+using Application.Accounting.Reports;
 
-public class AccountBalanceResult
+namespace Application.Accounting.Reports
 {
-    public List<TransactionTotal> AccountBalanceList { get; set; }
-    public decimal BalanceTotal { get; set; }
+    public class AccountBalanceResult
+    {
+        public List<TransactionTotal> AccountBalanceList { get; set; } = new();
+        public decimal BalanceTotal { get; set; }
+    }
 }

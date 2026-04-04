@@ -1,4 +1,5 @@
 using Application.Accounting.OrganizationGlSettings;
+using Application.Accounting.Reports;
 using Application.Shipments.Reports;
 using Domain;
 using Microsoft.EntityFrameworkCore;
@@ -399,6 +400,14 @@ public class AcctgReportsService : IAcctgReportsService
 
             var now = DateTime.Now;
 
+            // If user selected a month, override fromDate & thruDate
+            if (selectedMonth.HasValue && selectedMonth.Value > 0)
+            {
+                var selectedMonthDate = new DateTime(now.Year, selectedMonth.Value, 1);
+                fromDate = selectedMonthDate;
+                thruDate = selectedMonthDate.AddMonths(1).AddDays(-1);
+            }
+
             // If fromDate is not specified, attempt to find last closed date or fallback to (now - 1 month)
             if (!fromDate.HasValue)
             {
@@ -411,14 +420,6 @@ public class AcctgReportsService : IAcctgReportsService
                 {
                     fromDate = now.AddMonths(-1);
                 }
-            }
-
-            // If user selected a month, override fromDate & thruDate
-            if (selectedMonth.HasValue)
-            {
-                var selectedMonthDate = new DateTime(now.Year, selectedMonth.Value + 1, 1);
-                fromDate = selectedMonthDate;
-                thruDate = selectedMonthDate.AddMonths(1).AddDays(-1);
             }
 
             // If thruDate is still null, default to now
@@ -1015,27 +1016,40 @@ public class AcctgReportsService : IAcctgReportsService
     public async Task<IncomeStatementViewModel> GenerateIncomeStatement(string organizationPartyId, DateTime? fromDate,
         DateTime? thruDate, string glFiscalTypeId, int? selectedMonth = null)
     {
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
 
         try
         {
-            if (!fromDate.HasValue || !thruDate.HasValue || string.IsNullOrEmpty(glFiscalTypeId))
-            {
-                throw new ArgumentException("Invalid parameters");
-            }
-
             // If user selected a month, override fromDate & thruDate
             if (selectedMonth.HasValue)
             {
-                var selectedMonthDate = new DateTime(now.Year, selectedMonth.Value + 1, 1);
+                int month = selectedMonth.Value;
+
+                // Handle 0-based months from JavaScript/frontend
+                if (month >= 0 && month <= 11)
+                {
+                    month += 1; // Convert 0..11 → 1..12
+                }
+
+                if (month < 1 || month > 12)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(selectedMonth),
+                        $"Invalid month value: {selectedMonth.Value}. Expected 1-12 (or 0-11 from JS).");
+                }
+
+                var selectedMonthDate = new DateTime(now.Year, month, 1, 0, 0, 0, DateTimeKind.Utc);
                 fromDate = selectedMonthDate;
-                thruDate = selectedMonthDate.AddMonths(1).AddDays(-1);
+                thruDate = selectedMonthDate.AddMonths(1).AddDays(-1).AddHours(23).AddMinutes(59)
+                    .AddSeconds(59); // End of day
             }
 
-            if (!thruDate.HasValue)
-            {
-                thruDate = DateTime.Now;
-            }
+            // === 2. Validate Parameters ===
+            if (!fromDate.HasValue || !thruDate.HasValue || string.IsNullOrWhiteSpace(glFiscalTypeId))
+                throw new ArgumentException("FromDate, ThruDate, and GlFiscalTypeId are required.");
+
+            // Ensure thruDate is at end of day for inclusive comparison
+            thruDate = thruDate.Value.Date.AddDays(1).AddTicks(-1);
+
 
             organizationPartyId = organizationPartyId ?? throw new ArgumentNullException(nameof(organizationPartyId));
 
@@ -1043,97 +1057,67 @@ public class AcctgReportsService : IAcctgReportsService
             var partyIds = await GetAssociatedPartyIdsByRelationshipType(organizationPartyId, "GROUP_ROLLUP");
             partyIds.Add(organizationPartyId);
 
-            // Step C: Retrieve descendant GL account classes for each root class:
-            // e.g. REVENUE includes all sub-classes, etc.
-            var revenueAccountClassIds = await GetDescendantGlAccountClassIds("REVENUE");
-            var contraRevenueAccountClassIds = await GetDescendantGlAccountClassIds("CONTRA_REVENUE");
-            var incomeAccountClassIds = await GetDescendantGlAccountClassIds("INCOME");
-            var expenseAccountClassIds = await GetDescendantGlAccountClassIds("EXPENSE");
-            var cogsExpenseAccountClassIds = await GetDescendantGlAccountClassIds("COGS_EXPENSE");
-            var sgaExpenseAccountClassIds = await GetDescendantGlAccountClassIds("SGA_EXPENSE");
-            var depreciationAccountClassIds = await GetDescendantGlAccountClassIds("DEPRECIATION");
+            // === 4. Get All Descendant Account Classes (Hierarchy) ===
+            // Consider caching these results if called frequently
+            var revenueClassIds = await GetDescendantGlAccountClassIds("REVENUE");
+            var contraRevenueClassIds = await GetDescendantGlAccountClassIds("CONTRA_REVENUE");
+            var cogsClassIds = await GetDescendantGlAccountClassIds("COGS_EXPENSE");
+            var sgaClassIds = await GetDescendantGlAccountClassIds("SGA_EXPENSE");
+            var depreciationClassIds = await GetDescendantGlAccountClassIds("DEPRECIATION");
+            var otherIncomeClassIds = await GetDescendantGlAccountClassIds("INCOME");
+            var otherExpenseClassIds =
+                await GetDescendantGlAccountClassIds("EXPENSE"); // Non-operating / other expenses if needed
 
-            // Step D: For each major account class, calculate posted transactions and final balance
-            // Explanation: We only want posted transactions (IsPosted = "Y"),
-            // excluding PERIOD_CLOSING, between [fromDate, thruDate).
+            // === 5. Calculate Balances for Each Major Category ===
+            var revenueTotals = await CalculateAccountBalances(revenueClassIds, partyIds, fromDate.Value,
+                thruDate.Value, glFiscalTypeId, isRevenueOrIncome: true);
+            var contraRevenueTotals = await CalculateAccountBalances(contraRevenueClassIds, partyIds, fromDate.Value,
+                thruDate.Value, glFiscalTypeId, isRevenueOrIncome: false);
+            var cogsTotals = await CalculateAccountBalances(cogsClassIds, partyIds, fromDate.Value, thruDate.Value,
+                glFiscalTypeId, isRevenueOrIncome: false);
+            var sgaTotals = await CalculateAccountBalances(sgaClassIds, partyIds, fromDate.Value, thruDate.Value,
+                glFiscalTypeId, isRevenueOrIncome: false);
+            var depreciationTotals = await CalculateAccountBalances(depreciationClassIds, partyIds, fromDate.Value,
+                thruDate.Value, glFiscalTypeId, isRevenueOrIncome: false);
+            var otherIncomeTotals = await CalculateAccountBalances(otherIncomeClassIds, partyIds, fromDate.Value,
+                thruDate.Value, glFiscalTypeId, isRevenueOrIncome: true);
+            var otherExpenseTotals = await CalculateAccountBalances(otherExpenseClassIds, partyIds, fromDate.Value,
+                thruDate.Value, glFiscalTypeId, isRevenueOrIncome: false);
 
-            // 1) Summation of all REVENUE accounts
-            var revenueTotals = await CalculateAccountBalances(
-                revenueAccountClassIds, partyIds, fromDate.Value, thruDate.Value, glFiscalTypeId,
-                isRevenueOrIncome: true);
-
-            // 2) Summation of all CONTRA REVENUE accounts
-            var contraRevenueTotals = await CalculateAccountBalances(
-                contraRevenueAccountClassIds, partyIds, fromDate.Value, thruDate.Value, glFiscalTypeId,
-                isRevenueOrIncome: false);
-
-            // 3) Summation of all EXPENSE accounts
-            var expenseTotals = await CalculateAccountBalances(
-                expenseAccountClassIds, partyIds, fromDate.Value, thruDate.Value, glFiscalTypeId,
-                isRevenueOrIncome: false);
-
-            // 4) Summation of all COGS (Cost of Goods Sold) EXPENSE accounts
-            var cogsExpenseTotals = await CalculateAccountBalances(
-                cogsExpenseAccountClassIds, partyIds, fromDate.Value, thruDate.Value, glFiscalTypeId,
-                isRevenueOrIncome: false);
-
-            // 5) Summation of all SGA (Selling, General & Administrative) EXPENSE accounts
-            var sgaExpenseTotals = await CalculateAccountBalances(
-                sgaExpenseAccountClassIds, partyIds, fromDate.Value, thruDate.Value, glFiscalTypeId,
-                isRevenueOrIncome: false);
-
-            // 6) Summation of all DEPRECIATION accounts (also typically expenses)
-            var depreciationTotals = await CalculateAccountBalances(
-                depreciationAccountClassIds, partyIds, fromDate.Value, thruDate.Value, glFiscalTypeId,
-                isRevenueOrIncome: false);
-
-            // 7) Summation of all INCOME accounts
-            var incomeTotals = await CalculateAccountBalances(
-                incomeAccountClassIds, partyIds, fromDate.Value, thruDate.Value, glFiscalTypeId,
-                isRevenueOrIncome: true);
-
-
-            // Step E: Compute final lines of the Income Statement
-
-            // Net Sales = Revenue - Contra Revenue
+            // === 6. Compute Key Line Items (Corrected Business Logic) ===
             var netSales = revenueTotals.BalanceTotal - contraRevenueTotals.BalanceTotal;
+            var grossMargin = netSales - cogsTotals.BalanceTotal;
 
-            // Gross Margin = Net Sales - COGS
-            var grossMargin = netSales - cogsExpenseTotals.BalanceTotal;
+            var totalOperatingExpenses = sgaTotals.BalanceTotal + depreciationTotals.BalanceTotal;
+            var incomeFromOperations = grossMargin - totalOperatingExpenses;
 
-            // Income From Operations = Gross Margin - SGA Expenses
-            var incomeFromOperations = grossMargin - sgaExpenseTotals.BalanceTotal;
+            var netIncome = incomeFromOperations + otherIncomeTotals.BalanceTotal - otherExpenseTotals.BalanceTotal;
 
-            // Net Income = Net Sales + Income Accounts - Expense Accounts
-            // Explanation: Another typical formula is (Revenue - COGS - Expense + Other Income).
-            var netIncome = netSales + incomeTotals.BalanceTotal - expenseTotals.BalanceTotal;
-
-            // Step F: Return a structured view model with all details
+            // === 7. Build and Return ViewModel ===
             return new IncomeStatementViewModel
             {
-                // Detailed lists of each account's balance
+                // Detailed account-level lists (for grids)
                 RevenueAccountBalances = revenueTotals.AccountBalanceList,
                 ContraRevenueAccountBalances = contraRevenueTotals.AccountBalanceList,
-                ExpenseAccountBalances = expenseTotals.AccountBalanceList,
-                CogsExpenseAccountBalances = cogsExpenseTotals.AccountBalanceList,
-                SgaExpenseAccountBalances = sgaExpenseTotals.AccountBalanceList,
-                DepreciationAccountBalances = depreciationTotals.AccountBalanceList,
-                IncomeAccountBalances = incomeTotals.AccountBalanceList,
+                ExpenseAccountBalances =
+                    sgaTotals.AccountBalanceList.Concat(depreciationTotals.AccountBalanceList)
+                        .ToList(), // or keep separate if UI needs it
+                CogsExpenseAccountBalances = cogsTotals.AccountBalanceList,
+                IncomeAccountBalances = otherIncomeTotals.AccountBalanceList,
 
-                // Key line items in an income statement
+                // Key Totals for UI
+                RevenueBalanceTotal = revenueTotals.BalanceTotal,
+                ContraRevenueBalanceTotal = contraRevenueTotals.BalanceTotal,
+                CogsExpenseBalanceTotal = cogsTotals.BalanceTotal,
+                SgaExpenseBalanceTotal = sgaTotals.BalanceTotal,
+                DepreciationBalanceTotal = depreciationTotals.BalanceTotal,
+                IncomeBalanceTotal = otherIncomeTotals.BalanceTotal,
+
+                // Computed Lines (most important for display)
                 NetSales = netSales,
                 GrossMargin = grossMargin,
                 IncomeFromOperations = incomeFromOperations,
-                NetIncome = netIncome,
-
-                // Final numeric totals for each category
-                RevenueBalanceTotal = revenueTotals.BalanceTotal,
-                ContraRevenueBalanceTotal = contraRevenueTotals.BalanceTotal,
-                ExpenseBalanceTotal = expenseTotals.BalanceTotal,
-                CogsExpenseBalanceTotal = cogsExpenseTotals.BalanceTotal,
-                SgaExpenseBalanceTotal = sgaExpenseTotals.BalanceTotal,
-                DepreciationBalanceTotal = depreciationTotals.BalanceTotal,
-                IncomeBalanceTotal = incomeTotals.BalanceTotal
+                NetIncome = netIncome
             };
         }
         catch (Exception ex)
@@ -1196,18 +1180,18 @@ public class AcctgReportsService : IAcctgReportsService
 
         try
         {
+            // If user selected a month, override fromDate & thruDate
+            if (selectedMonth.HasValue && selectedMonth.Value > 0)
+            {
+                var selectedMonthDate = new DateTime(now.Year, selectedMonth.Value, 1);
+                fromDate = selectedMonthDate;
+                thruDate = selectedMonthDate.AddMonths(1).AddDays(-1);
+            }
+
             // A) Parameter checks
             if (!fromDate.HasValue || !thruDate.HasValue)
             {
                 throw new ArgumentException("Both fromDate and thruDate are required.");
-            }
-
-            // If user selected a month, override fromDate & thruDate
-            if (selectedMonth.HasValue)
-            {
-                var selectedMonthDate = new DateTime(now.Year, selectedMonth.Value + 1, 1);
-                fromDate = selectedMonthDate;
-                thruDate = selectedMonthDate.AddMonths(1).AddDays(-1);
             }
 
             if (string.IsNullOrEmpty(glFiscalTypeId))
@@ -1443,7 +1427,7 @@ public class AcctgReportsService : IAcctgReportsService
                 group ate by new
                 {
                     ate.GlAccountId,
-                    gla.AccountName,
+                    gla.AccountNameArabic,
                     gla.AccountCode,
                     ate.DebitCreditFlag
                 }
@@ -1451,7 +1435,7 @@ public class AcctgReportsService : IAcctgReportsService
                 select new
                 {
                     g.Key.GlAccountId,
-                    g.Key.AccountName,
+                    g.Key.AccountNameArabic,
                     g.Key.AccountCode,
                     g.Key.DebitCreditFlag,
                     Amount = g.Sum(x => x.Amount)
@@ -1470,7 +1454,7 @@ public class AcctgReportsService : IAcctgReportsService
                     {
                         GlAccountId = row.GlAccountId,
                         AccountCode = row.AccountCode,
-                        AccountName = row.AccountName,
+                        AccountName = row.AccountNameArabic,
                         D = 0,
                         C = 0,
                         Balance = 0
@@ -1716,20 +1700,11 @@ public class AcctgReportsService : IAcctgReportsService
     {
         try
         {
-            // ----------------------------------------------------
-            // (A) Validation checks
-            // ----------------------------------------------------
             if (string.IsNullOrEmpty(organizationPartyId))
-            {
-                throw new ArgumentException("organizationPartyId cannot be null or empty.");
-            }
-
+                throw new ArgumentException("organizationPartyId is required.");
             if (string.IsNullOrEmpty(glFiscalTypeId))
-            {
-                throw new ArgumentException("glFiscalTypeId is required (e.g. 'ACTUAL').");
-            }
+                throw new ArgumentException("glFiscalTypeId is required.");
 
-            // Prepare the result container
             var result = new IncomeStatementResult
             {
                 TotalNetIncome = 0m,
@@ -1740,178 +1715,128 @@ public class AcctgReportsService : IAcctgReportsService
                 }
             };
 
-            // (B) Fetch the descendant GL account classes for EXPENSE, REVENUE, INCOME
+            // Step 1: Get descendant classes (same as OFBiz)
             var expenseClasses = await GetDescendantGlAccountClassIds("EXPENSE");
             var revenueClasses = await GetDescendantGlAccountClassIds("REVENUE");
             var incomeClasses = await GetDescendantGlAccountClassIds("INCOME");
 
-            // (C) Setup the party IDs (org + children)
             var partyIds = await GetAssociatedPartyIdsByRelationshipType(organizationPartyId, "GROUP_ROLLUP");
             if (!partyIds.Contains(organizationPartyId))
-            {
                 partyIds.Add(organizationPartyId);
-            }
 
-            // (D) Build the query that replicates GlAccOrgAndAcctgTransAndEntry:
-            //     Join GlAccountOrganization (GAO), AcctgTransEntry (ATE), AcctgTrans (ATR).
-            //     Group by GAO.glAccountId, ATE.debitCreditFlag, ATR.isPosted, ATR.transactionDate, etc.
-            //     We'll do a simpler approach: we won't group in EF first, 
-            //     but we WILL filter exactly how the script does 
-            //     and sum the amounts or transform them after we gather the rows.
-            //
-            // Conditions from minilang:
-            //    - organizationPartyId in (partyIds)
-            //    - isPosted == Y
-            //    - glFiscalTypeId == input
-            //    - transactionDate >= fromDate, < thruDate
-            //    - acctgTransTypeId != PERIOD_CLOSING
-            //    - glAccountClassId in (expense, revenue, income)
-            // We can get glAccountClassId from "GlAccount" table, 
-            // so let's just join that as well.
-
-            // Build a single EF query with multiple joins:
-
-            var validClasses = expenseClasses.Concat(revenueClasses).Concat(incomeClasses).Distinct().ToList();
-
-            var query = from gao in _context.GlAccountOrganizations
-                join ate in _context.AcctgTransEntries
-                    on new { gao.GlAccountId, gao.OrganizationPartyId }
-                    equals new { ate.GlAccountId, ate.OrganizationPartyId }
-                join atr in _context.AcctgTrans
-                    on ate.AcctgTransId equals atr.AcctgTransId
-                join gla in _context.GlAccounts
-                    on ate.GlAccountId equals gla.GlAccountId
+            // Step 2: Main query - Get all relevant posted transactions (matches OFBiz view entity logic)
+            var rawEntries = await (
+                from ate in _context.AcctgTransEntries
+                join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
+                join gla in _context.GlAccounts on ate.GlAccountId equals gla.GlAccountId
                 where partyIds.Contains(ate.OrganizationPartyId)
-                      && atr.IsPosted == "Y" // because "Y" => true
-                      && atr.GlFiscalTypeId == glFiscalTypeId
-                      && atr.AcctgTransTypeId != "PERIOD_CLOSING"
-                      && atr.TransactionDate >= fromDate
-                      && atr.TransactionDate < thruDate
-                      && validClasses.Contains(gla.GlAccountClassId)
-                // We'll order by AcctgTransId, AcctgTransEntrySeqId if you want
-                // .OrderBy(...)
+                      && act.IsPosted == "Y"
+                      && act.GlFiscalTypeId == glFiscalTypeId
+                      && act.AcctgTransTypeId != "PERIOD_CLOSING"
+                      && act.TransactionDate >= fromDate
+                      && act.TransactionDate < thruDate
+                      && (expenseClasses.Contains(gla.GlAccountClassId) ||
+                          revenueClasses.Contains(gla.GlAccountClassId) ||
+                          incomeClasses.Contains(gla.GlAccountClassId))
+                orderby act.AcctgTransId, ate.AcctgTransEntrySeqId
                 select new
                 {
                     ate.GlAccountId,
                     ate.DebitCreditFlag,
                     Amount = ate.Amount,
-                    // We'll need to figure out if the account is "credit" or "debit" 
-                    // or "expense" based on its class. 
-                    // We'll do that after we have the 'gla.GlAccountClassId' 
-                    GlAccountClassId = gla.GlAccountClassId,
                     gla.AccountCode,
-                    gla.AccountName,
-                    atr.TransactionDate
-                };
+                    gla.AccountNameArabic,
+                    GlAccountClassId = gla.GlAccountClassId
+                }).ToListAsync();
 
-            // Execute the query
-            var rawEntries = await query.ToListAsync();
-
-            // (E) We'll interpret each row, flipping amounts if needed:
-            //  - If "debitCreditFlag == D" but account is "credit-based" => flip sign
-            //  - If "debitCreditFlag == C" but account is "debit-based" => flip sign
-            //  - If it's an "expense" account => flip sign again
-            // Then we'll sum up net income and separate them into "expense" vs. "profit" sets.
-
+            // Step 3: Process each entry with proper sign logic (Most critical part - matches OFBiz exactly)
             decimal totalNetIncome = 0m;
-            var expenseTotals = new List<GlAccountTotal>();
-            var profitTotals = new List<GlAccountTotal>();
+
+            var expenseMap = new Dictionary<string, decimal>(); // glAccountId -> total
+            var profitMap = new Dictionary<string, decimal>();
 
             foreach (var row in rawEntries)
             {
-                // 1) Determine if the account is credit, debit, or expense
-                bool isExpense = expenseClasses.Contains(row.GlAccountClassId);
-                bool isCredit = (revenueClasses.Contains(row.GlAccountClassId) ||
-                                 incomeClasses.Contains(row.GlAccountClassId));
-                bool isDebit = !isCredit && !isExpense;
-                // (Note: if it's not revenue/income or expense, we treat it as debit-based by default,
-                //  but your classification might differ.)
+                decimal amount = (decimal)row.Amount;
 
-                // 2) Flip sign if (D + credit) or (C + debit)
-                decimal adjustedAmount = (decimal)row.Amount;
-                if ((row.DebitCreditFlag == "D" && isCredit)
-                    || (row.DebitCreditFlag == "C" && isDebit))
+                // Determine account nature (this replaces the OFBiz UtilAccounting calls)
+                bool isExpense = expenseClasses.Contains(row.GlAccountClassId);
+                bool isCreditAccount = revenueClasses.Contains(row.GlAccountClassId) ||
+                                       incomeClasses.Contains(row.GlAccountClassId);
+                bool isDebitAccount = !isCreditAccount && !isExpense;
+
+                // === Sign Flipping Logic (Exact equivalent of OFBiz) ===
+                // If Debit on Credit account OR Credit on Debit account → negate
+                if ((row.DebitCreditFlag == "D" && isCreditAccount) ||
+                    (row.DebitCreditFlag == "C" && isDebitAccount))
                 {
-                    adjustedAmount = -adjustedAmount;
+                    amount = -amount;
                 }
 
-                // 3) If expense, flip sign again
+                // If it's an Expense account → negate again
                 if (isExpense)
                 {
-                    adjustedAmount = -adjustedAmount;
+                    amount = -amount;
                 }
 
-                // 4) Add to net income
-                totalNetIncome += adjustedAmount;
+                totalNetIncome += amount;
 
-                // 5) Put in expense or profit list
-                var targetList = isExpense ? expenseTotals : profitTotals;
+                // Add to correct map
+                var targetMap = isExpense ? expenseMap : profitMap;
 
-                // See if we already have an entry for this glAccountId
-                var existing = targetList.FirstOrDefault(e => e.GlAccountId == row.GlAccountId);
-                if (existing == null)
-                {
-                    existing = new GlAccountTotal
-                    {
-                        GlAccountId = row.GlAccountId,
-                        TotalAmount = 0m,
-                        TotalOfCurrentFiscalPeriod = 0m,
-                        AccountCode = row.AccountCode,
-                        AccountName = row.AccountName
-                    };
-                    targetList.Add(existing);
-                }
+                if (!targetMap.ContainsKey(row.GlAccountId))
+                    targetMap[row.GlAccountId] = 0m;
 
-                existing.TotalAmount += adjustedAmount;
+                targetMap[row.GlAccountId] += amount;
             }
 
-            // (F) For each GL account in expenseTotals and profitTotals,
-            //     call "getAcctgTransEntriesAndTransTotal" to get the 
-            //     current fiscal period (debitTotal - creditTotal).
-            // The script sets customTimePeriodStartDate = customTimePeriod.fromDate, 
-            // but let's assume it's 'fromDate' or something similar 
-            // (depending on your actual "findCustomTimePeriods" logic).
-            var customTimePeriodStartDate = fromDate; // or a real time period start date
+            // Step 4: Get Current Fiscal Period totals for each account (matches OFBiz second loop)
+            var customTimePeriodStartDate = fromDate; // We can improve this later if needed
             var customTimePeriodEndDate = thruDate;
 
-            // Example usage inside your "PrepareIncomeStatement" logic (or similar):
-            foreach (var acct in expenseTotals)
-            {
-                // Pass isPosted = "Y" if we only want posted, 
-                // or isPosted = null if you want to ignore that filter.
-                var (debitTotal, creditTotal) = await GetAcctgTransEntriesAndTransTotal(
-                    acct.GlAccountId,
-                    organizationPartyId,
-                    "Y",
-                    customTimePeriodStartDate,
-                    customTimePeriodEndDate
-                );
-                acct.TotalOfCurrentFiscalPeriod = debitTotal - creditTotal;
-            }
-
-            foreach (var acct in profitTotals)
+            // Build Income list
+            foreach (var kvp in profitMap)
             {
                 var (debitTotal, creditTotal) = await GetAcctgTransEntriesAndTransTotal(
-                    acct.GlAccountId,
-                    organizationPartyId,
-                    /* isPosted */ "Y", // for example
-                    customTimePeriodStartDate,
-                    customTimePeriodEndDate
-                );
-                acct.TotalOfCurrentFiscalPeriod = debitTotal - creditTotal;
+                    organizationPartyId, kvp.Key, "Y", customTimePeriodStartDate, customTimePeriodEndDate);
+
+                var totalOfCurrentFiscalPeriod = debitTotal - creditTotal;
+
+                result.GlAccountTotalsMap.Income.Add(new GlAccountTotal
+                {
+                    GlAccountId = kvp.Key,
+                    TotalAmount = kvp.Value,
+                    TotalOfCurrentFiscalPeriod = totalOfCurrentFiscalPeriod,
+                    AccountCode = rawEntries.FirstOrDefault(x => x.GlAccountId == kvp.Key)?.AccountCode ?? "",
+                    AccountName = rawEntries.FirstOrDefault(x => x.GlAccountId == kvp.Key)?.AccountNameArabic ?? ""
+                });
             }
 
-            // (G) Construct final result
+            // Build Expense list
+            foreach (var kvp in expenseMap)
+            {
+                var (debitTotal, creditTotal) = await GetAcctgTransEntriesAndTransTotal(
+                    organizationPartyId, kvp.Key, "Y", customTimePeriodStartDate, customTimePeriodEndDate);
+
+                var totalOfCurrentFiscalPeriod = debitTotal - creditTotal;
+
+                result.GlAccountTotalsMap.Expenses.Add(new GlAccountTotal
+                {
+                    GlAccountId = kvp.Key,
+                    TotalAmount = kvp.Value,
+                    TotalOfCurrentFiscalPeriod = totalOfCurrentFiscalPeriod,
+                    AccountCode = rawEntries.FirstOrDefault(x => x.GlAccountId == kvp.Key)?.AccountCode ?? "",
+                    AccountName = rawEntries.FirstOrDefault(x => x.GlAccountId == kvp.Key)?.AccountNameArabic ?? ""
+                });
+            }
+
             result.TotalNetIncome = totalNetIncome;
-            result.GlAccountTotalsMap.Income = profitTotals;
-            result.GlAccountTotalsMap.Expenses = expenseTotals;
 
             return result;
         }
         catch (Exception ex)
         {
-            // If anything fails (DB access, logic error, etc.), we handle or rethrow
-            throw new Exception("Error in PrepareIncomeStatement (underlying tables approach)", ex);
+            throw new Exception("Error in PrepareIncomeStatement", ex);
         }
     }
 
@@ -2450,7 +2375,7 @@ public class AcctgReportsService : IAcctgReportsService
 
         var customTimePeriodId = lastClosedTimePeriod.CustomTimePeriodId;
         var periodFromDate = lastClosedTimePeriod.FromDate;
-        
+
         // Query glAccountHistory + glAccount 
         var rows = await (
             from glah in _context.GlAccountHistories

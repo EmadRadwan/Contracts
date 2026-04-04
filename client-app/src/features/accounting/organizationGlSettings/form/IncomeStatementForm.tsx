@@ -1,11 +1,9 @@
 import { Button, Grid } from '@mui/material';
 import { Field, Form, FormElement } from '@progress/kendo-react-form';
 import React from 'react'
-import { MemoizedFormDropDownList } from '../../../../app/common/form/MemoizedFormDropDownList';
 import FormDatePicker from '../../../../app/common/form/FormDatePicker';
 import { useTranslationHelper } from '../../../../app/hooks/useTranslationHelper';
 import { MemoizedFormDropDownList2 } from '../../../../app/common/form/MemoizedFormDropDownList2';
-import { requiredValidator } from '../../../../app/common/form/Validators';
 
 const months = [
     { text: "", month: null },
@@ -30,113 +28,98 @@ interface IncomeStatementFormProps {
 const IncomeStatementForm = ({onSubmit}: IncomeStatementFormProps) => {
   const {getTranslatedLabel} = useTranslationHelper()
   const localizationKey = "accounting.orgGL.reports.income-statement.form"
-    return (
-    <Form
-      onSubmit={(values) => onSubmit(values)}
-      initialValues={{glFiscalTypeId: "ACTUAL", thruDate: new Date()}}
-      render={(formRenderProps) => (
-        <FormElement>
-          <fieldset className={"k-form-fieldset"}>
-            <Grid container spacing={2} alignItems={"flex-end"}>
-              <Grid container item xs={12} spacing={2}>
-                <Grid item xs={3}>
-                  <Field
-                    name={"selectedMonth"}
-                    id={"selectedMonth"}
-                    label={getTranslatedLabel(`${localizationKey}.month`, "Month")}
-                    component={MemoizedFormDropDownList2}
-                    data={months}
-                    textField="text"
-                    dataItemKey="month"
-                    onChange={(e) => {
-                        formRenderProps.onChange("fromDate", {
-                          value: null,
-                        });
-                        formRenderProps.onChange("thruDate", {
-                          value: null,
-                        });
-                      }
-                    }
-                  />
-                </Grid>
-                <Grid item xs={3}>
-                  <Field
-                    name={"glFiscalTypeId"}
-                    id={"glFiscalTypeId"}
-                    label={getTranslatedLabel(`${localizationKey}.fiscalType`, "GL Fiscal Type *")}
-                    component={MemoizedFormDropDownList}
-                    data={[
-                      { text: "Actual", glFiscalTypeId: "ACTUAL" },
-                      { text: "Budget", glFiscalTypeId: "BUDGET" },
-                      { text: "Plan", glFiscalTypeId: "PLAN" },
-                      { text: "Scenario", glFiscalTypeId: "SCENARIO" },
-                      { text: "Forecast", glFiscalTypeId: "FORECAST" },
-                    ]}
-                    validator={requiredValidator}
-                    textField="text"
-                    dataItemKey="glFiscalTypeId"
-                  />
-                </Grid>
-                <Grid item xs={3}>
-                  <Field
-                    name={"fromDate"}
-                    id={"fromDate"}
-                    label={getTranslatedLabel(`${localizationKey}.fromDate`, "From Date")}
-                    component={FormDatePicker}
-                    validator={(value) => {
-                      const thruDate = formRenderProps.valueGetter("thruDate");
-                      if (
-                        thruDate &&
-                        value &&
-                        new Date(value) > new Date(thruDate)
-                      ) {
-                        return "From Date cannot be after Thru Date";
-                      }
-                      return "";
-                    }}
-                    onChange={(e) => {
-                      formRenderProps.onChange("month", { value: null });
-                      formRenderProps.onChange("fromDate", e);
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={3}>
-                  <Field
-                    name={"thruDate"}
-                    id={"thruDate"}
-                    label={getTranslatedLabel(`${localizationKey}.thruDate`, "Thru Date")}
-                    component={FormDatePicker}
-                    validator={(value) => {
-                      const fromDate = formRenderProps.valueGetter("fromDate");
-                      if (
-                        fromDate &&
-                        value &&
-                        new Date(value) < new Date(fromDate)
-                      ) {
-                        return "Thru Date cannot be before From Date";
-                      }
-                      return "";
-                    }}
-                    onChange={(e) => {
-                      formRenderProps.onChange("month", { value: null });
-                      formRenderProps.onChange("thruDate", e);
-                    }}
-                  />
-                </Grid>
-              </Grid>
-            </Grid>
-            <Grid container item xs={12} spacing={2} mt={2}>
-              <Grid item xs={12}>
-                <Button variant="contained" type="submit" color="success">
-                  {getTranslatedLabel("general.generate", "Generate Report")}
-                </Button>
-              </Grid>
-            </Grid>
-          </fieldset>
-        </FormElement>
-      )}
-    />
-  )
-}
 
+  const now = new Date();
+  const firstDayOfYear = new Date(now.getFullYear(), 0, 1);
+
+    return (
+        <Form
+            initialValues={{
+                glFiscalTypeId: "ACTUAL",
+                fromDate: firstDayOfYear,
+                thruDate: now,
+                selectedMonth: null,   // explicitly add this
+            }}
+            ignoreModified={true}
+            onSubmit={(values) => onSubmit(values)}   // ← Use onSubmit here
+            render={(formRenderProps) => (
+                <FormElement>
+                    <fieldset className={"k-form-fieldset"}>
+                        <Grid container spacing={2} alignItems={"flex-end"}>
+                            <Grid container item xs={12} spacing={2}>
+                                <Grid item xs={4}>
+                                    <Field
+                                        name={"selectedMonth"}
+                                        id={"selectedMonth"}
+                                        label={getTranslatedLabel(`${localizationKey}.month`, "Month")}
+                                        component={MemoizedFormDropDownList2}
+                                        data={months}
+                                        textField="text"
+                                        dataItemKey="month"
+                                        onChange={(e) => {
+                                            formRenderProps.onChange("fromDate", { value: null });
+                                            formRenderProps.onChange("thruDate", { value: null });
+                                            formRenderProps.onChange("selectedMonth", e);
+                                        }}
+                                    />
+                                </Grid>
+                                <Grid item xs={4}>
+                                    <Field
+                                        name={"fromDate"}
+                                        id={"fromDate"}
+                                        label={getTranslatedLabel(`${localizationKey}.fromDate`, "From Date")}
+                                        component={FormDatePicker}
+                                        validator={(value) => {
+                                            const thruDate = formRenderProps.valueGetter("thruDate");
+                                            if (thruDate && value && new Date(value) > new Date(thruDate)) {
+                                                return "From Date cannot be after Thru Date";
+                                            }
+                                            return "";
+                                        }}
+                                        onChange={(e) => {
+                                            formRenderProps.onChange("selectedMonth", { value: null });
+                                            formRenderProps.onChange("fromDate", e);
+                                        }}
+                                    />
+                                </Grid>
+                                <Grid item xs={4}>
+                                    <Field
+                                        name={"thruDate"}
+                                        id={"thruDate"}
+                                        label={getTranslatedLabel(`${localizationKey}.thruDate`, "Thru Date")}
+                                        component={FormDatePicker}
+                                        validator={(value) => {
+                                            const fromDate = formRenderProps.valueGetter("fromDate");
+                                            if (fromDate && value && new Date(value) < new Date(fromDate)) {
+                                                return "Thru Date cannot be before From Date";
+                                            }
+                                            return "";
+                                        }}
+                                        onChange={(e) => {
+                                            formRenderProps.onChange("selectedMonth", { value: null });
+                                            formRenderProps.onChange("thruDate", e);
+                                        }}
+                                    />
+                                </Grid>
+                            </Grid>
+                        </Grid>
+
+                        <Grid container item xs={12} spacing={2} mt={2}>
+                            <Grid item xs={12}>
+                                <Button
+                                    variant="contained"
+                                    type="submit"           // Important: keep type="submit"
+                                    color="success"
+                                    disabled={!formRenderProps.allowSubmit}   // Optional but recommended
+                                >
+                                    {getTranslatedLabel("general.generate", "Generate Report")}
+                                </Button>
+                            </Grid>
+                        </Grid>
+                    </fieldset>
+                </FormElement>
+            )}
+        />
+    );
+};
 export default IncomeStatementForm

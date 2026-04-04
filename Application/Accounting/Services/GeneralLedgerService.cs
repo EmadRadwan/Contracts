@@ -56,6 +56,7 @@ public interface IGeneralLedgerService
     Task<string> CreatePostdatedChequeIssuedAccountingTransaction(string paymentId);
     Task<string> CreateAccountingTransactionForEmployeeAdvance(string paymentId);
     Task<string> CreateAcctgTransForPayrollInvoice(string invoiceId);
+    Task<bool> DeletePostdatedChequeAccountingTransaction(string paymentId);
 }
 
 public class GeneralLedgerService : IGeneralLedgerService
@@ -5911,5 +5912,27 @@ public class GeneralLedgerService : IGeneralLedgerService
         }
 
         return acctgTransId;
+    }
+    
+    public async Task<bool> DeletePostdatedChequeAccountingTransaction(string paymentId)
+    {
+        var existingTrans = await _context.AcctgTrans
+            .Include(t => t.AcctgTransEntries)
+            .FirstOrDefaultAsync(t => t.PaymentId == paymentId && 
+                                      t.AcctgTransTypeId == "CHECK_ISSUED");
+
+        if (existingTrans == null)
+            return false;
+
+        // Option A: Hard delete (common if transaction is not yet posted/final)
+        _context.AcctgTransEntries.RemoveRange(existingTrans.AcctgTransEntries);
+        _context.AcctgTrans.Remove(existingTrans);
+
+        // Option B (safer audit trail): Reverse it instead of deleting
+        // You would create a reversing transaction with opposite D/C and negative amounts
+        // or set IsPosted = "N" + add a reversal flag, depending on your system's policy.
+
+        _logger.LogInformation("Deleted existing CHECK_ISSUED transaction for payment {PaymentId}", paymentId);
+        return true;
     }
 }

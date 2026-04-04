@@ -1664,15 +1664,21 @@
         },
         "income-statement": {
           "list": {
-            "title": "بيان الدخل لـ: ",
+            "title": "قائمة الدخل لـ: ",
             "loading": "جارٍ تحميل بيانات التقرير...",
             "code": "رمز الحساب",
             "name": "اسم الحساب",
-            "openingD": "الرصيد الافتتاحي (مدين)",
-            "openingC": "الرصيد الافتتاحي (دائن)",
-            "debit": "مدين",
-            "credit": "دائن",
-            "balance": "الرصيد"
+            "balance": "الرصيد",
+            "revenues": "الإيرادات",
+            "cost-of-goods-sold": "تكلفة البضاعة المباعة",
+            "expenses": "المصروفات",
+            "income": "إيرادات أخرى",
+            "net-sales": "صافي المبيعات",
+            "gross-margin": "مجمل الربح",
+            "operating-expenses": "المصروفات التشغيلية",
+            "income-from-operations": "الدخل من العمليات",
+            "net-income": "صافي الدخل",
+            "totals": "الإجماليات"
           },
           "form": {
             "month": "الشهر",

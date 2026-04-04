@@ -1,16 +1,13 @@
+using Application.Accounting.Reports;
 using MediatR;
 using Persistence;
 using AutoMapper;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Application.Accounting.Services;
-using Application.Shipments.Reports;
 
 
 
 
-namespace Application.Shipments.OrganizationGlSettings
+namespace Application.Accounting.OrganizationGlSettings
 {
     public class GetIncomeStatementReport
     {

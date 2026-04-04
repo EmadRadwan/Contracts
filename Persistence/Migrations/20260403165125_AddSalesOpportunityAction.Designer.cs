@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence;
 
@@ -10,9 +11,11 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20260403165125_AddSalesOpportunityAction")]
+    partial class AddSalesOpportunityAction
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -25961,11 +25964,6 @@ namespace Persistence.Migrations
                         .HasColumnType("datetime")
                         .HasColumnName("LAST_UPDATED_TX_STAMP");
 
-                    b.Property<string>("LeadTemperatureId")
-                        .HasMaxLength(1)
-                        .HasColumnType("varchar(1)")
-                        .HasColumnName("LEAD_TEMPRATURE_ID");
-
                     b.Property<string>("MainRole")
                         .HasColumnType("longtext")
                         .HasColumnName("MAIN_ROLE");
@@ -26003,8 +26001,6 @@ namespace Persistence.Migrations
                     b.HasIndex(new[] { "CreatedByUserLogin" }, "PARTY_CUL");
 
                     b.HasIndex(new[] { "DataSourceId" }, "PARTY_DATSRC");
-
-                    b.HasIndex(new[] { "LeadTemperatureId" }, "PARTY_LEADTEMP");
 
                     b.HasIndex(new[] { "LastModifiedByUserLogin" }, "PARTY_LMCUL");
 
