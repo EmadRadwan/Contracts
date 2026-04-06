@@ -61,4 +61,5 @@ public class PartyDto2
     public string? ReportingToPartyId { get; set; }
     public string? GlAccountIdAdvancedPayment { get; set; }
     public string? PreferredPayrollPaymentMethodId { get; set; }
+    public string? LeadTemperatureId { get; set; }
 }

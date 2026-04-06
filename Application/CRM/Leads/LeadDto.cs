@@ -47,6 +47,7 @@ public class LeadDto
     // Organization (if lead belongs to a company)
     public string? OrganizationPartyId { get; set; }
     public string? OrganizationName { get; set; }
+    public string? LeadTemperatureId { get; set; }
 }
 
 /// <summary>

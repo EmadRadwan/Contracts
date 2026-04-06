@@ -1,38 +1,54 @@
 import React, { useState } from 'react';
-import { Grid, Paper, Box, Typography, IconButton } from '@mui/material';
-import Button from '@mui/material/Button';
+import {
+    Grid,
+    Paper,
+    Box,
+    Typography,
+    IconButton,
+    Button,
+    Divider,
+    Alert,
+    Radio,
+    RadioGroup,
+    FormControlLabel,
+    FormControl,
+    FormLabel,
+} from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import SaveIcon from '@mui/icons-material/Save';
 import { Field, Form, FormElement } from '@progress/kendo-react-form';
 import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
+
 import {
     useCreateLeadMutation,
     useUpdateLeadMutation,
     useFetchDataSourcesQuery,
-    useFetchCountriesQuery
+    useFetchCountriesQuery,
 } from '../../../app/store/configureStore';
+
 import { Lead } from '../models/lead';
 import LoadingComponent from '../../../app/layout/LoadingComponent';
 import FormInput from '../../../app/common/form/FormInput';
 import { MemoizedFormDropDownList } from '../../../app/common/form/MemoizedFormDropDownList';
 import { requiredValidator } from '../../../app/common/form/Validators';
+import CRMMenu from '../menu/CRMMenu';
 
 interface LeadFormProps {
     lead?: Lead;
-    editMode: 1 | 2;
+    editMode: 1 | 2; // 1 = Create, 2 = Edit
     onClose: () => void;
     onSuccess: () => void;
 }
 
-const LeadForm: React.FC<LeadFormProps> = ({ lead, editMode, onClose, onSuccess }) => {
+const LeadForm: React.FC<LeadFormProps> = ({ lead, editMode, onClose, onSuccess }: LeadFormProps) => {
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = 'crm.leads.form';
 
     const [createLead, { isLoading: creating }] = useCreateLeadMutation();
     const [updateLead, { isLoading: updating }] = useUpdateLeadMutation();
 
-    // Fetch dropdown data
-    const { data: dataSources, isLoading: loadingDataSources } = useFetchDataSourcesQuery();
-    const { data: countries, isLoading: loadingCountries } = useFetchCountriesQuery({});
+    const { data: dataSources = [], isLoading: loadingDataSources } = useFetchDataSourcesQuery();
+    const { data: countries = [], isLoading: loadingCountries } = useFetchCountriesQuery({});
 
     const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -40,208 +56,274 @@ const LeadForm: React.FC<LeadFormProps> = ({ lead, editMode, onClose, onSuccess 
     const isLoading = loadingDataSources || loadingCountries;
 
     const initialValues: Partial<Lead> = editMode === 2 && lead
-        ? { ...lead }
+        ? { ...lead, geoId: lead.countryGeoId, mobileContactNumber: lead.mobilePhone, infoString: lead.email }
         : {
-            fullName: '',
-            email: '',
-            phone: '',
-            mobilePhone: '',
+            firstName: '',
+            middleName: '',
+            infoString: '',
+            mobileContactNumber: '',
             address1: '',
             address2: '',
             city: '',
-            postalCode: '',
-            countryGeoId: '',
-            dataSourceId: ''
+            geoId: '',
+            dataSourceId: '',
+            leadTemperatureId: 'F',
         };
-    
-    console.log('lead', lead)
 
     const handleSubmit = async (values: any) => {
         setSubmitError(null);
 
-        const leadData: Lead = {
-            ...values
-        };
-
         try {
             if (editMode === 2 && lead?.partyId) {
-                await updateLead({
-                    id: lead.partyId,
-                    lead: leadData
-                }).unwrap();
+                const updatePayload = {
+                    ...values,
+                    email: values.infoString,
+                    mobilePhone: values.mobileContactNumber,
+                    countryGeoId: values.geoId,
+                    lastName: values.middleName,
+                    leadTemperatureId: values.leadTemperatureId
+                }
+                await updateLead({ id: lead.partyId, lead: updatePayload }).unwrap();
             } else {
-                await createLead(leadData).unwrap();
+                await createLead(values).unwrap();
             }
+
             onSuccess();
             onClose();
         } catch (error: any) {
             console.error('Failed to save lead:', error);
-            setSubmitError(error?.data?.title || getTranslatedLabel(`${localizationKey}.saveError`, 'Failed to save lead'));
+            setSubmitError(
+                error?.data?.title ||
+                getTranslatedLabel(`${localizationKey}.saveError`, 'Failed to save lead')
+            );
         }
     };
 
     if (isLoading) {
-        return <LoadingComponent message={getTranslatedLabel(`${localizationKey}.loading`, 'Loading...')} />;
+        return <LoadingComponent message={getTranslatedLabel(`${localizationKey}.loading`, 'Loading form...')} />;
     }
 
     return (
-        <Paper elevation={5} className="div-container-withBorderCurved" sx={{ p: 3, mt: 2 }}>
-            {/* Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h6">
-                    {editMode === 2
-                        ? getTranslatedLabel(`${localizationKey}.editTitle`, 'Edit Lead')
-                        : getTranslatedLabel(`${localizationKey}.createTitle`, 'Create New Lead')
-                    }
-                </Typography>
-                <IconButton onClick={onClose} size="small">
-                    <CloseIcon />
-                </IconButton>
-            </Box>
+        <>
+        <CRMMenu />
+            <Paper
+                elevation={6}
+                sx={{
+                    borderRadius: 3,
+                    overflow: 'hidden',
+                    backgroundColor: 'background.paper',
+                }}
+            >
+                {/* Modern Header */}
+                <Box
+                    sx={{
+                        px: 3,
+                        py: 2.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                    }}
+                >
+                    <Typography variant="h6" fontWeight={600}>
+                        {editMode === 2
+                            ? getTranslatedLabel(`${localizationKey}.editTitle`, 'Edit Lead')
+                            : getTranslatedLabel(`${localizationKey}.createTitle`, 'Create New Lead')}
+                    </Typography>
+    
+                    <IconButton onClick={onClose} sx={{ color: 'inherit' }} size="small">
+                        <CloseIcon />
+                    </IconButton>
+                </Box>
+    
+                <Box sx={{ p: 4 }}>
+                    <Form
+                        initialValues={initialValues}
+                        onSubmit={handleSubmit}
+                        render={(formRenderProps) => (
+                            <FormElement>
+                                <Grid container spacing={3.5}>
+                                    {/* Full Name */}
+                                    <Grid item xs={6}>
+                                        <Field
+                                            name="firstName"
+                                            label={getTranslatedLabel(`${localizationKey}.firstName`, 'First Name')}
+                                            component={FormInput}
+                                            validator={requiredValidator}
+                                            placeholder="Enter first name"
+                                        />
+                                    </Grid>
 
-            <Form
-                initialValues={initialValues}
-                onSubmit={handleSubmit}
-                render={(formRenderProps) => (
-                    <FormElement>
-                        <fieldset className="k-form-fieldset">
-                            <Grid container spacing={3}>
-                                {/* Row 1: Full Name */}
-                                <Grid item xs={12} md={12}>
-                                    <Field
-                                        id="fullName"
-                                        name="fullName"
-                                        label={getTranslatedLabel(`${localizationKey}.firstName`, 'Full Name *')}
-                                        component={FormInput}
-                                        validator={requiredValidator}
-                                    />
-                                </Grid>
+                                    <Grid item xs={6}>
+                                        <Field
+                                            name="middleName"
+                                            label={getTranslatedLabel(`${localizationKey}.middleName`, 'Last Name')}
+                                            component={FormInput}
+                                            validator={requiredValidator}
+                                            placeholder="Enter last name"
+                                        />
+                                    </Grid>
+    
+                                    {/* Contact Information */}
+                                    <Grid item xs={12}>
+                                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                            {getTranslatedLabel(`${localizationKey}.contactInformation`, 'Contact Information')}
+                                        </Typography>
+                                        <Divider sx={{ mb: 2 }} />
+                                    </Grid>
+    
+                                    <Grid item xs={6}>
+                                        <Field
+                                            name="infoString"
+                                            label={getTranslatedLabel(`${localizationKey}.email`, 'Email Address')}
+                                            component={FormInput}
+                                            type="email"
+                                            placeholder="example@company.com"
+                                        />
+                                    </Grid>
+    
+                                    <Grid item xs={6} >
+                                        <Field
+                                            name="mobileContactNumber"
+                                            label={getTranslatedLabel(`${localizationKey}.mobile`, 'Mobile')}
+                                            component={FormInput}
+                                            placeholder="+20 987 654 321"
+                                        />
+                                    </Grid>
 
-                                {/* Row 2: Email and Phones */}
-                                <Grid item xs={12} md={4}>
-                                    <Field
-                                        id="email"
-                                        name="email"
-                                        label={getTranslatedLabel(`${localizationKey}.email`, 'Email')}
-                                        component={FormInput}
-                                        type="email"
-                                    />
-                                </Grid>
-                                <Grid item xs={12} md={4}>
-                                    <Field
-                                        id="phone"
-                                        name="phone"
-                                        label={getTranslatedLabel(`${localizationKey}.phone`, 'Phone')}
-                                        component={FormInput}
-                                    />
-                                </Grid>
-                                <Grid item xs={12} md={4}>
-                                    <Field
-                                        id="mobilePhone"
-                                        name="mobilePhone"
-                                        label={getTranslatedLabel(`${localizationKey}.mobile`, 'Mobile')}
-                                        component={FormInput}
-                                    />
-                                </Grid>
+                                     {/* Lead Source */}
+                                    <Grid item xs={6}>
+                                        <Field
+                                            name="dataSourceId"
+                                            label={getTranslatedLabel(`${localizationKey}.source`, 'Lead Source')}
+                                            component={MemoizedFormDropDownList}
+                                            dataItemKey="dataSourceId"
+                                            textField="description"
+                                            validator={requiredValidator}
+                                            data={dataSources || []}
+                                            placeholder="How did you find this lead?"
+                                        />
+                                    </Grid>
 
-                                {/* Row 3: Address */}
-                                <Grid item xs={12} md={6}>
-                                    <Field
-                                        id="address1"
-                                        name="address1"
-                                        label={getTranslatedLabel(`${localizationKey}.address1`, 'Address Line 1')}
-                                        component={FormInput}
-                                    />
+                                    {/* Lead Temperature */}
+                                    <Grid item xs={4}>
+                                        <FormControl component="fieldset">
+                                            <FormLabel component="legend" sx={{ mb: 1, color: 'text.primary', fontWeight: 500 }}>
+                                                {getTranslatedLabel(`${localizationKey}.leadTemperature`, 'Lead Temperature')}
+                                            </FormLabel>
+                                            <RadioGroup
+                                                row
+                                                name="leadTemperatureId"
+                                                defaultValue={initialValues.leadTemperatureId || 'F'}
+                                                onChange={(e) => {
+                                                    // Kendo Form doesn't auto-update radio, so we use formRenderProps.onChange
+                                                    formRenderProps.onChange('leadTemperatureId', {
+                                                        value: e.target.value
+                                                    });
+                                                }}
+                                            >
+                                                <FormControlLabel
+                                                    value="C"
+                                                    control={<Radio />}
+                                                    label={getTranslatedLabel(`${localizationKey}.cold`, 'Cold')}
+                                                />
+                                                <FormControlLabel
+                                                    value="F"
+                                                    control={<Radio />}
+                                                    label={getTranslatedLabel(`${localizationKey}.fresh`, 'Fresh')}
+                                                />
+                                            </RadioGroup>
+                                        </FormControl>
+                                    </Grid>
+    
+                                    {/* Address Section */}
+                                    <Grid item xs={12}>
+                                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                            {getTranslatedLabel(`${localizationKey}.addressDetails`, 'Address Details')}
+                                        </Typography>
+                                        <Divider sx={{ mb: 2 }} />
+                                    </Grid>
+    
+                                    <Grid item xs={12}>
+                                        <Field
+                                            name="address1"
+                                            label={getTranslatedLabel(`${localizationKey}.address1`, 'Address Line 1')}
+                                            component={FormInput}
+                                            placeholder="Street name and building number"
+                                        />
+                                    </Grid>
+    
+                                    <Grid item xs={12}>
+                                        <Field
+                                            name="address2"
+                                            label={getTranslatedLabel(`${localizationKey}.address2`, 'Address Line 2 (Optional)')}
+                                            component={FormInput}
+                                            placeholder="Apartment, floor, etc."
+                                        />
+                                    </Grid>
+    
+                                    <Grid item xs={6}>
+                                        <Field
+                                            name="city"
+                                            label={getTranslatedLabel(`${localizationKey}.city`, 'City')}
+                                            component={FormInput}
+                                            placeholder="Cairo"
+                                        />
+                                    </Grid>
+    
+                                    <Grid item xs={6}>
+                                        <Field
+                                            name="geoId"
+                                            label={getTranslatedLabel(`${localizationKey}.country`, 'Country')}
+                                            component={MemoizedFormDropDownList}
+                                            dataItemKey="geoId"
+                                            textField="geoName"
+                                            data={countries || []}
+                                            placeholder="Select country"
+                                        />
+                                    </Grid>
+    
+                                   
                                 </Grid>
-                                <Grid item xs={12} md={6}>
-                                    <Field
-                                        id="address2"
-                                        name="address2"
-                                        label={getTranslatedLabel(`${localizationKey}.address2`, 'Address Line 2')}
-                                        component={FormInput}
-                                    />
-                                </Grid>
-
-                                {/* Row 4: City, Postal Code, Country */}
-                                <Grid item xs={12} md={4}>
-                                    <Field
-                                        id="city"
-                                        name="city"
-                                        label={getTranslatedLabel(`${localizationKey}.city`, 'City')}
-                                        component={FormInput}
-                                    />
-                                </Grid>
-                                <Grid item xs={12} md={4}>
-                                    <Field
-                                        id="postalCode"
-                                        name="postalCode"
-                                        label={getTranslatedLabel(`${localizationKey}.postalCode`, 'Postal Code')}
-                                        component={FormInput}
-                                    />
-                                </Grid>
-                                <Grid item xs={12} md={4}>
-                                    <Field
-                                        id="countryGeoId"
-                                        name="countryGeoId"
-                                        label={getTranslatedLabel(`${localizationKey}.country`, 'Country')}
-                                        component={MemoizedFormDropDownList}
-                                        dataItemKey="geoId"
-                                        textField="geoName"
-                                        data={countries || []}
-                                    />
-                                </Grid>
-
-                                {/* Row 5: Data Source */}
-                                <Grid item xs={12} md={4}>
-                                    <Field
-                                        id="dataSourceId"
-                                        name="dataSourceId"
-                                        label={getTranslatedLabel(`${localizationKey}.source`, 'Lead Source')}
-                                        component={MemoizedFormDropDownList}
-                                        dataItemKey="dataSourceId"
-                                        textField="description"
-                                        data={dataSources || []}
-                                    />
-                                </Grid>
-                            </Grid>
-
-                            {/* Error Message */}
-                            {submitError && (
-                                <Box sx={{ mt: 2, p: 2, bgcolor: 'error.light', borderRadius: 1 }}>
-                                    <Typography color="error.dark">{submitError}</Typography>
+    
+                                {/* Error Alert */}
+                                {submitError && (
+                                    <Alert severity="error" sx={{ mt: 3 }}>
+                                        {submitError}
+                                    </Alert>
+                                )}
+    
+                                {/* Action Buttons */}
+                                <Box sx={{ mt: 5, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                                    <Button
+                                        variant="outlined"
+                                        onClick={onClose}
+                                        disabled={isProcessing}
+                                        sx={{ px: 4 }}
+                                    >
+                                        {getTranslatedLabel(`${localizationKey}.cancel`, 'Cancel')}
+                                    </Button>
+    
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        type="submit"
+                                        disabled={!formRenderProps.allowSubmit || isProcessing}
+                                        startIcon={<SaveIcon />}
+                                        sx={{ px: 5, fontWeight: 600 }}
+                                    >
+                                        {isProcessing
+                                            ? getTranslatedLabel(`${localizationKey}.processing`, 'Saving...')
+                                            : editMode === 2
+                                            ? getTranslatedLabel(`${localizationKey}.update`, 'Update Lead')
+                                            : getTranslatedLabel(`${localizationKey}.create`, 'Create Lead')}
+                                    </Button>
                                 </Box>
-                            )}
-
-                            {/* Buttons */}
-                            <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    type="submit"
-                                    disabled={!formRenderProps.allowSubmit || isProcessing}
-                                >
-                                    {editMode === 2
-                                        ? getTranslatedLabel(`${localizationKey}.update`, 'Update')
-                                        : getTranslatedLabel(`${localizationKey}.create`, 'Create')
-                                    }
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    onClick={onClose}
-                                    disabled={isProcessing}
-                                >
-                                    {getTranslatedLabel(`${localizationKey}.cancel`, 'Cancel')}
-                                </Button>
-                            </Box>
-
-                            {isProcessing && (
-                                <LoadingComponent message={getTranslatedLabel(`${localizationKey}.processing`, 'Processing...')} />
-                            )}
-                        </fieldset>
-                    </FormElement>
-                )}
-            />
-        </Paper>
+                            </FormElement>
+                        )}
+                    />
+                </Box>
+            </Paper>
+        </>
     );
 };
 

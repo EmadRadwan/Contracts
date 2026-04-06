@@ -9,6 +9,7 @@ public class LeadRecord
 
     // Identity
     public string? FirstName { get; set; }
+    public string? MiddleName { get; set; }
     public string? LastName { get; set; }
 
     // Display name (computed)
@@ -43,4 +44,5 @@ public class LeadRecord
     // Organization (if lead belongs to a company)
     public string? OrganizationPartyId { get; set; }
     public string? OrganizationName { get; set; }
+    public string? LeadTemperatureId { get; set; }
 }

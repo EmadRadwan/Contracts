@@ -71,7 +71,7 @@ const leadsApi = createApi({
             // Create a new lead
             createLead: builder.mutation<Lead, Lead>({
                 query: (lead) => ({
-                    url: `/leads`,
+                    url: `/parties/createLead`,
                     method: "POST",
                     body: lead,
                 }),

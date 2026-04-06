@@ -6,6 +6,7 @@ public class PartyDto
     public FromPartyDto? FromPartyId { get; set; }
     public string? Description { get; set; }
     public string? GroupName { get; set; }
+    public string? DataSourceId { get; set; }
     public string? MainRole { get; set; }
     public string? PartyTypeId { get; set; }
     public string? CreatedGlAccountId { get; set; }

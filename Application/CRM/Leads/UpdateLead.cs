@@ -67,19 +67,20 @@ public class UpdateLead
                 // Split FullName into FirstName and LastName
                 var fullName = dto.FullName ?? "";
                 var nameParts = fullName.Split(' ', 2);
-                var firstName = nameParts[0];
-                var lastName = nameParts.Length > 1 ? nameParts[1] : "";
+                var firstName = dto.FirstName ?? nameParts[0];
+                var lastName = dto.LastName ?? (nameParts.Length > 1 ? nameParts[1] : "");
 
                 // Update Party
                 party.DataSourceId = dto.DataSourceId;
                 party.Description = fullName;
+                party.LeadTemperatureId = dto.LeadTemperatureId;
                 party.LastUpdatedStamp = stamp;
 
                 // Update Person
                 if (party.Person != null)
                 {
                     party.Person.FirstName = firstName;
-                    party.Person.LastName = lastName;
+                    party.Person.MiddleName = lastName;
                     party.Person.LastUpdatedStamp = stamp;
                 }
 

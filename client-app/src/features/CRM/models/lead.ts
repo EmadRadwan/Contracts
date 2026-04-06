@@ -10,19 +10,23 @@ export interface Lead {
 
     // Identity
     firstName?: string;
+    middleName?: string;
     lastName?: string;
     fullName?: string;
 
     // Communication
+    infoString?: string; //email field
     email?: string;
     phone?: string;
     mobilePhone?: string;
+    mobileContactNumber?: string; //mobilePhone field
 
     // Address
     address1?: string;
     address2?: string;
     city?: string;
     postalCode?: string;
+    geoId?: string;
     countryGeoId?: string;
     countryName?: string;
 
@@ -42,6 +46,7 @@ export interface Lead {
     // Organization
     organizationPartyId?: string;
     organizationName?: string;
+    leadTemperatureId: 'C' | 'F'
 }
 
 /**
