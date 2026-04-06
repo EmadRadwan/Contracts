@@ -92,6 +92,8 @@ public class CreateSalesOpportunity
                     DataSourceId = dto.DataSourceId,
                     MarketingCampaignId = dto.MarketingCampaignId,
                     TypeEnumId = dto.TypeEnumId,
+                    WorkEffortId = dto.WorkEffortId,   // Assuming ProjectId maps to WorkEffortId
+                    ProductId = dto.ProductId,        // Assuming UnitId maps to ProductId
                     CreatedByUserLogin = userLogin?.UserLoginId,
                     CreatedStamp = stamp,
                     LastUpdatedStamp = stamp

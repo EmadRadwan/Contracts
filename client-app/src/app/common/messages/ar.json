@@ -2206,6 +2206,42 @@
         "processing": "جاري المعالجة...",
         "saveError": "فشل في حفظ جهة الاتصال"
       }
+    },
+    "opportunities": {
+      "title": "خط أنابيب المبيعات",
+      "boardView": "لوحة",
+      "listView": "قائمة",
+      "createNew": "فرصة جديدة",
+
+      "actionModal": {
+        "title": "إضافة إجراء",
+        "subtitle": "اختر الأعمدة التي تحتاج إلى رؤيتها في جدول العملاء المحتملين",
+        "nextAction": "الإجراء التالي",
+        "stageDate": "تاريخ المرحلة *",
+        "comment": "التعليق *",
+        "commentPlaceholder": "اكتب تعليقك",
+        "answer": "تم الرد",
+        "cancel": "إلغاء",
+        "saveAction": "حفظ الإجراء",
+        "cancelReason": "سبب الإلغاء *",
+
+        "actions": {
+          "setMeeting": "تحديد اجتماع",
+          "followUp": "متابعة",
+          "meeting": "اجتماع",
+          "followingAfterMeeting": "متابعة بعد الاجتماع",
+          "cancellation": "إلغاء",
+          "doneDeal": "صفقة مكتملة",
+          "noAnswer": "لا يوجد رد"
+        },
+
+        "reasons": {
+          "lowBudget": "ميزانية منخفضة",
+          "notInterested": "غير مهتم",
+          "noAnswer": "لا يوجد رد",
+          "other": "أخرى"
+        }
+      }
     }
   },
   "menu": {

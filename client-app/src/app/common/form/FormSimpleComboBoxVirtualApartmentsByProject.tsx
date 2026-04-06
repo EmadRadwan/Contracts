@@ -148,6 +148,7 @@ export const FormSimpleComboBoxVirtualApartmentsByProject = (fieldRenderProps: F
             params.append("pageSize", pageSize.toString());
             if (filter) params.append("searchTerm", filter);
             if (currentCertificateType) params.append("certificateType", currentCertificateType);
+            console.log(projectId)
             if (!projectId) {
                 setData([]);
                 setTotal(0);

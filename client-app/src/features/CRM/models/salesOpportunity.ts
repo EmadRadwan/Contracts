@@ -41,6 +41,10 @@ export interface SalesOpportunity {
     // Type
     typeEnumId?: string;
 
+    //Project and Product
+    workEffortId?: string;
+    productId?: string;
+
     // Linked leads
     leads: SalesOpportunityLead[];
 }

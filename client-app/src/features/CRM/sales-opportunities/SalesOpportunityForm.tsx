@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Grid, Paper, Box, Typography, IconButton, Divider } from '@mui/material';
-import Button from '@mui/material/Button';
-import CloseIcon from '@mui/icons-material/Close';
+import { Grid, Paper, Box, Typography, Divider, Button } from '@mui/material';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { Field, Form, FormElement } from '@progress/kendo-react-form';
 import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
 import {
@@ -9,103 +8,79 @@ import {
     useCreateOpportunityMutation,
     useUpdateOpportunityMutation,
     useFetchDataSourcesQuery,
-    useAppDispatch,
-    useAppSelector
 } from '../../../app/store/configureStore';
 import { currenciesSelectors, fetchCurrenciesAsync } from '../../catalog/slice/currencySlice';
 import { SalesOpportunity, SalesOpportunityLead } from '../models/salesOpportunity';
 import LoadingComponent from '../../../app/layout/LoadingComponent';
-import FormInput from '../../../app/common/form/FormInput';
-import FormNumericTextBox from '../../../app/common/form/FormNumericTextBox';
-import FormDatePicker from '../../../app/common/form/FormDatePicker';
 import { MemoizedFormDropDownList } from '../../../app/common/form/MemoizedFormDropDownList';
 import { requiredValidator } from '../../../app/common/form/Validators';
 import LeadPicker from '../components/LeadPicker';
-import { FormSimpleComboBoxVirtualApartmentsByProject } from '../../../app/common/form/FormSimpleComboBoxVirtualApartmentsByProject';
 import { FormComboBoxVirtualProject } from '../../../app/common/form/FormComboBoxVirtualProject';
+import { FormSimpleComboBoxVirtualApartmentsByProject } from '../../../app/common/form/FormSimpleComboBoxVirtualApartmentsByProject';
+import CRMMenu from '../menu/CRMMenu';
+import AddActionModal from './components/AddActionsModal';
+import { useAppDispatch, useAppSelector } from '../../../app/store/configureStore';
 
 interface OpportunityFormProps {
     opportunity?: SalesOpportunity;
-    editMode: 'create' | 'edit';
+    editMode: number; // 1 = create, 2 = edit
     onClose: () => void;
     onSuccess: () => void;
 }
 
-const OpportunityForm: React.FC<OpportunityFormProps> = ({ opportunity, editMode, onClose, onSuccess }) => {
+const OpportunityForm: React.FC<OpportunityFormProps> = ({ 
+    opportunity, 
+    editMode, 
+    onClose, 
+    onSuccess 
+}) => {
     const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = 'crm.opportunities.form';
+    const localizationKey = 'crm.opportunities';
+
     const dispatch = useAppDispatch();
-    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-    const [key, setKey] = useState(0); // Used to reset form when opportunity changes
+    const [openActionModal, setOpenActionModal] = useState(false);
 
     const { data: stages, isLoading: loadingStages } = useFetchOpportunityStagesQuery();
     const [createOpportunity, { isLoading: creating }] = useCreateOpportunityMutation();
     const [updateOpportunity, { isLoading: updating }] = useUpdateOpportunityMutation();
 
-    // Currency dropdown
     const { currenciesLoaded } = useAppSelector(state => state.currency);
-    const currencies = useAppSelector(currenciesSelectors.selectAll);
-
-    // Data sources dropdown
     const { data: dataSources, isLoading: loadingDataSources } = useFetchDataSourcesQuery();
+
+    const [selectedLeads, setSelectedLeads] = useState<SalesOpportunityLead[]>(opportunity?.leads || []);
+    const [leadsModified, setLeadsModified] = useState(false);
+
+    // Form state for cascading
+    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
+        opportunity?.workEffortId || null
+    );
 
     useEffect(() => {
         if (!currenciesLoaded) dispatch(fetchCurrenciesAsync());
     }, [currenciesLoaded, dispatch]);
-
-    const [submitError, setSubmitError] = useState<string | null>(null);
-    const [selectedLeads, setSelectedLeads] = useState<SalesOpportunityLead[]>(
-        opportunity?.leads || []
-    );
-    const [leadsModified, setLeadsModified] = useState(false);
 
     const handleLeadsChange = (leads: SalesOpportunityLead[]) => {
         setSelectedLeads(leads);
         setLeadsModified(true);
     };
 
-    const isProcessing = creating || updating;
-
-    // Helper to safely convert date string to Date object for Kendo DatePicker
-    const parseDate = (dateValue: string | Date | undefined): Date | null => {
-        if (!dateValue) return null;
-        try {
-            const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
-            if (isNaN(date.getTime())) return null;
-            return date;
-        } catch {
-            return null;
-        }
+    const handleOpenAction = () => {
+        if (opportunity) setOpenActionModal(true);
     };
 
-    const initialValues = editMode === 'edit' && opportunity
-        ? {
-            ...opportunity,
-            estimatedCloseDate: parseDate(opportunity.estimatedCloseDate),
-            nextStepDate: parseDate(opportunity.nextStepDate)
-        }
-        : {
-            opportunityName: '',
-            estimatedAmount: 0,
-            estimatedProbability: 0,
-            currencyUomId: 'USD',
-            opportunityStageId: stages?.[0]?.opportunityStageId || '',
-            leads: []
-        };
-
     const handleSubmit = async (values: any) => {
-        setSubmitError(null);
-
         const opportunityData: SalesOpportunity = {
             ...values,
-            leads: selectedLeads
+            workEffortId: values.workEffortId?.projectId || null,
+            productId: values.productId?.apartmentId || null,
+            leads: selectedLeads,
         };
 
         try {
-            if (editMode === 'edit' && opportunity?.salesOpportunityId) {
-                await updateOpportunity({
-                    id: opportunity.salesOpportunityId,
-                    opportunity: opportunityData
+            if (editMode === 2 && opportunity?.salesOpportunityId) {
+                await updateOpportunity({ 
+                    id: opportunity.salesOpportunityId, 
+                    opportunity: opportunityData 
                 }).unwrap();
             } else {
                 await createOpportunity(opportunityData).unwrap();
@@ -114,8 +89,40 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({ opportunity, editMode
             onClose();
         } catch (error: any) {
             console.error('Failed to save opportunity:', error);
-            setSubmitError(error?.data?.title || getTranslatedLabel(`${localizationKey}.saveError`, 'Failed to save opportunity'));
         }
+    };
+
+    const isProcessing = creating || updating;
+
+    const getInitialValues = () => {
+        if (editMode !== 2 || !opportunity) {
+            return {
+                opportunityStageId: 'SOSTG_PROSPECT',
+                workEffortId: null,
+                productId: null,
+            };
+        }
+
+        return {
+            opportunityStageId: opportunity.opportunityStageId || 'SOSTG_PROSPECT',
+            // Project ComboBox expects full object { projectId, projectName, facilityId }
+            workEffortId: opportunity.workEffortId
+                ? {
+                    projectId: opportunity.workEffortId,
+                    projectName: opportunity.workEffortName || '',   // optional: if you have the name
+                    facilityId: opportunity.facilityId || '0',
+                }
+                : null,
+
+            // Unit ComboBox expects full object { apartmentId, apartmentName, ... }
+            productId: opportunity.productId
+                ? {
+                    apartmentId: opportunity.productId,
+                    apartmentName: opportunity.productName || '',     // optional: if you have the name
+                    // You can add more fields if needed (floorNumber, status, etc.)
+                }
+                : null,
+        };
     };
 
     if (loadingStages || !currenciesLoaded || loadingDataSources) {
@@ -123,224 +130,128 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({ opportunity, editMode
     }
 
     return (
-        <Paper elevation={5} className="div-container-withBorderCurved" sx={{ p: 3, mt: 2 }}>
-            {/* Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h6">
-                    {editMode === 'edit'
-                        ? getTranslatedLabel(`${localizationKey}.editTitle`, 'Edit Opportunity')
-                        : getTranslatedLabel(`${localizationKey}.createTitle`, 'Create New Opportunity')
-                    }
-                </Typography>
-                {/* <IconButton onClick={onClose} size="small">
-                    <CloseIcon />
-                </IconButton> */}
-            </Box>
+        <>
+            <CRMMenu selectedMenuItem="sales-opportunities" />
 
-            <Form
-                key={key}
-                initialValues={initialValues}
-                onSubmit={handleSubmit}
-                render={(formRenderProps) => (
-                    <FormElement>
-                        <fieldset className="k-form-fieldset">
-                            <Grid container spacing={3}>
-                                {/* Row 1: Name and Stage */}
-                                <Grid item xs={3}>
-                                    <Field
-                                        id="opportunityName"
-                                        name="opportunityName"
-                                        label={getTranslatedLabel(`${localizationKey}.name`, 'Opportunity Name *')}
-                                        component={FormInput}
-                                        validator={requiredValidator}
-                                    />
-                                </Grid>
-                                <Grid item xs={3}>
-                                    <Field
-                                        id="opportunityStageId"
-                                        name="opportunityStageId"
-                                        label={getTranslatedLabel(`${localizationKey}.stage`, 'Stage *')}
-                                        component={MemoizedFormDropDownList}
-                                        dataItemKey="opportunityStageId"
-                                        textField="description"
-                                        data={stages || []}
-                                        validator={requiredValidator}
-                                    />
-                                </Grid>
+            <Paper elevation={5} className="div-container-withBorderCurved" sx={{ p: 3, mt: 2 }}>
+                {/* Header */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Typography variant="h6" fontWeight="medium">
+                        {editMode === 2
+                            ? getTranslatedLabel(`${localizationKey}.editTitle`, 'Edit Opportunity')
+                            : getTranslatedLabel(`${localizationKey}.createTitle`, 'Create New Opportunity')}
+                    </Typography>
 
-                                <Grid item xs={3}>
-                                    <Field
-                                        id="projectId"
-                                        name="projectId"
-                                        component={FormComboBoxVirtualProject}
-                                        label={getTranslatedLabel("projects.certificate.form.project", "Project")}
-                                        dataItemKey="projectId"
-                                        textField="ProjectName"
-                                        // validator={requiredValidator}
-                                        disabled={editMode > 3}
-                                        onChange={(e: any) => {
-                                            formRenderProps.onChange("workEffortId", {value :null})
-                                        }}
-                                    />
-                                </Grid>
+                    {editMode === 2 && opportunity && (
+                        <Button
+                            variant="outlined"
+                            startIcon={<MoreVertIcon />}
+                            onClick={handleOpenAction}
+                        >
+                            {getTranslatedLabel(`${localizationKey}.actionModal.title`, 'Add Action')}
+                        </Button>
+                    )}
+                </Box>
 
+                <Form
+                    initialValues={getInitialValues()}
+                    onSubmit={handleSubmit}
+                    render={(formRenderProps) => (
+                        <FormElement>
+                            <fieldset className="k-form-fieldset">
+                                <Grid container spacing={3}>
+                                    {/* Stage */}
+                                    <Grid item xs={4}>
+                                        <Field
+                                            name="opportunityStageId"
+                                            label={getTranslatedLabel(`${localizationKey}.stage`, 'Stage *')}
+                                            component={MemoizedFormDropDownList}
+                                            data={stages || []}
+                                            dataItemKey="opportunityStageId"
+                                            textField="description"
+                                            validator={requiredValidator}
+                                        />
+                                    </Grid>
 
-                                <Grid item xs={3}>
-                                    <Field
-                                        id="workEffortId"
-                                        name="workEffortId"
-                                        label={getTranslatedLabel(`${localizationKey}.unit`, 'Unit')}
-                                        component={FormSimpleComboBoxVirtualApartmentsByProject}
-                                        projectId={formRenderProps.valueGetter ? formRenderProps.valueGetter("projectId")?.projectId : null}
-                                    />
-                                </Grid>
+                                    {/* Project */}
+                                    <Grid item xs={4}>
+                                        <Field
+                                            name="workEffortId"
+                                            component={FormComboBoxVirtualProject}
+                                            label={getTranslatedLabel("projects.certificate.form.project", "Project")}
+                                            dataItemKey="projectId"
+                                            textField="ProjectName"
+                                            onChange={(e: any) => {
+                                                const newProjectId = e.value?.projectId || null;
+                                                setSelectedProjectId(newProjectId);
+                                                
+                                                // Clear Unit when Project changes
+                                                formRenderProps.onChange("productId", { value: null });
+                                                formRenderProps.onChange("workEffortId", { value: e.value });
+                                            }}
+                                        />
+                                    </Grid>
 
-                                {/* Row 2: Amount and Probability */}
-                                <Grid item xs={12} md={3}>
-                                    <Field
-                                        id="estimatedAmount"
-                                        name="estimatedAmount"
-                                        label={getTranslatedLabel(`${localizationKey}.amount`, 'Estimated Amount')}
-                                        component={FormNumericTextBox}
-                                        format="n2"
-                                        min={0}
-                                    />
-                                </Grid>
-                                {/* <Grid item xs={12} md={4}>
-                                    <Field
-                                        id="currencyUomId"
-                                        name="currencyUomId"
-                                        label={getTranslatedLabel(`${localizationKey}.currency`, 'Currency')}
-                                        component={MemoizedFormDropDownList}
-                                        dataItemKey="currencyUomId"
-                                        textField="description"
-                                        data={currencies}
-                                    />
-                                </Grid> */}
-                                <Grid item xs={12} md={4}>
-                                    <Field
-                                        id="estimatedProbability"
-                                        name="estimatedProbability"
-                                        label={getTranslatedLabel(`${localizationKey}.probability`, 'Probability (%)')}
-                                        component={FormNumericTextBox}
-                                        format="n0"
-                                        min={0}
-                                        max={100}
-                                    />
+                                    {/* Unit (Apartment) - Cascading */}
+                                    <Grid item xs={4}>
+                                        <Field
+                                            name="productId"
+                                            label={getTranslatedLabel(`${localizationKey}.unit`, 'Unit')}
+                                            component={FormSimpleComboBoxVirtualApartmentsByProject}
+                                            projectId={selectedProjectId}   // ← This is the key fix
+                                        />
+                                    </Grid>
+
+                                    {/* Linked Leads Section */}
+                                    <Grid item xs={12}>
+                                        <Divider sx={{ my: 2 }} />
+                                        <Typography variant="subtitle2" color="text.secondary">
+                                            {getTranslatedLabel(`${localizationKey}.linkedLeads`, 'Linked Leads')}
+                                        </Typography>
+                                    </Grid>
+
+                                    <Grid item xs={12}>
+                                        <LeadPicker
+                                            label={getTranslatedLabel(`${localizationKey}.leads`, 'Leads')}
+                                            value={selectedLeads}
+                                            onChange={handleLeadsChange}
+                                            multiple
+                                        />
+                                    </Grid>
                                 </Grid>
 
-                                {/* Row 3: Close Date and Description */}
-                                <Grid item xs={4} >
-                                    <Field
-                                        id="estimatedCloseDate"
-                                        name="estimatedCloseDate"
-                                        label={getTranslatedLabel(`${localizationKey}.closeDate`, 'Expected Close Date')}
-                                        component={FormDatePicker}
-                                    />
-                                </Grid>
-                                {/* <Grid item xs={12} md={6}>
-                                    <Field
-                                        id="dataSourceId"
-                                        name="dataSourceId"
-                                        label={getTranslatedLabel(`${localizationKey}.source`, 'Lead Source')}
-                                        component={MemoizedFormDropDownList}
-                                        dataItemKey="dataSourceId"
-                                        textField="description"
-                                        data={dataSources || []}
-                                    />
-                                </Grid> */}
-
-                                {/* Row 4: Description */}
-                                <Grid item xs={12}>
-                                    <Field
-                                        id="description"
-                                        name="description"
-                                        label={getTranslatedLabel(`${localizationKey}.description`, 'Description')}
-                                        component={FormInput}
-                                    />
-                                </Grid>
-
-                                {/* Row 5: Next Step */}
-                                <Grid item xs={12} md={8}>
-                                    <Field
-                                        id="nextStep"
-                                        name="nextStep"
-                                        label={getTranslatedLabel(`${localizationKey}.nextStep`, 'Next Step')}
-                                        component={FormInput}
-                                    />
-                                </Grid>
-                                <Grid item xs={12} md={4}>
-                                    <Field
-                                        id="nextStepDate"
-                                        name="nextStepDate"
-                                        label={getTranslatedLabel(`${localizationKey}.nextStepDate`, 'Next Step Date')}
-                                        component={FormDatePicker}
-                                    />
-                                </Grid>
-
-                                {/* Divider */}
-                               <Grid item xs={12}>
-                                    <Divider sx={{ my: 1 }} />
-                                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                                        {getTranslatedLabel(`${localizationKey}.linkedLeads`, 'Linked Leads')}
-                                    </Typography>
-                                </Grid>
-
-                                {/* Row 6: Lead Picker */}
-                                <Grid item xs={12}>
-                                    <LeadPicker
-                                        label={getTranslatedLabel(`${localizationKey}.leads`, 'Leads')}
-                                        value={selectedLeads}
-                                        onChange={handleLeadsChange}
-                                        multiple={true}
-                                        placeholder={getTranslatedLabel(`${localizationKey}.searchLeads`, 'Search and add leads...')}
-                                    />
-                                </Grid>
-                            </Grid>
-
-                            {/* Error Message */}
-                            {submitError && (
-                                <Box sx={{ mt: 2, p: 2, bgcolor: 'error.light', borderRadius: 1 }}>
-                                    <Typography color="error.dark">{submitError}</Typography>
+                                {/* Action Buttons */}
+                                <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
+                                    <Button
+                                        variant="contained"
+                                        type="submit"
+                                        disabled={isProcessing || (!formRenderProps.allowSubmit && !leadsModified)}
+                                    >
+                                        {editMode === 2
+                                            ? getTranslatedLabel(`${localizationKey}.update`, 'Update')
+                                            : getTranslatedLabel(`${localizationKey}.create`, 'Create')}
+                                    </Button>
+                                    <Button 
+                                        variant="outlined" 
+                                        onClick={onClose} 
+                                        disabled={isProcessing}
+                                    >
+                                        {getTranslatedLabel(`${localizationKey}.cancel`, 'Cancel')}
+                                    </Button>
                                 </Box>
-                            )}
+                            </fieldset>
+                        </FormElement>
+                    )}
+                />
+            </Paper>
 
-                            {/* Buttons */}
-                            <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    type={formRenderProps.allowSubmit ? "submit" : "button"}
-                                    onClick={() => {
-                                        // If form hasn't changed but leads have, submit with initial values
-                                        if (!formRenderProps.allowSubmit && leadsModified) {
-                                            handleSubmit(initialValues);
-                                        }
-                                    }}
-                                    disabled={(!formRenderProps.allowSubmit && !leadsModified) || isProcessing}
-                                >
-                                    {editMode === 'edit'
-                                        ? getTranslatedLabel(`${localizationKey}.update`, 'Update')
-                                        : getTranslatedLabel(`${localizationKey}.create`, 'Create')
-                                    }
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    onClick={onClose}
-                                    disabled={isProcessing}
-                                >
-                                    {getTranslatedLabel(`${localizationKey}.cancel`, 'Cancel')}
-                                </Button>
-                            </Box>
-
-                            {isProcessing && (
-                                <LoadingComponent message={getTranslatedLabel(`${localizationKey}.processing`, 'Processing...')} />
-                            )}
-                        </fieldset>
-                    </FormElement>
-                )}
+            {/* Action Modal */}
+            <AddActionModal
+                open={openActionModal}
+                onClose={() => setOpenActionModal(false)}
+                opportunity={opportunity || null}
             />
-        </Paper>
+        </>
     );
 };
 

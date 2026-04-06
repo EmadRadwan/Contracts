@@ -18,16 +18,14 @@ import OpportunityForm from './SalesOpportunityForm';
 import { SalesOpportunity } from '../models/salesOpportunity';
 
 type ViewMode = 'board' | 'list';
-type EditMode = 'none' | 'create' | 'edit';
 
 const SalesOpportunityDashboard: React.FC = () => {
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = 'crm.opportunities';
 
     const [viewMode, setViewMode] = useState<ViewMode>('board');
-    const [editMode, setEditMode] = useState<EditMode>('none');
+    const [editMode, setEditMode] = useState<number>(0); // 0 = none, 1 = create, 2 = edit
     const [selectedOpportunity, setSelectedOpportunity] = useState<SalesOpportunity | undefined>();
-    
 
     const handleViewChange = useCallback((_: React.MouseEvent<HTMLElement>, newView: ViewMode | null) => {
         if (newView !== null) {
@@ -37,22 +35,34 @@ const SalesOpportunityDashboard: React.FC = () => {
 
     const handleCreateNew = useCallback(() => {
         setSelectedOpportunity(undefined);
-        setEditMode('create');
+        setEditMode(1);
     }, []);
 
     const handleEditOpportunity = useCallback((opportunity: SalesOpportunity) => {
         setSelectedOpportunity(opportunity);
-        setEditMode('edit');
+        setEditMode(2);
     }, []);
 
     const handleCloseForm = useCallback(() => {
-        setEditMode('none');
+        setEditMode(0);
         setSelectedOpportunity(undefined);
     }, []);
 
     const handleFormSuccess = useCallback(() => {
-        // The RTK Query cache invalidation will automatically refresh the data
+        // RTK Query will auto-refresh the list/board
     }, []);
+
+    // Show form when in edit or create mode
+    if (editMode > 0) {
+        return (
+            <OpportunityForm
+                opportunity={selectedOpportunity}
+                editMode={editMode}
+                onClose={handleCloseForm}
+                onSuccess={handleFormSuccess}
+            />
+        );
+    }
 
     return (
         <>
@@ -63,7 +73,7 @@ const SalesOpportunityDashboard: React.FC = () => {
                 className="div-container-withBorderCurved"
                 sx={{ mt: 2, mx: 2 }}
             >
-                {/* Header with View Switcher */}
+                {/* Header */}
                 <Box
                     sx={{
                         display: 'flex',
@@ -78,7 +88,7 @@ const SalesOpportunityDashboard: React.FC = () => {
                         {getTranslatedLabel(`${localizationKey}.title`, 'Sales Pipeline')}
                     </Typography>
 
-                    {editMode !== "create" && <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                         {/* View Toggle */}
                         <ToggleButtonGroup
                             value={viewMode}
@@ -96,34 +106,21 @@ const SalesOpportunityDashboard: React.FC = () => {
                             </ToggleButton>
                         </ToggleButtonGroup>
 
-                        {/* Create Button (shown in board view) */}
-                        {viewMode === 'board' && (
-                            <Button
+                        
+                        <Button
                                 variant="contained"
                                 color="primary"
-                                sx={{ gap: 1 }}
+                                startIcon={<AddIcon />}
                                 onClick={handleCreateNew}
                             >
-                                <AddIcon />
                                 {getTranslatedLabel(`${localizationKey}.createNew`, 'New Opportunity')}
                             </Button>
-                        )}
-                        
-                    </Box>}
+                    </Box>
                 </Box>
 
-                {/* Content Area */}
-                {editMode !== 'none' ? (
-                    <OpportunityForm
-                        opportunity={selectedOpportunity}
-                        editMode={editMode}
-                        onClose={handleCloseForm}
-                        onSuccess={handleFormSuccess}
-                    />
-                ) : viewMode === 'board' ? (
-
+                {/* Main Content */}
+                {viewMode === 'board' ? (
                     <SalesOpportunityBoard onEditOpportunity={handleEditOpportunity} />
-
                 ) : (
                     <SalesOpportunityList
                         onCreateNew={handleCreateNew}

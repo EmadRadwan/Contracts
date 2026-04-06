@@ -40,6 +40,10 @@ public class SalesOpportunityDto
 
     // Type
     public string? TypeEnumId { get; set; }
+    public string? WorkEffortId { get; set; }
+    public string? WorkEffortName { get; set; }
+    public string? ProductId { get; set; }
+    public string? ProductName { get; set; }
 
     // Linked leads (for create/update)
     public List<SalesOpportunityLeadDto> Leads { get; set; } = new();

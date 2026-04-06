@@ -7,31 +7,32 @@ import {
     CardContent,
     Chip,
     IconButton,
-    Skeleton,
-    Tooltip
+    Tooltip,
 } from '@mui/material';
 import {
     Edit as EditIcon,
     Person as PersonIcon,
     AttachMoney as MoneyIcon,
-    CalendarToday as CalendarIcon
+    CalendarToday as CalendarIcon,
+    MoreVert as MoreVertIcon,
 } from '@mui/icons-material';
 import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
 import {
     useFetchOpportunitiesQuery,
     useFetchOpportunityStagesQuery,
-    useUpdateOpportunityStageMutation
+    useUpdateOpportunityStageMutation,
 } from '../../../app/store/configureStore';
 import { SalesOpportunity, OpportunityStage } from '../models/salesOpportunity';
 import LoadingComponent from '../../../app/layout/LoadingComponent';
+import AddActionModal from './components/AddActionsModal';
 
-interface LeadsBoardProps {
+interface SalesOpportunityBoardProps {
     onEditOpportunity: (opportunity: SalesOpportunity) => void;
 }
 
-const LeadsBoard: React.FC<LeadsBoardProps> = ({ onEditOpportunity }) => {
+const SalesOpportunityBoard: React.FC<SalesOpportunityBoardProps> = ({ onEditOpportunity }: SalesOpportunityBoardProps) => {
     const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = 'crm.leads.board';
+    const localizationKey = 'crm.opportunities';
 
     const { data: opportunities, isLoading: loadingOpportunities, refetch } = useFetchOpportunitiesQuery();
     const { data: stages, isLoading: loadingStages } = useFetchOpportunityStagesQuery();
@@ -40,6 +41,20 @@ const LeadsBoard: React.FC<LeadsBoardProps> = ({ onEditOpportunity }) => {
     const [draggedItem, setDraggedItem] = useState<SalesOpportunity | null>(null);
     const [dragOverStage, setDragOverStage] = useState<string | null>(null);
 
+    // Action Modal State
+    const [openActionModal, setOpenActionModal] = useState(false);
+    const [selectedOpportunityForAction, setSelectedOpportunityForAction] = useState<SalesOpportunity | null>(null);
+
+    const handleOpenActionModal = (opportunity: SalesOpportunity) => {
+        setSelectedOpportunityForAction(opportunity);
+        setOpenActionModal(true);
+    };
+
+    const handleCloseActionModal = () => {
+        setOpenActionModal(false);
+        setSelectedOpportunityForAction(null);
+    };
+
     const handleDragStart = useCallback((e: React.DragEvent, opportunity: SalesOpportunity) => {
         setDraggedItem(opportunity);
         e.dataTransfer.effectAllowed = 'move';
@@ -47,13 +62,10 @@ const LeadsBoard: React.FC<LeadsBoardProps> = ({ onEditOpportunity }) => {
 
     const handleDragOver = useCallback((e: React.DragEvent, stageId: string) => {
         e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
         setDragOverStage(stageId);
     }, []);
 
-    const handleDragLeave = useCallback(() => {
-        setDragOverStage(null);
-    }, []);
+    const handleDragLeave = useCallback(() => setDragOverStage(null), []);
 
     const handleDrop = useCallback(async (e: React.DragEvent, targetStageId: string) => {
         e.preventDefault();
@@ -76,27 +88,18 @@ const LeadsBoard: React.FC<LeadsBoardProps> = ({ onEditOpportunity }) => {
         setDraggedItem(null);
     }, [draggedItem, updateStage, refetch]);
 
-    const getOpportunitiesByStage = (stageId: string) => {
-        return opportunities?.filter(o => o.opportunityStageId === stageId) || [];
-    };
+    const getOpportunitiesByStage = (stageId: string) =>
+        opportunities?.filter(o => o.opportunityStageId === stageId) || [];
 
-    const getStageTotal = (stageId: string) => {
-        return getOpportunitiesByStage(stageId).reduce((sum, o) => sum + (o.estimatedAmount || 0), 0);
-    };
-
-    const formatCurrency = (amount: number, currency?: string) => {
-        return new Intl.NumberFormat('ar-EG', {
+    const formatCurrency = (amount: number) =>
+        new Intl.NumberFormat('ar-EG', {
             style: 'currency',
             currency: 'EGP',
             minimumFractionDigits: 0,
-            maximumFractionDigits: 0
         }).format(amount);
-    };
 
-    const formatDate = (dateString?: string) => {
-        if (!dateString) return '';
-        return new Date(dateString).toLocaleDateString();
-    };
+    const formatDate = (dateString?: string) =>
+        dateString ? new Date(dateString).toLocaleDateString('ar-EG') : '';
 
     if (loadingStages || loadingOpportunities) {
         return <LoadingComponent message={getTranslatedLabel(`${localizationKey}.loading`, 'Loading pipeline...')} />;
@@ -106,7 +109,6 @@ const LeadsBoard: React.FC<LeadsBoardProps> = ({ onEditOpportunity }) => {
         <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto', p: 2, minHeight: '70vh' }}>
             {stages?.map((stage: OpportunityStage) => {
                 const stageOpportunities = getOpportunitiesByStage(stage.opportunityStageId);
-                const stageTotal = getStageTotal(stage.opportunityStageId);
                 const isDropTarget = dragOverStage === stage.opportunityStageId;
 
                 return (
@@ -123,95 +125,59 @@ const LeadsBoard: React.FC<LeadsBoardProps> = ({ onEditOpportunity }) => {
                             borderRadius: 2,
                             display: 'flex',
                             flexDirection: 'column',
-                            transition: 'all 0.2s ease',
                             border: isDropTarget ? '2px dashed primary.main' : '1px solid',
-                            borderColor: isDropTarget ? 'primary.main' : 'divider'
+                            borderColor: isDropTarget ? 'primary.main' : 'divider',
                         }}
                     >
                         {/* Column Header */}
-                        <Box
-                            sx={{
-                                p: 2,
-                                borderBottom: '1px solid',
-                                borderColor: 'divider',
-                                bgcolor: 'grey.50'
-                            }}
-                        >
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Typography variant="subtitle1" fontWeight="bold">
                                     {stage.description}
                                 </Typography>
-                                <Chip
-                                    label={stageOpportunities.length}
-                                    size="small"
-                                    color="primary"
-                                    variant="outlined"
-                                />
+                                <Chip label={stageOpportunities.length} size="small" color="primary" variant="outlined" />
                             </Box>
-                            <Typography variant="body2" color="text.secondary">
-                                {formatCurrency(stageTotal)}
-                            </Typography>
                         </Box>
 
-                        {/* Cards Container */}
-                        <Box
-                            sx={{
-                                p: 1,
-                                flexGrow: 1,
-                                overflowY: 'auto',
-                                maxHeight: 'calc(70vh - 100px)',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 1
-                            }}
-                        >
-                            {stageOpportunities.map((opportunity) => (
+                        {/* Opportunities Cards */}
+                        <Box sx={{ p: 1, flexGrow: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            {stageOpportunities.map((opportunity: SalesOpportunity) => (
                                 <Card
                                     key={opportunity.salesOpportunityId}
                                     draggable
                                     onDragStart={(e) => handleDragStart(e, opportunity)}
                                     sx={{
                                         cursor: 'grab',
-                                        '&:hover': {
-                                            boxShadow: 4,
-                                            bgcolor: 'action.hover'
-                                        },
-                                        '&:active': {
-                                            cursor: 'grabbing'
-                                        },
-                                        opacity: draggedItem?.salesOpportunityId === opportunity.salesOpportunityId ? 0.5 : 1
+                                        '&:hover': { boxShadow: 4, bgcolor: 'action.hover' },
+                                        '&:active': { cursor: 'grabbing' },
                                     }}
                                 >
-                                    <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                                        {/* Header with name and edit */}
+                                    <CardContent sx={{ p: 1.5 }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                                             <Typography
-                                                variant="subtitle2"
+                                                variant="body1"
                                                 fontWeight="medium"
-                                                sx={{
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap',
-                                                    maxWidth: '80%'
-                                                }}
+                                                sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '75%' }}
                                             >
-                                                {opportunity.opportunityName}
+                                                {opportunity.leads[0]?.partyName || opportunity.opportunityName}
                                             </Typography>
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => onEditOpportunity(opportunity)}
-                                                sx={{ p: 0.5 }}
-                                            >
-                                                <EditIcon fontSize="small" />
-                                            </IconButton>
+
+                                            <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                                <IconButton size="small" onClick={() => onEditOpportunity(opportunity)}>
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton size="small" onClick={() => handleOpenActionModal(opportunity)}>
+                                                    <MoreVertIcon fontSize="small" />
+                                                </IconButton>
+                                            </Box>
                                         </Box>
 
                                         {/* Value */}
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                                            <MoneyIcon fontSize="small" color="success" />
+                                            {/* <MoneyIcon fontSize="small" color="success" />
                                             <Typography variant="body2" fontWeight="medium" color="success.main">
-                                                {formatCurrency(opportunity.estimatedAmount || 0, opportunity.currencyUomId)}
-                                            </Typography>
+                                                {formatCurrency(opportunity.estimatedAmount || 0)}
+                                            </Typography> */}
                                             {opportunity.estimatedProbability && (
                                                 <Chip
                                                     label={`${opportunity.estimatedProbability}%`}
@@ -241,14 +207,12 @@ const LeadsBoard: React.FC<LeadsBoardProps> = ({ onEditOpportunity }) => {
                                             </Box>
                                         )}
 
-                                        {/* Leads count */}
+                                        {/* Leads */}
                                         {opportunity.leads && opportunity.leads.length > 0 && (
-                                            <Tooltip title={opportunity.leads.map(c => c.partyName).join(', ')}>
+                                            <Tooltip title={opportunity.leads.map((c: any) => c.partyName).join(', ')}>
                                                 <Chip
                                                     icon={<PersonIcon />}
-                                                    label={opportunity.leads.length === 1
-                                                        ? getTranslatedLabel(`${localizationKey}.oneLead`, '1 lead')
-                                                        : getTranslatedLabel(`${localizationKey}.leads`, `${opportunity.leads.length} leads`).replace('{0}', opportunity.leads.length.toString())}
+                                                    label={opportunity.leads.length === 1 ? '1 lead' : `${opportunity.leads.length} leads`}
                                                     size="small"
                                                     variant="outlined"
                                                     sx={{ mt: 1, height: 22, fontSize: '0.7rem' }}
@@ -260,27 +224,23 @@ const LeadsBoard: React.FC<LeadsBoardProps> = ({ onEditOpportunity }) => {
                             ))}
 
                             {stageOpportunities.length === 0 && (
-                                <Box
-                                    sx={{
-                                        p: 2,
-                                        textAlign: 'center',
-                                        color: 'text.disabled',
-                                        border: '1px dashed',
-                                        borderColor: 'divider',
-                                        borderRadius: 1
-                                    }}
-                                >
-                                    <Typography variant="body2">
-                                        {getTranslatedLabel(`${localizationKey}.noDeals`, 'No deals')}
-                                    </Typography>
+                                <Box sx={{ p: 3, textAlign: 'center', color: 'text.disabled', border: '1px dashed', borderColor: 'divider', borderRadius: 1 }}>
+                                    <Typography variant="body2">No deals in this stage</Typography>
                                 </Box>
                             )}
                         </Box>
                     </Paper>
                 );
             })}
+
+            {/* Action Modal */}
+            <AddActionModal
+                open={openActionModal}
+                onClose={handleCloseActionModal}
+                opportunity={selectedOpportunityForAction}
+            />
         </Box>
     );
 };
 
-export default LeadsBoard;
+export default SalesOpportunityBoard;

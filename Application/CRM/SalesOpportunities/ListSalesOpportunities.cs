@@ -43,6 +43,10 @@ public class ListSalesOpportunities
                         .ThenInclude(p => p.PartyGroup)
                 .Include(o => o.SalesOpportunityRoles)
                     .ThenInclude(r => r.RoleType)
+                // NEW: Include Project (WorkEffort)
+                .Include(o => o.WorkEffort)
+                // NEW: Include Product (Unit/Apartment)
+                .Include(o => o.Product)
                 .AsQueryable();
 
             // Filter by stage
@@ -133,6 +137,13 @@ public class ListSalesOpportunities
                     DataSourceId = o.DataSourceId,
                     MarketingCampaignId = o.MarketingCampaignId,
                     TypeEnumId = o.TypeEnumId,
+                    WorkEffortId = o.WorkEffortId,
+                    ProductId = o.ProductId,
+                    // NEW: Project / WorkEffort Info
+                    WorkEffortName = o.WorkEffort?.WorkEffortName ?? o.WorkEffort?.ProjectName,   // adjust property name as per your entity
+
+                    // NEW: Product / Unit (Apartment) Info
+                    ProductName = o.Product?.ProductName ?? o.Product?.ProductName,
                     Leads = leads
                 };
             }).ToList();
