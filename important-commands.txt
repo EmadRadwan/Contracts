@@ -216,7 +216,6 @@ sudo rm -rf erp-contracts
  if [ -f docker-compose.vm.yml ]; then
    sudo docker-compose -f docker-compose.vm.yml down
  fi
- sudo docker-compose -f docker-compose.vm.yml up -d --build
  
  
  cd ../logs/contracts
@@ -240,10 +239,10 @@ cd ~/mysql-backups/contracts-golden
     > ~/mysql-backups/contracts-golden/erp_contracts_no_definer_$(date +%Y-%m-%d_%H-%M-%S).sql
 
 gzip ~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-02-01_11-35-20.sql
-scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-03-24_20-04-22.sql ~/Desktop/
+scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-04-06_07-06-57.sql ~/Desktop/
 gunzip ~/Desktop/erp_contracts_no_definer_2026-02-01_11-35-20.sql.gz
 
-mysql -u root -p erp_contracts < erp_contracts_no_definer_2026-03-24_20-04-22.sql
+mysql -u root -p erp_contracts < erp_contracts_no_definer_2026-04-06_07-06-57.sql
 
 
 
@@ -301,4 +300,5 @@ Summarize this entire conversation as a concise JSON or bullet-point outline, in
  
  ////////
  
- I want to refactor the @file:CreateEmployeeForm.tsx and all of its related C# handlers by including two UI components that will help in Payrol processing. 1- i want to add the @`FormDropDownTreeGlAccount2` component as part of the form - see usage in @file:EditPaymentForm.tsx  - and this will help linking the employee with a certain project GL Account, when persisting the employee record in Party table you can use the `GlAccountIdAdvancedPayment` prop that's linked to GlAccounts. this new component in @file:CreateEmployeeForm.tsx  will be optional and you need to make sure to also consider it in the update handler of the employee. 2- i want to add also to @file:CreateEmployeeForm.tsx a radio group for the payment pereference that will have two values 'Cash' and 'Bank Transfer' and this needs to bind to Party.`PreferredPayrollPaymentMethodId` prop. also make sure that `useFetchEmployeeQuery` will return the new props
+ New Power bi account
+ xejiri3063@fengnu.com  / Tmbtc202600))

@@ -1,147 +1,239 @@
-public async Task<IncomeStatementResult> PrepareIncomeStatement(
-    string organizationPartyId,
-    DateTime fromDate,
-    DateTime thruDate,
-    string glFiscalTypeId)
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using MediatR;
+using Microsoft.AspNetCore.OData.Query;
+using Microsoft.EntityFrameworkCore;
+using Persistence;
+using Application.Order.Orders; // for OrderPartyDto
+
+namespace Application.Accounting.Payments;
+
+public class ListPayments
 {
-    try
+    public class Query : IRequest<IQueryable<PaymentRecord>>
     {
-        if (string.IsNullOrEmpty(organizationPartyId))
-            throw new ArgumentException("organizationPartyId is required.");
-        if (string.IsNullOrEmpty(glFiscalTypeId))
-            throw new ArgumentException("glFiscalTypeId is required.");
-
-        var result = new IncomeStatementResult
-        {
-            TotalNetIncome = 0m,
-            GlAccountTotalsMap = new GlAccountTotalsMap
-            {
-                Income = new List<GlAccountTotal>(),
-                Expenses = new List<GlAccountTotal>()
-            }
-        };
-
-        // Step 1: Get descendant classes (same as OFBiz)
-        var expenseClasses = await GetDescendantGlAccountClassIds("EXPENSE");
-        var revenueClasses = await GetDescendantGlAccountClassIds("REVENUE");
-        var incomeClasses  = await GetDescendantGlAccountClassIds("INCOME");
-
-        var partyIds = await GetAssociatedPartyIdsByRelationshipType(organizationPartyId, "GROUP_ROLLUP");
-        if (!partyIds.Contains(organizationPartyId))
-            partyIds.Add(organizationPartyId);
-
-        // Step 2: Main query - Get all relevant posted transactions (matches OFBiz view entity logic)
-        var rawEntries = await (
-            from ate in _context.AcctgTransEntries
-            join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
-            join gla in _context.GlAccounts on ate.GlAccountId equals gla.GlAccountId
-            where partyIds.Contains(ate.OrganizationPartyId)
-                  && act.IsPosted == "Y"
-                  && act.GlFiscalTypeId == glFiscalTypeId
-                  && act.AcctgTransTypeId != "PERIOD_CLOSING"
-                  && act.TransactionDate >= fromDate
-                  && act.TransactionDate < thruDate
-                  && (expenseClasses.Contains(gla.GlAccountClassId) ||
-                      revenueClasses.Contains(gla.GlAccountClassId) ||
-                      incomeClasses.Contains(gla.GlAccountClassId))
-            orderby act.AcctgTransId, ate.AcctgTransEntrySeqId
-            select new
-            {
-                ate.GlAccountId,
-                ate.DebitCreditFlag,
-                Amount = ate.Amount,
-                gla.AccountCode,
-                gla.AccountNameArabic,
-                GlAccountClassId = gla.GlAccountClassId
-            }).ToListAsync();
-
-        // Step 3: Process each entry with proper sign logic (Most critical part - matches OFBiz exactly)
-        decimal totalNetIncome = 0m;
-
-        var expenseMap = new Dictionary<string, decimal>();   // glAccountId -> total
-        var profitMap  = new Dictionary<string, decimal>();
-
-        foreach (var row in rawEntries)
-        {
-            decimal amount = row.Amount;
-
-            // Determine account nature (this replaces the OFBiz UtilAccounting calls)
-            bool isExpense = expenseClasses.Contains(row.GlAccountClassId);
-            bool isCreditAccount = revenueClasses.Contains(row.GlAccountClassId) || 
-                                   incomeClasses.Contains(row.GlAccountClassId);
-            bool isDebitAccount = !isCreditAccount && !isExpense;
-
-            // === Sign Flipping Logic (Exact equivalent of OFBiz) ===
-            // If Debit on Credit account OR Credit on Debit account → negate
-            if ((row.DebitCreditFlag == "D" && isCreditAccount) ||
-                (row.DebitCreditFlag == "C" && isDebitAccount))
-            {
-                amount = -amount;
-            }
-
-            // If it's an Expense account → negate again
-            if (isExpense)
-            {
-                amount = -amount;
-            }
-
-            totalNetIncome += amount;
-
-            // Add to correct map
-            var targetMap = isExpense ? expenseMap : profitMap;
-
-            if (!targetMap.ContainsKey(row.GlAccountId))
-                targetMap[row.GlAccountId] = 0m;
-
-            targetMap[row.GlAccountId] += amount;
-        }
-
-        // Step 4: Get Current Fiscal Period totals for each account (matches OFBiz second loop)
-        var customTimePeriodStartDate = fromDate;   // We can improve this later if needed
-        var customTimePeriodEndDate = thruDate;
-
-        // Build Income list
-        foreach (var kvp in profitMap)
-        {
-            var (debitTotal, creditTotal) = await GetAcctgTransEntriesAndTransTotal(
-                organizationPartyId, kvp.Key, "Y", customTimePeriodStartDate, customTimePeriodEndDate);
-
-            var totalOfCurrentFiscalPeriod = debitTotal - creditTotal;
-
-            result.GlAccountTotalsMap.Income.Add(new GlAccountTotal
-            {
-                GlAccountId = kvp.Key,
-                TotalAmount = kvp.Value,
-                TotalOfCurrentFiscalPeriod = totalOfCurrentFiscalPeriod,
-                AccountCode = rawEntries.FirstOrDefault(x => x.GlAccountId == kvp.Key)?.AccountCode ?? "",
-                AccountName = rawEntries.FirstOrDefault(x => x.GlAccountId == kvp.Key)?.AccountNameArabic ?? ""
-            });
-        }
-
-        // Build Expense list
-        foreach (var kvp in expenseMap)
-        {
-            var (debitTotal, creditTotal) = await GetAcctgTransEntriesAndTransTotal(
-                organizationPartyId, kvp.Key, "Y", customTimePeriodStartDate, customTimePeriodEndDate);
-
-            var totalOfCurrentFiscalPeriod = debitTotal - creditTotal;
-
-            result.GlAccountTotalsMap.Expenses.Add(new GlAccountTotal
-            {
-                GlAccountId = kvp.Key,
-                TotalAmount = kvp.Value,
-                TotalOfCurrentFiscalPeriod = totalOfCurrentFiscalPeriod,
-                AccountCode = rawEntries.FirstOrDefault(x => x.GlAccountId == kvp.Key)?.AccountCode ?? "",
-                AccountName = rawEntries.FirstOrDefault(x => x.GlAccountId == kvp.Key)?.AccountNameArabic ?? ""
-            });
-        }
-
-        result.TotalNetIncome = totalNetIncome;
-
-        return result;
+        public ODataQueryOptions<PaymentRecord> Options { get; set; } = null!;
+        public string Language { get; set; } = "en";
+        public string? PaymentType { get; set; } // "incoming" or "outgoing"
     }
-    catch (Exception ex)
+
+    public class Handler : IRequestHandler<Query, IQueryable<PaymentRecord>>
     {
-        throw new Exception("Error in PrepareIncomeStatement", ex);
+        private readonly DataContext _context;
+
+        // Use UTC for consistent behavior
+        private static readonly DateTime TodayUtc = DateTime.UtcNow.Date;
+
+        public Handler(DataContext context)
+        {
+            _context = context;
+        }
+
+        public async Task<IQueryable<PaymentRecord>> Handle(Query request, CancellationToken cancellationToken)
+        {
+            var language = request.Language?.ToLower() ?? "en";
+            var isArabic = language == "ar";
+
+            // Build the query
+            var query = (from pyt in _context.Payments
+                         join ptt in _context.PaymentTypes on pyt.PaymentTypeId equals ptt.PaymentTypeId
+                         join sts in _context.StatusItems on pyt.StatusId equals sts.StatusId
+                         join pty in _context.Parties on pyt.PartyIdFrom equals pty.PartyId
+
+                         join pmt in _context.PaymentMethodTypes on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into pmtJoin
+                         from pmt in pmtJoin.DefaultIfEmpty()
+
+                         join ptyto in _context.Parties on pyt.PartyIdTo equals ptyto.PartyId into ptytoJoin
+                         from ptyto in ptytoJoin.DefaultIfEmpty()
+
+                         join opp in _context.OrderPaymentPreferences on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId into oppJoin
+                         from opp in oppJoin.DefaultIfEmpty()
+
+                         join ord in _context.OrderHeaders on opp.OrderId equals ord.OrderId into ordJoin
+                         from ord in ordJoin.DefaultIfEmpty()
+
+                         join we in _context.WorkEfforts on ord.OrderId equals we.RelatedOrderId into weJoin
+                         from we in weJoin.DefaultIfEmpty()
+
+                         join cc in _context.CostCenters on pyt.CostCenterId equals cc.CostCenterId into ccJoin
+                         from cc in ccJoin.DefaultIfEmpty()
+
+                         join proj in _context.WorkEfforts on pyt.WorkEffortId equals proj.WorkEffortId into projJoin
+                         from proj in projJoin.DefaultIfEmpty()
+
+                         join sr in _context.SalesRequests on pyt.SalesRequestId equals sr.SalesRequestId into srJoin
+                         from sr in srJoin.DefaultIfEmpty()
+
+                         join prod in _context.Products on sr.ProductId equals prod.ProductId into prodJoin
+                         from prod in prodJoin.DefaultIfEmpty()
+
+                         select new PaymentRecord
+                         {
+                             PaymentId = pyt.PaymentId,
+                             PaymentTypeId = pyt.PaymentTypeId,
+                             PaymentTypeDescription = isArabic ? ptt.DescriptionArabic : ptt.Description,
+                             PaymentMethodId = pyt.PaymentMethodId,
+                             PaymentMethodTypeId = pyt.PaymentMethodTypeId,
+                             PaymentMethodTypeDescription = pmt != null 
+                                 ? (isArabic ? pmt.DescriptionArabic : pmt.Description) 
+                                 : null,
+
+                             PartyIdFrom = pyt.PartyIdFrom,
+                             PartyIdFromName = pty.Description ?? string.Empty,
+                             PartyIdTo = pyt.PartyIdTo,
+                             PartyIdToName = ptyto != null 
+                                 ? ptyto.Description 
+                                 : (pyt.PartyIdTo == "Company" ? "Golden Land" : pyt.PartyIdTo ?? "Unknown"),
+
+                             StatusId = pyt.StatusId,
+                             StatusDescription = isArabic ? sts.DescriptionArabic : sts.Description,
+                             StatusDescriptionEnglish = sts.Description,
+
+                             EffectiveDate = (DateTime)pyt.EffectiveDate,   // Keep full DateTime
+                             CreatedStamp = (DateTime)pyt.CreatedStamp,
+                             Comments = pyt.Comments,
+                             PaymentRefNum = pyt.PaymentRefNum,
+                             PaymentPreferenceId = pyt.PaymentPreferenceId,
+                             IsBankTransfer = pyt.IsBankTransfer,
+                             Amount = pyt.Amount,
+                             ActualCurrencyAmount = pyt.ActualCurrencyAmount ?? pyt.Amount,
+                             CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
+
+                             FromPartyId = new OrderPartyDto 
+                             { 
+                                 FromPartyId = pty.PartyId, 
+                                 FromPartyName = pty.Description ?? string.Empty 
+                             },
+
+                             IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
+                             OrganizationPartyId = ptt.ParentTypeId == "DISBURSEMENT" 
+                                 ? pyt.PartyIdFrom 
+                                 : pyt.PartyIdTo,
+
+                             OrderId = ord?.OrderId,
+                             CertificateNumber = we?.CertificateNumber,
+                             ChequeNumber = pyt.ChequeNumber,
+                             ChequeDate = pyt.ChequeDate,
+                             ProjectId = pyt.WorkEffortId,
+                             ProjectName = proj?.ProjectName,
+                             CostCenterId = pyt.CostCenterId,
+                             SalesRequestId = pyt.SalesRequestId,
+                             CostCenterDescription = cc?.Description,
+                             ProductId = prod?.ProductId,
+                             BuildingNumber = prod?.BuildingNumber,
+                         })
+                         .AsQueryable();
+
+            // Server-side filter for incoming/outgoing
+            if (!string.IsNullOrEmpty(request.PaymentType))
+            {
+                var isOutgoing = request.PaymentType.ToLower() == "outgoing";
+                query = query.Where(p => p.IsDisbursement == isOutgoing);
+            }
+
+            // Apply OData $filter only
+            if (request.Options?.Filter != null)
+            {
+                query = request.Options.Filter.ApplyTo(query, new ODataQuerySettings 
+                { 
+                    EnsureStableOrdering = false 
+                }) as IQueryable<PaymentRecord>;
+            }
+
+            // Materialize to memory
+            var finalList = await query.ToListAsync(cancellationToken);
+
+            // === IMPROVED Post-processing: Calculate DaysUntilDue and DueStatusArabic ===
+            foreach (var record in finalList)
+            {
+                var effectiveDateOnly = record.EffectiveDate.Date;
+
+                // ==================== YOUR REQUESTED LOGIC ====================
+                // If EffectiveDate has time >= 20:00 (8 PM or later), treat it as due the NEXT day
+                // This makes 2026-04-04 22:00:00 → due on 2026-04-05 → daysUntilDue = -1 on 2026-04-06
+                DateTime dueDateForCalculation = effectiveDateOnly;
+                if (record.EffectiveDate.TimeOfDay.TotalHours >= 20)
+                {
+                    dueDateForCalculation = effectiveDateOnly.AddDays(1);
+                }
+
+                record.DaysUntilDue = (dueDateForCalculation - TodayUtc).Days;
+
+                if (record.StatusId != "PMNT_NOT_PAID")
+                {
+                    record.DueStatusArabic = record.StatusDescription;
+                    continue;
+                }
+
+                var isDisbursement = record.IsDisbursement;
+                var type = isDisbursement ? "دفعة" : "مستحق";
+                var typePaid = isDisbursement ? "دفعة مستحقة" : "مستحق";
+                
+
+                var quarterText = GetQuarterArabic(effectiveDateOnly);
+
+                if (record.DaysUntilDue < 0)
+                {
+                    var daysOverdue = Math.Abs(record.DaysUntilDue);
+
+                    record.DueStatusArabic = daysOverdue switch
+                    {
+                        1 => $"{type} متأخرة بيوم واحد",
+                        2 => $"{type} متأخرة بيومين",
+                        _ => daysOverdue <= 30 
+                            ? $"{type} متأخرة منذ {daysOverdue} يوم" 
+                            : $"{type} متأخرة جداً {quarterText}"
+                    };
+                }
+                else if (record.DaysUntilDue == 0)
+                {
+                    record.DueStatusArabic = $"{typePaid} اليوم";
+                }
+                else if (record.DaysUntilDue == 1)
+                {
+                    record.DueStatusArabic = $"{typePaid} غداً";
+                }
+                else if (record.DaysUntilDue <= 3)
+                {
+                    record.DueStatusArabic = $"{typePaid} بعد {record.DaysUntilDue} أيام";
+                }
+                else if (record.DaysUntilDue <= 7)
+                {
+                    record.DueStatusArabic = $"{typePaid} هذا الأسبوع";
+                }
+                else if (record.DaysUntilDue <= 30)
+                {
+                    record.DueStatusArabic = $"{typePaid} خلال الشهر";
+                }
+                else if (record.DaysUntilDue <= 90)
+                {
+                    record.DueStatusArabic = $"{typePaid} خلال 3 أشهر {quarterText}";
+                }
+                else
+                {
+                    record.DueStatusArabic = $"{typePaid} لاحقاً {quarterText}";
+                }
+            }
+
+            return finalList.AsQueryable();
+        }
+
+        // Helper to get quarter text
+        private static string GetQuarterArabic(DateTime date)
+        {
+            int quarterNum = (date.Month - 1) / 3 + 1;
+            string quarterName = quarterNum switch
+            {
+                1 => "الأول",
+                2 => "الثاني",
+                3 => "الثالث",
+                4 => "الرابع",
+                _ => ""
+            };
+
+            return $" (الربع {quarterName} {date.Year})";
+        }
     }
 }
