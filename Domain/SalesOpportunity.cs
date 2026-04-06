@@ -15,6 +15,9 @@ public class SalesOpportunity
     }
 
     public string SalesOpportunityId { get; set; } = null!;
+    public string? ProductId { get; set; }        // Apartment / Unit
+    public string? WorkEffortId { get; set; }     // Project / Compound / Phase
+
     public string? OpportunityName { get; set; }
     public string? Description { get; set; }
     public string? NextStep { get; set; }
@@ -39,6 +42,9 @@ public class SalesOpportunity
     public MarketingCampaign? MarketingCampaign { get; set; }
     public SalesOpportunityStage? OpportunityStage { get; set; }
     public Enumeration? TypeEnum { get; set; }
+    public virtual Product? Product { get; set; }           // Apartment / Unit
+    public virtual WorkEffort? WorkEffort { get; set; }     // Project / Compound
+
     public ICollection<InvoiceItem> InvoiceItems { get; set; }
     public ICollection<OrderItem> OrderItems { get; set; }
     public ICollection<SalesOpportunityCompetitor> SalesOpportunityCompetitors { get; set; }
@@ -48,8 +54,6 @@ public class SalesOpportunity
     public ICollection<SalesOpportunityTrckCode> SalesOpportunityTrckCodes { get; set; }
     public ICollection<SalesOpportunityWorkEffort> SalesOpportunityWorkEfforts { get; set; }
     
-    public virtual ICollection<SalesOpportunityProduct> SalesOpportunityProducts { get; set; } 
-        = new HashSet<SalesOpportunityProduct>();
     public virtual ICollection<SalesOpportunityAction> SalesOpportunityActions { get; set; } 
         = new HashSet<SalesOpportunityAction>();
 }

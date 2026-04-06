@@ -216,6 +216,7 @@ sudo rm -rf erp-contracts
  if [ -f docker-compose.vm.yml ]; then
    sudo docker-compose -f docker-compose.vm.yml down
  fi
+ sudo docker-compose -f docker-compose.vm.yml up -d --build
  
  
  cd ../logs/contracts
@@ -239,10 +240,10 @@ cd ~/mysql-backups/contracts-golden
     > ~/mysql-backups/contracts-golden/erp_contracts_no_definer_$(date +%Y-%m-%d_%H-%M-%S).sql
 
 gzip ~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-02-01_11-35-20.sql
-scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-04-06_07-06-57.sql ~/Desktop/
+scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-03-24_20-04-22.sql ~/Desktop/
 gunzip ~/Desktop/erp_contracts_no_definer_2026-02-01_11-35-20.sql.gz
 
-mysql -u root -p erp_contracts < erp_contracts_no_definer_2026-04-06_07-06-57.sql
+mysql -u root -p erp_contracts < erp_contracts_no_definer_2026-03-24_20-04-22.sql
 
 
 
@@ -300,5 +301,5 @@ Summarize this entire conversation as a concise JSON or bullet-point outline, in
  
  ////////
  
- New Power bi account
- xejiri3063@fengnu.com  / Tmbtc202600))
+  New Power bi account
+  xejiri3063@fengnu.com  / Tmbtc202600))

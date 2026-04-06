@@ -250,5 +250,7 @@ public class Product
     public ICollection<WorkEffort> WorkEffortsAsService { get; set; } = new HashSet<WorkEffort>();
     public virtual ICollection<SalesRequest> SalesRequests { get; set; } = new HashSet<SalesRequest>();
     public ICollection<ReserveRequest> ReserveRequests { get; set; } = new List<ReserveRequest>();
-
+    // Opportunities interested in this apartment/unit
+    public virtual ICollection<SalesOpportunity> SalesOpportunities { get; set; } 
+        = new HashSet<SalesOpportunity>();
 }

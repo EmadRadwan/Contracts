@@ -228,5 +228,7 @@ public class WorkEffort
 
     public virtual ICollection<BillingAccount> BillingAccounts { get; set; } 
     public virtual ICollection<Payment> Payments { get; set; }
-
+    // Opportunities interested in this project/compound
+    public virtual ICollection<SalesOpportunity> SalesOpportunities { get; set; } 
+        = new HashSet<SalesOpportunity>();
 }

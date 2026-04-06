@@ -1,239 +1,92 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using MediatR;
-using Microsoft.AspNetCore.OData.Query;
-using Microsoft.EntityFrameworkCore;
-using Persistence;
-using Application.Order.Orders; // for OrderPartyDto
+using System.ComponentModel.DataAnnotations.Schema;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
-namespace Application.Accounting.Payments;
+namespace Domain;
 
-public class ListPayments
+[JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]
+public class SalesOpportunity
 {
-    public class Query : IRequest<IQueryable<PaymentRecord>>
+    public SalesOpportunity()
     {
-        public ODataQueryOptions<PaymentRecord> Options { get; set; } = null!;
-        public string Language { get; set; } = "en";
-        public string? PaymentType { get; set; } // "incoming" or "outgoing"
+        InvoiceItems = new HashSet<InvoiceItem>();
+        OrderItems = new HashSet<OrderItem>();
+        SalesOpportunityCompetitors = new HashSet<SalesOpportunityCompetitor>();
+        SalesOpportunityHistories = new HashSet<SalesOpportunityHistory>();
+        SalesOpportunityQuotes = new HashSet<SalesOpportunityQuote>();
+        SalesOpportunityRoles = new HashSet<SalesOpportunityRole>();
+        SalesOpportunityTrckCodes = new HashSet<SalesOpportunityTrckCode>();
+        SalesOpportunityWorkEfforts = new HashSet<SalesOpportunityWorkEffort>();
+        SalesOpportunityActions = new HashSet<SalesOpportunityAction>();
     }
 
-    public class Handler : IRequestHandler<Query, IQueryable<PaymentRecord>>
-    {
-        private readonly DataContext _context;
+    // Primary Key
+    public string SalesOpportunityId { get; set; } = null!;
 
-        // Use UTC for consistent behavior
-        private static readonly DateTime TodayUtc = DateTime.UtcNow.Date;
+    // Core Opportunity Fields
+    public string? OpportunityName { get; set; }
+    public string? Description { get; set; }
+    public string? NextStep { get; set; }
+    public DateTime? NextStepDate { get; set; }
+    public decimal? EstimatedAmount { get; set; }
+    public decimal? EstimatedProbability { get; set; }
+    public string? CurrencyUomId { get; set; }
+    public string? MarketingCampaignId { get; set; }
+    public string? DataSourceId { get; set; }
+    public DateTime? EstimatedCloseDate { get; set; }
+    public string? OpportunityStageId { get; set; }
+    public string? TypeEnumId { get; set; }
 
-        public Handler(DataContext context)
-        {
-            _context = context;
-        }
+    // ==================== REAL ESTATE SPECIFIC FIELDS ====================
+    public string? ProductId { get; set; }        // Apartment / Unit
+    public string? WorkEffortId { get; set; }     // Project / Compound / Phase
 
-        public async Task<IQueryable<PaymentRecord>> Handle(Query request, CancellationToken cancellationToken)
-        {
-            var language = request.Language?.ToLower() ?? "en";
-            var isArabic = language == "ar";
+    public decimal Quantity { get; set; } = 1m;   // Usually 1, can be >1 for investors
+    public decimal? UnitPrice { get; set; }       // Estimated price per unit
+    public string? Notes { get; set; }            // "Client prefers 3rd floor", "Sea view", "Negotiating 5% discount"
 
-            // Build the query
-            var query = (from pyt in _context.Payments
-                         join ptt in _context.PaymentTypes on pyt.PaymentTypeId equals ptt.PaymentTypeId
-                         join sts in _context.StatusItems on pyt.StatusId equals sts.StatusId
-                         join pty in _context.Parties on pyt.PartyIdFrom equals pty.PartyId
+    // Additional useful fields for property sales
+    public string? PreferredFloor { get; set; }
+    public string? ViewType { get; set; }         // Sea View, Golf View, City View, etc.
+    public string? PaymentPlanId { get; set; }
 
-                         join pmt in _context.PaymentMethodTypes on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into pmtJoin
-                         from pmt in pmtJoin.DefaultIfEmpty()
+    // Date tracking for interest
+    public DateTime? FromDate { get; set; }
+    public DateTime? ThruDate { get; set; }       // Useful for history / soft-delete of interest
 
-                         join ptyto in _context.Parties on pyt.PartyIdTo equals ptyto.PartyId into ptytoJoin
-                         from ptyto in ptytoJoin.DefaultIfEmpty()
+    // Audit Fields
+    public DateTime? CreatedStamp { get; set; }
+    public DateTime? LastUpdatedStamp { get; set; }
+    public DateTime? CreatedTxStamp { get; set; }
+    public DateTime? LastUpdatedTxStamp { get; set; }
+    public string? CreatedByUserLogin { get; set; }
+    public string? LastModifiedByUserLogin { get; set; }
 
-                         join opp in _context.OrderPaymentPreferences on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId into oppJoin
-                         from opp in oppJoin.DefaultIfEmpty()
+    // ==================== NAVIGATION PROPERTIES ====================
 
-                         join ord in _context.OrderHeaders on opp.OrderId equals ord.OrderId into ordJoin
-                         from ord in ordJoin.DefaultIfEmpty()
+    // Standard OFBiz navigations
+    public virtual UserLogin? CreatedByUserLoginNavigation { get; set; }
+    public virtual Uom? CurrencyUom { get; set; }
+    public virtual DataSource? DataSource { get; set; }
+    public virtual MarketingCampaign? MarketingCampaign { get; set; }
+    public virtual SalesOpportunityStage? OpportunityStage { get; set; }
+    public virtual Enumeration? TypeEnum { get; set; }
 
-                         join we in _context.WorkEfforts on ord.OrderId equals we.RelatedOrderId into weJoin
-                         from we in weJoin.DefaultIfEmpty()
+    // Real Estate navigations (one-way from Opportunity)
+    public virtual Product? Product { get; set; }           // Apartment / Unit
+    public virtual WorkEffort? WorkEffort { get; set; }     // Project / Compound
 
-                         join cc in _context.CostCenters on pyt.CostCenterId equals cc.CostCenterId into ccJoin
-                         from cc in ccJoin.DefaultIfEmpty()
+    // Collections (keep all existing ones)
+    public virtual ICollection<InvoiceItem> InvoiceItems { get; set; }
+    public virtual ICollection<OrderItem> OrderItems { get; set; }
+    public virtual ICollection<SalesOpportunityCompetitor> SalesOpportunityCompetitors { get; set; }
+    public virtual ICollection<SalesOpportunityHistory> SalesOpportunityHistories { get; set; }
+    public virtual ICollection<SalesOpportunityQuote> SalesOpportunityQuotes { get; set; }
+    public virtual ICollection<SalesOpportunityRole> SalesOpportunityRoles { get; set; }
+    public virtual ICollection<SalesOpportunityTrckCode> SalesOpportunityTrckCodes { get; set; }
+    public virtual ICollection<SalesOpportunityWorkEffort> SalesOpportunityWorkEfforts { get; set; }
+    public virtual ICollection<SalesOpportunityAction> SalesOpportunityActions { get; set; }
 
-                         join proj in _context.WorkEfforts on pyt.WorkEffortId equals proj.WorkEffortId into projJoin
-                         from proj in projJoin.DefaultIfEmpty()
-
-                         join sr in _context.SalesRequests on pyt.SalesRequestId equals sr.SalesRequestId into srJoin
-                         from sr in srJoin.DefaultIfEmpty()
-
-                         join prod in _context.Products on sr.ProductId equals prod.ProductId into prodJoin
-                         from prod in prodJoin.DefaultIfEmpty()
-
-                         select new PaymentRecord
-                         {
-                             PaymentId = pyt.PaymentId,
-                             PaymentTypeId = pyt.PaymentTypeId,
-                             PaymentTypeDescription = isArabic ? ptt.DescriptionArabic : ptt.Description,
-                             PaymentMethodId = pyt.PaymentMethodId,
-                             PaymentMethodTypeId = pyt.PaymentMethodTypeId,
-                             PaymentMethodTypeDescription = pmt != null 
-                                 ? (isArabic ? pmt.DescriptionArabic : pmt.Description) 
-                                 : null,
-
-                             PartyIdFrom = pyt.PartyIdFrom,
-                             PartyIdFromName = pty.Description ?? string.Empty,
-                             PartyIdTo = pyt.PartyIdTo,
-                             PartyIdToName = ptyto != null 
-                                 ? ptyto.Description 
-                                 : (pyt.PartyIdTo == "Company" ? "Golden Land" : pyt.PartyIdTo ?? "Unknown"),
-
-                             StatusId = pyt.StatusId,
-                             StatusDescription = isArabic ? sts.DescriptionArabic : sts.Description,
-                             StatusDescriptionEnglish = sts.Description,
-
-                             EffectiveDate = (DateTime)pyt.EffectiveDate,   // Keep full DateTime
-                             CreatedStamp = (DateTime)pyt.CreatedStamp,
-                             Comments = pyt.Comments,
-                             PaymentRefNum = pyt.PaymentRefNum,
-                             PaymentPreferenceId = pyt.PaymentPreferenceId,
-                             IsBankTransfer = pyt.IsBankTransfer,
-                             Amount = pyt.Amount,
-                             ActualCurrencyAmount = pyt.ActualCurrencyAmount ?? pyt.Amount,
-                             CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
-
-                             FromPartyId = new OrderPartyDto 
-                             { 
-                                 FromPartyId = pty.PartyId, 
-                                 FromPartyName = pty.Description ?? string.Empty 
-                             },
-
-                             IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
-                             OrganizationPartyId = ptt.ParentTypeId == "DISBURSEMENT" 
-                                 ? pyt.PartyIdFrom 
-                                 : pyt.PartyIdTo,
-
-                             OrderId = ord?.OrderId,
-                             CertificateNumber = we?.CertificateNumber,
-                             ChequeNumber = pyt.ChequeNumber,
-                             ChequeDate = pyt.ChequeDate,
-                             ProjectId = pyt.WorkEffortId,
-                             ProjectName = proj?.ProjectName,
-                             CostCenterId = pyt.CostCenterId,
-                             SalesRequestId = pyt.SalesRequestId,
-                             CostCenterDescription = cc?.Description,
-                             ProductId = prod?.ProductId,
-                             BuildingNumber = prod?.BuildingNumber,
-                         })
-                         .AsQueryable();
-
-            // Server-side filter for incoming/outgoing
-            if (!string.IsNullOrEmpty(request.PaymentType))
-            {
-                var isOutgoing = request.PaymentType.ToLower() == "outgoing";
-                query = query.Where(p => p.IsDisbursement == isOutgoing);
-            }
-
-            // Apply OData $filter only
-            if (request.Options?.Filter != null)
-            {
-                query = request.Options.Filter.ApplyTo(query, new ODataQuerySettings 
-                { 
-                    EnsureStableOrdering = false 
-                }) as IQueryable<PaymentRecord>;
-            }
-
-            // Materialize to memory
-            var finalList = await query.ToListAsync(cancellationToken);
-
-            // === IMPROVED Post-processing: Calculate DaysUntilDue and DueStatusArabic ===
-            foreach (var record in finalList)
-            {
-                var effectiveDateOnly = record.EffectiveDate.Date;
-
-                // ==================== YOUR REQUESTED LOGIC ====================
-                // If EffectiveDate has time >= 20:00 (8 PM or later), treat it as due the NEXT day
-                // This makes 2026-04-04 22:00:00 → due on 2026-04-05 → daysUntilDue = -1 on 2026-04-06
-                DateTime dueDateForCalculation = effectiveDateOnly;
-                if (record.EffectiveDate.TimeOfDay.TotalHours >= 20)
-                {
-                    dueDateForCalculation = effectiveDateOnly.AddDays(1);
-                }
-
-                record.DaysUntilDue = (dueDateForCalculation - TodayUtc).Days;
-
-                if (record.StatusId != "PMNT_NOT_PAID")
-                {
-                    record.DueStatusArabic = record.StatusDescription;
-                    continue;
-                }
-
-                var isDisbursement = record.IsDisbursement;
-                var type = isDisbursement ? "دفعة" : "مستحق";
-                var typePaid = isDisbursement ? "دفعة مستحقة" : "مستحق";
-                
-
-                var quarterText = GetQuarterArabic(effectiveDateOnly);
-
-                if (record.DaysUntilDue < 0)
-                {
-                    var daysOverdue = Math.Abs(record.DaysUntilDue);
-
-                    record.DueStatusArabic = daysOverdue switch
-                    {
-                        1 => $"{type} متأخرة بيوم واحد",
-                        2 => $"{type} متأخرة بيومين",
-                        _ => daysOverdue <= 30 
-                            ? $"{type} متأخرة منذ {daysOverdue} يوم" 
-                            : $"{type} متأخرة جداً {quarterText}"
-                    };
-                }
-                else if (record.DaysUntilDue == 0)
-                {
-                    record.DueStatusArabic = $"{typePaid} اليوم";
-                }
-                else if (record.DaysUntilDue == 1)
-                {
-                    record.DueStatusArabic = $"{typePaid} غداً";
-                }
-                else if (record.DaysUntilDue <= 3)
-                {
-                    record.DueStatusArabic = $"{typePaid} بعد {record.DaysUntilDue} أيام";
-                }
-                else if (record.DaysUntilDue <= 7)
-                {
-                    record.DueStatusArabic = $"{typePaid} هذا الأسبوع";
-                }
-                else if (record.DaysUntilDue <= 30)
-                {
-                    record.DueStatusArabic = $"{typePaid} خلال الشهر";
-                }
-                else if (record.DaysUntilDue <= 90)
-                {
-                    record.DueStatusArabic = $"{typePaid} خلال 3 أشهر {quarterText}";
-                }
-                else
-                {
-                    record.DueStatusArabic = $"{typePaid} لاحقاً {quarterText}";
-                }
-            }
-
-            return finalList.AsQueryable();
-        }
-
-        // Helper to get quarter text
-        private static string GetQuarterArabic(DateTime date)
-        {
-            int quarterNum = (date.Month - 1) / 3 + 1;
-            string quarterName = quarterNum switch
-            {
-                1 => "الأول",
-                2 => "الثاني",
-                3 => "الثالث",
-                4 => "الرابع",
-                _ => ""
-            };
-
-            return $" (الربع {quarterName} {date.Year})";
-        }
-    }
+    // Reverse navigations (you already added these)
+    // public virtual ICollection<SalesOpportunity> SalesOpportunities { get; set; }  ← on Product & WorkEffort
 }
