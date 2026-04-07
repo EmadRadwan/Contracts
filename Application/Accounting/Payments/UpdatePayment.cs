@@ -62,8 +62,9 @@ public class UpdatePayment
                 if (original == null)
                     return Results<PaymentDto>.Failure("الدفعة غير موجودة", "PAYMENT_NOT_FOUND");
 
-                // Normalize effective date
-                var effectiveDate = dto.ChequeDate ?? dto.EffectiveDate ?? original.EffectiveDate ?? DateTime.UtcNow;
+                // === NORMALIZE TO DATE-ONLY (Timezone Safe) ===
+                DateTime effectiveDate = (dto.ChequeDate ?? dto.EffectiveDate ?? original.EffectiveDate ?? DateTime.UtcNow)
+                    .ToDateOnly();
 
                 // Get payment type once
                 var paymentType = await _context.PaymentTypes
@@ -147,7 +148,7 @@ public class UpdatePayment
                     EffectiveDate = effectiveDate,
                     PaymentTypeId = dto.PaymentTypeId,
                     ChequeNumber = dto.ChequeNumber,
-                    ChequeDate = dto.ChequeDate,
+                    ChequeDate = dto.ChequeDate?.ToDateOnly(),
                     Comments = dto.Comments,
                     IsBankTransfer = dto.IsBankTransfer,
                     PaymentMethodId = dto.PaymentMethodId,

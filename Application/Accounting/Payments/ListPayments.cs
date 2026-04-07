@@ -1,3 +1,4 @@
+using Application.Core;
 using MediatR;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
@@ -138,16 +139,7 @@ public class ListPayments
             {
                 var effectiveDateOnly = record.EffectiveDate.Date;
 
-                // ==================== YOUR REQUESTED LOGIC ====================
-                // If EffectiveDate has time >= 20:00 (8 PM or later), treat it as due the NEXT day
-                // This makes 2026-04-04 22:00:00 → due on 2026-04-05 → daysUntilDue = -1 on 2026-04-06
-                DateTime dueDateForCalculation = effectiveDateOnly;
-                if (record.EffectiveDate.TimeOfDay.TotalHours >= 20)
-                {
-                    dueDateForCalculation = effectiveDateOnly.AddDays(1);
-                }
-
-                record.DaysUntilDue = (dueDateForCalculation - TodayUtc).Days;
+                record.DaysUntilDue = (effectiveDateOnly - DateHelper.Today).Days;
 
                 if (record.StatusId != "PMNT_NOT_PAID")
                 {

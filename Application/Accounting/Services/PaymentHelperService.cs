@@ -110,7 +110,7 @@ public class PaymentHelperService : IPaymentHelperService
             PaymentMethodId = parameters.PaymentMethodId,
             PaymentPreferenceId = parameters.PaymentPreferenceId,
             StatusId = parameters.StatusId,
-            EffectiveDate = parameters.EffectiveDate ?? stamp,
+            EffectiveDate = parameters.EffectiveDate?.ToDateOnly() ?? DateHelper.Today,
             Amount = (decimal)parameters.Amount,
             PartyIdFrom = parameters.PartyIdFrom,
             PartyIdTo = parameters.PartyIdTo,
@@ -119,7 +119,7 @@ public class PaymentHelperService : IPaymentHelperService
             ActualCurrencyUomId = partyAccountingPreferences!.BaseCurrencyUomId,
             ActualCurrencyAmount = parameters.Amount,
             ChequeNumber = parameters.ChequeNumber, // Added
-            ChequeDate = parameters.ChequeDate, // Added
+            ChequeDate = parameters.ChequeDate?.ToDateOnly(),
             OverrideGlAccountId = parameters.OverrideGlAccountId,
             WorkEffortId = parameters.ProjectId,
             CostCenterId = parameters.CostCenterId,
@@ -200,7 +200,7 @@ public class PaymentHelperService : IPaymentHelperService
         payment.Comments = param.Comments ?? payment.Comments;
         payment.PaymentRefNum = param.PaymentRefNum;
         //payment.FinAccountTransId = param.FinAccountTransId;
-        payment.EffectiveDate = param.EffectiveDate;
+        payment.EffectiveDate = param.EffectiveDate?.ToDateOnly() ?? payment.EffectiveDate;
         payment.IsBankTransfer = param.IsBankTransfer;
         payment.PaymentPreferenceId = param.PaymentPreferenceId ?? payment.PaymentPreferenceId;
         payment.Amount = param.Amount ?? payment.Amount;
@@ -210,7 +210,8 @@ public class PaymentHelperService : IPaymentHelperService
         payment.CostCenterId = param.CostCenterId;
         payment.OverrideGlAccountId = param.OverrideGlAccountId;
         payment.ChequeNumber = param.ChequeNumber;
-        payment.ChequeDate = param.ChequeDate;
+        payment.ChequeDate = param.ChequeDate?.ToDateOnly();
+
 
         // Validate payment method (OFBiz: paymentMethod check)
         if (!string.IsNullOrEmpty(param.PaymentMethodId))
@@ -1243,9 +1244,10 @@ public class PaymentHelperService : IPaymentHelperService
     {
         try
         {
-            var effectiveDate = request.ChequeDate 
-                                ?? request.PaymentDate 
-                                ?? DateTime.UtcNow;
+            // === NORMALIZE TO DATE-ONLY (Timezone Safe) ===
+            DateTime effectiveDate = (request.ChequeDate ?? request.PaymentDate ?? DateTime.UtcNow)
+                .ToDateOnly();   // Using the helper
+
             
             // 1) Map parameters to createPayment
             var createPaymentMap = new CreatePaymentParam
@@ -1254,17 +1256,17 @@ public class PaymentHelperService : IPaymentHelperService
                 PartyIdTo = request.PartyIdTo,
                 Amount = request.Amount,
                 StatusId = request.StatusId,
-                EffectiveDate = effectiveDate,
+                EffectiveDate = effectiveDate,           // ← Now always date-only
                 PaymentTypeId = request.PaymentTypeId,
-                ChequeNumber = request.ChequeNumber, // Added
-                ChequeDate = request.ChequeDate, // Added
-                SalesRequestId = request.SalesRequestId, // Added
+                ChequeNumber = request.ChequeNumber,
+                ChequeDate = request.ChequeDate?.ToDateOnly(),
+                SalesRequestId = request.SalesRequestId,
                 Comments = request.Comments,
                 IsBankTransfer = request.IsBankTransfer,
                 OverrideGlAccountId = request.OverrideGlAccountId,
                 ProjectId = request.ProjectId,
-                CostCenterId =  request.CostCenterId,
-                PaymentRefNum = request.PaymentRefNum // Added
+                CostCenterId = request.CostCenterId,
+                PaymentRefNum = request.PaymentRefNum
             };
 
             // If PaymentMethodId is provided, fetch PaymentMethod and set PaymentMethodTypeId
