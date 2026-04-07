@@ -251,6 +251,11 @@ function SalesRequestsList() {
                                     field="projectName"
                                     title={getTranslatedLabel("salesRequest.list.project", "Advance")}
                                     width={130}
+                                /> 
+                                <Column
+                                    field="buildingNumber"
+                                    title={getTranslatedLabel("salesRequest.list.buildingNumber", "Building Number")}
+                                    width={100}
                                 />
                                 <Column
                                     field="comments"

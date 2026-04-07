@@ -108,6 +108,7 @@ namespace Application.Order.SalesRequests
                                     prod.ApartmentSpaceM2,
                                     prod.GardenSpaceM2,
                                     prod.ApartmentStatusId,
+                                    prod.BuildingNumber,
                                     pt.Description,
                                     pt.DescriptionArabic,
                                     FromPartyName      = cust != null ? cust.Description : null,
@@ -149,6 +150,7 @@ namespace Application.Order.SalesRequests
                     ProjectName                = SalesRequestProjectionHelpers.GetProjectName(x.ProjectId, projectNameLookup),
                     FloorNumber                = SalesRequestProjectionHelpers.GetFloorName(x.FloorNumber, floorMap),
                     ApartmentSpaceM2           = x.ApartmentSpaceM2 ?? 0m,
+                    BuildingNumber             = x.BuildingNumber ?? "",        // ← Added here
                     GardenSpaceM2              = x.GardenSpaceM2,
                     ApartmentStatusDescription = SalesRequestProjectionHelpers.GetApartmentStatusDescription(x.ApartmentStatusId, apartmentStatusLookup),
                     MaintenanceDeposit         = x.MaintenanceDeposit,

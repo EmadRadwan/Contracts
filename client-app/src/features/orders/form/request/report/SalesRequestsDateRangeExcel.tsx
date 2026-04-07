@@ -87,7 +87,7 @@ export const SalesRequestsDateRangeExcel: React.FC<SalesRequestsDateRangeExcelPr
             .replace('{1}', endDate?.format('DD/MM/YYYY') || '')
         );
         ws.getCell(`A${startRow}`).value = title;
-        ws.mergeCells(`A${startRow}:J${startRow}`); // 10 columns
+        ws.mergeCells(`A${startRow}:K${startRow}`); // 11 columns
         ws.getRow(startRow).font = { name: 'Amiri', size: 18, bold: true };
         ws.getRow(startRow).alignment = { horizontal: 'center', vertical: 'middle' };
         ws.getRow(startRow).height = 40;
@@ -96,6 +96,7 @@ export const SalesRequestsDateRangeExcel: React.FC<SalesRequestsDateRangeExcelPr
         const headers = [
             getTranslatedLabel('salesRequest.list.id', 'Request ID'),
             getTranslatedLabel('salesRequest.list.apartment', 'Apartment'),
+            getTranslatedLabel('salesRequest.list.buildingNumber', 'Building Number'),
             getTranslatedLabel('salesRequest.list.customer', 'Customer'),
             getTranslatedLabel('salesRequest.list.employee', 'Employee'),
             getTranslatedLabel('salesRequest.list.status', 'Status'),
@@ -116,6 +117,7 @@ export const SalesRequestsDateRangeExcel: React.FC<SalesRequestsDateRangeExcelPr
             const row = ws.addRow([
                 utils.rtlEmbed(utils.safeString(sr.salesRequestId)),
                 utils.rtlEmbed(utils.safeString(sr.apartmentName ?? '')),
+                utils.rtlEmbed(utils.safeString(sr.buildingNumber ?? '')),
                 utils.rtlEmbed(utils.safeString(sr.fromPartyName ?? '')),
                 utils.rtlEmbed(utils.safeString(sr.employeeName ?? '')),
                 utils.rtlEmbed(utils.safeString(sr.statusDescription ?? '')),
@@ -134,30 +136,31 @@ export const SalesRequestsDateRangeExcel: React.FC<SalesRequestsDateRangeExcelPr
             const totalSum = data.reduce((sum: number, sr: any) => sum + (sr.totalPrice || 0), 0);
             const totalRowNum = headerRowNum + data.length + 1;
             ws.addRow([
-                '', '', '', '', '',
+                '', '', '', '', '', '',
                 utils.rtlEmbed(getTranslatedLabel('common.total', 'Total')),
                 utils.formatNumber(totalSum),
                 '', '', ''
             ]);
-            ws.mergeCells(`A${totalRowNum}:F${totalRowNum}`);
+            ws.mergeCells(`A${totalRowNum}:G${totalRowNum}`);
             ws.getRow(totalRowNum).font = { name: 'Amiri', size: 12, bold: true };
-            ws.getCell(`G${totalRowNum}`).font = { bold: true };
+            ws.getCell(`H${totalRowNum}`).font = { bold: true };
         }
 
         ws.columns = [
             { width: 15 }, // A Request ID
             { width: 25 }, // B Apartment
-            { width: 25 }, // C Customer
-            { width: 25 }, // D Employee
-            { width: 20 }, // E Status
-            { width: 15 }, // F Sale Date
-            { width: 15 }, // G Total
-            { width: 15 }, // H Advance
-            { width: 25 }, // I Project
-            { width: 35 }  // J Comments
+            { width: 20 }, // C Building Number
+            { width: 25 }, // D Customer
+            { width: 25 }, // E Employee
+            { width: 20 }, // F Status
+            { width: 15 }, // G Sale Date
+            { width: 15 }, // H Total
+            { width: 15 }, // I Advance
+            { width: 25 }, // J Project
+            { width: 35 }  // K Comments
         ];
-        ws.getColumn(7).numFmt = '#,##0.00'; 
-        ws.getColumn(8).numFmt = '#,##0.00';
+        ws.getColumn(8).numFmt = '#,##0.00'; 
+        ws.getColumn(9).numFmt = '#,##0.00';
 
         return await workbook.xlsx.writeBuffer();
     }, [getTranslatedLabel, startDate, endDate]);

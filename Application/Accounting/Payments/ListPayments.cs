@@ -58,6 +58,9 @@ public class ListPayments
                     from sr in srJoin.DefaultIfEmpty()
                     join prod in _context.Products on sr.ProductId equals prod.ProductId into prodJoin
                     from prod in prodJoin.DefaultIfEmpty()
+                    join approvedBy in _context.Parties on pyt.ApprovedByPartyId equals approvedBy.PartyId into approvedByJoin
+                    from approvedBy in approvedByJoin.DefaultIfEmpty()
+
                     select new PaymentRecord
                     {
                         PaymentId = pyt.PaymentId,
@@ -112,6 +115,9 @@ public class ListPayments
                         CostCenterDescription = cc.Description,
                         ProductId = prod.ProductId,
                         BuildingNumber = prod.BuildingNumber,
+                        ApprovedByPartyId = pyt.ApprovedByPartyId,
+                        ApprovedByPartyName = approvedBy != null ? approvedBy.Description : null,
+
                     })
                 .AsQueryable();
 

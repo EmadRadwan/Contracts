@@ -33,7 +33,7 @@ public class SalesRequestRecord
     public decimal ApartmentSpaceM2 { get; set; }
     public decimal? GardenSpaceM2 { get; set; }
     public string ApartmentStatusDescription { get; set; } = string.Empty;
-    
+    public string? BuildingNumber { get; set; }   // Add this property
     public string StatusId { get; set; } = string.Empty;
     public bool? IsChequesDelivered { get; set; }
 

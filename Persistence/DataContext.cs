@@ -32084,6 +32084,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 entity.ToTable("PAYMENT");
 
                 entity.HasIndex(e => e.ActualCurrencyUomId, "PAYMENT_ACUOM");
+                entity.HasIndex(e => e.ApprovedByPartyId, "PAYMENT_APPR_PTY");
 
                 entity.HasIndex(e => e.CurrencyUomId, "PAYMENT_CUOM");
 
@@ -32220,6 +32221,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasMaxLength(60)
                     .IsUnicode(false)
                     .HasColumnName("PAYMENT_REF_NUM");
+                    
+                     entity.Property(e => e.ApprovedByPartyId)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("APPROVED_BY_PARTY_ID");
 
                 entity.Property(e => e.PaymentTypeId)
                     .HasMaxLength(36)
@@ -32323,6 +32329,12 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasForeignKey(p => p.SalesRequestId)
                     .OnDelete(DeleteBehavior.ClientSetNull)  // Optional: explicit for clarity; allows deleting SalesRequest without cascading
                     .HasConstraintName("FK_PAYMENT_SALES_REQUEST");
+                    
+           entity.HasOne(d => d.ApprovedByPartyNavigation)
+        .WithMany(p => p.PaymentsApprovedBy)
+        .HasForeignKey(d => d.ApprovedByPartyId)
+        .HasConstraintName("FK_PAYMENT_APPROVED_BY_PARTY")
+        .OnDelete(DeleteBehavior.ClientSetNull);   // Usually you don't want to cascade delete payments when a party is deleted
 
               
             });
@@ -32336,6 +32348,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 entity.HasIndex(e => e.TaxAuthGeoId, "PAYMENT_APP_GEO");
 
                 entity.HasIndex(e => e.InvoiceId, "PAYMENT_APP_INV");
+                
 
                 entity.HasIndex(e => e.OverrideGlAccountId, "PAYMENT_APP_ORGLA");
 
@@ -32355,6 +32368,9 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 entity.Property(e => e.AmountApplied)
                     .HasColumnType("decimal(18,3)")
                     .HasColumnName("AMOUNT_APPLIED");
+                    
+                   
+
 
                 entity.Property(e => e.BillingAccountId)
                     .HasMaxLength(36)
@@ -32436,6 +32452,8 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .WithMany(p => p.PaymentApplicationToPayments)
                     .HasForeignKey(d => d.ToPaymentId)
                     .HasConstraintName("PAYMENT_APP_TPMT");
+                    
+          
             });
 
             modelBuilder.Entity<PaymentAttribute>(entity =>

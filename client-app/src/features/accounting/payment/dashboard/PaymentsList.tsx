@@ -461,6 +461,11 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
 
     // ── Always last ──
     {
+      field: "approvedByPartyName",
+      title: getTranslatedLabel(`${localizationKey}.approvedByPartyName`, "Approved By"),
+      width: 150,
+    },
+    {
       title: getTranslatedLabel(`${localizationKey}.actions`, "Actions"),
       width: 220,
       cell: ActionsCell,

@@ -50,4 +50,6 @@ public class PaymentRecord
     public string? CostCenterDescription { get; set; }
     public int DaysUntilDue { get; set; }
     public string? DueStatusArabic { get; set; }
+    public string? ApprovedByPartyId { get; set; }
+    public string? ApprovedByPartyName { get; set; }
 }

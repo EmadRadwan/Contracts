@@ -78,6 +78,7 @@ public class ListSalesRequestsByDateRange
                                 prod.ProductName,
                                 prod.ProjectId,
                                 prod.FloorNumber,
+                                    prod.BuildingNumber,           // ← Added here
                                 prod.ApartmentSpaceM2,
                                 prod.GardenSpaceM2,
                                 prod.ApartmentStatusId,
@@ -117,6 +118,7 @@ public class ListSalesRequestsByDateRange
                 FromPartyName              = x.FromPartyName ?? "",
                 EmployeePartyId            = x.EmployeePartyId,
                 EmployeeName               = x.EmployeeName ?? "",
+                    BuildingNumber             = x.BuildingNumber ?? "",        // ← Added here
                 ProjectName                = SalesRequestProjectionHelpers.GetProjectName(x.ProjectId, projectNameLookup),
                 FloorNumber                = SalesRequestProjectionHelpers.GetFloorName(x.FloorNumber, floorMap),
                 ApartmentSpaceM2           = x.ApartmentSpaceM2 ?? 0m,

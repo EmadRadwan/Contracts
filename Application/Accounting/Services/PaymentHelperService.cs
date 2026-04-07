@@ -2,6 +2,7 @@ using Application.Accounting.FinAccounts;
 using Application.Accounting.Payments;
 using Application.Accounting.Services.Models;
 using Application.Core;
+using Application.Interfaces;
 using Application.Shipments.Invoices;
 using Domain;
 using Microsoft.EntityFrameworkCore;
@@ -47,13 +48,14 @@ public class PaymentHelperService : IPaymentHelperService
     private readonly IPaymentApplicationService _paymentApplicationService;
     private readonly Lazy<IFinAccountService> _finAccountService;
     private readonly ILogger _logger;
+        private readonly IUserAccessor _userAccessor;
 
 
     public PaymentHelperService(DataContext context, IUtilityService utilityService,
         IInvoiceService invoiceService, IInvoiceUtilityService invoiceUtilityService,
         IAcctgMiscService acctgMiscService, IGeneralLedgerService generalLedgerService,
         IPaymentApplicationService paymentApplicationService, Lazy<IFinAccountService> finAccountService,
-        ILogger<PaymentService> logger)
+        ILogger<PaymentService> logger, IUserAccessor userAccessor)
     {
         _context = context;
         _utilityService = utilityService;
@@ -64,6 +66,7 @@ public class PaymentHelperService : IPaymentHelperService
         _invoiceUtilityService = invoiceUtilityService;
         _paymentApplicationService = paymentApplicationService;
         _finAccountService = finAccountService;
+        _userAccessor = userAccessor;
     }
 
 
@@ -349,8 +352,13 @@ public class PaymentHelperService : IPaymentHelperService
                 orderPayPref.LastUpdatedStamp = DateTime.UtcNow;
             }
         }
+        
+        var user = await _context.Users
+            .FirstOrDefaultAsync(x => x.UserName == _userAccessor.GetUsername());
+        
 
         // Update the payment status
+        payment.ApprovedByPartyId = user?.PartyId;
         payment.StatusId = statusId;
         payment.LastUpdatedStamp = DateTime.UtcNow;
 

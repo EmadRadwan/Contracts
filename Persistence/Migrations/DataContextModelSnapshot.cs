@@ -28896,6 +28896,12 @@ namespace Persistence.Migrations
                         .HasColumnType("decimal(18,3)")
                         .HasColumnName("AMOUNT");
 
+                    b.Property<string>("ApprovedByPartyId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("APPROVED_BY_PARTY_ID");
+
                     b.Property<DateTime?>("ChequeDate")
                         .HasColumnType("datetime");
 
@@ -29034,6 +29040,8 @@ namespace Persistence.Migrations
                     b.HasIndex(new[] { "WorkEffortId" }, "IX_PAYMENT_WORK_EFFORT_ID");
 
                     b.HasIndex(new[] { "ActualCurrencyUomId" }, "PAYMENT_ACUOM");
+
+                    b.HasIndex(new[] { "ApprovedByPartyId" }, "PAYMENT_APPR_PTY");
 
                     b.HasIndex(new[] { "CurrencyUomId" }, "PAYMENT_CUOM");
 
@@ -69926,6 +69934,12 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("PAYMENT_ACUOM");
 
+                    b.HasOne("Domain.Party", "ApprovedByPartyNavigation")
+                        .WithMany("PaymentsApprovedBy")
+                        .HasForeignKey("ApprovedByPartyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_PAYMENT_APPROVED_BY_PARTY");
+
                     b.HasOne("Domain.CostCenter", "CostCenter")
                         .WithMany("Payments")
                         .HasForeignKey("CostCenterId")
@@ -70011,6 +70025,8 @@ namespace Persistence.Migrations
                         .HasConstraintName("FK_PAYMENT_WORK_EFFORT");
 
                     b.Navigation("ActualCurrencyUom");
+
+                    b.Navigation("ApprovedByPartyNavigation");
 
                     b.Navigation("CostCenter");
 
@@ -81941,6 +81957,8 @@ namespace Persistence.Migrations
                     b.Navigation("PaymentPartyIdFromNavigations");
 
                     b.Navigation("PaymentPartyIdToNavigations");
+
+                    b.Navigation("PaymentsApprovedBy");
 
                     b.Navigation("PayrollPreferences");
 
