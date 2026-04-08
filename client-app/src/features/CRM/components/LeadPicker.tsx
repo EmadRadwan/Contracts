@@ -57,18 +57,12 @@ const LeadPicker: React.FC<LeadPickerProps> = ({
     const handleChange = useCallback((_: any, newValue: LeadLov | LeadLov[] | null) => {
         if (multiple) {
             onChange([])
-            // const selectedLeads = (newValue as LeadLov[] || []).map(c => ({
-            //     partyId: c.partyId,
-            //     partyName: c.fullName,
-            //     email: c.email,
-            //     phone: c.phone,
-            //     roleTypeId: 'LEAD_CONTACT'
-            // }));
             onChange([{
                     partyId: (newValue as LeadLov[])[newValue?.length - 1].partyId,
                     partyName: (newValue as LeadLov[])[newValue?.length - 1].fullName,
                     email: (newValue as LeadLov[])[newValue?.length - 1].email,
                     phone: (newValue as LeadLov[])[newValue?.length - 1].phone,
+                    dataSourceId : (newValue as LeadLov[])[newValue?.length - 1].dataSourceId,
                     roleTypeId: 'LEAD_CONTACT'
                 }]);
         } else {
@@ -79,6 +73,7 @@ const LeadPicker: React.FC<LeadPickerProps> = ({
                     partyName: lead.fullName,
                     email: lead.email,
                     phone: lead.phone,
+                    dataSourceId : lead.dataSourceId,
                     roleTypeId: 'LEAD_CONTACT'
                 }]);
             } else {
@@ -90,7 +85,7 @@ const LeadPicker: React.FC<LeadPickerProps> = ({
     // Convert SalesOpportunityLead[] to LeadLov[] for the Autocomplete value
     const selectedValues: LeadLov[] = value.map(v => ({
         partyId: v.partyId!,
-        fullName: v.partyName,
+        fullName: v.partyName || v.fullName,
         email: v.email,
         phone: v.phone
     }));

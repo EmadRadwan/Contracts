@@ -2,6 +2,7 @@ using Bogus;
 using Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace Persistence;
@@ -1118,6 +1119,38 @@ public class SeedContracts
                 {
                     string[] employeeRoles = { "AGENT", "SALES_REP", "EMPLOYEE" };
                     foreach (var role in employeeRoles)
+                    {
+                        context.PartyRoles.Add(new PartyRole
+                        {
+                            PartyId = party.PartyId,
+                            RoleTypeId = role,
+                            LastUpdatedStamp = DateTime.UtcNow,
+                            LastUpdatedTxStamp = DateTime.UtcNow,
+                            CreatedStamp = DateTime.UtcNow,
+                            CreatedTxStamp = DateTime.UtcNow
+                        });
+                    }
+                }
+                else if (party.MainRole == "BROKER")
+                {
+                    string[] brokerRoles = { "BROKER" };
+                    foreach (var role in brokerRoles)
+                    {
+                        context.PartyRoles.Add(new PartyRole
+                        {
+                            PartyId = party.PartyId,
+                            RoleTypeId = role,
+                            LastUpdatedStamp = DateTime.UtcNow,
+                            LastUpdatedTxStamp = DateTime.UtcNow,
+                            CreatedStamp = DateTime.UtcNow,
+                            CreatedTxStamp = DateTime.UtcNow
+                        });
+                    }
+                }
+                else if (party.MainRole == "SALES_REP")
+                {
+                    string[] salesRepRoles = { "SALES_REP" };
+                    foreach (var role in salesRepRoles)
                     {
                         context.PartyRoles.Add(new PartyRole
                         {

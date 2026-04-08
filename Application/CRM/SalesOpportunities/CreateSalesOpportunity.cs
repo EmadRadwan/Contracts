@@ -80,18 +80,7 @@ public class CreateSalesOpportunity
                 var opportunity = new SalesOpportunity
                 {
                     SalesOpportunityId = opportunityId,
-                    OpportunityName = dto.OpportunityName,
-                    Description = dto.Description,
-                    EstimatedAmount = dto.EstimatedAmount ?? 0,
-                    EstimatedProbability = dto.EstimatedProbability ?? stage.DefaultProbability ?? 0,
-                    CurrencyUomId = dto.CurrencyUomId ?? "USD",
                     OpportunityStageId = dto.OpportunityStageId,
-                    EstimatedCloseDate = dto.EstimatedCloseDate,
-                    NextStep = dto.NextStep,
-                    NextStepDate = dto.NextStepDate,
-                    DataSourceId = dto.DataSourceId,
-                    MarketingCampaignId = dto.MarketingCampaignId,
-                    TypeEnumId = dto.TypeEnumId,
                     WorkEffortId = dto.WorkEffortId,   // Assuming ProjectId maps to WorkEffortId
                     ProductId = dto.ProductId,        // Assuming UnitId maps to ProductId
                     CreatedByUserLogin = userLogin?.UserLoginId,
@@ -111,6 +100,20 @@ public class CreateSalesOpportunity
                         SalesOpportunity = opportunity,
                         PartyId = dto.OwnerPartyId,
                         RoleTypeId = "OWNER",
+                        CreatedStamp = stamp,
+                        LastUpdatedStamp = stamp
+                    });
+                }
+
+                if (!string.IsNullOrEmpty(dto.BrokerPartyId))
+                {
+                    await EnsurePartyRoleExists(dto.BrokerPartyId, "BROKER", stamp, ct);
+
+                    _context.SalesOpportunityRoles.Add(new SalesOpportunityRole
+                    {
+                        SalesOpportunity = opportunity,
+                        PartyId = dto.BrokerPartyId,
+                        RoleTypeId = "BROKER",
                         CreatedStamp = stamp,
                         LastUpdatedStamp = stamp
                     });

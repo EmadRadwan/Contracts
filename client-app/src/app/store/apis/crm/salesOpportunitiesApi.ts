@@ -4,7 +4,9 @@ import {
     SalesOpportunity,
     OpportunityStage,
     OpportunityQueryParams,
-    UpdateStageRequest
+    UpdateStageRequest,
+    OpportunityAction,
+    OpportunityCancellationReason
 } from "../../../../features/CRM/models/salesOpportunity";
 
 /**
@@ -26,7 +28,7 @@ const salesOpportunitiesApi = createApi({
             return headers;
         },
     }),
-    tagTypes: ["SalesOpportunity", "OpportunityStage"],
+    tagTypes: ["SalesOpportunity", "OpportunityStage", "OpportunityAction", "CancellationReason"],
 
     endpoints(builder) {
         return {
@@ -66,6 +68,22 @@ const salesOpportunitiesApi = createApi({
                     method: "GET",
                 }),
                 providesTags: [{ type: "OpportunityStage", id: "LIST" }],
+            }),
+
+            fetchActionTypes: builder.query<OpportunityAction[], void>({
+                query: () => ({
+                    url: `/salesOpportunities/actions`,
+                    method: "GET",
+                }),
+                providesTags: [{ type: "OpportunityAction", id: "LIST" }],
+            }),
+
+            fetchCancellationReasons: builder.query<OpportunityCancellationReason[], void>({
+                query: () => ({
+                    url: `/salesOpportunities/cancellation-reasons`,
+                    method: "GET",
+                }),
+                providesTags: [{ type: "CancellationReason", id: "LIST" }],
             }),
 
             // Create a new opportunity
@@ -110,6 +128,8 @@ const salesOpportunitiesApi = createApi({
 export const {
     useFetchOpportunitiesQuery,
     useFetchOpportunityStagesQuery,
+    useFetchActionTypesQuery,
+    useFetchCancellationReasonsQuery,
     useCreateOpportunityMutation,
     useUpdateOpportunityMutation,
     useUpdateOpportunityStageMutation,

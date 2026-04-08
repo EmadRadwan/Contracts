@@ -77,6 +77,13 @@
     "CREATED_STAMP": "2024-12-25 12:00:00"
   },
   {
+    "DATA_SOURCE_ID": "INDIRECT",
+    "DATA_SOURCE_TYPE_ID": null,
+    "DESCRIPTION": "Indirect",
+    "LAST_UPDATED_STAMP": "2024-12-25 12:00:00",
+    "CREATED_STAMP": "2024-12-25 12:00:00"
+  },
+  {
     "DATA_SOURCE_ID": "OTHER",
     "DATA_SOURCE_TYPE_ID": null,
     "DESCRIPTION": "Other",

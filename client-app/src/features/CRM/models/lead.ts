@@ -57,6 +57,7 @@ export interface LeadLov {
     fullName?: string;
     email?: string;
     phone?: string;
+    dataSourceId?: string;
 }
 
 /**

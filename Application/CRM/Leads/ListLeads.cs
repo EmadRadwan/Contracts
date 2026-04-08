@@ -28,9 +28,7 @@ public class ListLeads
                 .Where(p => p.PartyType!.PartyTypeId == "PERSON")
                 .Where(p =>
                     p.PartyRoles.Any(pr =>
-                        pr.RoleTypeId == "CONTACT" ||
-                        pr.RoleTypeId == "LEAD" ||
-                        pr.RoleTypeId == "CUSTOMER"))
+                        pr.RoleTypeId == "LEAD"))
                 .Select(p => new LeadRecord
                 {
                     PartyId = p.PartyId,

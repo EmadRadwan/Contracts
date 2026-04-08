@@ -19,6 +19,7 @@ import {
 import { Person as PersonIcon } from '@mui/icons-material';
 import { useTranslationHelper } from '../../../../app/hooks/useTranslationHelper';
 import { SalesOpportunity } from '../../models/salesOpportunity';
+import { useFetchActionTypesQuery, useFetchCancellationReasonsQuery } from '../../../../app/store/configureStore';
 
 interface AddActionModalProps {
     open: boolean;
@@ -33,18 +34,14 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
     const [nextAction, setNextAction] = useState('Set meeting');
     const [stageDate, setStageDate] = useState('');
     const [comment, setComment] = useState('');
-    const [isAnswered, setIsAnswered] = useState(true);
     const [cancelReason, setCancelReason] = useState('');
+
+    const { data: cancellationReasons, isLoading: loadingCancellationReasons } = useFetchCancellationReasonsQuery();
+    const { data: actionTypes, isLoading: loadingActionTypes } = useFetchActionTypesQuery();
 
     const handleSaveAction = () => {
         if (!opportunity) return;
-        console.log('Action saved for:', opportunity.opportunityName, {
-            nextAction,
-            stageDate,
-            comment,
-            isAnswered,
-            cancelReason,
-        });
+        
         onClose();
     };
 
@@ -76,9 +73,6 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
                     <Typography variant="h6" fontWeight="bold">
                         {getTranslatedLabel(`${localizationKey}.title`, 'Add Action')}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                        {getTranslatedLabel(`${localizationKey}.subtitle`, 'Select which columns you need to see lead table')}
-                    </Typography>
                 </Box>
 
                 <Box sx={{ p: 3 }}>
@@ -90,18 +84,22 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
                             label={getTranslatedLabel(`${localizationKey}.nextAction`, 'Next Action')}
                             onChange={(e) => setNextAction(e.target.value)}
                         >
-                            <MenuItem value="Set meeting">{getTranslatedLabel(`${localizationKey}.actions.setMeeting`, 'Set meeting')}</MenuItem>
-                            <MenuItem value="Follow up">{getTranslatedLabel(`${localizationKey}.actions.followUp`, 'Follow up')}</MenuItem>
-                            <MenuItem value="Meeting">{getTranslatedLabel(`${localizationKey}.actions.meeting`, 'Meeting')}</MenuItem>
-                            <MenuItem value="Following after meeting">{getTranslatedLabel(`${localizationKey}.actions.followingAfterMeeting`, 'Following after meeting')}</MenuItem>
-                            <MenuItem value="Cancellation">{getTranslatedLabel(`${localizationKey}.actions.cancellation`, 'Cancellation')}</MenuItem>
-                            <MenuItem value="Done deal">{getTranslatedLabel(`${localizationKey}.actions.doneDeal`, 'Done deal')}</MenuItem>
-                            <MenuItem value="No Answer">{getTranslatedLabel(`${localizationKey}.actions.noAnswer`, 'No Answer')}</MenuItem>
+                            {loadingActionTypes ? (
+                                <MenuItem value="">
+                                    <em>Loading...</em>
+                                </MenuItem>
+                            ) : (
+                                actionTypes?.map((action) => (
+                                    <MenuItem key={action.actionId} value={action.actionId}>
+                                        {action.description}
+                                    </MenuItem>
+                                ))
+                            )}
                         </Select>
                     </FormControl>
 
                     {/* Conditional Field */}
-                    {nextAction === 'Cancellation' ? (
+                    {nextAction === 'CANCELLATION' ? (
                         <FormControl fullWidth sx={{ mb: 3 }}>
                             <InputLabel>{getTranslatedLabel(`${localizationKey}.cancelReason`, 'Cancel Reason *')}</InputLabel>
                             <Select
@@ -109,10 +107,17 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
                                 label={getTranslatedLabel(`${localizationKey}.cancelReason`, 'Cancel Reason *')}
                                 onChange={(e) => setCancelReason(e.target.value)}
                             >
-                                <MenuItem value="low budget">{getTranslatedLabel(`${localizationKey}.reasons.lowBudget`, 'Low budget')}</MenuItem>
-                                <MenuItem value="not interested">{getTranslatedLabel(`${localizationKey}.reasons.notInterested`, 'Not interested')}</MenuItem>
-                                <MenuItem value="no answer">{getTranslatedLabel(`${localizationKey}.reasons.noAnswer`, 'No answer')}</MenuItem>
-                                <MenuItem value="other">{getTranslatedLabel(`${localizationKey}.reasons.other`, 'Other')}</MenuItem>
+                                {loadingCancellationReasons ? (
+                                    <MenuItem value="">
+                                        <em>Loading...</em>
+                                    </MenuItem>
+                                ) : (
+                                    cancellationReasons?.map((reason) => (
+                                        <MenuItem key={reason.reasonId} value={reason.reasonId}>
+                                            {reason.description}
+                                        </MenuItem>
+                                    ))
+                                )}
                             </Select>
                         </FormControl>
                     ) : (

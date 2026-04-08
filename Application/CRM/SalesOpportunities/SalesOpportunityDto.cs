@@ -26,6 +26,10 @@ public class SalesOpportunityDto
     public string? OwnerPartyId { get; set; }
     public string? OwnerName { get; set; }
 
+    // Brokerage (for indirect sales)
+    public string? BrokerPartyId { get; set; }
+    public string? BrokerName { get; set; }
+
     // Lifecycle
     public DateTime? EstimatedCloseDate { get; set; }
     public DateTime? CreatedStamp { get; set; }
@@ -61,4 +65,5 @@ public class SalesOpportunityLeadDto
     public string? RoleDescription { get; set; }
     public string? Email { get; set; }
     public string? Phone { get; set; }
+    public string? DataSourceId { get; set; }
 }

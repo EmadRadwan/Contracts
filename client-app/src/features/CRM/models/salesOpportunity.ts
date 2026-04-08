@@ -26,6 +26,10 @@ export interface SalesOpportunity {
     ownerPartyId?: string;
     ownerName?: string;
 
+    // Brokerage (for indirect sales)
+    brokerPartyId?: string;
+    brokerName?: string;
+
     // Lifecycle
     estimatedCloseDate?: string;
     createdStamp?: string;
@@ -43,7 +47,9 @@ export interface SalesOpportunity {
 
     //Project and Product
     workEffortId?: string;
+    workEffortName?: string;
     productId?: string;
+    productName?: string;
 
     // Linked leads
     leads: SalesOpportunityLead[];
@@ -59,6 +65,7 @@ export interface SalesOpportunityLead {
     roleTypeId?: string;  // e.g., "LEAD_CONTACT", "DECISION_MAKER", "INFLUENCER"
     roleDescription?: string;
     email?: string;
+    dataSourceId?: string;
     phone?: string;
 }
 
@@ -71,6 +78,17 @@ export interface OpportunityStage {
     defaultProbability?: number;
     sequenceNum?: number;
 }
+
+export interface OpportunityAction {
+    actionId: string;
+    description?: string;
+}
+
+export interface OpportunityCancellationReason {
+    actionId: string;
+    description?: string;
+}
+
 
 /**
  * Query parameters for listing opportunities.

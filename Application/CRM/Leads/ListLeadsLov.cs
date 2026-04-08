@@ -39,6 +39,7 @@ namespace Application.CRM.Leads
                         FirstName = p.Person!.FirstName,
                         LastName = p.Person!.LastName,
                         FullName = (p.Person!.FirstName ?? "") + " " + (p.Person!.MiddleName ?? "") + " " + (p.Person!.LastName ?? ""),
+                        DataSourceId = p.DataSourceId,
                         Email = p.PartyContactMeches
                             .Where(pcm => pcm.ContactMech!.ContactMechType!.ContactMechTypeId == "EMAIL_ADDRESS")
                             .OrderByDescending(pcm => pcm.FromDate)
