@@ -1303,6 +1303,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             {
                 GlFiscalTypeId = "ACTUAL",
                 AcctgTransTypeId = "SALES_INVOICE",
+                Description = invoice.Description,
                 InvoiceId = invoiceId,
                 PartyId = invoice.PartyId,
                 RoleTypeId = "BILL_TO_CUSTOMER",
@@ -2348,6 +2349,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             {
                 GlFiscalTypeId = "ACTUAL",
                 AcctgTransTypeId = "PURCHASE_INVOICE",
+                Description = invoice.Description,
                 InvoiceId = invoice.InvoiceId,
                 PartyId = invoice.PartyIdFrom,
                 RoleTypeId = "BILL_FROM_VENDOR",

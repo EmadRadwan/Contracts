@@ -54,12 +54,16 @@ public class ListAccountingTransactions
                 select new
                 {
                     AcctgTransId = g.Key,
-                    TotalDebit = g.Where(e => e.DebitCreditFlag == "D").Sum(e => e.Amount ?? 0m),
-                    TotalCredit = g.Where(e => e.DebitCreditFlag == "C").Sum(e => e.Amount ?? 0m),
+                    TotalDebit = g.Where(e => e.DebitCreditFlag == "D")
+                        .Sum(e => e.Amount ?? 0m),
+                    TotalCredit = g.Where(e => e.DebitCreditFlag == "C")
+                        .Sum(e => e.Amount ?? 0m),
                     NetAmount = g.Sum(e =>
                         e.DebitCreditFlag == "D" ? (e.Amount ?? 0m) :
                         e.DebitCreditFlag == "C" ? -(e.Amount ?? 0m) : 0m
-                    )
+                    ),
+                    // New: Absolute amount - very useful for single-sided entries
+                    TransactionAmount = g.Sum(e => Math.Abs(e.Amount ?? 0m))
                 };
 
             var query = (from transaction in _context.AcctgTrans
@@ -103,10 +107,19 @@ public class ListAccountingTransactions
                     ProjectNumber = project != null ? project.WorkEffortId : null,
                     ProjectName = project != null ? project.ProjectName : null,
                     SalesRequestId = transaction.SalesRequestId,
-                    DebitTotal = summary != null ? summary.TotalDebit : 0m,
-                    CreditTotal = summary != null ? summary.TotalCredit : 0m,
-                    NetAmount = summary != null ? summary.NetAmount : 0m,
+                    DebitTotal = summary != null 
+                        ? (summary.TotalDebit > 0 
+                            ? summary.TotalDebit 
+                            : summary.TransactionAmount)   // Show absolute amount when only credit exists
+                        : 0m,
 
+                    CreditTotal = summary != null 
+                        ? (summary.TotalCredit > 0 
+                            ? summary.TotalCredit 
+                            : 0m)
+                        : 0m,
+
+                    NetAmount = summary.NetAmount,
 
                     CreatedStamp = transaction.CreatedStamp
                 }).Distinct().AsQueryable();

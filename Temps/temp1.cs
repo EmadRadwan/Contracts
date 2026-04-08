@@ -1,224 +1,150 @@
-using Application.Core;
+using API.Controllers.Accounting.Transactions;
+using Application.Interfaces;
+using AutoMapper;
+using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.OData.Query;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Persistence;
-using Application.Order.Orders;
 
-namespace Application.Accounting.Payments;
+namespace Application.Accounting.Transactions;
 
-public class ListPayments
+public class ListAccountingTransactions
 {
-    public class Query : IRequest<IQueryable<PaymentRecord>>
+    public class Query : IRequest<IQueryable<AccountingTransactionRecord>>
     {
-        public ODataQueryOptions<PaymentRecord> Options { get; set; } = null!;
-        public string Language { get; set; } = "en";
-        public string? PaymentType { get; set; } // "incoming" or "outgoing"
+        public ODataQueryOptions<AccountingTransactionRecord> Options { get; set; }
+        public string CompanyId { get; set; }
     }
 
-    public class Handler : IRequestHandler<Query, IQueryable<PaymentRecord>>
+    public class QueryValidator : AbstractValidator<Query>
+    {
+        public QueryValidator()
+        {
+            RuleFor(x => x.CompanyId).NotEmpty().WithMessage("CompanyId is required");
+        }
+    }
+
+    public class Handler : IRequestHandler<Query, IQueryable<AccountingTransactionRecord>>
     {
         private readonly DataContext _context;
-
-        private static readonly DateTime TodayUtc = DateTime.UtcNow.Date;
 
         public Handler(DataContext context)
         {
             _context = context;
         }
 
-        public async Task<IQueryable<PaymentRecord>> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<IQueryable<AccountingTransactionRecord>> Handle(Query request,
+            CancellationToken cancellationToken)
         {
-            var language = request.Language?.ToLower() ?? "en";
-            var isArabic = language == "ar";
+            // Validation (you can remove this if you use MediatR pipeline validation)
+            var validator = new QueryValidator();
+            var validationResult = await validator.ValidateAsync(request, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
+            }
 
-            var query = (from pyt in _context.Payments
-                         join ptt in _context.PaymentTypes on pyt.PaymentTypeId equals ptt.PaymentTypeId
-                         join sts in _context.StatusItems on pyt.StatusId equals sts.StatusId
-                         join pty in _context.Parties on pyt.PartyIdFrom equals pty.PartyId
-                         join pmt in _context.PaymentMethodTypes on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId
-                             into pmtJoin
-                         from pmt in pmtJoin.DefaultIfEmpty()
-                         join ptyto in _context.Parties on pyt.PartyIdTo equals ptyto.PartyId into ptytoJoin
-                         from ptyto in ptytoJoin.DefaultIfEmpty()
+            // Improved entry summaries - handles single-sided transactions like Opening Balance
+            var entrySummaries =
+                from entry in _context.AcctgTransEntries
+                group entry by entry.AcctgTransId
+                into g
+                select new
+                {
+                    AcctgTransId = g.Key,
+                    TotalDebit = g.Where(e => e.DebitCreditFlag == "D")
+                                  .Sum(e => e.Amount ?? 0m),
+                    TotalCredit = g.Where(e => e.DebitCreditFlag == "C")
+                                   .Sum(e => e.Amount ?? 0m),
+                    NetAmount = g.Sum(e =>
+                        e.DebitCreditFlag == "D" ? (e.Amount ?? 0m) :
+                        e.DebitCreditFlag == "C" ? -(e.Amount ?? 0m) : 0m
+                    ),
+                    // New: Absolute amount - very useful for single-sided entries
+                    TransactionAmount = g.Sum(e => Math.Abs(e.Amount ?? 0m))
+                };
 
-                         // === NEW: Join for Approved By Party ===
-                         join approvedBy in _context.Parties on pyt.ApprovedByPartyId equals approvedBy.PartyId into approvedByJoin
-                         from approvedBy in approvedByJoin.DefaultIfEmpty()
+            var query = (from transaction in _context.AcctgTrans
+                join transactionType in _context.AcctgTransTypes 
+                    on transaction.AcctgTransTypeId equals transactionType.AcctgTransTypeId
 
-                         join opp in _context.OrderPaymentPreferences on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId into oppJoin
-                         from opp in oppJoin.DefaultIfEmpty()
-                         join ord in _context.OrderHeaders on opp.OrderId equals ord.OrderId into ordJoin
-                         from ord in ordJoin.DefaultIfEmpty()
-                         join we in _context.WorkEfforts on ord.OrderId equals we.RelatedOrderId into weJoin
-                         from we in weJoin.DefaultIfEmpty()
-                         join cc in _context.CostCenters on pyt.CostCenterId equals cc.CostCenterId into ccJoin
-                         from cc in ccJoin.DefaultIfEmpty()
-                         join proj in _context.WorkEfforts on pyt.WorkEffortId equals proj.WorkEffortId into projJoin
-                         from proj in projJoin.DefaultIfEmpty()
-                         join sr in _context.SalesRequests on pyt.SalesRequestId equals sr.SalesRequestId into srJoin
-                         from sr in srJoin.DefaultIfEmpty()
-                         join prod in _context.Products on sr.ProductId equals prod.ProductId into prodJoin
-                         from prod in prodJoin.DefaultIfEmpty()
+                join summary in entrySummaries
+                    on transaction.AcctgTransId equals summary.AcctgTransId into sumGroup
+                from summary in sumGroup.DefaultIfEmpty()
 
-                         select new PaymentRecord
-                         {
-                             PaymentId = pyt.PaymentId,
-                             PaymentTypeId = pyt.PaymentTypeId,
-                             PaymentTypeDescription = isArabic ? ptt.DescriptionArabic : ptt.Description,
-                             PaymentMethodId = pyt.PaymentMethodId,
-                             PaymentMethodTypeId = pyt.PaymentMethodTypeId,
-                             PaymentMethodTypeDescription = pmt != null
-                                 ? (isArabic ? pmt.DescriptionArabic : pmt.Description)
-                                 : null,
+                join transEntry in _context.AcctgTransEntries 
+                    on transaction.AcctgTransId equals transEntry.AcctgTransId
 
-                             PartyIdFrom = pyt.PartyIdFrom,
-                             PartyIdFromName = pty.Description ?? string.Empty,
-                             PartyIdTo = pyt.PartyIdTo,
-                             PartyIdToName = ptyto != null
-                                 ? ptyto.Description
-                                 : (pyt.PartyIdTo == "Company" ? "Golden Land" : pyt.PartyIdTo ?? "Unknown"),
+                join glAccount in _context.GlAccounts 
+                    on transEntry.GlAccountId equals glAccount.GlAccountId
 
-                             // === NEW: Approved By fields ===
-                             ApprovedByPartyId = pyt.ApprovedByPartyId,
-                             ApprovedByPartyName = approvedBy != null ? approvedBy.Description : null,
+                join glAccountOrg in _context.GlAccountOrganizations 
+                    on glAccount.GlAccountId equals glAccountOrg.GlAccountId
 
-                             StatusId = pyt.StatusId,
-                             StatusDescription = isArabic ? sts.DescriptionArabic : sts.Description,
-                             StatusDescriptionEnglish = sts.Description,
+                join certificate in _context.WorkEfforts 
+                    on new { transaction.WorkEffortId, Type = "PROJECT_CERTIFICATE" } 
+                    equals new { WorkEffortId = certificate.WorkEffortId, Type = certificate.WorkEffortTypeId } 
+                    into certGroup
+                from certificate in certGroup.DefaultIfEmpty()
 
-                             EffectiveDate = (DateTime)pyt.EffectiveDate,
-                             CreatedStamp = (DateTime)pyt.CreatedStamp,
-                             Comments = pyt.Comments,
-                             PaymentRefNum = pyt.PaymentRefNum,
-                             PaymentPreferenceId = pyt.PaymentPreferenceId,
-                             IsBankTransfer = pyt.IsBankTransfer,
-                             Amount = pyt.Amount,
-                             ActualCurrencyAmount = pyt.ActualCurrencyAmount ?? pyt.Amount,
-                             CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
+                join project in _context.WorkEfforts 
+                    on new
+                    {
+                        ProjectId = certificate != null ? certificate.ProjectId : transaction.WorkEffortId,
+                        Type = "PROJECT"
+                    } 
+                    equals new { ProjectId = project.WorkEffortId, Type = project.WorkEffortTypeId } 
+                    into projGroup
+                from project in projGroup.DefaultIfEmpty()
 
-                             FromPartyId = new OrderPartyDto
-                             {
-                                 FromPartyId = pty.PartyId,
-                                 FromPartyName = pty.Description ?? string.Empty
-                             },
+                join party in _context.Parties 
+                    on transaction.PartyId equals party.PartyId into partyGroup
+                from party in partyGroup.DefaultIfEmpty()
 
-                             IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
-                             OrganizationPartyId = ptt.ParentTypeId == "DISBURSEMENT"
-                                 ? pyt.PartyIdFrom
-                                 : pyt.PartyIdTo,
+                where glAccountOrg.OrganizationPartyId == request.CompanyId
 
-                             OrderId = ord.OrderId,
-                             CertificateNumber = we.CertificateNumber,
-                             ChequeNumber = pyt.ChequeNumber,
-                             ChequeDate = pyt.ChequeDate,
-                             ProjectId = pyt.WorkEffortId,
-                             ProjectName = proj.ProjectName,
-                             CostCenterId = pyt.CostCenterId,
-                             SalesRequestId = pyt.SalesRequestId,
-                             CostCenterDescription = cc.Description,
-                             ProductId = prod.ProductId,
-                             BuildingNumber = prod.BuildingNumber,
-                         })
+                select new AccountingTransactionRecord
+                {
+                    AcctgTransId = transaction.AcctgTransId,
+                    AcctgTransTypeId = transaction.AcctgTransTypeId,
+                    AcctgTransTypeDescription = transactionType.Description,
+                    PartyId = transaction.PartyId,
+                    PartyName = party != null ? party.Description : null,
+                    PaymentId = transaction.PaymentId,
+                    TransactionDate = transaction.TransactionDate,
+                    IsPosted = transaction.IsPosted,
+                    PostedDate = transaction.PostedDate,
+                    Description = transaction.Description,
+                    InvoiceId = transaction.InvoiceId,
+                    WorkEffortId = transaction.WorkEffortId,
+                    ShipmentId = transaction.ShipmentId,
+                    CertificateNumber = certificate != null ? certificate.CertificateNumber : null,
+                    ProjectNumber = project != null ? project.WorkEffortId : null,
+                    ProjectName = project != null ? project.ProjectName : null,
+                    SalesRequestId = transaction.SalesRequestId,
+
+                    // === FIXED AMOUNT CALCULATION (Option 1) ===
+                    DebitTotal = summary != null 
+                        ? (summary.TotalDebit > 0 
+                            ? summary.TotalDebit 
+                            : summary.TransactionAmount)   // Show absolute amount when only credit exists
+                        : 0m,
+
+                    CreditTotal = summary != null 
+                        ? (summary.TotalCredit > 0 
+                            ? summary.TotalCredit 
+                            : 0m)
+                        : 0m,
+
+                    NetAmount = summary?.NetAmount ?? 0m,
+
+                    CreatedStamp = transaction.CreatedStamp
+                })
+                .Distinct()
                 .AsQueryable();
 
-            // Server-side filter for incoming/outgoing
-            if (!string.IsNullOrEmpty(request.PaymentType))
-            {
-                var isOutgoing = request.PaymentType.ToLower() == "outgoing";
-                query = query.Where(p => p.IsDisbursement == isOutgoing);
-            }
-
-            // Apply OData $filter only
-            if (request.Options?.Filter != null)
-            {
-                query = request.Options.Filter.ApplyTo(query, new ODataQuerySettings
-                {
-                    EnsureStableOrdering = false
-                }) as IQueryable<PaymentRecord>;
-            }
-
-            // Materialize to memory
-            var finalList = await query.ToListAsync(cancellationToken);
-
-            // === Post-processing: Calculate DaysUntilDue and DueStatusArabic ===
-            foreach (var record in finalList)
-            {
-                var effectiveDateOnly = record.EffectiveDate.Date;
-
-                record.DaysUntilDue = (effectiveDateOnly - DateHelper.Today).Days;
-
-                if (record.StatusId != "PMNT_NOT_PAID")
-                {
-                    record.DueStatusArabic = record.StatusDescription;
-                    continue;
-                }
-
-                var isDisbursement = record.IsDisbursement;
-                var type = isDisbursement ? "دفعة" : "مستحق";
-                var typePaid = isDisbursement ? "دفعة مستحقة" : "مستحق";
-
-                var quarterText = GetQuarterArabic(effectiveDateOnly);
-
-                if (record.DaysUntilDue < 0)
-                {
-                    var daysOverdue = Math.Abs(record.DaysUntilDue);
-
-                    record.DueStatusArabic = daysOverdue switch
-                    {
-                        1 => $"{type} متأخرة بيوم واحد",
-                        2 => $"{type} متأخرة بيومين",
-                        _ => daysOverdue <= 30
-                            ? $"{type} متأخرة منذ {daysOverdue} يوم"
-                            : $"{type} متأخرة جداً {quarterText}"
-                    };
-                }
-                else if (record.DaysUntilDue == 0)
-                {
-                    record.DueStatusArabic = $"{typePaid} اليوم";
-                }
-                else if (record.DaysUntilDue == 1)
-                {
-                    record.DueStatusArabic = $"{typePaid} غداً";
-                }
-                else if (record.DaysUntilDue <= 3)
-                {
-                    record.DueStatusArabic = $"{typePaid} بعد {record.DaysUntilDue} أيام";
-                }
-                else if (record.DaysUntilDue <= 7)
-                {
-                    record.DueStatusArabic = $"{typePaid} هذا الأسبوع";
-                }
-                else if (record.DaysUntilDue <= 30)
-                {
-                    record.DueStatusArabic = $"{typePaid} خلال الشهر";
-                }
-                else if (record.DaysUntilDue <= 90)
-                {
-                    record.DueStatusArabic = $"{typePaid} خلال 3 أشهر {quarterText}";
-                }
-                else
-                {
-                    record.DueStatusArabic = $"{typePaid} لاحقاً {quarterText}";
-                }
-            }
-
-            return finalList.AsQueryable();
-        }
-
-        private static string GetQuarterArabic(DateTime date)
-        {
-            int quarterNum = (date.Month - 1) / 3 + 1;
-            string quarterName = quarterNum switch
-            {
-                1 => "الأول",
-                2 => "الثاني",
-                3 => "الثالث",
-                4 => "الرابع",
-                _ => ""
-            };
-
-            return $" (الربع {quarterName} {date.Year})";
+            return await Task.FromResult(query);
         }
     }
 }
