@@ -76,7 +76,7 @@ public class GetPartySubLedgerDetails
                         {
                             TransactionDate = ate.AcctgTrans.TransactionDate,
                             TransactionId = ate.AcctgTrans.AcctgTransId,
-                            Description = ate.Description,
+                            Description = ate.Description ?? ate.AcctgTrans.Description,
                             DebitCreditFlag = ate.DebitCreditFlag,
                             Amount = (decimal)ate.Amount,
                             CurrencyUomId = ate.CurrencyUomId ?? ate.OrigCurrencyUomId ?? currencyUomId,
