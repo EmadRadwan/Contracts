@@ -109,6 +109,7 @@ public class ListPayments
                         ChequeNumber = pyt.ChequeNumber,
                         ChequeDate = pyt.ChequeDate,
                         ProjectId = pyt.WorkEffortId,
+                        OverrideGlAccountId = pyt.OverrideGlAccountId,
                         ProjectName = proj.ProjectName,
                         CostCenterId = pyt.CostCenterId,
                         SalesRequestId = pyt.SalesRequestId,
