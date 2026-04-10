@@ -22,6 +22,7 @@ export const FormDropDownList = (fieldRenderProps: FieldRenderProps) => {
         data,
         name,
         onChange,
+        isModal,
         ...others
     } = fieldRenderProps;
     const editorRef = React.useRef(null);
@@ -87,6 +88,11 @@ export const FormDropDownList = (fieldRenderProps: FieldRenderProps) => {
         },
         [onBlur]
     );
+
+    const popupSettings = React.useMemo(() => ({
+        appendTo: isModal ? undefined : document.body   // undefined = render inside parent (Dialog)
+    }), [isModal]);
+
     return (
         <FieldWrapper style={wrapperStyle}>
             <Label
@@ -111,7 +117,7 @@ export const FormDropDownList = (fieldRenderProps: FieldRenderProps) => {
                 onChange={onChangeHandler}
                 onFocus={handleOnFocus}
                 onBlur={handleOnBlur}
-                popupSettings={{ appendTo: document.body }}
+                popupSettings={popupSettings}
                 {...others}
             />
             {

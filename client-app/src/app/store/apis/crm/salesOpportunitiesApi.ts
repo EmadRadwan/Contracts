@@ -4,7 +4,10 @@ import {
     SalesOpportunity,
     OpportunityStage,
     OpportunityQueryParams,
-    UpdateStageRequest
+    UpdateStageRequest,
+    OpportunityAction,
+    OpportunityCancellationReason,
+    SalesOpportunityAction
 } from "../../../../features/CRM/models/salesOpportunity";
 
 /**
@@ -26,7 +29,7 @@ const salesOpportunitiesApi = createApi({
             return headers;
         },
     }),
-    tagTypes: ["SalesOpportunity", "OpportunityStage"],
+    tagTypes: ["SalesOpportunity", "OpportunityStage", "OpportunityActionTypes", "CancellationReason", "OpportunityActions"],
 
     endpoints(builder) {
         return {
@@ -68,6 +71,22 @@ const salesOpportunitiesApi = createApi({
                 providesTags: [{ type: "OpportunityStage", id: "LIST" }],
             }),
 
+            fetchActionTypes: builder.query<OpportunityAction[], void>({
+                query: () => ({
+                    url: `/salesOpportunities/actions`,
+                    method: "GET",
+                }),
+                providesTags: [{ type: "OpportunityActionTypes", id: "LIST" }],
+            }),
+
+            fetchCancellationReasons: builder.query<OpportunityCancellationReason[], void>({
+                query: () => ({
+                    url: `/salesOpportunities/cancellation-reasons`,
+                    method: "GET",
+                }),
+                providesTags: [{ type: "CancellationReason", id: "LIST" }],
+            }),
+
             // Create a new opportunity
             createOpportunity: builder.mutation<SalesOpportunity, SalesOpportunity>({
                 query: (opportunity) => ({
@@ -76,6 +95,24 @@ const salesOpportunitiesApi = createApi({
                     body: opportunity,
                 }),
                 invalidatesTags: [{ type: "SalesOpportunity", id: "LIST" }],
+            }),
+
+            // Create a new opportunity
+            createOpportunityAction: builder.mutation<SalesOpportunityAction, {id: string, action: SalesOpportunityAction}>({
+                query: ({id, action}) => ({
+                    url: `/salesOpportunities/${id}/actions`,
+                    method: "POST",
+                    body: action,
+                }),
+                invalidatesTags: [{ type: "OpportunityActions", id: "ACTION_LIST" }],
+            }),
+
+            fetchOpportunityActions: builder.query<SalesOpportunityAction[], string>({
+                query: (id) => ({
+                    url: `/salesOpportunities/${id}/actions`,
+                    method: "GET",
+                }),
+                providesTags: [{ type: "OpportunityActions", id: "ACTION_LIST" }]
             }),
 
             // Update an existing opportunity
@@ -110,7 +147,11 @@ const salesOpportunitiesApi = createApi({
 export const {
     useFetchOpportunitiesQuery,
     useFetchOpportunityStagesQuery,
+    useFetchActionTypesQuery,
+    useFetchCancellationReasonsQuery,
     useCreateOpportunityMutation,
+    useCreateOpportunityActionMutation,
+    useFetchOpportunityActionsQuery,
     useUpdateOpportunityMutation,
     useUpdateOpportunityStageMutation,
 } = salesOpportunitiesApi;

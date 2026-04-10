@@ -106,14 +106,16 @@ public class ListSalesOpportunities
             var result = opportunities.Select(o =>
             {
                 var ownerRole = o.SalesOpportunityRoles.FirstOrDefault(r => r.RoleTypeId == "OWNER");
+                var brokerRole = o.SalesOpportunityRoles.FirstOrDefault(r => r.RoleTypeId == "BROKER");
                 var leads = o.SalesOpportunityRoles
-                    .Where(r => r.RoleTypeId != "OWNER")
+                    .Where(r => r.RoleTypeId != "OWNER" && r.RoleTypeId != "BROKER") // Exclude OWNER and BROKER roles
                     .Select(r => new SalesOpportunityLeadDto
                     {
                         PartyId = r.PartyId,
                         PartyName = GetPartyName(r.Party),
                         RoleTypeId = r.RoleTypeId,
-                        RoleDescription = r.RoleType?.Description
+                        RoleDescription = r.RoleType?.Description,
+                        DataSourceId = r.Party?.DataSourceId
                     })
                     .ToList();
 
@@ -130,6 +132,8 @@ public class ListSalesOpportunities
                     StageSequenceNum = o.OpportunityStage?.SequenceNum,
                     OwnerPartyId = ownerRole?.PartyId,
                     OwnerName = ownerRole != null ? GetPartyName(ownerRole.Party) : null,
+                    BrokerPartyId = brokerRole?.PartyId,
+                    BrokerName = brokerRole != null ? GetPartyName(brokerRole.Party) : null,
                     EstimatedCloseDate = o.EstimatedCloseDate,
                     CreatedStamp = o.CreatedStamp,
                     NextStep = o.NextStep,

@@ -25,9 +25,6 @@ public class UpdateSalesOpportunity
         {
             RuleFor(x => x.Opportunity.SalesOpportunityId)
                 .NotEmpty().WithMessage("Opportunity ID is required");
-
-            RuleFor(x => x.Opportunity.OpportunityName)
-                .NotEmpty().WithMessage("Opportunity name is required");
         }
     }
 
@@ -69,32 +66,10 @@ public class UpdateSalesOpportunity
 
                 // Check if stage changed (important for history)
                 var stageChanged = opportunity.OpportunityStageId != dto.OpportunityStageId;
-                var amountChanged = opportunity.EstimatedAmount != dto.EstimatedAmount;
-
-                // Update the opportunity - preserve existing values if not provided in DTO
-                opportunity.OpportunityName = dto.OpportunityName;
 
                 // Only update these fields if they are explicitly provided
-                if (dto.Description != null)
-                    opportunity.Description = dto.Description;
-                if (dto.EstimatedAmount.HasValue)
-                    opportunity.EstimatedAmount = dto.EstimatedAmount.Value;
-                if (dto.EstimatedProbability.HasValue)
-                    opportunity.EstimatedProbability = dto.EstimatedProbability.Value;
-                if (dto.CurrencyUomId != null)
-                    opportunity.CurrencyUomId = dto.CurrencyUomId;
-                if (dto.EstimatedCloseDate.HasValue)
-                    opportunity.EstimatedCloseDate = dto.EstimatedCloseDate;
-                if (dto.NextStep != null)
-                    opportunity.NextStep = dto.NextStep;
-                if (dto.NextStepDate.HasValue)
-                    opportunity.NextStepDate = dto.NextStepDate;
-                if (dto.DataSourceId != null)
-                    opportunity.DataSourceId = dto.DataSourceId;
-                if (dto.MarketingCampaignId != null)
-                    opportunity.MarketingCampaignId = dto.MarketingCampaignId;
-                if (dto.TypeEnumId != null)
-                    opportunity.TypeEnumId = dto.TypeEnumId;
+                opportunity.WorkEffortId = dto.WorkEffortId;
+                opportunity.ProductId = dto.ProductId;
 
                 opportunity.LastUpdatedStamp = stamp;
 
@@ -143,6 +118,32 @@ public class UpdateSalesOpportunity
                     }
                 }
 
+                if (!string.IsNullOrEmpty(dto.BrokerPartyId))
+                {
+                    var existingOwnerRole = opportunity.SalesOpportunityRoles
+                        .FirstOrDefault(r => r.RoleTypeId == "BROKER");
+
+                    if (existingOwnerRole == null || existingOwnerRole.PartyId != dto.BrokerPartyId)
+                    {
+                        // Remove old broker
+                        if (existingOwnerRole != null)
+                        {
+                            _context.SalesOpportunityRoles.Remove(existingOwnerRole);
+                        }
+
+                        // Add new broker
+                        await EnsurePartyRoleExists(dto.BrokerPartyId, "BROKER", stamp, ct);
+                        _context.SalesOpportunityRoles.Add(new SalesOpportunityRole
+                        {
+                            SalesOpportunityId = opportunity.SalesOpportunityId,
+                            PartyId = dto.BrokerPartyId,
+                            RoleTypeId = "BROKER",
+                            CreatedStamp = stamp,
+                            LastUpdatedStamp = stamp
+                        });
+                    }
+                }
+
                 // Update leads
                 if (dto.Leads.Any())
                 {
@@ -177,12 +178,12 @@ public class UpdateSalesOpportunity
                 }
 
                 // Create history entry if significant changes
-                if (stageChanged || amountChanged)
+                if (stageChanged)
                 {
                     var historyId = await _utilityService.GetNextSequence("SalesOpportunityHistory");
                     var changeNote = stageChanged
                         ? $"Stage changed to {dto.OpportunityStageId}"
-                        : "Amount updated";
+                        : "Opportunity updated";
 
                     _context.SalesOpportunityHistories.Add(new SalesOpportunityHistory
                     {
@@ -218,19 +219,9 @@ public class UpdateSalesOpportunity
                 var result = new SalesOpportunityDto
                 {
                     SalesOpportunityId = opportunity.SalesOpportunityId,
-                    OpportunityName = opportunity.OpportunityName,
-                    Description = opportunity.Description,
-                    EstimatedAmount = opportunity.EstimatedAmount,
-                    CurrencyUomId = opportunity.CurrencyUomId,
-                    EstimatedProbability = opportunity.EstimatedProbability,
                     OpportunityStageId = opportunity.OpportunityStageId,
                     OpportunityStageName = stage?.Description,
-                    StageSequenceNum = stage?.SequenceNum,
                     OwnerPartyId = dto.OwnerPartyId,
-                    EstimatedCloseDate = opportunity.EstimatedCloseDate,
-                    CreatedStamp = opportunity.CreatedStamp,
-                    NextStep = opportunity.NextStep,
-                    NextStepDate = opportunity.NextStepDate,
                     Leads = dto.Leads
                 };
 
