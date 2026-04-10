@@ -51,8 +51,10 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
     const handleLeadCreated = (newLead: SalesOpportunityLead) => {
         // Add the newly created lead to the selected leads
         const updatedLeads = [newLead];
+        console.log('New lead created and added to opportunity:', newLead);
         setSelectedLeads(updatedLeads);
         setLeadsModified(true);
+        setShowBroker(newLead?.dataSourceId === "INDIRECT");
         setOpenLeadModal(false);   // Close the modal
     };
 

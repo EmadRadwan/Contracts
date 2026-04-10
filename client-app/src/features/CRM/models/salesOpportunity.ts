@@ -56,6 +56,25 @@ export interface SalesOpportunity {
 }
 
 /**
+ * Sales Opportunity Action
+ */
+
+export interface SalesOpportunityAction {
+        // Mandatory IDs
+        salesOpportunityActionId?: string;
+        salesOpportunityId?: string;
+
+        // Main fields
+        actionTypeId?: string;
+        actionTypeDescription?: string;
+        isAnswered?: boolean;
+        actionDate?: string;
+        cancelReasonId?: string;
+        cancelReasonDescription?: string;
+        comment?: string;
+    }
+
+/**
  * Lead linked to a Sales Opportunity.
  * Enables many-to-many relationship between opportunities and people.
  */

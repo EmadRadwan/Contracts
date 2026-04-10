@@ -9,14 +9,14 @@ namespace Application.CRM.SalesOpportunities;
 /// Lists all Sales Opportunity Actions for use in dropdowns or action selection.
 /// Supports Arabic localization based on language parameter.
 /// </summary>
-public class ListSalesOpportunityActions
+public class ListSalesOpportunityActionTypes
 {
-    public record Query : IRequest<Result<List<SalesOpportunityActionDto>>>
+    public record Query : IRequest<Result<List<SalesOpportunityActionTypesDto>>>
     {
         public string Language { get; set; } = "en"; // Default to English
     }
 
-    public class Handler : IRequestHandler<Query, Result<List<SalesOpportunityActionDto>>>
+    public class Handler : IRequestHandler<Query, Result<List<SalesOpportunityActionTypesDto>>>
     {
         private readonly DataContext _context;
 
@@ -25,11 +25,11 @@ public class ListSalesOpportunityActions
             _context = context;
         }
 
-        public async Task<Result<List<SalesOpportunityActionDto>>> Handle(Query request, CancellationToken ct)
+        public async Task<Result<List<SalesOpportunityActionTypesDto>>> Handle(Query request, CancellationToken ct)
         {
             var actions = await _context.Enumerations
                 .Where(e => e.EnumTypeId == "CRM_ACTION_TYPE") // Adjust EnumType if your table uses a different identifier
-                .Select(e => new SalesOpportunityActionDto
+                .Select(e => new SalesOpportunityActionTypesDto
                 {
                     ActionId = e.EnumId,
                     Description = request.Language == "ar" 
@@ -38,12 +38,12 @@ public class ListSalesOpportunityActions
                 })
                 .ToListAsync(ct);
 
-            return Result<List<SalesOpportunityActionDto>>.Success(actions);
+            return Result<List<SalesOpportunityActionTypesDto>>.Success(actions);
         }
     }
 }
 
-public class SalesOpportunityActionDto
+public class SalesOpportunityActionTypesDto
 {
     public string ActionId { get; set; } = null!;
     public string? Description { get; set; }

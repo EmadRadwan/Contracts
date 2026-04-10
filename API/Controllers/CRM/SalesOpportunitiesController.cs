@@ -1,4 +1,5 @@
 using Application.CRM.SalesOpportunities;
+using FluentValidation.Resources;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.CRM;
@@ -50,7 +51,7 @@ public class SalesOpportunitiesController : BaseApiController
     public async Task<IActionResult> GetActions()
     {
         var Language = GetLanguage();
-        return HandleResult(await Mediator.Send(new ListSalesOpportunityActions.Query { Language = Language }));
+        return HandleResult(await Mediator.Send(new ListSalesOpportunityActionTypes.Query { Language = Language }));
     }
 
     [HttpGet("cancellation-reasons")]
@@ -69,6 +70,33 @@ public class SalesOpportunitiesController : BaseApiController
         return HandleResult(await Mediator.Send(new CreateSalesOpportunity.Command
         {
             Opportunity = opportunity
+        }));
+    }
+
+    /// <summary>
+    /// Create a new action for a sales opportunity.
+    /// </summary>
+    [HttpPost("{id}/actions")]
+    public async Task<IActionResult> AddAction(string id, [FromBody] SalesOpportunityActionDto action)
+    {
+        
+        return HandleResult(await Mediator.Send(new CreateSalesOpportunityAction.Command
+        {
+            Action = action
+        }));
+    }
+
+    /// <summary>
+    /// Create a new action for a sales opportunity.
+    /// </summary>
+    [HttpGet("{id}/actions")]
+    public async Task<IActionResult> ListSalesOpportinutyAction(string id)
+    {
+        
+        return HandleResult(await Mediator.Send(new ListSalesOpportunityActions.Query
+        {
+            SalesOpportunityId = id,
+            Language = GetLanguage()
         }));
     }
 

@@ -112,6 +112,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
                     fullName: `${values.firstName} ${values.middleName || ''}`.trim(),
                     email: values.infoString,
                     mobilePhone: values.mobileContactNumber,
+                    dataSourceId: values.dataSourceId,
                     // Add any other fields your SalesOpportunityLead model expects
                 };
 
