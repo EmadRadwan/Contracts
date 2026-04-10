@@ -60,6 +60,8 @@ public class ListPayments
                     from prod in prodJoin.DefaultIfEmpty()
                     join approvedBy in _context.Parties on pyt.ApprovedByPartyId equals approvedBy.PartyId into approvedByJoin
                     from approvedBy in approvedByJoin.DefaultIfEmpty()
+                    join createdBy in _context.Parties on pyt.CreatedByPartyId equals createdBy.PartyId into createdByJoin
+                    from createdBy in createdByJoin.DefaultIfEmpty()
 
                     select new PaymentRecord
                     {
@@ -118,7 +120,8 @@ public class ListPayments
                         BuildingNumber = prod.BuildingNumber,
                         ApprovedByPartyId = pyt.ApprovedByPartyId,
                         ApprovedByPartyName = approvedBy != null ? approvedBy.Description : null,
-
+                        CreatedByPartyId = pyt.CreatedByPartyId,
+                        CreatedByPartyName = createdBy != null ? createdBy.Description : null
                     })
                 .AsQueryable();
 

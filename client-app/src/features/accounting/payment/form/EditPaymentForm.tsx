@@ -494,7 +494,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     <strong style={{color: "blue"}}>{paymentTypeDesc}</strong>
                                                 </Typography>
                                             </Grid>
-                                            <Grid item xs={2}>
+                                            <Grid item xs={3}>
                                                 <Field
                                                     id="paymentMethodId"
                                                     name="paymentMethodId"
@@ -533,7 +533,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     validator={chequeValidator}
                                                 />
                                             </Grid>
-                                            <Grid item xs={3}>
+                                            <Grid item xs={2}>
                                                 <Field
                                                     id="chequeDate"
                                                     name="chequeDate"

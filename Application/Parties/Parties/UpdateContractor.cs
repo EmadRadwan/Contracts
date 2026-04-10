@@ -251,15 +251,16 @@ public class UpdateContractor
             string? newApGlAccountId = null;
 
             // Check if already has AP override
-            var hasApOverride = await _context.PartyGlAccounts
-                .AnyAsync(pga =>
+            var existingPartyGl = await _context.PartyGlAccounts
+                .Include(pga => pga.GlAccount)
+                .FirstOrDefaultAsync(pga =>
                         pga.OrganizationPartyId == "Company" &&
                         pga.PartyId == request.PartyDto.PartyId &&
                         pga.RoleTypeId == "BILL_FROM_VENDOR" &&
                         pga.GlAccountTypeId == "ACCOUNTS_PAYABLE",
                     cancellationToken);
 
-            if (!hasApOverride)
+            if (existingPartyGl == null)
             {
                 apCreated = false;
                 newApGlAccountId = null;
@@ -344,6 +345,15 @@ public class UpdateContractor
 
 
                 apCreated = true;
+            }
+            else if (existingPartyGl.GlAccount != null)
+            {
+                existingPartyGl.GlAccount.AccountName = $"AP - {request.PartyDto.GroupName} ({request.PartyDto.PartyId})";
+                existingPartyGl.GlAccount.AccountNameArabic = $"المقاولون - {request.PartyDto.GroupName} ";
+                existingPartyGl.GlAccount.LastUpdatedStamp = stamp;
+                existingPartyGl.GlAccount.LastUpdatedTxStamp = stamp;
+
+                _context.GlAccounts.Update(existingPartyGl.GlAccount);
             }
 
 

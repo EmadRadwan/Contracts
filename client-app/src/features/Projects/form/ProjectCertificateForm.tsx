@@ -225,7 +225,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
         state.certificateUi.selectedCertificate.currentFacilityId
         ?? state.certificateUi.selectedCertificate.facilityId
     );
-    const [deliverToSite, setDeliverToSite] = useState(false);
+    const [deliverToSite, setDeliverToSite] = useState(true);
     const [showNewCustomer, setShowNewCustomer] = useState(false);
 
     const handleFacilityChange = useCallback((event: any, formRenderProps: FormRenderProps) => {
@@ -704,7 +704,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                         <Grid container alignItems="start" justifyContent="start" spacing={1}>
                                             <Grid container spacing={1} alignItems="flex-end" justifyContent="flex-start"
                                                   sx={{paddingLeft: 3}}>
-                                                <Grid item xs={2}
+                                                <Grid item xs={3}
                                                       className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
                                                     <Field
                                                         id="projectId"

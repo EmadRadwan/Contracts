@@ -1385,7 +1385,9 @@
         "comments": "التعليقات",
         "orderId": "رقم الطلب",
         "approvedByPartyName": "اعتمدت بواسطة",
+        "createdByPartyName": "تم إنشاؤها بواسطة",
         "certificateNumber": "رقم المستخلص",
+        "isBankTransfer": "تحويل بنكي",
         "loading": "جاري تحميل الدفعات...",
         "deleteDialogMessage": "هل أنت متأكد من حذف الدفعة رقم {0}؟ هذا الإجراء لا يمكن التراجع عنه. إذا كانت هناك حركات محاسبية مرتبطة بهذه الدفعة، سيتم حذفها أيضاً."
       },
@@ -2101,6 +2103,7 @@
         "gratuities": "الإكراميات",
         "total": "الإجمالي",
         "addItem": "إضافة بند دفع",
+        "bulkAdd": "إضافة بند دفع",
         "totalAmount": "الإجمالي"
       },
       "HeaderList": {

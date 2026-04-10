@@ -258,14 +258,15 @@ public class UpdateCustomer
             string? newGlAccountId = null;
 
             var existingPartyGl = await _context.PartyGlAccounts
-                .AnyAsync(pga =>
+                .Include(pga => pga.GlAccount)
+                .FirstOrDefaultAsync(pga =>
                         pga.OrganizationPartyId == "Company" &&
                         pga.PartyId == request.PartyDto.PartyId &&
                         pga.RoleTypeId == "BILL_TO_CUSTOMER" &&
                         pga.GlAccountTypeId == "ACCOUNTS_RECEIVABLE",
                     cancellationToken);
 
-            if (!existingPartyGl)
+            if (existingPartyGl == null)
             {
                 // Generate unique GL Account ID (same logic as in CreateCustomer)
                 const string prefix = "12";
@@ -347,6 +348,16 @@ public class UpdateCustomer
                 _context.PartyGlAccounts.Add(partyGl);
 
                 glCreated = true;
+            }
+            else if (existingPartyGl.GlAccount != null)
+            {
+                // Update existing GL Account names if they changed
+                existingPartyGl.GlAccount.AccountName = $"AR - {request.PartyDto.FirstName} ({request.PartyDto.PartyId})";
+                existingPartyGl.GlAccount.AccountNameArabic = $"مدينون - {request.PartyDto.FirstName}";
+                existingPartyGl.GlAccount.LastUpdatedStamp = stamp;
+                existingPartyGl.GlAccount.LastUpdatedTxStamp = stamp;
+                
+                _context.GlAccounts.Update(existingPartyGl.GlAccount);
             }
 
             var result = await _context.SaveChangesAsync(cancellationToken) > 0;

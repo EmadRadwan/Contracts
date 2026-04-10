@@ -469,11 +469,16 @@ public class UpdateEmployee
                 return null;
             }
 
-            if (!await _context.PartyGlAccounts.AnyAsync(p =>
+            // 1. Loans Receivable
+            var existingLoanPartyGl = await _context.PartyGlAccounts
+                .Include(pga => pga.GlAccount)
+                .FirstOrDefaultAsync(p =>
                     p.OrganizationPartyId == "Company" &&
                     p.PartyId == request.PartyDto.PartyId &&
                     p.RoleTypeId == "EMPLOYEE" &&
-                    p.GlAccountTypeId == "ACCOUNTS_RECEIVABLE", cancellationToken))
+                    p.GlAccountTypeId == "ACCOUNTS_RECEIVABLE", cancellationToken);
+
+            if (existingLoanPartyGl == null)
             {
                 loanId = await GenerateUniqueGlId("1241", 2);
                 if (loanId == null) throw new Exception("Cannot generate loan GL ID");
@@ -529,13 +534,26 @@ public class UpdateEmployee
                     $"Loans Receivable - {request.PartyDto.FirstName} ({request.PartyDto.PartyId})",
                     $"ذمم الموظفين - ..."));
             }
+            else if (existingLoanPartyGl.GlAccount != null)
+            {
+                existingLoanPartyGl.GlAccount.AccountName = $"Loans Receivable - {request.PartyDto.FirstName} ({party.PartyId})";
+                existingLoanPartyGl.GlAccount.AccountNameArabic = $"ذمم الموظفين - {request.PartyDto.FirstName}";
+                existingLoanPartyGl.GlAccount.LastUpdatedStamp = stamp;
+                existingLoanPartyGl.GlAccount.LastUpdatedTxStamp = stamp;
+
+                _context.GlAccounts.Update(existingLoanPartyGl.GlAccount);
+            }
 
             // 2. Accrued Expenses
-            if (!await _context.PartyGlAccounts.AnyAsync(p =>
+            var existingAccruedPartyGl = await _context.PartyGlAccounts
+                .Include(pga => pga.GlAccount)
+                .FirstOrDefaultAsync(p =>
                     p.OrganizationPartyId == "Company" &&
                     p.PartyId == request.PartyDto.PartyId &&
                     p.RoleTypeId == "EMPLOYEE" &&
-                    p.GlAccountTypeId == "ACCOUNTS_PAYABLE", cancellationToken))
+                    p.GlAccountTypeId == "ACCOUNTS_PAYABLE", cancellationToken);
+
+            if (existingAccruedPartyGl == null)
             {
                 accruedId = await GenerateUniqueGlId("22");
                 if (accruedId == null) throw new Exception("Cannot generate accrued GL ID");
@@ -591,6 +609,15 @@ public class UpdateEmployee
                 createdAccounts.Add((accruedId, "Accrued Expenses",
                     $"Accrued Salaries - {request.PartyDto.FirstName} ({request.PartyDto.PartyId})",
                     $"مستحقات رواتب - ..."));
+            }
+            else if (existingAccruedPartyGl.GlAccount != null)
+            {
+                existingAccruedPartyGl.GlAccount.AccountName = $"Accrued Salaries - {request.PartyDto.FirstName} ({party.PartyId})";
+                existingAccruedPartyGl.GlAccount.AccountNameArabic = $"مستحقات رواتب - {request.PartyDto.FirstName}";
+                existingAccruedPartyGl.GlAccount.LastUpdatedStamp = stamp;
+                existingAccruedPartyGl.GlAccount.LastUpdatedTxStamp = stamp;
+
+                _context.GlAccounts.Update(existingAccruedPartyGl.GlAccount);
             }
 
             var result = await _context.SaveChangesAsync(cancellationToken) > 0;

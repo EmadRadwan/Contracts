@@ -311,6 +311,28 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
     );
   };
 
+  // Custom cell for Is Bank Transfer (Boolean)
+  const BankTransferCell = (props: any) => {
+    const value = props.dataItem.isBankTransfer === 1 || props.dataItem.isBankTransfer === true;
+
+    return (
+        <td
+            style={{
+              ...props.style,
+              textAlign: "center",
+              fontSize: "18px",
+              fontWeight: "bold",
+            }}
+        >
+          {value ? (
+              <span style={{ color: "#2e7d32" }}>✓</span>   // Green check
+          ) : (
+              <span style={{ color: "#c62828" }}>✕</span>   // Red cross
+          )}
+        </td>
+    );
+  };
+
   const gridColumns = [
     // ── Always visible (common) ──
     {
@@ -334,6 +356,18 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
     {
       field: "paymentMethodTypeDescription",
       title: getTranslatedLabel(`${localizationKey}.paymentMethodTypeDescription`, "Payment Method Type"),
+      width: 150,
+    },
+    {
+      field: "isBankTransfer",
+      title: getTranslatedLabel(`${localizationKey}.isBankTransfer`, "Bank Transfer"),
+      width: 120,
+      filter: "boolean",
+      cell: BankTransferCell,           // Custom cell for better display
+    },
+    {
+      field: "chequeNumber",
+      title: getTranslatedLabel(`${localizationKey}.chequeNumber`, "Cheque Number"),
       width: 150,
     },
     {
@@ -463,6 +497,11 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
     {
       field: "approvedByPartyName",
       title: getTranslatedLabel(`${localizationKey}.approvedByPartyName`, "Approved By"),
+      width: 150,
+    },
+    {
+      field: "createdByPartyName",
+      title: getTranslatedLabel(`${localizationKey}.createdByPartyName`, "Created By"),
       width: 150,
     },
     {

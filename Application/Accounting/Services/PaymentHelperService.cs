@@ -105,6 +105,8 @@ public class PaymentHelperService : IPaymentHelperService
             throw new Exception($"No accounting preferences found for party: {organizationPartyId}");
         }
 
+        var user = await _context.Users
+            .FirstOrDefaultAsync(x => x.UserName == _userAccessor.GetUsername());
 
         var payment = new Payment
         {
@@ -130,6 +132,7 @@ public class PaymentHelperService : IPaymentHelperService
             IsBankTransfer = parameters.IsBankTransfer,
             PaymentRefNum = parameters.PaymentRefNum,
             Comments = parameters.Comments,
+            CreatedByPartyId = user?.PartyId,
             CreatedStamp = stamp,
             LastUpdatedStamp = stamp
         };

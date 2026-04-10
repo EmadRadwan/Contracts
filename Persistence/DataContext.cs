@@ -32085,6 +32085,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
 
                 entity.HasIndex(e => e.ActualCurrencyUomId, "PAYMENT_ACUOM");
                 entity.HasIndex(e => e.ApprovedByPartyId, "PAYMENT_APPR_PTY");
+                entity.HasIndex(e => e.CreatedByPartyId, "PAYMENT_CRTD_PTY");
 
                 entity.HasIndex(e => e.CurrencyUomId, "PAYMENT_CUOM");
 
@@ -32223,9 +32224,14 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("PAYMENT_REF_NUM");
                     
                      entity.Property(e => e.ApprovedByPartyId)
-        .HasMaxLength(36)
-        .IsUnicode(false)
-        .HasColumnName("APPROVED_BY_PARTY_ID");
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("APPROVED_BY_PARTY_ID");
+                    
+                     entity.Property(e => e.CreatedByPartyId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("CREATED_BY_PARTY_ID");
 
                 entity.Property(e => e.PaymentTypeId)
                     .HasMaxLength(36)
@@ -32243,7 +32249,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("STATUS_ID");
                     
                     entity.Property(e => e.ChequeNumber)
-                    .HasMaxLength(50); // Adjust length based on requirements
+                    .HasMaxLength(50); 
 
                 entity.Property(e => e.ChequeDate)
                     .HasColumnType("datetime");
@@ -32330,13 +32336,19 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .OnDelete(DeleteBehavior.ClientSetNull)  // Optional: explicit for clarity; allows deleting SalesRequest without cascading
                     .HasConstraintName("FK_PAYMENT_SALES_REQUEST");
                     
-           entity.HasOne(d => d.ApprovedByPartyNavigation)
-        .WithMany(p => p.PaymentsApprovedBy)
-        .HasForeignKey(d => d.ApprovedByPartyId)
-        .HasConstraintName("FK_PAYMENT_APPROVED_BY_PARTY")
-        .OnDelete(DeleteBehavior.ClientSetNull);   // Usually you don't want to cascade delete payments when a party is deleted
+                       entity.HasOne(d => d.ApprovedByPartyNavigation)
+                    .WithMany(p => p.PaymentsApprovedBy)
+                    .HasForeignKey(d => d.ApprovedByPartyId)
+                    .HasConstraintName("FK_PAYMENT_APPROVED_BY_PARTY")
+                    .OnDelete(DeleteBehavior.ClientSetNull);   
+                    
+                    entity.HasOne(d => d.CreatedByPartyNavigation)
+                    .WithMany(p => p.PaymentsCreatedBy)
+                    .HasForeignKey(d => d.CreatedByPartyId)
+                    .HasConstraintName("FK_PAYMENT_CREATED_BY_PARTY");
 
-              
+                                    
+                          
             });
 
             modelBuilder.Entity<PaymentApplication>(entity =>

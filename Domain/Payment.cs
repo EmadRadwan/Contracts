@@ -41,7 +41,8 @@ public class Payment
     public DateTime? ChequeDate { get; set; }
     public string? WorkEffortId { get; set; }
     public string? CostCenterId { get; set; }
-    public string? ApprovedByPartyId { get; set; }   // Foreign key
+    public string? ApprovedByPartyId { get; set; }
+    public string? CreatedByPartyId { get; set; }
 
 
     public DateTime? LastUpdatedStamp { get; set; }
@@ -63,7 +64,8 @@ public class Payment
     public virtual WorkEffort? WorkEffort { get; set; }
     public virtual CostCenter? CostCenter { get; set; }
     public virtual SalesRequest? SalesRequest { get; set; }
-    public Party? ApprovedByPartyNavigation { get; set; }   // Recommended naming
+    public Party? ApprovedByPartyNavigation { get; set; }
+    public Party? CreatedByPartyNavigation { get; set; }
     
     public virtual ICollection<EmployeeAdvance> EmployeeAdvances { get; set; }
 

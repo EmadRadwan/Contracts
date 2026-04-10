@@ -161,7 +161,7 @@ public class Party
         WorkEffortsAsEmployee = new HashSet<WorkEffort>();
         SalesRequestsAsEmployee = new HashSet<SalesRequest>(); 
         PaymentsApprovedBy = new HashSet<Payment>();
-        
+        PaymentsCreatedBy = new HashSet<Payment>();
     }
 
     public string PartyId { get; set; } = null!;
@@ -357,6 +357,7 @@ public class Party
     public ICollection<ReserveRequest> ReserveRequestsAsCustomer { get; set; } = new List<ReserveRequest>();
     public ICollection<ReserveRequest> ReserveRequestsAsEmployee { get; set; } = new List<ReserveRequest>();
     public virtual ICollection<Payment> PaymentsApprovedBy { get; set; } = new HashSet<Payment>();
+    public virtual ICollection<Payment> PaymentsCreatedBy { get; set; } = new HashSet<Payment>();
 
 
 }

@@ -1,7 +1,10 @@
 export interface MultiPaymentItem {
     workEffortId: string;
+    workEffortIdParent?: string;
     glAccountId: string;
+    glAccountName?: string;
     itemType: string;
+    itemTypeDescription?: string;
     serviceId: string;
     serviceName: string;
     productId: string;
@@ -14,5 +17,7 @@ export interface MultiPaymentItem {
     gratuities: number;
     total: number;
     partyIdSupplier: string;
+    partyIdSupplierName?: string;
     partyIdContractor: string;
+    partyIdContractorName?: string;
 }
