@@ -67,6 +67,8 @@ public class WorkEffort
     public string? WorkEffortParentId { get; set; }
     public int? Priority { get; set; }
     public string? WorkEffortName { get; set; }
+    public string? CostCenterId { get; set; }
+    
     public string? Description { get; set; }
     public string? DeductionDescription { get; set; }
     public DateTime? EstimatedStartDate { get; set; }
@@ -158,6 +160,7 @@ public class WorkEffort
 
     public WorkEffort? Project { get; set; } 
     public Product? Product { get; set; } 
+    public CostCenter? CostCenter { get; set; }
     
     
     public OrderHeader? RelatedOrder { get; set; }

@@ -73,6 +73,16 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
                 width: "200px",
             },
             {
+                field: "subProjectName",
+                title: getTranslatedLabel("projects.certificate.form.subProject", "Sub Project"),
+                width: "150px",
+            },
+            {
+                field: "costCenterName",
+                title: getTranslatedLabel("accounting.payments.form.costCenter", "Cost Center"),
+                width: "150px",
+            },
+            {
                 field: "total",
                 title: getTranslatedLabel(`${localizationKey}.total`, "Total"),
                 width: "100px",
@@ -118,7 +128,7 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
                 ))}
             </Grid>
             {showBulk && (
-                <ModalContainer show={showBulk} onClose={handleBulkClose} width={1200}>
+                <ModalContainer show={showBulk} onClose={handleBulkClose} width="95vw" maxWidth={1680}>
                     <MultiPaymentItemBulkAdd
                         workEffortId={workEffortId}
                         onClose={handleBulkClose}

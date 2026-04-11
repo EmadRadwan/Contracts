@@ -11,8 +11,8 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20260406130820_Added productId to Sales Opp")]
-    partial class AddedproductIdtoSalesOpp
+    [Migration("20260410191412_AddCostCenterToWorkEffort")]
+    partial class AddCostCenterToWorkEffort
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -28899,6 +28899,12 @@ namespace Persistence.Migrations
                         .HasColumnType("decimal(18,3)")
                         .HasColumnName("AMOUNT");
 
+                    b.Property<string>("ApprovedByPartyId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("APPROVED_BY_PARTY_ID");
+
                     b.Property<DateTime?>("ChequeDate")
                         .HasColumnType("datetime");
 
@@ -28917,6 +28923,12 @@ namespace Persistence.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(20)")
                         .HasColumnName("COST_CENTER_ID");
+
+                    b.Property<string>("CreatedByPartyId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("CREATED_BY_PARTY_ID");
 
                     b.Property<DateTime?>("CreatedStamp")
                         .HasColumnType("datetime")
@@ -29037,6 +29049,10 @@ namespace Persistence.Migrations
                     b.HasIndex(new[] { "WorkEffortId" }, "IX_PAYMENT_WORK_EFFORT_ID");
 
                     b.HasIndex(new[] { "ActualCurrencyUomId" }, "PAYMENT_ACUOM");
+
+                    b.HasIndex(new[] { "ApprovedByPartyId" }, "PAYMENT_APPR_PTY");
+
+                    b.HasIndex(new[] { "CreatedByPartyId" }, "PAYMENT_CRTD_PTY");
 
                     b.HasIndex(new[] { "CurrencyUomId" }, "PAYMENT_CUOM");
 
@@ -57580,8 +57596,7 @@ namespace Persistence.Migrations
                         .HasColumnName("ACTUAL_START_DATE");
 
                     b.Property<decimal?>("AdditionalInsurance")
-                        .HasColumnType("decimal(18,3)")
-                        .HasColumnName("ADDITIONAL_INSURANCE");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<decimal?>("Amount")
                         .HasColumnType("decimal(18,3)")
@@ -57612,6 +57627,12 @@ namespace Persistence.Migrations
                     b.Property<decimal?>("CompletionPercentage")
                         .HasColumnType("decimal(5, 2)")
                         .HasColumnName("COMPLETION_PERCENTAGE");
+
+                    b.Property<string>("CostCenterId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("COST_CENTER_ID");
 
                     b.Property<string>("CostType")
                         .HasMaxLength(36)
@@ -57650,8 +57671,7 @@ namespace Persistence.Migrations
                         .HasColumnName("DEDUCTION_DESCRIPTION");
 
                     b.Property<decimal?>("Deductions")
-                        .HasColumnType("decimal(18,3)")
-                        .HasColumnName("DEDUCTIONS");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("Description")
                         .HasMaxLength(4000)
@@ -57660,8 +57680,7 @@ namespace Persistence.Migrations
                         .HasColumnName("DESCRIPTION");
 
                     b.Property<decimal?>("Discount")
-                        .HasColumnType("decimal(18,3)")
-                        .HasColumnName("DISCOUNT");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<decimal?>("DueAmount")
                         .HasColumnType("decimal(18,3)")
@@ -57708,8 +57727,7 @@ namespace Persistence.Migrations
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<decimal?>("Insurance")
-                        .HasColumnType("decimal(18,3)")
-                        .HasColumnName("INSURANCE");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<decimal?>("LaborPrice")
                         .HasColumnType("decimal(18,3)")
@@ -57952,6 +57970,8 @@ namespace Persistence.Migrations
                     b.HasIndex(new[] { "ChequeNumber" }, "WK_EFFRT_CHEQUE_NUM");
 
                     b.HasIndex(new[] { "PartyIdContractor" }, "WK_EFFRT_CONTRACTOR");
+
+                    b.HasIndex(new[] { "CostCenterId" }, "WK_EFFRT_COST_CENTER");
 
                     b.HasIndex(new[] { "CurrentStatusId" }, "WK_EFFRT_CURSTTS");
 
@@ -69929,11 +69949,23 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("PAYMENT_ACUOM");
 
+                    b.HasOne("Domain.Party", "ApprovedByPartyNavigation")
+                        .WithMany("PaymentsApprovedBy")
+                        .HasForeignKey("ApprovedByPartyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_PAYMENT_APPROVED_BY_PARTY");
+
                     b.HasOne("Domain.CostCenter", "CostCenter")
                         .WithMany("Payments")
                         .HasForeignKey("CostCenterId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("FK_PAYMENT_COST_CENTER");
+
+                    b.HasOne("Domain.Party", "CreatedByPartyNavigation")
+                        .WithMany("PaymentsCreatedBy")
+                        .HasForeignKey("CreatedByPartyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_PAYMENT_CREATED_BY_PARTY");
 
                     b.HasOne("Domain.Uom", "CurrencyUom")
                         .WithMany("PaymentCurrencyUoms")
@@ -70015,7 +70047,11 @@ namespace Persistence.Migrations
 
                     b.Navigation("ActualCurrencyUom");
 
+                    b.Navigation("ApprovedByPartyNavigation");
+
                     b.Navigation("CostCenter");
+
+                    b.Navigation("CreatedByPartyNavigation");
 
                     b.Navigation("CurrencyUom");
 
@@ -78680,6 +78716,12 @@ namespace Persistence.Migrations
                         .HasForeignKey("AccommodationSpotId")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("Domain.CostCenter", "CostCenter")
+                        .WithMany("WorkEfforts")
+                        .HasForeignKey("CostCenterId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("WK_EFFRT_COST_CENTER");
+
                     b.HasOne("Domain.StatusItem", "CurrentStatus")
                         .WithMany("WorkEfforts")
                         .HasForeignKey("CurrentStatusId")
@@ -78815,6 +78857,8 @@ namespace Persistence.Migrations
                     b.Navigation("AccommodationSpot");
 
                     b.Navigation("ContractorParty");
+
+                    b.Navigation("CostCenter");
 
                     b.Navigation("CurrentStatus");
 
@@ -80199,6 +80243,8 @@ namespace Persistence.Migrations
             modelBuilder.Entity("Domain.CostCenter", b =>
                 {
                     b.Navigation("Payments");
+
+                    b.Navigation("WorkEfforts");
                 });
 
             modelBuilder.Entity("Domain.CostComponent", b =>
@@ -81944,6 +81990,10 @@ namespace Persistence.Migrations
                     b.Navigation("PaymentPartyIdFromNavigations");
 
                     b.Navigation("PaymentPartyIdToNavigations");
+
+                    b.Navigation("PaymentsApprovedBy");
+
+                    b.Navigation("PaymentsCreatedBy");
 
                     b.Navigation("PayrollPreferences");
 

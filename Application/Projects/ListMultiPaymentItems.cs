@@ -2,6 +2,11 @@ using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Application.Projects;
 
@@ -9,7 +14,7 @@ public class ListMultiPaymentItems
 {
     public class Query : IRequest<Result<List<MultiPaymentItemDto>>>
     {
-        public string WorkEffortId { get; set; }
+        public string WorkEffortId { get; set; } = string.Empty;
     }
 
     public class QueryValidator : AbstractValidator<Query>
@@ -33,6 +38,7 @@ public class ListMultiPaymentItems
         {
             var validator = new QueryValidator();
             var validationResult = await validator.ValidateAsync(request, cancellationToken);
+
             if (!validationResult.IsValid)
                 return Result<List<MultiPaymentItemDto>>.Failure(
                     string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
@@ -48,7 +54,8 @@ public class ListMultiPaymentItems
                         item => item.ProjectId,
                         project => project.WorkEffortId,
                         (item, projects) => new { item, projects })
-                    .SelectMany(x => x.projects.DefaultIfEmpty(), (x, project) => new { x.item, project })
+                    .SelectMany(x => x.projects.DefaultIfEmpty(),
+                        (x, project) => new { x.item, project })
 
                     // ── SubProject ──
                     .GroupJoin(_context.WorkEfforts.Where(sp => sp.WorkEffortTypeId == "SUB_PROJECT"),
@@ -86,46 +93,59 @@ public class ListMultiPaymentItems
                     .GroupJoin(_context.Parties,
                         x => x.item.PartyIdContractor,
                         contractor => contractor.PartyId,
-                        (x, contractors) => new
-                            { x.item, x.project, x.subProject, x.service, x.product, x.supplier, contractors })
+                        (x, contractors) => new { x.item, x.project, x.subProject, x.service, x.product, x.supplier, contractors })
                     .SelectMany(x => x.contractors.DefaultIfEmpty(),
-                        (x, contractor) => new
-                            { x.item, x.project, x.subProject, x.service, x.product, x.supplier, contractor })
+                        (x, contractor) => new { x.item, x.project, x.subProject, x.service, x.product, x.supplier, contractor })
 
-                    // ── NEW: Left join to GlAccounts ────────────────────────────────
-                    .GroupJoin(_context.GlAccounts, // ← assuming your DbSet is named GlAccounts
+                    // ── Cost Center (Separate CostCenters table) ──
+                    .GroupJoin(_context.CostCenters,                          // ← Changed here
+                        x => x.item.CostCenterId,
+                        costCenter => costCenter.CostCenterId,                // adjust property name if different (e.g. Id)
+                        (x, costCenters) => new { x.item, x.project, x.subProject, x.service, x.product, x.supplier, x.contractor, costCenters })
+                    .SelectMany(y => y.costCenters.DefaultIfEmpty(),
+                        (y, costCenter) => new { y.item, y.project, y.subProject, y.service, y.product, y.supplier, y.contractor, costCenter })
+
+                    // ── GlAccount (from GlAccounts table) ──
+                    .GroupJoin(_context.GlAccounts,
                         x => x.item.GlAccountId,
-                        gl => gl.GlAccountId, // ← adjust column name if different
-                        (x, glAccounts) => new
+                        gl => gl.GlAccountId,
+                        (x, glAccounts) => new { x.item, x.project, x.subProject, x.service, x.product, x.supplier, x.contractor, x.costCenter, glAccounts })
+                    .SelectMany(z => z.glAccounts.DefaultIfEmpty(),
+                        (z, glAccount) => new MultiPaymentItemDto
                         {
-                            x.item, x.project, x.subProject, x.service, x.product, x.supplier, x.contractor, glAccounts
+                            WorkEffortId = z.item.WorkEffortId,
+                            GlAccountId = z.item.GlAccountId,
+                            GlAccountName = glAccount != null ? glAccount.AccountNameArabic : null,
+
+                            ItemType = z.item.CostType,
+                            ServiceId = z.item.ServiceId,
+                            ServiceName = z.service != null ? z.service.ProductName : "",
+                            ProductId = z.item.ProductId,
+                            ProductName = z.product != null ? z.product.ProductName : "",
+                            Description = z.item.Description,
+
+                            Amount = (decimal?)z.item.Amount,
+                            Discount = (decimal?)z.item.Discount,
+                            TransportationExpenses = (decimal?)z.item.TransportationExpenses,
+                            Gratuities = (decimal?)z.item.Gratuities,
+                            Total = (decimal?)z.item.TotalAmount,
+
+                            PartyIdSupplier = z.item.PartyIdSupplier,
+                            PartyIdSupplierName = z.supplier != null ? z.supplier.Description : "",
+                            PartyIdContractor = z.item.PartyIdContractor,
+                            PartyIdContractorName = z.contractor != null ? z.contractor.Description : "",
+
+                            // Cost Center from separate table
+                            CostCenterId = z.item.CostCenterId,
+                            CostCenterName = z.costCenter != null ? z.costCenter.Description : "",   // ← This should now populate
+
+                            ProjectId = z.item.ProjectId,
+                            SubProjectId = z.item.SubProjectId,
+                            SubProjectName = z.subProject != null ? z.subProject.SubProjectName : ""
                         })
-                    .SelectMany(x => x.glAccounts.DefaultIfEmpty(), (x, glAccount) => new MultiPaymentItemDto
-                    {
-                        WorkEffortId = x.item.WorkEffortId,
-                        GlAccountId = x.item.GlAccountId,
-                        GlAccountName = glAccount != null ? glAccount.AccountNameArabic : null, // ← added
-
-                        ItemType = x.item.CostType,
-                        ServiceId = x.item.ServiceId,
-                        ServiceName = x.service != null ? x.service.ProductName : "",
-                        ProductId = x.item.ProductId,
-                        ProductName = x.product != null ? x.product.ProductName : "",
-                        Description = x.item.Description,
-
-                        Amount = (decimal?)x.item.Amount,
-                        Discount = (decimal?)x.item.Discount,
-                        TransportationExpenses = (decimal?)x.item.TransportationExpenses,
-                        Gratuities = (decimal?)x.item.Gratuities,
-                        Total = (decimal?)x.item.TotalAmount,
-
-                        PartyIdSupplier = x.item.PartyIdSupplier,
-                        PartyIdSupplierName = x.supplier != null ? x.supplier.Description : "",
-                        PartyIdContractor = x.item.PartyIdContractor,
-                        PartyIdContractorName = x.contractor != null ? x.contractor.Description : ""
-                    })
                     .ToListAsync(cancellationToken);
 
+                // Post-processing
                 var itemTypeDescriptions = new Dictionary<string, string>
                 {
                     { "MATERIALS", "المواد" },
@@ -142,7 +162,7 @@ public class ListMultiPaymentItems
                         ? "value"
                         : item.Discount < 0
                             ? "percentage"
-                            : null; // ← improved a bit
+                            : null;
                 }
 
                 return Result<List<MultiPaymentItemDto>>.Success(multiPaymentItems);

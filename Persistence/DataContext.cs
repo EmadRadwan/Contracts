@@ -62448,6 +62448,16 @@ entity.Property(e => e.BuildingNumber)
 
                 entity.HasIndex(e => e.ServiceId, "WK_EFFRT_SERVICE");
     entity.HasIndex(e => e.PaymentMethodId, "WK_EFFRT_PAYMENT_METHOD");
+    entity.HasIndex(e => e.CostCenterId, "WK_EFFRT_COST_CENTER");
+    entity.HasIndex(e => e.ProjectId, "WK_EFFRT_PROJECT");
+                 entity.HasIndex(e => e.PartyIdSupplier, "WK_EFFRT_SUPPLIER");
+    entity.HasIndex(e => e.PartyIdContractor, "WK_EFFRT_CONTRACTOR");
+    entity.HasIndex(e => new { e.PartyIdSupplier, e.PartyIdContractor, e.CertificateCategory }, "WK_EFFRT_SUPPLIER_CONTRACTOR_CERTCAT").IsUnique(false);
+
+                entity.HasIndex(e => e.RelatedOrderId, "WK_EFFRT_RELATED_ORDER");
+                entity.HasIndex(e => e.ProductId, "WK_EFFRT_PRODUCT");
+                entity.HasIndex(e => e.CertificateNumber, "WK_EFFRT_CERT_NUM");
+                
 
                 entity.Property(e => e.WorkEffortId)
                     .HasMaxLength(36)
@@ -62630,6 +62640,12 @@ entity.Property(e => e.BuildingNumber)
         .HasMaxLength(36)
         .IsUnicode(false)
         .HasColumnName("SERVICE_ID");
+        
+         entity.Property(e => e.CostCenterId)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("COST_CENTER_ID");
+
 
     entity.HasOne(d => d.SubProject)
         .WithMany()
@@ -62804,15 +62820,9 @@ entity.Property(e => e.BuildingNumber)
             
                 entity.Property(e => e.ProductId)
                     .HasColumnName("PRODUCT_ID");
+                    
+                    
             
-                entity.HasIndex(e => e.ProjectId, "WK_EFFRT_PROJECT");
-                 entity.HasIndex(e => e.PartyIdSupplier, "WK_EFFRT_SUPPLIER");
-    entity.HasIndex(e => e.PartyIdContractor, "WK_EFFRT_CONTRACTOR");
-    entity.HasIndex(e => new { e.PartyIdSupplier, e.PartyIdContractor, e.CertificateCategory }, "WK_EFFRT_SUPPLIER_CONTRACTOR_CERTCAT").IsUnique(false);
-
-                entity.HasIndex(e => e.RelatedOrderId, "WK_EFFRT_RELATED_ORDER");
-                entity.HasIndex(e => e.ProductId, "WK_EFFRT_PRODUCT");
-                entity.HasIndex(e => e.CertificateNumber, "WK_EFFRT_CERT_NUM");
                 
             
         entity.HasOne(d => d.SupplierParty)
@@ -62842,22 +62852,14 @@ entity.Property(e => e.BuildingNumber)
                     .HasForeignKey(d => d.RelatedOrderId)
                     .HasConstraintName("WK_EFFRT_RELATED_ORDER");
                        
-                       entity.Property(e => e.Discount)
-                    .HasColumnType("decimal(18,3)")
-                    .HasColumnName("DISCOUNT"); 
-            
-                entity.Property(e => e.Deductions)
-                    .HasColumnType("decimal(18,3)")
-                    .HasColumnName("DEDUCTIONS"); 
-            
-                entity.Property(e => e.Insurance)
-                    .HasColumnType("decimal(18,3)")
-                    .HasColumnName("INSURANCE");
-            
-                entity.Property(e => e.AdditionalInsurance)
-                    .HasColumnType("decimal(18,3)")
-                    .HasColumnName("ADDITIONAL_INSURANCE");
-            
+                      
+             entity.HasOne(d => d.CostCenter)
+        .WithMany(p => p.WorkEfforts)
+        .HasForeignKey(d => d.CostCenterId)
+        .IsRequired(false)                    // Optional relationship
+        .HasConstraintName("WK_EFFRT_COST_CENTER")
+        .OnDelete(DeleteBehavior.Restrict);   // Safe delete behavior
+
  
 
                         });

@@ -13,17 +13,20 @@ public class CostCenter
     public CostCenter()
     {
         Payments = new HashSet<Payment>();
+        WorkEfforts = new HashSet<WorkEffort>();   // ← Add this
     }
 
-    public string CostCenterId { get; set; } = null!;      // PK
-    public string Description { get; set; } = null!;       // Human readable description
-    public string IsOutPayment { get; set; } = null!;       
+    public string CostCenterId { get; set; } = null!;
+    public string Description { get; set; } = null!;
+    public string IsOutPayment { get; set; } = null!;
 
-    // Timestamps (kept for consistency with the rest of the model)
     public DateTime? LastUpdatedStamp { get; set; }
     public DateTime? LastUpdatedTxStamp { get; set; }
     public DateTime? CreatedStamp { get; set; }
     public DateTime? CreatedTxStamp { get; set; }
-    public virtual ICollection<Payment> Payments { get; set; }
 
+    public virtual ICollection<Payment> Payments { get; set; }
+    
+    // NEW: Navigation to WorkEfforts
+    public virtual ICollection<WorkEffort> WorkEfforts { get; set; } = new HashSet<WorkEffort>();
 }

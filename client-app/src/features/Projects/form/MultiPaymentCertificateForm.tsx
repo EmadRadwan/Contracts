@@ -431,7 +431,7 @@ export default function MultiPaymentCertificateForm({
                                                     label={getTranslatedLabel(`${localizationKey}.paymentTo`, "Payment To")}
                                                     valueField="fromPartyId"
                                                     textField="fromPartyName"
-                                                    validator={requiredValidator}
+                                                    //validator={requiredValidator}
                                                 />
                                             </Grid>
 

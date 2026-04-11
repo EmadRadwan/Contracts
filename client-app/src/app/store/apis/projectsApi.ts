@@ -176,6 +176,12 @@ const projectsApi = createApi({
                 }),
                 invalidatesTags: ['ProjectCertificates', 'ProjectCertificate'],
             }),
+            fetchWorkEffortsByGlAccountId: builder.query<WorkEffort[], { glAccountId: string; workEffortTypeId?: string; workEffortParentId?: string }>({
+                query: ({ glAccountId, workEffortTypeId, workEffortParentId }) => ({
+                    url: `/project/workEffortsByGlAccount`,
+                    params: { glAccountId, workEffortTypeId, workEffortParentId },
+                }),
+            }),
         };
         
     },
@@ -195,6 +201,7 @@ export const {
     useApprovePOForCertificateMutation,
     useDeleteProjectCertificateMutation,
     useResetProjectCertificateMutation,
+    useFetchWorkEffortsByGlAccountIdQuery,
 } = projectsApi;
 export {projectsApi};
 

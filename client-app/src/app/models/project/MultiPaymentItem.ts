@@ -20,4 +20,9 @@ export interface MultiPaymentItem {
     partyIdSupplierName?: string;
     partyIdContractor: string;
     partyIdContractorName?: string;
+    projectId?: string;
+    subProjectId?: string;
+    subProjectName?: string;
+    costCenterId?: string;
+    costCenterName?: string;
 }

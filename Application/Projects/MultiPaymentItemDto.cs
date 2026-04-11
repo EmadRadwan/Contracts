@@ -9,6 +9,8 @@ public class MultiPaymentItemDto
     public string? ServiceId { get; set; }
     public string? ServiceName { get; set; }
     public string? GlAccountName { get; set; }
+    public string? ProjectId { get; set; }
+    public string? SubProjectId { get; set; }
     public string? ProductId { get; set; }
     public string? ProductName { get; set; }
     public string? Description { get; set; }
@@ -19,7 +21,10 @@ public class MultiPaymentItemDto
     public decimal? Gratuities { get; set; }
     public decimal? Total { get; set; }
     public string? PartyIdSupplier { get; set; }
+    public string? CostCenterId { get; set; }
+    public string? CostCenterName { get; set; }
     public string PartyIdSupplierName { get; set; }
     public string? PartyIdContractor { get; set; }
     public string PartyIdContractorName { get; set; }
+    public string? SubProjectName { get; set; }
 }

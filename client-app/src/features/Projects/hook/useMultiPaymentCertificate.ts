@@ -87,10 +87,12 @@ export default function useMultiPaymentCertificate({
             return false;
         }
         const isItemsValid = items.every((item) => {
-            const isValid = item.amount > 0 && !!item.description;
+            const isValid = item.amount > 0 && !!item.description && !!item.itemType && !!item.glAccountId;
             if (!isValid) {
                 if (item.amount <= 0) toast.error("Item amount must be greater than 0");
                 if (!item.description) toast.error("Item description is required");
+                if (!item.itemType) toast.error("Item type is required");
+                if (!item.glAccountId) toast.error("GL Account is required");
             }
             return isValid;
         });

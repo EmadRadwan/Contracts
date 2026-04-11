@@ -57593,8 +57593,7 @@ namespace Persistence.Migrations
                         .HasColumnName("ACTUAL_START_DATE");
 
                     b.Property<decimal?>("AdditionalInsurance")
-                        .HasColumnType("decimal(18,3)")
-                        .HasColumnName("ADDITIONAL_INSURANCE");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<decimal?>("Amount")
                         .HasColumnType("decimal(18,3)")
@@ -57625,6 +57624,12 @@ namespace Persistence.Migrations
                     b.Property<decimal?>("CompletionPercentage")
                         .HasColumnType("decimal(5, 2)")
                         .HasColumnName("COMPLETION_PERCENTAGE");
+
+                    b.Property<string>("CostCenterId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("COST_CENTER_ID");
 
                     b.Property<string>("CostType")
                         .HasMaxLength(36)
@@ -57663,8 +57668,7 @@ namespace Persistence.Migrations
                         .HasColumnName("DEDUCTION_DESCRIPTION");
 
                     b.Property<decimal?>("Deductions")
-                        .HasColumnType("decimal(18,3)")
-                        .HasColumnName("DEDUCTIONS");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("Description")
                         .HasMaxLength(4000)
@@ -57673,8 +57677,7 @@ namespace Persistence.Migrations
                         .HasColumnName("DESCRIPTION");
 
                     b.Property<decimal?>("Discount")
-                        .HasColumnType("decimal(18,3)")
-                        .HasColumnName("DISCOUNT");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<decimal?>("DueAmount")
                         .HasColumnType("decimal(18,3)")
@@ -57721,8 +57724,7 @@ namespace Persistence.Migrations
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<decimal?>("Insurance")
-                        .HasColumnType("decimal(18,3)")
-                        .HasColumnName("INSURANCE");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<decimal?>("LaborPrice")
                         .HasColumnType("decimal(18,3)")
@@ -57965,6 +57967,8 @@ namespace Persistence.Migrations
                     b.HasIndex(new[] { "ChequeNumber" }, "WK_EFFRT_CHEQUE_NUM");
 
                     b.HasIndex(new[] { "PartyIdContractor" }, "WK_EFFRT_CONTRACTOR");
+
+                    b.HasIndex(new[] { "CostCenterId" }, "WK_EFFRT_COST_CENTER");
 
                     b.HasIndex(new[] { "CurrentStatusId" }, "WK_EFFRT_CURSTTS");
 
@@ -78709,6 +78713,12 @@ namespace Persistence.Migrations
                         .HasForeignKey("AccommodationSpotId")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("Domain.CostCenter", "CostCenter")
+                        .WithMany("WorkEfforts")
+                        .HasForeignKey("CostCenterId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("WK_EFFRT_COST_CENTER");
+
                     b.HasOne("Domain.StatusItem", "CurrentStatus")
                         .WithMany("WorkEfforts")
                         .HasForeignKey("CurrentStatusId")
@@ -78844,6 +78854,8 @@ namespace Persistence.Migrations
                     b.Navigation("AccommodationSpot");
 
                     b.Navigation("ContractorParty");
+
+                    b.Navigation("CostCenter");
 
                     b.Navigation("CurrentStatus");
 
@@ -80228,6 +80240,8 @@ namespace Persistence.Migrations
             modelBuilder.Entity("Domain.CostCenter", b =>
                 {
                     b.Navigation("Payments");
+
+                    b.Navigation("WorkEfforts");
                 });
 
             modelBuilder.Entity("Domain.CostComponent", b =>

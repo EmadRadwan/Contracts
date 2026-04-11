@@ -236,7 +236,10 @@ namespace Application.Projects
                             PartyIdSupplier = item.PartyIdSupplier,
                             PartyIdSupplierName = supplier?.Description ?? "",
                             PartyIdContractor = item.PartyIdContractor,
-                            PartyIdContractorName = contractor?.Description ?? ""
+                            PartyIdContractorName = contractor?.Description ?? "",
+                            CostCenterId = item.CostCenterId,
+                            ProjectId = item.ProjectId,
+                            SubProjectId = item.SubProjectId
                         });
                     }
 

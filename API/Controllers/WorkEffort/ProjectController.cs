@@ -197,6 +197,20 @@ public class ProjectController : BaseApiController
         var result = await Mediator.Send(new ResetProjectCertificate.Command { WorkEffortId = workEffortId });
         return HandleResult(result);
     }
+
+    [HttpGet("workEffortsByGlAccount")]
+    public async Task<IActionResult> GetWorkEffortsByGlAccount(
+        [FromQuery] string? glAccountId,
+        [FromQuery] string? workEffortTypeId,
+        [FromQuery] string? workEffortParentId)
+    {
+        return HandleResult(await Mediator.Send(new ListWorkEffortsByGlAccount.Query
+        {
+            GlAccountId = glAccountId,
+            WorkEffortTypeId = workEffortTypeId,
+            WorkEffortParentId = workEffortParentId
+        }));
+    }
     
 }
 

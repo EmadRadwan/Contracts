@@ -97,59 +97,12 @@ namespace Application.Projects
                                 ? item.PartyIdContractor
                                 : null,
                             CurrentStatusId = "WEPR_CREATED",
+                            CostCenterId = item.CostCenterId,
+                            ProjectId = item.ProjectId,
+                            SubProjectId = item.SubProjectId,
                             CreatedDate = stamp,
                             LastUpdatedStamp = stamp
                         };
-
-                        /*if (string.IsNullOrEmpty(itemWorkEffort.ServiceId))
-                        {
-                            _logger.LogWarning(
-                                "ServiceId is null or empty for WorkEffortId={WorkEffortId}. ServiceId is mandatory.",
-                                itemWorkEffort.WorkEffortId);
-                            throw new InvalidOperationException(
-                                $"ServiceId cannot be null or empty for WorkEffortId {itemWorkEffort.WorkEffortId}.");
-                        }*/
-
-                        /*var serviceExists =
-                            await _context.Products.AnyAsync(p => p.ProductId == itemWorkEffort.ServiceId,
-                                cancellationToken);
-                        if (!serviceExists)
-                        {
-                            _logger.LogWarning(
-                                "Invalid ServiceId={ServiceId} for WorkEffortId={WorkEffortId}. No matching PRODUCT_ID in PRODUCT table.",
-                                itemWorkEffort.ServiceId, itemWorkEffort.WorkEffortId);
-                            throw new InvalidOperationException(
-                                $"ServiceId {itemWorkEffort.ServiceId} does not exist in PRODUCT table.");
-                        }
-
-                        _logger.LogInformation("Validated ServiceId={ServiceId} for WorkEffortId={WorkEffortId}",
-                            itemWorkEffort.ServiceId, itemWorkEffort.WorkEffortId);
-                            */
-
-                        // REFACTOR: Validate ProductId only if it's not null or empty, as it's optional
-                        /*if (!string.IsNullOrEmpty(itemWorkEffort.ProductId))
-                        {
-                            var productExists =
-                                await _context.Products.AnyAsync(p => p.ProductId == itemWorkEffort.ProductId,
-                                    cancellationToken);
-                            if (!productExists)
-                            {
-                                _logger.LogWarning(
-                                    "Invalid ProductId={ProductId} for WorkEffortId={WorkEffortId}. No matching PRODUCT_ID in PRODUCT table.",
-                                    itemWorkEffort.ProductId, itemWorkEffort.WorkEffortId);
-                                throw new InvalidOperationException(
-                                    $"ProductId {itemWorkEffort.ProductId} does not exist in PRODUCT table.");
-                            }
-
-                            _logger.LogInformation("Validated ProductId={ProductId} for WorkEffortId={WorkEffortId}",
-                                itemWorkEffort.ProductId, itemWorkEffort.WorkEffortId);
-                        }
-                        else
-                        {
-                            _logger.LogInformation(
-                                "ProductId is null or empty for WorkEffortId={WorkEffortId}, skipping validation as it's optional",
-                                itemWorkEffort.WorkEffortId);
-                        }*/
 
                         _context.WorkEfforts.Add(itemWorkEffort);
 
