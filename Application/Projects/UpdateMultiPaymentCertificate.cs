@@ -101,50 +101,19 @@ namespace Application.Projects
                             Gratuities = item.Gratuities ?? 0,
                             TotalAmount = item.Total,
                             Amount = item.Amount ?? 0,
+                            EstimatedStartDate = item.EstimatedStartDate,
                             PartyIdSupplier = !string.IsNullOrEmpty(item.PartyIdSupplier) ? item.PartyIdSupplier : null,
                             PartyIdContractor = !string.IsNullOrEmpty(item.PartyIdContractor)
                                 ? item.PartyIdContractor
                                 : null,
                             CurrentStatusId = existingWorkEffort.CurrentStatusId, // Inherit parent status
-                            CostCenterId = item.CostCenterId,
-                            ProjectId = item.ProjectId,
-                            SubProjectId = item.SubProjectId,
+                            CostCenterId = !string.IsNullOrEmpty(item.CostCenterId) ? item.CostCenterId : null,
+                            ProjectId = !string.IsNullOrEmpty(item.ProjectId) ? item.ProjectId : null,
+                            SubProjectId = !string.IsNullOrEmpty(item.SubProjectId) ? item.SubProjectId : null,
                             CreatedDate = stamp,
                             LastUpdatedStamp = stamp
                         };
-
-                        /*if (string.IsNullOrEmpty(itemWorkEffort.ServiceId))
-                        {
-                            _logger.LogWarning("ServiceId is null for WorkEffortId={WorkEffortId}",
-                                itemWorkEffort.WorkEffortId);
-                            throw new InvalidOperationException(
-                                $"ServiceId cannot be null for WorkEffortId {itemWorkEffort.WorkEffortId}");
-                        }
-
-                        var serviceExists =
-                            await _context.Products.AnyAsync(p => p.ProductId == itemWorkEffort.ServiceId,
-                                cancellationToken);
-                        if (!serviceExists)
-                        {
-                            _logger.LogWarning("Invalid ServiceId={ServiceId} for WorkEffortId={WorkEffortId}",
-                                itemWorkEffort.ServiceId, itemWorkEffort.WorkEffortId);
-                            throw new InvalidOperationException($"ServiceId {itemWorkEffort.ServiceId} does not exist");
-                        }
-
-                        if (!string.IsNullOrEmpty(itemWorkEffort.ProductId))
-                        {
-                            var productExists =
-                                await _context.Products.AnyAsync(p => p.ProductId == itemWorkEffort.ProductId,
-                                    cancellationToken);
-                            if (!productExists)
-                            {
-                                _logger.LogWarning("Invalid ProductId={ProductId} for WorkEffortId={WorkEffortId}",
-                                    itemWorkEffort.ProductId, itemWorkEffort.WorkEffortId);
-                                throw new InvalidOperationException(
-                                    $"ProductId {itemWorkEffort.ProductId} does not exist");
-                            }
-                        }*/
-
+                        
                         _context.WorkEfforts.Add(itemWorkEffort);
                         _logger.LogInformation(
                             "Adding WorkEffort item: WorkEffortId={WorkEffortId}, ServiceId={ServiceId}, ProductId={ProductId}",
@@ -220,6 +189,7 @@ namespace Application.Projects
                             TransportationExpenses = item.TransportationExpenses,
                             Gratuities = item.Gratuities,
                             Total = item.Total,
+                            EstimatedStartDate = item.EstimatedStartDate,
                             PartyIdSupplier = item.PartyIdSupplier,
                             PartyIdSupplierName = supplier?.Description ?? "",
                             PartyIdContractor = item.PartyIdContractor,

@@ -28,6 +28,7 @@ import { FormSimpleComboBoxRawMaterialVirtual } from "../../../app/common/form/F
 import { FormComboBoxVirtualAllParties } from "../../../app/common/form/FormComboBoxVirtualAllParties";
 import { MemoizedFormComboBox2 } from "../../../app/common/form/FormComboBox2";
 import {useFetchWorkEffortsByGlAccountIdQuery} from "../../../app/store/apis/projectsApi";
+import { FormDropDownTreeGlAccount3 } from "../../../app/common/form/FormDropDownTreeGlAccount3";
 
 interface Props {
     onClose: () => void;
@@ -54,6 +55,7 @@ interface BulkAddRow {
     party: any; // { fromPartyId, fromPartyName }
     description: string;
     amount: number;
+    estimatedStartDate?: string;
 }
 
 const BulkAddRowItem: React.FC<{
@@ -100,7 +102,7 @@ const BulkAddRowItem: React.FC<{
     return (
         <TableRow key={row.tempId}>
             <TableCell>
-                <FormDropDownTreeGlAccount2
+                <FormDropDownTreeGlAccount3
                     data={glAccounts || []}
                     value={row.glAccountId}
                     onChange={(e: any) => handleRowChange(index, "glAccountId", e.value)}
@@ -130,6 +132,16 @@ const BulkAddRowItem: React.FC<{
                     value={row.amount}
                     onChange={(e) => handleRowChange(index, "amount", parseFloat(e.target.value) || 0)}
                     inputProps={{ min: 0, step: "0.01" }}
+                />
+            </TableCell>
+            <TableCell>
+                <TextField
+                    fullWidth
+                    size="small"
+                    type="date"
+                    value={row.estimatedStartDate || ""}
+                    onChange={(e) => handleRowChange(index, "estimatedStartDate", e.target.value)}
+                    InputLabelProps={{ shrink: true }}
                 />
             </TableCell>
             <TableCell>
@@ -250,6 +262,7 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
         party: null,
         description: "",
         amount: 0,
+        estimatedStartDate: "",
     });
 
     const [rows, setRows] = useState<BulkAddRow[]>([]);
@@ -273,6 +286,7 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
                 party: item.partyIdSupplier ? { fromPartyId: item.partyIdSupplier, fromPartyName: item.partyIdSupplierName || "" } : null,
                 description: item.description || "",
                 amount: item.amount || 0,
+                estimatedStartDate: item.estimatedStartDate ? item.estimatedStartDate.split('T')[0] : "",
             }));
             setRows(mappedRows);
         } else {
@@ -359,6 +373,7 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
                 productName: row.productId?.ProductName || "",
                 description: row.description,
                 amount: row.amount,
+                estimatedStartDate: row.estimatedStartDate,
                 discount: 0,
                 discountMode: "value",
                 transportationExpenses: 0,
@@ -392,6 +407,7 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
                             <TableCell sx={{ minWidth: 350 }}>{getTranslatedLabel(`${itemFormLocalizationKey}.glAccountId`, "GL Account")}</TableCell>
                             <TableCell sx={{ minWidth: 250 }}>{getTranslatedLabel(`${itemFormLocalizationKey}.description`, "Description")}</TableCell>
                             <TableCell sx={{ minWidth: 120 }}>{getTranslatedLabel(`${itemFormLocalizationKey}.amount`, "Amount")}</TableCell>
+                            <TableCell sx={{ minWidth: 150 }}>{getTranslatedLabel(`${itemFormLocalizationKey}.estimatedStartDate`, "Date")}</TableCell>
                             <TableCell sx={{ minWidth: 200 }}>{getTranslatedLabel(`${itemFormLocalizationKey}.itemType`, "Item Type")}</TableCell>
                             <TableCell sx={{ minWidth: 300 }}>{getTranslatedLabel(`${itemFormLocalizationKey}.service`, "Service")}</TableCell>
                             <TableCell sx={{ minWidth: 300 }}>{getTranslatedLabel(`${itemFormLocalizationKey}.product`, "Product")}</TableCell>

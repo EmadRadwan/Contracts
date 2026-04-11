@@ -94,7 +94,7 @@ namespace Application.Projects
                     {
                         AcctgTransId = acctgTransId,
                         AcctgTransTypeId = "DISBURSEMENT",
-                        Description = $"مستند دفع متعدد {certificate.WorkEffortId}",
+                        Description = certificate.Description,
                         TransactionDate = DateTime.UtcNow,
                         WorkEffortId = certificate.WorkEffortId,
                         IsPosted = "Y",
@@ -110,7 +110,7 @@ namespace Application.Projects
                         AcctgTransId = acctgTransId,
                         AcctgTransEntrySeqId = "00001",
                         AcctgTransEntryTypeId = "_NA_",
-                        Description = $"مستند دفع متعدد {certificate.WorkEffortId}",
+                        Description = certificate.Description,
                         GlAccountId = certificate.GlAccountId,
                         OrganizationPartyId = request.CompanyId,
                         Amount = totalAmount,

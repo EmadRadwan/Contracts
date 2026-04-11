@@ -27,4 +27,5 @@ public class MultiPaymentItemDto
     public string? PartyIdContractor { get; set; }
     public string PartyIdContractorName { get; set; }
     public string? SubProjectName { get; set; }
+    public DateTime? EstimatedStartDate { get; set; }
 }

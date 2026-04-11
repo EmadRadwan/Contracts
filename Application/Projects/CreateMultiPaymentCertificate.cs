@@ -92,14 +92,15 @@ namespace Application.Projects
                             Gratuities = item.Gratuities ?? 0,
                             TotalAmount = item.Total,
                             Amount = item.Amount ?? 0,
+                            EstimatedStartDate = item.EstimatedStartDate,
                             PartyIdSupplier = !string.IsNullOrEmpty(item.PartyIdSupplier) ? item.PartyIdSupplier : null,
                             PartyIdContractor = !string.IsNullOrEmpty(item.PartyIdContractor)
                                 ? item.PartyIdContractor
                                 : null,
                             CurrentStatusId = "WEPR_CREATED",
-                            CostCenterId = item.CostCenterId,
-                            ProjectId = item.ProjectId,
-                            SubProjectId = item.SubProjectId,
+                            CostCenterId = !string.IsNullOrEmpty(item.CostCenterId) ? item.CostCenterId : null,
+                            ProjectId = !string.IsNullOrEmpty(item.ProjectId) ? item.ProjectId : null,
+                            SubProjectId = !string.IsNullOrEmpty(item.SubProjectId) ? item.SubProjectId : null,
                             CreatedDate = stamp,
                             LastUpdatedStamp = stamp
                         };
@@ -189,6 +190,7 @@ namespace Application.Projects
                             TransportationExpenses = item.TransportationExpenses,
                             Gratuities = item.Gratuities,
                             Total = item.Total,
+                            EstimatedStartDate = item.EstimatedStartDate,
                             PartyIdSupplier = item.PartyIdSupplier,
                             PartyIdSupplierName = supplier?.Description ?? "",
                             PartyIdContractor = item.PartyIdContractor,

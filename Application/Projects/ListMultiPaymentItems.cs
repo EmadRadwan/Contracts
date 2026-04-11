@@ -129,6 +129,7 @@ public class ListMultiPaymentItems
                             TransportationExpenses = (decimal?)z.item.TransportationExpenses,
                             Gratuities = (decimal?)z.item.Gratuities,
                             Total = (decimal?)z.item.TotalAmount,
+                            EstimatedStartDate = z.item.EstimatedStartDate,
 
                             PartyIdSupplier = z.item.PartyIdSupplier,
                             PartyIdSupplierName = z.supplier != null ? z.supplier.Description : "",

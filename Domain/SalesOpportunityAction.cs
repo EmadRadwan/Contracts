@@ -6,32 +6,84 @@ namespace Domain;
 [JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]
 public class SalesOpportunityAction
 {
-    public SalesOpportunityAction()
-    {
-        // Default constructor for EF Core
-    }
+    public SalesOpportunityAction() { }
 
-    public string SalesOpportunityActionId { get; set; } = null!;   // Surrogate PK (recommended)
+    // Primary Key
+    public string SalesOpportunityActionId { get; set; } = null!;
 
+    // Foreign Key to Opportunity
     public string SalesOpportunityId { get; set; } = null!;
 
-    // Main fields inspired by the other CRM
-    public string? ActionTypeId { get; set; }           // e.g. NOT_INTERESTED, FOLLOW_UP, SITE_VISIT, PROPOSAL_SENT, CANCELLED
-    public bool IsAnswered { get; set; } = false;       // The "Answer" toggle
-    public DateTime? ActionDate { get; set; }           // Next Action Date
-    public string? CancelReasonId { get; set; }         // When action is a cancellation
-    public string? Comment { get; set; }                // Main comment (required in UI)
+    // ==================== Core CRM Fields ====================
 
-    // Audit fields (matching your existing style)
+    /// <summary>
+    /// Next Action (from the first dropdown) - e.g. DONE_DEAL, LOST_DEAL, FOLLOW_UP, etc.
+    /// </summary>
+    public string ActionTypeId { get; set; } = null!;
+
+    /// <summary>
+    /// The "Answer" toggle switch
+    /// </summary>
+    public bool IsAnswered { get; set; } = false;
+
+    /// <summary>
+    /// Date for this action (closing date or next action date)
+    /// </summary>
+    public DateTime? ActionDate { get; set; }
+
+    /// <summary>
+    /// Optional: Schedule the next follow-up action after this one
+    /// Useful after "Follow up" → "Meeting", or after "Meeting" → "Following after meeting"
+    /// </summary>
+    public string? NextActionTypeId { get; set; }
+
+    /// <summary>
+    /// Cancel Reason - ONLY used when the action is a loss/cancellation
+    /// Should be NULL for positive actions like "Done Deal"
+    /// </summary>
+    public string? CancelReasonId { get; set; }
+
+    /// <summary>
+    /// Main comment (required in UI)
+    /// </summary>
+    public string? Comment { get; set; }
+
+    // ==================== Helper Properties for Business Logic ====================
+
+    /// <summary>
+    /// True for successful closure (Done Deal, Reservation, Interested, etc.)
+    /// </summary>
+    public bool IsWon { get; set; } = false;
+
+    /// <summary>
+    /// Returns true if this ActionType requires a Cancel Reason
+    /// </summary>
+    public bool RequiresCancelReason =>
+        ActionTypeId is "LOST_DEAL" or "NOT_INTERESTED" or "CANCELLATION" 
+        or "NO_ANSWER" or "NO_ANSWER_ALL_THE_TIME" or "UN_REACHABLE" 
+        or "WRONG_NUMBER" or "WRONG_REQUEST";
+
+    /// <summary>
+    /// True if this action closes the opportunity (won or lost)
+    /// </summary>
+    public bool IsClosingAction =>
+        ActionTypeId is "DONE_DEAL" or "LOST_DEAL" or "CANCELLATION" or "NOT_INTERESTED";
+
+    // ==================== Audit Fields ====================
+
     public string CreatedByUserLogin { get; set; } = null!;
     public DateTime CreatedStamp { get; set; }
     public DateTime LastUpdatedStamp { get; set; }
     public DateTime? CreatedTxStamp { get; set; }
     public DateTime? LastUpdatedTxStamp { get; set; }
 
-    // Navigation Properties
+    // ==================== Navigation Properties ====================
+
     public virtual SalesOpportunity SalesOpportunity { get; set; } = null!;
-    public virtual Enumeration? ActionType { get; set; }           // Recommended: use your Enumeration table
+
+    public virtual Enumeration? ActionType { get; set; }
+    public virtual Enumeration? NextActionType { get; set; }     // For NextActionTypeId
     public virtual Enumeration? CancelReason { get; set; }
+
     public virtual UserLogin CreatedByUserLoginNavigation { get; set; } = null!;
 }

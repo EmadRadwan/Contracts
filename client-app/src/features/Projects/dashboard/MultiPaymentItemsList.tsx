@@ -58,6 +58,18 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
                 format: "{0:n2}",
             },
             {
+                field: "itemTypeDescription",
+                title: getTranslatedLabel(`${localizationKey}.itemType`, "Total"),
+                width: "100px",
+                format: "{0:n2}",
+            },
+            {
+                field: "estimatedStartDate",
+                title: getTranslatedLabel(`${localizationKey}.estimatedStartDate`, "Date"),
+                width: "150px",
+                format: "{0:d}",
+            },
+            {
                 field: "serviceName",
                 title: getTranslatedLabel(`${localizationKey}.serviceName`, "Service"),
                 width: "200px",
@@ -82,12 +94,6 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
                 title: getTranslatedLabel("accounting.payments.form.costCenter", "Cost Center"),
                 width: "150px",
             },
-            {
-                field: "total",
-                title: getTranslatedLabel(`${localizationKey}.total`, "Total"),
-                width: "100px",
-                format: "{0:n2}",
-            },
         ],
         [getTranslatedLabel]
     );
@@ -97,10 +103,17 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
         [items]
     );
     
+    const gridData = useMemo(() => {
+        return items.map(item => ({
+            ...item,
+            estimatedStartDate: item.estimatedStartDate ? new Date(item.estimatedStartDate) : null
+        }));
+    }, [items]);
+
     return (
         <>
             <Grid
-                data={items} 
+                data={gridData} 
                 sortable={true}
                 resizable={true}
                 pageable={true}
