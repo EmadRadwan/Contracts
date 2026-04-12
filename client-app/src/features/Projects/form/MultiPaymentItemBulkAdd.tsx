@@ -88,6 +88,7 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
                                                                 localAmount,
                                                             }) => {
 
+    // === Queries ===
     const { data: projects } = useFetchWorkEffortsByGlAccountIdQuery(
         { glAccountId: row.glAccountId, workEffortTypeId: "PROJECT" },
         { skip: !row.glAccountId }
@@ -95,20 +96,25 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
 
     const projectId = projects && projects.length > 0 ? projects[0].workEffortId : undefined;
 
-    useEffect(() => {
-        if (projectId !== row.projectId) {
-            handleRowChange(index, "projectId" as any, projectId);
-            if (!projectId) {
-                handleRowChange(index, "subProjectId" as any, undefined);
-                handleRowChange(index, "subProjectName" as any, undefined);
-            }
-        }
-    }, [projectId, index, handleRowChange, row.projectId]);
-
     const { data: subProjects } = useFetchWorkEffortsByGlAccountIdQuery(
-        { glAccountId: row.glAccountId, workEffortTypeId: "SUB_PROJECT", workEffortParentId: projectId },
+        {
+            glAccountId: row.glAccountId,
+            workEffortTypeId: "SUB_PROJECT",
+            workEffortParentId: projectId
+        },
         { skip: !projectId }
     );
+
+    // === Effects ===
+    useEffect(() => {
+        if (projectId && projectId !== row.projectId) {
+            handleRowChange(index, "projectId" as any, projectId);
+        } else if (!projectId && row.projectId) {
+            handleRowChange(index, "projectId" as any, undefined);
+            handleRowChange(index, "subProjectId" as any, undefined);
+            handleRowChange(index, "subProjectName" as any, undefined);
+        }
+    }, [projectId, row.projectId, index, handleRowChange]);
 
     useEffect(() => {
         if (subProjects && row.subProjectId) {
@@ -138,7 +144,7 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
                 />
             </TableCell>
 
-            {/* Description - Smooth typing */}
+            {/* Description */}
             <TableCell sx={{ minWidth: 250 }}>
                 <TextField
                     fullWidth
@@ -159,8 +165,8 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
                     inputProps={{ min: 0, step: "0.01" }}
                 />
             </TableCell>
-            
-            {/* Estimated Start Date */}
+
+            {/* Estimated Start Date - Fixed for calendar */}
             <TableCell sx={{ minWidth: 150 }}>
                 <TextField
                     fullWidth
@@ -169,6 +175,7 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
                     value={row.estimatedStartDate || ""}
                     onChange={(e) => handleRowChange(index, "estimatedStartDate", e.target.value)}
                     InputLabelProps={{ shrink: true }}
+                    onClick={(e) => e.stopPropagation()}
                 />
             </TableCell>
 
@@ -212,7 +219,7 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
                 />
             </TableCell>
 
-            {/* Supplier / Party */}
+            {/* Supplier */}
             <TableCell sx={{ minWidth: 300 }}>
                 <FormComboBoxVirtualAllParties
                     value={row.party}
@@ -245,7 +252,7 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
                 )}
             </TableCell>
 
-            {/* Cost Center - Fixed binding */}
+            {/* Cost Center */}
             <TableCell sx={{ minWidth: 250 }}>
                 <MemoizedFormComboBox2
                     id={`costCenterId-${row.tempId}`}
@@ -257,7 +264,6 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
                     onChange={(e: any) => {
                         const selectedId = e?.value;
                         const selectedCc = costCenters.find((c: any) => c.costCenterId === selectedId);
-
                         handleRowChange(index, "costCenterId", selectedId, {
                             costCenterName: selectedCc?.description || ""
                         });
@@ -265,7 +271,7 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
                 />
             </TableCell>
 
-            {/* Delete Button */}
+            {/* Delete */}
             <TableCell sx={{ width: 50 }}>
                 <IconButton
                     color="error"
@@ -278,7 +284,6 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
         </TableRow>
     );
 });
-
 
 const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addItem, updateItem, deleteItem, initialItems }) => {
     const { getTranslatedLabel } = useTranslationHelper();
@@ -442,8 +447,7 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
         value: any,
         extraFields: Partial<BulkAddRow> = {}
     ) => {
-
-        // 1. Always update localAmounts synchronously for amount field (this is the key fix)
+        // Special handling for amount and date - update local state first to prevent clearing
         if (field === "amount") {
             const tempId = rows[index]?.tempId;
             if (tempId) {
@@ -451,23 +455,24 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
             }
         }
 
-        setRows(prevRows => {
+        setRows((prevRows) => {
             const newRows = [...prevRows];
-            const currentRow = { ...newRows[index] };   // fresh shallow copy
+            const currentRow = { ...newRows[index] };
 
             let processedValue = value;
 
             if (field === "amount") {
                 processedValue = parseFloat(value) || 0;
+            } else if (field === "estimatedStartDate") {
+                processedValue = value; // keep as string (YYYY-MM-DD)
             }
 
-            // Apply the main change
             (currentRow as any)[field] = processedValue;
 
-            // Apply extra fields (e.g. costCenterName, subProjectName)
+            // Apply extra fields (costCenterName, subProjectName, etc.)
             Object.assign(currentRow, extraFields);
 
-            // Special GL Account logic
+            // GL Account special logic
             if (field === "glAccountId") {
                 currentRow.glAccountName = findGlAccountNameById(value);
                 currentRow.projectId = undefined;
@@ -477,10 +482,9 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
 
             newRows[index] = currentRow;
 
-            // Immediate backend sync only if valid
+            // Only sync to parent if the row is valid
             if (validateRow(currentRow)) {
                 const serialized = serializeRow(currentRow);
-
                 if (currentRow.workEffortId) {
                     updateItem(serialized);
                 } else {
