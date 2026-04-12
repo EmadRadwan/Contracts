@@ -1,117 +1,157 @@
-modelBuilder.Entity<SalesOpportunityAction>(entity =>
-{
-    entity.ToTable("SALES_OPPORTUNITY_ACTION");
+entity.ToTable("SALES_OPPORTUNITY_ACTION");
 
-    // Primary Key
-    entity.HasKey(e => e.SalesOpportunityActionId);
+#region Primary Key
+entity.HasKey(e => e.SalesOpportunityActionId);
+#endregion
 
-    // Indexes
-    entity.HasIndex(e => e.SalesOpportunityId, "SLSOPPACT_OPPID");
-    entity.HasIndex(e => e.ActionTypeId, "SLSOPPACT_ACTION_TYP");
-    entity.HasIndex(e => e.CancelReasonId, "SLSOPPACT_CANCEL_RSN");
-    entity.HasIndex(e => e.NextActionTypeId, "SLSOPPACT_NEXT_ACTION");   // New
-    entity.HasIndex(e => e.IsWon, "SLSOPPACT_IS_WON");                    // New
-    entity.HasIndex(e => e.CreatedByUserLogin, "SLSOPPACT_USRLGN");
-    entity.HasIndex(e => e.CreatedStamp, "SLSOPPACT_CRTS");
-    entity.HasIndex(e => e.LastUpdatedStamp, "SLSOPPACT_UPDST");
-    entity.HasIndex(e => new { e.SalesOpportunityId, e.ActionTypeId }, "SLSOPPACT_OPP_ACTION");
+#region Indexes
+entity.HasIndex(e => e.SalesOpportunityId, "SLSOPPACT_OPPID");
+entity.HasIndex(e => e.ActionTypeId, "SLSOPPACT_ACTION_TYP");
+entity.HasIndex(e => e.CancelReasonId, "SLSOPPACT_CANCEL_RSN");
+entity.HasIndex(e => e.NextActionTypeId, "SLSOPPACT_NEXT_ACTION");
+entity.HasIndex(e => e.IsWon, "SLSOPPACT_IS_WON");
+entity.HasIndex(e => e.CreatedByUserLogin, "SLSOPPACT_USRLGN");
+entity.HasIndex(e => e.CreatedStamp, "SLSOPPACT_CRTS");
+entity.HasIndex(e => e.LastUpdatedStamp, "SLSOPPACT_UPDST");
+entity.HasIndex(e => new { e.SalesOpportunityId, e.ActionTypeId }, "SLSOPPACT_OPP_ACTION");
 
-    // Column Mappings
-    entity.Property(e => e.SalesOpportunityActionId)
-        .HasMaxLength(36)
-        .IsUnicode(false)
-        .HasColumnName("SALES_OPPORTUNITY_ACTION_ID");
+// New indexes for the added fields
+entity.HasIndex(e => e.MeetingTypeId, "SLSOPPACT_MEETING_TYP");
+entity.HasIndex(e => e.MeetingLocationId, "SLSOPPACT_MEETING_LOC");
+#endregion
 
-    entity.Property(e => e.SalesOpportunityId)
-        .HasMaxLength(36)
-        .IsUnicode(false)
-        .HasColumnName("SALES_OPPORTUNITY_ID")
-        .IsRequired();
+#region Column Mappings
 
-    entity.Property(e => e.ActionTypeId)
-        .HasMaxLength(36)
-        .IsUnicode(false)
-        .HasColumnName("ACTION_TYPE_ID")
-        .IsRequired();
+entity.Property(e => e.SalesOpportunityActionId)
+    .HasMaxLength(36)
+    .IsUnicode(false)
+    .HasColumnName("SALES_OPPORTUNITY_ACTION_ID");
 
-    entity.Property(e => e.IsAnswered)
-        .HasColumnName("IS_ANSWERED")
-        .HasDefaultValue(false);
+entity.Property(e => e.SalesOpportunityId)
+    .HasMaxLength(36)
+    .IsUnicode(false)
+    .HasColumnName("SALES_OPPORTUNITY_ID")
+    .IsRequired();
 
-    entity.Property(e => e.ActionDate)
-        .HasColumnType("datetime")
-        .HasColumnName("ACTION_DATE");
+entity.Property(e => e.ActionTypeId)
+    .HasMaxLength(36)
+    .IsUnicode(false)
+    .HasColumnName("ACTION_TYPE_ID")
+    .IsRequired();
 
-    entity.Property(e => e.NextActionTypeId)
-        .HasMaxLength(36)
-        .IsUnicode(false)
-        .HasColumnName("NEXT_ACTION_TYPE_ID");
+entity.Property(e => e.IsAnswered)
+    .HasColumnName("IS_ANSWERED")
+    .HasDefaultValue(false);
 
-    entity.Property(e => e.CancelReasonId)
-        .HasMaxLength(36)
-        .IsUnicode(false)
-        .HasColumnName("CANCEL_REASON_ID");
+entity.Property(e => e.ActionDate)
+    .HasColumnType("datetime")
+    .HasColumnName("ACTION_DATE");
 
-    entity.Property(e => e.Comment)
-        .HasColumnType("text")
-        .HasColumnName("COMMENT");
+entity.Property(e => e.NextActionTypeId)
+    .HasMaxLength(36)
+    .IsUnicode(false)
+    .HasColumnName("NEXT_ACTION_TYPE_ID");
 
-    entity.Property(e => e.IsWon)
-        .HasColumnName("IS_WON")
-        .HasDefaultValue(false);
+entity.Property(e => e.CancelReasonId)
+    .HasMaxLength(36)
+    .IsUnicode(false)
+    .HasColumnName("CANCEL_REASON_ID");
 
-    entity.Property(e => e.CreatedByUserLogin)
-        .HasMaxLength(250)
-        .IsUnicode(false)
-        .HasColumnName("CREATED_BY_USER_LOGIN")
-        .IsRequired();
+entity.Property(e => e.Comment)
+    .HasColumnType("text")
+    .HasColumnName("COMMENT");
 
-    entity.Property(e => e.CreatedStamp)
-        .HasColumnType("datetime")
-        .HasColumnName("CREATED_STAMP")
-        .IsRequired();
+// ==================== New Properties ====================
 
-    entity.Property(e => e.LastUpdatedStamp)
-        .HasColumnType("datetime")
-        .HasColumnName("LAST_UPDATED_STAMP")
-        .IsRequired();
+entity.Property(e => e.MeetingTypeId)
+    .HasMaxLength(36)
+    .IsUnicode(false)
+    .HasColumnName("MEETING_TYPE_ID");
 
-    entity.Property(e => e.CreatedTxStamp)
-        .HasColumnType("datetime")
-        .HasColumnName("CREATED_TX_STAMP");
+entity.Property(e => e.MeetingLocationId)
+    .HasMaxLength(36)
+    .IsUnicode(false)
+    .HasColumnName("MEETING_LOCATION_ID");
 
-    entity.Property(e => e.LastUpdatedTxStamp)
-        .HasColumnType("datetime")
-        .HasColumnName("LAST_UPDATED_TX_STAMP");
+entity.Property(e => e.Note)
+    .HasColumnType("text")
+    .HasColumnName("NOTE");
 
-    // Foreign Key Relationships
-    entity.HasOne(d => d.SalesOpportunity)
-        .WithMany(p => p.SalesOpportunityActions)
-        .HasForeignKey(d => d.SalesOpportunityId)
-        .HasConstraintName("SLSOPPACT_SLSOPP")
-        .OnDelete(DeleteBehavior.Cascade);
+// ==================== Helper & Audit Fields ====================
 
-    entity.HasOne(d => d.ActionType)
-        .WithMany()
-        .HasForeignKey(d => d.ActionTypeId)
-        .HasConstraintName("SLSOPPACT_ACTION_TYP")
-        .OnDelete(DeleteBehavior.Restrict);
+entity.Property(e => e.IsWon)
+    .HasColumnName("IS_WON")
+    .HasDefaultValue(false);
 
-    entity.HasOne(d => d.NextActionType)
-        .WithMany()
-        .HasForeignKey(d => d.NextActionTypeId)
-        .HasConstraintName("SLSOPPACT_NEXT_ACTION_TYP")
-        .OnDelete(DeleteBehavior.Restrict);
+entity.Property(e => e.CreatedByUserLogin)
+    .HasMaxLength(250)
+    .IsUnicode(false)
+    .HasColumnName("CREATED_BY_USER_LOGIN")
+    .IsRequired();
 
-    entity.HasOne(d => d.CancelReason)
-        .WithMany()
-        .HasForeignKey(d => d.CancelReasonId)
-        .HasConstraintName("SLSOPPACT_CANCEL_RSN")
-        .OnDelete(DeleteBehavior.Restrict);
+entity.Property(e => e.CreatedStamp)
+    .HasColumnType("datetime")
+    .HasColumnName("CREATED_STAMP")
+    .IsRequired();
 
-    entity.HasOne(d => d.CreatedByUserLoginNavigation)
-        .WithMany()
-        .HasForeignKey(d => d.CreatedByUserLogin)
-        .HasConstraintName("SLSOPPACT_USRLGN")
-        .OnDelete(DeleteBehavior.Restrict);
-});
+entity.Property(e => e.LastUpdatedStamp)
+    .HasColumnType("datetime")
+    .HasColumnName("LAST_UPDATED_STAMP")
+    .IsRequired();
+
+entity.Property(e => e.CreatedTxStamp)
+    .HasColumnType("datetime")
+    .HasColumnName("CREATED_TX_STAMP");
+
+entity.Property(e => e.LastUpdatedTxStamp)
+    .HasColumnType("datetime")
+    .HasColumnName("LAST_UPDATED_TX_STAMP");
+
+#endregion
+
+#region Foreign Key Relationships
+
+entity.HasOne(d => d.SalesOpportunity)
+    .WithMany(p => p.SalesOpportunityActions)
+    .HasForeignKey(d => d.SalesOpportunityId)
+    .HasConstraintName("SLSOPPACT_SLSOPP")
+    .OnDelete(DeleteBehavior.Cascade);
+
+entity.HasOne(d => d.ActionType)
+    .WithMany()
+    .HasForeignKey(d => d.ActionTypeId)
+    .HasConstraintName("SLSOPPACT_ACTION_TYP")
+    .OnDelete(DeleteBehavior.Restrict);
+
+entity.HasOne(d => d.NextActionType)
+    .WithMany()
+    .HasForeignKey(d => d.NextActionTypeId)
+    .HasConstraintName("SLSOPPACT_NEXT_ACTION_TYP")
+    .OnDelete(DeleteBehavior.Restrict);
+
+entity.HasOne(d => d.CancelReason)
+    .WithMany()
+    .HasForeignKey(d => d.CancelReasonId)
+    .HasConstraintName("SLSOPPACT_CANCEL_RSN")
+    .OnDelete(DeleteBehavior.Restrict);
+
+// New Foreign Key Relationships
+entity.HasOne(d => d.MeetingType)
+    .WithMany()
+    .HasForeignKey(d => d.MeetingTypeId)
+    .HasConstraintName("SLSOPPACT_MEETING_TYP")
+    .OnDelete(DeleteBehavior.Restrict);
+
+entity.HasOne(d => d.MeetingLocation)
+    .WithMany()
+    .HasForeignKey(d => d.MeetingLocationId)
+    .HasConstraintName("SLSOPPACT_MEETING_LOC")
+    .OnDelete(DeleteBehavior.Restrict);
+
+entity.HasOne(d => d.CreatedByUserLoginNavigation)
+    .WithMany()
+    .HasForeignKey(d => d.CreatedByUserLogin)
+    .HasConstraintName("SLSOPPACT_USRLGN")
+    .OnDelete(DeleteBehavior.Restrict);
+
+#endregion

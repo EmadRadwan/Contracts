@@ -50517,7 +50517,8 @@ entity.Property(e => e.BuildingNumber)
     entity.HasIndex(e => e.CreatedStamp, "SLSOPPACT_CRTS");
     entity.HasIndex(e => e.LastUpdatedStamp, "SLSOPPACT_UPDST");
     entity.HasIndex(e => new { e.SalesOpportunityId, e.ActionTypeId }, "SLSOPPACT_OPP_ACTION");
-
+    entity.HasIndex(e => e.MeetingTypeId, "SLSOPPACT_MEETING_TYP");
+    entity.HasIndex(e => e.MeetingLocationId, "SLSOPPACT_MEETING_LOC");
     // Column Mappings
     entity.Property(e => e.SalesOpportunityActionId)
         .HasMaxLength(36)
@@ -50585,6 +50586,20 @@ entity.Property(e => e.BuildingNumber)
     entity.Property(e => e.LastUpdatedTxStamp)
         .HasColumnType("datetime")
         .HasColumnName("LAST_UPDATED_TX_STAMP");
+        
+        entity.Property(e => e.MeetingTypeId)
+    .HasMaxLength(36)
+    .IsUnicode(false)
+    .HasColumnName("MEETING_TYPE_ID");
+
+entity.Property(e => e.MeetingLocationId)
+    .HasMaxLength(36)
+    .IsUnicode(false)
+    .HasColumnName("MEETING_LOCATION_ID");
+
+entity.Property(e => e.Note)
+    .HasColumnType("text")
+    .HasColumnName("NOTE");
 
     // Foreign Key Relationships
     entity.HasOne(d => d.SalesOpportunity)
@@ -50616,6 +50631,24 @@ entity.Property(e => e.BuildingNumber)
         .HasForeignKey(d => d.CreatedByUserLogin)
         .HasConstraintName("SLSOPPACT_USRLGN")
         .OnDelete(DeleteBehavior.Restrict);
+        
+        entity.HasOne(d => d.MeetingType)
+    .WithMany()
+    .HasForeignKey(d => d.MeetingTypeId)
+    .HasConstraintName("SLSOPPACT_MEETING_TYP")
+    .OnDelete(DeleteBehavior.Restrict);
+
+entity.HasOne(d => d.MeetingLocation)
+    .WithMany()
+    .HasForeignKey(d => d.MeetingLocationId)
+    .HasConstraintName("SLSOPPACT_MEETING_LOC")
+    .OnDelete(DeleteBehavior.Restrict);
+
+entity.HasOne(d => d.CreatedByUserLoginNavigation)
+    .WithMany()
+    .HasForeignKey(d => d.CreatedByUserLogin)
+    .HasConstraintName("SLSOPPACT_USRLGN")
+    .OnDelete(DeleteBehavior.Restrict);
 });
             
             

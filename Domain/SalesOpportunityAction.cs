@@ -48,6 +48,25 @@ public class SalesOpportunityAction
     /// </summary>
     public string? Comment { get; set; }
 
+    // ==================== New Fields for Meetings ====================
+
+    /// <summary>
+    /// Type of meeting (e.g. In-person, Online/Zoom, Phone Call, etc.)
+    /// Only relevant when ActionType is related to a meeting
+    /// </summary>
+    public string? MeetingTypeId { get; set; }
+
+    /// <summary>
+    /// Location of the meeting (e.g. Office, Client Site, Coffee Shop, etc.)
+    /// Only relevant for in-person meetings
+    /// </summary>
+    public string? MeetingLocationId { get; set; }
+
+    /// <summary>
+    /// Additional notes specific to this action/meeting
+    /// </summary>
+    public string? Note { get; set; }
+
     // ==================== Helper Properties for Business Logic ====================
 
     /// <summary>
@@ -82,8 +101,12 @@ public class SalesOpportunityAction
     public virtual SalesOpportunity SalesOpportunity { get; set; } = null!;
 
     public virtual Enumeration? ActionType { get; set; }
-    public virtual Enumeration? NextActionType { get; set; }     // For NextActionTypeId
+    public virtual Enumeration? NextActionType { get; set; }
     public virtual Enumeration? CancelReason { get; set; }
+
+    // New Navigation Properties for the added fields
+    public virtual Enumeration? MeetingType { get; set; }
+    public virtual Enumeration? MeetingLocation { get; set; }
 
     public virtual UserLogin CreatedByUserLoginNavigation { get; set; } = null!;
 }
