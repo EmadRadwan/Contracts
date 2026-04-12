@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, memo , useEffect } from "react";
 import {
     Button,
     Box,
@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
+import { toast } from "react-toastify";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import { MultiPaymentItem } from "../../../app/models/project/MultiPaymentItem";
 import { useAppSelector } from "../../../app/store/configureStore";
@@ -58,16 +59,35 @@ interface BulkAddRow {
     estimatedStartDate?: string;
 }
 
-const BulkAddRowItem: React.FC<{
+interface BulkAddRowItemProps {
     row: BulkAddRow;
     index: number;
     glAccounts: any[];
-    handleRowChange: (index: number, field: keyof BulkAddRow, value: any) => void;
+    handleRowChange: (
+        index: number,
+        field: keyof BulkAddRow,
+        value: any,
+        extraFields?: Partial<BulkAddRow>
+    ) => void;
     handleRemoveRow: (index: number) => void;
     rowsCount: number;
     costCenters: any[];
     itemTypes: any[];
-}> = ({ row, index, glAccounts, handleRowChange, handleRemoveRow, rowsCount, costCenters, itemTypes }) => {
+    localAmount: string;
+}
+
+const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
+                                                                row,
+                                                                index,
+                                                                glAccounts,
+                                                                handleRowChange,
+                                                                handleRemoveRow,
+                                                                rowsCount,
+                                                                costCenters,
+                                                                itemTypes,
+                                                                localAmount,
+                                                            }) => {
+
     const { data: projects } = useFetchWorkEffortsByGlAccountIdQuery(
         { glAccountId: row.glAccountId, workEffortTypeId: "PROJECT" },
         { skip: !row.glAccountId }
@@ -101,7 +121,8 @@ const BulkAddRowItem: React.FC<{
 
     return (
         <TableRow key={row.tempId}>
-            <TableCell>
+            {/* GL Account */}
+            <TableCell sx={{ minWidth: 350 }}>
                 <FormDropDownTreeGlAccount3
                     data={glAccounts || []}
                     value={row.glAccountId}
@@ -116,25 +137,31 @@ const BulkAddRowItem: React.FC<{
                     modified={false}
                 />
             </TableCell>
-            <TableCell>
+
+            {/* Description - Smooth typing */}
+            <TableCell sx={{ minWidth: 250 }}>
                 <TextField
                     fullWidth
                     size="small"
-                    value={row.description}
+                    value={row.description || ""}
                     onChange={(e) => handleRowChange(index, "description", e.target.value)}
                 />
             </TableCell>
-            <TableCell>
+
+            {/* Amount */}
+            <TableCell sx={{ minWidth: 120 }}>
                 <TextField
                     fullWidth
                     size="small"
                     type="number"
-                    value={row.amount}
-                    onChange={(e) => handleRowChange(index, "amount", parseFloat(e.target.value) || 0)}
+                    value={localAmount ?? ""}
+                    onChange={(e) => handleRowChange(index, "amount", e.target.value)}
                     inputProps={{ min: 0, step: "0.01" }}
                 />
             </TableCell>
-            <TableCell>
+
+            {/* Estimated Start Date */}
+            <TableCell sx={{ minWidth: 150 }}>
                 <TextField
                     fullWidth
                     size="small"
@@ -144,7 +171,9 @@ const BulkAddRowItem: React.FC<{
                     InputLabelProps={{ shrink: true }}
                 />
             </TableCell>
-            <TableCell>
+
+            {/* Item Type */}
+            <TableCell sx={{ minWidth: 200 }}>
                 <MemoizedFormComboBox2
                     data={itemTypes}
                     textField="description"
@@ -153,7 +182,9 @@ const BulkAddRowItem: React.FC<{
                     onChange={(e: any) => handleRowChange(index, "itemType", e.value)}
                 />
             </TableCell>
-            <TableCell>
+
+            {/* Service */}
+            <TableCell sx={{ minWidth: 300 }}>
                 <FormSimpleComboBoxServiceVirtual
                     value={row.serviceId}
                     onChange={(e: any) => handleRowChange(index, "serviceId", e.value)}
@@ -165,7 +196,9 @@ const BulkAddRowItem: React.FC<{
                     modified={false}
                 />
             </TableCell>
-            <TableCell>
+
+            {/* Product */}
+            <TableCell sx={{ minWidth: 300 }}>
                 <FormSimpleComboBoxRawMaterialVirtual
                     value={row.productId}
                     onChange={(e: any) => handleRowChange(index, "productId", e.value)}
@@ -178,7 +211,9 @@ const BulkAddRowItem: React.FC<{
                     disabled={row.itemType !== "MATERIALS"}
                 />
             </TableCell>
-            <TableCell>
+
+            {/* Supplier / Party */}
+            <TableCell sx={{ minWidth: 300 }}>
                 <FormComboBoxVirtualAllParties
                     value={row.party}
                     onChange={(e: any) => handleRowChange(index, "party", e.value)}
@@ -188,7 +223,9 @@ const BulkAddRowItem: React.FC<{
                     modified={false}
                 />
             </TableCell>
-            <TableCell>
+
+            {/* Sub Project */}
+            <TableCell sx={{ minWidth: 250 }}>
                 {subProjects && subProjects.length > 0 ? (
                     <MemoizedFormComboBox2
                         data={subProjects.filter((sp: any) => !!sp)}
@@ -196,38 +233,52 @@ const BulkAddRowItem: React.FC<{
                         dataItemKey="workEffortId"
                         value={row.subProjectId || null}
                         onChange={(e: any) => {
-                            handleRowChange(index, "subProjectId" as any, e.value);
-                            const sp = subProjects.find((p: any) => p.workEffortId === e.value);
-                            handleRowChange(index, "subProjectName" as any, sp?.subProjectName);
+                            const selectedId = e?.value;
+                            const sp = subProjects.find((p: any) => p.workEffortId === selectedId);
+                            handleRowChange(index, "subProjectId", selectedId, {
+                                subProjectName: sp?.subProjectName || ""
+                            });
                         }}
                     />
                 ) : (
                     "-"
                 )}
             </TableCell>
-            <TableCell>
+
+            {/* Cost Center - Fixed binding */}
+            <TableCell sx={{ minWidth: 250 }}>
                 <MemoizedFormComboBox2
-                    id="costCenterId"
+                    id={`costCenterId-${row.tempId}`}
                     name="costCenterId"
                     data={(costCenters || []).filter((cc: any) => !!cc)}
                     textField="description"
                     dataItemKey="costCenterId"
                     value={row.costCenterId || null}
                     onChange={(e: any) => {
-                        handleRowChange(index, "costCenterId" as any, e.value);
-                        const cc = costCenters.find((c: any) => c.costCenterId === e.value);
-                        handleRowChange(index, "costCenterName" as any, cc?.description);
+                        const selectedId = e?.value;
+                        const selectedCc = costCenters.find((c: any) => c.costCenterId === selectedId);
+
+                        handleRowChange(index, "costCenterId", selectedId, {
+                            costCenterName: selectedCc?.description || ""
+                        });
                     }}
                 />
             </TableCell>
-            <TableCell>
-                <IconButton color="error" onClick={() => handleRemoveRow(index)} disabled={rowsCount === 1}>
+
+            {/* Delete Button */}
+            <TableCell sx={{ width: 50 }}>
+                <IconButton
+                    color="error"
+                    onClick={() => handleRemoveRow(index)}
+                    disabled={rowsCount === 1}
+                >
                     <DeleteIcon />
                 </IconButton>
             </TableCell>
         </TableRow>
     );
-};
+});
+
 
 const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addItem, updateItem, deleteItem, initialItems }) => {
     const { getTranslatedLabel } = useTranslationHelper();
@@ -266,7 +317,7 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
     });
 
     const [rows, setRows] = useState<BulkAddRow[]>([]);
-    const [deletedWorkEffortIds, setDeletedWorkEffortIds] = useState<string[]>([]);
+    const [localAmounts, setLocalAmounts] = useState<{ [tempId: string]: string }>({});
 
     useEffect(() => {
         if (initialItems && initialItems.length > 0) {
@@ -289,22 +340,78 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
                 estimatedStartDate: item.estimatedStartDate ? item.estimatedStartDate.split('T')[0] : "",
             }));
             setRows(mappedRows);
+            const amounts: { [tempId: string]: string } = {};
+            mappedRows.forEach(r => {
+                amounts[r.tempId] = r.amount.toString();
+            });
+            setLocalAmounts(amounts);
         } else {
-            setRows([createEmptyRow()]);
+            const emptyRow = createEmptyRow();
+            setRows([emptyRow]);
+            setLocalAmounts({ [emptyRow.tempId]: "0" });
         }
     }, [initialItems]);
 
+    const validateRow = (row: BulkAddRow): boolean => {
+        return !!row.glAccountId && !!row.description && row.amount > 0;
+    };
+
+    const serializeRow = (row: BulkAddRow): MultiPaymentItem => {
+        const selectedItemType = itemTypes.find(t => t.itemType === row.itemType);
+        const partyId = (row.party && row.party.fromPartyId && row.party.fromPartyId !== "0") ? row.party.fromPartyId : "";
+        const partyName = partyId ? row.party.fromPartyName : "";
+        return {
+            workEffortId: row.workEffortId || `temp-${row.tempId}`,
+            workEffortIdParent: workEffortId,
+            glAccountId: row.glAccountId,
+            glAccountName: row.glAccountName,
+            projectId: row.projectId,
+            subProjectId: row.subProjectId,
+            subProjectName: row.subProjectName,
+            costCenterId: row.costCenterId,
+            costCenterName: row.costCenterName,
+            itemType: row.itemType,
+            itemTypeDescription: selectedItemType?.description || "",
+            serviceId: row.serviceId?.ProductId || "",
+            serviceName: row.serviceId?.ProductName || "",
+            productId: row.productId?.ProductId || "",
+            productName: row.productId?.ProductName || "",
+            description: row.description,
+            amount: row.amount,
+            estimatedStartDate: row.estimatedStartDate,
+            discount: 0,
+            discountMode: "value",
+            transportationExpenses: 0,
+            gratuities: 0,
+            total: row.amount,
+            partyIdSupplier: partyId,
+            partyIdSupplierName: partyName,
+            partyIdContractor: "",
+            partyIdContractorName: "",
+        };
+    };
+
     const handleAddRow = () => {
-        setRows([...rows, createEmptyRow()]);
+        const lastRow = rows[rows.length - 1];
+        if (lastRow && !validateRow(lastRow)) {
+            toast.error(getTranslatedLabel("general.mandatoryFieldsMissing", "Please fill mandatory fields: GL Account, Description, and Amount."));
+            return;
+        }
+        const emptyRow = createEmptyRow();
+        setRows([...rows, emptyRow]);
+        setLocalAmounts(prev => ({ ...prev, [emptyRow.tempId]: "0" }));
     };
 
     const handleRemoveRow = (index: number) => {
         const rowToRemove = rows[index];
         if (rowToRemove.workEffortId) {
-            setDeletedWorkEffortIds((prev) => [...prev, rowToRemove.workEffortId!]);
+            deleteItem(rowToRemove.workEffortId);
         }
         const newRows = [...rows];
         newRows.splice(index, 1);
+        if (newRows.length === 0) {
+            newRows.push(createEmptyRow());
+        }
         setRows(newRows);
     };
 
@@ -329,68 +436,65 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
         return search(glAccounts) || "";
     }, [glAccounts]);
 
-    const handleRowChange = (index: number, field: keyof BulkAddRow, value: any) => {
-        const newRows = [...rows];
-        newRows[index] = { ...newRows[index], [field]: value };
-        
-        if (field === "glAccountId") {
-            newRows[index].glAccountName = findGlAccountNameById(value);
-        }
+    const handleRowChange = useCallback((
+        index: number,
+        field: keyof BulkAddRow,
+        value: any,
+        extraFields: Partial<BulkAddRow> = {}
+    ) => {
 
-        if (field === "glAccountId") {
-            newRows[index].projectId = undefined;
-            newRows[index].subProjectId = undefined;
-        }
+        setRows(prevRows => {
+            const newRows = [...prevRows];
+            const currentRow = { ...newRows[index] };
 
-        setRows(newRows);
-    };
+            let processedValue = value;
 
-    const handleSave = () => {
-        // Handle deleted items
-        deletedWorkEffortIds.forEach((id) => deleteItem(id));
-
-        console.log('rows', rows)
-        rows.forEach(row => {
-            if (!row.glAccountId || !row.description || !row.itemType || row.amount <= 0) return;
-
-            const selectedItemType = itemTypes.find(t => t.itemType === row.itemType);
-
-            const serializedItem: MultiPaymentItem = {
-                workEffortId: row.workEffortId || `temp-${Date.now()}-${row.tempId}`,
-                workEffortIdParent: workEffortId,
-                glAccountId: row.glAccountId,
-                glAccountName: row.glAccountName,
-                projectId: row.projectId,
-                subProjectId: row.subProjectId,
-                subProjectName: row.subProjectName,
-                costCenterId: row.costCenterId,
-                costCenterName: row.costCenterName,
-                itemType: row.itemType,
-                itemTypeDescription: selectedItemType?.description || "",
-                serviceId: row.serviceId?.ProductId || "",
-                serviceName: row.serviceId?.ProductName || "",
-                productId: row.productId?.ProductId || "",
-                productName: row.productId?.ProductName || "",
-                description: row.description,
-                amount: row.amount,
-                estimatedStartDate: row.estimatedStartDate,
-                discount: 0,
-                discountMode: "value",
-                transportationExpenses: 0,
-                gratuities: 0,
-                total: row.amount, // Total is just amount since we ignore discounts etc.
-                partyIdSupplier: row.party?.fromPartyId || "",
-                partyIdSupplierName: row.party?.fromPartyName || "",
-                partyIdContractor: "",
-                partyIdContractorName: "",
-            };
-
-            if (row.workEffortId) {
-                updateItem(serializedItem);
-            } else {
-                addItem(serializedItem);
+            // Special handling for amount (already fixed by you)
+            if (field === "amount") {
+                setLocalAmounts(prev => ({ ...prev, [currentRow.tempId]: value || "" }));
+                processedValue = parseFloat(value) || 0;
             }
+
+            // Apply the change
+            currentRow[field] = processedValue;
+
+            // Apply any extra fields (for costCenter, glAccount, etc.)
+            Object.assign(currentRow, extraFields);
+
+            // Special GL Account logic
+            if (field === "glAccountId") {
+                currentRow.glAccountName = findGlAccountNameById(value);
+                currentRow.projectId = undefined;
+                currentRow.subProjectId = undefined;
+                currentRow.subProjectName = undefined;
+            }
+
+            newRows[index] = currentRow;
+
+            // === Immediate sync only if row is valid ===
+            if (validateRow(currentRow)) {
+                const serialized = serializeRow(currentRow);
+
+                if (currentRow.workEffortId) {
+                    updateItem(serialized);
+                } else {
+                    const newWorkEffortId = `temp-${currentRow.tempId}`;
+                    currentRow.workEffortId = newWorkEffortId;
+                    addItem(serialized);
+                    // Note: we already updated newRows[index] above
+                }
+            }
+
+            return newRows;
         });
+    }, [findGlAccountNameById, validateRow, serializeRow, addItem, updateItem]);
+    
+    const handleClose = () => {
+        const invalidRows = rows.filter(row => (row.glAccountId || row.description || row.amount > 0) && !validateRow(row));
+        if (invalidRows.length > 0) {
+            toast.error(getTranslatedLabel("general.mandatoryFieldsMissing", "Some rows are incomplete. Please fill GL Account, Description, and Amount."));
+            return;
+        }
         onClose();
     };
 
@@ -429,6 +533,7 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
                                 rowsCount={rows.length}
                                 costCenters={costCenters}
                                 itemTypes={itemTypes}
+                                localAmount={localAmounts[row.tempId] || "0"}
                             />
                         ))}
                     </TableBody>
@@ -443,8 +548,8 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
                     <Button onClick={onClose} variant="outlined" color="inherit">
                         {getTranslatedLabel("general.cancel", "Cancel")}
                     </Button>
-                    <Button onClick={handleSave} variant="contained" color="primary">
-                        {getTranslatedLabel("general.save", "Save")}
+                    <Button onClick={handleClose} variant="contained" color="primary">
+                        {getTranslatedLabel("general.close", "Close")}
                     </Button>
                 </Box>
             </Box>
