@@ -1,15 +1,18 @@
-import React, { useEffect, memo } from "react";
-import {
-    TableRow,
-    TableCell,
-    TextField,
-    IconButton,
-} from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-import { MemoizedFormComboBox2 } from "../../../app/common/form/FormComboBox2";
-import { FormDropDownTreeGlAccount3 } from "../../../app/common/form/FormDropDownTreeGlAccount3";
-import { FormSimpleComboBoxServiceVirtual } from "../../../app/common/form/FormSimpleComboBoxServiceVirtual";
-import { FormSimpleComboBoxRawMaterialVirtual } from "../../../app/common/form/FormSimpleComboBoxRawMaterialVirtual";
-import { FormComboBoxVirtualAllParties } from "../../../app/common/form/FormComboBoxVirtualAllParties";
+useEffect(() => {
+    if (projectId !== row.projectId) {
+        handleRowChange(index, "projectId" as any, projectId);
+        if (!projectId) {
+            handleRowChange(index, "subProjectId" as any, undefined);
+            handleRowChange(index, "subProjectName" as any, undefined);
+        }
+    }
+}, [projectId, row.projectId]);   // removed index & handleRowChange from deps (they are stable)
 
-handleRowChange(index: number, field: keyof BulkAddRow, value: any, extraFields?: Partial<BulkAddRow>)
+useEffect(() => {
+    if (subProjects && row.subProjectId) {
+        const sp = subProjects.find((p: any) => p.workEffortId === row.subProjectId);
+        if (sp && sp.subProjectName !== row.subProjectName) {
+            handleRowChange(index, "subProjectName" as any, sp.subProjectName);
+        }
+    }
+}, [subProjects, row.subProjectId, row.subProjectName]);   // removed index & handleRowChange

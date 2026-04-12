@@ -4,7 +4,7 @@ public class MultiPaymentItemDto
 {
     public string WorkEffortId { get; set; }
     public string GlAccountId { get; set; }
-    public string ItemType { get; set; }
+    public string? ItemType { get; set; }
     public string? ItemTypeDescription { get; set; }
     public string? ServiceId { get; set; }
     public string? ServiceName { get; set; }

@@ -257,8 +257,12 @@ public class DateTimeConverter : JsonConverter<DateTime>
 {
     public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        //return DateTime.ParseExact(reader.GetString(), "yyyy-MM-ddTHH:mm:sss.K", null).ToUniversalTime();
-        return DateTime.Parse(reader.GetString()).ToUniversalTime();
+        var dateString = reader.GetString();
+        if (string.IsNullOrEmpty(dateString))
+        {
+            return DateTime.MinValue;
+        }
+        return DateTime.Parse(dateString).ToUniversalTime();
     }
 
     public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
@@ -271,7 +275,12 @@ public class UtcDateTimeConverter : JsonConverter<DateTime>
 {
     public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        return DateTime.Parse(reader.GetString()!);  // or more strict parsing
+        var dateString = reader.GetString();
+        if (string.IsNullOrEmpty(dateString))
+        {
+            return DateTime.MinValue;
+        }
+        return DateTime.Parse(dateString);
     }
 
     public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)

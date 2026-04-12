@@ -159,7 +159,7 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
                     inputProps={{ min: 0, step: "0.01" }}
                 />
             </TableCell>
-
+            
             {/* Estimated Start Date */}
             <TableCell sx={{ minWidth: 150 }}>
                 <TextField
@@ -378,7 +378,7 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
             productName: row.productId?.ProductName || "",
             description: row.description,
             amount: row.amount,
-            estimatedStartDate: row.estimatedStartDate,
+            estimatedStartDate: row.estimatedStartDate || undefined,
             discount: 0,
             discountMode: "value",
             transportationExpenses: 0,
@@ -443,22 +443,28 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
         extraFields: Partial<BulkAddRow> = {}
     ) => {
 
+        // 1. Always update localAmounts synchronously for amount field (this is the key fix)
+        if (field === "amount") {
+            const tempId = rows[index]?.tempId;
+            if (tempId) {
+                setLocalAmounts(prev => ({ ...prev, [tempId]: value || "" }));
+            }
+        }
+
         setRows(prevRows => {
             const newRows = [...prevRows];
-            const currentRow = { ...newRows[index] };
+            const currentRow = { ...newRows[index] };   // fresh shallow copy
 
             let processedValue = value;
 
-            // Special handling for amount (already fixed by you)
             if (field === "amount") {
-                setLocalAmounts(prev => ({ ...prev, [currentRow.tempId]: value || "" }));
                 processedValue = parseFloat(value) || 0;
             }
 
-            // Apply the change
-            currentRow[field] = processedValue;
+            // Apply the main change
+            (currentRow as any)[field] = processedValue;
 
-            // Apply any extra fields (for costCenter, glAccount, etc.)
+            // Apply extra fields (e.g. costCenterName, subProjectName)
             Object.assign(currentRow, extraFields);
 
             // Special GL Account logic
@@ -471,7 +477,7 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
 
             newRows[index] = currentRow;
 
-            // === Immediate sync only if row is valid ===
+            // Immediate backend sync only if valid
             if (validateRow(currentRow)) {
                 const serialized = serializeRow(currentRow);
 
@@ -481,13 +487,12 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
                     const newWorkEffortId = `temp-${currentRow.tempId}`;
                     currentRow.workEffortId = newWorkEffortId;
                     addItem(serialized);
-                    // Note: we already updated newRows[index] above
                 }
             }
 
             return newRows;
         });
-    }, [findGlAccountNameById, validateRow, serializeRow, addItem, updateItem]);
+    }, [rows, findGlAccountNameById, validateRow, serializeRow, addItem, updateItem]);
     
     const handleClose = () => {
         const invalidRows = rows.filter(row => (row.glAccountId || row.description || row.amount > 0) && !validateRow(row));
