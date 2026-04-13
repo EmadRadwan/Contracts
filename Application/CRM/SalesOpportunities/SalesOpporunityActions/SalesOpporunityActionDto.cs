@@ -16,6 +16,12 @@ namespace Application.CRM.SalesOpportunities
         public string? CancelReasonId { get; set; }         // From ENUM_TYPE_ID = 'CRM_CANCELLATION_REASON'
         public string? CancelReasonDescription { get; set; }  
         public string? Comment { get; set; }                // Main comment (required in most cases)
+        public string? MeetingLocationId { get; set; }
+        public string? MeetingLocationDescription {get; set;}
+        public string? MeetingTypeId { get; set; }
+        public string? MeetingTypeDescription {get; set;}
+
+        public string? Note { get; set; }
 
         // Audit fields
         public string? CreatedByUserLogin { get; set; }

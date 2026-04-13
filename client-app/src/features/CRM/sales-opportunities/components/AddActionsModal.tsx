@@ -18,11 +18,13 @@ import {
 } from '@mui/material';
 import { Person as PersonIcon } from '@mui/icons-material';
 import { useTranslationHelper } from '../../../../app/hooks/useTranslationHelper';
-import { SalesOpportunity, SalesOpportunityAction } from '../../models/salesOpportunity';
+import { OpportunityMeetingLocation, OpportunityMeetingType, SalesOpportunity, SalesOpportunityAction } from '../../models/salesOpportunity';
 import {
     useCreateOpportunityActionMutation,
     useFetchActionTypesQuery,
     useFetchCancellationReasonsQuery,
+    useFetchMeetingLocationsQuery,
+    useFetchMeetingTypesQuery,
     useFetchOpportunityActionsQuery,
 } from '../../../../app/store/configureStore';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
@@ -45,13 +47,19 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
     const [comment, setComment] = React.useState('');
     const [stageDate, setStageDate] = React.useState<string>('');
     const [cancelReason, setCancelReason] = React.useState('');
+    const [meetingType, setMeetingType] = React.useState('');
+    const [meetingLocation, setMeetingLocation] = React.useState('');
+    const [note, setNote] = React.useState('');
 
     const hasDateField = ['FOLLOW_UP', 'SET_MEETING', 'FRESH_STAGE', 'INTERESTED', 'FOLLOWING_UP_AFTER_MEETING', 'NO_ANSWER'].includes(nextAction);
     const hasCancelReasonField = ['CANCELLATION'].includes(nextAction);
+    const hasMeetingDropdownsAndNote = ['MEETING', 'SITE_VISIT'].includes(nextAction);
 
     // Queries
     const { data: cancellationReasons, isLoading: loadingCancellationReasons } = useFetchCancellationReasonsQuery();
     const { data: actionTypes, isLoading: loadingActionTypes } = useFetchActionTypesQuery();
+    const { data: meetingTypes, isLoading: loadingMeetingTypes } = useFetchMeetingTypesQuery();
+    const { data: meetingLocations, isLoading: loadingMeetingLocations } = useFetchMeetingLocationsQuery();
 
     const {
         data: opportunityActions = [],
@@ -161,6 +169,60 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
                                 )}
                             </Select>
                         </FormControl>
+                    )}
+
+                    {hasMeetingDropdownsAndNote && (
+                        <>
+                            <FormControl fullWidth sx={{ mb: 3 }}>
+                                <InputLabel>{getTranslatedLabel(`${localizationKey}.meetingType`, 'Meeting Type *')}</InputLabel>
+                                <Select
+                                    value={meetingType}
+                                    label={getTranslatedLabel(`${localizationKey}.meetingType`, 'Meeting Type *')}
+                                    onChange={(e) => setMeetingType(e.target.value)}
+                                >
+                                    {loadingMeetingTypes ? (
+                                        <MenuItem value=""><em>Loading...</em></MenuItem>
+                                    ) : (
+                                        meetingTypes?.map((type: OpportunityMeetingType) => (
+                                            <MenuItem key={type.meetingTypeId} value={type.meetingTypeId}>
+                                                {type.description}
+                                            </MenuItem>
+                                        ))
+                                    )}
+                                </Select>
+                            </FormControl>
+                            <FormControl fullWidth sx={{ mb: 3 }}>
+                                <InputLabel>{getTranslatedLabel(`${localizationKey}.meetingLocation`, 'Meeting Location *')}</InputLabel>
+                                <Select
+                                    value={meetingLocation}
+                                    label={getTranslatedLabel(`${localizationKey}.meetingLocation`, 'Meeting Location *')}
+                                    onChange={(e) => setMeetingLocation(e.target.value)}
+                                >
+                                    {loadingMeetingTypes ? (
+                                        <MenuItem value=""><em>Loading...</em></MenuItem>
+                                    ) : (
+                                        meetingLocations?.map((type: OpportunityMeetingLocation) => (
+                                            <MenuItem key={type.meetingLocationId} value={type.meetingLocationId}>
+                                                {type.description}
+                                            </MenuItem>
+                                        ))
+                                    )}
+                                </Select>
+                            </FormControl>
+
+                            {/* Comment */}
+                    <TextField
+                        fullWidth
+                        label={getTranslatedLabel(`${localizationKey}.note`, 'Note')}
+                        multiline
+                        rows={4}
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        placeholder={getTranslatedLabel(`${localizationKey}.notePlaceholder`, 'Note...')}
+                        sx={{ mb: 3 }}
+                    />
+                        </>
+                        
                     )}
 
                     {/* Action Date */}

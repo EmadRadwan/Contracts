@@ -7,7 +7,9 @@ import {
     UpdateStageRequest,
     OpportunityAction,
     OpportunityCancellationReason,
-    SalesOpportunityAction
+    SalesOpportunityAction,
+    OpportunityMeetingType,
+    OpportunityMeetingLocation
 } from "../../../../features/CRM/models/salesOpportunity";
 
 /**
@@ -29,7 +31,7 @@ const salesOpportunitiesApi = createApi({
             return headers;
         },
     }),
-    tagTypes: ["SalesOpportunity", "OpportunityStage", "OpportunityActionTypes", "CancellationReason", "OpportunityActions"],
+    tagTypes: ["SalesOpportunity", "OpportunityStage", "OpportunityActionTypes", "CancellationReason", "OpportunityActions", "MeetingTypes", "MeetingLocations"],
 
     endpoints(builder) {
         return {
@@ -140,6 +142,22 @@ const salesOpportunitiesApi = createApi({
                     { type: "SalesOpportunity", id: "LIST" },
                 ],
             }),
+
+            fetchMeetingTypes: builder.query<OpportunityMeetingType[], void>({
+                query: () => ({
+                    url: `/salesOpportunities/meeting-types`,
+                    method: "GET",
+                }),
+                providesTags: [{ type: "MeetingTypes", id: "LIST" }],
+            }),
+
+            fetchMeetingLocations: builder.query<OpportunityMeetingLocation[], void>({
+                query: () => ({
+                    url: `/salesOpportunities/meeting-locations`,
+                    method: "GET",
+                }),
+                providesTags: [{ type: "MeetingLocations", id: "LIST" }],
+            }),
         };
     },
 });
@@ -154,6 +172,8 @@ export const {
     useFetchOpportunityActionsQuery,
     useUpdateOpportunityMutation,
     useUpdateOpportunityStageMutation,
+    useFetchMeetingTypesQuery,
+    useFetchMeetingLocationsQuery
 } = salesOpportunitiesApi;
 
 export { salesOpportunitiesApi };

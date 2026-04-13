@@ -108,6 +108,16 @@ export interface OpportunityCancellationReason {
     description?: string;
 }
 
+export interface OpportunityMeetingType {
+    meetingTypeId: string;
+    description?: string;
+}
+
+export interface OpportunityMeetingLocation {
+    meetingLocationId: string;
+    description?: string;
+}
+
 
 /**
  * Query parameters for listing opportunities.

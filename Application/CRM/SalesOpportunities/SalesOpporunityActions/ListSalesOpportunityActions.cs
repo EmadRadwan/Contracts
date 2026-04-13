@@ -45,6 +45,8 @@ public class ListSalesOpportunityActions
                 .Where(a => a.SalesOpportunityId == request.SalesOpportunityId)
                 .Include(a => a.ActionType)           // Join with Enumeration for Action Type
                 .Include(a => a.CancelReason)         // Join with Enumeration for Cancel Reason
+                .Include(a => a.MeetingType)         // Join with Enumeration for Cancel Reason
+                .Include(a => a.MeetingLocation)         // Join with Enumeration for Cancel Reason
                 .OrderByDescending(a => a.CreatedStamp)   // Latest first
                 .ToListAsync(ct);
 
@@ -61,6 +63,13 @@ public class ListSalesOpportunityActions
                 CancelReasonId = a.CancelReasonId,
                 CancelReasonDescription = GetDescription(a.CancelReason, request.Language),
 
+                MeetingTypeId = a.MeetingTypeId,
+                MeetingTypeDescription = GetDescription(a.MeetingType, request.Language),
+
+                MeetingLocationId = a.MeetingLocationId,
+                MeetingLocationDescription = GetDescription(a.MeetingLocation, request.Language),
+
+                Note = a.Note,
                 Comment = a.Comment,
 
                 CreatedByUserLogin = a.CreatedByUserLogin,

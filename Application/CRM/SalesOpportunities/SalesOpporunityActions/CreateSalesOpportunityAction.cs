@@ -101,6 +101,18 @@ public class CreateSalesOpportunityAction
                         return Result<SalesOpportunityActionDto>.Failure($"Invalid Cancel Reason: '{dto.CancelReasonId}'");
                 }
 
+                if (IsMeetingAction(dto.ActionTypeId))
+                {
+                    if (string.IsNullOrEmpty(dto.MeetingTypeId))
+                        return Result<SalesOpportunityActionDto>.Failure("Meeting Type is required for meeting actions");
+
+                    var meetingTypeExists = await _context.Enumerations
+                        .AnyAsync(e => e.EnumTypeId == "CRM_MEETING_TYPE" && e.EnumId == dto.MeetingTypeId, ct);
+
+                    if (!meetingTypeExists)
+                        return Result<SalesOpportunityActionDto>.Failure($"Invalid Cancel Reason: '{dto.MeetingTypeId}'");
+                }
+
                 // Validate Action Date for types that require it
                 if (RequiresActionDate(dto.ActionTypeId) && !dto.ActionDate.HasValue)
                 {
@@ -120,6 +132,9 @@ public class CreateSalesOpportunityAction
                     ActionDate = dto.ActionDate,
                     CancelReasonId = dto.CancelReasonId,
                     Comment = dto.Comment,
+                    MeetingTypeId = dto.MeetingTypeId,
+                    MeetingLocationId = dto.MeetingLocationId,
+                    Note = dto.Note,
 
                     // Audit fields (following your existing pattern)
                     CreatedByUserLogin = userLogin?.UserLoginId ?? "SYSTEM",
@@ -177,6 +192,18 @@ public class CreateSalesOpportunityAction
             };
 
             return cancellationActions.Contains(actionTypeId);
+        }
+
+        private bool IsMeetingAction(string? actionTypeId)
+        {
+            if (string.IsNullOrEmpty(actionTypeId)) return false;
+
+            var meetingActions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "MEETING", "SITE_VISIT"
+            };
+
+            return meetingActions.Contains(actionTypeId);
         }
 
         private bool RequiresActionDate(string? actionTypeId)

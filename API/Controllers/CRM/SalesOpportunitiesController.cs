@@ -61,6 +61,20 @@ public class SalesOpportunitiesController : BaseApiController
         return HandleResult(await Mediator.Send(new ListSalesOpportunityCancellationReasons.Query { Language = Language }));
     }
 
+    [HttpGet("meeting-types")]
+    public async Task<IActionResult> GetMeetingTypes()
+    {
+        var Language = GetLanguage();
+        return HandleResult(await Mediator.Send(new ListSalesOpportunityMeetingTypes.Query { Language = Language }));
+    }
+
+    [HttpGet("meeting-locations")]
+    public async Task<IActionResult> GetMeetingLocations()
+    {
+        var Language = GetLanguage();
+        return HandleResult(await Mediator.Send(new ListSalesOpportunityMeetingLocations.Query { Language = Language }));
+    }
+
     /// <summary>
     /// Create a new sales opportunity.
     /// </summary>
