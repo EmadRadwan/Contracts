@@ -1,208 +1,211 @@
-const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
-                                                                row,
-                                                                index,
-                                                                glAccounts,
-                                                                handleRowChange,
-                                                                handleRemoveRow,
-                                                                rowsCount,
-                                                                costCenters,
-                                                                itemTypes,
-                                                                localAmount,
-                                                            }) => {
+// ─────────────────────────────────────────────
+// 1. Common columns (before amount)
+const commonStartColumns = [
+    {
+        field: "paymentId",
+        title: getTranslatedLabel(`${localizationKey}.paymentId`, "Payment Number"),
+        cell: PaymentDescriptionCell,
+        width: 150,
+        locked: !show,
+    },
+    {
+        field: "paymentTypeDescription",
+        title: getTranslatedLabel(`${localizationKey}.paymentType`, "Payment Type"),
+        width: 150,
+    },
+    {
+        field: "amount",
+        title: getTranslatedLabel(`${localizationKey}.amount`, "Amount"),
+        width: 130,
+        filter: "numeric",
+    },
+];
 
-    // === Queries ===
-    const { data: projects } = useFetchWorkEffortsByGlAccountIdQuery(
-        { glAccountId: row.glAccountId, workEffortTypeId: "PROJECT" },
-        { skip: !row.glAccountId }
-    );
+// ─────────────────────────────────────────────
+// 2. Outgoing PRIORITY columns (must come after amount)
+const outgoingPriorityColumns = [
+    {
+        field: "partyIdToName",
+        title: getTranslatedLabel(`${localizationKey}.to`, "To Party"),
+        width: 180,
+    },
+    {
+        field: "effectiveDate",
+        title: getTranslatedLabel(`${localizationKey}.date`, "Payment Date"),
+        width: 150,
+        format: "{0: dd/MM/yyyy}",
+        filter: "date",
+    },
+    {
+        field: "statusDescription",
+        title: getTranslatedLabel(`${localizationKey}.status`, "Status"),
+        width: 120,
+    },
+    {
+        field: "paymentRefNum",
+        title: getTranslatedLabel(`${localizationKey}.paymentRefNum`, "Ref Number"),
+        width: 140,
+    },
+];
 
-    const projectId = projects && projects.length > 0 ? projects[0].workEffortId : undefined;
+// ─────────────────────────────────────────────
+// 3. Common middle columns (after amount / priority)
+const commonMiddleColumns = [
+    {
+        field: "paymentMethodTypeDescription",
+        title: getTranslatedLabel(`${localizationKey}.paymentMethodTypeDescription`, "Payment Method Type"),
+        width: 150,
+    },
+    {
+        field: "isBankTransfer",
+        title: getTranslatedLabel(`${localizationKey}.isBankTransfer`, "Bank Transfer"),
+        width: 120,
+        filter: "boolean",
+        cell: BankTransferCell,
+    },
+    {
+        field: "chequeNumber",
+        title: getTranslatedLabel(`${localizationKey}.chequeNumber`, "Cheque Number"),
+        width: 150,
+    },
+    {
+        field: "daysUntilDue",
+        title: getTranslatedLabel(`${localizationKey}.dueStatus`, "Due Status"),
+        width: 260,
+        cell: DueStatusCell,
+    },
+];
 
-    const { data: subProjects } = useFetchWorkEffortsByGlAccountIdQuery(
-        {
-            glAccountId: row.glAccountId,
-            workEffortTypeId: "SUB_PROJECT",
-            workEffortParentId: projectId
-        },
-        { skip: !projectId }
-    );
+// ─────────────────────────────────────────────
+// 4. Incoming-only columns
+const incomingColumns = [
+    {
+        field: "buildingNumber",
+        title: getTranslatedLabel(`${localizationKey}.buildingNumber`, "Building Number"),
+        width: 140,
+    },
+    {
+        field: "productId",
+        title: getTranslatedLabel(`${localizationKey}.productId`, "Product ID"),
+        width: 130,
+    },
+    {
+        field: "partyIdFromName",
+        title: getTranslatedLabel(`${localizationKey}.from`, "From Party"),
+        width: 180,
+    },
+    {
+        field: "effectiveDate",
+        title: getTranslatedLabel(`${localizationKey}.date`, "Payment Date"),
+        width: 150,
+        format: "{0: dd/MM/yyyy}",
+        filter: "date",
+    },
+    {
+        field: "statusDescription",
+        title: getTranslatedLabel(`${localizationKey}.status`, "Status"),
+        width: 120,
+    },
+    {
+        field: "comments",
+        title: getTranslatedLabel(`${localizationKey}.comments`, "Comments"),
+        width: 280,
+    },
+    {
+        field: "projectName",
+        title: getTranslatedLabel(`${localizationKey}.projectName`, "Project / Comments"),
+        width: 180,
+    },
+    {
+        field: "costCenterDescription",
+        title: getTranslatedLabel(`${localizationKey}.costCenterDescription`, "Cost Center"),
+        width: 160,
+    },
+    {
+        field: "paymentRefNum",
+        title: getTranslatedLabel(`${localizationKey}.paymentRefNum`, "Ref Number"),
+        width: 140,
+    },
+];
 
-    // === Effects ===
-    useEffect(() => {
-        if (projectId && projectId !== row.projectId) {
-            handleRowChange(index, "projectId" as any, projectId);
-        } else if (!projectId && row.projectId) {
-            handleRowChange(index, "projectId" as any, undefined);
-            handleRowChange(index, "subProjectId" as any, undefined);
-            handleRowChange(index, "subProjectName" as any, undefined);
-        }
-    }, [projectId, row.projectId, index, handleRowChange]);
+// ─────────────────────────────────────────────
+// 5. Outgoing remaining columns (EXCLUDING priority ones)
+const outgoingOtherColumns = [
+    {
+        field: "orderId",
+        title: getTranslatedLabel(`${localizationKey}.orderId`, "Order ID"),
+        width: 140,
+    },
+    {
+        field: "certificateNumber",
+        title: getTranslatedLabel(`${localizationKey}.certificateNumber`, "Certificate No"),
+        width: 150,
+    },
+    {
+        field: "partyIdFromName",
+        title: getTranslatedLabel(`${localizationKey}.from`, "From Party"),
+        width: 180,
+    },
+    {
+        field: "projectName",
+        title: getTranslatedLabel(`${localizationKey}.projectName`, "Project"),
+        width: 180,
+    },
+    {
+        field: "costCenterDescription",
+        title: getTranslatedLabel(`${localizationKey}.costCenterDescription`, "Cost Center"),
+        width: 160,
+    },
+    {
+        field: "salesRequestId",
+        title: getTranslatedLabel(`${localizationKey}.salesRequestId`, "Sales Request ID"),
+        width: 150,
+    },
+    {
+        field: "comments",
+        title: getTranslatedLabel(`${localizationKey}.comments`, "Comments"),
+        width: 280,
+    },
+];
 
-    useEffect(() => {
-        if (subProjects && row.subProjectId) {
-            const sp = subProjects.find((p: any) => p.workEffortId === row.subProjectId);
-            if (sp && sp.subProjectName !== row.subProjectName) {
-                handleRowChange(index, "subProjectName" as any, sp.subProjectName);
-            }
-        }
-    }, [subProjects, row.subProjectId, row.subProjectName, index, handleRowChange]);
+// ─────────────────────────────────────────────
+// 6. Final columns (always last)
+const finalColumns = [
+    {
+        field: "approvedByPartyName",
+        title: getTranslatedLabel(`${localizationKey}.approvedByPartyName`, "Approved By"),
+        width: 150,
+    },
+    {
+        field: "createdByPartyName",
+        title: getTranslatedLabel(`${localizationKey}.createdByPartyName`, "Created By"),
+        width: 150,
+    },
+    {
+        title: getTranslatedLabel(`${localizationKey}.actions`, "Actions"),
+        width: 220,
+        cell: ActionsCell,
+    },
+];
 
-    return (
-        <TableRow key={row.tempId}>
-            {/* GL Account */}
-            <TableCell sx={{ minWidth: 350 }}>
-                <FormDropDownTreeGlAccount3
-                    data={glAccounts || []}
-                    value={row.glAccountId}
-                    onChange={(e: any) => handleRowChange(index, "glAccountId", e.value)}
-                    dataItemKey="glAccountId"
-                    textField="text"
-                    selectField="selected"
-                    expandField="expanded"
-                    name="glAccountId"
-                    touched={false}
-                    visited={false}
-                    modified={false}
-                />
-            </TableCell>
+// ─────────────────────────────────────────────
+// 7. Assemble final gridColumns
 
-            {/* Description */}
-            <TableCell sx={{ minWidth: 250 }}>
-                <TextField
-                    fullWidth
-                    size="small"
-                    value={row.description || ""}
-                    onChange={(e) => handleRowChange(index, "description", e.target.value)}
-                />
-            </TableCell>
+let gridColumns: any[] = [];
 
-            {/* Amount */}
-            <TableCell sx={{ minWidth: 120 }}>
-                <TextField
-                    fullWidth
-                    size="small"
-                    type="number"
-                    value={localAmount ?? ""}
-                    onChange={(e) => handleRowChange(index, "amount", e.target.value)}
-                    inputProps={{ min: 0, step: "0.01" }}
-                />
-            </TableCell>
-
-            {/* Estimated Start Date - Fixed for calendar */}
-            <TableCell sx={{ minWidth: 150 }}>
-                <TextField
-                    fullWidth
-                    size="small"
-                    type="date"
-                    value={row.estimatedStartDate || ""}
-                    onChange={(e) => handleRowChange(index, "estimatedStartDate", e.target.value)}
-                    InputLabelProps={{ shrink: true }}
-                    onClick={(e) => e.stopPropagation()}
-                />
-            </TableCell>
-
-            {/* Item Type */}
-            <TableCell sx={{ minWidth: 200 }}>
-                <MemoizedFormComboBox2
-                    data={itemTypes}
-                    textField="description"
-                    dataItemKey="itemType"
-                    value={row.itemType || null}
-                    onChange={(e: any) => handleRowChange(index, "itemType", e.value)}
-                />
-            </TableCell>
-
-            {/* Service */}
-            <TableCell sx={{ minWidth: 300 }}>
-                <FormSimpleComboBoxServiceVirtual
-                    value={row.serviceId}
-                    onChange={(e: any) => handleRowChange(index, "serviceId", e.value)}
-                    textField="productName"
-                    dataItemKey="productId"
-                    name="serviceId"
-                    touched={false}
-                    visited={false}
-                    modified={false}
-                />
-            </TableCell>
-
-            {/* Product */}
-            <TableCell sx={{ minWidth: 300 }}>
-                <FormSimpleComboBoxRawMaterialVirtual
-                    value={row.productId}
-                    onChange={(e: any) => handleRowChange(index, "productId", e.value)}
-                    textField="productName"
-                    dataItemKey="productId"
-                    name="productId"
-                    touched={false}
-                    visited={false}
-                    modified={false}
-                    disabled={row.itemType !== "MATERIALS"}
-                />
-            </TableCell>
-
-            {/* Supplier */}
-            <TableCell sx={{ minWidth: 300 }}>
-                <FormComboBoxVirtualAllParties
-                    value={row.party}
-                    onChange={(e: any) => handleRowChange(index, "party", e.value)}
-                    name="party"
-                    touched={false}
-                    visited={false}
-                    modified={false}
-                />
-            </TableCell>
-
-            {/* Sub Project */}
-            <TableCell sx={{ minWidth: 250 }}>
-                {subProjects && subProjects.length > 0 ? (
-                    <MemoizedFormComboBox2
-                        data={subProjects.filter((sp: any) => !!sp)}
-                        textField="subProjectName"
-                        dataItemKey="workEffortId"
-                        value={row.subProjectId || null}
-                        onChange={(e: any) => {
-                            const selectedId = e?.value;
-                            const sp = subProjects.find((p: any) => p.workEffortId === selectedId);
-                            handleRowChange(index, "subProjectId", selectedId, {
-                                subProjectName: sp?.subProjectName || ""
-                            });
-                        }}
-                    />
-                ) : (
-                    "-"
-                )}
-            </TableCell>
-
-            {/* Cost Center */}
-            <TableCell sx={{ minWidth: 250 }}>
-                <MemoizedFormComboBox2
-                    id={`costCenterId-${row.tempId}`}
-                    name="costCenterId"
-                    data={(costCenters || []).filter((cc: any) => !!cc)}
-                    textField="description"
-                    dataItemKey="costCenterId"
-                    value={row.costCenterId || null}
-                    onChange={(e: any) => {
-                        const selectedId = e?.value;
-                        const selectedCc = costCenters.find((c: any) => c.costCenterId === selectedId);
-                        handleRowChange(index, "costCenterId", selectedId, {
-                            costCenterName: selectedCc?.description || ""
-                        });
-                    }}
-                />
-            </TableCell>
-
-            {/* Delete */}
-            <TableCell sx={{ width: 50 }}>
-                <IconButton
-                    color="error"
-                    onClick={() => handleRemoveRow(index)}
-                    disabled={rowsCount === 1}
-                >
-                    <DeleteIcon />
-                </IconButton>
-            </TableCell>
-        </TableRow>
-    );
-});
+if (isOutgoing) {
+    gridColumns = [
+        ...commonStartColumns,
+        ...outgoingPriorityColumns,   // 👈 inserted right after amount
+        ...commonMiddleColumns,
+        ...outgoingOtherColumns,
+        ...finalColumns,
+    ];
+} else {
+    gridColumns = [
+        ...commonStartColumns,
+        ...commonMiddleColumns,
+        ...incomingColumns,
+        ...finalColumns,
+    ];
+}

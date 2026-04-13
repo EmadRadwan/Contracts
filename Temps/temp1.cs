@@ -1,157 +1,85 @@
-entity.ToTable("SALES_OPPORTUNITY_ACTION");
+DROP VIEW IF EXISTS Fact_Apartment_Payments;
 
-#region Primary Key
-entity.HasKey(e => e.SalesOpportunityActionId);
-#endregion
+CREATE OR REPLACE VIEW Fact_Apartment_Payments AS
+SELECT 
+    p.PAYMENT_ID                                 AS PaymentId,
+    p.SALES_REQUEST_ID                           AS SalesRequestId,
+    sr.PRODUCT_ID                                AS ApartmentId,
 
-#region Indexes
-entity.HasIndex(e => e.SalesOpportunityId, "SLSOPPACT_OPPID");
-entity.HasIndex(e => e.ActionTypeId, "SLSOPPACT_ACTION_TYP");
-entity.HasIndex(e => e.CancelReasonId, "SLSOPPACT_CANCEL_RSN");
-entity.HasIndex(e => e.NextActionTypeId, "SLSOPPACT_NEXT_ACTION");
-entity.HasIndex(e => e.IsWon, "SLSOPPACT_IS_WON");
-entity.HasIndex(e => e.CreatedByUserLogin, "SLSOPPACT_USRLGN");
-entity.HasIndex(e => e.CreatedStamp, "SLSOPPACT_CRTS");
-entity.HasIndex(e => e.LastUpdatedStamp, "SLSOPPACT_UPDST");
-entity.HasIndex(e => new { e.SalesOpportunityId, e.ActionTypeId }, "SLSOPPACT_OPP_ACTION");
+    apt.PROJECT_ID                               AS ProjectId,
+    proj.ProjectName,
 
-// New indexes for the added fields
-entity.HasIndex(e => e.MeetingTypeId, "SLSOPPACT_MEETING_TYP");
-entity.HasIndex(e => e.MeetingLocationId, "SLSOPPACT_MEETING_LOC");
-#endregion
+    p.PARTY_ID_FROM                              AS CustomerPartyId,
+    pf.DESCRIPTION                               AS CustomerName,
 
-#region Column Mappings
+    p.PAYMENT_TYPE_ID,
+    pt_type.DESCRIPTION_ARABIC                   AS PaymentTypeArabic,
 
-entity.Property(e => e.SalesOpportunityActionId)
-    .HasMaxLength(36)
-    .IsUnicode(false)
-    .HasColumnName("SALES_OPPORTUNITY_ACTION_ID");
+    CASE p.PAYMENT_TYPE_ID 
+        WHEN 'RECEIPT_ADVANCE_PAYMENT'    THEN 'Advance Payment'
+        WHEN 'RECEIPT_DUE_INSTALLMENT'    THEN 'Installment'
+        WHEN 'RECEIPT_MAINTENANCE_AMOUNT' THEN 'Maintenance Deposit'
+        ELSE 'Other' 
+    END                                          AS RevenueCategory,
 
-entity.Property(e => e.SalesOpportunityId)
-    .HasMaxLength(36)
-    .IsUnicode(false)
-    .HasColumnName("SALES_OPPORTUNITY_ID")
-    .IsRequired();
+    COALESCE(p.AMOUNT, 0)                        AS ScheduledAmount,
 
-entity.Property(e => e.ActionTypeId)
-    .HasMaxLength(36)
-    .IsUnicode(false)
-    .HasColumnName("ACTION_TYPE_ID")
-    .IsRequired();
+    -- Amount Split (Best for Power BI)
+    CASE WHEN p.STATUS_ID IN ('PMNT_RECEIVED', 'PMNT_PAID') 
+         THEN COALESCE(p.AMOUNT, 0) ELSE 0 END   AS CollectedAmount,
 
-entity.Property(e => e.IsAnswered)
-    .HasColumnName("IS_ANSWERED")
-    .HasDefaultValue(false);
+    CASE WHEN p.STATUS_ID NOT IN ('PMNT_RECEIVED', 'PMNT_PAID') 
+         THEN COALESCE(p.AMOUNT, 0) ELSE 0 END   AS OutstandingAmount,
 
-entity.Property(e => e.ActionDate)
-    .HasColumnType("datetime")
-    .HasColumnName("ACTION_DATE");
+    CASE WHEN p.STATUS_ID NOT IN ('PMNT_RECEIVED', 'PMNT_PAID') 
+             AND DATE(p.EFFECTIVE_DATE) < CURDATE() 
+         THEN COALESCE(p.AMOUNT, 0) ELSE 0 END   AS LateAmount,
 
-entity.Property(e => e.NextActionTypeId)
-    .HasMaxLength(36)
-    .IsUnicode(false)
-    .HasColumnName("NEXT_ACTION_TYPE_ID");
+    CASE WHEN p.STATUS_ID NOT IN ('PMNT_RECEIVED', 'PMNT_PAID') 
+             AND DATE(p.EFFECTIVE_DATE) >= CURDATE() 
+         THEN COALESCE(p.AMOUNT, 0) ELSE 0 END   AS FutureAmount,
 
-entity.Property(e => e.CancelReasonId)
-    .HasMaxLength(36)
-    .IsUnicode(false)
-    .HasColumnName("CANCEL_REASON_ID");
+    -- ==================== IMPROVED STATUS LOGIC ====================
+    CASE 
+        WHEN p.STATUS_ID IN ('PMNT_RECEIVED', 'PMNT_PAID') THEN 'Received'
+        WHEN DATE(p.EFFECTIVE_DATE) < CURDATE()            THEN 'Late'
+        ELSE 'Upcoming'                                      -- Better than "Due"
+    END                                              AS PaymentStatus,
 
-entity.Property(e => e.Comment)
-    .HasColumnType("text")
-    .HasColumnName("COMMENT");
+    -- Detailed Bucket (Clean & Business Friendly)
+    CASE 
+        WHEN p.STATUS_ID IN ('PMNT_RECEIVED', 'PMNT_PAID') THEN 'Received'
+        WHEN DATE(p.EFFECTIVE_DATE) >= CURDATE()           THEN 'Upcoming'
+        WHEN DATEDIFF(CURDATE(), DATE(p.EFFECTIVE_DATE)) BETWEEN 1 AND 30 THEN 'Late (1-30 Days)'
+        WHEN DATEDIFF(CURDATE(), DATE(p.EFFECTIVE_DATE)) BETWEEN 31 AND 90 THEN 'Late (31-90 Days)'
+        ELSE 'Late (Over 90 Days)'
+    END                                              AS OverdueBucket,
 
-// ==================== New Properties ====================
+    -- Days Overdue (Only positive for late payments, 0 otherwise)
+    CASE 
+        WHEN p.STATUS_ID NOT IN ('PMNT_RECEIVED', 'PMNT_PAID') 
+             AND DATE(p.EFFECTIVE_DATE) < CURDATE() 
+            THEN DATEDIFF(CURDATE(), DATE(p.EFFECTIVE_DATE))
+        ELSE 0 
+    END                                              AS DaysOverdue,
 
-entity.Property(e => e.MeetingTypeId)
-    .HasMaxLength(36)
-    .IsUnicode(false)
-    .HasColumnName("MEETING_TYPE_ID");
+    -- Dates
+    DATE(p.EFFECTIVE_DATE)                           AS DueDateKey,
+    DATE(p.CREATED_STAMP)                            AS CreatedDateKey,
 
-entity.Property(e => e.MeetingLocationId)
-    .HasMaxLength(36)
-    .IsUnicode(false)
-    .HasColumnName("MEETING_LOCATION_ID");
+    p.COMMENTS,
+    p.ChequeNumber
 
-entity.Property(e => e.Note)
-    .HasColumnType("text")
-    .HasColumnName("NOTE");
+FROM PAYMENT p
+LEFT JOIN PARTY pf              ON p.PARTY_ID_FROM = pf.PARTY_ID
+LEFT JOIN PAYMENT_TYPE pt_type  ON p.PAYMENT_TYPE_ID = pt_type.PAYMENT_TYPE_ID
+LEFT JOIN SALES_REQUEST sr      ON p.SALES_REQUEST_ID = sr.SALES_REQUEST_ID
+LEFT JOIN PRODUCT apt           ON sr.PRODUCT_ID = apt.PRODUCT_ID
+LEFT JOIN DimProjects proj      ON COALESCE(apt.PROJECT_ID, p.WORK_EFFORT_ID) = proj.ProjectId
 
-// ==================== Helper & Audit Fields ====================
-
-entity.Property(e => e.IsWon)
-    .HasColumnName("IS_WON")
-    .HasDefaultValue(false);
-
-entity.Property(e => e.CreatedByUserLogin)
-    .HasMaxLength(250)
-    .IsUnicode(false)
-    .HasColumnName("CREATED_BY_USER_LOGIN")
-    .IsRequired();
-
-entity.Property(e => e.CreatedStamp)
-    .HasColumnType("datetime")
-    .HasColumnName("CREATED_STAMP")
-    .IsRequired();
-
-entity.Property(e => e.LastUpdatedStamp)
-    .HasColumnType("datetime")
-    .HasColumnName("LAST_UPDATED_STAMP")
-    .IsRequired();
-
-entity.Property(e => e.CreatedTxStamp)
-    .HasColumnType("datetime")
-    .HasColumnName("CREATED_TX_STAMP");
-
-entity.Property(e => e.LastUpdatedTxStamp)
-    .HasColumnType("datetime")
-    .HasColumnName("LAST_UPDATED_TX_STAMP");
-
-#endregion
-
-#region Foreign Key Relationships
-
-entity.HasOne(d => d.SalesOpportunity)
-    .WithMany(p => p.SalesOpportunityActions)
-    .HasForeignKey(d => d.SalesOpportunityId)
-    .HasConstraintName("SLSOPPACT_SLSOPP")
-    .OnDelete(DeleteBehavior.Cascade);
-
-entity.HasOne(d => d.ActionType)
-    .WithMany()
-    .HasForeignKey(d => d.ActionTypeId)
-    .HasConstraintName("SLSOPPACT_ACTION_TYP")
-    .OnDelete(DeleteBehavior.Restrict);
-
-entity.HasOne(d => d.NextActionType)
-    .WithMany()
-    .HasForeignKey(d => d.NextActionTypeId)
-    .HasConstraintName("SLSOPPACT_NEXT_ACTION_TYP")
-    .OnDelete(DeleteBehavior.Restrict);
-
-entity.HasOne(d => d.CancelReason)
-    .WithMany()
-    .HasForeignKey(d => d.CancelReasonId)
-    .HasConstraintName("SLSOPPACT_CANCEL_RSN")
-    .OnDelete(DeleteBehavior.Restrict);
-
-// New Foreign Key Relationships
-entity.HasOne(d => d.MeetingType)
-    .WithMany()
-    .HasForeignKey(d => d.MeetingTypeId)
-    .HasConstraintName("SLSOPPACT_MEETING_TYP")
-    .OnDelete(DeleteBehavior.Restrict);
-
-entity.HasOne(d => d.MeetingLocation)
-    .WithMany()
-    .HasForeignKey(d => d.MeetingLocationId)
-    .HasConstraintName("SLSOPPACT_MEETING_LOC")
-    .OnDelete(DeleteBehavior.Restrict);
-
-entity.HasOne(d => d.CreatedByUserLoginNavigation)
-    .WithMany()
-    .HasForeignKey(d => d.CreatedByUserLogin)
-    .HasConstraintName("SLSOPPACT_USRLGN")
-    .OnDelete(DeleteBehavior.Restrict);
-
-#endregion
+WHERE p.PARTY_ID_TO = 'Company'
+  AND p.SALES_REQUEST_ID IS NOT NULL
+  AND p.PAYMENT_TYPE_ID IN ('RECEIPT_ADVANCE_PAYMENT', 
+                            'RECEIPT_DUE_INSTALLMENT', 
+                            'RECEIPT_MAINTENANCE_AMOUNT')
+  AND COALESCE(p.AMOUNT, 0) > 0;

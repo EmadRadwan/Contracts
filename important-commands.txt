@@ -305,6 +305,3 @@ Summarize this entire conversation as a concise JSON or bullet-point outline, in
   xejiri3063@fengnu.com  / Tmbtc202600))
   
   
-  ///////////
-rm Persistence/Migrations/20260406124159_AddedproductIdtoSalesOpp.cs
-rm Persistence/Migrations/20260406124159_AddedproductIdtoSalesOpp.Designer.cs
