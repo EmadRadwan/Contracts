@@ -129,7 +129,7 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
         <TableRow key={row.tempId}>
             {/* GL Account */}
             <TableCell sx={{ minWidth: 350 }}>
-                <FormDropDownTreeGlAccount3
+                <FormDropDownTreeGlAccount2
                     data={glAccounts || []}
                     value={row.glAccountId}
                     onChange={(e: any) => handleRowChange(index, "glAccountId", e.value)}
