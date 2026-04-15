@@ -297,8 +297,8 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                 id="paymentMethodId"
                                                 name="paymentMethodId"
                                                 label={getTranslatedLabel(
-                                                    `${localizationKey}.paymentMethod`,
-                                                    "Payment Method *"
+                                                    `${localizationKey}.paymentMethodOut`,
+                                                    "Payment Method Out*"
                                                 )}
                                                 component={MemoizedFormComboBox2}
                                                 dataItemKey="paymentMethodId"

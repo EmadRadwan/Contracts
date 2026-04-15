@@ -27,7 +27,7 @@ const utils = {
     formatDate: (d: string | Date | undefined) => d ? new Date(d).toLocaleDateString("en-GB") : "N/A",
 };
 
-export default function MultiPaymentCertificatesDateRangeExcel() {
+export default function MultiPaymentItemsDateRangeExcel() {
     const { getTranslatedLabel } = useTranslationHelper();
     const dispatch = useAppDispatch();
     const [open, setOpen] = useState(false);
@@ -54,7 +54,7 @@ export default function MultiPaymentCertificatesDateRangeExcel() {
         }
 
         const period = `${startDate?.format("YYYY-MM-DD") || "start"}_to_${endDate?.format("YYYY-MM-DD") || "end"}`;
-        const safeSheetName = `Certificates ${period}`.replace(/[*\?\\:\[\]\/]/g, "_").slice(0, 31);
+        const safeSheetName = `Items ${period}`.replace(/[*\?\\:\[\]\/]/g, "_").slice(0, 31);
         const ws = workbook.addWorksheet(safeSheetName);
         ws.pageSetup = { paperSize: 9, orientation: "landscape" };
         ws.views = [{ rightToLeft: true }];
@@ -76,12 +76,12 @@ export default function MultiPaymentCertificatesDateRangeExcel() {
 
         const title = utils.rtlEmbed(
             getTranslatedLabel(
-                "projects.multiPaymentCertificate.excel.title",
-                `Multi Payment Certificates (${startDate?.format("DD/MM/YYYY") || ""} - ${endDate?.format("DD/MM/YYYY") || ""})`
+                "projects.multiPaymentCertificate.excel.itemsTitle",
+                `Multi Payment Certificate Items (${startDate?.format("DD/MM/YYYY") || ""} - ${endDate?.format("DD/MM/YYYY") || ""})`
             ).replace("{0}", startDate?.format("DD/MM/YYYY") || "").replace("{1}", endDate?.format("DD/MM/YYYY") || "")
         );
         ws.getCell(`A${startRow}`).value = title;
-        ws.mergeCells(`A${startRow}:I${startRow}`);
+        ws.mergeCells(`A${startRow}:N${startRow}`);
         ws.getRow(startRow).font = { name: "Amiri", size: 18, bold: true };
         ws.getRow(startRow).alignment = { horizontal: "center", vertical: "middle" };
         ws.getRow(startRow).height = 40;
@@ -89,14 +89,19 @@ export default function MultiPaymentCertificatesDateRangeExcel() {
         const headerRowNum = startRow + 2;
         const headers = [
             getTranslatedLabel("projects.multiPaymentCertificate.HeaderList.workEffortId", "Certificate ID"),
-            getTranslatedLabel("projects.multiPaymentCertificate.HeaderList.date", "Date"),
-            getTranslatedLabel("projects.multiPaymentCertificate.HeaderList.amount", "Amount"),
-            getTranslatedLabel("projects.multiPaymentCertificate.HeaderList.description", "Description"),
-            getTranslatedLabel("projects.multiPaymentCertificate.HeaderList.accountName", "Account Name"),
-            getTranslatedLabel("projects.multiPaymentCertificate.HeaderList.acctgTransId", "Transaction ID"),
-            getTranslatedLabel("projects.multiPaymentCertificate.HeaderList.paymentTo", "Payment To"),
-            getTranslatedLabel("projects.multiPaymentCertificate.HeaderList.referenceNum", "Reference"),
-            getTranslatedLabel("projects.multiPaymentCertificate.HeaderList.statusDescription", "Status"),
+            getTranslatedLabel("projects.multiPaymentCertificate.HeaderList.date", "Certificate Date"),
+            getTranslatedLabel("projects.multiPaymentCertificate.HeaderList.description", "Certificate Description"),
+            getTranslatedLabel("projects.multiPaymentCertificate.items.glAccountName", "GL Account"),
+            getTranslatedLabel("projects.multiPaymentCertificate.items.description", "Item Description"),
+            getTranslatedLabel("projects.multiPaymentCertificate.items.amount", "Amount"),
+            getTranslatedLabel("projects.multiPaymentCertificate.items.itemType", "Item Type"),
+            getTranslatedLabel("projects.multiPaymentCertificate.items.estimatedStartDate", "Date"),
+            getTranslatedLabel("projects.multiPaymentCertificate.items.serviceName", "Service"),
+            getTranslatedLabel("projects.multiPaymentCertificate.items.product", "Product"),
+            getTranslatedLabel("projects.certificate.form.supplier", "Supplier"),
+            getTranslatedLabel("projects.multiPaymentCertificate.items.project", "Project"),
+            getTranslatedLabel("projects.certificate.form.subProject", "Sub Project"),
+            getTranslatedLabel("accounting.payments.form.costCenter", "Cost Center"),
         ];
 
         ws.addRow(headers.map(h => utils.rtlEmbed(h)));
@@ -107,15 +112,20 @@ export default function MultiPaymentCertificatesDateRangeExcel() {
 
         data.forEach((item: any) => {
             const row = ws.addRow([
-                utils.rtlEmbed(utils.safeString(item.workEffortId)),
-                utils.formatDate(item.date),
-                utils.formatNumber(item.amount),
+                utils.rtlEmbed(utils.safeString(item.parentWorkEffortId)),
+                utils.formatDate(item.certificateDate),
+                utils.rtlEmbed(utils.safeString(item.parentDescription)),
+                utils.rtlEmbed(utils.safeString(item.glAccountName)),
                 utils.rtlEmbed(utils.safeString(item.description)),
-                utils.rtlEmbed(utils.safeString(item.accountName)),
-                utils.rtlEmbed(utils.safeString(item.acctgTransId)),
-                utils.rtlEmbed(utils.safeString(item.partyName)),
-                utils.rtlEmbed(utils.safeString(item.notes)),
-                utils.rtlEmbed(utils.safeString(item.statusDescription)),
+                utils.formatNumber(item.amount),
+                utils.rtlEmbed(utils.safeString(item.itemTypeDescription)),
+                utils.formatDate(item.estimatedStartDate),
+                utils.rtlEmbed(utils.safeString(item.serviceName)),
+                utils.rtlEmbed(utils.safeString(item.productName)),
+                utils.rtlEmbed(utils.safeString(item.partyIdSupplierName)),
+                utils.rtlEmbed(utils.safeString(item.projectName)),
+                utils.rtlEmbed(utils.safeString(item.subProjectName)),
+                utils.rtlEmbed(utils.safeString(item.costCenterName)),
             ]);
             row.font = { name: "Amiri", size: 10 };
             row.alignment = { horizontal: "right", wrapText: true };
@@ -127,27 +137,32 @@ export default function MultiPaymentCertificatesDateRangeExcel() {
             const totalAmount = data.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
             const totalRowNum = dataStartRow + data.length;
             ws.addRow([
-                "", 
+                "", "", "", "", 
                 utils.rtlEmbed(getTranslatedLabel("common.total", "Total")),
                 utils.formatNumber(totalAmount),
-                "", "", "", "", "", ""
+                "", "", "", "", "", "", "", ""
             ]);
             ws.getRow(totalRowNum).font = { name: "Amiri", size: 12, bold: true };
-            ws.getCell(`C${totalRowNum}`).font = { bold: true };
+            ws.getCell(`F${totalRowNum}`).font = { bold: true };
         }
 
         ws.columns = [
-            { width: 20 }, // ID
-            { width: 15 }, // Date
+            { width: 15 }, // Parent ID
+            { width: 15 }, // Parent Date
+            { width: 30 }, // Parent Description
+            { width: 25 }, // GL Account
+            { width: 35 }, // Item Description
             { width: 15 }, // Amount
-            { width: 40 }, // Description
-            { width: 25 }, // Account
-            { width: 15 }, // Trans ID
-            { width: 25 }, // Payment To
-            { width: 15 }, // Reference
-            { width: 15 }, // Status
+            { width: 15 }, // Item Type
+            { width: 15 }, // Date
+            { width: 25 }, // Service
+            { width: 25 }, // Product
+            { width: 25 }, // Supplier
+            { width: 25 }, // Project
+            { width: 20 }, // Sub Project
+            { width: 20 }, // Cost Center
         ];
-        ws.getColumn(3).numFmt = "#,##0.00";
+        ws.getColumn(6).numFmt = "#,##0.00";
 
         return await workbook.xlsx.writeBuffer();
     }, [getTranslatedLabel, startDate, endDate]);
@@ -160,7 +175,7 @@ export default function MultiPaymentCertificatesDateRangeExcel() {
         setIsGenerating(true);
         try {
             const result = await dispatch(
-                multiPaymentCertificateApi.endpoints.fetchMultiPaymentCertificatesByDateRange.initiate({
+                multiPaymentCertificateApi.endpoints.fetchMultiPaymentItemsByDateRange.initiate({
                     startDate: startDate.toISOString(),
                     endDate: endDate.toISOString(),
                 })
@@ -175,13 +190,13 @@ export default function MultiPaymentCertificatesDateRangeExcel() {
             const buffer = await generateExcel(result);
             if (buffer) {
                 const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-                saveAs(blob, `MultiPaymentCertificates_${startDate.format("YYYYMMDD")}_to_${endDate.format("YYYYMMDD")}.xlsx`);
-                toast.success(getTranslatedLabel("projects.multiPaymentCertificate.excel.success", "Excel report generated successfully"));
+                saveAs(blob, `MultiPaymentCertificateItems_${startDate.format("YYYYMMDD")}_to_${endDate.format("YYYYMMDD")}.xlsx`);
+                toast.success(getTranslatedLabel("projects.multiPaymentCertificate.excel.itemsSuccess", "Items Excel report generated successfully"));
             }
             handleClose();
         } catch (error) {
             console.error("Export failed", error);
-            toast.error(getTranslatedLabel("projects.multiPaymentCertificate.excel.error", "Failed to generate Excel report"));
+            toast.error(getTranslatedLabel("projects.multiPaymentCertificate.excel.itemsError", "Failed to generate items Excel report"));
         } finally {
             setIsGenerating(false);
         }
@@ -191,17 +206,17 @@ export default function MultiPaymentCertificatesDateRangeExcel() {
         <>
             <Button
                 variant="contained"
-                color="secondary"
+                color="info"
                 onClick={handleOpen}
                 disabled={isGenerating}
                 style={{ margin: "5px" }}
             >
-                {isGenerating ? getTranslatedLabel("common.exporting", "Exporting...") : getTranslatedLabel("common.exportToExcel", "Export by Date Range")}
+                {isGenerating ? getTranslatedLabel("common.exporting", "Exporting...") : getTranslatedLabel("common.exportItemsToExcel", "Export Items by Date Range")}
             </Button>
 
             <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
                 <DialogTitle>
-                    {getTranslatedLabel("projects.multiPaymentCertificate.excel.dialogTitle", "Select Date Range for Multi Payment Certificates")}
+                    {getTranslatedLabel("projects.multiPaymentCertificate.excel.itemsDialogTitle", "Select Date Range for Multi Payment Items")}
                 </DialogTitle>
                 <DialogContent>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>

@@ -24,6 +24,7 @@ import WorkEffortTransactionsList from "../../accounting/transaction/dashboard/W
 import {Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle} from "@mui/material";
 import {toast} from "react-toastify";
 import MultiPaymentCertificatesDateRangeExcel from "../report/MultiPaymentCertificatesDateRangeExcel";
+import MultiPaymentItemsDateRangeExcel from "../report/MultiPaymentItemsDateRangeExcel";
 
 export default function MultiPaymentCertificatesList() {
     const [certificates, setCertificates] = useState<DataResult>({ data: [], total: 0 });
@@ -242,6 +243,7 @@ export default function MultiPaymentCertificatesList() {
                                     {getTranslatedLabel(`${localizationKey}.createNew`, "Create New Certificate")}
                                 </Button>
                                 <MultiPaymentCertificatesDateRangeExcel />
+                                <MultiPaymentItemsDateRangeExcel />
                             </GridToolbar>
                             <Column
                                 field="workEffortId"

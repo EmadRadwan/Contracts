@@ -183,6 +183,19 @@ public class ProjectController : BaseApiController
         });
         return HandleResult(result);
     }
+
+    [HttpGet("multiPaymentItems/by-date-range")]
+    public async Task<IActionResult> GetMultiPaymentItemsByDateRange(
+        [FromQuery] DateTime startDate,
+        [FromQuery] DateTime endDate)
+    {
+        var result = await Mediator.Send(new ListMultiPaymentItemsByDateRange.Query
+        {
+            StartDate = startDate,
+            EndDate = endDate
+        });
+        return HandleResult(result);
+    }
     
     [HttpPost("review", Name = "ReviewProjectCertificate")]
     public async Task<ActionResult<ProjectCertificateDto>> ReviewProjectCertificate([FromBody] ReviewProjectCertificate.Command command)

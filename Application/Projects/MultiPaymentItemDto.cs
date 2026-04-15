@@ -10,6 +10,7 @@ public class MultiPaymentItemDto
     public string? ServiceName { get; set; }
     public string? GlAccountName { get; set; }
     public string? ProjectId { get; set; }
+    public string? ProjectName { get; set; }
     public string? SubProjectId { get; set; }
     public string? ProductId { get; set; }
     public string? ProductName { get; set; }
@@ -28,4 +29,5 @@ public class MultiPaymentItemDto
     public string PartyIdContractorName { get; set; }
     public string? SubProjectName { get; set; }
     public DateTime? EstimatedStartDate { get; set; }
+    public DateTime? CertificateDate { get; set; }
 }

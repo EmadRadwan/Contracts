@@ -95,6 +95,10 @@ const multiPaymentCertificateApi = createApi({
                 query: ({ startDate, endDate }) => `/project/multiPaymentCertificates/by-date-range?startDate=${startDate}&endDate=${endDate}`,
                 providesTags: ["MultiPaymentCertificates"],
             }),
+            fetchMultiPaymentItemsByDateRange: builder.query<any[], { startDate: string; endDate: string }>({
+                query: ({ startDate, endDate }) => `/project/multiPaymentItems/by-date-range?startDate=${startDate}&endDate=${endDate}`,
+                providesTags: ["MultiPaymentItems"],
+            }),
         };
     },
 });
@@ -104,7 +108,8 @@ export const { useFetchMultiPaymentCertificatesQuery,
     useFetchSubProjectsQuery, useAddMultiPaymentCertificateMutation,
     useApproveMultiPaymentCertificateMutation, useUpdateMultiPaymentCertificateMutation,
     useDeleteMultiPaymentCertificateMutation, useResetMultiPaymentCertificateMutation,
-    useLazyFetchMultiPaymentCertificatesByDateRangeQuery
+    useLazyFetchMultiPaymentCertificatesByDateRangeQuery,
+    useLazyFetchMultiPaymentItemsByDateRangeQuery
 } = multiPaymentCertificateApi;
 export { multiPaymentCertificateApi };
 
