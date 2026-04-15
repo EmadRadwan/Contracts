@@ -201,6 +201,7 @@
       "rounding": "التقريب:",
       "nearest100": "لأقرب 100",
       "nearest1000": "لأقرب 1000",
+      "noRounding": "بدون تقريب",
       "setInstallmentValue": "تحديد قيمة القسط",
       "actions": "الإجراءات",
       "advanceTotal": "إجمالي المقدم:",

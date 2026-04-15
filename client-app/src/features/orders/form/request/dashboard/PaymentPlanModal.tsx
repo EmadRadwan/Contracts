@@ -78,7 +78,7 @@ export default function PaymentPlanModal({
     const [showRecreateConfirm, setShowRecreateConfirm] = useState(false);
     const [pendingRecreate, setPendingRecreate] = useState<InstallmentRow[] | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-    const [roundingMode, setRoundingMode] = useState<'100' | '1000'>('100');
+    const [roundingMode, setRoundingMode] = useState<'none' | '100' | '1000'>('100');
     const [bulkEditOpen, setBulkEditOpen] = useState(false);
     const [bulkAmount, setBulkAmount] = useState<number | "">("");
 
@@ -94,7 +94,8 @@ export default function PaymentPlanModal({
     const isValid = Math.abs(grandTotal - totalPrice) < 0.01;
 
 
-    const applyRounding = (amount: number, mode: '100' | '1000'): number => {
+    const applyRounding = (amount: number, mode: 'none' | '100' | '1000'): number => {
+        if (mode === 'none') return amount;
         const factor = mode === '100' ? 100 : 1000;
         return Math.round(amount / factor) * factor;
     };
@@ -588,8 +589,9 @@ export default function PaymentPlanModal({
                         <RadioGroup
                             row
                             value={roundingMode}
-                            onChange={(e) => setRoundingMode(e.target.value as '100' | '1000')}
+                            onChange={(e) => setRoundingMode(e.target.value as 'none' | '100' | '1000')}
                         >
+                            <FormControlLabel value="none" control={<Radio size="small" />} label={getTranslatedLabel("salesRequest.paymentPlan.noRounding", "No Rounding")} />
                             <FormControlLabel value="100" control={<Radio size="small" />} label={getTranslatedLabel("salesRequest.paymentPlan.nearest100", "Nearest 100")} />
                             <FormControlLabel value="1000" control={<Radio size="small" />} label={getTranslatedLabel("salesRequest.paymentPlan.nearest1000", "Nearest 1000")} />
                         </RadioGroup>
