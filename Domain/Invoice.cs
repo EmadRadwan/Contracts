@@ -28,9 +28,9 @@ public class Invoice
     public string? StatusId { get; set; }
     public string? BillingAccountId { get; set; }
     public string? ContactMechId { get; set; }
-    public DateTime? InvoiceDate { get; set; }
-    public DateTime? DueDate { get; set; }
-    public DateTime? PaidDate { get; set; }
+    public DateOnly? InvoiceDate { get; set; }
+    public DateOnly? DueDate { get; set; }
+    public DateOnly? PaidDate { get; set; }
     public string? InvoiceMessage { get; set; }
     public string? ReferenceNumber { get; set; }
     public string? Description { get; set; }

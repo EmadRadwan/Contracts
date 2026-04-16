@@ -4,7 +4,7 @@ public class UnappliedInvoiceDto
 {
     public string InvoiceId { get; set; }
     public string TypeDescription { get; set; }
-    public DateTime? InvoiceDate { get; set; }
+    public DateOnly? InvoiceDate { get; set; }
     public decimal Amount { get; set; }
     public decimal UnappliedAmount { get; set; }
     public string CurrencyUomId { get; set; }

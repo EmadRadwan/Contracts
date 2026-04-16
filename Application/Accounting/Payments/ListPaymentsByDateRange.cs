@@ -1,9 +1,8 @@
-// Application layer - new command similar to ListPaymentsDaily
-
 using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
+using Application.Core;   // ← For DateHelper
 
 namespace Application.Accounting.Payments;
 
@@ -12,25 +11,23 @@ public class ListPaymentsByDateRange
     public class Query : IRequest<PaymentsDailyResponse>
     {
         public string? PaymentType { get; set; }
-        public DateTime FromDate { get; set; }
-        public DateTime ToDate { get; set; }
-        public string Language { get; set; }
+        public DateOnly FromDate { get; set; }     // Changed to DateOnly
+        public DateOnly ToDate { get; set; }       // Changed to DateOnly
+        public string Language { get; set; } = "en";
     }
 
     public class Handler : IRequestHandler<Query, PaymentsDailyResponse>
     {
         private readonly DataContext _context;
-        private readonly IMapper _mapper;
 
-        public Handler(DataContext context, IMapper mapper)
+        public Handler(DataContext context)
         {
             _context = context;
-            _mapper = mapper;
         }
 
         public async Task<PaymentsDailyResponse> Handle(Query request, CancellationToken ct)
         {
-            var isOutgoing = request.PaymentType == "outgoing";
+            var isOutgoing = request.PaymentType?.ToLower() == "outgoing";
 
             var query = from pyt in _context.Payments
                         join ptt in _context.PaymentTypes on pyt.PaymentTypeId equals ptt.PaymentTypeId
@@ -41,16 +38,6 @@ public class ListPaymentsByDateRange
                             on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into pmtGroup
                         from pmt in pmtGroup.DefaultIfEmpty()
 
-                        join opp in _context.OrderPaymentPreferences 
-                            on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId into oppJoin
-                        from opp in oppJoin.DefaultIfEmpty()
-                        join ord in _context.OrderHeaders 
-                            on opp.OrderId equals ord.OrderId into ordJoin
-                        from ord in ordJoin.DefaultIfEmpty()
-                        join we in _context.WorkEfforts 
-                            on ord.OrderId equals we.RelatedOrderId into weJoin
-                        from we in weJoin.DefaultIfEmpty()
-
                         join proj in _context.WorkEfforts 
                             on pyt.WorkEffortId equals proj.WorkEffortId into projJoin
                         from proj in projJoin.DefaultIfEmpty()
@@ -59,45 +46,60 @@ public class ListPaymentsByDateRange
                             on pyt.CostCenterId equals cc.CostCenterId into ccJoin
                         from cc in ccJoin.DefaultIfEmpty()
 
-                        join sr in _context.SalesRequests on pyt.SalesRequestId equals sr.SalesRequestId into srJoin
+                        join sr in _context.SalesRequests 
+                            on pyt.SalesRequestId equals sr.SalesRequestId into srJoin
                         from sr in srJoin.DefaultIfEmpty()
-                        join prod in _context.Products on sr.ProductId equals prod.ProductId into prodJoin
+
+                        join prod in _context.Products 
+                            on sr.ProductId equals prod.ProductId into prodJoin
                         from prod in prodJoin.DefaultIfEmpty()
 
-                        where pyt.CreatedStamp >= request.FromDate
-                              && pyt.CreatedStamp <= request.ToDate
-                              && (isOutgoing ? ptt.ParentTypeId == "DISBURSEMENT" : ptt.ParentTypeId != "DISBURSEMENT")
+                        where pyt.CreatedStamp >= request.FromDate.ToDateTime(new TimeOnly(0, 0))
+                           && pyt.CreatedStamp < request.ToDate.ToDateTime(new TimeOnly(0, 0)).AddDays(1)
+
+                           && (isOutgoing 
+                               ? ptt.ParentTypeId == "DISBURSEMENT" 
+                               : ptt.ParentTypeId != "DISBURSEMENT")
+
                         select new PaymentRecordDto
                         {
-                            // same mapping as in ListPaymentsDaily
                             PaymentId = pyt.PaymentId,
                             PaymentTypeId = pyt.PaymentTypeId,
-                            PaymentTypeDescription = request.Language == "ar" ? ptt.DescriptionArabic : ptt.Description,
+                            PaymentTypeDescription = request.Language == "ar" 
+                                ? ptt.DescriptionArabic : ptt.Description,
+
                             PaymentMethodId = pyt.PaymentMethodId,
                             PaymentMethodTypeId = pyt.PaymentMethodTypeId,
                             PaymentMethodTypeDescription = pmt != null
                                 ? (request.Language == "ar" ? pmt.DescriptionArabic : pmt.Description)
                                 : null,
+
                             PartyIdFrom = pyt.PartyIdFrom,
-                            PartyIdFromName = ptyFrom.Description,
+                            PartyIdFromName = ptyFrom.Description ?? string.Empty,
                             PartyIdTo = pyt.PartyIdTo,
-                            PartyIdToName = ptyTo.Description,
+                            PartyIdToName = ptyTo.Description ?? string.Empty,
+
                             StatusId = pyt.StatusId,
-                            StatusDescription = request.Language == "ar" ? sts.DescriptionArabic : sts.Description,
+                            StatusDescription = request.Language == "ar" 
+                                ? sts.DescriptionArabic : sts.Description,
                             StatusDescriptionEnglish = sts.Description,
-                            EffectiveDate = (DateTime)pyt.EffectiveDate,
+
+                            EffectiveDate = pyt.EffectiveDate,
                             Comments = pyt.Comments,
                             PaymentRefNum = pyt.PaymentRefNum,
                             PaymentPreferenceId = pyt.PaymentPreferenceId,
                             ActualCurrencyAmount = pyt.ActualCurrencyAmount ?? pyt.Amount,
                             OverrideGlAccountId = pyt.OverrideGlAccountId,
-                            OrganizationPartyId = ptt.ParentTypeId == "DISBURSEMENT" ? pyt.PartyIdFrom : pyt.PartyIdTo,
+                            OrganizationPartyId = ptt.ParentTypeId == "DISBURSEMENT" 
+                                ? pyt.PartyIdFrom : pyt.PartyIdTo,
+
                             Amount = pyt.Amount,
                             CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
                             IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
+
                             ChequeNumber = pyt.ChequeNumber,
                             ChequeDate = pyt.ChequeDate,
-                            CertificateNumber = we != null ? we.CertificateNumber : null,
+                            CertificateNumber = null,                    // Not populated
                             ProjectName = proj != null ? proj.ProjectName : null,
                             CostCenterDescription = cc != null ? cc.Description : null,
                             ProductId = prod != null ? prod.ProductId : null,
@@ -106,22 +108,14 @@ public class ListPaymentsByDateRange
 
             var data = await query.ToListAsync(ct);
 
-            var today = DateTime.Today;
+            // Post-processing
             foreach (var record in data)
             {
-                record.DaysUntilDue = (record.EffectiveDate - today).Days;
+                var effectiveDate = record.EffectiveDate ?? DateHelper.Today;
 
-                var date = record.EffectiveDate;
-                var quarterNum = (date.Month - 1) / 3 + 1;
-                var quarterArabic = quarterNum switch
-                {
-                    1 => "الأول",
-                    2 => "الثاني",
-                    3 => "الثالث",
-                    4 => "الرابع",
-                    _ => string.Empty
-                };
-                var quarterAndYear = $"(الربع {quarterArabic} {date.Year})";
+                record.DaysUntilDue = effectiveDate.DayNumber - DateHelper.Today.DayNumber;
+
+                var quarterText = GetQuarterArabic(effectiveDate);
 
                 if (record.StatusId == "PMNT_NOT_PAID")
                 {
@@ -133,7 +127,7 @@ public class ListPaymentsByDateRange
                         var daysOverdue = Math.Abs(record.DaysUntilDue);
                         record.DueStatusArabic = daysOverdue <= 30
                             ? $"{type} متأخرة منذ {daysOverdue} يوم"
-                            : $"{type} متأخرة جداً {quarterAndYear}";
+                            : $"{type} متأخرة جداً {quarterText}";
                     }
                     else if (record.DaysUntilDue == 0)
                         record.DueStatusArabic = $"{typePaid} اليوم";
@@ -146,9 +140,9 @@ public class ListPaymentsByDateRange
                     else if (record.DaysUntilDue <= 30)
                         record.DueStatusArabic = $"{typePaid} خلال الشهر";
                     else if (record.DaysUntilDue <= 90)
-                        record.DueStatusArabic = $"{typePaid} خلال 3 أشهر {quarterAndYear}";
+                        record.DueStatusArabic = $"{typePaid} خلال 3 أشهر {quarterText}";
                     else
-                        record.DueStatusArabic = $"{typePaid} لاحقاً {quarterAndYear}";
+                        record.DueStatusArabic = $"{typePaid} لاحقاً {quarterText}";
                 }
                 else
                 {
@@ -161,6 +155,21 @@ public class ListPaymentsByDateRange
                 Data = data,
                 Total = data.Count
             };
+        }
+
+        private static string GetQuarterArabic(DateOnly date)
+        {
+            int quarterNum = (date.Month - 1) / 3 + 1;
+            string quarterName = quarterNum switch
+            {
+                1 => "الأول",
+                2 => "الثاني",
+                3 => "الثالث",
+                4 => "الرابع",
+                _ => ""
+            };
+
+            return $" (الربع {quarterName} {date.Year})";
         }
     }
 }

@@ -44,7 +44,7 @@ public class CreatePaymentAndFinAccountTrans
             try
             {
                 var req = command.request;
-                DateTime effectiveDate = req.PaymentDate ?? DateTime.UtcNow; // fallback to today
+                DateOnly effectiveDate = req.PaymentDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
 
 
                 var paymentResult = await _paymentHelperService.CreatePaymentAndFinAccountTrans(req);

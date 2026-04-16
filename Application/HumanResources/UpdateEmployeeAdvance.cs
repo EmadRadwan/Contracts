@@ -162,12 +162,12 @@ public class UpdateEmployeeAdvance
             }
 
             // Short-term: monthly limit (considering existing + new amount)
-            if (dto.AdvanceTypeId == "EMPLOYEE_ADVANCE")
+            if (dto.AdvanceTypeId == "EMPLOYEE_ADVANCE" && dto.AdvanceDate.HasValue)
             {
-                var monthStart = new DateTime(dto.AdvanceDate.Year, dto.AdvanceDate.Month, 1);
+                var advanceDate = dto.AdvanceDate.Value;
+                var monthStart = new DateOnly(advanceDate.Year, advanceDate.Month, 1);
                 var monthEnd = monthStart.AddMonths(1).AddDays(-1);
 
-                // Exclude current advance when recalculating total this month
                 var previousAdvancesThisMonth = await _context.EmployeeAdvances
                     .Where(ea => ea.PartyId == employeeId
                                  && ea.AdvanceDate >= monthStart
@@ -177,7 +177,7 @@ public class UpdateEmployeeAdvance
                                  && ea.StatusId != "ADVANCE_REJECTED")
                     .SumAsync(ea => ea.Amount, ct);
 
-                var totalThisMonth = previousAdvancesThisMonth + dto.Amount;
+                var totalThisMonth = previousAdvancesThisMonth + (dto.Amount ?? 0);
 
                 if (totalThisMonth > maxAllowedShortTerm)
                 {
@@ -205,7 +205,7 @@ public class UpdateEmployeeAdvance
                         "SCHEDULE_TOTAL_MISMATCH");
                 }
 
-                if (dto.CustomDeductionSchedules.Any(s => s.DueDate < DateTime.UtcNow.Date))
+                if (dto.CustomDeductionSchedules.Any(s => s.DueDate < DateHelper.Today))
                 {
                     return Results<EmployeeAdvanceDto>.Failure(
                         "لا يمكن جدولة خصم بتاريخ سابق.",

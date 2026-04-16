@@ -692,7 +692,7 @@ public class IssuanceService : IIssuanceService
             ShipmentItemSeqId = shipmentItemSeqId,
             InventoryItemId = inventoryItemId,
             Quantity = quantity,
-            IssuedDateTime = issuedDateTime ?? DateTime.UtcNow,
+            IssuedDateTime = DateHelper.ToDateOnly(issuedDateTime),
             CreatedStamp = DateTime.UtcNow,
             LastUpdatedStamp = DateTime.UtcNow
         };

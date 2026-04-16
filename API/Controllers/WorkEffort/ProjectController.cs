@@ -1,3 +1,4 @@
+using Application.Core;
 using Application.Parties.Parties;
 using Application.Projects;
 using Microsoft.AspNetCore.Mvc;
@@ -223,6 +224,22 @@ public class ProjectController : BaseApiController
             WorkEffortTypeId = workEffortTypeId,
             WorkEffortParentId = workEffortParentId
         }));
+    }
+
+    [HttpGet("report")]
+    public async Task<ActionResult<ProjectReportDto>> GetProjectReport(
+        [FromQuery] string projectId,
+        [FromQuery] DateTime? startDate,
+        [FromQuery] DateTime? endDate,
+        [FromQuery] bool allData)
+    {
+        return HandleResult(Result<ProjectReportDto>.Success(await Mediator.Send(new GetProjectReport.Query
+        {
+            ProjectId = projectId,
+            StartDate = startDate,
+            EndDate = endDate,
+            AllData = allData
+        })));
     }
     
 }

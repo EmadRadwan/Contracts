@@ -40,9 +40,9 @@ public class AcctgTransService : IAcctgTransService
         {
             AcctgTransId = newAcctgTransSequence,
             AcctgTransTypeId = parameters.AcctgTransTypeId,
-            TransactionDate = parameters.TransactionDate,
+            TransactionDate = DateHelper.ToStartOfDay(parameters.TransactionDate),
             IsPosted = parameters.IsPosted,
-            PostedDate = parameters.PostedDate ?? parameters.TransactionDate,
+            PostedDate = parameters.PostedDate ?? DateHelper.ToStartOfDay(parameters.TransactionDate),
             GlFiscalTypeId = parameters.GlFiscalTypeId,
             InvoiceId = parameters.InvoiceId,
             PaymentId = parameters.PaymentId,

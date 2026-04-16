@@ -93,7 +93,7 @@ namespace Application.Accounting.Transactions
     public class CreateInitialBalanceTransParams
     {
         public string AcctgTransTypeId { get; set; }
-        public DateTime TransactionDate { get; set; }
+        public DateOnly? TransactionDate { get; set; }
         public string OrganizationPartyId { get; set; }
         public string? HeaderDescription { get; set; }
         public string GlFiscalTypeId { get; set; }

@@ -55,7 +55,7 @@ public class GetPaymentForReport
                                 ? ptyto.Description 
                                 : (pyt.PartyIdTo == "Company" ? "Company" : pyt.PartyIdTo ?? "Unknown"),
                             StatusDescription = isArabic ? sts.DescriptionArabic : sts.Description,
-                            EffectiveDate = (DateTime)pyt.EffectiveDate,
+                            EffectiveDate = pyt.EffectiveDate,
                             Amount = pyt.Amount,
                             CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
                             PaymentMethodId = pyt.PaymentMethodId,
@@ -86,13 +86,13 @@ public class PaymentReportDto
     public string FromPartyName { get; set; } = string.Empty;
     public string ToPartyName { get; set; } = string.Empty;
     public string StatusDescription { get; set; } = string.Empty;
-    public DateTime EffectiveDate { get; set; }
+    public DateOnly? EffectiveDate { get; set; }
     public decimal Amount { get; set; }
     public string CurrencyUomId { get; set; } = "EGP";
     public string PaymentMethodId { get; set; } = string.Empty;
     public string PaymentMethodDescription { get; set; } = string.Empty;
     public string? ChequeNumber { get; set; }
-    public DateTime? ChequeDate { get; set; }
+    public DateOnly? ChequeDate { get; set; }
     public string? ProjectName { get; set; }
     public string? CostCenterDescription { get; set; }
     public string? Comments { get; set; }

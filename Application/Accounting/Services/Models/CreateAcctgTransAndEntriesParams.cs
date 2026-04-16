@@ -36,5 +36,5 @@ public class CreateAcctgTransAndEntriesParams
     public string DebitGlAccountId { get; set; }
     public string CreditGlAccountId { get; set; }
     public List<AcctgTransEntry>? AcctgTransEntries { get; set; }
-    public DateTime? TransactionDate { get; set; }
+    public DateOnly? TransactionDate { get; set; }
 }

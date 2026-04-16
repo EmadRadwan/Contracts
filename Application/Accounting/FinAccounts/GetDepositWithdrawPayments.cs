@@ -11,8 +11,8 @@ namespace Application.Accounting.FinAccounts
         {
             // Removed NoConditionFind since it's no longer needed
             public string PaymentMethodTypeId { get; set; }
-            public DateTime? FromDate { get; set; }
-            public DateTime? ThruDate { get; set; }
+            public DateOnly? FromDate { get; set; }
+            public DateOnly? ThruDate { get; set; }
             public string PartyIdFrom { get; set; }
             public bool CheckFinAccountTransNull { get; set; } // Now defaults to false if not provided
             public List<string> PartyIdSetFromFinAccountRole { get; set; }

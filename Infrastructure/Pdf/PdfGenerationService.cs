@@ -349,11 +349,14 @@ namespace Infrastructure.Pdf
             return new string(result);
         }
 
-        private string FormatArabicDate(DateTime date)
+        private string FormatArabicDate(DateOnly? date)
         {
-            return ToArabicNumerals($"{date:yyyy/MM/dd}");
-        }
+            if (!date.HasValue)
+                return "٢٠    /    /    ";   // Empty placeholder
 
+            return ToArabicNumerals(date.Value.ToString("yyyy/MM/dd"));
+        }
+        
         private string FormatArabicNumber(decimal number)
         {
             return ToArabicNumerals(((int)number).ToString("N0"));

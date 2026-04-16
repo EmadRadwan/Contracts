@@ -168,7 +168,7 @@ public class ResetSalesRequest
                 MonthsBetweenInstallments = (int)sr.MonthsBetweenInstallments,
                 IsChequesDelivered = sr.IsChequesDelivered,
                 MaintenanceDeposit = sr.MaintenanceDeposit,
-                SaleDate = sr.SaleDate ?? DateTime.UtcNow,
+                SaleDate = sr.SaleDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
                 Comments = sr.Comments,
                 StatusId = sr.StatusId,
                 StatusDescription = statusDesc,

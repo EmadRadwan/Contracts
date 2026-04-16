@@ -47,7 +47,7 @@ namespace Application.Accounting.Transactions
                     var acctgTransParams = new CreateAcctgTransParams
                     {
                         AcctgTransTypeId = origHeader.AcctgTransTypeId,
-                        TransactionDate = DateTime.UtcNow.Date,
+                        TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
                         Description = origHeader.Description,
                         IsPosted = "N",
                         GlFiscalTypeId = origHeader.GlFiscalTypeId,

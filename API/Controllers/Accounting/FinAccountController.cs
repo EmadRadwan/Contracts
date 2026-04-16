@@ -35,8 +35,8 @@ public class FinAccountController : BaseApiController
     [HttpGet("listFinAccountDepositsWidthrawls")]
     public async Task<IActionResult> ListFinAccountDepositsWidthrawals(
         [FromQuery] string? paymentMethodTypeId,
-        [FromQuery] DateTime? fromDate,
-        [FromQuery] DateTime? thruDate,
+        [FromQuery] DateOnly? fromDate,
+        [FromQuery] DateOnly? thruDate,
         [FromQuery] string? partyIdFrom,
         [FromQuery] bool? checkFinAccountTransNull,
         [FromQuery] List<string> partyIdSetFromFinAccountRole)

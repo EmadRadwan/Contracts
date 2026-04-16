@@ -15,7 +15,7 @@ namespace Application.Accounting.Services.Models
         public string? PartyId { get; set; }                   // PARTY_ID
         public string? RoleTypeId { get; set; }                // ROLE_TYPE_ID
         public string? Description { get; set; }               // DESCRIPTION
-        public DateTime? TransactionDate { get; set; }         // TRANSACTION_DATE
+        public DateOnly? TransactionDate { get; set; }         // TRANSACTION_DATE
         public DateTime? PostedDate { get; set; }              // POSTED_DATE
 
         // Additional Transaction Details

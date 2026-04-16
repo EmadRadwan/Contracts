@@ -9,7 +9,7 @@ public interface ICommonService
     Task<decimal?> ConvertUom(
         string uomId,
         string uomIdTo,
-        DateTime? asOfDate,
+        DateOnly? asOfDate,
         decimal originalValue,
         string? purposeEnumI);
 }
@@ -28,13 +28,13 @@ public class CommonService : ICommonService
     public async Task<decimal?> ConvertUom(
         string uomId,
         string uomIdTo,
-        DateTime? asOfDate,
+        DateOnly? asOfDate,
         decimal originalValue,
         string? purposeEnumId = null)
     {
         if (uomId == uomIdTo) return originalValue;
 
-        asOfDate ??= DateTime.Now;
+        asOfDate ??= DateOnly.FromDateTime(DateTime.UtcNow);
 
         var uomConversionDated = await _context.UomConversionDateds
             .Where(e => e.UomId == uomId && e.UomIdTo == uomIdTo && e.PurposeEnumId == purposeEnumId)

@@ -182,6 +182,12 @@ const projectsApi = createApi({
                     params: { glAccountId, workEffortTypeId, workEffortParentId },
                 }),
             }),
+            fetchProjectReport: builder.query<ProjectReportDto, { projectId: string; startDate?: string; endDate?: string; allData: boolean }>({
+                query: (params) => ({
+                    url: "/project/report",
+                    params,
+                }),
+            }),
         };
         
     },
@@ -202,6 +208,7 @@ export const {
     useDeleteProjectCertificateMutation,
     useResetProjectCertificateMutation,
     useFetchWorkEffortsByGlAccountIdQuery,
+    useLazyFetchProjectReportQuery,
 } = projectsApi;
 export {projectsApi};
 
@@ -232,4 +239,66 @@ interface OrderStatusChangeResult {
     orderId: string;
     orderStatusId: string;
     invoiceId: string;
+}
+
+export interface ProjectReportDto {
+    expenses: ProjectExpenseRecord[];
+    revenues: ProjectRevenueRecord[];
+}
+
+export interface ProjectExpenseRecord {
+    expenseItemKey?: string;
+    certificateKey?: string;
+    certificateNumber?: string;
+    projectId?: string;
+    partyId?: string;
+    partyName?: string;
+    partyRole?: string;
+    productId?: string;
+    productName?: string;
+    expenseDate?: string;
+    recordType?: string;
+    certificateType?: string;
+    certificateCategoryCode?: string;
+    certificateDescription?: string;
+    itemDescription?: string;
+    relatedPurchaseOrderId?: string;
+    isSupplyProcurement: boolean;
+    isWorkmanship: boolean;
+    isMultiPaymentCertificate: boolean;
+    quantity: number;
+    unitRate?: number;
+    grossAmount: number;
+    discountAmount: number;
+    deductionsAmount: number;
+    insuranceAmount: number;
+    transportationExpensesAmount: number;
+    gratuitiesAmount: number;
+    netCertifiedAmount: number;
+    achievementPercentage: number;
+}
+
+export interface ProjectRevenueRecord {
+    paymentId?: string;
+    salesRequestId?: string;
+    apartmentId?: string;
+    projectId?: string;
+    projectName?: string;
+    customerPartyId?: string;
+    customerName?: string;
+    paymentTypeId?: string;
+    paymentTypeArabic?: string;
+    revenueCategory?: string;
+    scheduledAmount: number;
+    collectedAmount: number;
+    outstandingAmount: number;
+    lateAmount: number;
+    futureAmount: number;
+    paymentStatus?: string;
+    overdueBucket?: string;
+    daysOverdue: number;
+    dueDate?: string;
+    createdDate?: string;
+    comments?: string;
+    chequeNumber?: string;
 }

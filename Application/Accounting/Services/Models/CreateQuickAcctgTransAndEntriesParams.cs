@@ -17,7 +17,7 @@ public class CreateQuickAcctgTransAndEntriesParams
     public string? AcctgTransEntryTypeId { get; set; }
     public string? PartyId { get; set; }
     public string? RoleTypeId { get; set; }
-    public DateTime TransactionDate { get; set; }
+    public DateOnly? TransactionDate { get; set; }
     public string? Description { get; set; }
     public string? IsPosted { get; set; } = "N";
 

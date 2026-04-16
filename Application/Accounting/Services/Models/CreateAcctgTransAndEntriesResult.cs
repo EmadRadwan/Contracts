@@ -22,5 +22,5 @@ public class CreateAcctgTransAndEntriesResult
     public string? ShipmentId { get; set; }
     public string? RoleTypeId { get; set; }
     public List<AcctgTransEntry>? AcctgTransEntries { get; set; }
-    public DateTime? TransactionDate { get; set; }
+    public DateOnly? TransactionDate { get; set; }
 }

@@ -31,7 +31,7 @@ public class SalesRequest
     // -----------------------------------------------------------------
     // 4-11. Business fields
     // -----------------------------------------------------------------
-    public DateTime? SaleDate { get; set; }
+    public DateOnly? SaleDate { get; set; }
     public decimal? Discount { get; set; }
     public decimal? TotalPrice { get; set; }
     public string? Comments { get; set; }
@@ -40,7 +40,7 @@ public class SalesRequest
     public decimal? AdvancePercent { get; set; }
     public decimal? MaintenancePercent { get; set; }
     public int? NumberOfInstallments { get; set; }
-    public DateTime? DateOfFirstInstallment { get; set; }
+    public DateOnly? DateOfFirstInstallment { get; set; }
     public int? MonthsBetweenInstallments { get; set; }
     public string? StatusId { get; set; }
     public bool? IsChequesDelivered { get; set; }

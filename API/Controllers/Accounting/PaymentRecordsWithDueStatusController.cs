@@ -18,15 +18,16 @@ public class PaymentRecordsWithDueStatusController : BaseODataController2<Paymen
 
     [HttpGet("by-date-range")]
     public async Task<ActionResult<ListPaymentsWithDueStatusByDateRange.ListPaymentsWithDueStatusResponse>> GetByDateRange(
-        [FromQuery] string fromDate,
-        [FromQuery] string toDate,
+        [FromQuery] DateOnly fromDate,
+        [FromQuery] DateOnly toDate,
         CancellationToken ct = default)
     {
         var language = GetLanguage();
+
         var query = new ListPaymentsWithDueStatusByDateRange.Query
         {
-            FromDate = DateTime.ParseExact(fromDate, "yyyy-MM-dd", null),
-            ToDate = DateTime.ParseExact(toDate, "yyyy-MM-dd", null).AddDays(1).AddTicks(-1),
+            FromDate = fromDate,
+            ToDate = toDate,
             Language = language
         };
 

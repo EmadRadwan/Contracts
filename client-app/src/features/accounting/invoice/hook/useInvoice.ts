@@ -8,6 +8,7 @@ import { useAppDispatch } from "../../../../app/store/configureStore";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router";
 import { setSelectedInvoice } from "../../slice/accountingSharedUiSlice";
+import {normalizeToDateString} from "../../../../app/util/utils";
 
 type UseInvoiceProps = {
   invoiceId?: string | null;
@@ -93,7 +94,7 @@ const useInvoice = ( invoiceId: UseInvoiceProps) => {
       partyIdFrom,
       statusId: "INVOICE_IN_PROCESS",
       currencyUomId: values.currencyUomId || "EGP",
-      invoiceDate: values.invoiceDate,
+      invoiceDate: normalizeToDateString(values.invoiceDate),
       referenceNumber: values.referenceNumber,
       description: values.description,
     };

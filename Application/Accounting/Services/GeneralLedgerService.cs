@@ -212,7 +212,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             ShipmentId = shipmentReceipt.ShipmentId,
             PaymentId = null,
             PartyId = shipment.PartyIdFrom,
-            TransactionDate = shipmentReceipt.CreatedStamp
+            TransactionDate = shipmentReceipt.DatetimeReceived
         };
 
         var acctgTransId = await CreateAcctgTransAndEntries(createAcctgTransAndEntriesParams);
@@ -390,7 +390,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             ShipmentId = shipmentReceipt.ShipmentId,
             PaymentId = null,
             PartyId = shipment.PartyIdFrom,
-            TransactionDate = shipmentReceipt.CreatedStamp,
+            TransactionDate = shipmentReceipt.DatetimeReceived,
             WorkEffortId = workEffortId,
             RoleTypeId = "BILL_FROM_VENDOR"
         };
@@ -794,7 +794,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 RoleTypeId = parameters.RoleTypeId,
                 TransactionDate = parameters.TransactionDate != default
                     ? parameters.TransactionDate
-                    : stamp, // fallback if not set
+                    : DateOnly.FromDateTime(DateTime.UtcNow), // fallback if not set
                 Description = parameters.Description,
                 IsPosted = parameters.IsPosted ?? "N" // ensure a default of "N"
             };
@@ -932,7 +932,7 @@ public class GeneralLedgerService : IGeneralLedgerService
 
                 AcctgTransTypeId = "INVENTORY",
                 WorkEffortId = workEffortId,
-                TransactionDate = stamp,
+                TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
                 AcctgTransEntries = acctgTransEntries
             };
 
@@ -1915,7 +1915,7 @@ public class GeneralLedgerService : IGeneralLedgerService
         // <if-empty field="createAcctgTransParams.transactionDate"><now-timestamp field="createAcctgTransParams.transactionDate"/></if-empty>
         if (!createAcctgTransParams.TransactionDate.HasValue)
         {
-            createAcctgTransParams.TransactionDate = DateTime.UtcNow;
+            createAcctgTransParams.TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow);
         }
 
         // call-service service-name="createAcctgTrans" ...
@@ -2634,7 +2634,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 InvoiceId = invoice.InvoiceId,
                 PartyId = invoice.PartyIdFrom,
                 RoleTypeId = "BILL_FROM_VENDOR",
-                TransactionDate = invoice.InvoiceDate ?? DateTime.UtcNow,
+                TransactionDate = invoice.InvoiceDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
                 AcctgTransEntries = acctgTransEntries,
                 Description = workEffort?.Description,
                 WorkEffortId = workEffortId
@@ -4153,7 +4153,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                     {
                         GlFiscalTypeId = "ACTUAL",
                         AcctgTransTypeId = "PERIOD_CLOSING",
-                        TransactionDate = transactionDate,
+                        TransactionDate = DateOnly.FromDateTime(transactionDate),
                         AcctgTransEntries = new List<AcctgTransEntry> { creditEntry, debitEntry }
                     };
                     await CreateAcctgTransAndEntries(createAcctgTransAndEntriesInMap);
@@ -4576,7 +4576,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             var acctgTransDto = new CreateQuickAcctgTransAndEntriesParams
             {
                 FinAccountTransId = request.FinAccountTransId,
-                TransactionDate = nowTimestamp,
+                TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
                 GlFiscalTypeId = "ACTUAL",
                 PartyId = finAccountTrans.PartyId, // if PartyId is a column in FinAccountTrans
                 IsPosted = "N",
@@ -4738,7 +4738,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 GlFiscalTypeId = "ACTUAL",
                 AcctgTransTypeId = "INVENTORY",
                 WorkEffortId = workEffortId,
-                TransactionDate = certificateItem.ProcurementDate,
+                TransactionDate = DateHelper.ToDateOnly(certificateItem.ProcurementDate),
                 AcctgTransEntries = acctgTransEntries,
             };
 
@@ -4797,7 +4797,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                     GlFiscalTypeId = "ACTUAL",
                     AcctgTransTypeId = "PROJECT_EXPENSE", // or "PROJECT_EXPENSE" if you have that type
                     WorkEffortId = workEffortId,
-                    TransactionDate = stamp,
+                    TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
                     AcctgTransEntries = new List<AcctgTransEntry> { debitCashEntry, creditCashEntry }
                 };
 
@@ -5023,7 +5023,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 PartyId = acctgTrans.PartyId,
                 RoleTypeId = acctgTrans.RoleTypeId,
                 Description = acctgTrans.Description,
-                TransactionDate = DateTime.UtcNow, // Set to current timestamp
+                TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow), // Set to current timestamp
                 PostedDate = acctgTrans.PostedDate,
                 ScheduledPostingDate = acctgTrans.ScheduledPostingDate,
                 GlJournalId = acctgTrans.GlJournalId,
@@ -5472,7 +5472,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             var acctgTransParams = new CreateAcctgTransParams
             {
                 AcctgTransTypeId = "CHECK_ISSUED", // or "CHECK_ISSUED", adjust as per your system
-                TransactionDate = payment.EffectiveDate?.Date ?? DateTime.UtcNow.Date,
+                TransactionDate = payment.EffectiveDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
                 IsPosted = "Y",
                 GlFiscalTypeId = "ACTUAL",
                 Description = description,
@@ -5592,7 +5592,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             var acctgTransParams = new CreateAcctgTransParams
             {
                 AcctgTransTypeId = "OUTGOING_PAYMENT", // ← use a specific type if your system has it
-                TransactionDate = DateTime.UtcNow.Date,
+                TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
                 IsPosted = "Y",
                 Description = description,
                 GlFiscalTypeId = "ACTUAL",
@@ -5674,7 +5674,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             throw new Exception("Employee (PartyTo) not found on payment");
 
         var now = DateTime.UtcNow;
-        var effectiveDate = payment.EffectiveDate ?? now;
+        var effectiveDate = payment.EffectiveDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
 
         string employeePartyId = payment.PartyIdTo;
         string companyPartyId = payment.PartyIdFrom;
@@ -5837,7 +5837,7 @@ public class GeneralLedgerService : IGeneralLedgerService
         var acctgTransParams = new CreateAcctgTransParams
         {
             AcctgTransTypeId = "PAYROL_INVOICE",
-            TransactionDate = invoice.InvoiceDate ?? DateTime.UtcNow,
+            TransactionDate = invoice.InvoiceDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
             IsPosted = "Y",
             Description = $"Payroll Invoice - {invoice.InvoiceId}",
             GlFiscalTypeId = "ACTUAL",

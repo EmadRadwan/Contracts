@@ -56,11 +56,11 @@ public class CreateSalesRequest
         public decimal? Discount { get; set; }
         public decimal AdvancePayment { get; set; }
         public int NumberOfInstallments { get; set; }
-        public DateTime? DateOfFirstInstallment { get; set; }
+        public DateOnly? DateOfFirstInstallment { get; set; }
         public int MonthsBetweenInstallments { get; set; }
 
         // Metadata
-        public DateTime SaleDate { get; set; }
+        public DateOnly SaleDate { get; set; }
         public string? Comments { get; set; }
         public string StatusId { get; set; } = string.Empty;
         public string StatusDescription { get; set; } = string.Empty;
@@ -137,7 +137,7 @@ public class CreateSalesRequest
             {
                 SalesRequestId = salesRequestId,
                 ProductId = dto.ProductId!,
-                SaleDate = dto.SaleDate!.Value,
+                SaleDate = dto.SaleDate,
                 FromPartyId = dto.FromPartyId!,
                 EmployeePartyId = dto.EmployeePartyId,
                 ApartmentPricePerM2 = dto.ApartmentPricePerM2,

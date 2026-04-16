@@ -124,7 +124,7 @@ public class PaymentService : IPaymentService
                 PartyIdTo = orderRoleBillFromVendor.PartyId,
                 RoleTypeIdTo = orderRoleBillToCustomer.RoleTypeId,
                 PaymentRefNum = null,
-                EffectiveDate = stamp,
+                EffectiveDate = DateOnly.FromDateTime(DateTime.UtcNow),
                 Amount = payment.Amount,
                 CurrencyUomId = salesOrder.CurrencyUomId,
                 Comments = null,
@@ -178,7 +178,7 @@ public class PaymentService : IPaymentService
                 PartyIdTo = orderRoleBillFromVendor.PartyId,
                 RoleTypeIdTo = orderRoleBillToCustomer.RoleTypeId,
                 PaymentRefNum = null,
-                EffectiveDate = stamp,
+                EffectiveDate = DateOnly.FromDateTime(DateTime.UtcNow),
                 Amount = (decimal)salesOrder.UseUpToFromBillingAccount,
                 CurrencyUomId = salesOrder.CurrencyUomId,
                 Comments = null,
@@ -209,7 +209,7 @@ public class PaymentService : IPaymentService
             StatusId = "PMNT_NOT_PAID",
             Amount = (decimal)purchaseOrder.GrandTotal,
             PaymentPreferenceId = paymentPreference.OrderPaymentPreferenceId,
-            EffectiveDate = stamp,
+            EffectiveDate = DateOnly.FromDateTime(DateTime.UtcNow),
             CreatedStamp = stamp,
             LastUpdatedStamp = stamp
         };

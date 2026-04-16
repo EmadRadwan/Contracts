@@ -43,7 +43,7 @@ public class GetInstallmentsQuery
                 .Select(i => new InstallmentDto
                 {
                     InstallmentNumber = i.InstallmentNumber,
-                    DueDate = i.DueDate.ToString("yyyy-MM-dd"), // Consistent format for frontend date input
+                    DueDate = i.DueDate.ToString(), // Consistent format for frontend date input
                     Amount = i.Amount,
                     IsAdvance = i.IsAdvance
                 })

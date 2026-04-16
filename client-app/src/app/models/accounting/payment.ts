@@ -35,7 +35,7 @@ export interface Payment {
   isPaymentDeleted?: boolean;
   isDisbursement?: boolean;
   chequeNumber?: string;
-  chequeDate?: string | Date;
+  chequeDate?: any;
   projectId?: string;
   costCenterId?: string;
   paymentApplications?: any[];

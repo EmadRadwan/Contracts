@@ -6,7 +6,7 @@ public class BillingAccountInvoiceDto
     public string InvoiceId { get; set; }
     public string InvoiceTypeId { get; set; }
     public string InvoiceTypeDescription { get; set; }
-    public DateTime InvoiceDate { get; set; }
+    public DateOnly? InvoiceDate { get; set; }
     public string StatusId { get; set; }
     public string StatusDescription { get; set; }
     public string Description { get; set; }

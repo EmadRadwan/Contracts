@@ -12,7 +12,7 @@ public class BatchCreatePayrollInvoices
     public class Command : IRequest<Result<Unit>>
     {
         public List<EmployeePayrollRunDto> Employees { get; set; }
-        public DateTime InvoiceDate { get; set; }
+        public DateOnly InvoiceDate { get; set; }
         public string OrganizationPartyId { get; set; }
     }
 
@@ -120,8 +120,8 @@ public class BatchCreatePayrollInvoices
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                var monthStart = new DateTime(request.InvoiceDate.Year, request.InvoiceDate.Month, 1);
-                var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+                DateOnly monthStart = new DateOnly(request.InvoiceDate.Year, request.InvoiceDate.Month, 1);
+                DateOnly monthEnd = monthStart.AddMonths(1).AddDays(-1);
 
                 // ===================================================================
                 // STEP 1: Find existing payroll invoices for this month

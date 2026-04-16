@@ -28,7 +28,7 @@ public class Payment
     public string? PartyIdTo { get; set; }
     public string? RoleTypeIdTo { get; set; }
     public string? StatusId { get; set; }
-    public DateTime? EffectiveDate { get; set; }
+    public DateOnly? EffectiveDate { get; set; }
     public string? PaymentRefNum { get; set; }
     public decimal Amount { get; set; }
     public string? CurrencyUomId { get; set; }
@@ -38,7 +38,7 @@ public class Payment
     public bool? IsBankTransfer { get; set; }
     public string? ActualCurrencyUomId { get; set; }
     public string? ChequeNumber { get; set; }
-    public DateTime? ChequeDate { get; set; }
+    public DateOnly? ChequeDate { get; set; }
     public string? WorkEffortId { get; set; }
     public string? CostCenterId { get; set; }
     public string? ApprovedByPartyId { get; set; }

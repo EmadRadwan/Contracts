@@ -9,8 +9,8 @@ public class ListPayrollData
 {
     public class Query : IRequest<Result<List<PayrollDataDto>>>
     {
-        public DateTime FromDate { get; set; }
-        public DateTime ToDate { get; set; }
+        public DateOnly FromDate { get; set; }
+        public DateOnly ToDate { get; set; }
         public string OrganizationPartyId { get; set; }
     }
 
@@ -26,7 +26,7 @@ public class ListPayrollData
         public decimal OvertimeValue { get; set; }
         public decimal NetSalary { get; set; }
         public decimal TotalAdvances { get; set; }
-        public DateTime InvoiceDate { get; set; }
+        public DateOnly InvoiceDate { get; set; }
         public string PreferredPayrollPaymentMethodId { get; set; }
         public string SalaryAccountNameArabic { get; set; }
     }
@@ -122,7 +122,7 @@ public class ListPayrollData
                 return new PayrollDataDto
                 {
                     InvoiceId = r.InvoiceId,
-                    InvoiceDate = r.InvoiceDate ?? DateTime.MinValue,
+                    InvoiceDate = r.InvoiceDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
                     EmployeeId = r.EmployeeId,
                     EmployeeName = r.EmployeeName,
                     PreferredPayrollPaymentMethodId = r.PreferredPayrollPaymentMethodId,

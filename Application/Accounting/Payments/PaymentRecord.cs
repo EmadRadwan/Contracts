@@ -24,7 +24,7 @@ public class PaymentRecord
 
     public string StatusDescription { get; set; }
     public string StatusDescriptionEnglish { get; set; }
-    public DateTime EffectiveDate { get; set; }
+    public DateOnly? EffectiveDate { get; set; }
     public DateTime CreatedStamp { get; set; }
     public string Comments { get; set; }
     public string PaymentRefNum { get; set; }
@@ -40,7 +40,7 @@ public class PaymentRecord
     public string? OrderId { get; set; }
     public bool IsDisbursement { get; set; }
     public string? ChequeNumber { get; set; }
-    public DateTime? ChequeDate { get; set; }
+    public DateOnly? ChequeDate { get; set; }
     public OrderPartyDto FromPartyId { get; set; }
     public string? ProjectId { get; set; }
     public string? ProjectName { get; set; }

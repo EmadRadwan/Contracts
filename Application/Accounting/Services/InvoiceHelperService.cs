@@ -116,7 +116,7 @@ public class InvoiceHelperService : IInvoiceHelperService
             await _invoiceUtilityService.SetInvoiceStatus(
                 invoice.InvoiceId,
                 invoice.StatusId,
-                DateTime.UtcNow);
+                DateOnly.FromDateTime(DateTime.UtcNow));
         }
 
         return new InvoiceDto3
@@ -682,7 +682,7 @@ public class InvoiceHelperService : IInvoiceHelperService
             StatusId = "INVOICE_IN_PROCESS",
             BillingAccountId = invoice.BillingAccountId,
             ContactMechId = null,
-            InvoiceDate = invoice.InvoiceDate ?? stamp,
+            InvoiceDate = invoice.InvoiceDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
             InvoiceMessage = null,
             ReferenceNumber = invoice.ReferenceNumber,
             Description = invoice.Description,
@@ -815,8 +815,8 @@ public class InvoiceHelperService : IInvoiceHelperService
                     PartyId = billToCustomerPartyId,
                     PartyIdFrom = billFromVendorPartyId,
                     BillingAccountId = billingAccountId,
-                    InvoiceDate = invoiceDate,
-                    DueDate = dueDate,
+                    InvoiceDate = DateOnly.FromDateTime(invoiceDate),
+                    DueDate = DateHelper.ToDateOnly(dueDate),
                     InvoiceTypeId = invoiceType,
                     StatusId = "INVOICE_IN_PROCESS",
                     CurrencyUomId = orderHeader.CurrencyUom,
@@ -1423,7 +1423,7 @@ public class InvoiceHelperService : IInvoiceHelperService
             if (autoApproveInvoice != "N")
             {
                 string nextStatusId = invoiceType == "PURCHASE_INVOICE" ? "INVOICE_IN_PROCESS" : "INVOICE_READY";
-                await _invoiceUtilityService.SetInvoiceStatus(invoiceId, nextStatusId, DateTime.UtcNow, null, false);
+                await _invoiceUtilityService.SetInvoiceStatus(invoiceId, nextStatusId, DateOnly.FromDateTime(DateTime.UtcNow), null, false);
             }
 
             return new InvoiceResponse

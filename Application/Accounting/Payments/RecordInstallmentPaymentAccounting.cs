@@ -15,9 +15,9 @@ public class RecordInstallmentPaymentAccounting
         public string PaymentId { get; set; } = null!;
         public string SalesRequestId { get; set; } = null!;
         public decimal Amount { get; set; }
-        public DateTime EffectiveDate { get; set; }
+        public DateOnly? EffectiveDate { get; set; }
         public string ChequeNumber { get; set; } = null!;
-        public DateTime? ChequeDate { get; set; }
+        public DateOnly? ChequeDate { get; set; }
         public string PartyIdFrom { get; set; } = null!; // Customer
         public string? Comments { get; set; }
     }
@@ -77,7 +77,7 @@ public class RecordInstallmentPaymentAccounting
                 var acctgTransParams = new CreateAcctgTransParams
                 {
                     AcctgTransTypeId = "INCOMING_PAYMENT", 
-                    TransactionDate = request.EffectiveDate.Date,
+                    TransactionDate = request.EffectiveDate,
                     IsPosted = "Y",
                     Description = description,
                     GlFiscalTypeId = "ACTUAL",

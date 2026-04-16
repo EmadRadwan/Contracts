@@ -10,7 +10,7 @@ public class EmployeeAdvanceSchedule
     public string ScheduleId { get; set; } = null!;
     public string AdvanceId { get; set; } = null!;
     public int InstallmentNumber { get; set; }
-    public DateTime DueDate { get; set; }
+    public DateOnly? DueDate { get; set; }
     public decimal ScheduledAmount { get; set; }
     public decimal DeductedAmount { get; set; }
     public string? StatusId { get; set; }

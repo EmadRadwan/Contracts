@@ -11,8 +11,8 @@ public class ListEmployeeAdvancesByDateRange
 {
     public class Query : IRequest<Results<EmployeeAdvancesResponse>>
     {
-        public DateTime FromDate { get; set; }
-        public DateTime ToDate { get; set; }
+        public DateOnly? FromDate { get; set; }
+        public DateOnly? ToDate { get; set; }
         public string Language { get; set; } = "en";
     }
 

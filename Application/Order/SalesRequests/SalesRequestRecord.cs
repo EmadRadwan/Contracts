@@ -16,7 +16,7 @@ public class SalesRequestRecord
 
     public decimal? ApartmentPricePerM2 { get; set; }
     public decimal? GardenPricePerM2 { get; set; }
-    public DateTime? SaleDate { get; set; }
+    public DateOnly? SaleDate { get; set; }
     public decimal? Discount { get; set; }
     public decimal? TotalPrice { get; set; }
 
@@ -26,7 +26,7 @@ public class SalesRequestRecord
     public decimal? AdvancePercent { get; set; }
     public decimal? MaintenancePercent { get; set; }
     public int? NumberOfInstallments { get; set; }
-    public DateTime? DateOfFirstInstallment { get; set; }
+    public DateOnly? DateOfFirstInstallment { get; set; }
     public int? MonthsBetweenInstallments { get; set; }
     public string ProjectName { get; set; } = string.Empty;
     public string FloorNumber { get; set; } = string.Empty;

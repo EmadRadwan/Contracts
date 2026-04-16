@@ -69,6 +69,7 @@ public static class ApplicationServiceExtensions
         services.AddMvc().AddJsonOptions(options =>
         {
             options.JsonSerializerOptions.Converters.Add(new DateTimeConverter());
+            options.JsonSerializerOptions.Converters.Add(new DateOnlyJsonConverter());
         });
 
         services.AddScoped<IPdfGenerationService, PdfGenerationService>();

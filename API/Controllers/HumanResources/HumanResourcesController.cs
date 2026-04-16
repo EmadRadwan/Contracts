@@ -47,7 +47,7 @@ public class HumanResourcesController : BaseApiController
     }
 
     [HttpGet("getEmployeeAdvancesByDateRange")]
-    public async Task<IActionResult> GetEmployeeAdvancesByDateRange([FromQuery] DateTime fromDate, [FromQuery] DateTime toDate)
+    public async Task<IActionResult> GetEmployeeAdvancesByDateRange([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate)
     {
         var language = GetLanguage();
         return HandleResults(await Mediator.Send(new ListEmployeeAdvancesByDateRange.Query

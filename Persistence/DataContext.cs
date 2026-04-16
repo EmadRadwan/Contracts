@@ -13577,7 +13577,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
               .HasColumnName("PAYMENT_ID");
 
         entity.Property(e => e.AdvanceDate)
-              .HasColumnType("datetime")
+              .HasColumnType("date")
               .HasColumnName("ADVANCE_DATE");
 
         entity.Property(e => e.Amount)
@@ -16290,7 +16290,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("CREATED_TX_STAMP");
 
                 entity.Property(e => e.EntryDate)
-                    .HasColumnType("datetime")
+                    .HasColumnType("date")
                     .HasColumnName("ENTRY_DATE");
 
                 entity.Property(e => e.FinAccountId)
@@ -16352,7 +16352,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("STATUS_ID");
 
                 entity.Property(e => e.TransactionDate)
-                    .HasColumnType("datetime")
+                    .HasColumnType("date")
                     .HasColumnName("TRANSACTION_DATE");
 
                 entity.HasOne(d => d.FinAccount)
@@ -21247,11 +21247,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("DESCRIPTION");
 
                 entity.Property(e => e.DueDate)
-                    .HasColumnType("datetime")
+                    .HasColumnType("date")
                     .HasColumnName("DUE_DATE");
 
                 entity.Property(e => e.InvoiceDate)
-                    .HasColumnType("datetime")
+                    .HasColumnType("date")
                     .HasColumnName("INVOICE_DATE");
 
                 entity.Property(e => e.InvoiceMessage)
@@ -21273,7 +21273,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("LAST_UPDATED_TX_STAMP");
 
                 entity.Property(e => e.PaidDate)
-                    .HasColumnType("datetime")
+                    .HasColumnType("date")
                     .HasColumnName("PAID_DATE");
 
                 entity.Property(e => e.PartyId)
@@ -22766,7 +22766,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("ISSUED_BY_USER_LOGIN_ID");
 
                 entity.Property(e => e.IssuedDateTime)
-                    .HasColumnType("datetime")
+                    .HasColumnType("date")
                     .HasColumnName("ISSUED_DATE_TIME");
 
                 entity.Property(e => e.LastUpdatedStamp)
@@ -28610,7 +28610,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                 // Business fields
                 // --------------------------------------------------------------
                 entity.Property(e => e.SaleDate)
-                      .HasColumnType("datetime")
+                      .HasColumnType("date")
                       .HasColumnName("SALE_DATE");
             
                 entity.Property(e => e.Discount)
@@ -28641,7 +28641,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                       .HasColumnName("MONTHS_BETWEEN_INSTALLMENTS");
             
                 entity.Property(e => e.DateOfFirstInstallment)
-                      .HasColumnType("datetime")
+                      .HasColumnType("date")
                       .HasColumnName("DATE_OF_FIRST_INSTALLMENT");
             
            
@@ -28728,7 +28728,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                       .IsRequired();
             
                 entity.Property(e => e.DueDate)
-                      .HasColumnType("datetime")
+                      .HasColumnType("date")
                       .HasColumnName("DUE_DATE")
                       .IsRequired();
             
@@ -32160,7 +32160,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("CURRENCY_UOM_ID");
 
                 entity.Property(e => e.EffectiveDate)
-                    .HasColumnType("datetime")
+                    .HasColumnType("date")
                     .HasColumnName("EFFECTIVE_DATE");
 
               
@@ -32252,7 +32252,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasMaxLength(50); 
 
                 entity.Property(e => e.ChequeDate)
-                    .HasColumnType("datetime");
+                    .HasColumnType("date");
                     
                     entity.Property(p => p.IsBankTransfer)
                         .HasColumnName("IS_BANK_TRANSFER")
@@ -53605,7 +53605,7 @@ entity.HasOne(d => d.CreatedByUserLoginNavigation)
                     .HasColumnName("CREATED_TX_STAMP");
 
                 entity.Property(e => e.DatetimeReceived)
-                    .HasColumnType("datetime")
+                    .HasColumnType("date")
                     .HasColumnName("DATETIME_RECEIVED");
 
                 entity.Property(e => e.InventoryItemId)
@@ -60090,7 +60090,7 @@ entity.HasOne(d => d.CreatedByUserLoginNavigation)
                     .HasColumnName("UOM_ID_TO");
 
                 entity.Property(e => e.FromDate)
-                    .HasColumnType("datetime")
+                    .HasColumnType("date")
                     .HasColumnName("FROM_DATE");
 
                 entity.Property(e => e.ConversionFactor).HasColumnName("CONVERSION_FACTOR");
@@ -60129,7 +60129,7 @@ entity.HasOne(d => d.CreatedByUserLoginNavigation)
                     .HasColumnName("ROUNDING_MODE");
 
                 entity.Property(e => e.ThruDate)
-                    .HasColumnType("datetime")
+                    .HasColumnType("date")
                     .HasColumnName("THRU_DATE");
 
                 entity.HasOne(d => d.CustomMethod)

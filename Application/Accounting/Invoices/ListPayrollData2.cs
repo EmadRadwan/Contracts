@@ -10,8 +10,8 @@ public class ListPayrollData2
 {
     public class Query : IRequest<Result<List<PayrollData2Dto>>>
     {
-        public DateTime FromDate { get; set; }
-        public DateTime ToDate { get; set; }
+        public DateOnly? FromDate { get; set; }
+        public DateOnly? ToDate { get; set; }
         public string OrganizationPartyId { get; set; }
     }
 
@@ -39,7 +39,7 @@ public class ListPayrollData2
         public decimal NetSalary { get; set; }
         public string Notes { get; set; } = "";
         public string PaymentMethod { get; set; }
-        public DateTime InvoiceDate { get; set; }
+        public DateOnly? InvoiceDate { get; set; }
         public string InvoiceId { get; set; }
     }
 
@@ -135,7 +135,7 @@ public class ListPayrollData2
                     NetSalary = netSalary,
                     PaymentMethod = inv.PreferredPayrollPaymentMethodId == "BANK_TRANSFER" ? "تحويل بنكي" :
                                    inv.PreferredPayrollPaymentMethodId == "CASH" ? "يصرف نقدا" : inv.PreferredPayrollPaymentMethodId,
-                    InvoiceDate = (DateTime)inv.InvoiceDate,
+                    InvoiceDate = inv.InvoiceDate,
                     InvoiceId = inv.InvoiceId,
                     Notes = ""
                 });

@@ -16,7 +16,7 @@ public class CreatePaymentParam
     public string? FinAccountTransId { get; set; }
     public string? PaymentPreferenceId { get; set; }
     
-    public DateTime? EffectiveDate { get; set; }
+    public DateOnly? EffectiveDate { get; set; }
     public decimal? Amount { get; set; }
     public decimal? ActualCurrencyAmount { get; set; }
     public string? PaymentRefNum { get; set; }
@@ -27,5 +27,5 @@ public class CreatePaymentParam
     public string? ProjectId { get; set; }
     public string? CostCenterId { get; set; }
     public string? SalesRequestId { get; set; }
-    public DateTime? ChequeDate { get; set; }
+    public DateOnly? ChequeDate { get; set; }
 }

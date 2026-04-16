@@ -16,10 +16,10 @@ public class EmployeeAdvance
     
     public string PartyId { get; set; } = null!;
     public string? PaymentId { get; set; }
-    public DateTime AdvanceDate { get; set; }
+    public DateOnly? AdvanceDate { get; set; }
     public decimal Amount { get; set; }
     public int? InstallmentCount { get; set; }
-    public DateTime? StartDate { get; set; }
+    public DateOnly? StartDate { get; set; }
     public string StatusId { get; set; } 
     public string? PayrollInvoiceId { get; set; }
     

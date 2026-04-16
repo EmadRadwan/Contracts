@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Persistence;
 
+
 namespace Application.Catalog.Products.Services.Inventory;
 
 public interface IInventoryService
@@ -233,7 +234,7 @@ public class InventoryService : IInventoryService
             {
                 var itemIssuance = await _utilityService.FindLocalOrDatabaseAsync<ItemIssuance>(param.ItemIssuanceId);
                 if (itemIssuance != null)
-                    newEntity.EffectiveDate = itemIssuance.IssuedDateTime;
+                    newEntity.EffectiveDate = DateHelper.ToStartOfDay(itemIssuance.IssuedDateTime);
 
                 newEntity.ItemIssuanceId = param.ItemIssuanceId;
             }

@@ -96,10 +96,10 @@ namespace Application.HumanResources
         public string PartyId { get; set; } = null!;
         public string? EmployeeName { get; set; }
         public string? AdvanceTypeId { get; set; }
-        public DateTime AdvanceDate { get; set; }
+        public DateOnly? AdvanceDate { get; set; }
         public decimal Amount { get; set; }
         public int? InstallmentCount { get; set; }
-        public DateTime? StartDate { get; set; }
+        public DateOnly? StartDate { get; set; }
         public string? StatusId { get; set; }
         public string? StatusDescription { get; set; }
         public string? Description { get; set; }
@@ -111,7 +111,7 @@ namespace Application.HumanResources
     {
         public string ScheduleId { get; set; } = null!;
         public int InstallmentNumber { get; set; }
-        public DateTime DueDate { get; set; }
+        public DateOnly? DueDate { get; set; }
         public decimal ScheduledAmount { get; set; }
         public decimal DeductedAmount { get; set; }
         public string? StatusId { get; set; }

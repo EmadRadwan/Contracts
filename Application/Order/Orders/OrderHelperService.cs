@@ -1399,7 +1399,7 @@ public class OrderHelperService : BaseService, IOrderHelperService
                             PaymentRefNum = paymentReference,
                             PaymentFromId = input.PartyId, // Assuming this is the placing customer
                             Comments = "Payment received offline and manually entered.",
-                            EventDate = DateTime.UtcNow
+                            EventDate = DateOnly.FromDateTime(DateTime.UtcNow)
                         };
 
                         var createPaymentResult = await CreatePaymentFromPreference(createPaymentFromPreferenceInput);
@@ -1582,11 +1582,11 @@ public class OrderHelperService : BaseService, IOrderHelperService
                     ot.OrderId == input.OrderId && ot.TermTypeId == "FIN_PAYMENT_TERM");
                 if (orderTerm?.TermDays != null)
                 {
-                    input.EffectiveDate = DateTime.UtcNow.AddDays(orderTerm.TermDays.Value);
+                    input.EffectiveDate = DateOnly.FromDateTime(DateTime.UtcNow);
                 }
                 else
                 {
-                    input.EffectiveDate = DateTime.UtcNow;
+                    input.EffectiveDate = DateOnly.FromDateTime(DateTime.UtcNow);
                 }
             }
 
@@ -1606,10 +1606,10 @@ public class OrderHelperService : BaseService, IOrderHelperService
                     where oib.OrderId == input.OrderId
                     select inv).FirstOrDefaultAsync();
 
-                DateTime? conversionDate = invoice?.InvoiceDate;
+                DateOnly? conversionDate = invoice?.InvoiceDate;
 
                 amount = (decimal)await _commonService.ConvertUom(orderHeader.CurrencyUom,
-                    partyAcctgPreference.BaseCurrencyUomId, DateTime.UtcNow, orderHeader.GrandTotal ?? 0, null);
+                    partyAcctgPreference.BaseCurrencyUomId, DateOnly.FromDateTime(DateTime.UtcNow), orderHeader.GrandTotal ?? 0, null);
 
                 currencyUomId = partyAcctgPreference.BaseCurrencyUomId;
                 actualCurrencyAmount = orderHeader.GrandTotal ?? 0;
@@ -1752,7 +1752,7 @@ public class OrderHelperService : BaseService, IOrderHelperService
                 PaymentPreferenceId = orderPaymentPreference.OrderPaymentPreferenceId,
                 Amount = orderPaymentPreference.MaxAmount,
                 StatusId = "PMNT_RECEIVED",
-                EffectiveDate = input.EventDate ?? DateTime.UtcNow,
+                EffectiveDate = input.EventDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
                 PartyIdFrom = paymentFromId,
                 PartyIdTo = payToPartyId,
                 PaymentRefNum = input.PaymentRefNum,

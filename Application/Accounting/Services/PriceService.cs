@@ -816,7 +816,7 @@ public class PriceService : IPriceService
                             var convertedValue = await _commonService.ConvertUom(
                                 currencyDefaultUomId,
                                 currencyUomIdTo,
-                                DateTime.UtcNow,
+                                DateOnly.FromDateTime(DateTime.UtcNow),
                                 result.BasePrice,
                                 null
                             );
@@ -849,7 +849,7 @@ public class PriceService : IPriceService
                             var convertedValue = await _commonService.ConvertUom(
                                 currencyDefaultUomId,
                                 currencyUomIdTo,
-                                DateTime.UtcNow,
+                                DateOnly.FromDateTime(DateTime.UtcNow),
                                 result.Price,
                                 null
                             );
@@ -882,7 +882,7 @@ public class PriceService : IPriceService
                             var convertedValue = await _commonService.ConvertUom(
                                 currencyDefaultUomId,
                                 currencyUomIdTo,
-                                DateTime.UtcNow,
+                                DateOnly.FromDateTime(DateTime.UtcNow),
                                 result.DefaultPrice.Value,
                                 null
                             );
@@ -915,7 +915,7 @@ public class PriceService : IPriceService
                             var convertedValue = await _commonService.ConvertUom(
                                 currencyDefaultUomId,
                                 currencyUomIdTo,
-                                DateTime.UtcNow,
+                                DateOnly.FromDateTime(DateTime.UtcNow),
                                 result.CompetitivePrice.Value,
                                 null);
 
@@ -948,7 +948,7 @@ public class PriceService : IPriceService
                             var convertedValue = await _commonService.ConvertUom(
                                 currencyDefaultUomId,
                                 currencyUomIdTo,
-                                DateTime.UtcNow,
+                                DateOnly.FromDateTime(DateTime.UtcNow),
                                 result.AverageCost.Value,
                                 null
                             );
@@ -981,7 +981,7 @@ public class PriceService : IPriceService
                             var convertedValue = await _commonService.ConvertUom(
                                 currencyDefaultUomId,
                                 currencyUomIdTo,
-                                DateTime.UtcNow,
+                                DateOnly.FromDateTime(DateTime.UtcNow),
                                 result.PromoPrice.Value,
                                 null
                             );
@@ -1014,7 +1014,7 @@ public class PriceService : IPriceService
                             var convertedValue = await _commonService.ConvertUom(
                                 currencyDefaultUomId,
                                 currencyUomIdTo,
-                                DateTime.UtcNow,
+                                DateOnly.FromDateTime(DateTime.UtcNow),
                                 result.SpecialPromoPrice.Value,
                                 null
                             );

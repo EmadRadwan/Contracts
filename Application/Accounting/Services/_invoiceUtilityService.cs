@@ -14,15 +14,15 @@ public interface IInvoiceUtilityService
     Task<bool> IsInvoiceInForeignCurrency(string invoiceId);
     Task<decimal> GetInvoiceTotal(string invoiceId, bool actualCurrency);
     Task<decimal> GetInvoiceNotApplied(string invoiceId);
-    Task<decimal> GetInvoiceApplied(string invoiceId, DateTime asOfDateTime, bool actualCurrency);
+    Task<decimal> GetInvoiceApplied(string invoiceId, DateOnly asOfDateTime, bool actualCurrency);
     Task<Dictionary<string, HashSet<string>>> GetInvoiceTaxAuthPartyAndGeos(string invoiceId);
 
     Task<decimal> GetInvoiceTaxTotalForTaxAuthPartyAndGeo(string invoiceId, string taxAuthPartyId, string taxAuthGeoId);
     Task<decimal> GetInvoiceUnattributedTaxTotal(string invoiceId);
     string GetNextInvoiceNumber(PartyAcctgPreference partyAcctgPreference);
 
-    Task SetInvoiceStatus(string invoiceId, string statusId, DateTime? statusDate = null,
-        DateTime? paidDate = null, bool actualCurrency = false);
+    Task SetInvoiceStatus(string invoiceId, string statusId, DateOnly? statusDate = null,
+        DateOnly? paidDate = null, bool actualCurrency = false);
 
     Task<InvoiceStatusDto> GetInvoiceStatus(string invoiceId);
 }
@@ -66,8 +66,8 @@ public class InvoiceUtilityService : IInvoiceUtilityService
         return newInvoiceSequence.ToString();
     }
 
-    public async Task SetInvoiceStatus(string invoiceId, string statusId, DateTime? statusDate = null,
-        DateTime? paidDate = null, bool actualCurrency = false)
+    public async Task SetInvoiceStatus(string invoiceId, string statusId, DateOnly? statusDate = null,
+        DateOnly? paidDate = null, bool actualCurrency = false)
     {
         try
         {
@@ -109,7 +109,7 @@ public class InvoiceUtilityService : IInvoiceUtilityService
                     }
 
                     // Set paidDate if provided, otherwise use current UTC time
-                    invoice.PaidDate = paidDate ?? DateTime.UtcNow;
+                    invoice.PaidDate = paidDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
                 }
 
                 // If we are setting the invoice to "INVOICE_READY" and it currently has a paid date, clear it
@@ -383,7 +383,7 @@ public class InvoiceUtilityService : IInvoiceUtilityService
     }
 
 
-    public async Task<decimal> GetInvoiceApplied(string invoiceId, DateTime asOfDateTime, bool actualCurrency)
+    public async Task<decimal> GetInvoiceApplied(string invoiceId, DateOnly asOfDateTime, bool actualCurrency)
     {
         decimal invoiceApplied = 0;
 
@@ -915,7 +915,7 @@ public class InvoiceUtilityService : IInvoiceUtilityService
             var invoiceTotal = await GetInvoiceTotal(invoiceId, true);
 
             // Call the methods to calculate applied amount
-            var invoiceApplied = await GetInvoiceApplied(invoiceId, DateTime.UtcNow, true);
+            var invoiceApplied = await GetInvoiceApplied(invoiceId, DateOnly.FromDateTime(DateTime.UtcNow), true);
 
             // Subtract applied amount from total to get not applied amount
             return invoiceTotal - invoiceApplied;
@@ -951,7 +951,7 @@ public class InvoiceUtilityService : IInvoiceUtilityService
             return;
 
         var employeeId = invoice.PartyIdFrom;
-        var invoiceDate = invoice.InvoiceDate?.Date ?? DateTime.UtcNow.Date;
+        var invoiceDate = invoice.InvoiceDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
         var invMonth = invoiceDate.Month;
         var invYear = invoiceDate.Year;
 
@@ -965,28 +965,26 @@ public class InvoiceUtilityService : IInvoiceUtilityService
         {
             if (advance.AdvanceTypeId == "EMPLOYEE_ADVANCE")
             {
-                // Short-term advance: was it given in the previous month?
-                var advDate = advance.AdvanceDate.Date;
-                if (advDate.Month == invMonth - 1 && advDate.Year == invYear)
+                // Short-term advance: was it issued in the previous month?
+                var (prevMonth, prevYear) = advance.AdvanceDate.GetPreviousMonth();
+
+                if (advance.AdvanceDate.IsInMonth(prevMonth, prevYear))
                 {
-                    // Fully deduct it
                     advance.PayrollInvoiceId = invoiceId;
-                    advance.StatusId = "ADVANCE_FULLY_PAID"; // or "ADVANCE_CLOSED" if you prefer
+                    advance.StatusId = "ADVANCE_FULLY_PAID";
                     advance.LastUpdatedStamp = DateTime.UtcNow;
                 }
             }
             else if (advance.AdvanceTypeId == "EMPLOYEE_LONG_TERM_ADVANCE")
             {
-                // Long-term: find schedules due this month that are still SCHEDULED
+                // Long-term: deduct all scheduled installments due this month
                 var dueSchedules = advance.EmployeeAdvanceSchedules
-                    .Where(s => s.StatusId == "SCHEDULED"
-                                && s.DueDate.Month == invMonth
-                                && s.DueDate.Year == invYear)
+                    .Where(s => s.StatusId == "SCHEDULED" 
+                                && s.DueDate.IsInMonth(invMonth, invYear))
                     .ToList();
 
                 foreach (var schedule in dueSchedules)
                 {
-                    // Fully deduct the schedule
                     schedule.DeductedAmount = schedule.ScheduledAmount;
                     schedule.PayrolInvoiceId = invoiceId;
                     schedule.StatusId = "SCHED_PAID";

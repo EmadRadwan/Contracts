@@ -5,7 +5,7 @@ public class SalesRequestDto
     // Core fields (mirrors the form)
     public string? SalesRequestId { get; set; }
     public string? ProductId { get; set; }
-    public DateTime? SaleDate { get; set; }
+    public DateOnly? SaleDate { get; set; }
     public string? FromPartyId { get; set; }
     public string? EmployeePartyId { get; set; }
 
@@ -20,7 +20,7 @@ public class SalesRequestDto
     public decimal? AdvancePercent { get; set; }
     public decimal? MaintenancePercent { get; set; }
     public int? NumberOfInstallments { get; set; }
-    public DateTime? DateOfFirstInstallment { get; set; }
+    public DateOnly? DateOfFirstInstallment { get; set; }
     public int? MonthsBetweenInstallments { get; set; }
     public bool? IsChequesDelivered { get; set; }
 

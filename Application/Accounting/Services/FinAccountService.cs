@@ -153,7 +153,7 @@ public class FinAccountService : IFinAccountService
                 PartyId = finAccount.OwnerPartyId,
                 Amount = paymentRunningTotal,
                 StatusId = "FINACT_TRNS_CREATED",
-                EffectiveDate = DateTime.UtcNow
+                EffectiveDate = DateOnly.FromDateTime(DateTime.UtcNow)
             };
 
             var finAccountTransId = await CreateFinAccountTrans(createTransParam);
@@ -169,7 +169,7 @@ public class FinAccountService : IFinAccountService
                     PaymentMethodId = payment.PaymentMethodId,
                     PaymentMethodTypeId = payment.PaymentMethodTypeId,
                     PaymentPreferenceId = payment.PaymentPreferenceId,
-                    EffectiveDate = DateTime.UtcNow,
+                    EffectiveDate = DateOnly.FromDateTime(DateTime.UtcNow),
                     PartyIdFrom = payment.PartyIdFrom,
                     PartyIdTo = payment.PartyIdTo,
                     PaymentTypeId = payment.PaymentTypeId,
@@ -205,7 +205,7 @@ public class FinAccountService : IFinAccountService
                     Amount = payment.Amount,
                     StatusId = "FINACT_TRNS_CREATED",
                     PaymentId = payment.PaymentId,
-                    EffectiveDate = DateTime.UtcNow
+                    EffectiveDate = DateOnly.FromDateTime(DateTime.UtcNow)
                 };
 
                 var finAccountTransId = await CreateFinAccountTrans(createTransParam);
@@ -218,7 +218,7 @@ public class FinAccountService : IFinAccountService
                     PaymentMethodId = payment.PaymentMethodId,
                     PaymentMethodTypeId = payment.PaymentMethodTypeId,
                     PaymentPreferenceId = payment.PaymentPreferenceId,
-                    EffectiveDate = DateTime.UtcNow,
+                    EffectiveDate = DateOnly.FromDateTime(DateTime.UtcNow),
                     PartyIdFrom = payment.PartyIdFrom,
                     PartyIdTo = payment.PartyIdTo,
                     PaymentTypeId = payment.PaymentTypeId,
@@ -270,8 +270,8 @@ public class FinAccountService : IFinAccountService
             {
                 FinAccountTransId = newFinAcctTransSequence,
                 FinAccountId = request.FinAccountId,
-                TransactionDate = request.TransactionDate ?? nowTimestamp,
-                EntryDate = request.EntryDate ?? nowTimestamp,
+                TransactionDate = request.TransactionDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
+                EntryDate = request.EntryDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
                 StatusId = request.StatusId ?? "FINACT_TRNS_APPROVED",
                 PerformedByPartyId = request.PerformedByPartyId,
                 FinAccountTransTypeId = request.FinAccountTransTypeId,

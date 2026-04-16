@@ -115,7 +115,7 @@ public class PaymentHelperService : IPaymentHelperService
             PaymentMethodId = parameters.PaymentMethodId,
             PaymentPreferenceId = parameters.PaymentPreferenceId,
             StatusId = parameters.StatusId,
-            EffectiveDate = parameters.EffectiveDate?.ToDateOnly() ?? DateHelper.Today,
+            EffectiveDate = parameters.EffectiveDate ?? DateHelper.Today,
             Amount = (decimal)parameters.Amount,
             PartyIdFrom = parameters.PartyIdFrom,
             PartyIdTo = parameters.PartyIdTo,
@@ -124,7 +124,7 @@ public class PaymentHelperService : IPaymentHelperService
             ActualCurrencyUomId = partyAccountingPreferences!.BaseCurrencyUomId,
             ActualCurrencyAmount = parameters.Amount,
             ChequeNumber = parameters.ChequeNumber, // Added
-            ChequeDate = parameters.ChequeDate?.ToDateOnly(),
+            ChequeDate = parameters.ChequeDate,
             OverrideGlAccountId = parameters.OverrideGlAccountId,
             WorkEffortId = parameters.ProjectId,
             CostCenterId = parameters.CostCenterId,
@@ -206,7 +206,7 @@ public class PaymentHelperService : IPaymentHelperService
         payment.Comments = param.Comments ?? payment.Comments;
         payment.PaymentRefNum = param.PaymentRefNum;
         //payment.FinAccountTransId = param.FinAccountTransId;
-        payment.EffectiveDate = param.EffectiveDate?.ToDateOnly() ?? payment.EffectiveDate;
+        payment.EffectiveDate = param.EffectiveDate ?? payment.EffectiveDate;
         payment.IsBankTransfer = param.IsBankTransfer;
         payment.PaymentPreferenceId = param.PaymentPreferenceId ?? payment.PaymentPreferenceId;
         payment.Amount = param.Amount ?? payment.Amount;
@@ -216,7 +216,7 @@ public class PaymentHelperService : IPaymentHelperService
         payment.CostCenterId = param.CostCenterId;
         payment.OverrideGlAccountId = param.OverrideGlAccountId;
         payment.ChequeNumber = param.ChequeNumber;
-        payment.ChequeDate = param.ChequeDate?.ToDateOnly();
+        payment.ChequeDate = param.ChequeDate;
 
 
         // Validate payment method (OFBiz: paymentMethod check)
@@ -1256,8 +1256,7 @@ public class PaymentHelperService : IPaymentHelperService
         try
         {
             // === NORMALIZE TO DATE-ONLY (Timezone Safe) ===
-            DateTime effectiveDate = (request.ChequeDate ?? request.PaymentDate ?? DateTime.UtcNow)
-                .ToDateOnly();   // Using the helper
+            DateOnly effectiveDate = request.PaymentDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
 
             
             // 1) Map parameters to createPayment
@@ -1270,7 +1269,7 @@ public class PaymentHelperService : IPaymentHelperService
                 EffectiveDate = effectiveDate,           // ← Now always date-only
                 PaymentTypeId = request.PaymentTypeId,
                 ChequeNumber = request.ChequeNumber,
-                ChequeDate = request.ChequeDate?.ToDateOnly(),
+                ChequeDate = request.ChequeDate,
                 SalesRequestId = request.SalesRequestId,
                 Comments = request.Comments,
                 IsBankTransfer = request.IsBankTransfer,

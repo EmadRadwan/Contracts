@@ -1,4 +1,5 @@
 using Application.Accounting.Services;
+using Application.Core;
 using Application.order.Orders;
 using Application.Shipments;
 using Domain;
@@ -282,7 +283,7 @@ public class ListPurchaseOrderItemsForReceive
                         {
                             ReceiptId = joined.ShipmentReceipt.ReceiptId,
                             ShipmentId = joined.ShipmentReceipt.ShipmentId,
-                            DatetimeReceived = joined.ShipmentReceipt.DatetimeReceived,
+                            DatetimeReceived = DateHelper.ToStartOfDay(joined.ShipmentReceipt.DatetimeReceived),
                             OrderId = joined.ShipmentReceipt.OrderId,
                             OrderItemSeqId = joined.ShipmentReceipt.OrderItemSeqId,
                             ProductId = joined.ShipmentReceipt.ProductId,

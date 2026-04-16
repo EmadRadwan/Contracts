@@ -23,7 +23,7 @@ public class ItemIssuance
     public string? ShipmentItemSeqId { get; set; }
     public string? FixedAssetId { get; set; }
     public string? MaintHistSeqId { get; set; }
-    public DateTime? IssuedDateTime { get; set; }
+    public DateOnly? IssuedDateTime { get; set; }
     public string? IssuedByUserLoginId { get; set; }
     public decimal? Quantity { get; set; }
     public decimal? CancelQuantity { get; set; }

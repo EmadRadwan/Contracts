@@ -108,7 +108,7 @@ public class InvoiceService : IInvoiceService
 
         // Dictionary to store payments applied to the invoice
         var payments = new Dictionary<string, decimal>();
-        DateTime? paidDate = null;
+        DateOnly? paidDate = null;
 
         // REFACTOR: Switch iteration to filteredPaymentApplications to only consider valid applications
         //           (matches intent of filtering logic, which was unused before; prevents invalid apps
@@ -152,7 +152,7 @@ public class InvoiceService : IInvoiceService
             // Check if totalPayments is greater than or equal to invoiceTotal
             if (totalPayments >= invoiceTotal)
                 // Set invoice status to PAID
-                await _invoiceUtilityService.SetInvoiceStatus(invoice.InvoiceId, "INVOICE_PAID", DateTime.UtcNow,
+                await _invoiceUtilityService.SetInvoiceStatus(invoice.InvoiceId, "INVOICE_PAID", DateOnly.FromDateTime(DateTime.UtcNow),
                     paidDate, true);
         }
     }
@@ -243,7 +243,7 @@ public class InvoiceService : IInvoiceService
             {
                 var invoiceAmount = await _invoiceUtilityService.GetInvoiceTotal(invoice.InvoiceId, actual);
                 var invoiceApplied =
-                    await _invoiceUtilityService.GetInvoiceApplied(invoice.InvoiceId, DateTime.UtcNow, actual);
+                    await _invoiceUtilityService.GetInvoiceApplied(invoice.InvoiceId, DateOnly.FromDateTime(DateTime.UtcNow), actual);
                 var invoiceToApply = invoiceAmount - invoiceApplied;
 
                 if (invoiceToApply > 0)

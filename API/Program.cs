@@ -288,3 +288,21 @@ public class UtcDateTimeConverter : JsonConverter<DateTime>
         writer.WriteStringValue(value.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss") + "Z");
     }
 }
+
+public class DateOnlyJsonConverter : JsonConverter<DateOnly>
+{
+    public override DateOnly Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        var dateStr = reader.GetString();
+        if (string.IsNullOrEmpty(dateStr)) 
+            return DateOnly.MinValue;
+
+        // Handles "2026-04-15", "2026-04-15T00:00:00", etc.
+        return DateOnly.Parse(dateStr.Split('T')[0]);
+    }
+
+    public override void Write(Utf8JsonWriter writer, DateOnly value, JsonSerializerOptions options)
+    {
+        writer.WriteStringValue(value.ToString("yyyy-MM-dd"));
+    }
+}

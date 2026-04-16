@@ -13,11 +13,11 @@ public class CreatePaymentAndFinAccountTransRequest
     public decimal Amount { get; set; }
     public string? StatusId { get; set; }
     public string? SalesRequestId { get; set; }
-    public DateTime? PaymentDate { get; set; }
+    public DateOnly? PaymentDate { get; set; }
     public string? Comments { get; set; }
     public string? PaymentRefNum { get; set; }
     public string? ChequeNumber { get; set; }
-    public DateTime? ChequeDate { get; set; }
+    public DateOnly? ChequeDate { get; set; }
     public string? OverrideGlAccountId { get; set; }
     public string? ProjectId { get; set; }
     public string? CostCenterId { get; set; }

@@ -18,14 +18,14 @@ public class PaymentDto
     public string? StatusDescription { get; set; }
     public bool IsPaymentDeleted { get; set; }
     public bool IsIncomingPayment { get; set; }
-    public DateTime? EffectiveDate { get; set; }
-    public DateTime? PaymentDate { get; set; }
+    public DateOnly? EffectiveDate { get; set; }
+    public DateOnly? PaymentDate { get; set; }
     public string? PaymentRefNum { get; set; }
     public decimal Amount { get; set; }
     public string? CurrencyUomId { get; set; }
     public string? Comments { get; set; }
     public string? ChequeNumber { get; set; }
-    public DateTime? ChequeDate { get; set; }
+    public DateOnly? ChequeDate { get; set; }
     public string? FinAccountTransId { get; set; }
     public string? OverrideGlAccountId { get; set; }
     public decimal? ActualCurrencyAmount { get; set; }

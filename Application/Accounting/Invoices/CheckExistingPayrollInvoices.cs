@@ -24,8 +24,8 @@ public class CheckExistingPayrollInvoices
 
         public async Task<Result<bool>> Handle(Query request, CancellationToken cancellationToken)
         {
-            var monthStart = new DateTime(request.InvoiceDate.Year, request.InvoiceDate.Month, 1);
-            var monthEnd = monthStart.AddMonths(1).AddTicks(-1);
+            var monthStart = new DateOnly(request.InvoiceDate.Year, request.InvoiceDate.Month, 1);
+            var monthEnd = monthStart.AddMonths(1);
 
 
             var existingInvoicesExist = await _context.Invoices

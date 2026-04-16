@@ -6,5 +6,5 @@ public class CreatePaymentFromPreferenceInput
     public string PaymentFromId { get; set; }
     public string PaymentRefNum { get; set; }
     public string Comments { get; set; }
-    public DateTime? EventDate { get; set; }
+    public DateOnly? EventDate { get; set; }
 }

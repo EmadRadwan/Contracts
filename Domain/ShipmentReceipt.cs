@@ -23,7 +23,7 @@ public class ShipmentReceipt
     public string? ReturnItemSeqId { get; set; }
     public string? RejectionId { get; set; }
     public string? ReceivedByUserLoginId { get; set; }
-    public DateTime? DatetimeReceived { get; set; }
+    public DateOnly? DatetimeReceived { get; set; }
     public string? ItemDescription { get; set; }
     public decimal? QuantityAccepted { get; set; }
     public decimal? QuantityRejected { get; set; }

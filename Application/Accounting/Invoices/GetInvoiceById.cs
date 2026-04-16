@@ -37,7 +37,7 @@ namespace Application.Accounting.Invoices
                         InvoiceId = inv.InvoiceId,
                         InvoiceTypeDescription = request.Language == "ar" ? invt.DescriptionArabic : invt.Description,
 
-                        InvoiceDate = (DateTime)inv.InvoiceDate,
+                        InvoiceDate = inv.InvoiceDate,
                         StatusId = inv.StatusId,
                         InvoiceTypeId = inv.InvoiceTypeId,
                         Status = inv.StatusId,

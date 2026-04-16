@@ -134,10 +134,11 @@ public class CreateEmployeeAdvance
 
             // 5. Short-term advance: 50% limit exceeded
             // ── Only for short-term: check previous advances in current month ──
-            if (dto.AdvanceTypeId == "EMPLOYEE_ADVANCE")
+            if (dto.AdvanceTypeId == "EMPLOYEE_ADVANCE" && dto.AdvanceDate.HasValue)
             {
-                // Start and end of the month of effectiveDate
-                var monthStart = new DateTime(dto.AdvanceDate.Year, dto.AdvanceDate.Month, 1);
+                var advanceDate = dto.AdvanceDate.Value;   // DateOnly
+
+                var monthStart = new DateOnly(advanceDate.Year, advanceDate.Month, 1);
                 var monthEnd = monthStart.AddMonths(1).AddDays(-1);
 
                 var previousAdvances = await _context.EmployeeAdvances
@@ -184,7 +185,7 @@ public class CreateEmployeeAdvance
                 }
 
                 // Optional: check dates are in future / ordered / no duplicates, etc.
-                var hasPastDue = dto.CustomDeductionSchedules.Any(s => s.DueDate < DateTime.UtcNow.Date);
+                var hasPastDue = dto.CustomDeductionSchedules.Any(s => s.DueDate < DateOnly.FromDateTime(DateTime.UtcNow));
                 if (hasPastDue)
                 {
                     return Results<EmployeeAdvanceDto>.Failure(

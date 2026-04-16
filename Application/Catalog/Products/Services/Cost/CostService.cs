@@ -185,7 +185,7 @@ public class CostService : ICostService
                             var convertedValue = await _commonService.ConvertUom(
                                 uomId,
                                 uomIdTo,
-                                DateTime.Now,
+                                DateOnly.FromDateTime(DateTime.UtcNow),
                                 originalValue,
                                 null
                             );

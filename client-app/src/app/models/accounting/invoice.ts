@@ -14,7 +14,7 @@ export interface Invoice {
     billingAccountId?: any;
     billingAccountName?: string
     contactMechId?: any;
-    invoiceDate?: string;
+    invoiceDate?: any;
     dueDate?: any;
     paidDate?: any;
     invoiceMessage?: any;

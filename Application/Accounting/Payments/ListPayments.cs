@@ -85,7 +85,7 @@ public class ListPayments
                         StatusDescription = isArabic ? sts.DescriptionArabic : sts.Description,
                         StatusDescriptionEnglish = sts.Description,
 
-                        EffectiveDate = (DateTime)pyt.EffectiveDate, // Keep full DateTime here
+                        EffectiveDate = pyt.EffectiveDate, // Keep full DateTime here
                         CreatedStamp = (DateTime)pyt.CreatedStamp,
                         Comments = pyt.Comments,
                         PaymentRefNum = pyt.PaymentRefNum,
@@ -147,10 +147,11 @@ public class ListPayments
             // === Post-processing: Calculate DaysUntilDue and DueStatusArabic ===
             foreach (var record in finalList)
             {
-                var effectiveDateOnly = record.EffectiveDate.Date;
+                var effectiveDateOnly = record.EffectiveDate ?? DateHelper.Today;
 
-                record.DaysUntilDue = (effectiveDateOnly - DateHelper.Today).Days;
+                record.DaysUntilDue = effectiveDateOnly.DayNumber - DateHelper.Today.DayNumber;
 
+                
                 if (record.StatusId != "PMNT_NOT_PAID")
                 {
                     record.DueStatusArabic = record.StatusDescription;
@@ -211,7 +212,7 @@ public class ListPayments
         }
 
         // Helper to get quarter text
-        private static string GetQuarterArabic(DateTime date)
+        private static string GetQuarterArabic(DateOnly date)
         {
             int quarterNum = (date.Month - 1) / 3 + 1;
             string quarterName = quarterNum switch

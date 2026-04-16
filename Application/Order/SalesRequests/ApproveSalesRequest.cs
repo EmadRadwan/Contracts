@@ -150,7 +150,7 @@ public class ApproveSalesRequest
 
                 if (sr.MaintenanceDeposit > 0)
                 {
-                    var maintenanceDueDate = (sr.SaleDate ?? DateTime.UtcNow.Date).AddYears(2);
+                    var maintenanceDueDate = (sr.SaleDate ?? DateOnly.FromDateTime(DateTime.UtcNow)).AddYears(2);
 
                     var maintenancePaymentParam = new CreatePaymentParam
                     {
@@ -192,7 +192,7 @@ public class ApproveSalesRequest
                 var acctgTransParams = new CreateAcctgTransParams
                 {
                     AcctgTransTypeId = "APARTMENT_SALE_INSTALLMENTS", // or "APARTMENT_SALE" if you add it later
-                    TransactionDate = sr.SaleDate ?? DateTime.UtcNow.Date,
+                    TransactionDate = sr.SaleDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
                     IsPosted = "Y",
                     Description = $"Apartment Sale - SR {sr.SalesRequestId} - {apartment.ApartmentName}",
                     GlFiscalTypeId = "ACTUAL",
@@ -249,7 +249,7 @@ public class ApproveSalesRequest
                     acctgTransParams = new CreateAcctgTransParams
                     {
                         AcctgTransTypeId = "APARTMENT_SALE_CHEQUE", // or "APARTMENT_SALE" if you add it later
-                        TransactionDate = sr.SaleDate ?? DateTime.UtcNow.Date,
+                        TransactionDate = sr.SaleDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
                         IsPosted = "Y",
                         Description = $"Apartment Sale - SR {sr.SalesRequestId} - {apartment.ApartmentName}",
                         GlFiscalTypeId = "ACTUAL",
@@ -307,7 +307,7 @@ public class ApproveSalesRequest
                         var maintenanceAcctgTransParams = new CreateAcctgTransParams
                         {
                             AcctgTransTypeId = "APARTMENT_MAINTENANCE_DEPOSIT",
-                            TransactionDate = sr.SaleDate ?? DateTime.UtcNow.Date,
+                            TransactionDate = sr.SaleDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
                             IsPosted = "Y",
                             Description = $"Maintenance Deposit - SR {sr.SalesRequestId} - {apartment.ApartmentName}",
                             GlFiscalTypeId = "ACTUAL",
@@ -429,7 +429,7 @@ public class ApproveSalesRequest
                 MonthsBetweenInstallments = (int)sr.MonthsBetweenInstallments,
                 IsChequesDelivered = sr.IsChequesDelivered,
                 MaintenanceDeposit = sr.MaintenanceDeposit,
-                SaleDate = sr.SaleDate ?? DateTime.UtcNow,
+                SaleDate = sr.SaleDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
                 Comments = sr.Comments,
                 StatusId = sr.StatusId,
                 StatusDescription = statusDesc,

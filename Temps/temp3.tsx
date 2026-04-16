@@ -1,211 +1,50 @@
-// ─────────────────────────────────────────────
-// 1. Common columns (before amount)
-const commonStartColumns = [
-    {
-        field: "paymentId",
-        title: getTranslatedLabel(`${localizationKey}.paymentId`, "Payment Number"),
-        cell: PaymentDescriptionCell,
-        width: 150,
-        locked: !show,
-    },
-    {
-        field: "paymentTypeDescription",
-        title: getTranslatedLabel(`${localizationKey}.paymentType`, "Payment Type"),
-        width: 150,
-    },
-    {
-        field: "amount",
-        title: getTranslatedLabel(`${localizationKey}.amount`, "Amount"),
-        width: 130,
-        filter: "numeric",
-    },
-];
+const handleCreate = async (data: { values: any; menuItem: string }) => {
+    const { values } = data;
+    const isDisbursement = values.isDisbursement ?? false;
 
-// ─────────────────────────────────────────────
-// 2. Outgoing PRIORITY columns (must come after amount)
-const outgoingPriorityColumns = [
-    {
-        field: "partyIdToName",
-        title: getTranslatedLabel(`${localizationKey}.to`, "To Party"),
-        width: 180,
-    },
-    {
-        field: "effectiveDate",
-        title: getTranslatedLabel(`${localizationKey}.date`, "Payment Date"),
-        width: 150,
-        format: "{0: dd/MM/yyyy}",
-        filter: "date",
-    },
-    {
-        field: "statusDescription",
-        title: getTranslatedLabel(`${localizationKey}.status`, "Status"),
-        width: 120,
-    },
-    {
-        field: "paymentRefNum",
-        title: getTranslatedLabel(`${localizationKey}.paymentRefNum`, "Ref Number"),
-        width: 140,
-    },
-];
+    const customerId = isDisbursement
+        ? values.partyIdTo?.fromPartyId
+        : values.partyIdFrom?.fromPartyId;
 
-// ─────────────────────────────────────────────
-// 3. Common middle columns (after amount / priority)
-const commonMiddleColumns = [
-    {
-        field: "paymentMethodTypeDescription",
-        title: getTranslatedLabel(`${localizationKey}.paymentMethodTypeDescription`, "Payment Method Type"),
-        width: 150,
-    },
-    {
-        field: "isBankTransfer",
-        title: getTranslatedLabel(`${localizationKey}.isBankTransfer`, "Bank Transfer"),
-        width: 120,
-        filter: "boolean",
-        cell: BankTransferCell,
-    },
-    {
-        field: "chequeNumber",
-        title: getTranslatedLabel(`${localizationKey}.chequeNumber`, "Cheque Number"),
-        width: 150,
-    },
-    {
-        field: "daysUntilDue",
-        title: getTranslatedLabel(`${localizationKey}.dueStatus`, "Due Status"),
-        width: 260,
-        cell: DueStatusCell,
-    },
-];
+    const organizationId = values.organizationPartyId;
+    const org = companies.find((c) => c.organizationPartyId === organizationId);
+    const orgName = org?.organizationPartyName ?? "";
 
-// ─────────────────────────────────────────────
-// 4. Incoming-only columns
-const incomingColumns = [
-    {
-        field: "buildingNumber",
-        title: getTranslatedLabel(`${localizationKey}.buildingNumber`, "Building Number"),
-        width: 140,
-    },
-    {
-        field: "productId",
-        title: getTranslatedLabel(`${localizationKey}.productId`, "Product ID"),
-        width: 130,
-    },
-    {
-        field: "partyIdFromName",
-        title: getTranslatedLabel(`${localizationKey}.from`, "From Party"),
-        width: 180,
-    },
-    {
-        field: "effectiveDate",
-        title: getTranslatedLabel(`${localizationKey}.date`, "Payment Date"),
-        width: 150,
-        format: "{0: dd/MM/yyyy}",
-        filter: "date",
-    },
-    {
-        field: "statusDescription",
-        title: getTranslatedLabel(`${localizationKey}.status`, "Status"),
-        width: 120,
-    },
-    {
-        field: "comments",
-        title: getTranslatedLabel(`${localizationKey}.comments`, "Comments"),
-        width: 280,
-    },
-    {
-        field: "projectName",
-        title: getTranslatedLabel(`${localizationKey}.projectName`, "Project / Comments"),
-        width: 180,
-    },
-    {
-        field: "costCenterDescription",
-        title: getTranslatedLabel(`${localizationKey}.costCenterDescription`, "Cost Center"),
-        width: 160,
-    },
-    {
-        field: "paymentRefNum",
-        title: getTranslatedLabel(`${localizationKey}.paymentRefNum`, "Ref Number"),
-        width: 140,
-    },
-];
+    const newPayment: Payment = {
+        paymentId: "",
+        paymentTypeId: values.paymentTypeId,
+        paymentMethodId: values.paymentMethodId,
+        statusId: PAYMENT_STATUSES.NOT_PAID,
 
-// ─────────────────────────────────────────────
-// 5. Outgoing remaining columns (EXCLUDING priority ones)
-const outgoingOtherColumns = [
-    {
-        field: "orderId",
-        title: getTranslatedLabel(`${localizationKey}.orderId`, "Order ID"),
-        width: 140,
-    },
-    {
-        field: "certificateNumber",
-        title: getTranslatedLabel(`${localizationKey}.certificateNumber`, "Certificate No"),
-        width: 150,
-    },
-    {
-        field: "partyIdFromName",
-        title: getTranslatedLabel(`${localizationKey}.from`, "From Party"),
-        width: 180,
-    },
-    {
-        field: "projectName",
-        title: getTranslatedLabel(`${localizationKey}.projectName`, "Project"),
-        width: 180,
-    },
-    {
-        field: "costCenterDescription",
-        title: getTranslatedLabel(`${localizationKey}.costCenterDescription`, "Cost Center"),
-        width: 160,
-    },
-    {
-        field: "salesRequestId",
-        title: getTranslatedLabel(`${localizationKey}.salesRequestId`, "Sales Request ID"),
-        width: 150,
-    },
-    {
-        field: "comments",
-        title: getTranslatedLabel(`${localizationKey}.comments`, "Comments"),
-        width: 280,
-    },
-];
+        partyIdFrom: isDisbursement ? organizationId : customerId,
+        partyIdFromName: isDisbursement
+            ? orgName
+            : values.partyIdFrom?.fromPartyName ?? "",
 
-// ─────────────────────────────────────────────
-// 6. Final columns (always last)
-const finalColumns = [
-    {
-        field: "approvedByPartyName",
-        title: getTranslatedLabel(`${localizationKey}.approvedByPartyName`, "Approved By"),
-        width: 150,
-    },
-    {
-        field: "createdByPartyName",
-        title: getTranslatedLabel(`${localizationKey}.createdByPartyName`, "Created By"),
-        width: 150,
-    },
-    {
-        title: getTranslatedLabel(`${localizationKey}.actions`, "Actions"),
-        width: 220,
-        cell: ActionsCell,
-    },
-];
+        partyIdTo: isDisbursement ? customerId : organizationId,
+        partyIdToName: isDisbursement
+            ? values.partyIdTo?.fromPartyName ?? ""
+            : orgName,
 
-// ─────────────────────────────────────────────
-// 7. Assemble final gridColumns
+        amount: values.amount,
+        effectiveDate: normalizeToDateString(values.effectiveDate),   // ← Clean!
 
-let gridColumns: any[] = [];
+        comments: values.comments ?? "",
+        organizationPartyId: organizationId,
+        isDepositWithDrawPayment: values.isDepositWithDrawPayment ? "Y" : "N",
+        finAccountTransTypeId: isDisbursement ? "WITHDRAWAL" : "DEPOSIT",
+        isDisbursement,
 
-if (isOutgoing) {
-    gridColumns = [
-        ...commonStartColumns,
-        ...outgoingPriorityColumns,   // 👈 inserted right after amount
-        ...commonMiddleColumns,
-        ...outgoingOtherColumns,
-        ...finalColumns,
-    ];
-} else {
-    gridColumns = [
-        ...commonStartColumns,
-        ...commonMiddleColumns,
-        ...incomingColumns,
-        ...finalColumns,
-    ];
-}
+        chequeNumber: values.chequeNumber ?? "",
+        chequeDate: normalizeToISOString(values.chequeDate),         // ← Clean!
+
+        overrideGlAccountId: values.overrideGlAccountId,
+        projectId: values.projectId?.projectId || null,
+        projectName: values.projectId?.projectName || null,
+        costCenterId: values.costCenterId || null,
+        isBankTransfer: values.isBankTransfer || false,
+        paymentRefNum: values.paymentRefNum || "",
+    };
+
+    await createPayment(newPayment);
+};

@@ -186,17 +186,18 @@ public class PaymentsController : BaseApiController
     // Controller addition
     [HttpGet("by-date-range")]
     public async Task<ActionResult<PaymentsDailyResponse>> GetPaymentsByDateRange(
-        [FromQuery] string paymentType,
-        [FromQuery] string fromDate,
-        [FromQuery] string toDate,
+        [FromQuery] string? paymentType,
+        [FromQuery] DateOnly fromDate,
+        [FromQuery] DateOnly toDate,
         CancellationToken ct = default)
     {
         var language = GetLanguage();
+
         var query = new ListPaymentsByDateRange.Query
         {
             PaymentType = paymentType,
-            FromDate = DateTime.ParseExact(fromDate, "yyyy-MM-dd", null),
-            ToDate = DateTime.ParseExact(toDate, "yyyy-MM-dd", null).AddDays(1).AddTicks(-1), // end of day
+            FromDate = fromDate,
+            ToDate = toDate,
             Language = language
         };
 

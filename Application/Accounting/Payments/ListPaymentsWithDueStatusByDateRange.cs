@@ -2,6 +2,7 @@ using Application.Order.Orders;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
+using Application.Core;   // ← Required for DateHelper
 
 namespace Application.Accounting.Payments;
 
@@ -9,8 +10,8 @@ public class ListPaymentsWithDueStatusByDateRange
 {
     public class Query : IRequest<ListPaymentsWithDueStatusResponse>
     {
-        public DateTime FromDate { get; set; }
-        public DateTime ToDate { get; set; }
+        public DateOnly FromDate { get; set; }
+        public DateOnly ToDate { get; set; }
         public string Language { get; set; } = "en";
     }
 
@@ -23,7 +24,6 @@ public class ListPaymentsWithDueStatusByDateRange
     public class Handler : IRequestHandler<Query, ListPaymentsWithDueStatusResponse>
     {
         private readonly DataContext _context;
-        private static readonly DateTime Today = DateTime.Today;
 
         public Handler(DataContext context)
         {
@@ -39,7 +39,7 @@ public class ListPaymentsWithDueStatusByDateRange
                         join ptt in _context.PaymentTypes on pyt.PaymentTypeId equals ptt.PaymentTypeId
                         join sts in _context.StatusItems on pyt.StatusId equals sts.StatusId
                         join pty in _context.Parties on pyt.PartyIdFrom equals pty.PartyId
-                        
+
                         join pmt in _context.PaymentMethodTypes on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into pmtJoin
                         from pmt in pmtJoin.DefaultIfEmpty()
 
@@ -68,7 +68,9 @@ public class ListPaymentsWithDueStatusByDateRange
                         join prod in _context.Products on sr.ProductId equals prod.ProductId into prodJoin
                         from prod in prodJoin.DefaultIfEmpty()
 
-                        where pyt.EffectiveDate >= request.FromDate && pyt.EffectiveDate <= request.ToDate
+                        where pyt.EffectiveDate >= request.FromDate 
+                           && pyt.EffectiveDate <= request.ToDate
+
                         select new PaymentRecord
                         {
                             PaymentId = pyt.PaymentId,
@@ -94,7 +96,8 @@ public class ListPaymentsWithDueStatusByDateRange
                             StatusDescription = isArabic ? sts.DescriptionArabic : sts.Description,
                             StatusDescriptionEnglish = sts.Description,
 
-                            EffectiveDate = (DateTime)pyt.EffectiveDate,
+                            // Fixed: Keep as DateOnly (do NOT cast to DateTime)
+                            EffectiveDate = pyt.EffectiveDate,
                             Comments = pyt.Comments,
                             PaymentRefNum = pyt.PaymentRefNum,
                             PaymentPreferenceId = pyt.PaymentPreferenceId,
@@ -112,7 +115,9 @@ public class ListPaymentsWithDueStatusByDateRange
                             },
 
                             IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
-                            OrganizationPartyId = ptt.ParentTypeId == "DISBURSEMENT" ? pyt.PartyIdFrom : pyt.PartyIdTo,
+                            OrganizationPartyId = ptt.ParentTypeId == "DISBURSEMENT" 
+                                ? pyt.PartyIdFrom 
+                                : pyt.PartyIdTo,
 
                             OrderId = ord != null ? ord.OrderId : null,
                             CertificateNumber = we != null ? we.CertificateNumber : null,
@@ -126,15 +131,21 @@ public class ListPaymentsWithDueStatusByDateRange
                             ProductId = prod != null ? prod.ProductId : null,
                             BuildingNumber = prod != null ? prod.BuildingNumber : null,
                             CreatedStamp = (DateTime)pyt.CreatedStamp,
-                            DaysUntilDue = EF.Functions.DateDiffDay(Today, (DateTime)pyt.EffectiveDate),
+
+                            // Fixed: Use DayNumber instead of EF.Functions.DateDiffDay + static Today
+                            DaysUntilDue = pyt.EffectiveDate.HasValue
+                                ? (pyt.EffectiveDate.Value.DayNumber - DateHelper.Today.DayNumber)
+                                : 0
                         };
 
             var data = await query.ToListAsync(ct);
 
+            // Post-processing for DueStatusArabic
             foreach (var record in data)
             {
-                var date = record.EffectiveDate;
-                var quarterNum = (date.Month - 1) / 3 + 1;
+                var effectiveDate = record.EffectiveDate ?? DateHelper.Today;
+
+                var quarterNum = (effectiveDate.Month - 1) / 3 + 1;
                 var quarterArabic = quarterNum switch
                 {
                     1 => "الأول",
@@ -143,7 +154,7 @@ public class ListPaymentsWithDueStatusByDateRange
                     4 => "الرابع",
                     _ => string.Empty
                 };
-                var quarterAndYear = $"(الربع {quarterArabic} {date.Year})";
+                var quarterAndYear = $"(الربع {quarterArabic} {effectiveDate.Year})";
 
                 if (record.StatusId == "PMNT_NOT_PAID")
                 {
@@ -153,18 +164,24 @@ public class ListPaymentsWithDueStatusByDateRange
                     if (record.DaysUntilDue < 0)
                     {
                         var daysOverdue = Math.Abs(record.DaysUntilDue);
-                        if (daysOverdue <= 30)
-                            record.DueStatusArabic = $"{type} متأخرة منذ {daysOverdue} يوم";
-                        else
-                            record.DueStatusArabic = $"{type} متأخرة جداً {quarterAndYear}";
+                        record.DueStatusArabic = daysOverdue <= 30
+                            ? $"{type} متأخرة منذ {daysOverdue} يوم"
+                            : $"{type} متأخرة جداً {quarterAndYear}";
                     }
-                    else if (record.DaysUntilDue == 0) record.DueStatusArabic = $"{typePaid} اليوم";
-                    else if (record.DaysUntilDue == 1) record.DueStatusArabic = $"{typePaid} غداً";
-                    else if (record.DaysUntilDue <= 3) record.DueStatusArabic = $"{typePaid} بعد {record.DaysUntilDue} أيام";
-                    else if (record.DaysUntilDue <= 7) record.DueStatusArabic = $"{typePaid} هذا الأسبوع";
-                    else if (record.DaysUntilDue <= 30) record.DueStatusArabic = $"{typePaid} خلال الشهر";
-                    else if (record.DaysUntilDue <= 90) record.DueStatusArabic = $"{typePaid} خلال 3 أشهر {quarterAndYear}";
-                    else record.DueStatusArabic = $"{typePaid} لاحقاً {quarterAndYear}";
+                    else if (record.DaysUntilDue == 0)
+                        record.DueStatusArabic = $"{typePaid} اليوم";
+                    else if (record.DaysUntilDue == 1)
+                        record.DueStatusArabic = $"{typePaid} غداً";
+                    else if (record.DaysUntilDue <= 3)
+                        record.DueStatusArabic = $"{typePaid} بعد {record.DaysUntilDue} أيام";
+                    else if (record.DaysUntilDue <= 7)
+                        record.DueStatusArabic = $"{typePaid} هذا الأسبوع";
+                    else if (record.DaysUntilDue <= 30)
+                        record.DueStatusArabic = $"{typePaid} خلال الشهر";
+                    else if (record.DaysUntilDue <= 90)
+                        record.DueStatusArabic = $"{typePaid} خلال 3 أشهر {quarterAndYear}";
+                    else
+                        record.DueStatusArabic = $"{typePaid} لاحقاً {quarterAndYear}";
                 }
                 else
                 {

@@ -13,6 +13,7 @@ import {
 } from "../slice/paymentsUiSlice";
 import {setSelectedPayment} from "../../slice/accountingSharedUiSlice";
 import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
+import { normalizeToDateString } from "../../../../app/util/utils";
 
 interface Company {
   organizationPartyId: string;
@@ -335,6 +336,9 @@ const handleCreate = async (data: {
   const org = companies.find((c) => c.organizationPartyId === organizationId);
   const orgName = org?.organizationPartyName ?? "";
 
+  
+
+
   const newPayment: Payment = {
     paymentId: "",
     paymentTypeId: values.paymentTypeId,
@@ -345,14 +349,14 @@ const handleCreate = async (data: {
     partyIdTo: isDisbursement ? customerId : organizationId,
     partyIdToName: isDisbursement ? values.partyIdTo?.fromPartyName ?? "" : orgName,
     amount: values.amount,
-    effectiveDate: values.effectiveDate ?? new Date().toISOString(),
+    effectiveDate: normalizeToDateString(values.effectiveDate),   // ← Clean!
     comments: values.comments ?? "",
     organizationPartyId: organizationId,
     isDepositWithDrawPayment: values.isDepositWithDrawPayment ? "Y" : "N",
     finAccountTransTypeId: isDisbursement ? "WITHDRAWAL" : "DEPOSIT",
     isDisbursement,
     chequeNumber: values.chequeNumber ?? "",
-    chequeDate: values.chequeDate ? new Date(values.chequeDate).toISOString() : null,
+    chequeDate: normalizeToDateString(values.chequeDate),
     overrideGlAccountId: values.overrideGlAccountId,
     projectId: values.projectId?.projectId || null,
     projectName: values.projectId?.projectName || null,

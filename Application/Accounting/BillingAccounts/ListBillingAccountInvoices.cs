@@ -74,7 +74,7 @@ public class ListBillingAccountInvoices
                         InvoiceId = invoice.InvoiceId,
                         InvoiceTypeId = invoice.InvoiceTypeId,
                         InvoiceTypeDescription = invoiceType.Description,
-                        InvoiceDate = (DateTime)invoice.InvoiceDate,
+                        InvoiceDate = invoice.InvoiceDate,
                         StatusId = invoice.StatusId,
                         StatusDescription = status.Description,
                         Description = invoice.Description,

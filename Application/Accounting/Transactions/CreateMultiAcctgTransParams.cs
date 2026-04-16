@@ -3,7 +3,7 @@ namespace Application.Accounting.Transactions
     public class CreateMultiAcctgTransParams
     {
         public string AcctgTransTypeId { get; set; }
-        public DateTime TransactionDate { get; set; }
+        public DateOnly? TransactionDate { get; set; }
         public string OrganizationPartyId { get; set; }
         public string HeaderDescription { get; set; } // REFACTOR: Added HeaderDescription for transaction header
         public string Description { get; set; } // REFACTOR: Retained for backward compatibility or alternative use

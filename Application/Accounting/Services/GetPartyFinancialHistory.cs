@@ -489,7 +489,7 @@ public class GetPartyFinancialHistory
                         inv.InvoiceTypeId,
                         InvoiceDate = inv.InvoiceDate, // Normalize date
                         PaymentId = pmt != null ? pmt.PaymentId : null,
-                        PaymentEffectiveDate = pmt != null ? pmt.EffectiveDate : (DateTime?)null, // Normalize date
+                        PaymentEffectiveDate = pmt != null ? pmt.EffectiveDate : DateOnly.FromDateTime(DateTime.UtcNow), // Normalize date
                         PaymentAppliedAmount = pap != null ? pap.AmountApplied : 0,
                         PaymentAmount = pmt != null ? pmt.Amount : 0,
                         CurrencyUomId = inv.CurrencyUomId ?? (pmt != null ? pmt.ActualCurrencyUomId : currencyUomId)
@@ -507,7 +507,7 @@ public class GetPartyFinancialHistory
                     decimal total = await _invoiceUtilityService.GetInvoiceTotal(item.InvoiceId, actualCurrency);
                     decimal amountApplied = (decimal)(item.PaymentAppliedAmount > 0
                         ? item.PaymentAppliedAmount
-                        : await _invoiceUtilityService.GetInvoiceApplied(item.InvoiceId, DateTime.UtcNow,
+                        : await _invoiceUtilityService.GetInvoiceApplied(item.InvoiceId, DateOnly.FromDateTime(DateTime.UtcNow),
                             actualCurrency));
                     decimal amountToApply = await _invoiceUtilityService.GetInvoiceNotApplied(item.InvoiceId);
 
@@ -743,7 +743,7 @@ public class GetPartyFinancialHistory
                 {
                     decimal total = await _invoiceUtilityService.GetInvoiceTotal(inv.InvoiceId, actualCurrency);
                     decimal applied =
-                        await _invoiceUtilityService.GetInvoiceApplied(inv.InvoiceId, DateTime.UtcNow, actualCurrency);
+                        await _invoiceUtilityService.GetInvoiceApplied(inv.InvoiceId, DateOnly.FromDateTime(DateTime.UtcNow), actualCurrency);
                     decimal notApplied = total - applied;
 
                     if (inv.InvoiceTypeId == "SALES_INVOICE")

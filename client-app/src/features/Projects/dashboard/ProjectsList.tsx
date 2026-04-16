@@ -3,8 +3,6 @@ import {
     Grid as KendoGrid,
     GRID_COL_INDEX_ATTRIBUTE,
     GridColumn as Column, GridDataStateChangeEvent,
-    GridPageChangeEvent,
-    GridSortChangeEvent,
     GridToolbar,
 } from "@progress/kendo-react-grid";
 import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
@@ -17,11 +15,15 @@ import ProjectMenu from "../menu/ProjectMenu";
 import {DataResult, State} from "@progress/kendo-data-query";
 import {handleDatesArray} from "../../../app/util/utils";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
+import {ProjectReportExcel} from "../report/ProjectReportExcel";
 
 export default function ProjectsList() {
     const [editMode, setEditMode] = useState(0);
     const [project, setProject] = useState<WorkEffort | undefined>(undefined);
     const [projects, setProjects] = React.useState<DataResult>({data: [], total: 0});
+
+    const [reportDialogOpen, setReportDialogOpen] = useState(false);
+    const [selectedProjectForReport, setSelectedProjectForReport] = useState<{id: string, name: string} | null>(null);
 
     const [dataState, setDataState] = React.useState<State>({take: 6, skip: 0});
     const { data, error, isFetching, isLoading } = useFetchProjectsQuery({...dataState});
@@ -69,9 +71,25 @@ export default function ProjectsList() {
                 {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
                 {...navigationAttributes}
             >
-                <Button onClick={() => handleSelectProject(props.dataItem.workEffortId)}>
-                    {props.dataItem.workEffortId}
-                </Button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Button onClick={() => handleSelectProject(props.dataItem.workEffortId)}>
+                        {props.dataItem.workEffortId}
+                    </Button>
+                    <Button 
+                        size="small" 
+                        variant="outlined" 
+                        color="success"
+                        onClick={() => {
+                            setSelectedProjectForReport({
+                                id: props.dataItem.workEffortId,
+                                name: props.dataItem.projectName
+                            });
+                            setReportDialogOpen(true);
+                        }}
+                    >
+                        {getTranslatedLabel("project.projects.report", "Project Report")}
+                    </Button>
+                </div>
             </td>
         );
     };
@@ -113,7 +131,7 @@ export default function ProjectsList() {
                         field="workEffortId"
                         title={getTranslatedLabel("project.projects.list.num", "Project Number")}
                         cell={ProjectNumCell}
-                        width={200}
+                        width={320}
                         locked={true}
                     />
                     <Column
@@ -144,6 +162,17 @@ export default function ProjectsList() {
                     />
                 </KendoGrid>
                 {isFetching && <LoadingComponent message={getTranslatedLabel("project.projects.list.loading", "Loading Projects...")} />}
+                {reportDialogOpen && selectedProjectForReport && (
+                    <ProjectReportExcel
+                        projectId={selectedProjectForReport.id}
+                        projectName={selectedProjectForReport.name}
+                        open={reportDialogOpen}
+                        onClose={() => {
+                            setReportDialogOpen(false);
+                            setSelectedProjectForReport(null);
+                        }}
+                    />
+                )}
             </Paper>
         </>
     );

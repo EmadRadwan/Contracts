@@ -8,7 +8,7 @@ public class CreatePaymentAndFinAccountTransResponse
     public string ActualCurrencyUomId { get; set; }
     public string? Comments { get; set; }
     public string? ChequeNumber { get; set; }
-    public DateTime? ChequeDate { get; set; }
+    public DateOnly? ChequeDate { get; set; }
     public string? PartyIdFromName { get; set; }
     public string? PartyIdToName { get; set; }
 }

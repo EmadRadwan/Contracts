@@ -8,8 +8,8 @@ public class FinAccountTransListDto
     public string? FinAccountId { get; set; }
     public string? PartyId { get; set; }
     public string? GlReconciliationId { get; set; }
-    public DateTime? TransactionDate { get; set; }
-    public DateTime? EntryDate { get; set; }
+    public DateOnly? TransactionDate { get; set; }
+    public DateOnly? EntryDate { get; set; }
     public decimal? Amount { get; set; }
     public string? PaymentId { get; set; }
     public string? OrderId { get; set; }

@@ -127,7 +127,7 @@ public class UpdateOrApproveSalesOrderPayments
                             savedPayment.PartyIdTo = orderRoleBillFromVendor.PartyId;
                             savedPayment.RoleTypeIdTo = orderRoleBillToCustomer.RoleTypeId;
                             savedPayment.LastUpdatedStamp = stamp;
-                            savedPayment.EffectiveDate = stamp;
+                            savedPayment.EffectiveDate = DateOnly.FromDateTime(DateTime.UtcNow);
                             savedPayment.Amount = updatedPayment.Amount;
                             savedPayment.StatusId = "PMNT_NOT_PAID";
                         }
@@ -189,7 +189,7 @@ public class UpdateOrApproveSalesOrderPayments
                             PartyIdTo = orderRoleBillFromVendor.PartyId,
                             RoleTypeIdTo = orderRoleBillToCustomer.RoleTypeId,
                             PaymentRefNum = null,
-                            EffectiveDate = stamp,
+                            EffectiveDate = DateOnly.FromDateTime(DateTime.UtcNow),
                             Amount = updatedPayment.Amount,
                             CurrencyUomId = order.CurrencyUom,
                             Comments = null,

@@ -136,7 +136,7 @@ public class ShipmentService : IShipmentService
                 ReturnId = parameters.ReturnId,
                 ReturnItemSeqId = parameters.ReturnItemSeqId,
                 QuantityRejected = parameters.QuantityRejected ?? 0,
-                DatetimeReceived = DateTime.UtcNow,
+                DatetimeReceived = DateOnly.FromDateTime(DateTime.UtcNow),
                 CreatedStamp = DateTime.UtcNow,
                 LastUpdatedStamp = DateTime.UtcNow,
                 ReceiptId = newShipmentReceiptSequence

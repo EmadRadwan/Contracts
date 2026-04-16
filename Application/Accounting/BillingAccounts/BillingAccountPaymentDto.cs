@@ -7,7 +7,7 @@ public class BillingAccountPaymentDto
     public string PaymentMethodTypeId { get; set; }
     public string InvoiceId { get; set; }
     public string InvoiceItemSeqId { get; set; }
-    public DateTime EffectiveDate { get; set; }
+    public DateOnly EffectiveDate { get; set; }
     public decimal AmountApplied { get; set; }
     public decimal Amount { get; set; }
 }

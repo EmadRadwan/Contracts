@@ -9,7 +9,7 @@ public class PaymentPartyNameDto
     public string PaymentMethodTypeId { get; set; }
     public string PaymentTypeId { get; set; }
     public string StatusId { get; set; }
-    public DateTime? EffectiveDate { get; set; }
+    public DateOnly? EffectiveDate { get; set; }
     public string FinAccountTransId { get; set; }
 
     // PaymentMethodType
