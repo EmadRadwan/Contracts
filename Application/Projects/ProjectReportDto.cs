@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Application.Accounting.Payments;
 
 namespace Application.Projects
 {
@@ -7,6 +8,7 @@ namespace Application.Projects
     {
         public List<ProjectExpenseRecord> Expenses { get; set; } = new();
         public List<ProjectRevenueRecord> Revenues { get; set; } = new();
+        public List<PaymentRecord> DirectPayments { get; set; } = new();
     }
 
     public class ProjectExpenseRecord
@@ -14,6 +16,7 @@ namespace Application.Projects
         public string? ExpenseItemKey { get; set; }
         public string? CertificateKey { get; set; }
         public string? CertificateNumber { get; set; }
+        public string? PaymentId { get; set; }
         public string? ProjectId { get; set; }
         public string? PartyId { get; set; }
         public string? PartyName { get; set; }
@@ -40,13 +43,17 @@ namespace Application.Projects
         public decimal GratuitiesAmount { get; set; }
         public decimal NetCertifiedAmount { get; set; }
         public decimal AchievementPercentage { get; set; }
+        public string? CertificateTypeArabic { get; set; }
     }
 
     public class ProjectRevenueRecord
     {
         public string? PaymentId { get; set; }
+        public string? StatusId { get; set; }
+        public string? StatusDescription { get; set; }
         public string? SalesRequestId { get; set; }
         public string? ApartmentId { get; set; }
+        public string? BuildingNumber { get; set; }
         public string? ProjectId { get; set; }
         public string? ProjectName { get; set; }
         public string? CustomerPartyId { get; set; }
@@ -66,5 +73,6 @@ namespace Application.Projects
         public DateTime? CreatedDate { get; set; }
         public string? Comments { get; set; }
         public string? ChequeNumber { get; set; }
+        public string? DueStatusArabic { get; set; }
     }
 }

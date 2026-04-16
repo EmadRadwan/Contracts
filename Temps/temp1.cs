@@ -1,293 +1,378 @@
 using Application.Accounting.Payments;
-using Application.Accounting.Services;
-using Application.Catalog.ProductStores;
 using Application.Core;
-using Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 
-namespace Application.HumanResources;
-
-public class UpdateEmployeeAdvance
+namespace Application.Projects
 {
-    public class Command : IRequest<Results<EmployeeAdvanceDto>>
+    public class GetProjectReport
     {
-        public EmployeeAdvanceDto AdvanceDto { get; set; } = null!;
-        public string Language { get; set; } = "en";
-    }
-
-    public class Handler : IRequestHandler<Command, Results<EmployeeAdvanceDto>>
-    {
-        private readonly DataContext _context;
-        private readonly IUtilityService _utilityService;
-        private readonly IProductStoreService _productStoreService;
-        private readonly IPaymentHelperService _paymentHelperService;
-
-        public Handler(
-            DataContext context,
-            IUtilityService utilityService,
-            IProductStoreService productStoreService,
-            IPaymentHelperService paymentHelperService)
+        public class Query : IRequest<ProjectReportDto>
         {
-            _context = context;
-            _utilityService = utilityService;
-            _productStoreService = productStoreService;
-            _paymentHelperService = paymentHelperService;
+            public string ProjectId { get; set; } = null!;
+            public DateTime? StartDate { get; set; }
+            public DateTime? EndDate { get; set; }
+            public bool AllData { get; set; }
         }
 
-        public async Task<Results<EmployeeAdvanceDto>> Handle(Command request, CancellationToken ct)
+        public class Handler : IRequestHandler<Query, ProjectReportDto>
         {
-            var dto = request.AdvanceDto;
+            private readonly DataContext _context;
 
-            // 1. Load existing advance with schedules
-            var advance = await _context.EmployeeAdvances
-                .Include(a => a.EmployeeAdvanceSchedules)
-                .FirstOrDefaultAsync(x => x.AdvanceId == dto.AdvanceId, ct);
-
-            if (advance == null)
+            public Handler(DataContext context)
             {
-                return Results<EmployeeAdvanceDto>.Failure(
-                    $"No employee advance found with ID {dto.AdvanceId}.",
-                    "ADVANCE_NOT_FOUND");
+                _context = context;
             }
 
-            // 2. Prevent modification of closed/final states
-            if (advance.StatusId is "ADVANCE_PAID" or "ADVANCE_CANCELLED" or "ADVANCE_REJECTED")
+            public async Task<ProjectReportDto> Handle(Query request, CancellationToken cancellationToken)
             {
-                return Results<EmployeeAdvanceDto>.Failure(
-                    "Cannot modify a paid, cancelled or rejected advance.",
-                    "ADVANCE_CLOSED");
-            }
+                var expenses = await GetExpenses(request, cancellationToken);
+                var revenues = await GetRevenues(request, cancellationToken);
+                var directPayments = await GetDirectPayments(request, cancellationToken);
 
-            var isLongTerm = dto.AdvanceTypeId == "EMPLOYEE_LONG_TERM_ADVANCE";
-            var wasLongTerm = advance.AdvanceTypeId == "EMPLOYEE_LONG_TERM_ADVANCE";
+                // Filter out direct payments that were already reported in expenses
+                var expensePaymentIds = expenses
+                    .Where(e => !string.IsNullOrEmpty(e.PaymentId))
+                    .Select(e => e.PaymentId!)
+                    .ToHashSet();
 
-            // 3. Core validations
-            if (string.IsNullOrEmpty(dto.PartyId))
-            {
-                return Results<EmployeeAdvanceDto>.Failure(
-                    "معرف الموظف (PartyId) مطلوب.", "EMPLOYEE_ID_REQUIRED");
-            }
+                var filteredDirectPayments = directPayments
+                    .Where(dp => !expensePaymentIds.Contains(dp.PaymentId))
+                    .ToList();
 
-            var employeeId = dto.PartyId;
-
-            // Employee role check
-            if (!await _context.PartyRoles.AnyAsync(pr => 
-                    pr.PartyId == employeeId && pr.RoleTypeId == "EMPLOYEE", ct))
-            {
-                return Results<EmployeeAdvanceDto>.Failure(
-                    "هذا الطرف ليس موظفًا مسجلاً (دور EMPLOYEE غير موجود).", 
-                    "EMPLOYEE_ROLE_MISSING");
-            }
-
-            // Active employment check
-            if (!await _context.Employments.AnyAsync(e => 
-                    e.PartyIdTo == employeeId 
-                    && e.FromDate <= DateHelper.Today 
-                    && (e.ThruDate == null || e.ThruDate > DateHelper.Today), ct))
-            {
-                return Results<EmployeeAdvanceDto>.Failure(
-                    "لا يوجد سجل توظيف نشط لهذا الموظف.", "NO_ACTIVE_EMPLOYMENT");
-            }
-
-            // GL accounts check
-            var glTypes = await _context.PartyGlAccounts
-                .Where(pga => pga.PartyId == employeeId 
-                           && pga.OrganizationPartyId == "Company"
-                           && pga.RoleTypeId == "EMPLOYEE")
-                .Select(pga => pga.GlAccountTypeId)
-                .Distinct()
-                .ToListAsync(ct);
-
-            if (!glTypes.Contains("ACCOUNTS_RECEIVABLE") || !glTypes.Contains("ACCOUNTS_PAYABLE"))
-            {
-                return Results<EmployeeAdvanceDto>.Failure(
-                    "يجب ربط حساب ذمم مدينة وحساب مستحقات بالموظف أولاً.", 
-                    "GL_ACCOUNTS_NOT_LINKED");
-            }
-
-            // Salary check
-            var monthlySalary = await _context.RateAmounts
-                .Where(ra => ra.PartyId == employeeId 
-                          && ra.PeriodTypeId == "RATE_MONTH"
-                          && ra.FromDate <= DateHelper.Today
-                          && (ra.ThruDate == null || ra.ThruDate > DateHelper.Today))
-                .OrderByDescending(ra => ra.FromDate)
-                .Select(ra => ra.Amount)
-                .FirstOrDefaultAsync(ct);
-
-            if (monthlySalary <= 0)
-            {
-                return Results<EmployeeAdvanceDto>.Failure(
-                    "لم يتم العثور على راتب شهري صالح.", "INVALID_OR_MISSING_SALARY");
-            }
-
-            decimal maxAllowedShortTerm = (decimal)monthlySalary * 0.50m;
-
-            // Amount validation
-            if ((dto.Amount ?? 0) <= 0)
-            {
-                return Results<EmployeeAdvanceDto>.Failure(
-                    "المبلغ يجب أن يكون أكبر من صفر.", "INVALID_AMOUNT");
-            }
-
-            // ────────────────────────────────────────────────────────────────
-            // Short-term: Monthly limit check (excluding current advance)
-            // ────────────────────────────────────────────────────────────────
-            if (dto.AdvanceTypeId == "EMPLOYEE_ADVANCE" && dto.AdvanceDate.HasValue)
-            {
-                var advanceDate = dto.AdvanceDate.Value;
-                var monthStart = new DateOnly(advanceDate.Year, advanceDate.Month, 1);
-                var monthEnd = monthStart.AddMonths(1).AddDays(-1);
-
-                var previousAdvancesThisMonth = await _context.EmployeeAdvances
-                    .Where(ea => ea.PartyId == employeeId
-                              && ea.AdvanceDate >= monthStart
-                              && ea.AdvanceDate <= monthEnd
-                              && ea.AdvanceId != advance.AdvanceId
-                              && ea.StatusId != "ADVANCE_CANCELLED"
-                              && ea.StatusId != "ADVANCE_REJECTED")
-                    .SumAsync(ea => ea.Amount, ct);
-
-                var totalThisMonth = previousAdvancesThisMonth + (dto.Amount ?? 0);
-
-                if (totalThisMonth > maxAllowedShortTerm)
+                return new ProjectReportDto
                 {
-                    return Results<EmployeeAdvanceDto>.Failure(
-                        $"تجاوز الحد الشهري للسلف القصيرة الأجل (الحد الأقصى: {maxAllowedShortTerm:N2}).",
-                        "MONTHLY_ADVANCE_LIMIT_EXCEEDED");
-                }
+                    Expenses = expenses,
+                    Revenues = revenues,
+                    DirectPayments = filteredDirectPayments
+                };
             }
 
-            // ────────────────────────────────────────────────────────────────
-            // Long-term validations
-            // ────────────────────────────────────────────────────────────────
-            if (isLongTerm)
+            private async Task<List<ProjectExpenseRecord>> GetExpenses(Query request, CancellationToken ct)
             {
-                if (dto.CustomDeductionSchedules == null || !dto.CustomDeductionSchedules.Any())
+                var query = from header in _context.WorkEfforts.AsNoTracking()
+                            join item in _context.WorkEfforts.AsNoTracking()
+                                on header.WorkEffortId equals item.WorkEffortParentId
+                            
+                            let partyId = header.PartyIdSupplier ?? header.PartyIdContractor ?? header.PartyIdEmployee
+                            join p in _context.Parties.AsNoTracking() on partyId equals p.PartyId into pJoin from p in pJoin.DefaultIfEmpty()
+                            
+                            let prodId = item.ProductId ?? item.ServiceId
+                            join prod in _context.Products.AsNoTracking() on prodId equals prod.ProductId into prodJoin from prod in prodJoin.DefaultIfEmpty()
+
+                            join opp in _context.OrderPaymentPreferences.AsNoTracking() on header.RelatedOrderId equals opp.OrderId into oppJoin from opp in oppJoin.DefaultIfEmpty()
+                            join pyt in _context.Payments.AsNoTracking() on opp.OrderPaymentPreferenceId equals pyt.PaymentPreferenceId into pytJoin from pyt in pytJoin.DefaultIfEmpty()
+
+                            where header.CurrentStatusId == "WEPR_APPROVED"
+                               && header.CertificateCategory != "COMPANY_SUPPLY_SALE_CERTIFICATE"
+                               && (item.WorkEffortTypeId == "CERTIFICATE_ITEM" || item.WorkEffortTypeId == "PAYMENT_CERTIFICATE_ITEM")
+                            
+                            let projId = header.ProjectId ?? item.ProjectId
+                            where projId == request.ProjectId
+
+                            where !(header.WorkEffortTypeId == "PAYMENT_CERTIFICATE" && projId == null)
+
+                            select new { header, item, projId, partyId, p, prodId, prod, paymentId = pyt.PaymentId };
+
+                if (!request.AllData)
                 {
-                    return Results<EmployeeAdvanceDto>.Failure(
-                        "السلفة طويلة الأجل تتطلب جدول سداد.", "LONG_TERM_REQUIRES_SCHEDULE");
+                    if (request.StartDate.HasValue)
+                        query = query.Where(x => (x.item.ProcurementDate ?? x.item.EstimatedStartDate ?? x.header.EstimatedStartDate ?? x.header.CreatedDate) >= request.StartDate.Value);
+                    if (request.EndDate.HasValue)
+                        query = query.Where(x => (x.item.ProcurementDate ?? x.item.EstimatedStartDate ?? x.header.EstimatedStartDate ?? x.header.CreatedDate) <= request.EndDate.Value);
                 }
 
-                var totalScheduled = dto.CustomDeductionSchedules.Sum(s => s.ScheduledAmount);
-                if (Math.Abs(totalScheduled - (dto.Amount ?? 0)) > 0.01m)
+                var results = await query.Select(x => new ProjectExpenseRecord
                 {
-                    return Results<EmployeeAdvanceDto>.Failure(
-                        $"مجموع المبالغ المجدولة لا يتطابق مع قيمة السلفة.", "SCHEDULE_TOTAL_MISMATCH");
+                    ExpenseItemKey = x.item.WorkEffortId,
+                    CertificateKey = x.header.WorkEffortId,
+                    CertificateNumber = x.header.WorkEffortTypeId == "PROJECT_CERTIFICATE" ? x.header.CertificateNumber : null,
+                    PaymentId = x.header.WorkEffortTypeId == "PAYMENT_CERTIFICATE" ? x.header.WorkEffortId : x.paymentId,
+                    ProjectId = x.projId,
+                    PartyId = x.partyId,
+                    PartyName = x.p.Description,
+                    PartyRole = x.header.PartyIdSupplier != null ? "Supplier" :
+                                x.header.PartyIdContractor != null ? "Contractor" :
+                                x.header.PartyIdEmployee != null ? "Employee" : "Unknown",
+                    ProductId = x.prodId,
+                    ProductName = x.prod.ProductName,
+                    ExpenseDate = x.item.ProcurementDate ?? x.item.EstimatedStartDate ?? x.header.EstimatedStartDate ?? x.header.CreatedDate,
+                    RecordType = x.header.WorkEffortTypeId == "PROJECT_CERTIFICATE" && (x.header.CertificateCategory == "SUPPLY_PROCUREMENT_CERTIFICATE" || x.header.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE") ? "ProjectCertificate" :
+                                 x.header.WorkEffortTypeId == "PAYMENT_CERTIFICATE" ? "MultiPaymentCertificate" : "Other",
+                    CertificateType = x.header.WorkEffortTypeId == "PROJECT_CERTIFICATE" ? 
+                                        (x.header.CertificateCategory == "SUPPLY_PROCUREMENT_CERTIFICATE" ? "Supply Procurement" :
+                                         x.header.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE" ? "Workmanship Contracting" : "Project Certificate") :
+                                      x.header.WorkEffortTypeId == "PAYMENT_CERTIFICATE" ? "Multi-Payment / Direct Expense" : "Unknown",
+                    CertificateTypeArabic = x.header.WorkEffortTypeId == "PROJECT_CERTIFICATE" ?
+                                        (x.header.CertificateCategory == "SUPPLY_PROCUREMENT_CERTIFICATE" ? "توريد مواد" :
+                                         x.header.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE" ? "مقاولات مصنعيات" :
+                                         x.header.CertificateCategory == "COMPANY_SUPPLY_SALE_CERTIFICATE" ? "بيع توريدات الشركة" : "مستخلص مشروع") :
+                                      x.header.WorkEffortTypeId == "PAYMENT_CERTIFICATE" ? "مستخلص دفعات متعددة / مصاريف مباشرة" : "غير معروف",
+                    CertificateCategoryCode = x.header.CertificateCategory,
+                    CertificateDescription = x.header.Description,
+                    ItemDescription = x.item.Description,
+                    RelatedPurchaseOrderId = x.header.RelatedOrderId,
+                    IsSupplyProcurement = x.header.CertificateCategory == "SUPPLY_PROCUREMENT_CERTIFICATE",
+                    IsWorkmanship = x.header.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE",
+                    IsMultiPaymentCertificate = x.header.WorkEffortTypeId == "PAYMENT_CERTIFICATE",
+                    Quantity = x.item.Quantity ?? 1m,
+                    UnitRate = x.item.Rate,
+                    GrossAmount = x.item.TotalAmount ?? x.item.Amount ?? 0m,
+                    DiscountAmount = x.item.Discount ?? 0m,
+                    DeductionsAmount = x.item.Deductions ?? 0m,
+                    InsuranceAmount = x.item.Insurance ?? 0m,
+                    TransportationExpensesAmount = x.item.TransportationExpenses ?? 0m,
+                    GratuitiesAmount = x.item.Gratuities ?? 0m,
+                    AchievementPercentage = x.header.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE" ? (x.item.AchievementPercent ?? 0m) :
+                                            (x.header.CertificateCategory == "SUPPLY_PROCUREMENT_CERTIFICATE" || x.header.WorkEffortTypeId == "PAYMENT_CERTIFICATE" ? 100m : (x.item.AchievementPercent ?? 0m))
+                }).ToListAsync(ct);
+
+                foreach (var r in results)
+                {
+                    r.NetCertifiedAmount = r.GrossAmount - r.DiscountAmount - r.DeductionsAmount - r.InsuranceAmount 
+                                         + r.TransportationExpensesAmount + r.GratuitiesAmount;
                 }
 
-                if (dto.CustomDeductionSchedules.Any(s => s.DueDate < DateHelper.Today))
+                return results;
+            }
+
+            private async Task<List<ProjectRevenueRecord>> GetRevenues(Query request, CancellationToken ct)
+            {
+                var today = DateTime.Today;
+
+                var query = from p in _context.Payments.AsNoTracking()
+                            join pf in _context.Parties.AsNoTracking() on p.PartyIdFrom equals pf.PartyId into pfJoin from pf in pfJoin.DefaultIfEmpty()
+                            join pt_type in _context.PaymentTypes.AsNoTracking() on p.PaymentTypeId equals pt_type.PaymentTypeId into ptJoin from pt_type in ptJoin.DefaultIfEmpty()
+                            join sr in _context.SalesRequests.AsNoTracking() on p.SalesRequestId equals sr.SalesRequestId into srJoin from sr in srJoin.DefaultIfEmpty()
+                            join apt in _context.Products.AsNoTracking() on sr.ProductId equals apt.ProductId into aptJoin from apt in aptJoin.DefaultIfEmpty()
+                            join proj in _context.WorkEfforts.AsNoTracking() on (apt.ProjectId ?? p.WorkEffortId) equals proj.WorkEffortId into projJoin from proj in projJoin.DefaultIfEmpty()
+
+                            where p.PartyIdTo == "Company" 
+                               && p.SalesRequestId != null
+                               && (p.PaymentTypeId == "RECEIPT_ADVANCE_PAYMENT" 
+                                || p.PaymentTypeId == "RECEIPT_DUE_INSTALLMENT" 
+                                || p.PaymentTypeId == "RECEIPT_MAINTENANCE_AMOUNT")
+                               && p.Amount > 0m
+                            
+                            let projId = apt.ProjectId ?? p.WorkEffortId
+                            where projId == request.ProjectId
+
+                            select new { p, pf, pt_type, sr, apt, proj, projId };
+
+                if (!request.AllData)
                 {
-                    return Results<EmployeeAdvanceDto>.Failure(
-                        "لا يمكن جدولة خصم بتاريخ سابق.", "PAST_DUE_DATE_NOT_ALLOWED");
+                    if (request.StartDate.HasValue)
+                        query = query.Where(x => x.p.EffectiveDate >= DateOnly.FromDateTime(request.StartDate.Value));
+                    if (request.EndDate.HasValue)
+                        query = query.Where(x => x.p.EffectiveDate <= DateOnly.FromDateTime(request.EndDate.Value));
                 }
-            }
 
-            // Prevent increasing amount after deductions started
-            if ((dto.Amount ?? 0) > advance.Amount && 
-                advance.EmployeeAdvanceSchedules.Any(s => s.DeductedAmount > 0))
-            {
-                return Results<EmployeeAdvanceDto>.Failure(
-                    "لا يمكن زيادة المبلغ بعد بدء الخصومات.", "AMOUNT_INCREASE_AFTER_DEDUCTION");
-            }
-
-            // ────────────────────────────────────────────────────────────────
-            // 5. Apply changes
-            // ────────────────────────────────────────────────────────────────
-            var companyPartyId = await _productStoreService.GetProductStorePayToPartId();
-
-            // Update Payment
-            var paymentParam = new CreatePaymentParam
-            {
-                PaymentId = advance.PaymentId,
-                PartyIdFrom = companyPartyId,
-                PartyIdTo = dto.PartyId,
-                Amount = dto.Amount ?? 0,
-                EffectiveDate = dto.AdvanceDate ?? DateHelper.Today,
-                PaymentTypeId = dto.AdvanceTypeId,
-                StatusId = "PMNT_NOT_PAID",
-                Comments = dto.Description,
-            };
-
-            await _paymentHelperService.UpdatePayment(paymentParam);
-
-            // Update Advance
-            advance.PartyId = dto.PartyId;
-            advance.AdvanceDate = dto.AdvanceDate ?? DateHelper.Today;
-            advance.Amount = dto.Amount ?? 0;
-            advance.AdvanceTypeId = dto.AdvanceTypeId;
-            advance.Description = dto.Description ?? advance.Description;
-            advance.LastUpdatedStamp = DateTime.UtcNow;
-
-            // Handle schedules for long-term
-            if (isLongTerm && dto.CustomDeductionSchedules?.Any() == true)
-            {
-                // Remove old schedules
-                _context.EmployeeAdvanceSchedules.RemoveRange(advance.EmployeeAdvanceSchedules);
-
-                int installmentNumber = 1;
-                foreach (var sched in dto.CustomDeductionSchedules.OrderBy(s => s.DueDate))
+                var results = await query.Select(x => new ProjectRevenueRecord
                 {
-                    var schedule = new EmployeeAdvanceSchedule
+                    PaymentId = x.p.PaymentId,
+                    SalesRequestId = x.p.SalesRequestId,
+                    ApartmentId = x.sr.ProductId,
+                    ProjectId = x.projId,
+                    ProjectName = x.proj.ProjectName,
+                    CustomerPartyId = x.p.PartyIdFrom,
+                    CustomerName = x.pf.Description,
+                    PaymentTypeId = x.p.PaymentTypeId,
+                    PaymentTypeArabic = x.pt_type.DescriptionArabic,
+                    RevenueCategory = x.p.PaymentTypeId == "RECEIPT_ADVANCE_PAYMENT" ? "Advance Payment" :
+                                      x.p.PaymentTypeId == "RECEIPT_DUE_INSTALLMENT" ? "Installment" :
+                                      x.p.PaymentTypeId == "RECEIPT_MAINTENANCE_AMOUNT" ? "Maintenance Deposit" : "Other",
+                    ScheduledAmount = x.p.Amount,
+                    CollectedAmount = x.p.StatusId == "PMNT_RECEIVED" ? x.p.Amount : 0m,
+                    OutstandingAmount = x.p.StatusId != "PMNT_RECEIVED" ? x.p.Amount : 0m,
+                    LateAmount = (x.p.StatusId != "PMNT_RECEIVED" && x.p.EffectiveDate < DateOnly.FromDateTime(today)) ? x.p.Amount : 0m,
+                    FutureAmount = (x.p.StatusId != "PMNT_RECEIVED" && x.p.EffectiveDate >= DateOnly.FromDateTime(today)) ? x.p.Amount : 0m,
+                    PaymentStatus = x.p.StatusId == "PMNT_RECEIVED" ? "Received" :
+                                    (x.p.EffectiveDate < DateOnly.FromDateTime(today) ? "Late" : "Upcoming"),
+                    DueDate = x.p.EffectiveDate != null ? x.p.EffectiveDate.Value.ToDateTime(TimeOnly.MinValue) : null,
+                    CreatedDate = x.p.CreatedStamp,
+                    Comments = x.p.Comments,
+                    ChequeNumber = x.p.ChequeNumber,
+                    DueStatusArabic = null   // Will be calculated in post-processing
+                }).ToListAsync(ct);
+
+                // Post-processing for DueStatusArabic and OverdueBucket (Consistent with ListPayments)
+                foreach (var r in results)
+                {
+                    if (r.PaymentStatus == "Received")
                     {
-                        ScheduleId = Guid.NewGuid().ToString(),
-                        AdvanceId = advance.AdvanceId,
-                        InstallmentNumber = installmentNumber++,
-                        DueDate = sched.DueDate,
-                        ScheduledAmount = sched.ScheduledAmount,
-                        DeductedAmount = 0m,
-                        StatusId = "SCHEDULED",
-                        CreatedStamp = DateTime.UtcNow,
-                        LastUpdatedStamp = DateTime.UtcNow,
-                    };
-                    _context.EmployeeAdvanceSchedules.Add(schedule);
+                        r.OverdueBucket = "Received";
+                        r.DueStatusArabic = "تم التحصيل";   // Clean & consistent (instead of "قسط مستحق")
+                    }
+                    else
+                    {
+                        // For unpaid revenues → isDisbursement = false (incoming)
+                        r.DueStatusArabic = CalculateDueStatusArabic(r.DueDate, false);
+
+                        if (r.DueDate >= today)
+                            r.OverdueBucket = "Upcoming";
+                        else if (r.DueDate.HasValue)
+                        {
+                            var diff = (today - r.DueDate.Value).Days;
+                            r.DaysOverdue = diff;
+                            r.OverdueBucket = diff switch
+                            {
+                                <= 30 => "Late (1-30 Days)",
+                                <= 90 => "Late (31-90 Days)",
+                                _     => "Late (Over 90 Days)"
+                            };
+                        }
+                    }
                 }
 
-                advance.InstallmentCount = dto.CustomDeductionSchedules.Count;
-                advance.StartDate = dto.CustomDeductionSchedules.Min(s => s.DueDate);
-            }
-            else if (wasLongTerm && !isLongTerm)
-            {
-                // Switching from long-term to short-term → clear schedules
-                _context.EmployeeAdvanceSchedules.RemoveRange(advance.EmployeeAdvanceSchedules);
-                advance.InstallmentCount = dto.InstallmentCount ?? 0;
-                advance.StartDate = dto.StartDate;
-            }
-            else
-            {
-                advance.InstallmentCount = dto.InstallmentCount ?? advance.InstallmentCount;
-                advance.StartDate = dto.StartDate;
+                return results;
             }
 
-            await _context.SaveChangesAsync(ct);
-
-            // Return updated record
-            var party = await _context.Parties.FirstOrDefaultAsync(p => p.PartyId == advance.PartyId, ct);
-            var status = await _context.StatusItems.FirstOrDefaultAsync(s => s.StatusId == advance.StatusId, ct);
-
-            var resultRecord = new EmployeeAdvanceDto
+            /// <summary>
+            /// Consistent DueStatusArabic calculation for revenues (incoming payments)
+            /// isDisbursement = false for all revenues here
+            /// </summary>
+            private static string CalculateDueStatusArabic(DateTime? dueDate, bool isDisbursement)
             {
-                AdvanceId = advance.AdvanceId,
-                PartyId = advance.PartyId,
-                EmployeeName = party?.Description ?? advance.PartyId,
-                PaymentId = advance.PaymentId,
-                AdvanceDate = advance.AdvanceDate,
-                Amount = advance.Amount,
-                InstallmentCount = advance.InstallmentCount,
-                StartDate = advance.StartDate,
-                StatusId = advance.StatusId,
-                StatusDescription = request.Language == "ar"
-                    ? (status?.DescriptionArabic ?? status?.Description ?? advance.StatusId)
-                    : (status?.Description ?? advance.StatusId),
-                Description = advance.Description,
-                AdvanceTypeId = advance.AdvanceTypeId,
-            };
+                if (dueDate == null)
+                    return "غير محدد";
 
-            return Results<EmployeeAdvanceDto>.Success(resultRecord);
+                var effectiveDateOnly = DateOnly.FromDateTime(dueDate.Value);
+                var daysUntilDue = effectiveDateOnly.DayNumber - DateHelper.Today.DayNumber;
+
+                var type = isDisbursement ? "دفعة" : "مستحق";
+                var typePaid = isDisbursement ? "دفعة مستحقة" : "مستحق";
+                var quarterText = GetQuarterArabic(effectiveDateOnly);
+
+                if (daysUntilDue < 0)
+                {
+                    var daysOverdue = Math.Abs(daysUntilDue);
+                    return daysOverdue switch
+                    {
+                        1 => $"{type} متأخرة بيوم واحد",
+                        2 => $"{type} متأخرة بيومين",
+                        _ => daysOverdue <= 30 
+                            ? $"{type} متأخرة منذ {daysOverdue} يوم" 
+                            : $"{type} متأخرة جداً {quarterText}"
+                    };
+                }
+                else if (daysUntilDue == 0) 
+                    return $"{typePaid} اليوم";
+                else if (daysUntilDue == 1) 
+                    return $"{typePaid} غداً";
+                else if (daysUntilDue <= 3) 
+                    return $"{typePaid} بعد {daysUntilDue} أيام";
+                else if (daysUntilDue <= 7) 
+                    return $"{typePaid} هذا الأسبوع";
+                else if (daysUntilDue <= 30) 
+                    return $"{typePaid} خلال الشهر";
+                else if (daysUntilDue <= 90) 
+                    return $"{typePaid} خلال 3 أشهر {quarterText}";
+                else 
+                    return $"{typePaid} لاحقاً {quarterText}";
+            }
+
+            private static string GetQuarterArabic(DateOnly date)
+            {
+                int quarterNum = (date.Month - 1) / 3 + 1;
+                string quarterName = quarterNum switch
+                {
+                    1 => "الأول",
+                    2 => "الثاني",
+                    3 => "الثالث",
+                    4 => "الرابع",
+                    _ => ""
+                };
+                return $" (الربع {quarterName} {date.Year})";
+            }
+
+            private async Task<List<PaymentRecord>> GetDirectPayments(Query request, CancellationToken ct)
+            {
+                var project = await _context.WorkEfforts.AsNoTracking()
+                    .FirstOrDefaultAsync(w => w.WorkEffortId == request.ProjectId, ct);
+
+                if (project == null) return new List<PaymentRecord>();
+
+                var glAccountId = project.GlAccountId;
+
+                var query = from pyt in _context.Payments.AsNoTracking()
+                            join ptt in _context.PaymentTypes.AsNoTracking() on pyt.PaymentTypeId equals ptt.PaymentTypeId
+                            join sts in _context.StatusItems.AsNoTracking() on pyt.StatusId equals sts.StatusId
+                            join pty in _context.Parties.AsNoTracking() on pyt.PartyIdFrom equals pty.PartyId
+                            join pmt in _context.PaymentMethodTypes.AsNoTracking() on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into pmtJoin
+                            from pmt in pmtJoin.DefaultIfEmpty()
+                            join ptyto in _context.Parties.AsNoTracking() on pyt.PartyIdTo equals ptyto.PartyId into ptytoJoin
+                            from ptyto in ptytoJoin.DefaultIfEmpty()
+                            join cc in _context.CostCenters.AsNoTracking() on pyt.CostCenterId equals cc.CostCenterId into ccJoin
+                            from cc in ccJoin.DefaultIfEmpty()
+                            join proj in _context.WorkEfforts.AsNoTracking() on pyt.WorkEffortId equals proj.WorkEffortId into projJoin
+                            from proj in projJoin.DefaultIfEmpty()
+                            join sr in _context.SalesRequests.AsNoTracking() on pyt.SalesRequestId equals sr.SalesRequestId into srJoin
+                            from sr in srJoin.DefaultIfEmpty()
+                            join prod in _context.Products.AsNoTracking() on sr.ProductId equals prod.ProductId into prodJoin
+                            from prod in prodJoin.DefaultIfEmpty()
+                            join approvedBy in _context.Parties.AsNoTracking() on pyt.ApprovedByPartyId equals approvedBy.PartyId into approvedByJoin
+                            from approvedBy in approvedByJoin.DefaultIfEmpty()
+                            join createdBy in _context.Parties.AsNoTracking() on pyt.CreatedByPartyId equals createdBy.PartyId into createdByJoin
+                            from createdBy in createdByJoin.DefaultIfEmpty()
+
+                            where (pyt.WorkEffortId == request.ProjectId || (glAccountId != null && pyt.OverrideGlAccountId == glAccountId))
+                               && pyt.StatusId == "PMNT_SENT"
+                               && ptt.ParentTypeId == "DISBURSEMENT"
+                            
+                            select new PaymentRecord
+                            {
+                                PaymentId = pyt.PaymentId,
+                                PaymentTypeId = pyt.PaymentTypeId,
+                                PaymentTypeDescription = ptt.DescriptionArabic,
+                                PaymentMethodId = pyt.PaymentMethodId,
+                                PaymentMethodTypeId = pyt.PaymentMethodTypeId,
+                                PaymentMethodTypeDescription = pmt != null ? pmt.DescriptionArabic : null,
+                                PartyIdFrom = pyt.PartyIdFrom,
+                                PartyIdFromName = pty.Description ?? string.Empty,
+                                PartyIdTo = pyt.PartyIdTo,
+                                PartyIdToName = ptyto != null ? ptyto.Description : (pyt.PartyIdTo == "Company" ? "Golden Land" : pyt.PartyIdTo ?? "Unknown"),
+                                StatusId = pyt.StatusId,
+                                StatusDescription = sts.DescriptionArabic,
+                                StatusDescriptionEnglish = sts.Description,
+                                EffectiveDate = pyt.EffectiveDate,
+                                CreatedStamp = pyt.CreatedStamp ?? DateTime.MinValue,
+                                Comments = pyt.Comments,
+                                PaymentRefNum = pyt.PaymentRefNum,
+                                PaymentPreferenceId = pyt.PaymentPreferenceId,
+                                IsBankTransfer = pyt.IsBankTransfer,
+                                Amount = pyt.Amount,
+                                ActualCurrencyAmount = pyt.ActualCurrencyAmount ?? pyt.Amount,
+                                CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
+                                IsDisbursement = true,
+                                OrganizationPartyId = pyt.PartyIdFrom,
+                                ProjectId = pyt.WorkEffortId,
+                                OverrideGlAccountId = pyt.OverrideGlAccountId,
+                                ProjectName = proj.ProjectName,
+                                CostCenterId = pyt.CostCenterId,
+                                SalesRequestId = pyt.SalesRequestId,
+                                CostCenterDescription = cc.Description,
+                                ProductId = prod.ProductId,
+                                BuildingNumber = prod.BuildingNumber,
+                                ApprovedByPartyId = pyt.ApprovedByPartyId,
+                                ApprovedByPartyName = approvedBy != null ? approvedBy.Description : null,
+                                CreatedByPartyId = pyt.CreatedByPartyId,
+                                CreatedByPartyName = createdBy != null ? createdBy.Description : null,
+                                ChequeNumber = pyt.ChequeNumber,
+                                ChequeDate = pyt.ChequeDate,
+                                DueStatusArabic = sts.DescriptionArabic   // Already paid/sent → use status
+                            };
+
+                if (!request.AllData)
+                {
+                    if (request.StartDate.HasValue)
+                        query = query.Where(p => p.EffectiveDate >= DateOnly.FromDateTime(request.StartDate.Value));
+                    if (request.EndDate.HasValue)
+                        query = query.Where(p => p.EffectiveDate <= DateOnly.FromDateTime(request.EndDate.Value));
+                }
+
+                return await query.ToListAsync(ct);
+            }
         }
     }
 }
-
-dotnet ef migrations add Convert_BusinessDates_To_DateOnly  -p Persistence -s API

@@ -3,6 +3,7 @@ import {store} from "../configureStore";
 import {State, toODataString} from "@progress/kendo-data-query";
 import {WorkEffort} from "../../models/manufacturing/workEffort";
 import {CertificateStatus} from "../../../features/Projects/hook/useProjectCertificate";
+import {Payment} from "../../models/accounting/payment";
 
 interface ListResponse<T> {
     data: T[];
@@ -244,12 +245,14 @@ interface OrderStatusChangeResult {
 export interface ProjectReportDto {
     expenses: ProjectExpenseRecord[];
     revenues: ProjectRevenueRecord[];
+    directPayments: Payment[];
 }
 
 export interface ProjectExpenseRecord {
     expenseItemKey?: string;
     certificateKey?: string;
     certificateNumber?: string;
+    paymentId?: string;
     projectId?: string;
     partyId?: string;
     partyName?: string;
@@ -276,12 +279,14 @@ export interface ProjectExpenseRecord {
     gratuitiesAmount: number;
     netCertifiedAmount: number;
     achievementPercentage: number;
+    certificateTypeArabic?: string;
 }
 
 export interface ProjectRevenueRecord {
     paymentId?: string;
     salesRequestId?: string;
     apartmentId?: string;
+    buildingNumber?: string;
     projectId?: string;
     projectName?: string;
     customerPartyId?: string;
@@ -301,4 +306,5 @@ export interface ProjectRevenueRecord {
     createdDate?: string;
     comments?: string;
     chequeNumber?: string;
+    dueStatusArabic?: string;
 }
