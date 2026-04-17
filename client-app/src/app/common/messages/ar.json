@@ -2336,6 +2336,7 @@
         "num": "رقم المشروع",
         "name": "اسم المشروع",
         "glAccount": "حساب دفتر الأستاذ",
+        "operatingExpenseGlAccount": "حساب دفتر الأستاذ للتكاليف التشغيلية",
         "status": "الحالة",
         "startDate": "تاريخ البدء",
         "completionDate": "تاريخ الانتهاء",
@@ -2355,6 +2356,7 @@
         "createSuccess": "تم إنشاء المشروع بنجاح",
         "error": "فشل في معالجة المشروع",
         "glAccount": "حساب دفتر الأستاذ",
+        "operatingExpenseGlAccount": "حساب دفتر الأستاذ للتكاليف التشغيلية",
         "validation": {
           "startDate": "يرجى إدخال تاريخ بدء صحيح.",
           "completionDate": "يرجى إدخال تاريخ انتهاء صحيح.",

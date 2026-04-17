@@ -57817,6 +57817,12 @@ namespace Persistence.Migrations
                         .HasColumnType("varchar(255)")
                         .HasColumnName("NOTES");
 
+                    b.Property<string>("OperatingExpenseGlAccountId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("OPERATING_EXPENSE_GL_ACCOUNT_ID");
+
                     b.Property<decimal?>("PaidAmount")
                         .HasColumnType("decimal(18,3)")
                         .HasColumnName("PAID_AMOUNT");
@@ -58021,6 +58027,8 @@ namespace Persistence.Migrations
                     b.HasIndex(new[] { "FixedAssetId" }, "WK_EFFRT_FXDASST");
 
                     b.HasIndex(new[] { "NoteId" }, "WK_EFFRT_NOTE");
+
+                    b.HasIndex(new[] { "OperatingExpenseGlAccountId" }, "WK_EFFRT_OP_EXP_GL");
 
                     b.HasIndex(new[] { "WorkEffortParentId" }, "WK_EFFRT_PARENT");
 
@@ -78826,6 +78834,12 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("WK_EFFRT_NOTE");
 
+                    b.HasOne("Domain.GlAccount", "OperatingExpenseGlAccount")
+                        .WithMany()
+                        .HasForeignKey("OperatingExpenseGlAccountId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("WK_EFFRT_OP_EXP_GL");
+
                     b.HasOne("Domain.Party", "ContractorParty")
                         .WithMany("WorkEffortsAsContractor")
                         .HasForeignKey("PartyIdContractor")
@@ -78937,6 +78951,8 @@ namespace Persistence.Migrations
                     b.Navigation("MoneyUom");
 
                     b.Navigation("Note");
+
+                    b.Navigation("OperatingExpenseGlAccount");
 
                     b.Navigation("PaymentMethod");
 

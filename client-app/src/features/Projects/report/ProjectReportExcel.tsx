@@ -229,6 +229,70 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
             grandTotalExpenses += totalDirect;
         }
 
+        // ====================== OPERATING EXPENSES SECTION ======================
+        if (data.operatingExpenses && data.operatingExpenses.length > 0) {
+            currentRow = wsExp.rowCount + 3;
+
+            const opTitleCell = wsExp.getCell(`A${currentRow}`);
+            opTitleCell.value = utils.rtlEmbed('مصاريف تشغيلية (دفعات)');
+            opTitleCell.font = { name: 'Amiri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+            opTitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6366F1' } }; // Indigo
+            opTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+            wsExp.mergeCells(`A${currentRow}:O${currentRow}`);
+            wsExp.getRow(currentRow).height = 30;
+
+            currentRow++;
+
+            const opHeaders = [
+                'رقم الدفعة', 'النوع', 'من طرف', 'إلى طرف', 'الحالة', 'التاريخ',
+                'المبلغ', 'رقم المرجع', 'طريقة الدفع', 'الشيك', 'تاريخ الشيك',
+                'مركز التكلفة', 'ملاحظات', '', ''
+            ];
+
+            const opHeaderRow = wsExp.addRow(opHeaders.map(h => utils.rtlEmbed(h)));
+            opHeaderRow.font = { name: 'Amiri', size: 11, bold: true };
+            opHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E7FF' } }; // Light Indigo
+            opHeaderRow.alignment = { horizontal: 'center', vertical: 'middle' };
+
+            let totalOp = 0;
+            data.operatingExpenses.forEach((pyt: any, idx) => {
+                const row = wsExp.addRow([
+                    utils.safeString(pyt.paymentId),
+                    utils.safeString(pyt.paymentTypeDescription),
+                    utils.safeString(pyt.partyIdFromName),
+                    utils.safeString(pyt.partyIdToName),
+                    utils.safeString(pyt.dueStatusArabic || pyt.statusDescription),
+                    utils.formatDate(pyt.effectiveDate),
+                    pyt.amount || 0,
+                    utils.safeString(pyt.paymentRefNum || ''),
+                    utils.safeString(pyt.paymentMethodTypeDescription),
+                    utils.safeString(pyt.chequeNumber),
+                    utils.formatDate(pyt.chequeDate),
+                    utils.safeString(pyt.costCenterDescription),
+                    utils.safeString(pyt.comments),
+                    '',
+                    ''
+                ]);
+
+                row.getCell(7).numFmt = '#,##0.00';
+                row.getCell(7).alignment = { horizontal: 'right' };
+                row.getCell(8).alignment = { horizontal: 'right' };
+
+                if (idx % 2 === 1) {
+                    row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F3FF' } };
+                }
+                totalOp += Number(pyt.amount) || 0;
+            });
+
+            const opTotalRow = wsExp.addRow(['', '', '', '', '', 'الإجمالي', totalOp, '', '', '', '', '', '', '', '']);
+            opTotalRow.font = { name: 'Amiri', size: 12, bold: true };
+            opTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC7D2FE' } };
+            opTotalRow.getCell(7).numFmt = '#,##0.00';
+            opTotalRow.getCell(7).alignment = { horizontal: 'right' };
+
+            grandTotalExpenses += totalOp;
+        }
+
         // ====================== GRAND TOTAL FOR EXPENSES ======================
         wsExp.addRow([]); // Empty row for spacing
         const grandTotalRow = wsExp.addRow(['', '', '', '', '', 'إجمالي مصاريف المشروع', '', '', '', '', '', '', '', '', grandTotalExpenses]);

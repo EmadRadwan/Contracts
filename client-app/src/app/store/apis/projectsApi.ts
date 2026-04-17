@@ -246,6 +246,7 @@ export interface ProjectReportDto {
     expenses: ProjectExpenseRecord[];
     revenues: ProjectRevenueRecord[];
     directPayments: Payment[];
+    operatingExpenses: Payment[];
 }
 
 export interface ProjectExpenseRecord {

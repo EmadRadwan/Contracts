@@ -1,0 +1,13 @@
+SELECT
+    t.ACCTG_TRANS_ID,
+    t.TRANSACTION_DATE,
+    t.DESCRIPTION AS journal_desc,
+    e.ACCTG_TRANS_ENTRY_SEQ_ID,
+    e.DESCRIPTION AS line_desc,
+    e.GL_ACCOUNT_ID,
+    e.DEBIT_CREDIT_FLAG,
+    e.AMOUNT,
+    e.CURRENCY_UOM_ID
+FROM acctg_trans t
+         INNER JOIN acctg_trans_entry e ON t.ACCTG_TRANS_ID = e.ACCTG_TRANS_ID
+WHERE e.GL_ACCOUNT_ID = '120011';

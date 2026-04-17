@@ -15,7 +15,6 @@ import { useAddProjectMutation, useUpdateProjectMutation } from "../../../app/st
 import ProjectMenu from "../menu/ProjectMenu";
 import { FormDropDownTreeGlAccount2 } from "../../../app/common/form/FormDropDownTreeGlAccount2";
 import { useFetchGlAccountOrganizationHierarchyLovQuery } from "../../../app/store/apis";
-import { FormDropDownTreeGlAccountWithItems } from "../../../app/common/form/FormDropDownTreeGlAccountWithItems";
 
 interface Props {
     project?: WorkEffort;
@@ -37,9 +36,6 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
     
     console.log('project', project)
 
-    // REFACTOR: Updated initialValues to use workEffortId instead of ProjectNum and lowercase field names.
-    // Ensures consistency with field naming convention and aligns with backend workEffortId usage.
-    // Add a loading guard or use useMemo with dependency
     const initialValues = useMemo(() => {
         if (editMode !== 2 || !project) {
             return {
@@ -49,35 +45,25 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
                 estimatedCompletionDate: null,
                 currentStatusId: "",
                 glAccountId: null,
+                operatingExpenseGlAccountId: null,
             };
         }
-
-        if (isLoadingGlAccounts) {
-            // You can return empty or previous values while loading
-            return {
-                workEffortId: project.workEffortId,
-                projectName: project.projectName,
-                estimatedStartDate: project.estimatedStartDate ? new Date(project.estimatedStartDate) : null,
-                estimatedCompletionDate: project.estimatedCompletionDate ? new Date(project.estimatedCompletionDate) : null,
-                currentStatusId: project.currentStatusId,
-                glAccountId: null, // Will be updated when glAccounts loads
-            };
-        }
-
-        const selectedGlAccount = glAccounts?.find(acc => acc.glAccountId === project.glAccountId) || null;
 
         return {
             workEffortId: project.workEffortId,
             projectName: project.projectName,
             estimatedStartDate: project.estimatedStartDate ? new Date(project.estimatedStartDate) : null,
             estimatedCompletionDate: project.estimatedCompletionDate ? new Date(project.estimatedCompletionDate) : null,
-            currentStatusId: project.currentStatusId,
-            glAccountId: project.glAccountId,
+            currentStatusId: project.currentStatusId || "",
+            glAccountId: project.glAccountId,                    // raw ID is enough
+            operatingExpenseGlAccountId: project.operatingExpenseGlAccountId, // raw ID is enough
         };
-    }, [editMode, project, glAccounts, isLoadingGlAccounts]);
+    }, [editMode, project]);   // ← removed glAccounts dependency
 
-    console.log('project', project);
-    console.log('initialValues', initialValues);
+    const formKey = useMemo(() => {
+        return `${project?.workEffortId || 'new'}-${glAccounts?.length > 0 ? 'loaded' : 'loading'}`;
+    }, [project?.workEffortId, glAccounts?.length]);
+
 
     // REFACTOR: Updated formValidator to use lowercase field names for consistency.
     // Maintains date validation logic while aligning with new field naming convention.
@@ -156,6 +142,7 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
                     </Typography>
                 )}
                 <Form
+                    key={formKey} 
                     initialValues={initialValues}
                     validator={formValidator}
                     onSubmit={(values) => handleSubmitData(values)}
@@ -226,7 +213,7 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
                                 </Grid>
                                 {/* Parent Account – Tree dropdown */}
                                 <Grid container spacing={2}>
-                                    <Grid item xs={8}>
+                                    <Grid item xs={5}>
                                         <Field
                                             id="glAccountId"
                                             name="glAccountId"
@@ -240,7 +227,22 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
                                             expandField="expanded"
                                         />
                                     </Grid>
+                                    <Grid item xs={5}>
+                                        <Field
+                                            id="operatingExpenseGlAccountId"
+                                            name="operatingExpenseGlAccountId"
+                                            validator={requiredValidator}
+                                            label={getTranslatedLabel("project.projects.form.operatingExpenseGlAccount", "Operating Expense GL Account")}
+                                            component={FormDropDownTreeGlAccount2}
+                                            data={glAccounts || []}
+                                            dataItemKey="glAccountId"
+                                            textField="text"
+                                            selectField="selected"
+                                            expandField="expanded"
+                                        />
+                                    </Grid>
                                 </Grid>
+                               
                                 <div className="k-form-buttons">
                                     <Grid container spacing={1}>
                                         <Grid item xs={1}>

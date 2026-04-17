@@ -9,6 +9,7 @@ namespace Application.Projects
         public List<ProjectExpenseRecord> Expenses { get; set; } = new();
         public List<ProjectRevenueRecord> Revenues { get; set; } = new();
         public List<PaymentRecord> DirectPayments { get; set; } = new();
+        public List<PaymentRecord> OperatingExpenses { get; set; } = new();
     }
 
     public class ProjectExpenseRecord

@@ -62514,12 +62514,18 @@ entity.HasOne(d => d.CreatedByUserLoginNavigation)
                 entity.HasIndex(e => e.RelatedOrderId, "WK_EFFRT_RELATED_ORDER");
                 entity.HasIndex(e => e.ProductId, "WK_EFFRT_PRODUCT");
                 entity.HasIndex(e => e.CertificateNumber, "WK_EFFRT_CERT_NUM");
+entity.HasIndex(e => e.OperatingExpenseGlAccountId, "WK_EFFRT_OP_EXP_GL");
                 
 
                 entity.Property(e => e.WorkEffortId)
                     .HasMaxLength(36)
                     .IsUnicode(false)
                     .HasColumnName("WORK_EFFORT_ID");
+                    
+                    entity.Property(e => e.OperatingExpenseGlAccountId)
+    .HasMaxLength(36)
+    .IsUnicode(false)
+    .HasColumnName("OPERATING_EXPENSE_GL_ACCOUNT_ID");
 
                 entity.Property(e => e.ActualCompletionDate)
                     .HasColumnType("datetime")
@@ -62917,7 +62923,12 @@ entity.HasOne(d => d.CreatedByUserLoginNavigation)
         .HasConstraintName("WK_EFFRT_COST_CENTER")
         .OnDelete(DeleteBehavior.Restrict);   // Safe delete behavior
 
- 
+ entity.HasOne(d => d.OperatingExpenseGlAccount)
+    .WithMany() 
+    .HasForeignKey(d => d.OperatingExpenseGlAccountId)
+    .IsRequired(false)
+    .HasConstraintName("WK_EFFRT_OP_EXP_GL")
+    .OnDelete(DeleteBehavior.Restrict);
 
                         });
                   

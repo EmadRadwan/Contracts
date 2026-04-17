@@ -145,12 +145,16 @@ public class WorkEffort
     public string? ChequeNumber { get; set; }
     public DateTime? ChequeDate { get; set; }
     public string? GlAccountId { get; set; }
+    public string? OperatingExpenseGlAccountId { get; set; }    // ← NEW
+    
 
 
     
     public Product? Service { get; set; }
     public PaymentMethod? PaymentMethod { get; set; }
     public GlAccount? ProjectGlAccount { get; set; }
+    public GlAccount? OperatingExpenseGlAccount { get; set; }   // ← NEW
+    
     
     public Party? EmployeeParty { get; set; }
     public Party? SupplierParty { get; set; }

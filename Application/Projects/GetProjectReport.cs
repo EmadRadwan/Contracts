@@ -30,8 +30,9 @@ namespace Application.Projects
                 var expenses = await GetExpenses(request, cancellationToken);
                 var revenues = await GetRevenues(request, cancellationToken);
                 var directPayments = await GetDirectPayments(request, cancellationToken);
+                var operatingExpenses = await GetOperatingExpenses(request, cancellationToken);
 
-                // Filter out direct payments that were already reported in expenses
+                // Filter out duplicates across expense sections
                 var expensePaymentIds = expenses
                     .Where(e => !string.IsNullOrEmpty(e.PaymentId))
                     .Select(e => e.PaymentId!)
@@ -41,11 +42,22 @@ namespace Application.Projects
                     .Where(dp => !expensePaymentIds.Contains(dp.PaymentId))
                     .ToList();
 
+                var reportedPaymentIds = expensePaymentIds;
+                foreach (var dp in filteredDirectPayments)
+                {
+                    reportedPaymentIds.Add(dp.PaymentId);
+                }
+
+                var filteredOperatingExpenses = operatingExpenses
+                    .Where(oe => !reportedPaymentIds.Contains(oe.PaymentId))
+                    .ToList();
+
                 return new ProjectReportDto
                 {
                     Expenses = expenses,
                     Revenues = revenues,
-                    DirectPayments = filteredDirectPayments
+                    DirectPayments = filteredDirectPayments,
+                    OperatingExpenses = filteredOperatingExpenses
                 };
             }
 
@@ -371,6 +383,126 @@ namespace Application.Projects
                     from createdBy in createdByJoin.DefaultIfEmpty()
                     where (
                            (glAccountId != null && pyt.OverrideGlAccountId == glAccountId))
+                          && pyt.StatusId == "PMNT_SENT"
+                          && ptt.ParentTypeId == "DISBURSEMENT"
+                    select new PaymentRecord
+                    {
+                        PaymentId = pyt.PaymentId,
+                        PaymentTypeId = pyt.PaymentTypeId,
+                        PaymentTypeDescription = ptt.DescriptionArabic,
+                        PaymentMethodId = pyt.PaymentMethodId,
+                        PaymentMethodTypeId = pyt.PaymentMethodTypeId,
+                        PaymentMethodTypeDescription = pmt != null ? pmt.DescriptionArabic : null,
+                        PartyIdFrom = pyt.PartyIdFrom,
+                        PartyIdFromName = pty.Description ?? string.Empty,
+                        PartyIdTo = pyt.PartyIdTo,
+                        PartyIdToName = ptyto != null
+                            ? ptyto.Description
+                            : (pyt.PartyIdTo == "Company" ? "Golden Land" : pyt.PartyIdTo ?? "Unknown"),
+                        StatusId = pyt.StatusId,
+                        StatusDescription = sts.DescriptionArabic,
+                        StatusDescriptionEnglish = sts.Description,
+                        EffectiveDate = pyt.EffectiveDate,
+                        CreatedStamp = pyt.CreatedStamp ?? DateTime.MinValue,
+                        Comments = pyt.Comments,
+                        PaymentRefNum = pyt.PaymentRefNum,
+                        PaymentPreferenceId = pyt.PaymentPreferenceId,
+                        IsBankTransfer = pyt.IsBankTransfer,
+                        Amount = pyt.Amount,
+                        ActualCurrencyAmount = pyt.ActualCurrencyAmount ?? pyt.Amount,
+                        CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
+                        IsDisbursement = true,
+                        OrganizationPartyId = pyt.PartyIdFrom,
+                        ProjectId = pyt.WorkEffortId,
+                        OverrideGlAccountId = pyt.OverrideGlAccountId,
+                        ProjectName = proj.ProjectName,
+                        CostCenterId = pyt.CostCenterId,
+                        SalesRequestId = pyt.SalesRequestId,
+                        CostCenterDescription = cc.Description,
+                        ProductId = prod.ProductId,
+                        BuildingNumber = prod.BuildingNumber,
+                        ApprovedByPartyId = pyt.ApprovedByPartyId,
+                        ApprovedByPartyName = approvedBy != null ? approvedBy.Description : null,
+                        CreatedByPartyId = pyt.CreatedByPartyId,
+                        CreatedByPartyName = createdBy != null ? createdBy.Description : null,
+                        ChequeNumber = pyt.ChequeNumber,
+                        ChequeDate = pyt.ChequeDate,
+                        DueStatusArabic = CalculateDueStatusArabic(
+                            pyt.EffectiveDate != null ? pyt.EffectiveDate.Value.ToDateTime(TimeOnly.MinValue) : null,
+                            true,
+                            pyt.StatusId,
+                            sts.DescriptionArabic)
+                    };
+
+                if (!request.AllData)
+                {
+                    if (request.StartDate.HasValue)
+                        query = query.Where(p => p.EffectiveDate >= DateOnly.FromDateTime(request.StartDate.Value));
+                    if (request.EndDate.HasValue)
+                        query = query.Where(p => p.EffectiveDate <= DateOnly.FromDateTime(request.EndDate.Value));
+                }
+
+                return await query.ToListAsync(ct);
+            }
+
+            private async Task<List<PaymentRecord>> GetOperatingExpenses(Query request, CancellationToken ct)
+            {
+                var project = await _context.WorkEfforts.AsNoTracking()
+                    .FirstOrDefaultAsync(w => w.WorkEffortId == request.ProjectId, ct);
+
+                if (project == null || string.IsNullOrEmpty(project.OperatingExpenseGlAccountId))
+                    return new List<PaymentRecord>();
+
+                var parentGlAccountId = project.OperatingExpenseGlAccountId;
+
+                // Get all child GL accounts recursively
+                var allGlAccountIds = new HashSet<string> { parentGlAccountId };
+                var childAccounts = await _context.GlAccounts
+                    .AsNoTracking()
+                    .Select(g => new { g.GlAccountId, g.ParentGlAccountId })
+                    .ToListAsync(ct);
+
+                void AddChildren(string parentId)
+                {
+                    var children = childAccounts.Where(c => c.ParentGlAccountId == parentId).ToList();
+                    foreach (var child in children)
+                    {
+                        if (allGlAccountIds.Add(child.GlAccountId))
+                        {
+                            AddChildren(child.GlAccountId);
+                        }
+                    }
+                }
+
+                AddChildren(parentGlAccountId);
+
+                var query = from pyt in _context.Payments.AsNoTracking()
+                    join ptt in _context.PaymentTypes.AsNoTracking() on pyt.PaymentTypeId equals ptt.PaymentTypeId
+                    join sts in _context.StatusItems.AsNoTracking() on pyt.StatusId equals sts.StatusId
+                    join pty in _context.Parties.AsNoTracking() on pyt.PartyIdFrom equals pty.PartyId
+                    join pmt in _context.PaymentMethodTypes.AsNoTracking() on pyt.PaymentMethodTypeId equals pmt
+                        .PaymentMethodTypeId into pmtJoin
+                    from pmt in pmtJoin.DefaultIfEmpty()
+                    join ptyto in _context.Parties.AsNoTracking() on pyt.PartyIdTo equals ptyto.PartyId into ptytoJoin
+                    from ptyto in ptytoJoin.DefaultIfEmpty()
+                    join cc in _context.CostCenters.AsNoTracking() on pyt.CostCenterId equals cc.CostCenterId into
+                        ccJoin
+                    from cc in ccJoin.DefaultIfEmpty()
+                    join proj in _context.WorkEfforts.AsNoTracking() on pyt.WorkEffortId equals proj.WorkEffortId into
+                        projJoin
+                    from proj in projJoin.DefaultIfEmpty()
+                    join sr in _context.SalesRequests.AsNoTracking() on pyt.SalesRequestId equals sr.SalesRequestId into
+                        srJoin
+                    from sr in srJoin.DefaultIfEmpty()
+                    join prod in _context.Products.AsNoTracking() on sr.ProductId equals prod.ProductId into prodJoin
+                    from prod in prodJoin.DefaultIfEmpty()
+                    join approvedBy in _context.Parties.AsNoTracking() on pyt.ApprovedByPartyId equals approvedBy
+                        .PartyId into approvedByJoin
+                    from approvedBy in approvedByJoin.DefaultIfEmpty()
+                    join createdBy in _context.Parties.AsNoTracking() on pyt.CreatedByPartyId equals createdBy.PartyId
+                        into createdByJoin
+                    from createdBy in createdByJoin.DefaultIfEmpty()
+                    where allGlAccountIds.Contains(pyt.OverrideGlAccountId!)
                           && pyt.StatusId == "PMNT_SENT"
                           && ptt.ParentTypeId == "DISBURSEMENT"
                     select new PaymentRecord

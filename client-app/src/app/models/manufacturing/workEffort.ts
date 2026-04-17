@@ -57,4 +57,6 @@ export interface WorkEffort {
     addQuantityProduced?: number;
     addSetupTime?: number;
     addTaskTime?: number;
+    operatingExpenseGlAccountId?: string;
+    operatingExpenseGlAccountName?: string;
 }

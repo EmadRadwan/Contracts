@@ -142,11 +142,12 @@ export default function ProjectsList() {
                     <Column
                         field="glAccountName"
                         title={getTranslatedLabel("project.projects.list.glAccount", "GL Account")}
+                        width={350}
                     />
                     <Column
-                        field="currentStatusDescription"
-                        title={getTranslatedLabel("project.projects.list.status", "Status")}
-                        width={150}
+                        field="operatingExpenseGlAccountName"
+                        title={getTranslatedLabel("project.projects.list.operatingExpenseGlAccount", "Operating Expense GL Account")}
+                        width={350}
                     />
                     <Column
                         field="estimatedStartDate"

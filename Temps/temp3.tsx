@@ -1,50 +1,101 @@
-const handleCreate = async (data: { values: any; menuItem: string }) => {
-    const { values } = data;
-    const isDisbursement = values.isDisbursement ?? false;
+export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
+    const { user } = useAppSelector((state) => state.account);
+    const companyId = user?.organizationPartyId || "";
 
-    const customerId = isDisbursement
-        ? values.partyIdTo?.fromPartyId
-        : values.partyIdFrom?.fromPartyId;
+    const { data: glAccounts = [], isLoading: isLoadingGlAccounts } = useFetchGlAccountOrganizationHierarchyLovQuery(
+        companyId,
+        { skip: !companyId }
+    );
 
-    const organizationId = values.organizationPartyId;
-    const org = companies.find((c) => c.organizationPartyId === organizationId);
-    const orgName = org?.organizationPartyName ?? "";
+    // Simple initial values - just raw data from project
+    const initialValues = useMemo(() => {
+        if (editMode !== 2 || !project) {
+            return {
+                workEffortId: null,
+                projectName: "",
+                estimatedStartDate: null,
+                estimatedCompletionDate: null,
+                currentStatusId: "",
+                glAccountId: null,
+                operatingExpenseGlAccountId: null,
+            };
+        }
 
-    const newPayment: Payment = {
-        paymentId: "",
-        paymentTypeId: values.paymentTypeId,
-        paymentMethodId: values.paymentMethodId,
-        statusId: PAYMENT_STATUSES.NOT_PAID,
+        return {
+            workEffortId: project.workEffortId,
+            projectName: project.projectName,
+            estimatedStartDate: project.estimatedStartDate ? new Date(project.estimatedStartDate) : null,
+            estimatedCompletionDate: project.estimatedCompletionDate ? new Date(project.estimatedCompletionDate) : null,
+            currentStatusId: project.currentStatusId || "",
+            glAccountId: project.glAccountId,                    // raw ID is enough
+            operatingExpenseGlAccountId: project.operatingExpenseGlAccountId, // raw ID is enough
+        };
+    }, [editMode, project]);   // ← removed glAccounts dependency
 
-        partyIdFrom: isDisbursement ? organizationId : customerId,
-        partyIdFromName: isDisbursement
-            ? orgName
-            : values.partyIdFrom?.fromPartyName ?? "",
+    // Force re-mount of the Form when glAccounts finish loading or project changes
+    const formKey = useMemo(() => {
+        return `${project?.workEffortId || 'new'}-${glAccounts.length > 0 ? 'loaded' : 'loading'}`;
+    }, [project?.workEffortId, glAccounts.length]);
 
-        partyIdTo: isDisbursement ? customerId : organizationId,
-        partyIdToName: isDisbursement
-            ? values.partyIdTo?.fromPartyName ?? ""
-            : orgName,
+    // ... rest of your code (handleSubmitData, formValidator, etc.)
 
-        amount: values.amount,
-        effectiveDate: normalizeToDateString(values.effectiveDate),   // ← Clean!
+    if (isLoadingGlAccounts && editMode === 2) {
+        return <LoadingComponent message="Loading GL Accounts..." />;
+    }
 
-        comments: values.comments ?? "",
-        organizationPartyId: organizationId,
-        isDepositWithDrawPayment: values.isDepositWithDrawPayment ? "Y" : "N",
-        finAccountTransTypeId: isDisbursement ? "WITHDRAWAL" : "DEPOSIT",
-        isDisbursement,
+    return (
+        <>
+            <ProjectMenu selectedMenuItem={"projects"} />
+            <Paper elevation={5} className={`div-container-withBorderCurved`} style={{ padding: '16px' }}>
+                {/* Title ... */}
 
-        chequeNumber: values.chequeNumber ?? "",
-        chequeDate: normalizeToISOString(values.chequeDate),         // ← Clean!
+                <Form
+                    key={formKey}                     {/* ← This is the most important line */}
+                    initialValues={initialValues}
+                    validator={formValidator}
+                    onSubmit={handleSubmitData}
+                    render={(formRenderProps) => (
+                        <FormElement>
+                            <fieldset className={"k-form-fieldset"}>
+                                {/* ... other fields ... */}
 
-        overrideGlAccountId: values.overrideGlAccountId,
-        projectId: values.projectId?.projectId || null,
-        projectName: values.projectId?.projectName || null,
-        costCenterId: values.costCenterId || null,
-        isBankTransfer: values.isBankTransfer || false,
-        paymentRefNum: values.paymentRefNum || "",
-    };
+                                <Grid container spacing={2}>
+                                    <Grid item xs={6}>
+                                        <Field
+                                            id="glAccountId"
+                                            name="glAccountId"
+                                            validator={requiredValidator}
+                                            label={getTranslatedLabel("project.projects.form.glAccount", "GL Account")}
+                                            component={FormDropDownTreeGlAccount2}
+                                            data={glAccounts || []}
+                                            dataItemKey="glAccountId"
+                                            textField="text"
+                                            selectField="selected"
+                                            expandField="expanded"
+                                        />
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <Field
+                                            id="operatingExpenseGlAccountId"
+                                            name="operatingExpenseGlAccountId"
+                                            validator={requiredValidator}
+                                            label={getTranslatedLabel("project.projects.form.operatingExpenseGlAccount", "Operating Expense GL Account")}
+                                            component={FormDropDownTreeGlAccount2}
+                                            data={glAccounts || []}
+                                            dataItemKey="glAccountId"
+                                            textField="text"
+                                            selectField="selected"
+                                            expandField="expanded"
+                                        />
+                                    </Grid>
+                                </Grid>
 
-    await createPayment(newPayment);
-};
+                                {/* buttons ... */}
+                            </fieldset>
+                        </FormElement>
+                    )}
+                />
+            </Paper>
+        </>
+    );
+}

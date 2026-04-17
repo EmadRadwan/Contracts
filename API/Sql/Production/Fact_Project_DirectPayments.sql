@@ -1,0 +1,117 @@
+CREATE OR REPLACE VIEW Fact_Project_DirectPayments AS
+SELECT
+    pyt.PAYMENT_ID                                      AS PaymentId,
+    pyt.PAYMENT_TYPE_ID,
+    ptt.DESCRIPTION_ARABIC                              AS PaymentTypeDescription,
+    pyt.PAYMENT_METHOD_ID                               AS PaymentMethodId,
+    pyt.PAYMENT_METHOD_TYPE_ID,
+    pmt.DESCRIPTION_ARABIC                              AS PaymentMethodTypeDescription,
+
+    pyt.PARTY_ID_FROM                                   AS PartyIdFrom,
+    pty_from.DESCRIPTION                                AS PartyIdFromName,
+
+    pyt.PARTY_ID_TO                                     AS PartyIdTo,
+    COALESCE(pty_to.DESCRIPTION,
+             CASE WHEN pyt.PARTY_ID_TO = 'Company' THEN 'Golden Land'
+                  ELSE pyt.PARTY_ID_TO END)              AS PartyIdToName,
+
+    pyt.STATUS_ID,
+    sts.DESCRIPTION_ARABIC                              AS StatusDescription,
+    sts.DESCRIPTION                                     AS StatusDescriptionEnglish,
+
+    pyt.EFFECTIVE_DATE,
+    pyt.CREATED_STAMP                                   AS CreatedStamp,
+    pyt.COMMENTS,
+    pyt.PAYMENT_REF_NUM                                 AS PaymentRefNum,
+    pyt.PAYMENT_PREFERENCE_ID                           AS PaymentPreferenceId,
+
+    pyt.IS_BANK_TRANSFER                                AS IsBankTransfer,
+    pyt.AMOUNT,
+    COALESCE(pyt.ACTUAL_CURRENCY_AMOUNT, pyt.AMOUNT)    AS ActualCurrencyAmount,
+    COALESCE(pyt.CURRENCY_UOM_ID, 'EGP')                AS CurrencyUomId,
+
+    TRUE                                                AS IsDisbursement,
+
+    -- Removed ORGANIZATION_PARTY_ID (column does not exist)
+    -- If you have another column for organization/branch, replace below with the correct one
+    NULL                                                AS OrganizationPartyId,
+
+    pyt.WORK_EFFORT_ID                                  AS ProjectId,
+    pyt.OVERRIDE_GL_ACCOUNT_ID                          AS OverrideGlAccountId,
+
+    proj.PROJECT_NAME                                   AS ProjectName,
+    pyt.COST_CENTER_ID                                  AS CostCenterId,
+    cc.DESCRIPTION                                      AS CostCenterDescription,
+
+    sr.SALES_REQUEST_ID,
+    prod.PRODUCT_ID,
+    prod.BUILDING_NUMBER,
+
+    pyt.APPROVED_BY_PARTY_ID                            AS ApprovedByPartyId,
+    approved.DESCRIPTION                                AS ApprovedByPartyName,
+
+    pyt.CREATED_BY_PARTY_ID                             AS CreatedByPartyId,
+    created_by.DESCRIPTION                              AS CreatedByPartyName,
+
+    pyt.CHEQUENUMBER                                    AS ChequeNumber,
+    pyt.CHEQUEDATE                                      AS ChequeDate,
+
+    -- Arabic Due Status (isDisbursement = true)
+    CASE
+        WHEN pyt.STATUS_ID != 'PMNT_NOT_PAID' AND pyt.STATUS_ID IS NOT NULL
+            THEN COALESCE(sts.DESCRIPTION_ARABIC, pyt.STATUS_ID)
+
+        WHEN pyt.EFFECTIVE_DATE IS NULL
+            THEN 'غير محدد'
+
+        ELSE
+            CASE
+                WHEN DATEDIFF(pyt.EFFECTIVE_DATE, CURDATE()) < 0 THEN
+                    CASE
+                        WHEN ABS(DATEDIFF(pyt.EFFECTIVE_DATE, CURDATE())) = 1 THEN 'دفعة مستحقة متأخرة بيوم واحد'
+                        WHEN ABS(DATEDIFF(pyt.EFFECTIVE_DATE, CURDATE())) = 2 THEN 'دفعة مستحقة متأخرة بيومين'
+                        WHEN ABS(DATEDIFF(pyt.EFFECTIVE_DATE, CURDATE())) <= 30
+                            THEN CONCAT('دفعة مستحقة متأخرة منذ ', ABS(DATEDIFF(pyt.EFFECTIVE_DATE, CURDATE())), ' يوم')
+                        ELSE CONCAT('دفعة مستحقة متأخرة جداً (الربع ',
+                                    CASE ((MONTH(pyt.EFFECTIVE_DATE)-1) DIV 3 + 1)
+                                        WHEN 1 THEN 'الأول' WHEN 2 THEN 'الثاني'
+                                        WHEN 3 THEN 'الثالث' WHEN 4 THEN 'الرابع'
+                                        END, ' ', YEAR(pyt.EFFECTIVE_DATE), ')')
+                        END
+
+                WHEN DATEDIFF(pyt.EFFECTIVE_DATE, CURDATE()) = 0 THEN 'دفعة مستحقة اليوم'
+                WHEN DATEDIFF(pyt.EFFECTIVE_DATE, CURDATE()) = 1 THEN 'دفعة مستحقة غداً'
+                WHEN DATEDIFF(pyt.EFFECTIVE_DATE, CURDATE()) <= 3
+                    THEN CONCAT('دفعة مستحقة بعد ', DATEDIFF(pyt.EFFECTIVE_DATE, CURDATE()), ' أيام')
+                WHEN DATEDIFF(pyt.EFFECTIVE_DATE, CURDATE()) <= 7 THEN 'دفعة مستحقة هذا الأسبوع'
+                WHEN DATEDIFF(pyt.EFFECTIVE_DATE, CURDATE()) <= 30 THEN 'دفعة مستحقة خلال الشهر'
+                WHEN DATEDIFF(pyt.EFFECTIVE_DATE, CURDATE()) <= 90
+                    THEN CONCAT('دفعة مستحقة خلال 3 أشهر (الربع ',
+                                CASE ((MONTH(pyt.EFFECTIVE_DATE)-1) DIV 3 + 1)
+                                    WHEN 1 THEN 'الأول' WHEN 2 THEN 'الثاني'
+                                    WHEN 3 THEN 'الثالث' WHEN 4 THEN 'الرابع'
+                                    END, ' ', YEAR(pyt.EFFECTIVE_DATE), ')')
+                ELSE CONCAT('دفعة مستحقة لاحقاً (الربع ',
+                            CASE ((MONTH(pyt.EFFECTIVE_DATE)-1) DIV 3 + 1)
+                                WHEN 1 THEN 'الأول' WHEN 2 THEN 'الثاني'
+                                WHEN 3 THEN 'الثالث' WHEN 4 THEN 'الرابع'
+                                END, ' ', YEAR(pyt.EFFECTIVE_DATE), ')')
+                END
+        END                                                 AS DueStatusArabic
+
+FROM PAYMENT pyt
+         JOIN PAYMENT_TYPE ptt          ON pyt.PAYMENT_TYPE_ID = ptt.PAYMENT_TYPE_ID
+         JOIN STATUS_ITEM sts           ON pyt.STATUS_ID = sts.STATUS_ID
+         JOIN PARTY pty_from            ON pyt.PARTY_ID_FROM = pty_from.PARTY_ID
+
+         LEFT JOIN PAYMENT_METHOD_TYPE pmt ON pyt.PAYMENT_METHOD_TYPE_ID = pmt.PAYMENT_METHOD_TYPE_ID
+         LEFT JOIN PARTY pty_to            ON pyt.PARTY_ID_TO = pty_to.PARTY_ID
+         LEFT JOIN COST_CENTER cc          ON pyt.COST_CENTER_ID = cc.COST_CENTER_ID
+         LEFT JOIN WORK_EFFORT proj        ON pyt.WORK_EFFORT_ID = proj.WORK_EFFORT_ID
+         LEFT JOIN SALES_REQUEST sr        ON pyt.SALES_REQUEST_ID = sr.SALES_REQUEST_ID
+         LEFT JOIN PRODUCT prod            ON sr.PRODUCT_ID = prod.PRODUCT_ID
+         LEFT JOIN PARTY approved          ON pyt.APPROVED_BY_PARTY_ID = approved.PARTY_ID
+         LEFT JOIN PARTY created_by        ON pyt.CREATED_BY_PARTY_ID = created_by.PARTY_ID
+
+WHERE ptt.PARENT_TYPE_ID = 'DISBURSEMENT'
+  AND pyt.STATUS_ID = 'PMNT_SENT';
