@@ -72,6 +72,22 @@ export interface SalesOpportunityAction {
         cancelReasonId?: string;
         cancelReasonDescription?: string;
         comment?: string;
+
+        // meeting-specific fields
+        meetingTypeId?: string;
+        meetingTypeDescription?: string;
+        meetingLocationId?: string;
+        meetingLocationDescription?: string;
+        note?: string;
+
+        // unit-related fields
+        productId?: string;
+        productName?: string;
+        workEffortId?: string;
+        workEffortName?: string;
+
+        // audit fields
+        createdStamp?: string;
     }
 
 /**

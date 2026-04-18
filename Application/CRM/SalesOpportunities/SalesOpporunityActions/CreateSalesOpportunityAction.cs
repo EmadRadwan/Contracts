@@ -72,10 +72,10 @@ public class CreateSalesOpportunityAction
                     : null;
 
                 // Validate Sales Opportunity exists
-                var opportunityExists = await _context.SalesOpportunities
-                    .AnyAsync(x => x.SalesOpportunityId == dto.SalesOpportunityId, ct);
+                var opportunity = await _context.SalesOpportunities
+                    .FirstOrDefaultAsync(x => x.SalesOpportunityId == dto.SalesOpportunityId, ct);
 
-                if (!opportunityExists)
+                if (opportunity == null)
                     return Result<SalesOpportunityActionDto>.Failure($"Sales Opportunity '{dto.SalesOpportunityId}' not found");
 
                 // Validate Action Type exists in enumerations
@@ -113,6 +113,26 @@ public class CreateSalesOpportunityAction
                         return Result<SalesOpportunityActionDto>.Failure($"Invalid Cancel Reason: '{dto.MeetingTypeId}'");
                 }
 
+                if (IsUnitRelatedAction(dto.ActionTypeId))
+                {
+                    if (string.IsNullOrEmpty(dto.ProductId))
+                        return Result<SalesOpportunityActionDto>.Failure("Unit (Product) is required for Reservation and Done Deal actions");
+
+                    if (string.IsNullOrEmpty(dto.WorkEffortId))
+                        return Result<SalesOpportunityActionDto>.Failure("Project (Work Effort) is required for Reservation and Done Deal actions");
+
+                    bool projectChanged = opportunity.WorkEffortId != dto.WorkEffortId;
+                    bool unitChanged = opportunity.ProductId != dto.ProductId;
+
+                    if (projectChanged || unitChanged)
+                    {
+                        opportunity.WorkEffortId = dto.WorkEffortId;
+                        opportunity.ProductId = dto.ProductId;
+                        opportunity.LastUpdatedStamp = stamp;
+                        opportunity.LastUpdatedTxStamp = stamp;
+                    }
+                }
+
                 // Validate Action Date for types that require it
                 if (RequiresActionDate(dto.ActionTypeId) && !dto.ActionDate.HasValue)
                 {
@@ -135,6 +155,7 @@ public class CreateSalesOpportunityAction
                     MeetingTypeId = dto.MeetingTypeId,
                     MeetingLocationId = dto.MeetingLocationId,
                     Note = dto.Note,
+                    
 
                     // Audit fields (following your existing pattern)
                     CreatedByUserLogin = userLogin?.UserLoginId ?? "SYSTEM",
@@ -204,6 +225,18 @@ public class CreateSalesOpportunityAction
             };
 
             return meetingActions.Contains(actionTypeId);
+        }
+
+        private bool IsUnitRelatedAction(string? actionTypeId)
+        {
+            if (string.IsNullOrEmpty(actionTypeId)) return false;
+
+            var unitRelatedActions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "RESERVATION", "DONE_DEAL"
+            };
+
+            return unitRelatedActions.Contains(actionTypeId);
         }
 
         private bool RequiresActionDate(string? actionTypeId)

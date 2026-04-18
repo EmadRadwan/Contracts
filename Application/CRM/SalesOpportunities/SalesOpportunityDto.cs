@@ -48,6 +48,8 @@ public class SalesOpportunityDto
     public string? WorkEffortName { get; set; }
     public string? ProductId { get; set; }
     public string? ProductName { get; set; }
+    public bool IsWon { get; set; }
+    public bool IsClosed { get; set; }
 
     // Linked leads (for create/update)
     public List<SalesOpportunityLeadDto> Leads { get; set; } = new();

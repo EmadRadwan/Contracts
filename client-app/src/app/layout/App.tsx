@@ -48,6 +48,7 @@ function App() {
         typography: {
             fontFamily: ['Rubik', 'Arial', 'sans-serif'].join(","),
         },
+        direction: language === "ar" ? "rtl" : "ltr",
         components: {
             MuiCssBaseline: {
                 styleOverrides: `

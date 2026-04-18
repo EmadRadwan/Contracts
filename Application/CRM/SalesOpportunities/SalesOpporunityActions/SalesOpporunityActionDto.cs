@@ -22,6 +22,12 @@ namespace Application.CRM.SalesOpportunities
         public string? MeetingTypeDescription {get; set;}
 
         public string? Note { get; set; }
+        public string? ProductId { get; set; }              // Apartment/Unit ID (optional, only for certain action types)
+        public string? ProductName { get; set; }
+        public string? WorkEffortId { get; set; }           // Project ID (optional, only for certain action types)
+        public string? WorkEffortName { get; set; }
+
+        public bool? isClosed { get; set; }
 
         // Audit fields
         public string? CreatedByUserLogin { get; set; }
