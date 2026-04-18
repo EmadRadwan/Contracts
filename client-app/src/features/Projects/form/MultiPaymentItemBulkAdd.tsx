@@ -308,7 +308,7 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
         []
     );
 
-    const createEmptyRow = (): BulkAddRow => ({
+    const createEmptyRow = useCallback((): BulkAddRow => ({
         tempId: Math.random().toString(36).substring(7),
         glAccountId: "",
         costCenterId: "",
@@ -319,49 +319,57 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
         description: "",
         amount: 0,
         estimatedStartDate: "",
-    });
+    }), []);
 
     const [rows, setRows] = useState<BulkAddRow[]>([]);
     const [localAmounts, setLocalAmounts] = useState<{ [tempId: string]: string }>({});
+    const isInitialized = React.useRef(false);
 
     useEffect(() => {
+        if (isInitialized.current) return;
+
         if (initialItems && initialItems.length > 0) {
-            const mappedRows = initialItems.map((item) => ({
-                tempId: Math.random().toString(36).substring(7),
-                workEffortId: item.workEffortId,
-                glAccountId: item.glAccountId || "",
-                glAccountName: item.glAccountName || "",
-                projectId: item.projectId,
-                subProjectId: item.subProjectId,
-                subProjectName: item.subProjectName,
-                costCenterId: item.costCenterId,
-                costCenterName: item.costCenterName,
-                itemType: item.itemType || "",
-                serviceId: item.serviceId ? { ProductId: item.serviceId, ProductName: item.serviceName || "" } : null,
-                productId: item.productId ? { ProductId: item.productId, ProductName: item.productName || "" } : null,
-                party: item.partyIdSupplier ? { fromPartyId: item.partyIdSupplier, fromPartyName: item.partyIdSupplierName || "" } : null,
-                description: item.description || "",
-                amount: item.amount || 0,
-                estimatedStartDate: item.estimatedStartDate ? item.estimatedStartDate.split('T')[0] : "",
-            }));
+            const mappedRows = initialItems.map((item) => {
+                const tempId = item.workEffortId || Math.random().toString(36).substring(7);
+                return {
+                    tempId: tempId,
+                    workEffortId: item.workEffortId,
+                    glAccountId: item.glAccountId || "",
+                    glAccountName: item.glAccountName || "",
+                    projectId: item.projectId,
+                    subProjectId: item.subProjectId,
+                    subProjectName: item.subProjectName,
+                    costCenterId: item.costCenterId,
+                    costCenterName: item.costCenterName,
+                    itemType: item.itemType || "",
+                    serviceId: item.serviceId ? { ProductId: item.serviceId, ProductName: item.serviceName || "" } : null,
+                    productId: item.productId ? { ProductId: item.productId, ProductName: item.productName || "" } : null,
+                    party: item.partyIdSupplier ? { fromPartyId: item.partyIdSupplier, fromPartyName: item.partyIdSupplierName || "" } : null,
+                    description: item.description || "",
+                    amount: item.amount || 0,
+                    estimatedStartDate: item.estimatedStartDate ? item.estimatedStartDate.split('T')[0] : "",
+                };
+            });
             setRows(mappedRows);
             const amounts: { [tempId: string]: string } = {};
             mappedRows.forEach(r => {
                 amounts[r.tempId] = r.amount.toString();
             });
             setLocalAmounts(amounts);
-        } else {
+            isInitialized.current = true;
+        } else if (initialItems !== undefined) {
             const emptyRow = createEmptyRow();
             setRows([emptyRow]);
             setLocalAmounts({ [emptyRow.tempId]: "0" });
+            isInitialized.current = true;
         }
-    }, [initialItems]);
+    }, [initialItems, createEmptyRow]);
 
-    const validateRow = (row: BulkAddRow): boolean => {
+    const validateRow = useCallback((row: BulkAddRow): boolean => {
         return !!row.glAccountId && !!row.description && row.amount > 0;
-    };
+    }, []);
 
-    const serializeRow = (row: BulkAddRow): MultiPaymentItem => {
+    const serializeRow = useCallback((row: BulkAddRow): MultiPaymentItem => {
         const selectedItemType = itemTypes.find(t => t.itemType === row.itemType);
         const partyId = (row.party && row.party.fromPartyId && row.party.fromPartyId !== "0") ? row.party.fromPartyId : "";
         const partyName = partyId ? row.party.fromPartyName : "";
@@ -394,7 +402,7 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
             partyIdContractor: "",
             partyIdContractorName: "",
         };
-    };
+    }, [workEffortId, itemTypes]);
 
     const handleAddRow = () => {
         const lastRow = rows[rows.length - 1];
@@ -447,12 +455,15 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
         value: any,
         extraFields: Partial<BulkAddRow> = {}
     ) => {
-        // Special handling for amount and date - update local state first to prevent clearing
+        // Special handling for amount - update local state first
         if (field === "amount") {
-            const tempId = rows[index]?.tempId;
-            if (tempId) {
-                setLocalAmounts(prev => ({ ...prev, [tempId]: value || "" }));
-            }
+            setRows((prevRows) => {
+                const tempId = prevRows[index]?.tempId;
+                if (tempId) {
+                    setLocalAmounts(prev => ({ ...prev, [tempId]: value || "" }));
+                }
+                return prevRows;
+            });
         }
 
         setRows((prevRows) => {
@@ -496,7 +507,7 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
 
             return newRows;
         });
-    }, [rows, findGlAccountNameById, validateRow, serializeRow, addItem, updateItem]);
+    }, [findGlAccountNameById, validateRow, serializeRow, addItem, updateItem]);
     
     const handleClose = () => {
         const invalidRows = rows.filter(row => (row.glAccountId || row.description || row.amount > 0) && !validateRow(row));

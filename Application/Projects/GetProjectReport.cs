@@ -444,25 +444,31 @@ namespace Application.Projects
                 var project = await _context.WorkEfforts.AsNoTracking()
                     .FirstOrDefaultAsync(w => w.WorkEffortId == request.ProjectId, ct);
 
-                if (project == null)
+                if (project == null || string.IsNullOrEmpty(project.OperatingExpenseGlAccountId))
                     return new List<PaymentRecord>();
 
-                // === HARD-CODED GL ACCOUNTS FOR DEBUGGING ===
-                var allGlAccountIds = new HashSet<string>
-                {
-                    "600024",
-                    "600025",
-                    "600026",
-                    "600027",
-                    "600029"
-                };
+                var parentGlAccountId = project.OperatingExpenseGlAccountId;
 
-                // Debug: Confirm the set contains 600024
-                if (!allGlAccountIds.Contains("600024"))
+                // Get all child GL accounts recursively
+                var allGlAccountIds = new HashSet<string> { parentGlAccountId };
+                var childAccounts = await _context.GlAccounts
+                    .AsNoTracking()
+                    .Select(g => new { g.GlAccountId, g.ParentGlAccountId })
+                    .ToListAsync(ct);
+
+                void AddChildren(string parentId)
                 {
-                    // You can throw or log if needed
-                    Console.WriteLine("ERROR: 600024 is missing from hard-coded list!");
+                    var children = childAccounts.Where(c => c.ParentGlAccountId == parentId).ToList();
+                    foreach (var child in children)
+                    {
+                        if (allGlAccountIds.Add(child.GlAccountId))
+                        {
+                            AddChildren(child.GlAccountId);
+                        }
+                    }
                 }
+
+                AddChildren(parentGlAccountId);
 
                 var query = from pyt in _context.Payments.AsNoTracking()
                     join ptt in _context.PaymentTypes.AsNoTracking()
@@ -485,7 +491,7 @@ namespace Application.Projects
                     where pyt.OverrideGlAccountId != null
                           && allGlAccountIds.Contains(pyt.OverrideGlAccountId)
                           && pyt.StatusId == "PMNT_SENT"
-                          && ptt.ParentTypeId == "DISBURSEMENT"
+                          && (ptt.ParentTypeId == "DISBURSEMENT" || ptt.PaymentTypeId == "DISBURSEMENT")
                     select new PaymentRecord
                     {
                         PaymentId = pyt.PaymentId,
@@ -533,20 +539,7 @@ namespace Application.Projects
                 }
 
                 var results = await query.ToListAsync(ct);
-
-                // === DEBUG OUTPUT (remove later) ===
-                var glAccountsFound = results.Select(r => r.OverrideGlAccountId).Distinct().OrderBy(x => x).ToList();
-                Console.WriteLine($"GetOperatingExpenses returned {results.Count} records.");
-                Console.WriteLine($"GL Accounts found: {string.Join(", ", glAccountsFound)}");
-
-                if (results.Any(r => r.PaymentId == "11617"))
-                {
-                    Console.WriteLine("SUCCESS: Payment 11617 (600024) was found!");
-                }
-                else
-                {
-                    Console.WriteLine("Payment 11617 was NOT found.");
-                }
+                
 
                 return results;
             }

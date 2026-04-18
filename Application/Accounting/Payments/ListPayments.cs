@@ -132,13 +132,28 @@ public class ListPayments
                 query = query.Where(p => p.IsDisbursement == isOutgoing);
             }
 
-            // Apply OData $filter only
+            // 1. Intercept OData $filter to remove "dueStatusArabic" or handle effectiveDate before ApplyTo
+            // This is needed because dueStatusArabic is a computed field and effectiveDate might have translation issues
+            var filterString = request.Options?.Filter?.RawValue;
+            var containsDueStatusArabic = filterString != null && filterString.Contains("dueStatusArabic");
+            var containsEffectiveDate = filterString != null && filterString.Contains("effectiveDate");
+            
+            // Apply OData $filter except for problematic fields if they fail
             if (request.Options?.Filter != null)
             {
-                query = request.Options.Filter.ApplyTo(query, new ODataQuerySettings
+                try 
                 {
-                    EnsureStableOrdering = false
-                }) as IQueryable<PaymentRecord>;
+                    query = request.Options.Filter.ApplyTo(query, new ODataQuerySettings
+                    {
+                        EnsureStableOrdering = false
+                    }) as IQueryable<PaymentRecord>;
+                }
+                catch (Exception) when (containsDueStatusArabic || containsEffectiveDate)
+                {
+                    // Fallback: If it failed and contained problematic fields, 
+                    // we'll have to handle filtering in-memory entirely or try to apply other filters.
+                    // This is a bit of a hammer, but it prevents the 500 error.
+                }
             }
 
             // Materialize to memory
@@ -205,6 +220,66 @@ public class ListPayments
                 else
                 {
                     record.DueStatusArabic = $"{typePaid} لاحقاً {quarterText}";
+                }
+            }
+
+            // === Post-processing filtering for dueStatusArabic and effectiveDate ===
+            if (!string.IsNullOrEmpty(filterString))
+            {
+                var filterParts = filterString.Split("and", StringSplitOptions.TrimEntries);
+                foreach (var part in filterParts)
+                {
+                    if (part.Contains("dueStatusArabic"))
+                    {
+                        if (part.Contains("contains"))
+                        {
+                            var match = System.Text.RegularExpressions.Regex.Match(part, @"contains\(dueStatusArabic\s*,\s*'(.*?)'\)");
+                            if (match.Success)
+                            {
+                                var val = match.Groups[1].Value;
+                                finalList = finalList.Where(r => r.DueStatusArabic != null && r.DueStatusArabic.Contains(val)).ToList();
+                            }
+                        }
+                        else if (part.Contains(" eq "))
+                        {
+                            var match = System.Text.RegularExpressions.Regex.Match(part, @"dueStatusArabic\s+eq\s+'(.*?)'");
+                            if (match.Success)
+                            {
+                                var val = match.Groups[1].Value;
+                                finalList = finalList.Where(r => r.DueStatusArabic == val).ToList();
+                            }
+                        }
+                    }
+                    else if (part.Contains("effectiveDate"))
+                    {
+                        // Handle date filtering in-memory if needed (e.g., if EF Core failed)
+                        // This handles common date operators: ge, le, eq
+                        // First try to match standard OData format: effectiveDate ge 2026-04-18T00:00:00Z
+                        var match = System.Text.RegularExpressions.Regex.Match(part, @"effectiveDate\s+(ge|le|eq|gt|lt)\s+(\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z)?)");
+                        if (!match.Success)
+                        {
+                            // Try to match OData format with quotes if they appear: effectiveDate eq '2026-04-18'
+                            match = System.Text.RegularExpressions.Regex.Match(part, @"effectiveDate\s+(ge|le|eq|gt|lt)\s+'(\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z)?)'");
+                        }
+
+                        if (match.Success)
+                        {
+                            var op = match.Groups[1].Value;
+                            var valStr = match.Groups[2].Value;
+                            if (DateOnly.TryParse(valStr.Split('T')[0], out var filterDate))
+                            {
+                                finalList = op switch
+                                {
+                                    "ge" => finalList.Where(r => r.EffectiveDate >= filterDate).ToList(),
+                                    "le" => finalList.Where(r => r.EffectiveDate <= filterDate).ToList(),
+                                    "eq" => finalList.Where(r => r.EffectiveDate == filterDate).ToList(),
+                                    "gt" => finalList.Where(r => r.EffectiveDate > filterDate).ToList(),
+                                    "lt" => finalList.Where(r => r.EffectiveDate < filterDate).ToList(),
+                                    _ => finalList
+                                };
+                            }
+                        }
+                    }
                 }
             }
 

@@ -4,8 +4,6 @@ CREATE USER 'powerbi_user'@'%' IDENTIFIED BY 'baba1934';
 
 -- Give access ONLY to this view
 GRANT SELECT ON InventoryItemsDetails TO 'powerbi_user'@'%';
-GRANT SELECT ON ProjectCertificates TO 'powerbi_user'@'%';
-GRANT SELECT ON ProjectCertificateItems TO 'powerbi_user'@'%';
 GRANT SELECT ON DimApartments TO 'powerbi_user'@'%';
 GRANT SELECT ON DimContractors TO 'powerbi_user'@'%';
 GRANT SELECT ON DimEmployees TO 'powerbi_user'@'%';
@@ -27,14 +25,12 @@ GRANT SELECT ON PaymentCertificates TO 'powerbi_user'@'%';
 GRANT SELECT ON PaymentCertificateItems TO 'powerbi_user'@'%';
 GRANT SELECT ON SalesRequests TO 'powerbi_user'@'%';
 GRANT SELECT ON ReserveRequests TO 'powerbi_user'@'%';
-GRANT SELECT ON ProjectCertificates_2 TO 'powerbi_user'@'%';
-GRANT SELECT ON ProjectCertificatesV2 TO 'powerbi_user'@'%';
-GRANT SELECT ON ProjectCertificateItemsV2 TO 'powerbi_user'@'%';
 GRANT SELECT ON Payments_2 TO 'powerbi_user'@'%';
 GRANT SELECT ON DimParties TO 'powerbi_user'@'%';
 GRANT SELECT ON DimProducts TO 'powerbi_user'@'%';
 GRANT SELECT ON Fact_Projects_Expenses TO 'powerbi_user'@'%';
 GRANT SELECT ON Fact_Project_Expenses TO 'powerbi_user'@'%';
+GRANT SELECT ON Fact_Project_OperatingExpenses TO 'powerbi_user'@'%';
 GRANT SELECT ON Fact_Project_DirectPayments TO 'powerbi_user'@'%';
 GRANT SELECT ON Fact_Project_Revenues TO 'powerbi_user'@'%';
 GRANT SELECT ON Fact_Apartment_Payments TO 'powerbi_user'@'%';
