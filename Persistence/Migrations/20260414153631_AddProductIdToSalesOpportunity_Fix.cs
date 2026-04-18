@@ -60,7 +60,7 @@ namespace Persistence.Migrations
         SET @sql = IF(@fk_exists = 0,
             'ALTER TABLE SALES_OPPORTUNITY 
              ADD CONSTRAINT FK_SalesOpportunity_Product_PRODUCT_ID
-             FOREIGN KEY (PRODUCT_ID) REFERENCES Product(PRODUCT_ID)',
+             FOREIGN KEY (PRODUCT_ID) REFERENCES PRODUCT(PRODUCT_ID)',
             'SELECT 1');
 
         PREPARE stmt FROM @sql;
