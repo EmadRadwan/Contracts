@@ -75,5 +75,7 @@ namespace Application.Projects
         public string? Comments { get; set; }
         public string? ChequeNumber { get; set; }
         public string? DueStatusArabic { get; set; }
+        public int? Year { get; set; }
+        public string? Quarter { get; set; }
     }
 }

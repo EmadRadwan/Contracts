@@ -308,4 +308,6 @@ export interface ProjectRevenueRecord {
     comments?: string;
     chequeNumber?: string;
     dueStatusArabic?: string;
+    year?: number;
+    quarter?: string;
 }

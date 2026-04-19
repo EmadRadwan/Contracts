@@ -244,12 +244,21 @@ namespace Application.Projects
                     CreatedDate = x.p.CreatedStamp,
                     Comments = x.p.Comments,
                     ChequeNumber = x.p.ChequeNumber,
-                    DueStatusArabic = null // Will be calculated in post-processing
+                    DueStatusArabic = null, // Will be calculated in post-processing
+                    Year = x.p.EffectiveDate != null ? x.p.EffectiveDate.Value.Year : (int?)null,
+                    Quarter = null
                 }).ToListAsync(ct);
 
                 // Post-processing for DueStatusArabic and OverdueBucket (Consistent with ListPayments)
                 foreach (var r in results)
                 {
+                    // Calculate Quarter from DueDate (populated from EffectiveDate)
+                    if (r.DueDate.HasValue)
+                    {
+                        var month = r.DueDate.Value.Month;
+                        r.Quarter = "Q" + ((month - 1) / 3 + 1);
+                    }
+                    
                     // Calculate due status using consistent logic
                     r.DueStatusArabic = CalculateDueStatusArabic(r.DueDate, false, r.StatusId, r.StatusDescription);
 

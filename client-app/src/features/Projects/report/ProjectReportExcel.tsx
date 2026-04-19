@@ -324,13 +324,13 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
         revTitleCell.font = { name: 'Amiri', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
         revTitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E40AF' } };
         revTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-        wsRev.mergeCells(`A${revRow}:L${revRow}`);
+        wsRev.mergeCells(`A${revRow}:N${revRow}`);
         wsRev.getRow(revRow).height = 45;
 
         revRow += 2;
 
         const revHeaders = [
-            'رقم الدفعة', 'المبنى', 'الوحدة', 'العميل', 'الفئة', 'المجدول',
+            'رقم الدفعة', 'السنة', 'الربع', 'المبنى', 'الوحدة', 'العميل', 'الفئة', 'المجدول',
             'المحصل', 'المتبقي', 'الحالة', 'شريحة التأخير', 'حالة الاستحقاق', 'تاريخ الاستحقاق'
         ];
 
@@ -343,6 +343,8 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
         data.revenues.forEach(rev => {
             const row = wsRev.addRow([
                 rev.paymentId,
+                rev.year,
+                rev.quarter,
                 rev.buildingNumber,
                 rev.apartmentId,
                 utils.safeString(rev.customerName),
@@ -356,7 +358,7 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
                 utils.formatDate(rev.dueDate)
             ]);
 
-            [6, 7, 8].forEach(col => {
+            [8, 9, 10].forEach(col => {
                 const cell = row.getCell(col);
                 cell.numFmt = '#,##0.00';
                 cell.alignment = { horizontal: 'right' };
@@ -368,15 +370,15 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
         });
 
         // Total Row for Revenues
-        const revTotalRow = wsRev.addRow(['', '', '', '', 'الإجمالي', totalScheduled, totalCollected, totalOutstanding, '', '', '', '']);
+        const revTotalRow = wsRev.addRow(['', '', '', '', '', '', 'الإجمالي', totalScheduled, totalCollected, totalOutstanding, '', '', '', '']);
         revTotalRow.font = { name: 'Amiri', size: 12, bold: true };
         revTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBFDBFE' } };
-        for (let i = 6; i <= 8; i++) {
+        for (let i = 8; i <= 10; i++) {
             revTotalRow.getCell(i).numFmt = '#,##0.00';
         }
 
         // Column widths for Revenue
-        const revWidths = [16, 14, 14, 32, 20, 18, 18, 18, 16, 24, 25, 16];
+        const revWidths = [16, 10, 10, 14, 14, 32, 20, 18, 18, 18, 16, 24, 25, 16];
         wsRev.columns.forEach((col, i) => col.width = revWidths[i] || 15);
 
         return await workbook.xlsx.writeBuffer();
