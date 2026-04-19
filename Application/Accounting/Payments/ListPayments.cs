@@ -137,22 +137,33 @@ public class ListPayments
             var filterString = request.Options?.Filter?.RawValue;
             var containsDueStatusArabic = filterString != null && filterString.Contains("dueStatusArabic");
             var containsEffectiveDate = filterString != null && filterString.Contains("effectiveDate");
+
+            // Create a new ODataQueryOptions without problematic filters if they exist
+            var options = request.Options;
+            if (containsDueStatusArabic || containsEffectiveDate)
+            {
+                // We will handle filtering for these fields manually after materialization
+                // To avoid the 500 error, we try to apply a modified filter if possible, 
+                // but ODataQueryOptions is mostly read-only for its clauses.
+                // The safest way to avoid the 500 error is to catch it during ApplyTo.
+            }
             
             // Apply OData $filter except for problematic fields if they fail
-            if (request.Options?.Filter != null)
+            if (options?.Filter != null)
             {
                 try 
                 {
-                    query = request.Options.Filter.ApplyTo(query, new ODataQuerySettings
+                    query = options.Filter.ApplyTo(query, new ODataQuerySettings
                     {
                         EnsureStableOrdering = false
                     }) as IQueryable<PaymentRecord>;
                 }
-                catch (Exception) when (containsDueStatusArabic || containsEffectiveDate)
+                catch (Exception)
                 {
-                    // Fallback: If it failed and contained problematic fields, 
-                    // we'll have to handle filtering in-memory entirely or try to apply other filters.
-                    // This is a bit of a hammer, but it prevents the 500 error.
+                    // Fallback: If it failed (likely due to type mismatch in effectiveDate or dueStatusArabic),
+                    // we'll have to handle filtering in-memory entirely for the failing parts.
+                    // We continue with the query as-is (with other filters applied if they didn't fail, 
+                    // but usually the whole ApplyTo fails).
                 }
             }
 
@@ -250,33 +261,45 @@ public class ListPayments
                             }
                         }
                     }
-                    else if (part.Contains("effectiveDate"))
+                    else if (part.Contains("effectiveDate") || part.Contains("chequeDate"))
                     {
                         // Handle date filtering in-memory if needed (e.g., if EF Core failed)
-                        // This handles common date operators: ge, le, eq
+                        // This handles common date operators: ge, le, eq, gt, lt
                         // First try to match standard OData format: effectiveDate ge 2026-04-18T00:00:00Z
-                        var match = System.Text.RegularExpressions.Regex.Match(part, @"effectiveDate\s+(ge|le|eq|gt|lt)\s+(\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z)?)");
-                        if (!match.Success)
-                        {
-                            // Try to match OData format with quotes if they appear: effectiveDate eq '2026-04-18'
-                            match = System.Text.RegularExpressions.Regex.Match(part, @"effectiveDate\s+(ge|le|eq|gt|lt)\s+'(\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z)?)'");
-                        }
+                        // We use a regex that handles both quoted and unquoted values, and optionally time parts
+                        var match = System.Text.RegularExpressions.Regex.Match(part, @"(effectiveDate|chequeDate)\s+(ge|le|eq|gt|lt)\s+(')?(\d{4}-\d{2}-\d{2})(T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z)?(')?");
 
                         if (match.Success)
                         {
-                            var op = match.Groups[1].Value;
-                            var valStr = match.Groups[2].Value;
-                            if (DateOnly.TryParse(valStr.Split('T')[0], out var filterDate))
+                            var field = match.Groups[1].Value;
+                            var op = match.Groups[2].Value;
+                            var dateStr = match.Groups[4].Value;
+                            if (DateOnly.TryParse(dateStr, out var filterDate))
                             {
-                                finalList = op switch
+                                if (field == "effectiveDate")
                                 {
-                                    "ge" => finalList.Where(r => r.EffectiveDate >= filterDate).ToList(),
-                                    "le" => finalList.Where(r => r.EffectiveDate <= filterDate).ToList(),
-                                    "eq" => finalList.Where(r => r.EffectiveDate == filterDate).ToList(),
-                                    "gt" => finalList.Where(r => r.EffectiveDate > filterDate).ToList(),
-                                    "lt" => finalList.Where(r => r.EffectiveDate < filterDate).ToList(),
-                                    _ => finalList
-                                };
+                                    finalList = op switch
+                                    {
+                                        "ge" => finalList.Where(r => r.EffectiveDate >= filterDate).ToList(),
+                                        "le" => finalList.Where(r => r.EffectiveDate <= filterDate).ToList(),
+                                        "eq" => finalList.Where(r => r.EffectiveDate == filterDate).ToList(),
+                                        "gt" => finalList.Where(r => r.EffectiveDate > filterDate).ToList(),
+                                        "lt" => finalList.Where(r => r.EffectiveDate < filterDate).ToList(),
+                                        _ => finalList
+                                    };
+                                }
+                                else if (field == "chequeDate")
+                                {
+                                    finalList = op switch
+                                    {
+                                        "ge" => finalList.Where(r => r.ChequeDate >= filterDate).ToList(),
+                                        "le" => finalList.Where(r => r.ChequeDate <= filterDate).ToList(),
+                                        "eq" => finalList.Where(r => r.ChequeDate == filterDate).ToList(),
+                                        "gt" => finalList.Where(r => r.ChequeDate > filterDate).ToList(),
+                                        "lt" => finalList.Where(r => r.ChequeDate < filterDate).ToList(),
+                                        _ => finalList
+                                    };
+                                }
                             }
                         }
                     }

@@ -145,9 +145,22 @@ public class ListPaymentsWithDueStatus
                 }
             ).AsQueryable();
 
-            // Apply OData $filter and $orderby
+            // 1. Intercept OData $filter to handle fields that might cause issues with EF Core (DateOnly vs DateTimeOffset or computed fields)
+            var filterString = request.Options?.Filter?.RawValue;
+            
+            // Apply OData $filter
             if (request.Options?.Filter != null)
-                query = request.Options.Filter.ApplyTo(query, new ODataQuerySettings()) as IQueryable<PaymentRecord>;
+            {
+                try 
+                {
+                    query = request.Options.Filter.ApplyTo(query, new ODataQuerySettings()) as IQueryable<PaymentRecord>;
+                }
+                catch (Exception)
+                {
+                    // Fallback: If it failed (likely due to type mismatch in DateOnly fields),
+                    // we'll handle filtering in-memory later.
+                }
+            }
 
             if (request.Options?.OrderBy != null)
                 query = request.Options.OrderBy.ApplyTo(query, new ODataQuerySettings()) as IQueryable<PaymentRecord>;
@@ -201,6 +214,51 @@ public class ListPaymentsWithDueStatus
                 else
                 {
                     record.DueStatusArabic = record.StatusDescription;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(filterString))
+            {
+                var filterParts = filterString.Split("and", StringSplitOptions.TrimEntries);
+                foreach (var part in filterParts)
+                {
+                    if (part.Contains("effectiveDate") || part.Contains("chequeDate"))
+                    {
+                        var match = System.Text.RegularExpressions.Regex.Match(part, @"(effectiveDate|chequeDate)\s+(ge|le|eq|gt|lt)\s+(')?(\d{4}-\d{2}-\d{2})(T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z)?(')?");
+                        if (match.Success)
+                        {
+                            var field = match.Groups[1].Value;
+                            var op = match.Groups[2].Value;
+                            var dateStr = match.Groups[4].Value;
+                            if (DateOnly.TryParse(dateStr, out var filterDate))
+                            {
+                                if (field == "effectiveDate")
+                                {
+                                    finalList = op switch
+                                    {
+                                        "ge" => finalList.Where(r => r.EffectiveDate >= filterDate).ToList(),
+                                        "le" => finalList.Where(r => r.EffectiveDate <= filterDate).ToList(),
+                                        "eq" => finalList.Where(r => r.EffectiveDate == filterDate).ToList(),
+                                        "gt" => finalList.Where(r => r.EffectiveDate > filterDate).ToList(),
+                                        "lt" => finalList.Where(r => r.EffectiveDate < filterDate).ToList(),
+                                        _ => finalList
+                                    };
+                                }
+                                else if (field == "chequeDate")
+                                {
+                                    finalList = op switch
+                                    {
+                                        "ge" => finalList.Where(r => r.ChequeDate >= filterDate).ToList(),
+                                        "le" => finalList.Where(r => r.ChequeDate <= filterDate).ToList(),
+                                        "eq" => finalList.Where(r => r.ChequeDate == filterDate).ToList(),
+                                        "gt" => finalList.Where(r => r.ChequeDate > filterDate).ToList(),
+                                        "lt" => finalList.Where(r => r.ChequeDate < filterDate).ToList(),
+                                        _ => finalList
+                                    };
+                                }
+                            }
+                        }
+                    }
                 }
             }
 

@@ -196,7 +196,7 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
     );
   };
 
-
+ 
   const handleNewPayment = () => {
     dispatch(setPaymentType(paymentType === "incoming" ? 1 : 2));
     dispatch(setSelectedPayment(undefined));
@@ -333,7 +333,7 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
     );
   };
 
-
+ 
   // ─────────────────────────────────────────────
 // 1. Common columns (before amount)
   const commonStartColumns = [
@@ -545,106 +545,106 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
       ...finalColumns,
     ];
   }
-
+  
   return (
-      <>
-        <AccountingMenu selectedMenuItem={"/payments"} />
-        <Paper elevation={5} className={`div-container-withBorderCurved`}>
-          <Grid container columnSpacing={1} alignItems="center">
-
-            <Grid item xs={12}>
-              <div className="div-container">
-                <KendoGrid
-                    style={{ flex: 1 }}
-                    data={payments ? payments : { data: [], total: 0 }}
-                    resizable={true}
-                    filterable={true}
-                    sortable={true}
-                    pageable={true}
-                    {...dataState}
-                    onDataStateChange={dataStateChange}
-                >
-                  <GridToolbar>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={handleNewPayment}
-                    >
-                      {getTranslatedLabel(
-                          `${localizationKey}.actions.${paymentType}`, // Dynamically use 'incoming' or 'outgoing'
-                          `New ${paymentType === 'incoming' ? 'Incoming' : 'Outgoing'} Payment` // Fallback
-                      )}
-                    </Button>
-
-                    <PaymentsDailyExcel
-                        companyName={companyName}
-                        paymentType={paymentType}
-                        getTranslatedLabel={getTranslatedLabel}
-                    />
-                    <PaymentsDateRangeExcel
-                        companyName={companyName}
-                        paymentType={paymentType}
-                        getTranslatedLabel={getTranslatedLabel}
-                    />
-                  </GridToolbar>
-                  {gridColumns.map((col, index) => (
-                      <Column key={index} {...col} />
-                  ))}
-                </KendoGrid>
-                <Dialog
-                    open={deleteDialogOpen}
-                    onClose={handleCancelDelete}
-                    aria-labelledby="delete-payment-dialog-title"
-                    aria-describedby="delete-payment-dialog-description"
-                >
-                  <DialogTitle id="delete-payment-dialog-title">
+    <>
+      <AccountingMenu selectedMenuItem={"/payments"} />
+      <Paper elevation={5} className={`div-container-withBorderCurved`}>
+        <Grid container columnSpacing={1} alignItems="center">
+          
+          <Grid item xs={12}>
+            <div className="div-container">
+              <KendoGrid
+                style={{ flex: 1 }}
+                data={payments ? payments : { data: [], total: 0 }}
+                resizable={true}
+                filterable={true}
+                sortable={true}
+                pageable={true}
+                {...dataState}
+                onDataStateChange={dataStateChange}
+              >
+                <GridToolbar>
+                  <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleNewPayment}
+                  >
                     {getTranslatedLabel(
-                        "accounting.payments.list.deleteDialogTitle",
-                        "Confirm Deletion"
+                        `${localizationKey}.actions.${paymentType}`, // Dynamically use 'incoming' or 'outgoing'
+                        `New ${paymentType === 'incoming' ? 'Incoming' : 'Outgoing'} Payment` // Fallback
                     )}
-                  </DialogTitle>
-                  <DialogContent>
-                    <DialogContentText id="delete-payment-dialog-description">
-                      {getTranslatedLabel(
-                          "accounting.payments.list.deleteDialogMessage",
-                          "Are you sure you want to delete payment {0}? This action cannot be undone."
-                      ).replace("{0}", paymentToDelete || "")}
-                    </DialogContentText>
-                  </DialogContent>
-                  <DialogActions>
-                    <Button onClick={handleCancelDelete} disabled={isDeleting}>
-                      {getTranslatedLabel("global.cancel", "Cancel")}
-                    </Button>
-                    <Button
-                        onClick={handleConfirmDelete}
-                        color="error"
-                        variant="contained"
-                        disabled={isDeleting}
-                        autoFocus
-                    >
-                      {isDeleting
-                          ? getTranslatedLabel("global.deleting", "Deleting...")
-                          : getTranslatedLabel("accounting.payments.list.deleteConfirm", "Delete")}
-                    </Button>
-                  </DialogActions>
-                </Dialog>
-                {selectedPaymentIdForTransactions && (
-                    <ModalContainer
-                        show={!!selectedPaymentIdForTransactions}
+                  </Button>
+
+                  <PaymentsDailyExcel
+                      companyName={companyName}
+                      paymentType={paymentType}
+                      getTranslatedLabel={getTranslatedLabel}
+                  />
+                  <PaymentsDateRangeExcel
+                      companyName={companyName}
+                      paymentType={paymentType}
+                      getTranslatedLabel={getTranslatedLabel}
+                  />
+                </GridToolbar>
+                {gridColumns.map((col, index) => (
+                    <Column key={index} {...col} />
+                ))}
+              </KendoGrid>
+              <Dialog
+                  open={deleteDialogOpen}
+                  onClose={handleCancelDelete}
+                  aria-labelledby="delete-payment-dialog-title"
+                  aria-describedby="delete-payment-dialog-description"
+              >
+                <DialogTitle id="delete-payment-dialog-title">
+                  {getTranslatedLabel(
+                      "accounting.payments.list.deleteDialogTitle",
+                      "Confirm Deletion"
+                  )}
+                </DialogTitle>
+                <DialogContent>
+                  <DialogContentText id="delete-payment-dialog-description">
+                    {getTranslatedLabel(
+                        "accounting.payments.list.deleteDialogMessage",
+                        "Are you sure you want to delete payment {0}? This action cannot be undone."
+                    ).replace("{0}", paymentToDelete || "")}
+                  </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={handleCancelDelete} disabled={isDeleting}>
+                    {getTranslatedLabel("global.cancel", "Cancel")}
+                  </Button>
+                  <Button
+                      onClick={handleConfirmDelete}
+                      color="error"
+                      variant="contained"
+                      disabled={isDeleting}
+                      autoFocus
+                  >
+                    {isDeleting
+                        ? getTranslatedLabel("global.deleting", "Deleting...")
+                        : getTranslatedLabel("accounting.payments.list.deleteConfirm", "Delete")}
+                  </Button>
+                </DialogActions>
+              </Dialog>
+              {selectedPaymentIdForTransactions && (
+                  <ModalContainer
+                      show={!!selectedPaymentIdForTransactions}
+                      onClose={() => setSelectedPaymentIdForTransactions(null)}
+                      width={950}
+                  >
+                    <PaymentTransactionsList
                         onClose={() => setSelectedPaymentIdForTransactions(null)}
-                        width={950}
-                    >
-                      <PaymentTransactionsList
-                          onClose={() => setSelectedPaymentIdForTransactions(null)}
-                          paymentId={selectedPaymentIdForTransactions}
-                      />
-                    </ModalContainer>
-                )}
-                {isFetching && <LoadingComponent message={getTranslatedLabel(`${localizationKey}.loading`,"Loading Payments...")} />}
-              </div>
-            </Grid>
+                        paymentId={selectedPaymentIdForTransactions}
+                    />
+                  </ModalContainer>
+              )}
+              {isFetching && <LoadingComponent message={getTranslatedLabel(`${localizationKey}.loading`,"Loading Payments...")} />}
+            </div>
           </Grid>
-        </Paper>
-      </>
+        </Grid>
+      </Paper>
+    </>
   );
 }
