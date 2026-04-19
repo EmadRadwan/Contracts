@@ -28,6 +28,10 @@ const salesOpportunitiesApi = createApi({
             if (token) {
                 headers.set("authorization", `Bearer ${token}`);
             }
+            const lang = store.getState().localization.language ;
+            if (lang) {
+                headers.set("Accept-Language", `${lang}`);
+            }
             return headers;
         },
     }),
@@ -106,7 +110,7 @@ const salesOpportunitiesApi = createApi({
                     method: "POST",
                     body: action,
                 }),
-                invalidatesTags: [{ type: "OpportunityActions", id: "ACTION_LIST" }],
+                invalidatesTags: ['OpportunityActions', 'SalesOpportunity'],
             }),
 
             fetchOpportunityActions: builder.query<SalesOpportunityAction[], string>({

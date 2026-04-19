@@ -71,6 +71,8 @@ public class ListSalesOpportunityActions
 
                 Note = a.Note,
                 Comment = a.Comment,
+                isClosed = a.ActionTypeId == "DONE_DEAL",   // Example logic: if action type is "Done Deal", consider it closed
+                
 
                 CreatedByUserLogin = a.CreatedByUserLogin,
                 CreatedStamp = a.CreatedStamp,

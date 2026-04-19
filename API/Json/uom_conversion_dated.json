@@ -2,7 +2,7 @@
   {
     "UOM_ID": "EUR",
     "UOM_ID_TO": "USD",
-    "FROM_DATE": "2001-01-01 00:00:00.000",
+    "FROM_DATE": "2001-01-01",
     "THRU_DATE": null,
     "CONVERSION_FACTOR": 1.5,
     "CUSTOM_METHOD_ID": null,
@@ -17,7 +17,7 @@
   {
     "UOM_ID": "USD",
     "UOM_ID_TO": "EUR",
-    "FROM_DATE": "2001-01-01 00:00:00.000",
+    "FROM_DATE": "2001-01-01",
     "THRU_DATE": null,
     "CONVERSION_FACTOR": 0.7,
     "CUSTOM_METHOD_ID": null,
@@ -32,7 +32,7 @@
   {
     "UOM_ID": "USD",
     "UOM_ID_TO": "USD",
-    "FROM_DATE": "2001-01-01 00:00:00.000",
+    "FROM_DATE": "2001-01-01",
     "THRU_DATE": null,
     "CONVERSION_FACTOR": 1,
     "CUSTOM_METHOD_ID": null,

@@ -136,8 +136,7 @@ public class SalesOpportunitiesController : BaseApiController
         var opportunity = new SalesOpportunityDto
         {
             SalesOpportunityId = id,
-            OpportunityStageId = request.StageId,
-            OpportunityName = request.OpportunityName // Required field
+            OpportunityStageId = request.StageId
         };
 
         return HandleResult(await Mediator.Send(new UpdateSalesOpportunity.Command
@@ -150,5 +149,4 @@ public class SalesOpportunitiesController : BaseApiController
 public class UpdateStageRequest
 {
     public string StageId { get; set; } = null!;
-    public string OpportunityName { get; set; } = null!;
 }

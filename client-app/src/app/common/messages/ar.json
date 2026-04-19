@@ -291,7 +291,7 @@
         "contactNumber": "رقم الاتصال",
         "address": "العنوان",
         "email": "البريد الإلكتروني",
-        "partyId": "معرف الطرف", 
+        "partyId": "معرف الطرف",
         "partyType": "نوع الطرف",
         "reportTitle": "تقرير الأفراد والشركات",
         "generatedOn": "تم إنشاؤه في",
@@ -663,7 +663,7 @@
       "list": {
         "type": "نوع السعر",
         "currency": "العملة",
-        "from":"من تاريخ",
+        "from": "من تاريخ",
         "thru": "الى تاريخ",
         "price": "السعر",
         "title": "اسعار منتج: ",
@@ -675,8 +675,8 @@
         "prod-price": "سعر المنتج *",
         "currency": "العملة *",
         "from": "من تاريخ *",
-        "thru":"الى تاريخ",
-        "price":"السعر *"
+        "thru": "الى تاريخ",
+        "price": "السعر *"
       }
     }
   },
@@ -914,8 +914,7 @@
         "editProductionRun": "تعديل تشغيل إنتاج",
         "cancel": "إلغاء",
         "processing": "جارٍ معالجة التشغيل الإنتاجي..."
-      }
-    ,
+      },
       "tasks": {
         "title": "المهام",
         "seqNumber": "رقم الترتيب",
@@ -1382,8 +1381,8 @@
         "projectName": " المشروع",
         "bankName": "اسم البنك",
         "chequeNumber": "رقم الشيك",
-        "costCenterDescription":  "مركز التكلفة",
-        "salesRequestId":  "طلب المبيعات",
+        "costCenterDescription": "مركز التكلفة",
+        "salesRequestId": "طلب المبيعات",
         "comments": "التعليقات",
         "orderId": "رقم الطلب",
         "approvedByPartyName": "اعتمدت بواسطة",
@@ -1405,7 +1404,7 @@
           "applications": "تطبيقات الدفع",
           "reset": "إعادة تعيين الدفعة"
         },
-        "reset": {                                  
+        "reset": {
           "dialogTitle": "تأكيد إعادة تعيين الدفعة",
           "dialogMessage": "هل أنت متأكد من إعادة تعيين الدفعة رقم {paymentId}؟\n\nسيؤدي ذلك إلى:\n• إرجاع الحالة إلى \"غير مدفوع\"\n• حذف جميع تطبيقات الدفعة\n• حذف الحركات المحاسبية المرتبطة\n\nهذا الإجراء لا يمكن التراجع عنه.",
           "resetConfirm": "إعادة تعيين الدفعة",
@@ -1941,8 +1940,7 @@
         "description": "الوصف"
       }
     }
-  }
-  ,
+  },
   "projects": {
     "certificate": {
       "report": {
@@ -2100,7 +2098,7 @@
         "serviceId": "معرف الخدمة",
         "estimatedStartDate": "التاريخ",
         "serviceName": "اسم الخدمة",
-        "glAccountName":  " حساب دفتر الأستاذ",
+        "glAccountName": " حساب دفتر الأستاذ",
         "product": "المنتج",
         "description": "الوصف",
         "amount": "المبلغ",
@@ -2237,32 +2235,23 @@
 
       "actionModal": {
         "title": "إضافة إجراء",
-        "subtitle": "اختر الأعمدة التي تحتاج إلى رؤيتها في جدول العملاء المحتملين",
         "nextAction": "الإجراء التالي",
-        "stageDate": "تاريخ المرحلة *",
-        "comment": "التعليق *",
-        "commentPlaceholder": "اكتب تعليقك",
-        "answer": "تم الرد",
+        "cancelReason": "سبب الإلغاء",
+        "stageDate": "تاريخ الإجراء التالي",
+        "meetingType": "نوع الاجتماع",
+        "meetingLocation": "موقع الاجتماع",
+        "note": "ملاحظة",
+        "notePlaceholder": "ملاحظة...",
+        "comment": "التعليق",
+        "commentPlaceholder": "اكتب تعليقك هنا...",
         "cancel": "إلغاء",
         "saveAction": "حفظ الإجراء",
-        "cancelReason": "سبب الإلغاء *",
-
-        "actions": {
-          "setMeeting": "تحديد اجتماع",
-          "followUp": "متابعة",
-          "meeting": "اجتماع",
-          "followingAfterMeeting": "متابعة بعد الاجتماع",
-          "cancellation": "إلغاء",
-          "doneDeal": "صفقة مكتملة",
-          "noAnswer": "لا يوجد رد"
-        },
-
-        "reasons": {
-          "lowBudget": "ميزانية منخفضة",
-          "notInterested": "غير مهتم",
-          "noAnswer": "لا يوجد رد",
-          "other": "أخرى"
-        }
+        "actionHistory": "التعليقات",
+        "loadingActions": "جارٍ تحميل الإجراءات...",
+        "noActionsYet": "لا توجد إجراءات مسجلة بعد.",
+        "answered": "تمت الإجابة",
+        "nextActionDate": "تاريخ الإجراء",
+        "noDetails": "لا توجد تفاصيل إضافية"
       }
     }
   },

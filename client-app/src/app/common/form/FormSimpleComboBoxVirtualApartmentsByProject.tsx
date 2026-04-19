@@ -50,7 +50,8 @@ export const FormSimpleComboBoxVirtualApartmentsByProject = (fieldRenderProps: F
         wrapperStyle,
         value,
         onChange,
-        projectId
+        projectId,
+        popupSettings,
     } = fieldRenderProps;
 
     const editorRef = React.useRef<any>(null);
@@ -278,6 +279,7 @@ export const FormSimpleComboBoxVirtualApartmentsByProject = (fieldRenderProps: F
                     onFilterChange={onFilterChange}
                     virtual={{ pageSize, skip: skipRef.current, total }}
                     onPageChange={pageChange}
+                    popupSettings={popupSettings ? popupSettings : { appendTo: document.body }}
                 />
 
                 {showHint && (
