@@ -490,7 +490,7 @@ namespace Application.Projects
                     from cc in ccJoin.DefaultIfEmpty()
                     where pyt.OverrideGlAccountId != null
                           && allGlAccountIds.Contains(pyt.OverrideGlAccountId)
-                          && pyt.StatusId == "PMNT_SENT"
+                          //&& pyt.StatusId == "PMNT_SENT"
                           && (ptt.ParentTypeId == "DISBURSEMENT" || ptt.PaymentTypeId == "DISBURSEMENT")
                     select new PaymentRecord
                     {
