@@ -146,6 +146,12 @@ public class PartiesController : BaseApiController
         return HandleResult(await Mediator.Send(new CreateLead.Command { PartyDto = partyDto }));
     }
 
+    [HttpPost("createLeadsBatch", Name = "CreateLeadsBatch")]
+    public async Task<IActionResult> CreateLeadsBatch(List<PartyDto2> leads)
+    {
+        return HandleResult(await Mediator.Send(new CreateLeadsBatch.Command { Leads = leads }));
+    }
+
     [HttpPut("updateCustomer", Name = "UpdateCustomer")]
     public async Task<IActionResult> UpdateCustomer(PartyDto partyDto)
     {
