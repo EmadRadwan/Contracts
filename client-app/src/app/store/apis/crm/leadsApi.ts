@@ -78,6 +78,15 @@ const leadsApi = createApi({
                 invalidatesTags: [{ type: "Lead", id: "LIST" }, { type: "Lead", id: "LOV" }],
             }),
 
+            createLeadsBatch: builder.mutation<Lead, Lead[]>({
+                query: (leads) => ({
+                    url: `/parties/createLeadsBatch`,
+                    method: "POST",
+                    body: leads,
+                }),
+                invalidatesTags: [{ type: "Lead", id: "LIST" }, { type: "Lead", id: "LOV" }],
+            }),
+
             // Update an existing lead
             updateLead: builder.mutation<Lead, { id: string; lead: Lead }>({
                 query: ({ id, lead }) => ({
@@ -99,6 +108,7 @@ export const {
     useFetchLeadsQuery,
     useFetchLeadsLovQuery,
     useCreateLeadMutation,
+    useCreateLeadsBatchMutation,
     useUpdateLeadMutation,
 } = leadsApi;
 
