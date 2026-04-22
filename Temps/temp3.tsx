@@ -1,9 +1,17 @@
-import {GridColumn as Column} from "@progress/kendo-react-grid/dist/npm/GridColumn";
-import React from "react";
-
-<Column key="total" field="totalAmount" title={getTranslatedLabel(`${itemFormLocalizationKey}.deserved`, "Deserved")} editable={false} width={110} cell={(p) => <td>{(p.dataItem.totalAmount || 0).toFixed(2)}</td>} />,
-    <Column key="deserved" field="deserved" title="Deserved" editable={false} width={110} cell={(p) => <td>{(p.dataItem.deserved || 0).toFixed(2)}</td>} />
-
-<Column key="achievementPercentage" field="achievementPercentage" title={getTranslatedLabel(`${itemFormLocalizationKey}.total`, "Total)} editor="numeric" width={110} />,
-
-            
+const getNavItemStyles = (isSelected: boolean) => ({
+    color: isSelected ? theme.palette.primary.main : 'inherit',
+    textDecoration: "none",
+    typography: "h6",
+    "&:hover": { color: "grey.500", borderRadius: "3rem" },
+    fontWeight: isSelected ? "bold" : "normal",
+    display: 'flex',
+    alignItems: 'center',
+    // --- CHANGED VALUES BELOW ---
+    padding: { xs: '4px 8px', xl: '6px 12px' }, // Responsive padding
+    minWidth: { xs: '110px', xl: '130px' },    // Smaller min-width on laptops
+    // ----------------------------
+    justifyContent: 'center',
+    textAlign: 'center',
+    whiteSpace: 'nowrap',
+    fontSize: { xs: '0.75rem', xl: '0.875rem' } // Slightly smaller font on laptops
+});

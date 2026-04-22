@@ -508,6 +508,16 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
 // 6. Final columns (always last)
   const finalColumns = [
     {
+      field: "paymentMethodDescription",
+      title: getTranslatedLabel(`${localizationKey}.paymentMethodDescription`, "Payment Method"),
+      width: 150,
+    },
+    {
+      field: "accountNameArabic",
+      title: getTranslatedLabel(`${localizationKey}.accountNameArabic`, "Override Account"),
+      width: 150,
+    },
+    {
       field: "approvedByPartyName",
       title: getTranslatedLabel(`${localizationKey}.approvedByPartyName`, "Approved By"),
       width: 150,

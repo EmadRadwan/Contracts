@@ -58,13 +58,16 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
         fontWeight: isSelected ? "bold" : "normal",
         display: 'flex',
         alignItems: 'center',
-        padding: '6px 12px',
-        minWidth: '130px',
+        // --- CHANGED VALUES BELOW ---
+        padding: { xs: '4px 8px', xl: '6px 12px' }, // Responsive padding
+        minWidth: { xs: '110px', xl: '130px' },    // Smaller min-width on laptops
+        // ----------------------------
         justifyContent: 'center',
         textAlign: 'center',
         whiteSpace: 'nowrap',
+        fontSize: { xs: '0.75rem', xl: '0.875rem' } // Slightly smaller font on laptops
     });
-
+    
     const handleClick = (key: string) => {
         if (onMenuSelect) {
             onMenuSelect(key);
@@ -135,9 +138,24 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
     const handlePayrollReportClose = () => setPayrollReportOpen(false);
 
     return (
-        <Toolbar sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', paddingLeft: 0 }}>
-            <Box display="flex" alignItems="center">
-                <List sx={{ display: 'flex', padding: 0, gap: .1 }}>
+        <Toolbar sx={{
+            display: 'flex',
+            justifyContent: 'flex-start',
+            alignItems: 'center',
+            paddingLeft: 0,
+            overflowX: 'auto', // Allows horizontal scrolling if items overflow
+            width: '100%',
+            '&::-webkit-scrollbar': { display: 'none' }, // Optional: hide scrollbar for a cleaner look
+            msOverflowStyle: 'none',  // IE/Edge
+            scrollbarWidth: 'none',   // Firefox
+        }}>
+            <Box display="flex" alignItems="center" sx={{ width: 'max-content' }}>
+                <List sx={{
+                    display: 'flex',
+                    padding: 0,
+                    gap: 0.5, // slightly more spacing, but flexible
+                    flexWrap: 'nowrap' // ensures they stay in one line
+                }}>
                     {menuGroups.map((group) => (
                         <Can perform={group.requiredRole} key={group.groupKey}>
                             {(() => {
@@ -183,6 +201,9 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
                                                                 handlePayrollReportOpen();
                                                             } else {
                                                                 handleClick(sub.key);
+                                                                if (onMenuSelect) {
+                                                                    onMenuSelect(sub.key);
+                                                                }
                                                             }
                                                             handleMenuClose();
                                                         }}
@@ -215,7 +236,12 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
                                         component={LinkComponent}
                                         to={item.path}
                                         sx={getNavItemStyles(isSelected)}
-                                        onClick={() => handleClick(item.key)}
+                                        onClick={() => {
+                                            handleClick(item.key);
+                                            if (onMenuSelect) {
+                                                onMenuSelect(item.key);
+                                            }
+                                        }}
                                         disablePadding
                                     >
                                         {item.icon}

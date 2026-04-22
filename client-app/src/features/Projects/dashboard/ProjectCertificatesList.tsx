@@ -28,6 +28,7 @@ import {Certificate, CertificateStatus} from "../../../app/models/project/certif
 import {resetUiCertificateItems} from "../slice/certificateItemsUiSlice";
 import ProjectCertificatesDateRangeExcel from "../report/ProjectCertificatesDateRangeExcel";
 import {toast} from "react-toastify";
+import {certificateItemsApi} from "../../../app/store/apis/certificateItemsApi";
 
 
 interface ProjectCertificate {
@@ -71,10 +72,7 @@ export default function ProjectCertificatesList() {
     const { data, isFetching } = useFetchProjectCertificatesQuery({ ...dataState });
     const [viewMode, setViewMode] = useState<"list" | "form">("list");
 
-    //console.log("Certificates data:", data);
-
-    // console.log('List rendered')
-
+    
     const debounce = (func: Function, wait: number) => {
         let timeout: NodeJS.Timeout;
         return (...args: any[]) => {

@@ -218,7 +218,14 @@ export default function MultiPaymentCertificatesList() {
 
     return (
         <>
-            <AccountingMenu selectedMenuItem={"/multiPaymentCertificates"} />
+            <AccountingMenu
+                selectedMenuItem={"/multiPaymentCertificates"}
+                onMenuSelect={(key) => {
+                    if (key === "multiPaymentCertificates") {
+                        setViewMode("list");
+                    }
+                }}
+            />
             <Paper elevation={5} className="div-container-withBorderCurved">
                 <Grid container columnSpacing={1} alignItems="center">
                     <Grid item xs={12}>
@@ -261,6 +268,7 @@ export default function MultiPaymentCertificatesList() {
                                 field="amount"
                                 title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")}
                                 width={columnWidths.amount}
+                                filter={"numeric"}
                                 format="{0:n2}"
                             />
                             <Column

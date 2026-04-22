@@ -91,6 +91,13 @@ const multiPaymentCertificateApi = createApi({
                 }),
                 invalidatesTags: ['MultiPaymentCertificates', 'MultiPaymentItems'],
             }),
+            duplicateMultiPaymentCertificate: builder.mutation<MultiPaymentCertificate, string>({
+                query: (workEffortId) => ({
+                    url: `/project/${workEffortId}/duplicateMultiPaymentCertificate`,
+                    method: 'POST',
+                }),
+                invalidatesTags: ['MultiPaymentCertificates'],
+            }),
             fetchMultiPaymentCertificatesByDateRange: builder.query<MultiPaymentCertificate[], { startDate: string; endDate: string }>({
                 query: ({ startDate, endDate }) => `/project/multiPaymentCertificates/by-date-range?startDate=${startDate}&endDate=${endDate}`,
                 providesTags: ["MultiPaymentCertificates"],
@@ -108,6 +115,7 @@ export const { useFetchMultiPaymentCertificatesQuery,
     useFetchSubProjectsQuery, useAddMultiPaymentCertificateMutation,
     useApproveMultiPaymentCertificateMutation, useUpdateMultiPaymentCertificateMutation,
     useDeleteMultiPaymentCertificateMutation, useResetMultiPaymentCertificateMutation,
+    useDuplicateMultiPaymentCertificateMutation,
     useLazyFetchMultiPaymentCertificatesByDateRangeQuery,
     useLazyFetchMultiPaymentItemsByDateRangeQuery
 } = multiPaymentCertificateApi;

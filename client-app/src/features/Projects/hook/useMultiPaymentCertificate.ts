@@ -5,7 +5,8 @@ import { toast } from "react-toastify";
 import {
     useAddMultiPaymentCertificateMutation, useApproveMultiPaymentCertificateMutation,
     useGetMultiPaymentItemsQuery, useUpdateMultiPaymentCertificateMutation,
-    useDeleteMultiPaymentCertificateMutation, useResetMultiPaymentCertificateMutation
+    useDeleteMultiPaymentCertificateMutation, useResetMultiPaymentCertificateMutation,
+    useDuplicateMultiPaymentCertificateMutation
 } from "../../../app/store/apis/multiPaymentCertificateApi";
 import {useAppSelector} from "../../../app/store/configureStore";
 
@@ -32,6 +33,7 @@ export default function useMultiPaymentCertificate({
     const [approveMultiPaymentCertificate, { isLoading: approveLoading }] = useApproveMultiPaymentCertificateMutation();
     const [deleteMultiPaymentCertificate, { isLoading: deleteLoading }] = useDeleteMultiPaymentCertificateMutation();
     const [resetMultiPaymentCertificate, { isLoading: resetLoading }] = useResetMultiPaymentCertificateMutation();
+    const [duplicateMultiPaymentCertificate, { isLoading: duplicateLoading }] = useDuplicateMultiPaymentCertificateMutation();
     const { user } = useAppSelector((state) => state.account);
     const companyId = user?.organizationPartyId || "";
     const [itemsVersion, setItemsVersion] = useState(0);
@@ -248,6 +250,27 @@ export default function useMultiPaymentCertificate({
         [resetMultiPaymentCertificate, setParentCertificate, setEditMode, setFormKey]
     );
 
+    const handleDuplicate = useCallback(
+        async (workEffortId: string) => {
+            setIsLoading(true);
+            try {
+                const response = await duplicateMultiPaymentCertificate(workEffortId).unwrap();
+                setCertificate(response);
+                setParentCertificate?.(response);
+                setEditMode?.(2);
+                setFormKey(prev => prev + 1);
+                toast.success("Certificate duplicated successfully");
+                return { success: true, certificate: response };
+            } catch (error: any) {
+                toast.error("Error duplicating certificate: " + (error?.data?.message || error.message));
+                return { success: false };
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [duplicateMultiPaymentCertificate, setParentCertificate, setEditMode, setFormKey]
+    );
+
     return {
         certificate,
         setCertificate,
@@ -260,7 +283,8 @@ export default function useMultiPaymentCertificate({
         handleApprove,
         handleDelete,
         handleReset,
+        handleDuplicate,
         setItems, itemsVersion,
-        isLoading: isLoading || itemsLoading || addLoading || approveLoading || deleteLoading || resetLoading,
+        isLoading: isLoading || itemsLoading || addLoading || approveLoading || deleteLoading || resetLoading || duplicateLoading,
     };
 }

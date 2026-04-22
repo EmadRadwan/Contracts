@@ -27,6 +27,7 @@ interface CertificateActionsMenuProps {
     currentStatusId: string | undefined;
     handleApprove: () => void;
     handleReset: () => void;
+    handleDuplicate: () => void;
     disabled: boolean;
 }
 
@@ -35,10 +36,11 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
                                                                            currentStatusId,
                                                                            handleApprove,
                                                                            handleReset,
+                                                                           handleDuplicate,
                                                                            disabled,
                                                                        }) => {
     const {getTranslatedLabel} = useTranslationHelper();
-    const localizationKey = "accounting.multiPaymentCertificate.form";
+    const localizationKey = "projects.multiPaymentCertificate.form";
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
     const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -94,6 +96,15 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
                     sx={{ color: '#d32f2f' }}
                 >
                     {getTranslatedLabel(`${localizationKey}.resetConfirm`, "Reset Certificate")}
+                </MenuItem>
+                <MenuItem
+                    onClick={() => {
+                        handleDuplicate();
+                        handleClose();
+                    }}
+                    disabled={!workEffortId}
+                >
+                    {getTranslatedLabel(`${localizationKey}.duplicate`, "Duplicate Certificate")}
                 </MenuItem>
             </Menu>
 
@@ -180,7 +191,7 @@ export default function MultiPaymentCertificateForm({
         deleteItem,
         handleCreate,
         handleUpdate, setItems, handleApprove, itemsVersion,
-        handleDelete, handleReset,
+        handleDelete, handleReset, handleDuplicate,
         isLoading: apiLoading,
     } = useMultiPaymentCertificate({
         selectedCertificate,
@@ -330,13 +341,32 @@ export default function MultiPaymentCertificateForm({
         });
     }, [certificate, handleReset, setEditMode, setParentCertificate]);
 
+    const handleDuplicateCertificate = useCallback(() => {
+        if (!certificate?.workEffortId) {
+            return;
+        }
+        handleDuplicate(certificate.workEffortId).then((result) => {
+            if (result.success && result.certificate) {
+                setEditMode(2);
+                setParentCertificate(result.certificate);
+            }
+        });
+    }, [certificate, handleDuplicate, setEditMode, setParentCertificate]);
+
 
     const status = renderSwitchStatus();
 
 
     return (
         <>
-            <AccountingMenu selectedMenuItem="/multi-payment-certificates"/>
+            <AccountingMenu
+                selectedMenuItem="/multi-payment-certificates"
+                onMenuSelect={(key) => {
+                    if (key === "multiPaymentCertificates") {
+                        cancelEdit();
+                    }
+                }}
+            />
             <Paper elevation={5} className="div-container-withBorderCurved">
                 <Grid container spacing={2} alignItems="center">
                     <Grid item xs={11}>
@@ -353,6 +383,7 @@ export default function MultiPaymentCertificateForm({
                                     currentStatusId={certificate?.currentStatusId}
                                     handleApprove={handleApproveCertificate}
                                     handleReset={handleResetCertificate}
+                                    handleDuplicate={handleDuplicateCertificate}
                                     disabled={apiLoading || items.length === 0}
                                 />
                             )}

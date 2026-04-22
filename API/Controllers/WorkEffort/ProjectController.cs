@@ -158,6 +158,13 @@ public class ProjectController : BaseApiController
         return HandleResult(result);
     }
 
+    [HttpPost("{id}/duplicateMultiPaymentCertificate")]
+    public async Task<ActionResult<MultiPaymentCertificateDto>> DuplicateMultiPaymentCertificate(string id)
+    {
+        var result = await Mediator.Send(new DuplicateMultiPaymentCertificate.Command { OriginalWorkEffortId = id });
+        return HandleResult(result);
+    }
+
     [HttpDelete("multiPaymentCertificate/{workEffortId}")]
     public async Task<ActionResult> DeleteMultiPaymentCertificate(string workEffortId)
     {

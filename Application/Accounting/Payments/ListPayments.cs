@@ -58,11 +58,20 @@ public class ListPayments
                     from sr in srJoin.DefaultIfEmpty()
                     join prod in _context.Products on sr.ProductId equals prod.ProductId into prodJoin
                     from prod in prodJoin.DefaultIfEmpty()
-                    join approvedBy in _context.Parties on pyt.ApprovedByPartyId equals approvedBy.PartyId into approvedByJoin
+                    join approvedBy in _context.Parties on pyt.ApprovedByPartyId equals approvedBy.PartyId into
+                        approvedByJoin
                     from approvedBy in approvedByJoin.DefaultIfEmpty()
-                    join createdBy in _context.Parties on pyt.CreatedByPartyId equals createdBy.PartyId into createdByJoin
+                    join createdBy in _context.Parties on pyt.CreatedByPartyId equals createdBy.PartyId into
+                        createdByJoin
                     from createdBy in createdByJoin.DefaultIfEmpty()
+                    join pm in _context.PaymentMethods on pyt.PaymentMethodId equals pm.PaymentMethodId
+                        into pmJoin
+                    from pm in pmJoin.DefaultIfEmpty()
 
+                    // 2. New Left Join: GlAccounts (using OverrideGlAccountId)
+                    join gl in _context.GlAccounts on pyt.OverrideGlAccountId equals gl.GlAccountId
+                        into glJoin
+                    from gl in glJoin.DefaultIfEmpty()
                     select new PaymentRecord
                     {
                         PaymentId = pyt.PaymentId,
@@ -121,7 +130,9 @@ public class ListPayments
                         ApprovedByPartyId = pyt.ApprovedByPartyId,
                         ApprovedByPartyName = approvedBy != null ? approvedBy.Description : null,
                         CreatedByPartyId = pyt.CreatedByPartyId,
-                        CreatedByPartyName = createdBy != null ? createdBy.Description : null
+                        CreatedByPartyName = createdBy != null ? createdBy.Description : null,
+                        PaymentMethodDescription = pm != null ? pm.Description : null, // From PaymentMethod
+                        AccountNameArabic = gl != null ? gl.AccountNameArabic : null, // From GlAccount
                     })
                 .AsQueryable();
 
@@ -147,11 +158,11 @@ public class ListPayments
                 // but ODataQueryOptions is mostly read-only for its clauses.
                 // The safest way to avoid the 500 error is to catch it during ApplyTo.
             }
-            
+
             // Apply OData $filter except for problematic fields if they fail
             if (options?.Filter != null)
             {
-                try 
+                try
                 {
                     query = options.Filter.ApplyTo(query, new ODataQuerySettings
                     {
@@ -177,7 +188,7 @@ public class ListPayments
 
                 record.DaysUntilDue = effectiveDateOnly.DayNumber - DateHelper.Today.DayNumber;
 
-                
+
                 if (record.StatusId != "PMNT_NOT_PAID")
                 {
                     record.DueStatusArabic = record.StatusDescription;
@@ -244,16 +255,19 @@ public class ListPayments
                     {
                         if (part.Contains("contains"))
                         {
-                            var match = System.Text.RegularExpressions.Regex.Match(part, @"contains\(dueStatusArabic\s*,\s*'(.*?)'\)");
+                            var match = System.Text.RegularExpressions.Regex.Match(part,
+                                @"contains\(dueStatusArabic\s*,\s*'(.*?)'\)");
                             if (match.Success)
                             {
                                 var val = match.Groups[1].Value;
-                                finalList = finalList.Where(r => r.DueStatusArabic != null && r.DueStatusArabic.Contains(val)).ToList();
+                                finalList = finalList.Where(r =>
+                                    r.DueStatusArabic != null && r.DueStatusArabic.Contains(val)).ToList();
                             }
                         }
                         else if (part.Contains(" eq "))
                         {
-                            var match = System.Text.RegularExpressions.Regex.Match(part, @"dueStatusArabic\s+eq\s+'(.*?)'");
+                            var match = System.Text.RegularExpressions.Regex.Match(part,
+                                @"dueStatusArabic\s+eq\s+'(.*?)'");
                             if (match.Success)
                             {
                                 var val = match.Groups[1].Value;
@@ -267,7 +281,8 @@ public class ListPayments
                         // This handles common date operators: ge, le, eq, gt, lt
                         // First try to match standard OData format: effectiveDate ge 2026-04-18T00:00:00Z
                         // We use a regex that handles both quoted and unquoted values, and optionally time parts
-                        var match = System.Text.RegularExpressions.Regex.Match(part, @"(effectiveDate|chequeDate)\s+(ge|le|eq|gt|lt)\s+(')?(\d{4}-\d{2}-\d{2})(T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z)?(')?");
+                        var match = System.Text.RegularExpressions.Regex.Match(part,
+                            @"(effectiveDate|chequeDate)\s+(ge|le|eq|gt|lt)\s+(')?(\d{4}-\d{2}-\d{2})(T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z)?(')?");
 
                         if (match.Success)
                         {
