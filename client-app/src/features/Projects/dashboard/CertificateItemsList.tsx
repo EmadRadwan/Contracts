@@ -1,5 +1,5 @@
 import {orderBy, SortDescriptor, State, process} from '@progress/kendo-data-query';
-import React, {useCallback, useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState, useMemo} from "react";
 import {
     Grid as KendoGrid,
     GridCellProps,
@@ -11,11 +11,7 @@ import {
 import {useAppDispatch, useAppSelector} from "../../../app/store/configureStore";
 import {Button, Grid, Skeleton, Typography} from "@mui/material";
 import {CertificateItem} from "../../../app/models/project/certificateItem";
-import {
-    resetUiCertificateItems,
-    setUiCertificateItems,
-    setUiCertificateItemsFromApi
-} from "../slice/certificateItemsUiSlice";
+
 import ModalContainer from "../../../app/common/modals/ModalContainer";
 import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
 import {
@@ -25,6 +21,12 @@ import {
 } from "../slice/certificateSelectors";
 import {useFetchCertificateItemsQuery} from "../../../app/store/apis/certificateItemsApi";
 import {CertificateItemFormMemo} from "../form/CertificateItemForm";
+import CertificateItemKendoBulkAdd from "../form/CertificateItemKendoBulkAdd";
+import {
+    setProcessedCertificateItems,
+    setUiCertificateItems,
+    setUiCertificateItemsFromApi
+} from "../slice/certificateItemsUiSlice";
 
 
 interface Props {
@@ -41,28 +43,51 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
     const [show, setShow] = useState(false);
     const [itemEditMode, setItemEditMode] = useState(0);
     const [certificateItem, setCertificateItem] = useState<CertificateItem | undefined>(undefined);
+    const [showBulkAdd, setShowBulkAdd] = useState(false);
     const dispatch = useAppDispatch();
     const {getTranslatedLabel} = useTranslationHelper();
-    const localizationKey = "certificate.items.list";
+    const localizationKey = "projects.certificate.items.list";
     const subtotal = useAppSelector(certificateSubTotal);
     const {currentCertificateType} = useAppSelector((state) => state.certificateUi);
+
     const {data: certificateItemsData, isFetching, isLoading} = useFetchCertificateItemsQuery(workEffortId || "", {
         skip: !workEffortId,
     });
     const uiCertificateItems: CertificateItem[] = useAppSelector(displayCertificateItemsSelector);
     const nonDeletedItems = useAppSelector(nonDeletedCertificateItemsSelector);
 
-    console.log('certificateItemsData', certificateItemsData)
-    const pageChange = (event: GridPageChangeEvent) => {
-        setPage(event.page);
-    };
+    const isSupplyWithDiscount = ["SUPPLY_PROCUREMENT_CERTIFICATE"].includes(currentCertificateType);
+    const isSupplyWithoutDiscount = ["COMPANY_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
+    const isWorkmanship = ["WORKMANSHIP_CONTRACTING_CERTIFICATE"].includes(currentCertificateType);
 
     useEffect(() => {
         if (certificateItemsData && !isFetching && !isLoading) {
             dispatch(setUiCertificateItemsFromApi(certificateItemsData));
         }
     }, [certificateItemsData, isFetching, isLoading, dispatch]);
-    
+
+    const memoizedOnClose = useCallback(() => {
+        setShow(false);
+    }, []);
+
+    const memoizedOnBulkClose = useCallback(() => {
+        setShowBulkAdd(false);
+    }, []);
+
+    const modalWidth = isWorkmanship ? 1200 : 700;
+    const bulkModalWidth = "95%";
+
+    const addItem = useCallback((item: CertificateItem) => {
+        dispatch(setProcessedCertificateItems([item]));
+    }, [dispatch]);
+
+    const updateItem = useCallback((item: CertificateItem) => {
+        dispatch(setProcessedCertificateItems([item]));
+    }, [dispatch]);
+
+    const deleteItem = useCallback((itemId: string) => {
+        dispatch(setProcessedCertificateItems([{ workEffortId: itemId, isDeleted: true } as CertificateItem]));
+    }, [dispatch]);
 
     const handleSelectCertificateItem = useCallback(
         (workEffortId: string) => {
@@ -83,19 +108,46 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
                 transportationExpenses: selectedCertificateItem.transportationExpenses || 0,
                 discount: selectedCertificateItem.discount || 0,
                 unitPrice: selectedCertificateItem.unitPrice || 0,
+                materialPrice: selectedCertificateItem.materialPrice || 0,
+                laborPrice: selectedCertificateItem.laborPrice || 0,
                 procurementDate: selectedCertificateItem.procurementDate
                     ? new Date(selectedCertificateItem.procurementDate)
                     : new Date(),
+                additionalInsurance: selectedCertificateItem.additionalInsurance || 0,
+                deductionDescription: selectedCertificateItem.deductionDescription || "",
+                insuranceMode: selectedCertificateItem.insuranceMode || "value",
+                additionalInsuranceMode: selectedCertificateItem.additionalInsuranceMode || "value",
             };
             setCertificateItem(certificateItem);
             setItemEditMode(2);
             setShow(true);
-            console.log('selectedCertificateItem', selectedCertificateItem);
-            console.log('certificateItem', certificateItem);
         },
         [uiCertificateItems]
     );
 
+    const remove = useCallback(
+        (dataItem: CertificateItem, nonDeletedItems: CertificateItem[]) => {
+            const newCertificateItems = nonDeletedItems.map((item) =>
+                item.workEffortId === dataItem.workEffortId ? { ...item, isDeleted: true } : item
+            );
+            dispatch(setUiCertificateItems(newCertificateItems));
+        },
+        [dispatch]
+    );
+
+    const deductionDescriptionCell = (props: GridCellProps) => (
+        <td>
+            {props.dataItem.deductionDescription ? (
+                <Button onClick={() => handleSelectCertificateItem(props.dataItem.workEffortId)}>
+                    {props.dataItem.deductionDescription.length > 50
+                        ? `${props.dataItem.deductionDescription.substring(0, 50)}...`
+                        : props.dataItem.deductionDescription}
+                </Button>
+            ) : (
+                "-"
+            )}
+        </td>
+    );
 
     const descriptionCell = (props: GridCellProps) => (
         <td>
@@ -118,79 +170,25 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
         </td>
     );
 
-    const remove = useCallback(
-        (dataItem: CertificateItem, nonDeletedItems: CertificateItem[]) => {
-            const newCertificateItems = nonDeletedItems.map((item) =>
-                item.workEffortId === dataItem.workEffortId ? { ...item, isDeleted: true } : item
-            );
-            dispatch(setUiCertificateItems(newCertificateItems));
-        },
-        [dispatch]
-    );
-
     const CommandCell = (props: GridCellProps) => (
         <DeleteCertificateItemCell {...props} remove={(dataItem: CertificateItem) => remove(dataItem, nonDeletedItems)} />
     );
-    
 
-
-    const memoizedOnClose = useCallback(() => {
-        setShow(false);
-    }, []);
-
-    const modalWidth = 700;
-
-
-    const isSupplyWithDiscount = ["SUPPLY_PROCUREMENT_CERTIFICATE"].includes(currentCertificateType);
-    const isSupplyWithoutDiscount = ["COMPANY_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
-
-    const dataWithSummaries = uiCertificateItems ? (() => {
-        const groupedByProductId: { [key: string]: CertificateItem[] } = uiCertificateItems.reduce(
-            (acc, item) => {
-                const productId = item.productId || '';
-                if (!acc[productId]) acc[productId] = [];
-                acc[productId].push(item);
-                return acc;
-            },
-            {} as { [key: string]: CertificateItem[] }
-        );
-
-        const sortedData = orderBy(uiCertificateItems, sort);
-        let result: any[] = [];
-        Object.keys(groupedByProductId).forEach((productId) => {
-            const groupItems = groupedByProductId[productId];
-            // REFACTOR: Calculate productSubtotal for each group
-            // Purpose: Sum net values for items with the same productId to display in code column
-            // Improvement: Ensures subtotal is available for last item in group, matching CertificateItemsListGrouped
-            const subtotal = groupItems.reduce((sum: number, item: CertificateItem) => sum + (item.displayTotal || 0), 0);
-            const sortedGroupItems = sortedData.filter((item) => item.productId === productId);
-            const updatedGroupItems = sortedGroupItems.map((item, index) => ({
-                ...item,
-                isLastInGroup: index === sortedGroupItems.length - 1,
-                productSubtotal: subtotal.toFixed(2), // Add productSubtotal to each item
-            }));
-            result = [...result, ...updatedGroupItems];
-        });
-
-        const pagedData = process(result, {skip: page.skip, take: page.take});
-        return pagedData.data;
-    })() : [];
+    const dataWithSummaries = useMemo(() => {
+        const sorted = orderBy(uiCertificateItems, sort);
+        return process(sorted, { skip: page.skip, take: page.take });
+    }, [uiCertificateItems, sort, page]);
 
     const columns = [
         {
             field: 'code',
             title: getTranslatedLabel(`${localizationKey}.code`, 'Code'),
             width: 250,
-            // REFACTOR: Enforce LTR rendering with stronger specificity
-            // Purpose: Ensure productId/serial displays before subtotal in RTL mode
-            // Improvement: Uses span with inline LTR direction and !important to override page-level RTL
             cell: (props: GridCellProps) => (
-                <td style={{direction: 'ltr !important', textAlign: 'left !important'}}>
-        <span style={{direction: 'ltr !important'}}>
-          {props.dataItem.isLastInGroup && props.dataItem.productSubtotal !== undefined
-              ? `${props.dataItem.code} (${getTranslatedLabel(`${localizationKey}.productSubtotal`, 'Subtotal')}: ${props.dataItem.productSubtotal})`
-              : props.dataItem.code}
-        </span>
+                <td>
+                    {props.dataItem.isLastInGroup && props.dataItem.productSubtotal !== undefined
+                        ? `${props.dataItem.code} (${getTranslatedLabel(`${localizationKey}.productSubtotal`, 'Subtotal')}: ${props.dataItem.productSubtotal})`
+                        : props.dataItem.code}
                 </td>
             ),
         },
@@ -211,18 +209,38 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
             width: 100,
             format: "{0:n3}",
         },
-        {
-            field: "unitPrice",
-            title: getTranslatedLabel(`${localizationKey}.unitPrice`, "Unit Price"),
-            format: "{0:n3}",
-            width: 120,
-        },
-        {
-            field: "displayTotal",
-            title: getTranslatedLabel(`${localizationKey}.totalAmount`, "Total Amount"),
-            format: "{0:n3}",
-            width: 130,
-        },
+        ...(isWorkmanship
+            ? [
+                { field: "materialPrice", title: getTranslatedLabel(`${localizationKey}.materialPrice`, "Material Price"), format: "{0:n3}", width: 150 },
+                { field: "laborPrice", title: getTranslatedLabel(`${localizationKey}.laborPrice`, "Labor Price"), format: "{0:n3}", width: 150 },
+                { field: "displayTotal", title: getTranslatedLabel(`${localizationKey}.totalAmount`, "Total Amount"), format: "{0:n2}", width: 130 },
+                { field: "deductions", title: getTranslatedLabel(`${localizationKey}.deductions`, "Deductions"), format: "{0:n2}", width: 120 },
+                {
+                    field: "deductionDescription",
+                    title: getTranslatedLabel(`${localizationKey}.deductionDescription`, "Deduction Description"),
+                    width: 200,
+                    cell: deductionDescriptionCell,
+                },
+                { field: "deserved", title: getTranslatedLabel(`${localizationKey}.deserved`, "Deserved"), format: "{0:n2}", width: 120 },
+                { field: "insurance", title: getTranslatedLabel(`${localizationKey}.insurance`, "Insurance"), format: "{0:n2}", width: 120 },
+                { field: "additionalInsurance", title: getTranslatedLabel(`${localizationKey}.additionalInsurance`, "Additional Insurance"), format: "{0:n2}", width: 140 },
+                { field: "net", title: getTranslatedLabel(`${localizationKey}.net`, "Net"), format: "{0:n2}", width: 120 },
+                { field: "achievementPercentage", title: getTranslatedLabel(`${localizationKey}.achievementPercentage`, "Achievement %"), format: "{0:n9}", width: 140 },
+            ]
+            : [
+                {
+                    field: "unitPrice",
+                    title: getTranslatedLabel(`${localizationKey}.unitPrice`, "Unit Price"),
+                    format: "{0:n3}",
+                    width: 120,
+                },
+                {
+                    field: "displayTotal",
+                    title: getTranslatedLabel(`${localizationKey}.totalAmount`, "Total Amount"),
+                    format: "{0:n3}",
+                    width: 130,
+                },
+            ]),
         ...(isSupplyWithDiscount
             ? [
                 {
@@ -277,9 +295,9 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
         },
     ];
 
-    const sortedData = orderBy(uiCertificateItems || [], sort);
-    const pagedData = sortedData.slice(page.skip, page.skip + page.take);
-
+    const pageChange = (event: GridPageChangeEvent) => {
+        setPage(event.page);
+    };
 
     return (
         <>
@@ -290,6 +308,17 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
                         editMode={itemEditMode}
                         onClose={memoizedOnClose}
                         formEditMode={editMode}
+                    />
+                </ModalContainer>
+            )}
+            {showBulkAdd && (
+                <ModalContainer show={showBulkAdd} onClose={memoizedOnBulkClose} width={bulkModalWidth}>
+                    <CertificateItemKendoBulkAdd
+                        onClose={memoizedOnBulkClose}
+                        addItem={addItem}
+                        updateItem={updateItem}
+                        deleteItem={deleteItem}
+                        initialItems={uiCertificateItems}
                     />
                 </ModalContainer>
             )}
@@ -312,7 +341,7 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
                             <KendoGrid
                                 className="main-grid"
                                 style={{height: isFormCollapsed ? "60vh" : "30vh"}}
-                                data={dataWithSummaries}
+                                data={dataWithSummaries.data}
                                 sortable
                                 scrollable="scrollable"
                                 resizable={true}
@@ -339,12 +368,25 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
                                             >
                                                 {getTranslatedLabel(`${localizationKey}.addItem`, "Add Item")}
                                             </Button>
+                                            <Button
+                                                color="primary"
+                                                onClick={() => {
+                                                    setShowBulkAdd(true);
+                                                }}
+                                                variant="outlined"
+                                                disabled={editMode > 3}
+                                                sx={{ml: 1}}
+                                            >
+                                                {getTranslatedLabel(`${localizationKey}.bulkAdd`, "Bulk Add")}
+                                            </Button>
                                         </Grid>
-                                        <Grid item>
-                                            <Typography>
-                                                {getTranslatedLabel(`${localizationKey}.Total`, "Total")}: {subtotal.toFixed(2)}
-                                            </Typography>
-                                        </Grid>
+                                        {(isSupplyWithDiscount || isSupplyWithoutDiscount || isWorkmanship) && (
+                                            <Grid item>
+                                                <Typography>
+                                                    {getTranslatedLabel(`${localizationKey}.Total`, "Total")}: {subtotal.toFixed(2)}
+                                                </Typography>
+                                            </Grid>
+                                        )}
                                     </Grid>
                                 </GridToolbar>
                                 {columns.map((column, index) => (

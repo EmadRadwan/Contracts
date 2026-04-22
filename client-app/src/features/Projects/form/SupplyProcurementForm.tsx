@@ -5,7 +5,6 @@ import FormDatePicker from "../../../app/common/form/FormDatePicker";
 import FormNumericTextBox from "../../../app/common/form/FormNumericTextBox";
 import { FormSimpleComboBoxVirtualProduct } from "../../../app/common/form/FormSimpleComboBoxVirtualProduct";
 import { FormComboBoxVirtualUOM } from "../../../app/common/form/FormComboBoxVirtualUOM";
-import { MemoizedFormDropDownList2 } from "../../../app/common/form/MemoizedFormDropDownList2";
 import { requiredValidator } from "../../../app/common/form/Validators";
 import FormButtons from "./FormButtons";
 import FormInput from "../../../app/common/form/FormInput";

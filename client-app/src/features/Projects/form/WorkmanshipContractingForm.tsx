@@ -7,7 +7,6 @@ import { FormComboBoxVirtualUOM } from "../../../app/common/form/FormComboBoxVir
 import { percentageValidator, requiredValidator } from "../../../app/common/form/Validators";
 import FormButtons from "./FormButtons";
 import FormTextArea from "../../../app/common/form/FormTextArea";
-import { toast } from "react-toastify";
 import FormInput from "../../../app/common/form/FormInput";
 
 

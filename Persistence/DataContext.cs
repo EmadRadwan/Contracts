@@ -32142,7 +32142,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.Comments)
-                    .HasMaxLength(255)
+                    .HasMaxLength(1500)
                     .IsUnicode(false)
                     .HasColumnName("COMMENTS");
 

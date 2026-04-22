@@ -1,12 +1,9 @@
-const processedData = useMemo(() => {
-    if (!enrichedPayments || !Array.isArray(enrichedPayments) || enrichedPayments.length === 0) {
-        return { data: [], total: 0 };
-    }
+import {GridColumn as Column} from "@progress/kendo-react-grid/dist/npm/GridColumn";
+import React from "react";
 
-    try {
-        return process(enrichedPayments, dataState);
-    } catch (err) {
-        console.error("Kendo process error:", err);
-        return { data: enrichedPayments, total: enrichedPayments.length }; // fallback
-    }
-}, [enrichedPayments, dataState]);
+<Column key="total" field="totalAmount" title={getTranslatedLabel(`${itemFormLocalizationKey}.deserved`, "Deserved")} editable={false} width={110} cell={(p) => <td>{(p.dataItem.totalAmount || 0).toFixed(2)}</td>} />,
+    <Column key="deserved" field="deserved" title="Deserved" editable={false} width={110} cell={(p) => <td>{(p.dataItem.deserved || 0).toFixed(2)}</td>} />
+
+<Column key="achievementPercentage" field="achievementPercentage" title={getTranslatedLabel(`${itemFormLocalizationKey}.total`, "Total)} editor="numeric" width={110} />,
+
+            

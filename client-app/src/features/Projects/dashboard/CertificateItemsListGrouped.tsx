@@ -25,6 +25,8 @@ import {
 } from "../slice/certificateSelectors";
 import { useFetchCertificateItemsQuery } from "../../../app/store/apis/certificateItemsApi";
 import { CertificateItemFormMemo } from "../form/CertificateItemForm";
+import CertificateItemKendoBulkAdd from "../form/CertificateItemKendoBulkAdd";
+import { setProcessedCertificateItems } from "../slice/certificateItemsUiSlice";
 
 interface Props {
     editMode: number; // 0: view, 1: create, 2: edit CREATED, 3: edit APPROVED, 4: edit COMPLETED
@@ -45,17 +47,19 @@ export default function CertificateItemsListGrouped({
     const [sort, setSort] = useState<SortDescriptor[]>(initialSort);
     const [page, setPage] = useState<State>({ skip: 0, take: 4 });
     const [show, setShow] = useState(false);
+    const [showBulkAdd, setShowBulkAdd] = useState(false);
     const [itemEditMode, setItemEditMode] = useState(0);
     const [certificateItem, setCertificateItem] = useState<CertificateItem | undefined>(undefined);
 
     const dispatch = useAppDispatch();
     const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = "certificate.items.list";
+    const localizationKey = "projects.certificate.items.list";
 
     /* --------------------------- Selectors --------------------------------- */
     const total = useAppSelector(certificateSubTotal);
     const uiItems = useAppSelector(displayCertificateItemsSelector); // already has code, productSubtotal, isLastInGroup
     const nonDeletedItems = useAppSelector(nonDeletedCertificateItemsSelector);
+    const { currentCertificateType } = useAppSelector((state) => state.certificateUi);
 
     const { data: apiItems, isFetching, isLoading } = useFetchCertificateItemsQuery(
         workEffortId || "",
@@ -173,7 +177,24 @@ export default function CertificateItemsListGrouped({
         setShow(true);
     };
 
+    const openBulkAddModal = () => {
+        setShowBulkAdd(true);
+    };
+
     const closeModal = useCallback(() => setShow(false), []);
+    const closeBulkModal = useCallback(() => setShowBulkAdd(false), []);
+
+    const addItem = useCallback((item: CertificateItem) => {
+        dispatch(setProcessedCertificateItems([item]));
+    }, [dispatch]);
+
+    const updateItem = useCallback((item: CertificateItem) => {
+        dispatch(setProcessedCertificateItems([item]));
+    }, [dispatch]);
+
+    const deleteItem = useCallback((itemId: string) => {
+        dispatch(setProcessedCertificateItems([{ workEffortId: itemId, isDeleted: true } as CertificateItem]));
+    }, [dispatch]);
 
     /* --------------------------- Columns ----------------------------------- */
     const columns = useMemo(
@@ -225,7 +246,7 @@ export default function CertificateItemsListGrouped({
     /* --------------------------- Render ------------------------------------ */
     return (
         <>
-            {/* ---------- Modal ---------- */}
+            {/* ---------- Modals ---------- */}
             {show && (
                 <ModalContainer show={show} onClose={closeModal} width={1200}>
                     <CertificateItemFormMemo
@@ -233,6 +254,18 @@ export default function CertificateItemsListGrouped({
                         editMode={itemEditMode}
                         onClose={closeModal}
                         formEditMode={editMode}
+                    />
+                </ModalContainer>
+            )}
+
+            {showBulkAdd && (
+                <ModalContainer show={showBulkAdd} onClose={closeBulkModal} width="95%">
+                    <CertificateItemKendoBulkAdd
+                        onClose={closeBulkModal}
+                        addItem={addItem}
+                        updateItem={updateItem}
+                        deleteItem={deleteItem}
+                        initialItems={uiItems}
                     />
                 </ModalContainer>
             )}
@@ -276,6 +309,15 @@ export default function CertificateItemsListGrouped({
                                                 disabled={editMode > 3}
                                             >
                                                 {getTranslatedLabel(`${localizationKey}.addItem`, "Add Item")}
+                                            </Button>
+                                            <Button
+                                                color="primary"
+                                                onClick={openBulkAddModal}
+                                                variant="outlined"
+                                                disabled={editMode > 3}
+                                                sx={{ ml: 1 }}
+                                            >
+                                                {getTranslatedLabel(`${localizationKey}.bulkAdd`, "Bulk Add")}
                                             </Button>
                                         </Grid>
                                         <Grid item>

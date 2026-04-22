@@ -113,7 +113,7 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
         headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
 
         // Data + Total calculation
-        let totalNet = 0;
+        const dataStartRow = headerRow.number + 1;
 
         data.expenses.forEach((exp, idx) => {
             const net = exp.netCertifiedAmount ??
@@ -148,18 +148,19 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
             if (idx % 2 === 1) {
                 row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
             }
-
-            totalNet += net;
         });
 
+        const dataEndRow = wsExp.rowCount;
+
         // Total Row for Expenses
-        const totalRow = wsExp.addRow(['', '', '', '', '', '', '', 'الإجمالي الكلي', '', '', '', '', '', '', totalNet]);
+        const totalRow = wsExp.addRow(['', '', '', '', '', '', '', 'الإجمالي الكلي', '', '', '', '', '', '', { formula: `SUBTOTAL(109,O${dataStartRow}:O${dataEndRow})` }]);
         totalRow.font = { name: 'Amiri', size: 12, bold: true };
         totalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBFDBFE' } };
         totalRow.getCell(15).numFmt = '#,##0.00';
         totalRow.getCell(15).alignment = { horizontal: 'right' };
 
-        let grandTotalExpenses = totalNet;
+        // We need to keep track of rows for grand total
+        const expenseTotalRowNumber = totalRow.number;
 
         // Column widths
         const expColWidths = [18, 16, 32, 28, 14, 25, 38, 45, 12, 16, 18, 16, 16, 16, 20];
@@ -190,7 +191,8 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
             directHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
             directHeaderRow.alignment = { horizontal: 'center', vertical: 'middle' };
 
-            let totalDirect = 0;
+            const directDataStartRow = directHeaderRow.number + 1;
+
             data.directPayments.forEach((pyt: any, idx) => {
                 const row = wsExp.addRow([
                     utils.safeString(pyt.paymentId),
@@ -217,16 +219,17 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
                 if (idx % 2 === 1) {
                     row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0FDF4' } };
                 }
-                totalDirect += Number(pyt.amount) || 0;
             });
 
-            const directTotalRow = wsExp.addRow(['', '', '', '', '', 'الإجمالي', totalDirect, '', '', '', '', '', '', '', '']);
+            const directDataEndRow = wsExp.rowCount;
+
+            const directTotalRow = wsExp.addRow(['', '', '', '', '', 'الإجمالي', { formula: `SUBTOTAL(109,G${directDataStartRow}:G${directDataEndRow})` }, '', '', '', '', '', '', '', '']);
             directTotalRow.font = { name: 'Amiri', size: 12, bold: true };
             directTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFA7F3D0' } };
             directTotalRow.getCell(7).numFmt = '#,##0.00';
             directTotalRow.getCell(7).alignment = { horizontal: 'right' };
 
-            grandTotalExpenses += totalDirect;
+            var directTotalRowNumber = directTotalRow.number;
         }
 
         // ====================== OPERATING EXPENSES SECTION ======================
@@ -254,7 +257,8 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
             opHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E7FF' } }; // Light Indigo
             opHeaderRow.alignment = { horizontal: 'center', vertical: 'middle' };
 
-            let totalOp = 0;
+            const opDataStartRow = opHeaderRow.number + 1;
+
             data.operatingExpenses.forEach((pyt: any, idx) => {
                 const row = wsExp.addRow([
                     utils.safeString(pyt.paymentId),
@@ -281,21 +285,28 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
                 if (idx % 2 === 1) {
                     row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F3FF' } };
                 }
-                totalOp += Number(pyt.amount) || 0;
             });
 
-            const opTotalRow = wsExp.addRow(['', '', '', '', '', 'الإجمالي', totalOp, '', '', '', '', '', '', '', '']);
+            const opDataEndRow = wsExp.rowCount;
+
+            const opTotalRow = wsExp.addRow(['', '', '', '', '', 'الإجمالي', { formula: `SUBTOTAL(109,G${opDataStartRow}:G${opDataEndRow})` }, '', '', '', '', '', '', '', '']);
             opTotalRow.font = { name: 'Amiri', size: 12, bold: true };
             opTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC7D2FE' } };
             opTotalRow.getCell(7).numFmt = '#,##0.00';
             opTotalRow.getCell(7).alignment = { horizontal: 'right' };
 
-            grandTotalExpenses += totalOp;
+            var opTotalRowNumber = opTotalRow.number;
         }
 
         // ====================== GRAND TOTAL FOR EXPENSES ======================
         wsExp.addRow([]); // Empty row for spacing
-        const grandTotalRow = wsExp.addRow(['', '', '', '', '', 'إجمالي مصاريف المشروع', '', '', '', '', '', '', '', '', grandTotalExpenses]);
+        
+        let grandTotalFormulaParts = [];
+        if (expenseTotalRowNumber) grandTotalFormulaParts.push(`O${expenseTotalRowNumber}`);
+        if (typeof directTotalRowNumber !== 'undefined') grandTotalFormulaParts.push(`G${directTotalRowNumber}`);
+        if (typeof opTotalRowNumber !== 'undefined') grandTotalFormulaParts.push(`G${opTotalRowNumber}`);
+
+        const grandTotalRow = wsExp.addRow(['', '', '', '', '', 'إجمالي مصاريف المشروع', '', '', '', '', '', '', '', '', { formula: grandTotalFormulaParts.join('+') }]);
         grandTotalRow.font = { name: 'Amiri', size: 14, bold: true };
         grandTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF065F46' } }; // Dark green
         grandTotalRow.font.color = { argb: 'FFFFFFFF' };
@@ -306,6 +317,32 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
         grandTotalRow.getCell(1).alignment = { horizontal: 'center' };
         grandTotalRow.getCell(15).alignment = { horizontal: 'right' };
         grandTotalRow.height = 30;
+
+        // Apply a single AutoFilter for the entire Expenses sheet
+        // It starts from the first header row and covers until the last data row before Grand Total
+        wsExp.autoFilter = {
+            from: { row: headerRow.number, column: 1 },
+            to: { row: wsExp.rowCount - 1, column: 15 }
+        };
+
+        // Disable filter buttons for columns that are numeric in any of the sections
+        // Section 1: 9-15 are numeric
+        // Section 2: 7 is numeric
+        // Section 3: 7 is numeric
+        // Combined numeric: 7, 9, 10, 11, 12, 13, 14, 15
+        // @ts-ignore
+        wsExp.autoFilter.columns = [
+            {}, {}, {}, {}, {}, {},           // 1-6
+            { showButton: false },            // 7 (Amount in Direct/Op)
+            {},                               // 8
+            { showButton: false },            // 9 (Qty in Main)
+            { showButton: false },            // 10 (Price in Main)
+            { showButton: false },            // 11 (Total in Main)
+            { showButton: false },            // 12 (Disc in Main)
+            { showButton: false },            // 13 (Ded in Main)
+            { showButton: false },            // 14 (Ins in Main)
+            { showButton: false }             // 15 (Net in Main)
+        ];
 
         // ====================== REVENUES SHEET ======================
         const wsRev = workbook.addWorksheet('الإيرادات');
@@ -338,7 +375,25 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
         revHeaderRow.font = { name: 'Amiri', size: 11, bold: true };
         revHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } };
 
-        let totalScheduled = 0, totalCollected = 0, totalOutstanding = 0;
+        // Set AutoFilter for Revenues
+        wsRev.autoFilter = {
+            from: { row: revHeaderRow.number, column: 1 },
+            to: { row: revHeaderRow.number, column: revHeaders.length }
+        };
+        // Disable filter for numeric columns (2-3: Year, Quarter; 8-10: Scheduled, Collected, Outstanding)
+        // @ts-ignore
+        wsRev.autoFilter.columns = [
+            {},                   // 1: Payment ID
+            { showButton: false }, // 2: Year
+            { showButton: false }, // 3: Quarter
+            {}, {}, {}, {},       // 4-7
+            { showButton: false }, // 8: Scheduled
+            { showButton: false }, // 9: Collected
+            { showButton: false }, // 10: Outstanding
+            {}, {}, {}, {}        // 11-14
+        ];
+
+        const revDataStartRow = revHeaderRow.number + 1;
 
         data.revenues.forEach(rev => {
             const row = wsRev.addRow([
@@ -363,14 +418,18 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
                 cell.numFmt = '#,##0.00';
                 cell.alignment = { horizontal: 'right' };
             });
-
-            totalScheduled += rev.scheduledAmount || 0;
-            totalCollected += rev.collectedAmount || 0;
-            totalOutstanding += rev.outstandingAmount || 0;
         });
 
+        const revDataEndRow = wsRev.rowCount;
+
         // Total Row for Revenues
-        const revTotalRow = wsRev.addRow(['', '', '', '', '', '', 'الإجمالي', totalScheduled, totalCollected, totalOutstanding, '', '', '', '']);
+        const revTotalRow = wsRev.addRow([
+            '', '', '', '', '', '', 'الإجمالي',
+            { formula: `SUBTOTAL(109,H${revDataStartRow}:H${revDataEndRow})` },
+            { formula: `SUBTOTAL(109,I${revDataStartRow}:I${revDataEndRow})` },
+            { formula: `SUBTOTAL(109,J${revDataStartRow}:J${revDataEndRow})` },
+            '', '', '', ''
+        ]);
         revTotalRow.font = { name: 'Amiri', size: 12, bold: true };
         revTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBFDBFE' } };
         for (let i = 8; i <= 10; i++) {
