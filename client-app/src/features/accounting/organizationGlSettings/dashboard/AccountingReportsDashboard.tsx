@@ -1,7 +1,6 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { router } from "../../../../app/router/Routes";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
-import AccountingReportsMenu from "../menu/AccountingReportsMenu";
 import AccountingSummaryMenu from "../menu/AccountingSummaryMenu";
 import SetupAccountingMenu from "../menu/SetupAccountingMenu";
 import { useAppSelector } from "../../../../app/store/configureStore";
@@ -17,6 +16,7 @@ import {
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
+import { CompanyReportExcel } from "../../reports/CompanyReportExcel";
 
 const links = [
   { 
@@ -69,6 +69,11 @@ const links = [
     title: "Inventory Valuation",
     key: "inventory-valuation",
   },
+  {
+    path: "/companyExpensesVsRevenue",
+    title: "Company Expenses vs Revenue",
+    key: "company-expenses-vs-revenue",
+  },
   // { 
   //   path: "/costCenters", 
   //   title: "Cost Centers", 
@@ -86,6 +91,9 @@ const AccountingReportsDashboard = () => {
   const theme = useTheme();
   const { getTranslatedLabel } = useTranslationHelper();
   const localizationKey = "accounting.orgGL.reports"
+  
+  const [companyReportOpen, setCompanyReportOpen] = useState(false);
+
   return (
     <>
       <AccountingMenu selectedMenuItem={"/orgGl"} />
@@ -111,7 +119,11 @@ const AccountingReportsDashboard = () => {
                       },
                     }}
                   >
-                    <CardActionArea component={Link} to={path}>
+                    <CardActionArea 
+                      component={key === "company-expenses-vs-revenue" ? "div" : Link} 
+                      to={key === "company-expenses-vs-revenue" ? undefined : path}
+                      onClick={key === "company-expenses-vs-revenue" ? () => setCompanyReportOpen(true) : undefined}
+                    >
                       <CardContent>
                         <Typography
                           variant="h6"
@@ -133,6 +145,10 @@ const AccountingReportsDashboard = () => {
           </Box>
         </Paper>
       </Grid>
+      <CompanyReportExcel 
+          open={companyReportOpen} 
+          onClose={() => setCompanyReportOpen(false)} 
+      />
     </>
   );
 };

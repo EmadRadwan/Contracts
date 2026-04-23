@@ -1,16 +1,16 @@
 using Application.Accounting.Payments;
 using Application.Core;
+using Application.Projects;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 
-namespace Application.Projects
+namespace Application.Accounting.Reports
 {
-    public class GetProjectReport
+    public class GetCompanyReport
     {
         public class Query : IRequest<ProjectReportDto>
         {
-            public string ProjectId { get; set; } = null!;
             public DateTime? StartDate { get; set; }
             public DateTime? EndDate { get; set; }
             public bool AllData { get; set; }
@@ -83,7 +83,6 @@ namespace Application.Projects
                           && (item.WorkEffortTypeId == "CERTIFICATE_ITEM" ||
                               item.WorkEffortTypeId == "PAYMENT_CERTIFICATE_ITEM")
                     let projId = header.ProjectId ?? item.ProjectId
-                    where projId == request.ProjectId
                     where !(header.WorkEffortTypeId == "PAYMENT_CERTIFICATE" && projId == null)
                     select new { header, item, projId, partyId, p, prodId, prod, paymentId = pyt.PaymentId };
 
@@ -197,7 +196,6 @@ namespace Application.Projects
                               || p.PaymentTypeId == "RECEIPT_MAINTENANCE_AMOUNT")
                           && p.Amount > 0m
                     let projId = apt.ProjectId ?? p.WorkEffortId
-                    where projId == request.ProjectId
                     select new { p, pf, pt_type, sr, apt, proj, projId };
 
                 if (!request.AllData)
@@ -287,10 +285,6 @@ namespace Application.Projects
                 return results;
             }
 
-            /// <summary>
-            /// Consistent DueStatusArabic calculation for revenues (incoming payments)
-            /// isDisbursement = false for all revenues here
-            /// </summary>
             private static string CalculateDueStatusArabic(DateTime? dueDate, bool isDisbursement, string? statusId,
                 string? statusDescription)
             {
@@ -351,13 +345,6 @@ namespace Application.Projects
 
             private async Task<List<PaymentRecord>> GetDirectPayments(Query request, CancellationToken ct)
             {
-                var project = await _context.WorkEfforts.AsNoTracking()
-                    .FirstOrDefaultAsync(w => w.WorkEffortId == request.ProjectId, ct);
-
-                if (project == null) return new List<PaymentRecord>();
-
-                var glAccountId = project.GlAccountId;
-
                 var query = from pyt in _context.Payments.AsNoTracking()
                     join ptt in _context.PaymentTypes.AsNoTracking() on pyt.PaymentTypeId equals ptt.PaymentTypeId
                     join sts in _context.StatusItems.AsNoTracking() on pyt.StatusId equals sts.StatusId
@@ -384,9 +371,7 @@ namespace Application.Projects
                     join createdBy in _context.Parties.AsNoTracking() on pyt.CreatedByPartyId equals createdBy.PartyId
                         into createdByJoin
                     from createdBy in createdByJoin.DefaultIfEmpty()
-                    where (
-                              (glAccountId != null && pyt.OverrideGlAccountId == glAccountId))
-                          && pyt.StatusId == "PMNT_SENT"
+                    where pyt.StatusId == "PMNT_SENT"
                           && ptt.ParentTypeId == "DISBURSEMENT"
                     select new PaymentRecord
                     {
@@ -450,35 +435,6 @@ namespace Application.Projects
 
             private async Task<List<PaymentRecord>> GetOperatingExpenses(Query request, CancellationToken ct)
             {
-                var project = await _context.WorkEfforts.AsNoTracking()
-                    .FirstOrDefaultAsync(w => w.WorkEffortId == request.ProjectId, ct);
-
-                if (project == null || string.IsNullOrEmpty(project.OperatingExpenseGlAccountId))
-                    return new List<PaymentRecord>();
-
-                var parentGlAccountId = project.OperatingExpenseGlAccountId;
-
-                // Get all child GL accounts recursively
-                var allGlAccountIds = new HashSet<string> { parentGlAccountId };
-                var childAccounts = await _context.GlAccounts
-                    .AsNoTracking()
-                    .Select(g => new { g.GlAccountId, g.ParentGlAccountId })
-                    .ToListAsync(ct);
-
-                void AddChildren(string parentId)
-                {
-                    var children = childAccounts.Where(c => c.ParentGlAccountId == parentId).ToList();
-                    foreach (var child in children)
-                    {
-                        if (allGlAccountIds.Add(child.GlAccountId))
-                        {
-                            AddChildren(child.GlAccountId);
-                        }
-                    }
-                }
-
-                AddChildren(parentGlAccountId);
-
                 var query = from pyt in _context.Payments.AsNoTracking()
                     join ptt in _context.PaymentTypes.AsNoTracking()
                         on pyt.PaymentTypeId equals ptt.PaymentTypeId
@@ -498,8 +454,6 @@ namespace Application.Projects
                         on pyt.CostCenterId equals cc.CostCenterId into ccJoin
                     from cc in ccJoin.DefaultIfEmpty()
                     where pyt.OverrideGlAccountId != null
-                          && allGlAccountIds.Contains(pyt.OverrideGlAccountId)
-                          //&& pyt.StatusId == "PMNT_SENT"
                           && (ptt.ParentTypeId == "DISBURSEMENT" || ptt.PaymentTypeId == "DISBURSEMENT")
                     select new PaymentRecord
                     {
@@ -546,10 +500,7 @@ namespace Application.Projects
                         query = query.Where(p => p.EffectiveDate <= DateOnly.FromDateTime(request.EndDate.Value));
                 }
 
-                var results = await query.ToListAsync(ct);
-                
-
-                return results;
+                return await query.ToListAsync(ct);
             }
         }
     }

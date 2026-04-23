@@ -248,6 +248,20 @@ public class ProjectController : BaseApiController
             AllData = allData
         })));
     }
+
+    [HttpGet("companyReport")]
+    public async Task<ActionResult<ProjectReportDto>> GetCompanyReport(
+        [FromQuery] DateTime? startDate,
+        [FromQuery] DateTime? endDate,
+        [FromQuery] bool allData)
+    {
+        return HandleResult(Result<ProjectReportDto>.Success(await Mediator.Send(new Application.Accounting.Reports.GetCompanyReport.Query
+        {
+            StartDate = startDate,
+            EndDate = endDate,
+            AllData = allData
+        })));
+    }
     
 }
 

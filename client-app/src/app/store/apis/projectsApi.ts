@@ -189,6 +189,12 @@ const projectsApi = createApi({
                     params,
                 }),
             }),
+            fetchCompanyReport: builder.query<ProjectReportDto, { startDate?: string; endDate?: string; allData: boolean }>({
+                query: (params) => ({
+                    url: "/project/companyReport",
+                    params,
+                }),
+            }),
         };
         
     },
@@ -210,6 +216,7 @@ export const {
     useResetProjectCertificateMutation,
     useFetchWorkEffortsByGlAccountIdQuery,
     useLazyFetchProjectReportQuery,
+    useLazyFetchCompanyReportQuery,
 } = projectsApi;
 export {projectsApi};
 
