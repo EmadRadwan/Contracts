@@ -50349,6 +50349,8 @@ entity.Property(e => e.BuildingNumber)
                 entity.HasIndex(e => e.CurrencyUomId, "SLSOPP_CRNCY_UOM");
                  entity.HasIndex(e => e.ProductId, "SLSOPP_PRODUCT");
                 entity.HasIndex(e => e.WorkEffortId, "SLSOPP_WORKEFFORT");
+                entity.HasIndex(e => e.IsWon, "SLSOPPACT_IS_WON");                    // New
+                entity.HasIndex(e => e.IsClosed, "SLSOPPACT_IS_CLOSED");                    // New
 
 
                 entity.HasIndex(e => e.DataSourceId, "SLSOPP_DTSRC");
@@ -50454,6 +50456,15 @@ entity.Property(e => e.BuildingNumber)
                     .HasMaxLength(36)
                     .IsUnicode(false)
                     .HasColumnName("TYPE_ENUM_ID");
+                    
+                    entity.Property(e => e.IsWon)
+                        .HasColumnName("IS_WON")
+                        .HasDefaultValue(false);
+                
+                entity.Property(e => e.IsClosed)
+                        .HasColumnName("IS_CLOSED")
+                        .HasDefaultValue(false);
+
 
                 entity.HasOne(d => d.CreatedByUserLoginNavigation)
                     .WithMany(p => p.SalesOpportunities)

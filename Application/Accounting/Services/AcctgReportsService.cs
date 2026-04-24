@@ -46,6 +46,13 @@ public interface IAcctgReportsService
         DateTime? period2ThruDate,
         string period2GlFiscalTypeId);
 
+    Task<ComparativeIncomeStatementViewModel> GenerateComparativeIncomeStatement(
+        string organizationPartyId,
+        DateTime? fromDate1, DateTime? thruDate1,
+        DateTime? fromDate2, DateTime? thruDate2,
+        string glFiscalTypeId1, string glFiscalTypeId2,
+        int? selectedMonth1 = null, int? selectedMonth2 = null);
+
     Task<LastClosedTimePeriodResult> FindLastClosedDate(
         string organizationPartyId,
         DateTime? findDate,
@@ -3047,6 +3054,84 @@ public class AcctgReportsService : IAcctgReportsService
         // 3) Sort & return
         var sorted = map.Values.OrderBy(orderSelector).ToList();
         return sorted;
+    }
+
+    public async Task<ComparativeIncomeStatementViewModel> GenerateComparativeIncomeStatement(
+        string organizationPartyId,
+        DateTime? fromDate1, DateTime? thruDate1,
+        DateTime? fromDate2, DateTime? thruDate2,
+        string glFiscalTypeId1, string glFiscalTypeId2,
+        int? selectedMonth1 = null, int? selectedMonth2 = null)
+    {
+        var period1View = await GenerateIncomeStatement(organizationPartyId, fromDate1, thruDate1, glFiscalTypeId1, selectedMonth1);
+        var period2View = await GenerateIncomeStatement(organizationPartyId, fromDate2, thruDate2, glFiscalTypeId2, selectedMonth2);
+
+        return new ComparativeIncomeStatementViewModel
+        {
+            RevenueAccountBalances = MergeTransactionTotalsToComparative(period1View.RevenueAccountBalances, period2View.RevenueAccountBalances),
+            ContraRevenueAccountBalances = MergeTransactionTotalsToComparative(period1View.ContraRevenueAccountBalances, period2View.ContraRevenueAccountBalances),
+            CogsExpenseAccountBalances = MergeTransactionTotalsToComparative(period1View.CogsExpenseAccountBalances, period2View.CogsExpenseAccountBalances),
+            ExpenseAccountBalances = MergeTransactionTotalsToComparative(period1View.ExpenseAccountBalances, period2View.ExpenseAccountBalances),
+            IncomeAccountBalances = MergeTransactionTotalsToComparative(period1View.IncomeAccountBalances, period2View.IncomeAccountBalances),
+
+            NetSales1 = period1View.NetSales,
+            NetSales2 = period2View.NetSales,
+            GrossMargin1 = period1View.GrossMargin,
+            GrossMargin2 = period2View.GrossMargin,
+            CogsExpenseBalanceTotal1 = period1View.CogsExpenseBalanceTotal,
+            CogsExpenseBalanceTotal2 = period2View.CogsExpenseBalanceTotal,
+            OperatingExpenses1 = period1View.TotalOperatingExpenses,
+            OperatingExpenses2 = period2View.TotalOperatingExpenses,
+            IncomeFromOperations1 = period1View.IncomeFromOperations,
+            IncomeFromOperations2 = period2View.IncomeFromOperations,
+            IncomeBalanceTotal1 = period1View.IncomeBalanceTotal,
+            IncomeBalanceTotal2 = period2View.IncomeBalanceTotal,
+            NetIncome1 = period1View.NetIncome,
+            NetIncome2 = period2View.NetIncome
+        };
+    }
+
+    private List<ComparativeAccountBalance> MergeTransactionTotalsToComparative(
+        List<TransactionTotal> period1List,
+        List<TransactionTotal> period2List)
+    {
+        var map = new Dictionary<string, ComparativeAccountBalance>();
+
+        foreach (var item in period1List)
+        {
+            if (!map.ContainsKey(item.GlAccountId))
+            {
+                map[item.GlAccountId] = new ComparativeAccountBalance
+                {
+                    GlAccountId = item.GlAccountId,
+                    AccountCode = item.AccountCode,
+                    AccountName = item.AccountName,
+                    Balance1 = item.Balance ?? 0m,
+                    Balance2 = 0m
+                };
+            }
+        }
+
+        foreach (var item in period2List)
+        {
+            if (!map.TryGetValue(item.GlAccountId, out var existing))
+            {
+                map[item.GlAccountId] = new ComparativeAccountBalance
+                {
+                    GlAccountId = item.GlAccountId,
+                    AccountCode = item.AccountCode,
+                    AccountName = item.AccountName,
+                    Balance1 = 0m,
+                    Balance2 = item.Balance ?? 0m
+                };
+            }
+            else
+            {
+                existing.Balance2 = item.Balance ?? 0m;
+            }
+        }
+
+        return map.Values.OrderBy(x => x.AccountCode).ToList();
     }
 
     public async Task<ComparativeBalanceSheetResult> GenerateComparativeBalanceSheet(

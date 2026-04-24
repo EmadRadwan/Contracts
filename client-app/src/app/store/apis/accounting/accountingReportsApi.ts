@@ -219,6 +219,35 @@ const accountingReportsApi = createApi({
                 params: { fromDate, thruDate, selectedMonth, glFiscalTypeId, glAccountId, includePrePeriodTransactions },
             }),
           }),
+          fetchComparativeIncomeStatementReport: builder.query<any,
+              {
+                  organizationPartyId: string;
+                  fromDate1?: string;
+                  thruDate1?: string;
+                  glFiscalTypeId1: string;
+                  selectedMonth1?: number;
+                  fromDate2?: string;
+                  thruDate2?: string;
+                  glFiscalTypeId2: string;
+                  selectedMonth2?: number;
+              }>({
+              query: (params) => {
+                  return {
+                      url: `/organizationGlReports/${params.organizationPartyId}/getComparativeIncomeStatementReport`,
+                      method: "GET",
+                      params: {
+                          fromDate1: params.fromDate1,
+                          thruDate1: params.thruDate1,
+                          glFiscalTypeId1: params.glFiscalTypeId1,
+                          selectedMonth1: params.selectedMonth1,
+                          fromDate2: params.fromDate2,
+                          thruDate2: params.thruDate2,
+                          glFiscalTypeId2: params.glFiscalTypeId2,
+                          selectedMonth2: params.selectedMonth2,
+                      },
+                  };
+              },
+          }),
         };
     },
 });
@@ -234,6 +263,7 @@ export const {
     useFetchComparativeBalanceSheetReportQuery, 
     useFetchGlAccountTransactionDetailsQuery,
     useFetchBalanceSheetGlAccountTransactionDetailsQuery,
-    useFetchIncomeStatementGlAccountTransactionDetailsQuery
+    useFetchIncomeStatementGlAccountTransactionDetailsQuery,
+    useLazyFetchComparativeIncomeStatementReportQuery
 } = accountingReportsApi;
 export {accountingReportsApi};

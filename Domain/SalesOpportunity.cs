@@ -30,6 +30,9 @@ public class SalesOpportunity
     public DateTime? EstimatedCloseDate { get; set; }
     public string? OpportunityStageId { get; set; }
     public string? TypeEnumId { get; set; }
+    public bool IsWon { get; set; } = false;
+    public bool IsClosed { get; set; } = false;
+    
     public string? CreatedByUserLogin { get; set; }
     public DateTime? LastUpdatedStamp { get; set; }
     public DateTime? LastUpdatedTxStamp { get; set; }

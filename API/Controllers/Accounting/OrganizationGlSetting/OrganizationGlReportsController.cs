@@ -171,4 +171,26 @@ public class OrganizationGlReportsController : BaseApiController
             Period2ThruDate = period2ThruDate
         }));
     }
+    [HttpGet("{selectedAccountingCompanyId}/getComparativeIncomeStatementReport")]
+    public async Task<IActionResult> GetComparativeIncomeStatementReport(
+        string selectedAccountingCompanyId,
+        [FromQuery] DateTime? fromDate1, [FromQuery] DateTime? thruDate1,
+        [FromQuery] string glFiscalTypeId1, [FromQuery] int? selectedMonth1,
+        [FromQuery] DateTime? fromDate2, [FromQuery] DateTime? thruDate2,
+        [FromQuery] string glFiscalTypeId2, [FromQuery] int? selectedMonth2
+    )
+    {
+        return HandleResult(await Mediator.Send(new GetComparativeIncomeStatementReport.Query
+        {
+            OrganizationPartyId = selectedAccountingCompanyId,
+            FromDate1 = fromDate1,
+            ThruDate1 = thruDate1,
+            GlFiscalTypeId1 = glFiscalTypeId1,
+            SelectedMonth1 = selectedMonth1,
+            FromDate2 = fromDate2,
+            ThruDate2 = thruDate2,
+            GlFiscalTypeId2 = glFiscalTypeId2,
+            SelectedMonth2 = selectedMonth2
+        }));
+    }
 }
