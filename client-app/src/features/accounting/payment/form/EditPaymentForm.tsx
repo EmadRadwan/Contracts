@@ -36,13 +36,16 @@ import {
     DialogContent,
     DialogActions,
     IconButton,
-    CircularProgress
+    CircularProgress,
+    InputAdornment
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import ClearIcon from "@mui/icons-material/Clear";
 
 import {Worker, Viewer, SpecialZoomLevel} from '@react-pdf-viewer/core';
 import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
 import { version as pdfjsVersion } from 'pdfjs-dist/package.json';
+import {parseDate} from "../../../../app/util/utils";
 import {MemoizedFormCheckBox} from "../../../../app/common/form/FormCheckBox";
 
 interface EditPaymentFormProps {
@@ -241,7 +244,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
             partyIdToName: payment.partyIdToName ?? '',
             amount: payment.amount ?? undefined,
             currencyUomId: payment.currencyUomId ?? undefined,
-            effectiveDate: payment.effectiveDate ? new Date(payment.effectiveDate) : undefined,
+            effectiveDate: parseDate(payment.effectiveDate),
             comments: payment.comments ?? '',
             finAccountTransId: payment.finAccountTransId ?? undefined,
             overrideGlAccountId: payment.overrideGlAccountId ?? undefined,
@@ -251,7 +254,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
             actualCurrencyUomId: '',
             actualCurrencyAmount: undefined,
             chequeNumber: isCash ? '' : (payment.chequeNumber ?? ''),
-            chequeDate: isCash ? null : (payment.chequeDate ? new Date(payment.chequeDate) : null),
+            chequeDate: isCash ? null : parseDate(payment.chequeDate),
             projectId: payment.projectId
                 ? {
                     projectId: payment.projectId,
@@ -376,13 +379,17 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                         const selectedMethodId = event.value;
                         const isCash = selectedMethodId === CASH_PAYMENT_METHOD_ID;
 
+                        const selectedMethod = paymentMethods.find(m => m.paymentMethodId === selectedMethodId);
+                        const isCompanyCheck = selectedMethod?.paymentMethodTypeId === 'COMPANY_CHECK';
+
                         // Update the payment method
                         onChange('paymentMethodId', {value: selectedMethodId});
 
-                        // Clear cheque fields if CASH is selected
-                        if (isCash) {
+                        // Clear cheque fields if CASH or non-cheque method is selected
+                        if (isCash || !isCompanyCheck) {
                             onChange('chequeNumber', {value: ''});
                             onChange('chequeDate', {value: null});
+                            onChange('isBankTransfer', {value: false});
                         }
                     };
 
@@ -520,7 +527,14 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     )}
                                                     component={MemoizedFormCheckBox}
                                                     validator={bankTransferValidator}
-
+                                                    onChange={(e: any) => {
+                                                        const isChecked = e.value;
+                                                        onChange('isBankTransfer', { value: isChecked });
+                                                        if (isChecked) {
+                                                            onChange('chequeNumber', { value: '' });
+                                                            onChange('chequeDate', { value: null });
+                                                        }
+                                                    }}
                                                 />
                                             </Grid>
                                             <Grid item xs={2}>
@@ -534,14 +548,24 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                 />
                                             </Grid>
                                             <Grid item xs={2}>
-                                                <Field
-                                                    id="chequeDate"
-                                                    name="chequeDate"
-                                                    label={getTranslatedLabel(`${localizationKey}.chequeDate`, "Cheque Date")}
-                                                    component={FormDatePicker}
-                                                    format="yyyy-MM-dd"
-                                                    validator={chequeValidator}
-                                                />
+                                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                    <Field
+                                                        id="chequeDate"
+                                                        name="chequeDate"
+                                                        label={getTranslatedLabel(`${localizationKey}.chequeDate`, "Cheque Date")}
+                                                        component={FormDatePicker}
+                                                        format="yyyy-MM-dd"
+                                                        validator={chequeValidator}
+                                                    />
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => onChange('chequeDate', { value: null })}
+                                                        sx={{ mt: 3, ml: -1 }}
+                                                        title={getTranslatedLabel(`${localizationKey}.clearDate`, "Clear Date")}
+                                                    >
+                                                        <ClearIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Box>
                                             </Grid>
                                         </Grid>
                                     </Grid>

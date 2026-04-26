@@ -377,15 +377,10 @@ const handleCreate = async (data: {
       ...payment,
       paymentMethodId: data.values.paymentMethodId,
       amount: data.values.amount ?? payment.amount,
-      effectiveDate:
-          data.values.effectiveDate && !isNaN(new Date(data.values.effectiveDate).getTime())
-              ? new Date(data.values.effectiveDate).toISOString()
-              : payment.effectiveDate,
+      effectiveDate: normalizeToDateString(data.values.effectiveDate) || payment.effectiveDate,
       comments: data.values.comments ?? payment.comments ?? "",
       chequeNumber: data.values.chequeNumber ?? payment.chequeNumber ?? "",
-      chequeDate: data.values.chequeDate
-          ? new Date(data.values.chequeDate).toISOString()
-          : payment.chequeDate ?? null,
+      chequeDate: normalizeToDateString(data.values.chequeDate) || payment.chequeDate || null,
       overrideGlAccountId: data.values.overrideGlAccountId,
         projectId: data.values.projectId?.projectId,
         costCenterId: data.values.costCenterId || null,

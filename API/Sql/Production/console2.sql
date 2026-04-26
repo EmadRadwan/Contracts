@@ -1,73 +1,25 @@
-INSERT INTO PAYMENT_METHOD (
-    PAYMENT_METHOD_ID,
-    PAYMENT_METHOD_TYPE_ID,
-    PARTY_ID,
-    GL_ACCOUNT_ID,
-    FIN_ACCOUNT_ID,
-    DESCRIPTION,
-    FROM_DATE,
-    THRU_DATE,
-    LAST_UPDATED_STAMP,
-    LAST_UPDATED_TX_STAMP,
-    CREATED_STAMP,
-    CREATED_TX_STAMP
-) VALUES (
-             'QNB_CHECKING',
-             'COMPANY_CHECK',
-             'Company',
-             '112300',
-             NULL,
-             'QNB',
-             '2025-11-06 00:00:00',
-             NULL,
-             '2025-11-06 10:28:00',
-             '2025-11-06 10:28:00',
-             '2025-11-06 10:28:00',
-             '2025-11-06 10:28:00'
-         );
+SELECT
+    dp.PaymentId,
+    dp.ProjectName,
+    dp.Amount AS DirectPaymentAmount,
+    exp.CertificateNumber,
+    exp.NetCertifiedAmount AS ExpenseAmount,
+    dp.PartyIdFromName AS Payee,
+    dp.EFFECTIVE_DATE
+FROM Fact_Project_DirectPayments_2 dp
+         INNER JOIN Fact_Project_Expenses exp
+                    ON dp.PaymentId = exp.PaymentId
+ORDER BY dp.PaymentId;
 
-INSERT INTO FIN_ACCOUNT (
-    FIN_ACCOUNT_ID,
-    FIN_ACCOUNT_TYPE_ID,
-    STATUS_ID,
-    FIN_ACCOUNT_NAME,
-    FIN_ACCOUNT_CODE,
-    FIN_ACCOUNT_PIN,
-    CURRENCY_UOM_ID,
-    ORGANIZATION_PARTY_ID,
-    OWNER_PARTY_ID,
-    POST_TO_GL_ACCOUNT_ID,
-    FROM_DATE,
-    THRU_DATE,
-    IS_REFUNDABLE,
-    REPLENISH_PAYMENT_ID,
-    REPLENISH_LEVEL,
-    ACTUAL_BALANCE,
-    AVAILABLE_BALANCE,
-    LAST_UPDATED_STAMP,
-    LAST_UPDATED_TX_STAMP,
-    CREATED_STAMP,
-    CREATED_TX_STAMP
-) VALUES (
-             'QNB_CHECKING',
-             'BANK_ACCOUNT',
-             'FNACT_ACTIVE',
-             'Qatar National Bank',
-             'Ta9hrqSPsL84Em9YdEbPQkJ5veERP9v+4jL7bLF/3O8=',
-             'Nh4h8ExoNtN8fIIS8juiMA==',
-             'EGP',
-             'Company',
-             'Company',
-             '112300',
-             NULL,
-             NULL,
-             'Y',
-             NULL,
-             0.000,
-             50000.000,
-             50000.000,
-             '2022-05-27 12:24:37',
-             '2022-05-27 12:24:28',
-             '2022-05-27 12:24:33',
-             '2022-05-27 12:24:28'
-         );
+SELECT
+    dp.PaymentId,
+    dp.ProjectName,
+    dp.Amount AS DirectPaymentAmount,
+    exp.CertificateNumber,
+    exp.NetCertifiedAmount AS ExpenseAmount,
+    dp.PartyIdFromName AS Payee,
+    dp.EFFECTIVE_DATE
+FROM erp_contracts.Fact_Project_OperatingExpenses_2 dp
+         INNER JOIN Fact_Project_Expenses exp
+                    ON dp.PaymentId = exp.PaymentId
+ORDER BY dp.PaymentId;

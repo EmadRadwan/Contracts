@@ -1,8 +1,9 @@
-CREATE OR REPLACE VIEW Fact_Project_DirectPayments AS
+CREATE OR REPLACE VIEW Fact_Project_DirectPayments_2 AS
 SELECT
     pyt.PAYMENT_ID                                      AS PaymentId,
     pyt.PAYMENT_TYPE_ID,
     ptt.DESCRIPTION_ARABIC                              AS PaymentTypeDescription,
+
     pyt.PAYMENT_METHOD_ID                               AS PaymentMethodId,
     pyt.PAYMENT_METHOD_TYPE_ID,
     pmt.DESCRIPTION_ARABIC                              AS PaymentMethodTypeDescription,
@@ -32,17 +33,13 @@ SELECT
 
     TRUE                                                AS IsDisbursement,
 
-    -- Removed ORGANIZATION_PARTY_ID (column does not exist)
-    -- If you have another column for organization/branch, replace below with the correct one
     NULL                                                AS OrganizationPartyId,
 
-    -- 🔴 ADJUSTED LOGIC: 
--- 1. Take the direct Project ID if it exists
--- 2. If null, find the project that owns this GL account
-    COALESCE(pyt.WORK_EFFORT_ID, gl_proj.WORK_EFFORT_ID) AS ProjectId,
-    pyt.OVERRIDE_GL_ACCOUNT_ID                          AS OverrideGlAccountId,
+    -- ✅ Now driven by dimProject
+    dp.ProjectId,
+    dp.ProjectName,
 
-    COALESCE(proj.PROJECT_NAME, gl_proj.PROJECT_NAME)   AS ProjectName,
+    pyt.OVERRIDE_GL_ACCOUNT_ID                          AS OverrideGlAccountId,
 
     pyt.COST_CENTER_ID                                  AS CostCenterId,
     cc.DESCRIPTION                                      AS CostCenterDescription,
@@ -60,10 +57,10 @@ SELECT
     pyt.CHEQUENUMBER                                    AS ChequeNumber,
     pyt.CHEQUEDATE                                      AS ChequeDate,
 
-    -- Arabic Due Status (isDisbursement = true)
+    -- Due Status (unchanged)
     CASE
         WHEN pyt.STATUS_ID != 'PMNT_NOT_PAID' AND pyt.STATUS_ID IS NOT NULL
-            THEN COALESCE(sts.DESCRIPTION_ARABIC, pyt.STATUS_ID)
+    THEN COALESCE(sts.DESCRIPTION_ARABIC, pyt.STATUS_ID)
 
         WHEN pyt.EFFECTIVE_DATE IS NULL
             THEN 'غير محدد'
@@ -80,10 +77,10 @@ SELECT
                                     CASE ((MONTH(pyt.EFFECTIVE_DATE)-1) DIV 3 + 1)
                                         WHEN 1 THEN 'الأول' WHEN 2 THEN 'الثاني'
                                         WHEN 3 THEN 'الثالث' WHEN 4 THEN 'الرابع'
-                                        END, ' ', YEAR(pyt.EFFECTIVE_DATE), ')')
-                        END
+                                    END, ' ', YEAR(pyt.EFFECTIVE_DATE), ')')
+END
 
-                WHEN DATEDIFF(pyt.EFFECTIVE_DATE, CURDATE()) = 0 THEN 'دفعة مستحقة اليوم'
+WHEN DATEDIFF(pyt.EFFECTIVE_DATE, CURDATE()) = 0 THEN 'دفعة مستحقة اليوم'
                 WHEN DATEDIFF(pyt.EFFECTIVE_DATE, CURDATE()) = 1 THEN 'دفعة مستحقة غداً'
                 WHEN DATEDIFF(pyt.EFFECTIVE_DATE, CURDATE()) <= 3
                     THEN CONCAT('دفعة مستحقة بعد ', DATEDIFF(pyt.EFFECTIVE_DATE, CURDATE()), ' أيام')
@@ -94,29 +91,34 @@ SELECT
                                 CASE ((MONTH(pyt.EFFECTIVE_DATE)-1) DIV 3 + 1)
                                     WHEN 1 THEN 'الأول' WHEN 2 THEN 'الثاني'
                                     WHEN 3 THEN 'الثالث' WHEN 4 THEN 'الرابع'
-                                    END, ' ', YEAR(pyt.EFFECTIVE_DATE), ')')
+                                END, ' ', YEAR(pyt.EFFECTIVE_DATE), ')')
                 ELSE CONCAT('دفعة مستحقة لاحقاً (الربع ',
                             CASE ((MONTH(pyt.EFFECTIVE_DATE)-1) DIV 3 + 1)
                                 WHEN 1 THEN 'الأول' WHEN 2 THEN 'الثاني'
                                 WHEN 3 THEN 'الثالث' WHEN 4 THEN 'الرابع'
-                                END, ' ', YEAR(pyt.EFFECTIVE_DATE), ')')
-                END
-        END                                                 AS DueStatusArabic
+                            END, ' ', YEAR(pyt.EFFECTIVE_DATE), ')')
+END
+END AS DueStatusArabic
 
 FROM PAYMENT pyt
-         JOIN PAYMENT_TYPE ptt          ON pyt.PAYMENT_TYPE_ID = ptt.PAYMENT_TYPE_ID
-         JOIN STATUS_ITEM sts           ON pyt.STATUS_ID = sts.STATUS_ID
-         JOIN PARTY pty_from            ON pyt.PARTY_ID_FROM = pty_from.PARTY_ID
 
-         LEFT JOIN PAYMENT_METHOD_TYPE pmt ON pyt.PAYMENT_METHOD_TYPE_ID = pmt.PAYMENT_METHOD_TYPE_ID
-         LEFT JOIN PARTY pty_to            ON pyt.PARTY_ID_TO = pty_to.PARTY_ID
-         LEFT JOIN COST_CENTER cc          ON pyt.COST_CENTER_ID = cc.COST_CENTER_ID
-         LEFT JOIN WORK_EFFORT proj        ON pyt.WORK_EFFORT_ID = proj.WORK_EFFORT_ID
-         LEFT JOIN SALES_REQUEST sr        ON pyt.SALES_REQUEST_ID = sr.SALES_REQUEST_ID
-         LEFT JOIN PRODUCT prod            ON sr.PRODUCT_ID = prod.PRODUCT_ID
-         LEFT JOIN PARTY approved          ON pyt.APPROVED_BY_PARTY_ID = approved.PARTY_ID
-         LEFT JOIN PARTY created_by        ON pyt.CREATED_BY_PARTY_ID = created_by.PARTY_ID
-         LEFT JOIN WORK_EFFORT gl_proj  ON pyt.OVERRIDE_GL_ACCOUNT_ID = gl_proj.GlAccountId
+JOIN PAYMENT_TYPE ptt          ON pyt.PAYMENT_TYPE_ID = ptt.PAYMENT_TYPE_ID
+JOIN STATUS_ITEM sts           ON pyt.STATUS_ID = sts.STATUS_ID
+JOIN PARTY pty_from            ON pyt.PARTY_ID_FROM = pty_from.PARTY_ID
 
-WHERE ptt.PARENT_TYPE_ID = 'DISBURSEMENT'
-  AND pyt.STATUS_ID = 'PMNT_SENT';
+LEFT JOIN PAYMENT_METHOD_TYPE pmt ON pyt.PAYMENT_METHOD_TYPE_ID = pmt.PAYMENT_METHOD_TYPE_ID
+LEFT JOIN PARTY pty_to            ON pyt.PARTY_ID_TO = pty_to.PARTY_ID
+LEFT JOIN COST_CENTER cc          ON pyt.COST_CENTER_ID = cc.COST_CENTER_ID
+LEFT JOIN SALES_REQUEST sr        ON pyt.SALES_REQUEST_ID = sr.SALES_REQUEST_ID
+LEFT JOIN PRODUCT prod            ON sr.PRODUCT_ID = prod.PRODUCT_ID
+LEFT JOIN PARTY approved          ON pyt.APPROVED_BY_PARTY_ID = approved.PARTY_ID
+LEFT JOIN PARTY created_by        ON pyt.CREATED_BY_PARTY_ID = created_by.PARTY_ID
+
+-- ✅ CORE FIX
+JOIN DimProject dp
+    ON pyt.OVERRIDE_GL_ACCOUNT_ID = dp.GlAccountId
+
+WHERE (ptt.PARENT_TYPE_ID = 'DISBURSEMENT'
+    OR ptt.PAYMENT_TYPE_ID = 'DISBURSEMENT')
+  AND pyt.STATUS_ID = 'PMNT_SENT' AND dp.GlAccountType = 'PROJECT_MAIN'
+  AND pyt.OVERRIDE_GL_ACCOUNT_ID IS NOT NULL;

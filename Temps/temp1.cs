@@ -1,59 +1,30 @@
-public async Task<IQueryable<PaymentRecord>> Handle(Query request, CancellationToken cancellationToken)
-{
-    var language = request.Language?.ToLower() ?? "en";
-    var isArabic = language == "ar";
+CREATE OR REPLACE VIEW Fact_Project_DirectPayments AS
+SELECT
+pyt.PAYMENT_ID                                      AS PaymentId,
+-- ... [Keep other columns same] ...
 
-    var query = (from pyt in _context.Payments
-            join ptt in _context.PaymentTypes on pyt.PaymentTypeId equals ptt.PaymentTypeId
-            join sts in _context.StatusItems on pyt.StatusId equals sts.StatusId
-            join pty in _context.Parties on pyt.PartyIdFrom equals pty.PartyId
-            
-            // Existing Join
-            join pmt in _context.PaymentMethodTypes on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId
-                into pmtJoin from pmt in pmtJoin.DefaultIfEmpty()
+-- 🔴 ADJUSTED LOGIC: 
+-- 1. Take the direct Project ID if it exists
+-- 2. If null, find the project that owns this GL account
+COALESCE(pyt.WORK_EFFORT_ID, gl_proj.WORK_EFFORT_ID) AS ProjectId,
+    
+    pyt.OVERRIDE_GL_ACCOUNT_ID                          AS OverrideGlAccountId,
+    COALESCE(proj.PROJECT_NAME, gl_proj.PROJECT_NAME)   AS ProjectName,
 
-            // 1. New Left Join: PaymentMethods
-            join pm in _context.PaymentMethods on pyt.PaymentMethodId equals pm.PaymentMethodId 
-                into pmJoin from pm in pmJoin.DefaultIfEmpty()
+-- ... [Keep other columns same] ...
 
-            // 2. New Left Join: GlAccounts (using OverrideGlAccountId)
-            join gl in _context.GlAccounts on pyt.OverrideGlAccountId equals gl.GlAccountId 
-                into glJoin from gl in glJoin.DefaultIfEmpty()
+FROM PAYMENT pyt
+    JOIN PAYMENT_TYPE ptt          ON pyt.PAYMENT_TYPE_ID = ptt.PAYMENT_TYPE_ID
+JOIN STATUS_ITEM sts           ON pyt.STATUS_ID = sts.STATUS_ID
+JOIN PARTY pty_from            ON pyt.PARTY_ID_FROM = pty_from.PARTY_ID
 
-            // ... (other existing joins) ...
-            join ptyto in _context.Parties on pyt.PartyIdTo equals ptyto.PartyId into ptytoJoin
-            from ptyto in ptytoJoin.DefaultIfEmpty()
-            join opp in _context.OrderPaymentPreferences on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId into oppJoin
-            from opp in oppJoin.DefaultIfEmpty()
-            join ord in _context.OrderHeaders on opp.OrderId equals ord.OrderId into ordJoin
-            from ord in ordJoin.DefaultIfEmpty()
-            // ... (rest of joins) ...
+    -- Join for direct Project link
+    LEFT JOIN WORK_EFFORT proj     ON pyt.WORK_EFFORT_ID = proj.WORK_EFFORT_ID
+         
+    -- 🟢 NEW JOIN: Join via the GL Account to ensure "inheritance"
+LEFT JOIN WORK_EFFORT gl_proj  ON pyt.OVERRIDE_GL_ACCOUNT_ID = gl_proj.GL_ACCOUNT_ID
 
-            select new PaymentRecord
-            {
-                PaymentId = pyt.PaymentId,
-                PaymentTypeId = pyt.PaymentTypeId,
-                PaymentTypeDescription = isArabic ? ptt.DescriptionArabic : ptt.Description,
-                
-                // Using the new joins:
-                PaymentMethodId = pyt.PaymentMethodId,
-                PaymentMethodDescription = pm != null ? pm.Description : null, // From PaymentMethod
-                
-                OverrideGlAccountId = pyt.OverrideGlAccountId,
-                AccountNameArabic = gl != null ? gl.AccountNameArabic : null, // From GlAccount
+    -- ... [Keep other joins same] ...
 
-                PaymentMethodTypeId = pyt.PaymentMethodTypeId,
-                PaymentMethodTypeDescription = pmt != null
-                    ? (isArabic ? pmt.DescriptionArabic : pmt.Description)
-                    : null,
-
-                // ... (rest of the existing mapping) ...
-                PartyIdFrom = pyt.PartyIdFrom,
-                // ... (keep existing fields) ...
-                Amount = pyt.Amount,
-                CurrencyUomId = pyt.CurrencyUomId ?? "EGP"
-            })
-        .AsQueryable();
-
-    // ... (rest of your logic for OData and post-processing) ...
-}
+WHERE ptt.PARENT_TYPE_ID = 'DISBURSEMENT'
+AND pyt.STATUS_ID = 'PMNT_SENT';

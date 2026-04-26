@@ -141,6 +141,8 @@ export const createChequeFieldsValidator = (paymentMethods: any[] = []) => {
         const isBankTransfer = !!getter('isBankTransfer');
         const paymentMethodId = getter('paymentMethodId') as string | undefined;
 
+        const isValueEmpty = value === null || value === undefined || value === "";
+
         // If no method selected yet → no error here (let requiredValidator handle it)
         if (!paymentMethodId) {
             return undefined;
@@ -161,9 +163,11 @@ export const createChequeFieldsValidator = (paymentMethods: any[] = []) => {
         const isCompanyCheck = method.paymentMethodTypeId === 'COMPANY_CHECK';
         const isCash = paymentMethodId === 'CASH';
 
+        // console.log(`[DEBUG_LOG] Validating ${value} for method ${paymentMethodId}, isBankTransfer: ${isBankTransfer}, isCompanyCheck: ${isCompanyCheck}`);
+
         // For non-COMPANY_CHECK methods → cheque fields should not be used
         if (!isCompanyCheck) {
-            if (value) {
+            if (!isValueEmpty) {
                 return "Cheque number/date not applicable for this payment method";
             }
             return undefined;
@@ -175,14 +179,14 @@ export const createChequeFieldsValidator = (paymentMethods: any[] = []) => {
 
         if (isBankTransfer) {
             // Bank transfer → cheque should be EMPTY
-            if (value) {
+            if (!isValueEmpty) {
                 return "Cheque number/date must be empty when Bank Transfer is selected";
             }
             return undefined;
         }
 
         // Classic cheque payment (not bank transfer) → required
-        if (!value) {
+        if (isValueEmpty) {
             return "Cheque number/date is required for COMPANY_CHECK payments unless using Bank Transfer";
         }
 

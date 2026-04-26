@@ -8,7 +8,8 @@ BEGIN
         SELECT t.table_name
         FROM information_schema.tables t
         WHERE t.table_schema = DATABASE()
-          AND t.table_type = 'BASE TABLE'; -- Exclude views
+          AND t.table_type = 'BASE TABLE' 
+          AND t.table_name <> '__EFMigrationsHistory';
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
 
     SET FOREIGN_KEY_CHECKS = 0;
