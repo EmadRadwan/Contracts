@@ -25,6 +25,7 @@ interface TransactionRow {
     description?: string;
     projectName?: string;
     costCenterDescription?: string;
+    paymentRefNum?: string;
 }
 
 interface GlAccountTransactionsExcelProps {
@@ -99,7 +100,7 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
         // ---- title ------------------------------------------------------
         const titleRow = logoId ? 4 : 2;
         ws.addRow([`${getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.title', 'Transaction Details')} – ${utils.rtlEmbed(utils.safeString(accountName))} (${accountCode})`]);
-        ws.mergeCells(`A${titleRow}:P${titleRow}`);
+        ws.mergeCells(`A${titleRow}:Q${titleRow}`);
         ws.getRow(titleRow).font = { name: 'Amiri', size: 14, bold: true };
         ws.getRow(titleRow).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
         ws.addRow([]); ws.addRow([]);
@@ -126,6 +127,7 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.fiscalType', 'Fiscal GL Type'),
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.invoiceId', 'Invoice ID'),
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.paymentId', 'Payment ID'),
+            getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.paymentRefNum', 'Payment Ref Num'),
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.workEffortId', 'Work Effort ID'),
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.projectName', 'Project Name'),   // ← new
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.costCenter', 'Cost Center'),
@@ -152,8 +154,9 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
             { width: 14 }, // fiscal
             { width: 12 }, // invoice
             { width: 12 }, // payment
+            { width: 15 }, // paymentRefNum
             { width: 12 }, // work effort
-            { width: 28 },
+            { width: 28 }, // project name
             { width: 28 }, // cost center
             { width: 18 }, // party
             { width: 18 }, // product
@@ -162,7 +165,7 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
             { width: 14 }, // amount
             { width: 30 }, // description
         ];
-        ws.getColumn(13).numFmt = '#,##0.00';
+        ws.getColumn(14).numFmt = '#,##0.00';
 
         // ---- data rows --------------------------------------------------
         rows.forEach(r => {
@@ -174,6 +177,7 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
                 utils.safeString(r.glFiscalTypeId),
                 utils.safeString(r.invoiceId),
                 utils.safeString(r.paymentId),
+                utils.safeString(r.paymentRefNum),
                 utils.safeString(r.workEffortId),
                 utils.rtlEmbed(utils.safeString(r.projectName)), 
                 utils.rtlEmbed(utils.safeString(r.costCenterDescription)),
@@ -191,7 +195,7 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
 
         // ---- totals row -------------------------------------------------
         const totRow = ws.addRow([
-            '', '', '', '', '', '', '', '', '',
+            '', '', '', '', '', '', '', '', '', '',
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.totalDebit', 'Total Debit'),
             totalDebit,
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.totalCredit', 'Total Credit'),
@@ -199,8 +203,8 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
             '', ''
         ]);
         totRow.font = { name: 'Amiri', size: 10, bold: true };
-        totRow.getCell(11).numFmt = '#,##0.00';
-        totRow.getCell(13).numFmt = '#,##0.00';
+        totRow.getCell(12).numFmt = '#,##0.00';
+        totRow.getCell(14).numFmt = '#,##0.00';
 
         return await workbook.xlsx.writeBuffer();
     }, [

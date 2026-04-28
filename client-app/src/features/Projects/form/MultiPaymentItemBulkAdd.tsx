@@ -29,7 +29,6 @@ import { FormSimpleComboBoxRawMaterialVirtual } from "../../../app/common/form/F
 import { FormComboBoxVirtualAllParties } from "../../../app/common/form/FormComboBoxVirtualAllParties";
 import { MemoizedFormComboBox2 } from "../../../app/common/form/FormComboBox2";
 import {useFetchWorkEffortsByGlAccountIdQuery} from "../../../app/store/apis/projectsApi";
-import { FormDropDownTreeGlAccount3 } from "../../../app/common/form/FormDropDownTreeGlAccount3";
 
 interface Props {
     onClose: () => void;
@@ -128,7 +127,7 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
     return (
         <TableRow key={row.tempId}>
             {/* GL Account */}
-            <TableCell sx={{ minWidth: 350 }}>
+            <TableCell sx={{ minWidth: 450 }}>
                 <FormDropDownTreeGlAccount2
                     data={glAccounts || []}
                     value={row.glAccountId}

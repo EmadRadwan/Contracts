@@ -25,4 +25,5 @@ public class TransactionEntryDto
     public string CurrencyUomId { get; set; }
     public decimal Amount { get; set; }
     public string CostCenterDescription { get; set; }
+    public string PaymentRefNum { get; set; }
 }

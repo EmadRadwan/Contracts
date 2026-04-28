@@ -323,6 +323,7 @@ export default function PaymentForm({
                 />
                 <Grid container spacing={2} alignItems="center">
                     <Grid item xs={12} sx={{display: 'flex', justifyContent: 'flex-end'}}>
+                        {/* {JSON.stringify(payment?.statusId)} */}
                         <PaymentActions
                             payment={payment}
                             formEditMode={editMode}

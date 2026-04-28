@@ -5592,7 +5592,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             var acctgTransParams = new CreateAcctgTransParams
             {
                 AcctgTransTypeId = "OUTGOING_PAYMENT", // ← use a specific type if your system has it
-                TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                TransactionDate = payment.EffectiveDate,
                 IsPosted = "Y",
                 Description = description,
                 GlFiscalTypeId = "ACTUAL",

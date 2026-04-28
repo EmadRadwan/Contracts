@@ -11,21 +11,9 @@ interface PaymentActionsProps {
     getTranslatedLabel: (key: string, defaultValue: string) => string;
     handleMenuSelect: (e: { item: { data: string } }) => void;
     handleReset: () => void;
+    getAvailableStatusTransitions?: (payment?: Payment) => any;
 }
 
-const getAvailableStatusTransitions = (payment?: Payment) => {
-    if (!payment) {
-        return { toSent: false, toReceived: false, toCancelled: false, toConfirmed: false, toVoid: false };
-    }
-    const isOutgoing = payment.isDisbursement; 
-    return {
-        toSent: payment.statusId === 'PMNT_NOT_PAID' && isOutgoing,
-        toReceived: payment.statusId === 'PMNT_NOT_PAID' && !isOutgoing,
-        toCancelled: payment.statusId === 'PMNT_NOT_PAID',
-        toConfirmed: payment.statusId === 'PMNT_SENT' || payment.statusId === 'PMNT_RECEIVED',
-        toVoid: payment.statusId !== 'PMNT_CONFIRMED' && payment.statusId !== 'PMNT_VOID',
-    };
-};
 
 const PaymentActions: React.FC<PaymentActionsProps> = ({
                                                            payment,
@@ -33,10 +21,30 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                                                            getTranslatedLabel,
                                                            handleMenuSelect,
                                                            handleReset,
+                                                           getAvailableStatusTransitions: getAvailableStatusTransitionsFromProp
                                                        }) => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
     const [resetDialogOpen, setResetDialogOpen] = useState(false);
+
+    // use prop transitions if available, fallback to internal one
+    const getTransitions = (p?: Payment) => {
+        if (getAvailableStatusTransitionsFromProp) {
+            return getAvailableStatusTransitionsFromProp(p);
+        }
+        // internal fallback
+        if (!p) {
+            return { toSent: false, toReceived: false, toCancelled: false, toConfirmed: false, toVoid: false };
+        }
+        const isOutgoing = p.isDisbursement;
+        return {
+            toSent: p.statusId === 'PMNT_NOT_PAID' && isOutgoing,
+            toReceived: p.statusId === 'PMNT_NOT_PAID' && !isOutgoing,
+            toCancelled: p.statusId === 'PMNT_NOT_PAID',
+            toConfirmed: p.statusId === 'PMNT_SENT' || p.statusId === 'PMNT_RECEIVED',
+            toVoid: p.statusId !== 'PMNT_CONFIRMED' && p.statusId !== 'PMNT_VOID',
+        };
+    };
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
@@ -135,19 +143,19 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                     perform="Process_Payment"
                 >
                     <>
-                        {getAvailableStatusTransitions(payment).toSent && (
+                        {getTransitions(payment).toSent && (
                             <MenuItem onClick={() => onMenuSelect('send')}>
                                 {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.send`, "Status to Sent")}
                             </MenuItem>
                         )}
 
-                        {getAvailableStatusTransitions(payment).toReceived  && (
+                        {getTransitions(payment).toReceived  && (
                             <MenuItem onClick={() => onMenuSelect('receive')}>
                                 {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.receive`, "Status to Received")}
                             </MenuItem>
                         )}
 
-                        {!!payment?.paymentId && (
+                        {payment?.paymentId && (
                             <MenuItem onClick={() => onMenuSelect('duplicate')}>
                                 {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.duplicate`, "Duplicate Payment")}
                             </MenuItem>

@@ -88,6 +88,7 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
             description: t.description,
             projectName: t.projectName ?? '',
             costCenterDescription: t.costCenterDescription ?? '',
+            paymentRefNum: t.paymentRefNum ?? '',
         }));
     }, [accountingTransEntries]);
 

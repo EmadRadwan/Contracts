@@ -106,6 +106,7 @@ public class GetGlAccountTransactionDetails
                                 : (project != null ? (project.ProjectName ?? project.Description ?? project.WorkEffortName) : null))
                             : null,
                         CostCenterDescription = cc != null ? cc.Description : null,
+                        PaymentRefNum = pyt != null ? pyt.PaymentRefNum : null,
                     };
 
                 // 4. Filter transactions for display (respect IncludePrePeriodTransactions)
