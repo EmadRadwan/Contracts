@@ -2,7 +2,7 @@ using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
-using Application.Core;   // ← Make sure you have this for DateHelper
+using Application.Core; // ← Make sure you have this for DateHelper
 
 namespace Application.Accounting.Payments;
 
@@ -35,63 +35,64 @@ public class ListPaymentsDaily
             var isOutgoing = request.PaymentType?.ToLower() == "outgoing";
 
             var query = from pyt in _context.Payments
-                        join ptt in _context.PaymentTypes on pyt.PaymentTypeId equals ptt.PaymentTypeId
-                        join sts in _context.StatusItems on pyt.StatusId equals sts.StatusId
-                        join ptyFrom in _context.Parties on pyt.PartyIdFrom equals ptyFrom.PartyId
-                        join ptyTo in _context.Parties on pyt.PartyIdTo equals ptyTo.PartyId
-                        join pmt in _context.PaymentMethodTypes on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into pmtGroup
-                        from pmt in pmtGroup.DefaultIfEmpty()
-                        join proj in _context.WorkEfforts on pyt.WorkEffortId equals proj.WorkEffortId into projJoin
-                        from proj in projJoin.DefaultIfEmpty()
-                        join cc in _context.CostCenters on pyt.CostCenterId equals cc.CostCenterId into ccJoin
-                        from cc in ccJoin.DefaultIfEmpty()
-                        join sr in _context.SalesRequests on pyt.SalesRequestId equals sr.SalesRequestId into srJoin
-                        from sr in srJoin.DefaultIfEmpty()
-                        join prod in _context.Products on sr.ProductId equals prod.ProductId into prodJoin
-                        from prod in prodJoin.DefaultIfEmpty()
-
-                        where pyt.CreatedStamp >= startOfDayEgypt 
-                           && pyt.CreatedStamp < endOfDayEgypt
-                           && (isOutgoing 
-                               ? ptt.ParentTypeId == "DISBURSEMENT" 
-                               : ptt.ParentTypeId != "DISBURSEMENT")
-
-                        select new PaymentRecordDto
-                        {
-                            PaymentId = pyt.PaymentId,
-                            PaymentTypeId = pyt.PaymentTypeId,
-                            PaymentTypeDescription = request.Language == "ar" ? ptt.DescriptionArabic : ptt.Description,
-                            PaymentMethodId = pyt.PaymentMethodId,
-                            PaymentMethodTypeId = pyt.PaymentMethodTypeId,
-                            PaymentMethodTypeDescription = pmt != null 
-                                ? (request.Language == "ar" ? pmt.DescriptionArabic : pmt.Description) 
-                                : null,
-                            PartyIdFrom = pyt.PartyIdFrom,
-                            PartyIdFromName = ptyFrom.Description ?? string.Empty,
-                            PartyIdTo = pyt.PartyIdTo,
-                            PartyIdToName = ptyTo.Description ?? string.Empty,
-                            StatusId = pyt.StatusId,
-                            StatusDescription = request.Language == "ar" ? sts.DescriptionArabic : sts.Description,
-                            StatusDescriptionEnglish = sts.Description,
-                            EffectiveDate = pyt.EffectiveDate,           // DateOnly?
-                            Comments = pyt.Comments,
-                            PaymentRefNum = pyt.PaymentRefNum,
-                            PaymentPreferenceId = pyt.PaymentPreferenceId,
-                            ActualCurrencyAmount = pyt.ActualCurrencyAmount ?? pyt.Amount,
-                            OverrideGlAccountId = pyt.OverrideGlAccountId,
-                            OrganizationPartyId = ptt.ParentTypeId == "DISBURSEMENT" 
-                                ? pyt.PartyIdFrom : pyt.PartyIdTo,
-                            Amount = pyt.Amount,
-                            CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
-                            IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
-                            ChequeNumber = pyt.ChequeNumber,
-                            ChequeDate = pyt.ChequeDate,
-                            CertificateNumber = null,                    // was never populated
-                            ProjectName = proj != null ? proj.ProjectName : null,
-                            CostCenterDescription = cc != null ? cc.Description : null,
-                            ProductId = prod != null ? prod.ProductId : null,
-                            BuildingNumber = prod != null ? prod.BuildingNumber : null,
-                        };
+                join ptt in _context.PaymentTypes on pyt.PaymentTypeId equals ptt.PaymentTypeId
+                join sts in _context.StatusItems on pyt.StatusId equals sts.StatusId
+                join ptyFrom in _context.Parties on pyt.PartyIdFrom equals ptyFrom.PartyId
+                join ptyTo in _context.Parties on pyt.PartyIdTo equals ptyTo.PartyId
+                join pmt in _context.PaymentMethodTypes on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into
+                    pmtGroup
+                from pmt in pmtGroup.DefaultIfEmpty()
+                join proj in _context.WorkEfforts on pyt.WorkEffortId equals proj.WorkEffortId into projJoin
+                from proj in projJoin.DefaultIfEmpty()
+                join cc in _context.CostCenters on pyt.CostCenterId equals cc.CostCenterId into ccJoin
+                from cc in ccJoin.DefaultIfEmpty()
+                join sr in _context.SalesRequests on pyt.SalesRequestId equals sr.SalesRequestId into srJoin
+                from sr in srJoin.DefaultIfEmpty()
+                join prod in _context.Products on sr.ProductId equals prod.ProductId into prodJoin
+                from prod in prodJoin.DefaultIfEmpty()
+                where (pyt.CreatedStamp >= startOfDayEgypt
+                       && pyt.CreatedStamp < endOfDayEgypt) ||
+                      (pyt.LastUpdatedStamp >= startOfDayEgypt && pyt.LastUpdatedStamp < endOfDayEgypt)
+                      && (isOutgoing
+                          ? ptt.ParentTypeId == "DISBURSEMENT"
+                          : ptt.ParentTypeId != "DISBURSEMENT")
+                select new PaymentRecordDto
+                {
+                    PaymentId = pyt.PaymentId,
+                    PaymentTypeId = pyt.PaymentTypeId,
+                    PaymentTypeDescription = request.Language == "ar" ? ptt.DescriptionArabic : ptt.Description,
+                    PaymentMethodId = pyt.PaymentMethodId,
+                    PaymentMethodTypeId = pyt.PaymentMethodTypeId,
+                    PaymentMethodTypeDescription = pmt != null
+                        ? (request.Language == "ar" ? pmt.DescriptionArabic : pmt.Description)
+                        : null,
+                    PartyIdFrom = pyt.PartyIdFrom,
+                    PartyIdFromName = ptyFrom.Description ?? string.Empty,
+                    PartyIdTo = pyt.PartyIdTo,
+                    PartyIdToName = ptyTo.Description ?? string.Empty,
+                    StatusId = pyt.StatusId,
+                    StatusDescription = request.Language == "ar" ? sts.DescriptionArabic : sts.Description,
+                    StatusDescriptionEnglish = sts.Description,
+                    EffectiveDate = pyt.EffectiveDate, // DateOnly?
+                    Comments = pyt.Comments,
+                    PaymentRefNum = pyt.PaymentRefNum,
+                    PaymentPreferenceId = pyt.PaymentPreferenceId,
+                    ActualCurrencyAmount = pyt.ActualCurrencyAmount ?? pyt.Amount,
+                    OverrideGlAccountId = pyt.OverrideGlAccountId,
+                    OrganizationPartyId = ptt.ParentTypeId == "DISBURSEMENT"
+                        ? pyt.PartyIdFrom
+                        : pyt.PartyIdTo,
+                    Amount = pyt.Amount,
+                    CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
+                    IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
+                    ChequeNumber = pyt.ChequeNumber,
+                    ChequeDate = pyt.ChequeDate,
+                    CertificateNumber = null, // was never populated
+                    ProjectName = proj != null ? proj.ProjectName : null,
+                    CostCenterDescription = cc != null ? cc.Description : null,
+                    ProductId = prod != null ? prod.ProductId : null,
+                    BuildingNumber = prod != null ? prod.BuildingNumber : null,
+                };
 
             var data = await query.ToListAsync(ct);
 
@@ -205,8 +206,8 @@ public class PaymentRecordDto
     public bool IsDisbursement { get; set; }
     public string? ChequeNumber { get; set; }
     public DateOnly? ChequeDate { get; set; }
-    public string? CertificateNumber { get; set; }       // From WorkEffort via Order chain
-    public string? ProjectName { get; set; }             // Direct from Payment.WorkEffortId
+    public string? CertificateNumber { get; set; } // From WorkEffort via Order chain
+    public string? ProjectName { get; set; } // Direct from Payment.WorkEffortId
     public string? CostCenterDescription { get; set; }
     public string? ProductId { get; set; }
     public string? BuildingNumber { get; set; }

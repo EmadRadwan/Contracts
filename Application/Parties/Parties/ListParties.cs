@@ -98,7 +98,9 @@ public class ListParties
                     InfoString =
                         partyGroup.Where(x => x.cm != null && x.cm.InfoString != null)
                                   .Select(x => x.cm.InfoString)
-                                  .FirstOrDefault()
+                                  .FirstOrDefault(),
+                    
+                    MainRole = partyGroup.First().prty.MainRole,
                 };
 
             return groupedResults;

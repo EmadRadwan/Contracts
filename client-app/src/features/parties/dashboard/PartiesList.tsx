@@ -177,10 +177,11 @@ export default function PartiesList() {
                 {...navigationAttributes}
             ><Button
                 onClick={() => {
+                    console.log('dataItem', props.dataItem)
                     const startAt = props.dataItem.description.indexOf('(')
                     const endAt = props.dataItem.description.indexOf(')')
                     //console.log('MainRole', props.dataItem.description.substring(startAt + 2, endAt - 1))
-                    const formValue = props.dataItem.description.substring(startAt + 2, endAt - 1)
+                    const formValue = props.dataItem.mainRole;
                     setForm(formValue)
                     handleSelectParty(props.dataItem.partyId, formValue)
                 }}
@@ -192,6 +193,7 @@ export default function PartiesList() {
         )
     }
 
+    console.log('form', form);
 
     if (editMode > 0 && form === 'CUSTOMER') {
         return <CreateCustomerForm party={party} cancelEdit={cancelEdit} editMode={editMode}/>

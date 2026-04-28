@@ -1231,7 +1231,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("CREATED_TX_STAMP");
 
                 entity.Property(e => e.Description)
-                    .HasMaxLength(255)
+                    .HasMaxLength(1500)
                     .IsUnicode(false)
                     .HasColumnName("DESCRIPTION");
 
@@ -1574,7 +1574,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .IsFixedLength();
 
                 entity.Property(e => e.Description)
-                    .HasMaxLength(255)
+                    .HasMaxLength(2500)
                     .IsUnicode(false)
                     .HasColumnName("DESCRIPTION");
 
@@ -32142,7 +32142,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnName("AMOUNT");
 
                 entity.Property(e => e.Comments)
-                    .HasMaxLength(1500)
+                    .HasMaxLength(2500)
                     .IsUnicode(false)
                     .HasColumnName("COMMENTS");
 

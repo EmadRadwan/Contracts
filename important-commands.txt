@@ -261,7 +261,7 @@ http://129.146.22.240:9000
 admin / Tmbtc202500))
 
 // Cloud link: https://console.us-phoenix-1.oraclecloud.com/identity/domains/my-profile?tenant=efathyradwan67&domain=Default
-Tmbtc2026))00
+Tmbtc20260400))
 
 
 Mysql root password: Tmbtc202500

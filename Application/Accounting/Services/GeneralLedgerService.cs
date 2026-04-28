@@ -5472,10 +5472,10 @@ public class GeneralLedgerService : IGeneralLedgerService
             var acctgTransParams = new CreateAcctgTransParams
             {
                 AcctgTransTypeId = "CHECK_ISSUED", // or "CHECK_ISSUED", adjust as per your system
-                TransactionDate = payment.EffectiveDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
+                TransactionDate = payment.EffectiveDate,
                 IsPosted = "Y",
                 GlFiscalTypeId = "ACTUAL",
-                Description = description,
+                Description = payment.Comments,
                 PaymentId = payment.PaymentId,
                 PartyId = payment.PartyIdTo // the recipient
             };
@@ -5594,7 +5594,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 AcctgTransTypeId = "OUTGOING_PAYMENT", // ← use a specific type if your system has it
                 TransactionDate = payment.EffectiveDate,
                 IsPosted = "Y",
-                Description = description,
+                Description = payment.Comments,
                 GlFiscalTypeId = "ACTUAL",
                 PaymentId = payment.PaymentId,
                 PartyId = payment.PartyIdTo, // usually the supplier/vendor

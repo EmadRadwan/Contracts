@@ -95,10 +95,11 @@ namespace Application.Projects
                         AcctgTransId = acctgTransId,
                         AcctgTransTypeId = "DISBURSEMENT",
                         Description = certificate.Description,
-                        TransactionDate = DateTime.UtcNow,
+                        TransactionDate = certificate.EstimatedStartDate,
                         WorkEffortId = certificate.WorkEffortId,
                         IsPosted = "Y",
                         PostedDate = DateTime.UtcNow,
+                        CreatedStamp = DateTime.UtcNow,
                         GlFiscalTypeId = "ACTUAL",
                     };
 
