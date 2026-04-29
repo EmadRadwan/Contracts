@@ -79,10 +79,10 @@ const SalesOpportunityList: React.FC<SalesOpportunityListProps> = ({ onCreateNew
                 onDataStateChange={dataStateChange}
             >
 
-                <Column cell={OpportunityLeadsCell} title={getTranslatedLabel(`${localizationKey}.leads`, 'Leads')} width={180} />
-                <Column field="productName" title={getTranslatedLabel(`${localizationKey}.project`, 'Project')} width={250} />
-                <Column field="workEffortName" title={getTranslatedLabel(`${localizationKey}.workEffort`, 'Work Effort')} width={250} />
-                <Column field="opportunityStageName" title={getTranslatedLabel(`${localizationKey}.stage`, 'Stage')} width={200} />
+                <Column cell={OpportunityLeadsCell} title={getTranslatedLabel(`${localizationKey}.leads`, 'Leads')} />
+                <Column field="productName" title={getTranslatedLabel(`projects.certificate.form.project`, 'Project')} />
+                <Column field="workEffortName" title={getTranslatedLabel(`${localizationKey}.unit`, 'unit')} />
+                <Column field="opportunityStageName" title={getTranslatedLabel(`${localizationKey}.stage`, 'Stage')} />
 
                 {/* Actions Column */}
                 <Column
@@ -98,14 +98,14 @@ const SalesOpportunityList: React.FC<SalesOpportunityListProps> = ({ onCreateNew
                                     size="small"
                                     onClick={() => onEditOpportunity(props.dataItem)}
                                 >
-                                    {getTranslatedLabel(`${localizationKey}.edit`, 'Edit')}
+                                    {getTranslatedLabel(`general.edit`, 'Edit')}
                                 </Button>
                                 <Button
                                     variant="outlined"
                                     size="small"
                                     onClick={() => handleOpenAction(props.dataItem)}
                                 >
-                                    {getTranslatedLabel(`${localizationKey}.action`, 'Action')}
+                                    {getTranslatedLabel(`general.actions`, 'Action')}
                                 </Button>
                             </Box>
                         </td>

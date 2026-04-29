@@ -34,6 +34,7 @@ import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
 import FormInput from '../../../app/common/form/FormInput';
 import { useCreateLeadsBatchMutation } from '../../../app/store/configureStore';
 import AddIcon from '@mui/icons-material/Add';
+import { useAppSelector } from '../../../app/store/configureStore';
 
 interface ImportedDataGridProps {
   data: any[];
@@ -77,6 +78,8 @@ const mapRowToDto = (row: any) => ({
   geoId: row['Country'] ?? '',
 });
 
+const localizationKey = 'crm.leads.imported';
+
 const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onClose }) => {
   const { getTranslatedLabel } = useTranslationHelper();
   const [gridData, setGridData] = useState(data);
@@ -84,8 +87,8 @@ const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onC
   const [createBatchLeads, { isLoading: isSaving }] = useCreateLeadsBatchMutation();
   const [batchResult, setBatchResult] = useState<BatchCreateLeadsResult | null>(null);
   const [resultModalOpen, setResultModalOpen] = useState(false);
-  // Tracks which rows in the current gridData are failed (by their original index)
   const [failedIndices, setFailedIndices] = useState<Set<number>>(new Set());
+  const language = useAppSelector((state) => state.localization.language);
 
   const processed = process(gridData, dataState);
   const columns = data.length > 0 ? Object.keys(data[0]) : [];
@@ -106,7 +109,6 @@ const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onC
     }
   };
 
-  // Keep only the failed rows in the grid so the user can fix & retry
   const handleKeepFailedRows = () => {
     if (!batchResult) return;
 
@@ -126,7 +128,7 @@ const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onC
 
   const DeleteCell = (props: GridCellProps) => (
     <td>
-      <Tooltip title="Delete row">
+      <Tooltip title={getTranslatedLabel(`${localizationKey}.deleteRow`, 'Delete row')}>
         <IconButton
           size="small"
           color="error"
@@ -163,7 +165,7 @@ const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onC
   };
 
   const editableColumns = columns.map((col) => (
-    <Column key={col} field={col} title={col} width={280} editor="text" cell={MyEditCell} />
+    <Column key={col} field={col} title={col} editor="text" cell={MyEditCell} />
   ));
 
   return (
@@ -171,28 +173,35 @@ const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onC
       <Box sx={{ p: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
           <Typography variant="h6">
-            Imported: {fileName} ({gridData.length} rows)
+            {getTranslatedLabel(`${localizationKey}.importedTitle`, 'Imported:')} {fileName} ({gridData.length} {getTranslatedLabel(`${localizationKey}.rows`, 'rows')})
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
               variant="contained"
               color="primary"
-              startIcon={<AddIcon />}
+              // startIcon={<AddIcon />}
               onClick={handleSave}
               disabled={isSaving}
             >
-              {isSaving ? 'Saving...' : 'Save'}
+              <AddIcon sx={{ ml: language === "ar" ? 0.5 : 0, mr: language === "ar" ? 0 : 0.5 }} />
+              {isSaving
+                ? getTranslatedLabel(`${localizationKey}.saving`, 'Saving...')
+                : getTranslatedLabel(`${localizationKey}.save`, 'Save')}
             </Button>
             <Button variant="outlined" onClick={onClose}>
-              Close
+              {getTranslatedLabel(`${localizationKey}.close`, 'Close')}
             </Button>
           </Box>
         </Box>
 
-        {/* Banner shown when grid is displaying failed rows only */}
         {failedIndices.size > 0 && (
           <Alert severity="warning" sx={{ mb: 2 }}>
-            Showing <strong>{gridData.length}</strong> failed row(s) — fix the errors and click Save again.
+            {getTranslatedLabel(`${localizationKey}.failedRowsBannerPrefix`, 'Showing')}{' '}
+            <strong>{gridData.length}</strong>{' '}
+            {getTranslatedLabel(
+              `${localizationKey}.failedRowsBannerSuffix`,
+              'failed row(s) — fix the errors and click Save again.'
+            )}
           </Alert>
         )}
 
@@ -200,18 +209,20 @@ const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onC
           data={processed}
           {...dataState}
           onDataStateChange={(e) => setDataState(e.dataState)}
-          pageable={{ pageSizes: [30, 60] }}
+          // pageable={{ pageSizes: [30, 60] }}
           sortable
           filterable
           editable
           style={{ height: '65vh' }}
         >
           <GridToolbar>
-            <Typography variant="subtitle1">Preview & Edit Imported Data</Typography>
+            <Typography variant="subtitle1">
+              {getTranslatedLabel(`${localizationKey}.gridToolbarTitle`, 'Preview & Edit Imported Data')}
+            </Typography>
           </GridToolbar>
           {editableColumns}
           <Column
-            title="Actions"
+            title={getTranslatedLabel(`${localizationKey}.actionsColumn`, 'Actions')}
             width={80}
             cell={DeleteCell}
             filterable={false}
@@ -230,41 +241,53 @@ const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onC
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <WarningAmberIcon color="warning" />
-          Import Summary
+          {getTranslatedLabel(`${localizationKey}.importSummaryTitle`, 'Import Summary')}
         </DialogTitle>
 
         <DialogContent dividers>
-          {/* Summary chips */}
           <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-            <Chip label={`Total: ${batchResult?.totalReceived ?? 0}`} variant="outlined" />
+            <Chip
+              label={`${getTranslatedLabel(`${localizationKey}.total`, 'Total')}: ${batchResult?.totalReceived ?? 0}`}
+              variant="outlined"
+            />
             <Chip
               icon={<CheckCircleOutlineIcon />}
-              label={`Saved: ${batchResult?.successful ?? 0}`}
+              label={`${getTranslatedLabel(`${localizationKey}.saved`, 'Saved')}: ${batchResult?.successful ?? 0}`}
               color="success"
               variant="outlined"
             />
             <Chip
               icon={<WarningAmberIcon />}
-              label={`Failed: ${batchResult?.failed ?? 0}`}
+              label={`${getTranslatedLabel(`${localizationKey}.failed`, 'Failed')}: ${batchResult?.failed ?? 0}`}
               color="error"
               variant="outlined"
             />
           </Box>
 
-          {/* Failed rows table */}
           {batchResult && batchResult.errors.length > 0 && (
             <>
               <Typography variant="subtitle2" sx={{ mb: 1, color: 'error.main' }}>
-                The following rows could not be saved:
+                {getTranslatedLabel(
+                  `${localizationKey}.failedRowsDescription`,
+                  'The following rows could not be saved:'
+                )}
               </Typography>
               <TableContainer component={Paper} variant="outlined">
                 <Table size="small">
                   <TableHead>
                     <TableRow sx={{ backgroundColor: 'grey.100' }}>
-                      <TableCell><strong>Row #</strong></TableCell>
-                      <TableCell><strong>First Name</strong></TableCell>
-                      <TableCell><strong>Email</strong></TableCell>
-                      <TableCell><strong>Reason</strong></TableCell>
+                      <TableCell>
+                        <strong>{getTranslatedLabel(`${localizationKey}.rowNumber`, 'Row #')}</strong>
+                      </TableCell>
+                      <TableCell>
+                        <strong>{getTranslatedLabel(`${localizationKey}.firstName`, 'First Name')}</strong>
+                      </TableCell>
+                      <TableCell>
+                        <strong>{getTranslatedLabel(`${localizationKey}.email`, 'Email')}</strong>
+                      </TableCell>
+                      <TableCell>
+                        <strong>{getTranslatedLabel(`${localizationKey}.reason`, 'Reason')}</strong>
+                      </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -286,19 +309,17 @@ const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onC
         </DialogContent>
 
         <DialogActions sx={{ gap: 1 }}>
-          {/* Fix failed rows — loads them back into the grid */}
           <Button
             onClick={handleKeepFailedRows}
             variant="contained"
             color="warning"
             startIcon={<WarningAmberIcon />}
           >
-            Fix Failed Rows
+            {getTranslatedLabel(`${localizationKey}.fixFailedRows`, 'Fix Failed Rows')}
           </Button>
 
-          {/* Done — close everything */}
           <Button onClick={handleResultModalClose} variant="outlined">
-            Done
+            {getTranslatedLabel(`${localizationKey}.done`, 'Done')}
           </Button>
         </DialogActions>
       </Dialog>

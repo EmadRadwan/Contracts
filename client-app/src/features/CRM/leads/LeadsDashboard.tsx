@@ -11,6 +11,7 @@ import LeadsForm from './LeadsForm';           // ← Fixed import name (was Lea
 import { Lead } from '../models/lead';
 import ExcelUploadDialog from './ExcelUploadDialog';
 import ImportedDataGrid from './ImportedDataGrid';
+import { useAppSelector } from '../../../app/store/configureStore';
 
 const LeadsDashboard: React.FC = () => {
     const { getTranslatedLabel } = useTranslationHelper();
@@ -23,6 +24,8 @@ const LeadsDashboard: React.FC = () => {
     const [importedData, setImportedData] = useState<any[]>([]);
     const [importedFileName, setImportedFileName] = useState('');
     const [showImportedGrid, setShowImportedGrid] = useState(false);
+
+    const language = useAppSelector((state) => state.localization.language);
 
     // Handlers
     const handleUploadExcel = useCallback(() => {
@@ -122,19 +125,18 @@ const LeadsDashboard: React.FC = () => {
                         <Button
                             variant="contained"
                             color="primary"
-                            startIcon={<AddIcon />}
+
                             onClick={handleCreateNew}
                         >
-                            {getTranslatedLabel(`${localizationKey}.createNew`, 'New Lead')}
+                            <AddIcon sx={{ ml: language === "ar" ? 0.5 : 0, mr: language === "ar" ? 0 : 0.5 }} /> {getTranslatedLabel(`${localizationKey}.createNew`, 'New Lead')}
                         </Button>
 
                         <Button
                             variant="contained"
                             color="secondary"
-                            startIcon={<DriveFolderUploadIcon />}
                             onClick={handleUploadExcel}
                         >
-                            {getTranslatedLabel(`${localizationKey}.uploadExcel`, 'Upload Excel')}
+                            <DriveFolderUploadIcon sx={{ ml: language === "ar" ? 0.5 : 0, mr: language === "ar" ? 0 : 0.5 }} />{getTranslatedLabel(`${localizationKey}.uploadExcel`, 'Upload Excel')}
                         </Button>
                     </Box>
                 </Box>

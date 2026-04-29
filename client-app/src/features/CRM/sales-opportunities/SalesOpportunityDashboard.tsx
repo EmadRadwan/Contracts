@@ -16,12 +16,14 @@ import SalesOpportunityBoard from './SalesOpportunityBoard';
 import SalesOpportunityList from './SalesOpportunityList';
 import OpportunityForm from './SalesOpportunityForm';
 import { SalesOpportunity } from '../models/salesOpportunity';
+import { useAppSelector } from '../../../app/store/configureStore';
 
 type ViewMode = 'board' | 'list';
 
 const SalesOpportunityDashboard: React.FC = () => {
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = 'crm.opportunities';
+    const language = useAppSelector((state) => state.localization.language);
 
     const [viewMode, setViewMode] = useState<ViewMode>('board');
     const [editMode, setEditMode] = useState<number>(0); // 0 = none, 1 = create, 2 = edit
@@ -88,13 +90,14 @@ const SalesOpportunityDashboard: React.FC = () => {
                         {getTranslatedLabel(`${localizationKey}.title`, 'Sales Pipeline')}
                     </Typography>
 
-                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', gap: 2, flexDirection: language === "ar" ? "row-reverse" : "row", alignItems: 'center' }}>
                         {/* View Toggle */}
                         <ToggleButtonGroup
                             value={viewMode}
                             exclusive
                             onChange={handleViewChange}
                             size="small"
+                            sx={{ flexDirection: language === "ar" ? "row-reverse" : "row" }}
                         >
                             <ToggleButton value="board" aria-label="board view" sx={{ gap: 1 }}>
                                 <ViewKanbanIcon />
@@ -106,15 +109,15 @@ const SalesOpportunityDashboard: React.FC = () => {
                             </ToggleButton>
                         </ToggleButtonGroup>
 
-                        
+
                         <Button
-                                variant="contained"
-                                color="primary"
-                                startIcon={<AddIcon />}
-                                onClick={handleCreateNew}
-                            >
-                                {getTranslatedLabel(`${localizationKey}.createNew`, 'New Opportunity')}
-                            </Button>
+                            variant="contained"
+                            color="primary"
+
+                            onClick={handleCreateNew}
+                        >
+                            <AddIcon sx={{ ml: language === "ar" ? 0.5 : 0, mr: language === "ar" ? 0 : 0.5 }} /> {getTranslatedLabel(`${localizationKey}.createNew`, 'New Opportunity')}
+                        </Button>
                     </Box>
                 </Box>
 

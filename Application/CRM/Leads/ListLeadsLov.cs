@@ -29,10 +29,7 @@ namespace Application.CRM.Leads
 
                 var query = _context.Parties
                     .Where(p => p.PartyType!.PartyTypeId == "PERSON")
-                    .Where(p => p.PartyRoles.Any(pr =>
-                        pr.RoleTypeId == "CONTACT" ||
-                        pr.RoleTypeId == "LEAD" ||
-                        pr.RoleTypeId == "CUSTOMER"))
+                    .Where(p => p.PartyRoles.Any(pr => pr.RoleTypeId == "LEAD"))
                     .Select(p => new LeadDto
                     {
                         PartyId = p.PartyId,

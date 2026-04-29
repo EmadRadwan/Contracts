@@ -25,6 +25,7 @@ import {
     useUpdateLeadMutation,
     useFetchDataSourcesQuery,
     useFetchCountriesQuery,
+    useAppSelector,
 } from '../../../app/store/configureStore';
 
 import { Lead } from '../models/lead';
@@ -53,6 +54,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
 }) => {
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = 'crm.leads.form';
+    const language = useAppSelector((state) => state.localization.language);
 
     const [createLead, { isLoading: creating }] = useCreateLeadMutation();
     const [updateLead, { isLoading: updating }] = useUpdateLeadMutation();
@@ -146,17 +148,17 @@ const LeadForm: React.FC<LeadFormProps> = ({
                                 label={getTranslatedLabel(`${localizationKey}.firstName`, 'First Name')}
                                 component={FormInput}
                                 validator={requiredValidator}
-                                placeholder="Enter first name"
+                                placeholder={getTranslatedLabel(`${localizationKey}.firstNamePlaceholder`, 'Enter First Name')}
                             />
                         </Grid>
 
                         <Grid item xs={6}>
                             <Field
                                 name="middleName"
-                                label={getTranslatedLabel(`${localizationKey}.middleName`, 'Last Name')}
+                                label={getTranslatedLabel(`${localizationKey}.lastName`, 'Last Name')}
                                 component={FormInput}
                                 validator={requiredValidator}
-                                placeholder="Enter last name"
+                                placeholder={getTranslatedLabel(`${localizationKey}.lastNamePlaceholder`, 'Enter Last Name')}
                             />
                         </Grid>
 
@@ -325,9 +327,10 @@ const LeadForm: React.FC<LeadFormProps> = ({
                             color="primary"
                             type="submit"
                             disabled={!formRenderProps.allowSubmit || isProcessing}
-                            startIcon={<SaveIcon />}
+                            // startIcon={<SaveIcon />}
                             sx={{ px: 5, fontWeight: 600 }}
                         >
+                            <SaveIcon sx={{ ml: language === "ar" ? 0.5 : 0, mr: language === "ar" ? 0 : 0.5 }} />
                             {isProcessing
                                 ? getTranslatedLabel(`${localizationKey}.processing`, 'Saving...')
                                 : editMode === 2

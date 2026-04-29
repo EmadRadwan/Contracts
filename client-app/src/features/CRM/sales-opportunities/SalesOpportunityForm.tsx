@@ -6,7 +6,8 @@ import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
 import {
     useFetchOpportunityStagesQuery,
     useCreateOpportunityMutation,
-    useUpdateOpportunityMutation
+    useUpdateOpportunityMutation,
+    useAppSelector
 } from '../../../app/store/configureStore';
 import { SalesOpportunity, SalesOpportunityLead } from '../models/salesOpportunity';
 import LoadingComponent from '../../../app/layout/LoadingComponent';
@@ -37,6 +38,7 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
 }: OpportunityFormProps) => {
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = 'crm.opportunities';
+    const language = useAppSelector((state) => state.localization.language);
 
     const [openActionModal, setOpenActionModal] = useState(false);
     const [openLeadModal, setOpenLeadModal] = useState(false);   // ← New state
@@ -45,6 +47,7 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
     const [createOpportunity, { isLoading: creating }] = useCreateOpportunityMutation();
     const [updateOpportunity, { isLoading: updating }] = useUpdateOpportunityMutation();
     const [showBroker, setShowBroker] = useState(opportunity ? opportunity.leads.some(lead => lead.dataSourceId === "INDIRECT") : false);
+    const [leadsError, setLeadsError] = useState<string | null>(null);
 
 
 
@@ -68,6 +71,7 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
 
     const handleLeadsChange = (leads: SalesOpportunityLead[]) => {
         setSelectedLeads(leads);
+        setLeadsError(null);
         setLeadsModified(true);
         if (leads && leads?.length > 0 && leads[0].dataSourceId === "INDIRECT") {
             setShowBroker(true);
@@ -81,6 +85,11 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
     };
 
     const handleSubmit = async (values: any) => {
+        setLeadsError(null);
+        if (selectedLeads.length === 0) {
+            setLeadsError(getTranslatedLabel(`${localizationKey}.validation.leadsRequired`, 'At least one lead must be linked to the opportunity.'));
+            return;
+        }
         const opportunityData: SalesOpportunity = {
             ...values,
             workEffortId: values.workEffortId?.projectId || null,
@@ -89,6 +98,8 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
             brokerPartyId: values.brokerPartyId?.fromPartyId || null,
             leads: selectedLeads,
         };
+
+
 
         try {
             if (editMode === 2 && opportunity?.salesOpportunityId) {
@@ -135,7 +146,7 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
                     // You can add more fields if needed (floorNumber, status, etc.)
                 }
                 : null,
-            ownerPartyId: opportunity.ownerPartyId                
+            ownerPartyId: opportunity.ownerPartyId
                 ? {
                     fromPartyId: opportunity.ownerPartyId,
                     fromPartyName: opportunity.ownerName || '',     // optional: if you have the name
@@ -227,11 +238,12 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
                                         />
                                     </Grid>
 
-                                     <Grid item xs={4}>
+                                    <Grid item xs={4}>
                                         <Field
                                             name="ownerPartyId"
-                                            label={getTranslatedLabel(`${localizationKey}.owner`, 'Owner')}
+                                            label={getTranslatedLabel(`${localizationKey}.owner`, 'Owner *')}
                                             component={FormComboBoxVirtualPartySalesRep}
+                                            validator={requiredValidator}
                                         />
                                     </Grid>
 
@@ -239,10 +251,11 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
                                         <Grid item xs={4}>
                                             <Field
                                                 name="brokerPartyId"
-                                                label={getTranslatedLabel(`${localizationKey}.broker`, 'Broker')}
+                                                label={getTranslatedLabel(`${localizationKey}.broker`, 'Broker *')}
                                                 component={FormComboBoxVirtualPartyBroker}
+                                                validator={requiredValidator}
                                             />
-                                    </Grid>)}
+                                        </Grid>)}
 
                                     {/* Linked Leads Section */}
                                     <Grid item xs={12}>
@@ -255,10 +268,9 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
                                             <Button
                                                 variant="outlined"
                                                 size="small"
-                                                startIcon={<AddIcon />}
                                                 onClick={() => setOpenLeadModal(true)}
                                             >
-                                                {getTranslatedLabel(`${localizationKey}.addNewLead`, 'Add New Lead')}
+                                                <AddIcon sx={{ ml: language === "ar" ? 0.5 : 0, mr: language === "ar" ? 0 : 0.5 }} /> {getTranslatedLabel(`${localizationKey}.addNewLead`, 'Add New Lead')}
                                             </Button>
                                         </Box>
                                         <Divider sx={{ mb: 2 }} />
@@ -271,6 +283,11 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
                                             onChange={handleLeadsChange}
                                             multiple
                                         />
+                                        {leadsError && (
+                                            <Typography variant="caption" color="error">
+                                                {leadsError}
+                                            </Typography>
+                                        )}
                                     </Grid>
                                 </Grid>
 
@@ -282,15 +299,15 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
                                         disabled={isProcessing || (!formRenderProps.allowSubmit && !leadsModified)}
                                     >
                                         {editMode === 2
-                                            ? getTranslatedLabel(`${localizationKey}.update`, 'Update')
-                                            : getTranslatedLabel(`${localizationKey}.create`, 'Create')}
+                                            ? getTranslatedLabel(`general.update`, 'Update')
+                                            : getTranslatedLabel(`general.create`, 'Create')}
                                     </Button>
                                     <Button
                                         variant="outlined"
                                         onClick={onClose}
                                         disabled={isProcessing}
                                     >
-                                        {getTranslatedLabel(`${localizationKey}.cancel`, 'Cancel')}
+                                        {getTranslatedLabel(`general.cancel`, 'Cancel')}
                                     </Button>
                                 </Box>
                             </fieldset>
@@ -302,7 +319,10 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
             {/* Action Modal */}
             <AddActionModal
                 open={openActionModal}
-                onClose={() => setOpenActionModal(false)}
+                onClose={() => {
+                    setOpenActionModal(false);
+                    onClose();
+                }}
                 opportunity={opportunity || null}
             />
 

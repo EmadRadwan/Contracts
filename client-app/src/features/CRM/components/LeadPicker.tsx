@@ -58,13 +58,13 @@ const LeadPicker: React.FC<LeadPickerProps> = ({
         if (multiple) {
             onChange([])
             onChange([{
-                    partyId: (newValue as LeadLov[])[newValue?.length - 1].partyId,
-                    partyName: (newValue as LeadLov[])[newValue?.length - 1].fullName,
-                    email: (newValue as LeadLov[])[newValue?.length - 1].email,
-                    phone: (newValue as LeadLov[])[newValue?.length - 1].phone,
-                    dataSourceId : (newValue as LeadLov[])[newValue?.length - 1].dataSourceId,
-                    roleTypeId: 'LEAD_CONTACT'
-                }]);
+                partyId: (newValue as LeadLov[])[newValue?.length - 1].partyId,
+                partyName: (newValue as LeadLov[])[newValue?.length - 1].fullName,
+                email: (newValue as LeadLov[])[newValue?.length - 1].email,
+                phone: (newValue as LeadLov[])[newValue?.length - 1].phone,
+                dataSourceId: (newValue as LeadLov[])[newValue?.length - 1].dataSourceId,
+                roleTypeId: 'LEAD_CONTACT'
+            }]);
         } else {
             const lead = newValue as LeadLov | null;
             if (lead) {
@@ -73,7 +73,7 @@ const LeadPicker: React.FC<LeadPickerProps> = ({
                     partyName: lead.fullName,
                     email: lead.email,
                     phone: lead.phone,
-                    dataSourceId : lead.dataSourceId,
+                    dataSourceId: lead.dataSourceId,
                     roleTypeId: 'LEAD_CONTACT'
                 }]);
             } else {
@@ -149,7 +149,11 @@ const LeadPicker: React.FC<LeadPickerProps> = ({
                         key={option.partyId}
                         label={option.fullName || option.partyId}
                         icon={<PersonIcon />}
-                        size="small"
+                        size="medium"
+                        sx={{
+                            px: "1.2em",
+                            
+                        }}
                     />
                 ))
             }

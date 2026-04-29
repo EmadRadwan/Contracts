@@ -50,6 +50,8 @@ export interface SalesOpportunity {
     workEffortName?: string;
     productId?: string;
     productName?: string;
+    isWon: boolean
+    isClosed: boolean
 
     // Linked leads
     leads: SalesOpportunityLead[];

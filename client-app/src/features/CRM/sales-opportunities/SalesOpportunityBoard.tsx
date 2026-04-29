@@ -18,6 +18,7 @@ import {
 } from '@mui/icons-material';
 import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
 import {
+    useAppSelector,
     useFetchOpportunitiesQuery,
     useFetchOpportunityStagesQuery,
     useUpdateOpportunityStageMutation,
@@ -33,6 +34,7 @@ interface SalesOpportunityBoardProps {
 const SalesOpportunityBoard: React.FC<SalesOpportunityBoardProps> = ({ onEditOpportunity }: SalesOpportunityBoardProps) => {
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = 'crm.opportunities';
+    const language = useAppSelector((state) => state.localization.language);
 
     const { data: opportunities, isLoading: loadingOpportunities, refetch } = useFetchOpportunitiesQuery();
     const { data: stages, isLoading: loadingStages } = useFetchOpportunityStagesQuery();
@@ -90,13 +92,6 @@ const SalesOpportunityBoard: React.FC<SalesOpportunityBoardProps> = ({ onEditOpp
 
     const getOpportunitiesByStage = (stageId: string) =>
         opportunities?.filter(o => o.opportunityStageId === stageId) || [];
-
-    const formatCurrency = (amount: number) =>
-        new Intl.NumberFormat('ar-EG', {
-            style: 'currency',
-            currency: 'EGP',
-            minimumFractionDigits: 0,
-        }).format(amount);
 
     const formatDate = (dateString?: string) =>
         dateString ? new Date(dateString).toLocaleDateString('ar-EG') : '';
@@ -182,7 +177,7 @@ const SalesOpportunityBoard: React.FC<SalesOpportunityBoardProps> = ({ onEditOpp
                                                 <Chip
                                                     label={`${opportunity.estimatedProbability}%`}
                                                     size="small"
-                                                    sx={{ ml: 'auto', height: 20, fontSize: '0.7rem' }}
+                                                    sx={{ ml: language === "ar" ? 0 : 'auto', mr: language === "ar" ? 'auto' : 0, height: 20, fontSize: '0.7rem' }}
                                                 />
                                             )}
                                         </Box>
@@ -215,7 +210,7 @@ const SalesOpportunityBoard: React.FC<SalesOpportunityBoardProps> = ({ onEditOpp
                                                     label={opportunity.leads.length === 1 ? '1 lead' : `${opportunity.leads.length} leads`}
                                                     size="small"
                                                     variant="outlined"
-                                                    sx={{ mt: 1, height: 22, fontSize: '0.7rem' }}
+                                                    sx={{ mt: 1, height: 22, fontSize: '0.7rem', width: '7em' }}
                                                 />
                                             </Tooltip>
                                         )}
