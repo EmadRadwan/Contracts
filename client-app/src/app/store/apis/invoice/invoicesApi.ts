@@ -181,6 +181,14 @@ const invoicesApi = createApi({
         }),
         providesTags: ["invoices"],
       }),
+      deletePayrollInvoices: builder.mutation<void, { invoiceDate: string; organizationPartyId: string }>({
+        query: (command) => ({
+          url: "/invoices/deletePayrollInvoices",
+          method: "POST",
+          body: command,
+        }),
+        invalidatesTags: ["invoices"],
+      }),
     };
   },
 });
@@ -200,5 +208,6 @@ export const {
   useFetchPayrollDataQuery,
   useLazyFetchPayrollDataQuery,
   useCheckExistingPayrollInvoicesQuery,
+  useDeletePayrollInvoicesMutation,
 } = invoicesApi;
 export { invoicesApi };

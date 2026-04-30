@@ -158,6 +158,7 @@ public class BatchCreatePayrollInvoices
                     };
 
                     var createdInvoice = await _invoiceHelperService.CreateInvoice(invoiceDto);
+                    await _context.SaveChangesAsync(cancellationToken); // Ensure invoice is persisted for FK constraints
                     var invoiceId = createdInvoice.InvoiceId;
                     var itemSeqId = 1;
 
@@ -218,13 +219,38 @@ public class BatchCreatePayrollInvoices
                             Quantity = 1,
                             Description = advanceDesc
                         });
+
+                        // Update Advance Status to PAID
+                        foreach (var adv in emp.Advances)
+                        {
+                            if (adv.AdvanceTypeId == "EMPLOYEE_ADVANCE")
+                            {
+                                await _context.EmployeeAdvances
+                                    .Where(a => a.AdvanceId == adv.AdvanceId)
+                                    .ExecuteUpdateAsync(a => a
+                                        .SetProperty(x => x.StatusId, "PAID")
+                                        .SetProperty(x => x.PayrollInvoiceId, invoiceId)
+                                        .SetProperty(x => x.LastUpdatedStamp, DateTime.UtcNow), cancellationToken);
+                            }
+                            else if (adv.AdvanceTypeId == "EMPLOYEE_LONG_TERM_ADVANCE")
+                            {
+                                await _context.EmployeeAdvanceSchedules
+                                    .Where(s => s.AdvanceId == adv.AdvanceId && s.PayrolInvoiceId == null && s.StatusId == "SCHEDULED"
+                                        && s.DueDate.HasValue && s.DueDate.Value.Month == request.InvoiceDate.Month && s.DueDate.Value.Year == request.InvoiceDate.Year)
+                                    .Take(1)
+                                    .ExecuteUpdateAsync(s => s
+                                        .SetProperty(x => x.StatusId, "PAID")
+                                        .SetProperty(x => x.PayrolInvoiceId, invoiceId)
+                                        .SetProperty(x => x.DeductedAmount, adv.Amount)
+                                        .SetProperty(x => x.LastUpdatedStamp, DateTime.UtcNow), cancellationToken);
+                            }
+                        }
                     }
 
                     await _context.SaveChangesAsync(cancellationToken);
 
                     // 6. Set Invoice to READY (this triggers accounting posting)
                     await _invoiceUtilityService.SetInvoiceStatus(invoiceId, "INVOICE_READY", request.InvoiceDate);
-                    await _context.SaveChangesAsync(cancellationToken);
                 }
 
                 await transaction.CommitAsync(cancellationToken);

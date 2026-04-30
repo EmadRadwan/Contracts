@@ -1,30 +1,41 @@
-CREATE OR REPLACE VIEW Fact_Project_DirectPayments AS
-SELECT
-pyt.PAYMENT_ID                                      AS PaymentId,
--- ... [Keep other columns same] ...
+public async Task<OrderRole> CreateOrderRole(
+    string orderId, 
+    string roleTypeId, 
+    string partyId)
+{
+    var stamp = DateTime.UtcNow;
 
--- 🔴 ADJUSTED LOGIC: 
--- 1. Take the direct Project ID if it exists
--- 2. If null, find the project that owns this GL account
-COALESCE(pyt.WORK_EFFORT_ID, gl_proj.WORK_EFFORT_ID) AS ProjectId,
-    
-    pyt.OVERRIDE_GL_ACCOUNT_ID                          AS OverrideGlAccountId,
-    COALESCE(proj.PROJECT_NAME, gl_proj.PROJECT_NAME)   AS ProjectName,
+    // Step 1: Ensure the PartyRole record exists (PartyId + RoleTypeId combination)
+    var partyRole = await _context.PartyRoles
+        .FirstOrDefaultAsync(pr => pr.PartyId == partyId && pr.RoleTypeId == roleTypeId);
 
--- ... [Keep other columns same] ...
+    if (partyRole == null)
+    {
+        partyRole = new PartyRole
+        {
+            PartyId = partyId,
+            RoleTypeId = roleTypeId,
+            CreatedStamp = stamp,
+            LastUpdatedStamp = stamp
+            // Add CreatedTxStamp / LastUpdatedTxStamp if your entity has them
+        };
 
-FROM PAYMENT pyt
-    JOIN PAYMENT_TYPE ptt          ON pyt.PAYMENT_TYPE_ID = ptt.PAYMENT_TYPE_ID
-JOIN STATUS_ITEM sts           ON pyt.STATUS_ID = sts.STATUS_ID
-JOIN PARTY pty_from            ON pyt.PARTY_ID_FROM = pty_from.PARTY_ID
+        _context.PartyRoles.Add(partyRole);
+        await _context.SaveChangesAsync();   // Save PartyRole first
+    }
 
-    -- Join for direct Project link
-    LEFT JOIN WORK_EFFORT proj     ON pyt.WORK_EFFORT_ID = proj.WORK_EFFORT_ID
-         
-    -- 🟢 NEW JOIN: Join via the GL Account to ensure "inheritance"
-LEFT JOIN WORK_EFFORT gl_proj  ON pyt.OVERRIDE_GL_ACCOUNT_ID = gl_proj.GL_ACCOUNT_ID
+    // Step 2: Now create the OrderRole (with FK to PartyRole)
+    var orderRole = new OrderRole
+    {
+        OrderId = orderId,
+        PartyId = partyId,
+        RoleTypeId = roleTypeId,
+        CreatedStamp = stamp,
+        LastUpdatedStamp = stamp
+    };
 
-    -- ... [Keep other joins same] ...
+    _context.OrderRoles.Add(orderRole);
+    await _context.SaveChangesAsync();
 
-WHERE ptt.PARENT_TYPE_ID = 'DISBURSEMENT'
-AND pyt.STATUS_ID = 'PMNT_SENT';
+    return orderRole;
+}

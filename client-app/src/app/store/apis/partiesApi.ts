@@ -288,6 +288,10 @@ const partiesApi = createApi({
                     };
                 },
             }),
+            fetchPayrollAdvances: builder.query<EmployeeAdvancesResponse, { invoiceDate: string; organizationPartyId: string }>({
+                query: ({ invoiceDate, organizationPartyId }) => `/humanResources/listPayrollAdvances?invoiceDate=${invoiceDate}&organizationPartyId=${organizationPartyId}`,
+                providesTags: ['EmployeeAdvance'],
+            }),
         };
     },
 });
@@ -315,5 +319,6 @@ export const {
     useDeletePartyMutation,
     useLazyFetchAllPartiesForReportQuery,
     useFetchEmployeesWithSalaryQuery,
+    useFetchPayrollAdvancesQuery,
 } = partiesApi;
 export {partiesApi};

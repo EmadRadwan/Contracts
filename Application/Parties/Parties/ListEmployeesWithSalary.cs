@@ -36,6 +36,7 @@ public class ListEmployeesWithSalary
         {
             var query = from prty in _context.Parties
                 where prty.MainRole == "EMPLOYEE" && prty.StatusId == "PARTY_ENABLED"
+                && !_context.PartyRoles.Any(pr => pr.PartyId == prty.PartyId && pr.RoleTypeId == "PREVIOUS_EMPLOYEE")
                 
                 // Latest Monthly Base Salary
                 join ra in _context.RateAmounts

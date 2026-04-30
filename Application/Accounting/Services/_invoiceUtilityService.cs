@@ -170,7 +170,7 @@ public class InvoiceUtilityService : IInvoiceUtilityService
                     {
                         // All other cases: normal purchase/sales invoices
                         await ledgerService.CreateAcctgTransForPurchaseInvoice(invoiceId);
-                        await ledgerService.CreateAcctgTransForSalesInvoice(invoiceId);
+                        await ledgerService.CreateAcctgTransForSalesInvoice_2(invoiceId);
                     }
                     else if (invoiceTypeId == "CUST_RTN_INVOICE")
                     {

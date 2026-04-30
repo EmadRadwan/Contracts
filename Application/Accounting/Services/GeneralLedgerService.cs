@@ -17,6 +17,7 @@ public interface IGeneralLedgerService
 {
     Task<string> CreateAcctgTransForSalesShipmentIssuance(string itemIssuanceId);
     Task<string> CreateAcctgTransForSalesInvoice(string invoiceId);
+    Task<string> CreateAcctgTransForSalesInvoice_2(string invoiceId);
     Task<string> CreateAcctgTransForPurchaseInvoice(string invoiceId);
     Task<string> CreateAcctgTransForConstructionCertificateInvoice(string invoiceId);
     Task<string> CreateAcctgTransForShipmentReceipt(string receiptId);
@@ -1317,6 +1318,130 @@ public class GeneralLedgerService : IGeneralLedgerService
             return acctgTransId;
         }
 
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                $"An error occurred while creating accounting transaction for sales invoice {invoiceId}.");
+            throw;
+        }
+    }
+
+    public async Task<string> CreateAcctgTransForSalesInvoice_2(string invoiceId)
+    {
+        try
+        {
+            // Retrieve ledger rounding properties
+            var glSettings = _acctgMiscService.GetGlArithmeticSettingsInline();
+            var ledgerDecimals = glSettings.DecimalScale;
+            var roundingMode = glSettings.RoundingMode;
+
+            // Retrieve invoice
+            var invoice = await _utilityService.FindLocalOrDatabaseAsync<Invoice>(invoiceId);
+            if (invoice == null)
+                throw new ArgumentException($"Invoice {invoiceId} not found.");
+
+            if (invoice.InvoiceTypeId != "SALES_INVOICE")
+            {
+                _logger.LogWarning(
+                    $"Invoice {invoiceId} is not of type 'SALES_INVOICE'. No accounting transaction created.");
+                return null;
+            }
+
+            // Retrieve non-tax invoice items
+            var taxableItemTypeIds = new List<string> { "INV_SALES_TAX", "ITM_SALES_TAX" };
+            var invoiceItems = await _utilityService.FindLocalOrDatabaseListAsync<InvoiceItem>(query =>
+                query.Where(ii => ii.InvoiceId == invoiceId
+                                  && !taxableItemTypeIds.Contains(ii.InvoiceItemTypeId)));
+
+            if (!invoiceItems.Any())
+            {
+                _logger.LogWarning($"No valid items found for invoice {invoiceId}.");
+                return null;
+            }
+
+            var acctgTransEntries = new List<AcctgTransEntry>();
+            int seqNum = 1;
+
+            decimal totalDebitAmount = 0;
+
+            foreach (var item in invoiceItems)
+            {
+                decimal quantity = item.Quantity ?? 1;
+                decimal itemAmount = item.Amount ?? 0;
+
+                decimal origAmount = _acctgMiscService.CustomRound(
+                    quantity * itemAmount,
+                    (int)ledgerDecimals,
+                    roundingMode);
+
+                totalDebitAmount = _acctgMiscService.CustomRound(
+                    totalDebitAmount + origAmount,
+                    (int)ledgerDecimals,
+                    roundingMode);
+                
+                //get invoice item type from InvoiceItemTypes
+                var invoiceItemType = await _context.InvoiceItemTypes.FindAsync(item.InvoiceItemTypeId);
+
+                // === CREDIT ENTRY (Revenue) - Use DEFAULT_GL_ACCOUNT_ID from InvoiceItemType ===
+                var creditEntry = new AcctgTransEntry
+                {
+                    AcctgTransEntrySeqId = seqNum.ToString("D2"),
+                    AcctgTransEntryTypeId = "_NA_",
+                    ReconcileStatusId = "AES_NOT_RECONCILED",
+                    DebitCreditFlag = "C",
+                    OrganizationPartyId = invoice.PartyIdFrom,
+                    ProductId = item.ProductId,
+                    OrigAmount = origAmount,
+                    OrigCurrencyUomId = invoice.CurrencyUomId,
+                    // Credit Side: Use configured GL Account from InvoiceItemType
+                    GlAccountId = invoiceItemType?.DefaultGlAccountId, // We'll set this below
+                    GlAccountTypeId = null // We don't want to pass type when we have direct GlAccountId
+                };
+
+                acctgTransEntries.Add(creditEntry);
+                seqNum++;
+
+                // === DEBIT ENTRY (Asset / Override) - Use OverrideGlAccountId from InvoiceItem ===
+                var debitEntry = new AcctgTransEntry
+                {
+                    AcctgTransEntrySeqId = seqNum.ToString("D2"),
+                    AcctgTransEntryTypeId = "_NA_",
+                    ReconcileStatusId = "AES_NOT_RECONCILED",
+                    DebitCreditFlag = "D",
+                    OrganizationPartyId = invoice.PartyIdFrom,
+                    ProductId = item.ProductId,
+                    OrigAmount = origAmount,
+                    OrigCurrencyUomId = invoice.CurrencyUomId,
+                    // Debit Side: Use the Override GL Account set by user on this invoice item
+                    GlAccountId = item.OverrideGlAccountId,
+                    GlAccountTypeId = null,
+                    // Party info for receivable (if needed)
+                    PartyId = invoice.PartyId,
+                    RoleTypeId = "BILL_TO_CUSTOMER"
+                };
+
+                acctgTransEntries.Add(debitEntry);
+                seqNum++;
+            }
+
+            // Prepare parameters for CreateAcctgTransAndEntries
+            var createParams = new CreateAcctgTransAndEntriesParams
+            {
+                GlFiscalTypeId = "ACTUAL",
+                AcctgTransTypeId = "SALES_INVOICE",
+                Description = invoice.Description,
+                InvoiceId = invoiceId,
+                PartyId = invoice.PartyId,
+                RoleTypeId = "BILL_TO_CUSTOMER",
+                AcctgTransEntries = acctgTransEntries,
+                TransactionDate = invoice.InvoiceDate
+            };
+
+            // Create the transaction
+            var acctgTransId = await CreateAcctgTransAndEntries(createParams);
+
+            return acctgTransId;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex,
@@ -5915,12 +6040,12 @@ public class GeneralLedgerService : IGeneralLedgerService
 
         return acctgTransId;
     }
-    
+
     public async Task<bool> DeletePostdatedChequeAccountingTransaction(string paymentId)
     {
         var existingTrans = await _context.AcctgTrans
             .Include(t => t.AcctgTransEntries)
-            .FirstOrDefaultAsync(t => t.PaymentId == paymentId && 
+            .FirstOrDefaultAsync(t => t.PaymentId == paymentId &&
                                       t.AcctgTransTypeId == "CHECK_ISSUED");
 
         if (existingTrans == null)

@@ -57,4 +57,15 @@ public class HumanResourcesController : BaseApiController
             Language = language
         }));
     }
+
+    [HttpGet("listPayrollAdvances")]
+    public async Task<IActionResult> ListPayrollAdvances([FromQuery] DateTime invoiceDate, [FromQuery] string organizationPartyId)
+    {
+        return HandleResults(await Mediator.Send(new ListPayrollAdvances.Query
+        {
+            InvoiceDate = invoiceDate,
+            OrganizationPartyId = organizationPartyId,
+            Language = GetLanguage()
+        }));
+    }
 }

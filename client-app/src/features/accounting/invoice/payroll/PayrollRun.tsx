@@ -21,11 +21,12 @@ import { Alert, AlertTitle } from "@mui/material";
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
 import {
     useAppSelector,
-    useBatchCreatePayrollInvoicesMutation, useCheckExistingPayrollInvoicesQuery
+    useBatchCreatePayrollInvoicesMutation, useCheckExistingPayrollInvoicesQuery,
+    useDeletePayrollInvoicesMutation
 } from "../../../../app/store/configureStore";
 import {
     useFetchEmployeesWithSalaryQuery,
-    useFetchEmployeeAdvancesQuery
+    useFetchPayrollAdvancesQuery
 } from "../../../../app/store/apis";
 import { EmployeeAdvance } from "../../../../app/models/humanResources/employeeAdvance";
 
@@ -81,14 +82,41 @@ const PayrollRun: React.FC = () => {
     // Fetch Employees with Salary
     const { data: employeesResponse, isLoading: isEmployeesLoading } = useFetchEmployeesWithSalaryQuery();
 
-    // Fetch All Approved Advances
-    const { data: advancesResponse, isLoading: isAdvancesLoading } = useFetchEmployeeAdvancesQuery({
-        filter: {
-            field: "statusId", operator: "eq", value: "ADVANCE_APPROVED"
-        }
-    } as any);
+    // Fetch Payroll-specific Advances
+    const { data: advancesResponse, isLoading: isAdvancesLoading  } = useFetchPayrollAdvancesQuery({
+        invoiceDate,
+        organizationPartyId: companyId
+    }, {
+        skip: !invoiceDate || !companyId,
+        refetchOnMountOrArgChange: true
+    });
 
     const [batchCreate, { isLoading: isSubmitting }] = useBatchCreatePayrollInvoicesMutation();
+    const [deleteInvoices, { isLoading: isDeleting }] = useDeletePayrollInvoicesMutation();
+
+    // Check for draft in localStorage
+    // Load draft - but only if no data yet (runs first)
+    useEffect(() => {
+        const savedDraft = localStorage.getItem(`payroll_draft_${companyId}`);
+        if (savedDraft) {
+            try {
+                const { invoiceDate: savedDate, data: savedData } = JSON.parse(savedDraft);
+                if (savedDate === invoiceDate) {
+                    setPayrollData(savedData);   // This is fine as initial load
+                }
+            } catch (e) {
+                console.error("Failed to parse payroll draft", e);
+            }
+        }
+    }, [companyId, invoiceDate]);
+
+    const handleSaveDraft = () => {
+        localStorage.setItem(`payroll_draft_${companyId}`, JSON.stringify({
+            invoiceDate,
+            data: payrollData
+        }));
+        toast.info(getTranslatedLabel("accounting.payroll.run.draft-saved", "Draft saved locally"));
+    };
 
     // Check for existing invoices for this month
     const { data: hasExistingInvoices, isLoading: isCheckingExisting } = useCheckExistingPayrollInvoicesQuery({
@@ -96,67 +124,84 @@ const PayrollRun: React.FC = () => {
         organizationPartyId: companyId
     }, { skip: !invoiceDate || !companyId });
 
-    // Process initial data
     useEffect(() => {
-        if (employeesResponse?.data && advancesResponse?.data && invoiceDate) {
-            const invDate = new Date(invoiceDate);
-            const invMonth = invDate.getMonth();
-            const invYear = invDate.getFullYear();
+        if (!employeesResponse?.data || !advancesResponse?.data || !invoiceDate) return;
 
-            const initialData = employeesResponse.data.map((emp: any) => {
-                const baseSalary = emp.monthlyBaseSalary || 0;
-                
-                // Calculate Advances for this employee for this month
-                const empAdvances = advancesResponse.data.filter((adv: EmployeeAdvance) => {
-                    if (adv.partyId !== emp.partyId) return false;
-                    
-                    if (adv.advanceTypeId === "EMPLOYEE_ADVANCE") {
-                        const advDate = new Date(adv.advanceDate);
-                        return advDate.getMonth() === invMonth - 1 && advDate.getFullYear() === invYear;
-                    } else if (adv.advanceTypeId === "EMPLOYEE_LONG_TERM_ADVANCE") {
-                        return adv.schedules?.some(s => {
-                            const dueDate = new Date(s.dueDate);
-                            return dueDate.getMonth() === invMonth && dueDate.getFullYear() === invYear && s.statusId === "SCHEDULED";
-                        });
-                    }
-                    return false;
-                }).map((adv: EmployeeAdvance) => {
-                    let amountToDeduct = adv.amount;
+        const initialData = employeesResponse.data.map((emp: any) => {
+            const baseSalary = emp.monthlyBaseSalary || 0;
+
+            const empAdvances = advancesResponse.data
+                .filter((adv: EmployeeAdvance) => adv.partyId === emp.partyId)
+                .map((adv: EmployeeAdvance) => {
+                    let amountToDeduct = 0;
+
                     if (adv.advanceTypeId === "EMPLOYEE_LONG_TERM_ADVANCE") {
-                        const schedule = adv.schedules?.find(s => {
-                            const dueDate = new Date(s.dueDate);
-                            return dueDate.getMonth() === invMonth && dueDate.getFullYear() === invYear && s.statusId === "SCHEDULED";
-                        });
-                        amountToDeduct = schedule ? schedule.scheduledAmount : 0;
+                        const schedule = adv.schedules?.find(s =>
+                            s.dueDate && s.dueDate.startsWith(invoiceDate.substring(0, 7))
+                        ) || adv.schedules?.[0];
+
+                        amountToDeduct = schedule?.scheduledAmount || 0;
+                    } else {
+                        amountToDeduct = adv.amount || 0;
                     }
+
                     return {
                         advanceId: adv.advanceId,
                         advanceTypeId: adv.advanceTypeId,
-                        amount: amountToDeduct
+                        amount: Math.round(amountToDeduct)
                     };
-                });
+                })
+                .filter(a => a.amount > 0);
+
+            return {
+                employeeId: emp.partyId,
+                name: emp.name,
+                baseSalary: baseSalary,
+                salaryAccountNameArabic: emp.salaryAccountNameArabic || "",
+                glAccountIdAdvancedPayment: emp.glAccountIdAdvancedPayment || "",
+                advancedPaymentAccountNameArabic: emp.advancedPaymentAccountNameArabic || "",
+                preferredPayrollPaymentMethodId: emp.preferredPayrollPaymentMethodId || "",
+                absenceDays: 0,
+                absenceValue: 0,
+                overtimeDays: 0,
+                overtimeValue: 0,
+                netSalary: baseSalary - empAdvances.reduce((sum, adv) => sum + adv.amount, 0),
+                isSelected: baseSalary > 0 && !!(emp.advancedPaymentAccountNameArabic || emp.salaryAccountNameArabic),
+                advances: empAdvances
+            };
+        });
+
+        setPayrollData(prev => {
+            // No previous data → use fresh data
+            if (prev.length === 0) return initialData;
+
+            // Merge: Keep user changes (absence, overtime, selection), refresh base + advances
+            return initialData.map(freshEmp => {
+                const oldEmp = prev.find(o => o.employeeId === freshEmp.employeeId);
+
+                if (!oldEmp) return freshEmp;
+
+                // Recalculate netSalary with possibly updated advances
+                const totalAdvances = freshEmp.advances.reduce((sum, adv) => sum + adv.amount, 0);
+                const newNetSalary = freshEmp.baseSalary
+                    + oldEmp.overtimeValue
+                    - oldEmp.absenceValue
+                    - totalAdvances;
 
                 return {
-                    employeeId: emp.partyId,
-                    name: emp.name,
-                    baseSalary: baseSalary,
-                    salaryAccountNameArabic: emp.salaryAccountNameArabic || "",
-                    glAccountIdAdvancedPayment: emp.glAccountIdAdvancedPayment || "",
-                    advancedPaymentAccountNameArabic: emp.advancedPaymentAccountNameArabic || "",
-                    preferredPayrollPaymentMethodId: emp.preferredPayrollPaymentMethodId || "",
-                    absenceDays: 0,
-                    absenceValue: 0,
-                    overtimeDays: 0,
-                    overtimeValue: 0,
-                    netSalary: baseSalary - empAdvances.reduce((sum, adv) => sum + adv.amount, 0),
-                    isSelected: baseSalary > 0 && (emp.advancedPaymentAccountNameArabic || emp.salaryAccountNameArabic),
-                    advances: empAdvances
+                    ...freshEmp,
+                    absenceDays: oldEmp.absenceDays,
+                    absenceValue: oldEmp.absenceValue,
+                    overtimeDays: oldEmp.overtimeDays,
+                    overtimeValue: oldEmp.overtimeValue,
+                    isSelected: oldEmp.isSelected,
+                    netSalary: Math.round(newNetSalary)
                 };
             });
-            setPayrollData(initialData);
-        }
-    }, [employeesResponse, advancesResponse, invoiceDate]);
+        });
 
+    }, [employeesResponse, advancesResponse, invoiceDate]);
+    
     const handleCalculate = (index: number, type: 'absence' | 'overtime') => {
         const newData = [...payrollData];
         const row = { ...newData[index] };
@@ -220,6 +265,7 @@ const PayrollRun: React.FC = () => {
             };
 
             await batchCreate(command).unwrap();
+            localStorage.removeItem(`payroll_draft_${companyId}`);
             toast.success(getTranslatedLabel("accounting.payroll.run.success", "Payroll Run completed successfully"));
             navigate("/invoicesDashboard");
         } catch (error) {
@@ -228,8 +274,27 @@ const PayrollRun: React.FC = () => {
         }
     };
 
+    const handleDeleteExisting = async () => {
+        if (!window.confirm(getTranslatedLabel("accounting.payroll.run.confirm-delete", "Are you sure you want to delete existing invoices for this month? This action cannot be undone."))) {
+            return;
+        }
+
+        try {
+            await deleteInvoices({
+                invoiceDate,
+                organizationPartyId: companyId
+            }).unwrap();
+            toast.success(getTranslatedLabel("accounting.payroll.run.delete-success", "Existing payroll invoices deleted successfully"));
+            // Refreshing happens automatically via tag invalidation in RTK Query
+        } catch (error) {
+            console.error("Failed to delete payroll invoices", error);
+            toast.error(getTranslatedLabel("accounting.payroll.run.delete-failed", "Failed to delete payroll invoices"));
+        }
+    };
+
     if (isEmployeesLoading || isAdvancesLoading) return <CircularProgress />;
 
+    console.log("Payroll Data:", payrollData);
     return (
         <Box p={3}>
             <Typography variant="h4" gutterBottom>
@@ -247,7 +312,20 @@ const PayrollRun: React.FC = () => {
 
             {!isCheckingExisting && hasExistingInvoices && (
                 <Box mb={3}>
-                    <Alert severity="warning">
+                    <Alert 
+                        severity="warning"
+                        action={
+                            <LoadingButton 
+                                color="inherit" 
+                                size="small" 
+                                onClick={handleDeleteExisting}
+                                loading={isDeleting}
+                                variant="outlined"
+                            >
+                                {getTranslatedLabel("accounting.payroll.run.delete-existing", "Delete Existing Invoices")}
+                            </LoadingButton>
+                        }
+                    >
                         <AlertTitle>{getTranslatedLabel("accounting.payroll.run.existing-invoices", "Existing Payroll Invoices Detected")}</AlertTitle>
                         {getTranslatedLabel("accounting.payroll.run.existing-invoices-warning", "Payroll invoices already exist for the selected month. Proceeding will delete these invoices and all related data (Absence, Overtime, etc.). You will need to re-enter this information.")}
                     </Alert>
@@ -262,6 +340,9 @@ const PayrollRun: React.FC = () => {
                     onChange={(e) => setInvoiceDate(e.target.value)}
                     InputLabelProps={{ shrink: true }}
                 />
+                <Button variant="outlined" onClick={handleSaveDraft}>
+                    {getTranslatedLabel("accounting.payroll.run.save-draft", "Save as Draft")}
+                </Button>
             </Box>
 
             <TableContainer component={Paper}>

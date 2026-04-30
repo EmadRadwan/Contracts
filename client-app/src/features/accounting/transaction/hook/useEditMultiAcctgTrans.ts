@@ -13,13 +13,15 @@ export interface UpdateMultiAcctgTransResponse {
 export interface UpdateMultiAcctgTransWithEntriesParams {
   acctgTransId: string;
   updateMultiAcctgTransParams: {
-    acctgTransTypeId: string;
+    acctgTransId: string;
+    acctgTransTypeId?: string;
     transactionDate: Date | string;
     organizationPartyId: string;
     headerDescription: string;
     description: string;
     isPosted?: string;
-    glFiscalTypeId: string;
+    partyId?: string;
+    glFiscalTypeId?: string;
   };
   entries: MultiAcctgTransEntryParams[];
 }

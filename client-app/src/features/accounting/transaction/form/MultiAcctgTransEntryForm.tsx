@@ -376,6 +376,7 @@ export default function MultiAcctgTransEntryForm() {
         }
     }, [transactionId, postTransaction, getTranslatedLabel]);
     
+    console.log('isPosted', isPosted)
     return (
         <>
             <AccountingMenu selectedMenuItem={"orgGl"}/>

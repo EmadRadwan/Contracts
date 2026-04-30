@@ -222,6 +222,7 @@ export default function EditMultiAcctgTrans() {
                 updateMultiAcctgTransParams: {
                     acctgTransId: currentTransId,
                     transactionDate: headerValues.transactionDate,
+                    organizationPartyId: companyId,
                     headerDescription: headerValues.headerDescription,
                     description: transEntries[0]?.description || "",
                     partyId: headerValues.party?.fromPartyId || undefined,

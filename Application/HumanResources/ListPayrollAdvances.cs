@@ -1,45 +1,52 @@
-using Application.HumanResources;
+using Application.Core;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
-using FluentValidation;
-using Application.Core;
 
 namespace Application.HumanResources;
 
-public class ListEmployeeAdvancesByDateRange
+public class ListPayrollAdvances
 {
     public class Query : IRequest<Results<EmployeeAdvancesResponse>>
     {
-        public DateOnly? FromDate { get; set; }
-        public DateOnly? ToDate { get; set; }
+        public DateTime InvoiceDate { get; set; }
+        public string OrganizationPartyId { get; set; }
         public string Language { get; set; } = "en";
-    }
-
-    public class QueryValidator : AbstractValidator<Query>
-    {
-        public QueryValidator()
-        {
-            RuleFor(x => x.FromDate).NotEmpty();
-            RuleFor(x => x.ToDate).NotEmpty();
-        }
     }
 
     public class Handler : IRequestHandler<Query, Results<EmployeeAdvancesResponse>>
     {
         private readonly DataContext _context;
 
-        public Handler(DataContext context) => _context = context;
+        public Handler(DataContext context)
+        {
+            _context = context;
+        }
 
         public async Task<Results<EmployeeAdvancesResponse>> Handle(Query request, CancellationToken ct)
         {
             var language = request.Language;
+            
+            // Define month boundaries
+            var year = request.InvoiceDate.Year;
+            var month = request.InvoiceDate.Month;
+            
+            var monthStart = new DateOnly(year, month, 1);
+            var monthEnd = monthStart.AddMonths(1).AddDays(-1);
 
             var query = _context.EmployeeAdvances
                 .Include(a => a.EmployeeAdvanceSchedules)
-                .Where(adv => (adv.AdvanceDate >= request.FromDate && adv.AdvanceDate <= request.ToDate) ||
-                              (adv.AdvanceTypeId == "EMPLOYEE_LONG_TERM_ADVANCE" &&
-                               adv.EmployeeAdvanceSchedules.Any(s => s.DueDate >= request.FromDate && s.DueDate <= request.ToDate)))
+                .Where(adv => 
+                    // Case 1: Short-term advances in this month
+                    (adv.AdvanceTypeId == "EMPLOYEE_ADVANCE" && 
+                     adv.AdvanceDate >= monthStart && adv.AdvanceDate <= monthEnd &&
+                     (adv.StatusId == "ADVANCE_APPROVED" || adv.StatusId == "PAID")) ||
+                    // Case 2: Long-term advances with a schedule in this month
+                    (adv.AdvanceTypeId == "EMPLOYEE_LONG_TERM_ADVANCE" &&
+                     adv.EmployeeAdvanceSchedules.Any(s => 
+                        s.DueDate >= monthStart && s.DueDate <= monthEnd &&
+                        (s.StatusId == "SCHEDULED" || s.StatusId == "PAID")))
+                )
                 .OrderByDescending(adv => adv.AdvanceDate)
                 .Select(adv => new EmployeeAdvanceRecord
                 {
@@ -57,17 +64,19 @@ public class ListEmployeeAdvancesByDateRange
                     StatusDescription = _context.StatusItems.Where(s => s.StatusId == adv.StatusId)
                         .Select(s => language == "ar" ? s.DescriptionArabic : s.Description).FirstOrDefault() ?? adv.StatusId,
                     Description = adv.Description,
-                    Schedules = adv.EmployeeAdvanceSchedules.Select(s => new EmployeeAdvanceScheduleRecord
-                    {
-                        ScheduleId = s.ScheduleId,
-                        InstallmentNumber = s.InstallmentNumber,
-                        DueDate = s.DueDate,
-                        ScheduledAmount = s.ScheduledAmount,
-                        DeductedAmount = s.DeductedAmount,
-                        StatusId = s.StatusId,
-                        PayrolInvoiceId = s.PayrolInvoiceId,
-                        Notes = s.Notes
-                    }).ToList()
+                    Schedules = adv.EmployeeAdvanceSchedules
+                        .Where(s => s.DueDate >= monthStart && s.DueDate <= monthEnd)
+                        .Select(s => new EmployeeAdvanceScheduleRecord
+                        {
+                            ScheduleId = s.ScheduleId,
+                            InstallmentNumber = s.InstallmentNumber,
+                            DueDate = s.DueDate,
+                            ScheduledAmount = s.ScheduledAmount,
+                            DeductedAmount = s.DeductedAmount,
+                            StatusId = s.StatusId,
+                            PayrolInvoiceId = s.PayrolInvoiceId,
+                            Notes = s.Notes
+                        }).ToList()
                 });
 
             var data = await query.ToListAsync(ct);
@@ -79,10 +88,4 @@ public class ListEmployeeAdvancesByDateRange
             });
         }
     }
-}
-
-public class EmployeeAdvancesResponse
-{
-    public List<EmployeeAdvanceRecord> Data { get; set; }
-    public int Total { get; set; }
 }

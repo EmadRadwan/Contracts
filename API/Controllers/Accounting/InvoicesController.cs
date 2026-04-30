@@ -183,6 +183,12 @@ public class InvoicesController : BaseApiController
         return HandleResult(await Mediator.Send(command));
     }
 
+    [HttpPost("deletePayrollInvoices")]
+    public async Task<IActionResult> DeletePayrollInvoices(DeletePayrollInvoices.Command command)
+    {
+        return HandleResult(await Mediator.Send(command));
+    }
+
     [HttpGet("listPayrollData")]
     public async Task<IActionResult> ListPayrollData([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, [FromQuery] string organizationPartyId)
     {
