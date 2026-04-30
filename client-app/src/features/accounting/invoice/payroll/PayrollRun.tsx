@@ -124,12 +124,14 @@ const PayrollRun: React.FC = () => {
         organizationPartyId: companyId
     }, { skip: !invoiceDate || !companyId });
 
+    // Process initial data from API + merge with existing draft/user changes
     useEffect(() => {
         if (!employeesResponse?.data || !advancesResponse?.data || !invoiceDate) return;
 
-        const initialData = employeesResponse.data.map((emp: any) => {
+        const initialData: EmployeePayrollData[] = employeesResponse.data.map((emp: any) => {
             const baseSalary = emp.monthlyBaseSalary || 0;
 
+            // Calculate Advances
             const empAdvances = advancesResponse.data
                 .filter((adv: EmployeeAdvance) => adv.partyId === emp.partyId)
                 .map((adv: EmployeeAdvance) => {
@@ -171,30 +173,41 @@ const PayrollRun: React.FC = () => {
             };
         });
 
+        // Merge fresh data with previous user modifications
         setPayrollData(prev => {
-            // No previous data → use fresh data
-            if (prev.length === 0) return initialData;
+            // First time loading → use fresh data
+            if (prev.length === 0) {
+                return initialData;
+            }
 
-            // Merge: Keep user changes (absence, overtime, selection), refresh base + advances
-            return initialData.map(freshEmp => {
-                const oldEmp = prev.find(o => o.employeeId === freshEmp.employeeId);
+            // Merge logic: Keep user changes (absence, overtime, selection), refresh base data + advances
+            return initialData.map((freshEmp) => {
+                const oldEmp = prev.find((o) => o.employeeId === freshEmp.employeeId);
 
-                if (!oldEmp) return freshEmp;
+                // If employee is new (not in previous state), use fresh data
+                if (!oldEmp) {
+                    return freshEmp;
+                }
 
-                // Recalculate netSalary with possibly updated advances
+                // Recalculate absence and overtime values based on possibly new baseSalary
+                const calculatedAbsenceValue = Math.round((freshEmp.baseSalary / 30) * oldEmp.absenceDays);
+                const calculatedOvertimeValue = Math.round((freshEmp.baseSalary / 30) * oldEmp.overtimeDays);
+
                 const totalAdvances = freshEmp.advances.reduce((sum, adv) => sum + adv.amount, 0);
-                const newNetSalary = freshEmp.baseSalary
-                    + oldEmp.overtimeValue
-                    - oldEmp.absenceValue
-                    - totalAdvances;
+
+                const newNetSalary =
+                    freshEmp.baseSalary +
+                    calculatedOvertimeValue -
+                    calculatedAbsenceValue -
+                    totalAdvances;
 
                 return {
-                    ...freshEmp,
-                    absenceDays: oldEmp.absenceDays,
-                    absenceValue: oldEmp.absenceValue,
-                    overtimeDays: oldEmp.overtimeDays,
-                    overtimeValue: oldEmp.overtimeValue,
-                    isSelected: oldEmp.isSelected,
+                    ...freshEmp,                    // Fresh baseSalary, advances, accounts, etc.
+                    absenceDays: oldEmp.absenceDays,     // Keep user input
+                    absenceValue: calculatedAbsenceValue,
+                    overtimeDays: oldEmp.overtimeDays,   // Keep user input
+                    overtimeValue: calculatedOvertimeValue,
+                    isSelected: oldEmp.isSelected,       // Keep user selection
                     netSalary: Math.round(newNetSalary)
                 };
             });
@@ -205,7 +218,7 @@ const PayrollRun: React.FC = () => {
     const handleCalculate = (index: number, type: 'absence' | 'overtime') => {
         const newData = [...payrollData];
         const row = { ...newData[index] };
-        
+
         if (type === 'absence') {
             row.absenceValue = Math.round((row.baseSalary / 30) * row.absenceDays);
         } else {
@@ -221,7 +234,28 @@ const PayrollRun: React.FC = () => {
 
     const handleDataChange = (index: number, field: keyof EmployeePayrollData, value: any) => {
         const newData = [...payrollData];
-        newData[index] = { ...newData[index], [field]: value };
+        const row = { ...newData[index] };
+
+        if (field === 'absenceDays' || field === 'overtimeDays') {
+            const numValue = parseFloat(value) || 0;
+            row[field] = numValue;
+
+            // Auto-calculate the monetary value immediately when days change
+            if (field === 'absenceDays') {
+                row.absenceValue = Math.round((row.baseSalary / 30) * numValue);
+            } else {
+                row.overtimeValue = Math.round((row.baseSalary / 30) * numValue);
+            }
+
+            // Recalculate net salary
+            const totalAdvances = row.advances.reduce((sum, adv) => sum + adv.amount, 0);
+            row.netSalary = row.baseSalary + row.overtimeValue - row.absenceValue - totalAdvances;
+        }
+        else {
+            row[field] = value;
+        }
+
+        newData[index] = row;
         setPayrollData(newData);
     };
 
