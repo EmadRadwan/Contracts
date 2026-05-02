@@ -1,25 +1,25 @@
-SELECT
-    dp.PaymentId,
-    dp.ProjectName,
-    dp.Amount AS DirectPaymentAmount,
-    exp.CertificateNumber,
-    exp.NetCertifiedAmount AS ExpenseAmount,
-    dp.PartyIdFromName AS Payee,
-    dp.EFFECTIVE_DATE
-FROM Fact_Project_DirectPayments_2 dp
-         INNER JOIN Fact_Project_Expenses exp
-                    ON dp.PaymentId = exp.PaymentId
-ORDER BY dp.PaymentId;
-
-SELECT
-    dp.PaymentId,
-    dp.ProjectName,
-    dp.Amount AS DirectPaymentAmount,
-    exp.CertificateNumber,
-    exp.NetCertifiedAmount AS ExpenseAmount,
-    dp.PartyIdFromName AS Payee,
-    dp.EFFECTIVE_DATE
-FROM erp_contracts.Fact_Project_OperatingExpenses_2 dp
-         INNER JOIN Fact_Project_Expenses exp
-                    ON dp.PaymentId = exp.PaymentId
-ORDER BY dp.PaymentId;
+INSERT INTO INVOICE_ITEM_TYPE (
+    INVOICE_ITEM_TYPE_ID,
+    PARENT_TYPE_ID,
+    HAS_TABLE,
+    DESCRIPTION,
+    DESCRIPTION_ARABIC,
+    DEFAULT_GL_ACCOUNT_ID,
+    LAST_UPDATED_STAMP,
+    LAST_UPDATED_TX_STAMP,
+    CREATED_STAMP,
+    CREATED_TX_STAMP,
+    IS_POSITIVE_AMOUNT
+) VALUES (
+             'INV_LAND_PARTNERSHIP_ITEM',
+             NULL,
+             'N',
+             'Invoice Land Partnership Item (Sales)',
+             'بند أراضي مشاركات (مبيعات)',
+             '250448',
+             NULL,
+             NULL,
+             NOW(),
+             NOW(),
+             NULL
+         );

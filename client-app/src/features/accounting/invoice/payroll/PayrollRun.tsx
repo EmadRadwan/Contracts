@@ -383,6 +383,7 @@ const PayrollRun: React.FC = () => {
                 <Table size="small">
                     <TableHead>
                         <TableRow>
+                            <TableCell align="center">#</TableCell>
                             <TableCell>
                                 <Box display="flex" alignItems="center" gap={1}>
                                     <input 
@@ -410,6 +411,7 @@ const PayrollRun: React.FC = () => {
                             const invalid = isEmployeeInvalid(emp);
                             return (
                                 <TableRow key={emp.employeeId} sx={{ opacity: (!emp.isSelected || invalid) ? 0.5 : 1 }}>
+                                    <TableCell align="center"><strong>{index + 1}</strong></TableCell>
                                     <TableCell>
                                         <input 
                                             type="checkbox" 
@@ -488,7 +490,7 @@ const PayrollRun: React.FC = () => {
                     </TableBody>
                     <TableFooter>
                         <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                            <TableCell colSpan={2} align="right" sx={{ fontWeight: 'bold' }}>
+                            <TableCell colSpan={3} align="right" sx={{ fontWeight: 'bold' }}>
                                 {getTranslatedLabel("accounting.payroll.run.total", "Total")}
                             </TableCell>
                             <TableCell align="center" sx={{ fontWeight: 'bold' }}>{totals.baseSalary}</TableCell>

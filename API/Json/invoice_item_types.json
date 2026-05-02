@@ -1904,5 +1904,17 @@
     "CREATED_STAMP": "2025-11-18 10:18:05.776",
     "CREATED_TX_STAMP": "2025-11-18 10:18:03.448"
   },
-  
+  {
+    "INVOICE_ITEM_TYPE_ID": "INV_LAND_PARTNERSHIP_ITEM",
+    "PARENT_TYPE_ID": null,
+    "HAS_TABLE": "N",
+    "DESCRIPTION": "Invoice Land Partnership Item (Sales)",
+    "DESCRIPTION_ARABIC": "بند أراضي مشاركات (مبيعات)",
+    "DEFAULT_GL_ACCOUNT_ID": "250448",
+    "LAST_UPDATED_STAMP": null,
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": null,
+    "CREATED_TX_STAMP": null,
+    "IS_POSITIVE_AMOUNT": null
+  }
 ]

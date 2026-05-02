@@ -81,7 +81,8 @@ const EditInvoiceItem: React.FC<Props> = ({ invoiceItem, editMode, onClose, invo
         "PINV_INVPRD_ITEM",
         "PINV_SPROD_ITEM",
         "PINV_SUPLPRD_ITEM",
-        "INV_LAND_ITEM"
+        "INV_LAND_ITEM",
+        "INV_LAND_PARTNERSHIP_ITEM"
     ];
 
     // REFACTOR: Updated useInvoiceItem call to pass invoiceId prop

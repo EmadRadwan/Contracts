@@ -54,7 +54,8 @@ namespace Application.Accounting.Invoices
                         "ITM_SHIPPING_CHARGES",
                         "ITM_DISCOUNT_ADJ",
                         "ITM_FEE",
-                        "INV_LAND_ITEM"
+                        "INV_LAND_ITEM",
+                        "INV_LAND_PARTNERSHIP_ITEM",
                     }
                 },
                 {
