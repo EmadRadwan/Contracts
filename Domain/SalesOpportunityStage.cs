@@ -10,6 +10,7 @@ public class SalesOpportunityStage
 
     public string OpportunityStageId { get; set; } = null!;
     public string? Description { get; set; }
+    public string? DescriptionArabic { get; set; }
     public decimal? DefaultProbability { get; set; }
     public int? SequenceNum { get; set; }
     public DateTime? LastUpdatedStamp { get; set; }

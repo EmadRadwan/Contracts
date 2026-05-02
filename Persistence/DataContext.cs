@@ -11766,6 +11766,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasMaxLength(255)
                     .IsUnicode(false)
                     .HasColumnName("DESCRIPTION");
+                    
+                    entity.Property(e => e.DescriptionArabic)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("DESCRIPTION_ARABIC");
 
                 entity.Property(e => e.LastUpdatedStamp)
                     .HasColumnType("datetime")
@@ -50988,6 +50993,11 @@ entity.HasOne(d => d.CreatedByUserLoginNavigation)
                     .HasMaxLength(255)
                     .IsUnicode(false)
                     .HasColumnName("DESCRIPTION");
+                    
+                entity.Property(e => e.DescriptionArabic)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("DESCRIPTION_ARABIC");
 
                 entity.Property(e => e.LastUpdatedStamp)
                     .HasColumnType("datetime")

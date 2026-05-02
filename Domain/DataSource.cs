@@ -22,6 +22,7 @@ public class DataSource
     public string DataSourceId { get; set; } = null!;
     public string? DataSourceTypeId { get; set; }
     public string? Description { get; set; }
+    public string? DescriptionArabic { get; set; }
     public DateTime? LastUpdatedStamp { get; set; }
     public DateTime? LastUpdatedTxStamp { get; set; }
     public DateTime? CreatedStamp { get; set; }
