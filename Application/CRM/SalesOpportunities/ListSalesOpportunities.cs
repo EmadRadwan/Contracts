@@ -143,11 +143,10 @@ public class ListSalesOpportunities
                     TypeEnumId = o.TypeEnumId,
                     WorkEffortId = o.WorkEffortId,
                     ProductId = o.ProductId,
-                    // NEW: Project / WorkEffort Info
-                    WorkEffortName = o.WorkEffort?.WorkEffortName ?? o.WorkEffort?.ProjectName,   // adjust property name as per your entity
-
-                    // NEW: Product / Unit (Apartment) Info
+                    WorkEffortName = o.WorkEffort?.WorkEffortName ?? o.WorkEffort?.ProjectName,
                     ProductName = o.Product?.ProductName ?? o.Product?.ProductName,
+                    IsWon = o.IsWon,
+                    IsClosed = o.IsClosed,
                     Leads = leads
                 };
             }).ToList();

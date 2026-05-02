@@ -2133,7 +2133,7 @@
       }
     }
   },
-  
+
   "crm": {
     "menu": {
       "salesOpportunities": "فرص البيع",
@@ -2146,12 +2146,46 @@
       "loading": "جاري التحميل...",
       "noContacts": "لم يتم العثور على جهات اتصال"
     },
+    "leadPicker": {
+      "label": "العملاء المحتملين",
+      "placeholder": "ابحث عن عميل...",
+      "noLeads": "لا يوجد عملاء مطابقون",
+      "loading":"جاري التحميل..."
+    },
     "leads": {
       "title": "العملاء المحتملين",
       "boardView": "لوحة",
       "listView": "قائمة",
       "createNew": "عميل جديد",
       "uploadExcel": "تحميل ملف Excel",
+      "excel": {
+        "drop": "أسقط الملف هنا",
+        "drag": "اسحب الملف وأفلته هنا، أو انقر للتصفح.",
+        "supported": "(بحد أقصى ملف واحد) .xlsx، .xls، .csv :الملفات المدعومة"
+      },
+      "imported": {
+        "deleteRow": "حذف الصف",
+        "importedTitle": "تم الاستيراد:",
+        "rows": "صفوف",
+        "saving": "جارٍ الحفظ...",
+        "save": "حفظ",
+        "close": "إغلاق",
+        "failedRowsBannerPrefix": "عرض",
+        "failedRowsBannerSuffix": "صف/صفوف فاشلة — قم بتصحيح الأخطاء ثم انقر على حفظ مرة أخرى.",
+        "gridToolbarTitle": "معاينة وتعديل البيانات المستوردة",
+        "actionsColumn": "الإجراءات",
+        "importSummaryTitle": "ملخص الاستيراد",
+        "total": "الإجمالي",
+        "saved": "تم الحفظ",
+        "failed": "فاشل",
+        "failedRowsDescription": "تعذّر حفظ الصفوف التالية:",
+        "rowNumber": "رقم الصف",
+        "firstName": "الاسم الأول",
+        "email": "البريد الإلكتروني",
+        "reason": "السبب",
+        "fixFailedRows": "إصلاح الصفوف الفاشلة",
+        "done": "تم"
+      },
       "list": {
         "loading": "جاري تحميل الفرص...",
         "loadingLeads": "جاري تحميل العملاء المحتملين...",
@@ -2170,6 +2204,7 @@
         "contactNumber": "رقم الاتصال",
         "address": "العنوان",
         "email": "البريد الإلكتروني",
+        "phone": "الهاتف",
         "partyType": "نوع الطرف",
         "deleteSuccess": "تم حذف الطرف بنجاح",
         "deleteFailed": "فشل حذف الطرف",
@@ -2200,7 +2235,9 @@
         "createTitle": "إنشاء جهة اتصال جديدة",
         "title": "اللقب",
         "titlePlaceholder": "السيد/السيدة/د.",
+        "firstNamePlaceholder": "ادخل الأسم الأول",
         "firstName": "الاسم  *",
+        "lastNamePlaceholder": "ادخل اسم العائلة",
         "lastName": "اسم العائلة *",
         "email": "البريد الإلكتروني",
         "phone": "الهاتف",
@@ -2215,14 +2252,26 @@
         "create": "إنشاء",
         "cancel": "إلغاء",
         "processing": "جاري المعالجة...",
-        "saveError": "فشل في حفظ جهة الاتصال"
+        "saveError": "فشل في حفظ جهة الاتصال",
+        "contactInformation": "معلومات الاتصال",
+        "addressDetails": "العنوان",
+        "cold": "قديم",
+        "fresh": "جديد"
       }
     },
     "opportunities": {
-      "title": "خط أنابيب المبيعات",
+      "title": "فرص البيع",
       "boardView": "لوحة",
       "listView": "قائمة",
       "createNew": "فرصة جديدة",
+      "addNewLead": "إنشاء عميل محتمل جديد",
+      "leads": "العملاء المحتملون",
+      "unit": "الوحدة",
+      "owner": "المسؤول *",
+      "stage": "المرحلة *",
+      "broker": "الوسيط *" ,
+      "linkedLeads": "العملاء",
+      "loading":"جاري تحميل فرص البيع...",
 
       "actionModal": {
         "title": "إضافة إجراء",
@@ -2242,7 +2291,11 @@
         "noActionsYet": "لا توجد إجراءات مسجلة بعد.",
         "answered": "تمت الإجابة",
         "nextActionDate": "تاريخ الإجراء",
-        "noDetails": "لا توجد تفاصيل إضافية"
+        "noDetails": "لا توجد تفاصيل إضافية",
+        "actionSaved": "تم حفظ الإجراء بنجاح"
+      },
+      "validation": {
+        "leadsRequired": "يرجى إضافة جهة اتصال واحدة على الأقل كعميل محتمل."
       }
     }
   },

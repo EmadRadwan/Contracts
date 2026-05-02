@@ -28,6 +28,7 @@ const ExcelUploadDialog: React.FC<ExcelUploadDialogProps> = ({
   const { getTranslatedLabel } = useTranslationHelper();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const localizationKey = 'crm.leads.excel'
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -105,7 +106,7 @@ const ExcelUploadDialog: React.FC<ExcelUploadDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
+      <DialogTitle sx={{textAlign: "center"}}>
         {getTranslatedLabel('crm.leads.uploadExcel', 'Upload Excel/CSV')}
       </DialogTitle>
       <DialogContent>
@@ -131,18 +132,18 @@ const ExcelUploadDialog: React.FC<ExcelUploadDialogProps> = ({
             <>
               <Typography variant="h6" gutterBottom>
                 {isDragActive
-                  ? 'Drop the file here...'
-                  : 'Drag & drop file here, or click to browse'}
+                  ? getTranslatedLabel(`${localizationKey}.drop`, "Drop the file here")
+                  : getTranslatedLabel(`${localizationKey}.drag`, 'Drag & drop file here, or click to browse')}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Supported: .xlsx, .xls, .csv (max 1 file)
+                  {getTranslatedLabel(`${localizationKey}.supported`, 'Supported: .xlsx, .xls, .csv (max 1 file)')}
               </Typography>
             </>
           )}
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{getTranslatedLabel('general.cancel', "Cancel")}</Button>
       </DialogActions>
     </Dialog>
   );

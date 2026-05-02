@@ -118,13 +118,13 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
 
     // Custom cell for address
     const AddressCell = (props: GridCellProps) => {
-        const { address1, city, countryGeoId } = props.dataItem;
-        const parts = [address1, city, countryGeoId].filter(Boolean);
+        const { address1, city, countryGeoId, address2 } = props.dataItem;
+        const parts = [address1, address2, city, countryGeoId].filter(Boolean);
 
         return (
             <td className={props.className} style={props.style}>
                 {parts.length > 0 ? (
-                    <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
+                    <Typography variant="body2" noWrap sx={{ maxWidth: 400 }}>
                         {parts.join(', ')}
                     </Typography>
                 ) : (
@@ -167,30 +167,19 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
                     field="email"
                     title={getTranslatedLabel(`${localizationKey}.email`, 'Email')}
                     cell={EmailCell}
+                    width={300}
                 />
                 <Column
                     field="phone"
                     title={getTranslatedLabel(`${localizationKey}.phone`, 'Phone')}
                     cell={PhoneCell}
-                    width={150}
+                    width={200}
                 />
                 <Column
                     field="address1"
                     title={getTranslatedLabel(`${localizationKey}.address`, 'Address')}
                     cell={AddressCell}
-                    width={250}
-                />
-                <Column
-                    field="statusDescription"
-                    title={getTranslatedLabel(`${localizationKey}.status`, 'Status')}
-                    cell={StatusCell}
-                    width={120}
-                />
-                <Column
-                    field="createdStamp"
-                    title={getTranslatedLabel(`${localizationKey}.created`, 'Created')}
-                    cell={DateCell}
-                    width={120}
+                    
                 />
             </KendoGrid>
         </div>

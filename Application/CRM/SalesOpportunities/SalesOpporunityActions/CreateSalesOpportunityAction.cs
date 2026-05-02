@@ -139,6 +139,14 @@ public class CreateSalesOpportunityAction
                     return Result<SalesOpportunityActionDto>.Failure("Action Date is required for this action type");
                 }
 
+                if (dto.ActionTypeId == "DONE_DEAL")
+                {
+                    opportunity.IsWon = true;
+                    opportunity.OpportunityStageId = "SOSTG_CLOSED_WON";
+                    opportunity.LastUpdatedStamp = stamp;
+                    opportunity.LastUpdatedTxStamp = stamp;
+                }
+
                 // Generate next sequence ID
                 var actionId = await _utilityService.GetNextSequence("SalesOpportunityAction");
 
@@ -155,7 +163,7 @@ public class CreateSalesOpportunityAction
                     MeetingTypeId = dto.MeetingTypeId,
                     MeetingLocationId = dto.MeetingLocationId,
                     Note = dto.Note,
-                    
+
 
                     // Audit fields (following your existing pattern)
                     CreatedByUserLogin = userLogin?.UserLoginId ?? "SYSTEM",
