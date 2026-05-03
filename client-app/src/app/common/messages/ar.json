@@ -1831,7 +1831,7 @@
             "amount": "المبلغ",
             "fiscalType": "السنة المالية",
             "invoiceId": "رقم الفاتورة",
-            "paymentId": "رقم الدفعة",
+            "paymentId": "رقم الدفعة / مستخلص مجمع",
             "workEffortId": "رقم المستخلص",
             "partyId": "اسم الطرف",
             "productId": "اسم الصنف",

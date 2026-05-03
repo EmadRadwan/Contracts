@@ -86,7 +86,9 @@ public class GetGlAccountTransactionDetails
                         AcctgTransTypeDescription = att != null ? att.Description : (act.AcctgTransTypeId ?? "Unknown"),
                         GlFiscalTypeId = act.GlFiscalTypeId,
                         InvoiceId = act.InvoiceId,
-                        PaymentId = act.PaymentId,
+                        PaymentId = we != null && we.WorkEffortTypeId == "PAYMENT_CERTIFICATE"
+                            ? we.WorkEffortId
+                            : act.PaymentId,
                         WorkEffortId = act.WorkEffortId,
                         ShipmentId = act.ShipmentId,
                         PartyId = act.PartyId,
@@ -106,7 +108,9 @@ public class GetGlAccountTransactionDetails
                                 : (project != null ? (project.ProjectName ?? project.Description ?? project.WorkEffortName) : null))
                             : null,
                         CostCenterDescription = cc != null ? cc.Description : null,
-                        PaymentRefNum = pyt != null ? pyt.PaymentRefNum : null,
+                        PaymentRefNum = we != null && we.WorkEffortTypeId == "PAYMENT_CERTIFICATE"
+                            ? we.Notes
+                            : (pyt != null ? pyt.PaymentRefNum : null),
                     };
 
                 // 4. Filter transactions for display (respect IncludePrePeriodTransactions)
