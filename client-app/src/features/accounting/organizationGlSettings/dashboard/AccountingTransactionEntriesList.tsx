@@ -10,7 +10,7 @@ import {DataResult, State} from '@progress/kendo-data-query';
 import Button from "@mui/material/Button";
 import {Grid, Paper} from "@mui/material";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
-import {handleDatesArray} from "../../../../app/util/utils";
+import {handleDatesArray, normalizeNumeric} from "../../../../app/util/utils";
 
 import {
     RootState,
@@ -25,7 +25,6 @@ import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import SetupAccountingMenu from "../menu/SetupAccountingMenu";
 import AccountingSummaryMenu from "../menu/AccountingSummaryMenu";
 import {useSelector} from "react-redux";
-import {router} from "../../../../app/router/Routes";
 import {useNavigate} from "react-router";
 import { AccountingTransactionEntriesDateRangeExcel } from "./AccountingTransactionEntriesDateRangeExcel";
 
@@ -91,7 +90,10 @@ export default function AccountingTransactionEntriesList() {
 
     useEffect(() => {
             if (data) {
-                const adjustedData = handleDatesArray(data.data);
+                const adjustedData = handleDatesArray(data.data).map((item: any) => ({
+                    ...item,
+                    amount: normalizeNumeric(item.amount),
+                }));
                 setAccountingTransEntries({data: adjustedData, total: data.total})
             }
         }
@@ -183,6 +185,7 @@ export default function AccountingTransactionEntriesList() {
                                 )}
                                 width={100}
                                 format="{0:n}"
+                                filter={"numeric"}
                             />
 
                             <Column field="acctgTransEntrySeqId" title={getTranslatedLabel(

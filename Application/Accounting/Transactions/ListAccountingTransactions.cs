@@ -66,7 +66,7 @@ public class ListAccountingTransactions
                     TransactionAmount = g.Sum(e => Math.Abs(e.Amount ?? 0m))
                 };
 
-            var query = (from transaction in _context.AcctgTrans
+            var query = from transaction in _context.AcctgTrans
                 join transactionType in _context.AcctgTransTypes on transaction.AcctgTransTypeId equals transactionType
                     .AcctgTransTypeId
                 join summary in entrySummaries
@@ -107,24 +107,15 @@ public class ListAccountingTransactions
                     ProjectNumber = project != null ? project.WorkEffortId : null,
                     ProjectName = project != null ? project.ProjectName : null,
                     SalesRequestId = transaction.SalesRequestId,
-                    DebitTotal = summary != null 
-                        ? (summary.TotalDebit > 0 
-                            ? summary.TotalDebit 
-                            : summary.TransactionAmount)   // Show absolute amount when only credit exists
-                        : 0m,
-
-                    CreditTotal = summary != null 
-                        ? (summary.TotalCredit > 0 
-                            ? summary.TotalCredit 
-                            : 0m)
-                        : 0m,
-
+                    DebitTotal = summary.TotalDebit > 0m ? summary.TotalDebit : summary.TransactionAmount,
+                    CreditTotal = summary.TotalCredit,
                     NetAmount = summary.NetAmount,
 
                     CreatedStamp = transaction.CreatedStamp
-                }).Distinct().AsQueryable();
+                };
 
-            return await Task.FromResult(query);
+            // Distinct is required because of the join with AcctgTransEntries
+            return await Task.FromResult(query.Distinct().AsQueryable());
         }
     }
 }

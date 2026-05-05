@@ -2906,6 +2906,7 @@ public class SeedContracts
                 "Accounting_BillingAccounts_View",
                 "Accounting_MultiPaymentCertificates_View",
                 "Process_Payment",
+                "Duplicate_Payment",
                 // CRM Roles
                 "CRM_View",
                 "CRM_Leads_View", "CRM_Leads_Create", "CRM_Leads_Edit", "CRM_Leads_Delete",
@@ -3212,7 +3213,7 @@ public class SeedContracts
                     "Accounting_GLSettings_View",
                     "Accounting_Transactions_View",
                     "Accounting_BillingAccounts_View",
-                    "Accounting_MultiPaymentCertificates_View", "Process_Payment", "CreateReserveRequest",
+                    "Accounting_MultiPaymentCertificates_View", "Process_Payment", "Duplicate_Payment", "CreateReserveRequest",
                     "CreateSalesRequest",
                     // CRM Roles
                     "CRM_View",
@@ -3232,7 +3233,7 @@ public class SeedContracts
                     "Accounting_GLSettings_View",
                     "Accounting_Transactions_View",
                     "Accounting_BillingAccounts_View",
-                    "Accounting_MultiPaymentCertificates_View", "Process_Payment", "CreateReserveRequest",
+                    "Accounting_MultiPaymentCertificates_View", "Process_Payment", "Duplicate_Payment", "CreateReserveRequest",
                     "CreateSalesRequest"
                 }
             },
@@ -3248,7 +3249,7 @@ public class SeedContracts
                     "Accounting_GLSettings_View",
                     "Accounting_Transactions_View",
                     "Accounting_BillingAccounts_View",
-                    "Accounting_MultiPaymentCertificates_View", "Process_Payment", "CreateReserveRequest",
+                    "Accounting_MultiPaymentCertificates_View", "Process_Payment", "Duplicate_Payment", "CreateReserveRequest",
                     "CreateSalesRequest"
                 }
             },

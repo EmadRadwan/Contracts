@@ -154,14 +154,16 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                                 {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.receive`, "Status to Received")}
                             </MenuItem>
                         )}
-
-                        {payment?.paymentId && (
-                            <MenuItem onClick={() => onMenuSelect('duplicate')}>
-                                {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.duplicate`, "Duplicate Payment")}
-                            </MenuItem>
-                        )}
                     </>
                 </Can>
+
+                {payment?.paymentId && (
+                    <Can perform={["Process_Payment", "Duplicate_Payment"]}>
+                        <MenuItem onClick={() => onMenuSelect('duplicate')}>
+                            {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.duplicate`, "Duplicate Payment")}
+                        </MenuItem>
+                    </Can>
+                )}
 
                 {canReset && (
                     <Can perform="Reset_Payment"> {/* optional - add permission if needed */}

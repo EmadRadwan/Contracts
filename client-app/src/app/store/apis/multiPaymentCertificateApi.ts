@@ -117,6 +117,7 @@ export const { useFetchMultiPaymentCertificatesQuery,
     useDeleteMultiPaymentCertificateMutation, useResetMultiPaymentCertificateMutation,
     useDuplicateMultiPaymentCertificateMutation,
     useLazyFetchMultiPaymentCertificatesByDateRangeQuery,
+    useFetchMultiPaymentItemsByDateRangeQuery,
     useLazyFetchMultiPaymentItemsByDateRangeQuery
 } = multiPaymentCertificateApi;
 export { multiPaymentCertificateApi };

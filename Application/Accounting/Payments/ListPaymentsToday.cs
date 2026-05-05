@@ -6,7 +6,7 @@ using Application.Core; // ← Make sure you have this for DateHelper
 
 namespace Application.Accounting.Payments;
 
-public class ListPaymentsDaily
+public class  ListPaymentsDaily
 {
     public class Query : IRequest<PaymentsDailyResponse>
     {

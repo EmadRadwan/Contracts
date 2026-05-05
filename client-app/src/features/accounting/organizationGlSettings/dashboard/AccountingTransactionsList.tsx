@@ -12,7 +12,7 @@ import Button from "@mui/material/Button";
 import { Grid, Paper } from "@mui/material";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import { MenuSelectEvent } from "@progress/kendo-react-layout";
-import { handleDatesArray } from "../../../../app/util/utils";
+import { handleDatesArray, normalizeNumeric } from "../../../../app/util/utils";
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -147,7 +147,12 @@ export default function AccountingTransactionsList() {
 
   useEffect(() => {
     if (data) {
-      const adjustedData = handleDatesArray(data.data);
+      const adjustedData = handleDatesArray(data.data).map((item: any) => ({
+        ...item,
+        debitTotal: normalizeNumeric(item.debitTotal),
+        creditTotal: normalizeNumeric(item.creditTotal),
+        netAmount: normalizeNumeric(item.netAmount),
+      }));
       setAccountingTrans({ data: adjustedData, total: data.total });
     }
   }, [data]);
@@ -347,6 +352,7 @@ export default function AccountingTransactionsList() {
                   )}
                   width={150}
                   format="{0:n}"
+                  filter={"numeric"}
                 />
                 <Column field="description" title={getTranslatedLabel(
                     "accounting.orgGL.accounting.summary.txns.description",

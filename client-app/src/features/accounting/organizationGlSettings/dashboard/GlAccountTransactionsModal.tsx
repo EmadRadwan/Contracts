@@ -14,6 +14,7 @@ import { useTranslationHelper } from '../../../../app/hooks/useTranslationHelper
 import LoadingComponent from '../../../../app/layout/LoadingComponent';
 import {useFetchGlAccountTransactionDetailsQuery} from "../../../../app/store/apis/accounting/accountingReportsApi";
 import {GlAccountTransactionsExcel} from "../report/GlAccountTransactionsExcel";
+import { GlAccountTransactionsDateRangeExcel } from '../report/GlAccountTransactionsDateRangeExcel';
 
 interface Props {
     onClose: () => void;
@@ -185,6 +186,13 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                         totalCredit={totalCredit}
                                         getTranslatedLabel={getTranslatedLabel}
                                         isFetching={isFetching}
+                                    />
+                                    <GlAccountTransactionsDateRangeExcel
+                                        accountCode={data?.accountCode ?? ''}
+                                        accountName={data?.accountName ?? ''}
+                                        openingBalance={data?.openingBalance ?? 0}
+                                        rows={excelRows}
+                                        getTranslatedLabel={getTranslatedLabel}
                                     />
                                 </GridToolbar>
                                 <Column

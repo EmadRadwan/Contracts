@@ -27,4 +27,7 @@ export interface AcctgTrans {
     theirAcctgTransId?: string;
     debitGlAccountId?: string | null;
     creditGlAccountId?: string | null;
+    debitTotal?: number | null;
+    creditTotal?: number | null;
+    netAmount?: number | null;
 }
