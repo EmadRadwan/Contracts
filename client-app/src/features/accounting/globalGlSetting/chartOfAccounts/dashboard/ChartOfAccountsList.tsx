@@ -5,13 +5,9 @@ import AccountingMenu from "../../../invoice/menu/AccountingMenu";
 import {
   Grid as KendoGrid,
   GridColumn as Column,
-  GridDataStateChangeEvent,
   GridToolbar,
 } from "@progress/kendo-react-grid";
 import Button from "@mui/material/Button";
-import Box from '@mui/material/Box';
-import TabContext from '@mui/lab/TabContext';
-import TabPanel from '@mui/lab/TabPanel';
 import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
 import { toast } from "react-toastify";
 
@@ -24,8 +20,6 @@ import {
   useFetchGlobalGlAccountsQuery,
   useFetchTopLevelGlobalGlAccountsQuery
 } from "../../../../../app/store/apis/accounting/globalGlSettingsApi";
-import { StyledTabs } from "../../../../../app/components/StyledTabs";
-import { StyledTab } from "../../../../../app/components/StyledTab";
 import { useAppSelector } from "../../../../../app/store/configureStore";
 import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHelper";
 
@@ -201,7 +195,7 @@ const ChartOfAccountsList = () => {
 
       handleAccountCreated(createdAccount);
     } catch (e) {
-      handleApiError(err, getMessage("GL_ACCOUNT_SAVE_FAILED"));
+      handleApiError(e, getMessage("GL_ACCOUNT_SAVE_FAILED"));
     }
     handleSimilarModalClose();
   };
@@ -263,7 +257,11 @@ const ChartOfAccountsList = () => {
                   <Column field="parentGlAccountId" title={getTranslatedLabel("accounting.glAccount.list.parentId", "Parent ID")} width={120} />
                   <Column field="glAccountTypeId" title={getTranslatedLabel("accounting.glAccount.list.type", "Type")} width={180} />
                   <Column field="glAccountClassId" title={getTranslatedLabel("accounting.glAccount.list.class", "Class")} width={180} />
-                  <Column field="glResourceTypeId" title={getTranslatedLabel("accounting.glAccount.list.resourceType", "Resource Type")} width={160} />
+                  <Column field="glReportDescription" title={getTranslatedLabel("accounting.glAccount.list.report", "Report")} width={180} />
+                  <Column field="glClassCourseDescription" title={getTranslatedLabel("accounting.glAccount.list.classCourse", "Class Course")} width={180} />
+                  <Column field="glSubClassDescription" title={getTranslatedLabel("accounting.glAccount.list.subClass", "Sub Class")} width={180} />
+                  <Column field="glSubClass2Description" title={getTranslatedLabel("accounting.glAccount.list.subClass2", "Sub Class 2")} width={180} />
+                  <Column field="glAccountCourseLabelDescription" title={getTranslatedLabel("accounting.glAccount.list.courseLabel", "Course Label")} width={180} />
                   <Column cell={CreateSimilarAccountCell} width={170} />
                 </KendoGrid>
 

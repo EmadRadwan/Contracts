@@ -19,7 +19,6 @@ import { toast } from "react-toastify";
 
 import { requiredValidator } from "../../../../../app/common/form/Validators";
 import FormInput from "../../../../../app/common/form/FormInput";
-import { FormDropDownTreeGlAccount2 } from "../../../../../app/common/form/FormDropDownTreeGlAccount2";
 
 
 
@@ -27,11 +26,12 @@ import { GlAccount } from "../../../../../app/models/accounting/globalGlSettings
 import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHelper";
 import { FormDropDownList } from "../../../../../app/common/form/MemoizedFormDropDownList2";
 import { useAppSelector } from "../../../../../app/store/configureStore";
-import { useAssignGlAccountToOrganizationMutation, useFetchGlAccountOrganizationHierarchyLovQuery } from "../../../../../app/store/apis";
-import { useFetchTopLevelGlobalGlAccountsQuery, useCreateGlAccountMutation, useUpdateGlAccountMutation } from "../../../../../app/store/apis/accounting/globalGlSettingsApi";
+import { useAssignGlAccountToOrganizationMutation } from "../../../../../app/store/apis";
+import { useFetchTopLevelGlobalGlAccountsQuery, useCreateGlAccountMutation, useUpdateGlAccountMutation, useFetchGlReportsQuery, useFetchGlClassCoursesQuery, useFetchGlSubClassesQuery, useFetchGlSubClasses2Query, useFetchGlAccountCourseLabelsQuery } from "../../../../../app/store/apis/accounting/globalGlSettingsApi";
 import { FormDropDownTreeGlAccountWithChildren } from "../../../../../app/common/form/FormDropDownTreeGlAccountWithChildren";
 import { FormComboBoxVirtualGlAccountTypes } from "../../../../../app/common/form/FormComboBoxVirtualGlAccountTypes";
 import { FormComboBoxVirtualGlAccountClasses } from "../../../../../app/common/form/FormComboBoxVirtualGlAccountClasses";
+import { MemoizedFormComboBox2 } from "../../../../../app/common/form/FormComboBox2";
 import GlSettingsMenu from "../../menu/GlSettingsMenu";
 import AccountingMenu from "../../../invoice/menu/AccountingMenu";
 import { useLazyCheckGlAccountAssignedQuery, useRemoveGlAccountFromOrganizationMutation } from "../../../../../app/store/apis/accounting/organizationGlChartOfAccountsApi";
@@ -146,6 +146,12 @@ const AccountForm: React.FC<Props> = ({
     };
 
     const { data: glAccounts, isLoading: isLoadingGlAccounts } = useFetchTopLevelGlobalGlAccountsQuery(undefined);
+    const { data: glReportsData } = useFetchGlReportsQuery({});
+    const { data: glClassCoursesData } = useFetchGlClassCoursesQuery({});
+    const { data: glSubClassesData } = useFetchGlSubClassesQuery({});
+    const { data: glSubClasses2Data } = useFetchGlSubClasses2Query({});
+    const { data: glAccountCourseLabelsData } = useFetchGlAccountCourseLabelsQuery({});
+
     const [createGlAccount, { isLoading: isCreating }] = useCreateGlAccountMutation();
     const [updateGlAccount, { isLoading: isUpdating }] = useUpdateGlAccountMutation();
     const [assignGlAccountToOrganization] = useAssignGlAccountToOrganizationMutation();
@@ -185,6 +191,11 @@ const AccountForm: React.FC<Props> = ({
             accountName: account?.accountName ?? "",
             description: account?.description ?? null,
             glResourceTypeId: account?.glResourceTypeId ?? null,
+            glReportId: account?.glReportId ?? null,
+            glClassCourseId: account?.glClassCourseId ?? null,
+            glSubClassId: account?.glSubClassId ?? null,
+            glSubClass2Id: account?.glSubClass2Id ?? null,
+            glAccountCourseLabelId: account?.glAccountCourseLabelId ?? null,
             parentGlAccountId: account?.parentGlAccountId
                 ? {
                     glAccountId: account.parentGlAccountId,
@@ -244,6 +255,11 @@ const AccountForm: React.FC<Props> = ({
                     glAccountTypeId: data.glAccountTypeId?.glAccountTypeId ?? null,
                     glAccountClassId: data.glAccountClassId?.glAccountClassId ?? null,
                     glResourceTypeId: data.glResourceTypeId ?? null, // string or null
+                    glReportId: data.glReportId,
+                    glClassCourseId: data.glClassCourseId,
+                    glSubClassId: data.glSubClassId,
+                    glSubClass2Id: data.glSubClass2Id,
+                    glAccountCourseLabelId: data.glAccountCourseLabelId,
                 };
 
                 const result = await createGlAccount(createPayload).unwrap();
@@ -277,6 +293,11 @@ const AccountForm: React.FC<Props> = ({
                     glAccountTypeId: data.glAccountTypeId?.glAccountTypeId ?? null,
                     glAccountClassId: data.glAccountClassId?.glAccountClassId ?? null,
                     glResourceTypeId: data.glResourceTypeId ?? null,
+                    glReportId: data.glReportId,
+                    glClassCourseId: data.glClassCourseId,
+                    glSubClassId: data.glSubClassId,
+                    glSubClass2Id: data.glSubClass2Id,
+                    glAccountCourseLabelId: data.glAccountCourseLabelId,
                 };
 
                 const result = await updateGlAccount(updatePayload).unwrap();
@@ -452,6 +473,67 @@ const AccountForm: React.FC<Props> = ({
                                         multiline
                                         rows={3}
                                     />
+                                </Grid>
+
+                                {/* BI Section */}
+                                <Grid item xs={12}>
+                                    <Box sx={{ border: '1px solid #ccc', p: 2, mt: 2, borderRadius: 1 }}>
+                                        <Typography variant="subtitle1" sx={{ mt: -3.5, ml: 1, px: 1, bgcolor: 'background.paper', display: 'inline-block', fontWeight: 'bold' }}>
+                                            {getTranslatedLabel("accounting.glAccount.form.biSectionTitle", "Business Intelligence Use")}
+                                        </Typography>
+                                        <Grid container spacing={2}>
+                                            <Grid item xs={12} sm={4}>
+                                                <Field
+                                                    name="glReportId"
+                                                    label={getTranslatedLabel("accounting.glAccount.form.glReport", "GL Report")}
+                                                    component={MemoizedFormComboBox2}
+                                                    data={glReportsData?.glReports || []}
+                                                    dataItemKey="glReportId"
+                                                    textField="description"
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12} sm={4}>
+                                                <Field
+                                                    name="glClassCourseId"
+                                                    label={getTranslatedLabel("accounting.glAccount.form.glClassCourse", "Class Course")}
+                                                    component={MemoizedFormComboBox2}
+                                                    data={glClassCoursesData?.glClassCourses || []}
+                                                    dataItemKey="glClassCourseId"
+                                                    textField="description"
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12} sm={4}>
+                                                <Field
+                                                    name="glSubClassId"
+                                                    label={getTranslatedLabel("accounting.glAccount.form.glSubClass", "Sub Class")}
+                                                    component={MemoizedFormComboBox2}
+                                                    data={glSubClassesData?.glSubClasses || []}
+                                                    dataItemKey="glSubClassId"
+                                                    textField="description"
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12} sm={4}>
+                                                <Field
+                                                    name="glSubClass2Id"
+                                                    label={getTranslatedLabel("accounting.glAccount.form.glSubClass2", "Sub Class 2")}
+                                                    component={MemoizedFormComboBox2}
+                                                    data={glSubClasses2Data?.glSubClasses2 || []}
+                                                    dataItemKey="glSubClass2Id"
+                                                    textField="description"
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12} sm={4}>
+                                                <Field
+                                                    name="glAccountCourseLabelId"
+                                                    label={getTranslatedLabel("accounting.glAccount.form.glAccountCourseLabel", "Account Course Label")}
+                                                    component={MemoizedFormComboBox2}
+                                                    data={glAccountCourseLabelsData?.glAccountCourseLabels || []}
+                                                    dataItemKey="glAccountCourseLabelId"
+                                                    textField="description"
+                                                />
+                                            </Grid>
+                                        </Grid>
+                                    </Box>
                                 </Grid>
 
                                 {/* Buttons */}

@@ -1,15 +1,25 @@
 [
   {
-    "INVOICE_ITEM_TYPE_ID": "INV_LAND_PARTNERSHIP_ITEM",
-    "PARENT_TYPE_ID": null,
-    "HAS_TABLE": "N",
-    "DESCRIPTION": "Invoice Land Partnership Item (Sales)",
-    "DESCRIPTION_ARABIC": "بند أراضي مشاركات (مبيعات)",
-    "DEFAULT_GL_ACCOUNT_ID": "250448",
-    "LAST_UPDATED_STAMP": null,
-    "LAST_UPDATED_TX_STAMP": null,
-    "CREATED_STAMP": null,
-    "CREATED_TX_STAMP": null,
-    "IS_POSITIVE_AMOUNT": null
+    "GL_ACCOUNT_ID": "100075",
+    "GL_ACCOUNT_TYPE_ID": "CURRENT_ASSET",
+    "GL_ACCOUNT_CLASS_ID": "CASH_EQUIVALENT",
+    "GL_RESOURCE_TYPE_ID": "MONEY",
+    "GL_XBRL_CLASS_ID": null,
+    "PARENT_GL_ACCOUNT_ID": "100070",
+    "ACCOUNT_CODE": "100075",
+    "ACCOUNT_NAME": "Permanent Advances - Sites",
+    "DESCRIPTION": null,
+    "ACCOUNT_NAME_ARABIC": "عهدة مستديمة -  مواقع",
+    "PRODUCT_ID": null,
+    "EXTERNAL_ID": null,
+    "LAST_UPDATED_STAMP": "2022-05-27 12:24:25",
+    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:24:25",
+    "CREATED_STAMP": "2022-05-27 12:24:25",
+    "CREATED_TX_STAMP": "2022-05-27 12:24:25",
+    "GL_ACCOUNT_COURSE_LABEL_ID": null,
+    "GL_CLASS_COURSE_ID": null,
+    "GL_REPORT_ID": null,
+    "GL_SUB_CLASS_2_ID": null,
+    "GL_SUB_CLASS_ID": null
   }
 ]

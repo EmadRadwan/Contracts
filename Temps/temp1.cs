@@ -1,149 +1,109 @@
-public async Task<PaymentsDailyResponse> Handle(Query request, CancellationToken ct)
+// 1. Report Table Mapping
+modelBuilder.Entity<GlReport>(entity =>
 {
-    var isOutgoing = request.PaymentType?.ToLower() == "outgoing";
+    entity.ToTable("GL_REPORT");
+    entity.HasKey(e => e.GlReportId);
 
-    var fromDateTime = request.FromDate.ToDateTime(new TimeOnly(0, 0));
-    var toDateTime = request.ToDate.ToDateTime(new TimeOnly(0, 0)).AddDays(1);
+    entity.Property(e => e.GlReportId)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("GL_REPORT_ID");
 
-    var query = from pyt in _context.Payments
-                join ptt in _context.PaymentTypes on pyt.PaymentTypeId equals ptt.PaymentTypeId
-                join sts in _context.StatusItems on pyt.StatusId equals sts.StatusId
-                join ptyFrom in _context.Parties on pyt.PartyIdFrom equals ptyFrom.PartyId
-                join ptyTo in _context.Parties on pyt.PartyIdTo equals ptyTo.PartyId
-                join pmt in _context.PaymentMethodTypes 
-                    on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into pmtGroup
-                from pmt in pmtGroup.DefaultIfEmpty()
+    entity.Property(e => e.Description)
+        .HasMaxLength(255)
+        .IsUnicode()
+        .HasColumnName("DESCRIPTION");
+    
+    entity.Property(e => e.DescriptionArabic)
+        .HasMaxLength(255)
+        .HasColumnName("DESCRIPTION_ARABIC");
+    
+});
 
-                join proj in _context.WorkEfforts 
-                    on pyt.WorkEffortId equals proj.WorkEffortId into projJoin
-                from proj in projJoin.DefaultIfEmpty()
+// 2. Class Course Table Mapping
+modelBuilder.Entity<GlClassCourse>(entity =>
+{
+    entity.ToTable("GL_CLASS_COURSE");
+    entity.HasKey(e => e.GlClassCourseId);
 
-                join cc in _context.CostCenters 
-                    on pyt.CostCenterId equals cc.CostCenterId into ccJoin
-                from cc in ccJoin.DefaultIfEmpty()
+    entity.Property(e => e.GlClassCourseId)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("GL_CLASS_COURSE_ID");
 
-                join sr in _context.SalesRequests 
-                    on pyt.SalesRequestId equals sr.SalesRequestId into srJoin
-                from sr in srJoin.DefaultIfEmpty()
+    entity.Property(e => e.Description)
+        .HasMaxLength(255)
+        .IsUnicode()
+        .HasColumnName("DESCRIPTION");
+    
+    entity.Property(e => e.DescriptionArabic)
+        .HasMaxLength(255)
+        .HasColumnName("DESCRIPTION_ARABIC");
+});
 
-                join prod in _context.Products 
-                    on sr.ProductId equals prod.ProductId into prodJoin
-                from prod in prodJoin.DefaultIfEmpty()
+// 3. Sub Class Table Mapping
+modelBuilder.Entity<GlSubClass>(entity =>
+{
+    entity.ToTable("GL_SUB_CLASS");
+    entity.HasKey(e => e.GlSubClassId);
 
-                where 
-                    // Created OR Last Updated within the date range
-                    (
-                        (pyt.CreatedStamp >= fromDateTime && pyt.CreatedStamp < toDateTime) ||
-                        (pyt.LastUpdatedStamp >= fromDateTime && pyt.LastUpdatedStamp < toDateTime)
-                    )
-                    && (isOutgoing 
-                        ? ptt.ParentTypeId == "DISBURSEMENT" 
-                        : ptt.ParentTypeId != "DISBURSEMENT")
+    entity.Property(e => e.GlSubClassId)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("GL_SUB_CLASS_ID");
 
-                select new PaymentRecordDto
-                {
-                    PaymentId = pyt.PaymentId,
-                    PaymentTypeId = pyt.PaymentTypeId,
-                    PaymentTypeDescription = request.Language == "ar" 
-                        ? ptt.DescriptionArabic : ptt.Description,
+    entity.Property(e => e.Description)
+        .HasMaxLength(255)
+        .IsUnicode()
+        .HasColumnName("DESCRIPTION");
+    
+    entity.Property(e => e.DescriptionArabic)
+        .HasMaxLength(255)
+        .HasColumnName("DESCRIPTION_ARABIC");
+});
 
-                    PaymentMethodId = pyt.PaymentMethodId,
-                    PaymentMethodTypeId = pyt.PaymentMethodTypeId,
-                    PaymentMethodTypeDescription = pmt != null
-                        ? (request.Language == "ar" ? pmt.DescriptionArabic : pmt.Description)
-                        : null,
+// 4. Sub Class 2 Table Mapping (The Functional Area table)
+modelBuilder.Entity<GlSubClass2>(entity =>
+{
+    entity.ToTable("GL_SUB_CLASS_2");
+    entity.HasKey(e => e.GlSubClass2Id);
 
-                    PartyIdFrom = pyt.PartyIdFrom,
-                    PartyIdFromName = ptyFrom.Description ?? string.Empty,
-                    PartyIdTo = pyt.PartyIdTo,
-                    PartyIdToName = ptyTo.Description ?? string.Empty,
+    entity.Property(e => e.GlSubClass2Id)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("GL_SUB_CLASS_2_ID");
 
-                    StatusId = pyt.StatusId,
-                    StatusDescription = request.Language == "ar" 
-                        ? sts.DescriptionArabic : sts.Description,
-                    StatusDescriptionEnglish = sts.Description,
+    entity.Property(e => e.Description)
+        .HasMaxLength(255)
+        .IsUnicode()
+        .HasColumnName("DESCRIPTION");
+    
+    entity.Property(e => e.DescriptionArabic)
+        .HasMaxLength(255)
+        .HasColumnName("DESCRIPTION_ARABIC");
+});
 
-                    EffectiveDate = pyt.EffectiveDate,
-                    Comments = pyt.Comments,
-                    PaymentRefNum = pyt.PaymentRefNum,
-                    PaymentPreferenceId = pyt.PaymentPreferenceId,
-                    ActualCurrencyAmount = pyt.ActualCurrencyAmount ?? pyt.Amount,
-                    OverrideGlAccountId = pyt.OverrideGlAccountId,
-                    OrganizationPartyId = ptt.ParentTypeId == "DISBURSEMENT" 
-                        ? pyt.PartyIdFrom : pyt.PartyIdTo,
+// 5. Account Course Label Table Mapping
+modelBuilder.Entity<GlAccountCourseLabel>(entity =>
+{
+    entity.ToTable("GL_ACCOUNT_COURSE_LABEL");
+    entity.HasKey(e => e.GlAccountCourseLabelId);
 
-                    Amount = pyt.Amount,
-                    CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
-                    IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
+    entity.Property(e => e.GlAccountCourseLabelId)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("GL_ACCOUNT_COURSE_LABEL_ID");
 
-                    ChequeNumber = pyt.ChequeNumber,
-                    ChequeDate = pyt.ChequeDate,
-                    CertificateNumber = null,
-                    ProjectName = proj != null ? proj.ProjectName : null,
-                    CostCenterDescription = cc != null ? cc.Description : null,
-                    ProductId = prod != null ? prod.ProductId : null,
-                    BuildingNumber = prod != null ? prod.BuildingNumber : null,
-                };
+    entity.Property(e => e.Description)
+        .HasMaxLength(255)
+        .IsUnicode()
+        .HasColumnName("DESCRIPTION");
+    
+    entity.Property(e => e.DescriptionArabic)
+        .HasMaxLength(255)
+        .HasColumnName("DESCRIPTION_ARABIC");
 
-    var data = await query.ToListAsync(ct);
-
-    // === Post-processing: Calculate DaysUntilDue and DueStatusArabic ===
-    foreach (var record in data)
-    {
-        var effectiveDate = record.EffectiveDate ?? DateHelper.Today;
-        record.DaysUntilDue = effectiveDate.DayNumber - DateHelper.Today.DayNumber;
-
-        if (record.StatusId != "PMNT_NOT_PAID")
-        {
-            record.DueStatusArabic = record.StatusDescription;
-            continue;
-        }
-
-        var type = record.IsDisbursement ? "دفعة" : "مستحق";
-        var typePaid = record.IsDisbursement ? "دفعة مستحقة" : "مستحق";
-
-        var quarterText = GetQuarterArabic(effectiveDate);
-
-        if (record.DaysUntilDue < 0)
-        {
-            var daysOverdue = Math.Abs(record.DaysUntilDue);
-            record.DueStatusArabic = daysOverdue <= 30
-                ? $"{type} متأخرة منذ {daysOverdue} يوم"
-                : $"{type} متأخرة جداً {quarterText}";
-        }
-        else if (record.DaysUntilDue == 0)
-        {
-            record.DueStatusArabic = $"{typePaid} اليوم";
-        }
-        else if (record.DaysUntilDue == 1)
-        {
-            record.DueStatusArabic = $"{typePaid} غداً";
-        }
-        else if (record.DaysUntilDue <= 3)
-        {
-            record.DueStatusArabic = $"{typePaid} بعد {record.DaysUntilDue} أيام";
-        }
-        else if (record.DaysUntilDue <= 7)
-        {
-            record.DueStatusArabic = $"{typePaid} هذا الأسبوع";
-        }
-        else if (record.DaysUntilDue <= 30)
-        {
-            record.DueStatusArabic = $"{typePaid} خلال الشهر";
-        }
-        else if (record.DaysUntilDue <= 90)
-        {
-            record.DueStatusArabic = $"{typePaid} خلال 3 أشهر {quarterText}";
-        }
-        else
-        {
-            record.DueStatusArabic = $"{typePaid} لاحقاً {quarterText}";
-        }
-    }
-
-    return new PaymentsDailyResponse
-    {
-        Data = data,
-        Total = data.Count
-    };
-}
+    entity.Property(e => e.SignMultiplier)
+        .HasDefaultValue(1)
+        .HasColumnName("SIGN_MULTIPLIER");
+});

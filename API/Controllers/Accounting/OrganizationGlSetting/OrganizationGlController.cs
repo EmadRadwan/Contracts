@@ -599,4 +599,10 @@ public class OrganizationGlController : BaseApiController
         var result = await Mediator.Send(command);
         return HandleResults(result);
     }
+
+    [HttpPost("bulkUpdateOrganizationGlAccountProps")]
+    public async Task<IActionResult> BulkUpdateOrganizationGlAccountProps([FromBody] BulkUpdateOrganizationGlAccountProps.Command command)
+    {
+        return HandleResults(await Mediator.Send(command));
+    }
 }

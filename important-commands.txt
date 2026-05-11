@@ -315,3 +315,10 @@ Summarize this entire conversation as a concise JSON or bullet-point outline, in
   xejiri3063@fengnu.com  / Tmbtc202600))
   
   
+  Report → GL_REPORT
+  Class → GL_CLASS_COURSE
+  SubClass → GL_SUB_CLASS
+  SubClass2 → GL_SUB_CLASS_2
+  Account → GL_ACCOUNT_COURSE_LABEL
+  
+  

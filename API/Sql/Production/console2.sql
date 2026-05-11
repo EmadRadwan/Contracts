@@ -1,25 +1,31 @@
-INSERT INTO INVOICE_ITEM_TYPE (
-    INVOICE_ITEM_TYPE_ID,
-    PARENT_TYPE_ID,
-    HAS_TABLE,
-    DESCRIPTION,
-    DESCRIPTION_ARABIC,
-    DEFAULT_GL_ACCOUNT_ID,
-    LAST_UPDATED_STAMP,
-    LAST_UPDATED_TX_STAMP,
-    CREATED_STAMP,
-    CREATED_TX_STAMP,
-    IS_POSITIVE_AMOUNT
-) VALUES (
-             'INV_LAND_PARTNERSHIP_ITEM',
-             NULL,
-             'N',
-             'Invoice Land Partnership Item (Sales)',
-             'بند أراضي مشاركات (مبيعات)',
-             '250448',
-             NULL,
-             NULL,
-             NOW(),
-             NOW(),
-             NULL
-         );
+INSERT INTO ACCTG_TRANS_ENTRY (
+    `ACCTG_TRANS_ID`, `ACCTG_TRANS_ENTRY_SEQ_ID`, `ACCTG_TRANS_ENTRY_TYPE_ID`,
+    `DESCRIPTION`, `VOUCHER_REF`, `PARTY_ID`, `ROLE_TYPE_ID`, `THEIR_PARTY_ID`,
+    `PRODUCT_ID`, `THEIR_PRODUCT_ID`, `INVENTORY_ITEM_ID`, `GL_ACCOUNT_TYPE_ID`,
+    `GL_ACCOUNT_ID`, `ORGANIZATION_PARTY_ID`, `AMOUNT`, `CURRENCY_UOM_ID`,
+    `ORIG_AMOUNT`, `ORIG_CURRENCY_UOM_ID`, `DEBIT_CREDIT_FLAG`, `DUE_DATE`,
+    `GROUP_ID`, `TAX_ID`, `RECONCILE_STATUS_ID`, `SETTLEMENT_TERM_ID`,
+    `IS_SUMMARY`, `LAST_UPDATED_STAMP`, `LAST_UPDATED_TX_STAMP`,
+    `CREATED_STAMP`, `CREATED_TX_STAMP`
+) VALUES
+      -- Entry 001
+      ('12676', '001', '_NA_',
+       'Bank transfer received from customer ',
+       NULL, '279', NULL, NULL,
+       'A6-05', NULL, NULL, NULL,
+       '110100', 'Company', 50000.000, 'EGP',
+       NULL, 'EGP', 'D', NULL,
+       NULL, NULL, 'AES_NOT_RECONCILED', NULL,
+       NULL, '2026-04-06 14:19:15', NULL,
+       '2026-04-06 14:19:15', NULL),
+
+      -- Entry 002
+      ('12676', '002', '_NA_',
+       'Bank transfer applied - reducing cheques under collection',
+       NULL, '279', NULL, NULL,
+       'A6-05', NULL, NULL, NULL,
+       '124410', 'Company', 50000.000, 'EGP',
+       NULL, 'EGP', 'C', NULL,
+       NULL, NULL, 'AES_NOT_RECONCILED', NULL,
+       NULL, '2026-04-06 14:19:15', NULL,
+       '2026-04-06 14:19:15', NULL);

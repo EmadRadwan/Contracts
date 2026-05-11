@@ -76,7 +76,20 @@ namespace Application.Shipments.OrganizationGlSettings
                             ParentAccountName = _context.GlAccounts
                                 .Where(a => a.GlAccountId == x.account.ParentGlAccountId)
                                 .Select(a => request.Language == "ar" ? a.AccountNameArabic ?? a.AccountName : a.AccountName)
-                                .FirstOrDefault() ?? ""
+                                .FirstOrDefault() ?? "",
+                            ProductId = x.account.ProductId ?? "",
+                            ExternalId = x.account.ExternalId ?? "",
+                            GlXbrlClassId = x.account.GlXbrlClassId ?? "",
+                            GlReportId = x.account.GlReportId,
+                            GlReportDescription = request.Language == "ar" ? x.account.GlReport.DescriptionArabic : x.account.GlReport.Description,
+                            GlClassCourseId = x.account.GlClassCourseId,
+                            GlClassCourseDescription = request.Language == "ar" ? x.account.GlClassCourse.DescriptionArabic : x.account.GlClassCourse.Description,
+                            GlSubClassId = x.account.GlSubClassId,
+                            GlSubClassDescription = request.Language == "ar" ? x.account.GlSubClass.DescriptionArabic : x.account.GlSubClass.Description,
+                            GlSubClass2Id = x.account.GlSubClass2Id,
+                            GlSubClass2Description = request.Language == "ar" ? x.account.GlSubClass2.DescriptionArabic : x.account.GlSubClass2.Description,
+                            GlAccountCourseLabelId = x.account.GlAccountCourseLabelId,
+                            GlAccountCourseLabelDescription = request.Language == "ar" ? x.account.GlAccountCourseLabel.DescriptionArabic : x.account.GlAccountCourseLabel.Description
                         });
 
                 return accountsQuery;

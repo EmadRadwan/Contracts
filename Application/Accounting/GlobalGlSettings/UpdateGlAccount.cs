@@ -57,6 +57,12 @@ public class UpdateGlAccount
                 glAccount.ParentGlAccountId = dto.ParentGlAccountId;
                 glAccount.LastUpdatedStamp = DateTime.UtcNow;
                 
+                glAccount.GlReportId = dto.GlReportId;
+                glAccount.GlClassCourseId = dto.GlClassCourseId;
+                glAccount.GlSubClassId = dto.GlSubClassId;
+                glAccount.GlSubClass2Id = dto.GlSubClass2Id;
+                glAccount.GlAccountCourseLabelId = dto.GlAccountCourseLabelId;
+
                 if (!string.IsNullOrWhiteSpace(dto.GlAccountTypeId))
                     glAccount.GlAccountTypeId = dto.GlAccountTypeId;
 
@@ -94,7 +100,12 @@ public class UpdateGlAccount
                     ParentGlAccountId = glAccount.ParentGlAccountId,
                     LastUpdatedDate = glAccount.LastUpdatedStamp,
                     GlAccountTypeDescription = typeDesc,
-                    GlAccountClassDescription = classDesc
+                    GlAccountClassDescription = classDesc,
+                    GlReportId = glAccount.GlReportId,
+                    GlClassCourseId = glAccount.GlClassCourseId,
+                    GlSubClassId = glAccount.GlSubClassId,
+                    GlSubClass2Id = glAccount.GlSubClass2Id,
+                    GlAccountCourseLabelId = glAccount.GlAccountCourseLabelId,
                 };
 
                 return Results<UpdateGlAccountResponse>.Success(response);
@@ -116,6 +127,11 @@ public class UpdateGlAccountRequest
     public string? GlAccountTypeId { get; init; }
     public string? GlAccountClassId { get; init; }
     public string? GlResourceTypeId { get; init; }
+    public string? GlReportId { get; init; }
+    public string? GlClassCourseId { get; init; }
+    public string? GlSubClassId { get; init; }
+    public string? GlSubClass2Id { get; init; }
+    public string? GlAccountCourseLabelId { get; init; }
 }
 
 public class UpdateGlAccountResponse
@@ -130,5 +146,10 @@ public class UpdateGlAccountResponse
     public string? ParentGlAccountId { get; set; }
     public string? GlAccountTypeDescription { get; set; }
     public string? GlAccountClassDescription { get; set; }
+    public string? GlReportId { get; set; }
+    public string? GlClassCourseId { get; set; }
+    public string? GlSubClassId { get; set; }
+    public string? GlSubClass2Id { get; set; }
+    public string? GlAccountCourseLabelId { get; set; }
     public DateTime? LastUpdatedDate { get; set; }
 }

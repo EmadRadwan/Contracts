@@ -58,16 +58,33 @@ public class GlAccount
     public string? AccountNameArabic { get; set; }
     public string? ProductId { get; set; }
     public string? ExternalId { get; set; }
+    
+    public string? GlReportId { get; set; }
+    public string? GlClassCourseId { get; set; }
+    public string? GlSubClassId { get; set; }
+    public string? GlSubClass2Id { get; set; }
+    public string? GlAccountCourseLabelId { get; set; }
+    
+    
     public DateTime? LastUpdatedStamp { get; set; }
     public DateTime? LastUpdatedTxStamp { get; set; }
     public DateTime? CreatedStamp { get; set; }
     public DateTime? CreatedTxStamp { get; set; }
+    
 
     public GlAccountClass? GlAccountClass { get; set; }
     public GlAccountType? GlAccountType { get; set; }
     public GlResourceType? GlResourceType { get; set; }
     public GlXbrlClass? GlXbrlClass { get; set; }
     public GlAccount? ParentGlAccount { get; set; }
+    
+    public GlReport? GlReport { get; set; }
+    public GlClassCourse? GlClassCourse { get; set; }
+    public GlSubClass? GlSubClass { get; set; }
+    public GlSubClass2? GlSubClass2 { get; set; }
+    public GlAccountCourseLabel? GlAccountCourseLabel { get; set; }
+    
+    
     public ICollection<AcctgTransEntry> AcctgTransEntries { get; set; }
     public ICollection<FinAccountTypeGlAccount> FinAccountTypeGlAccounts { get; set; }
     public ICollection<FinAccount> FinAccounts { get; set; }
