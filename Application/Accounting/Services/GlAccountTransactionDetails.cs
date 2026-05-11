@@ -76,7 +76,7 @@ public class GetGlAccountTransactionDetails
                     where ate.OrganizationPartyId == request.OrganizationPartyId
                           && ate.GlAccountId == request.GlAccountId
                           && act.IsPosted == "Y"
-                          && act.GlFiscalTypeId == "ACTUAL"
+                          && act.GlFiscalTypeId == "ACTUAL" && act.AcctgTransTypeId != "PAYMENT_APPL"
                     select new TransactionEntryDto
                     {
                         AcctgTransId = ate.AcctgTransId,

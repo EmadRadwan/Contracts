@@ -231,7 +231,6 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
                                         <Field
                                             id="operatingExpenseGlAccountId"
                                             name="operatingExpenseGlAccountId"
-                                            validator={requiredValidator}
                                             label={getTranslatedLabel("project.projects.form.operatingExpenseGlAccount", "Operating Expense GL Account")}
                                             component={FormDropDownTreeGlAccount2}
                                             data={glAccounts || []}
