@@ -3,6 +3,7 @@
     "DATA_SOURCE_ID": "FACEBOOK",
     "DATA_SOURCE_TYPE_ID": null,
     "DESCRIPTION": "Facebook",
+    "DESCRIPTION_ARABIC": "فيسبوك",
     "LAST_UPDATED_STAMP": "2024-12-25 12:00:00",
     "CREATED_STAMP": "2024-12-25 12:00:00"
   },
@@ -10,6 +11,7 @@
     "DATA_SOURCE_ID": "LINKEDIN",
     "DATA_SOURCE_TYPE_ID": null,
     "DESCRIPTION": "LinkedIn",
+    "DESCRIPTION_ARABIC": "لينكد إن",
     "LAST_UPDATED_STAMP": "2024-12-25 12:00:00",
     "CREATED_STAMP": "2024-12-25 12:00:00"
   },
@@ -17,6 +19,7 @@
     "DATA_SOURCE_ID": "WEBSITE",
     "DATA_SOURCE_TYPE_ID": null,
     "DESCRIPTION": "Website",
+    "DESCRIPTION_ARABIC": "موقع إلكتروني",
     "LAST_UPDATED_STAMP": "2024-12-25 12:00:00",
     "CREATED_STAMP": "2024-12-25 12:00:00"
   },
@@ -24,6 +27,7 @@
     "DATA_SOURCE_ID": "REFERRAL",
     "DATA_SOURCE_TYPE_ID": null,
     "DESCRIPTION": "Referral",
+    "DESCRIPTION_ARABIC": "إحالة",
     "LAST_UPDATED_STAMP": "2024-12-25 12:00:00",
     "CREATED_STAMP": "2024-12-25 12:00:00"
   },
@@ -31,6 +35,7 @@
     "DATA_SOURCE_ID": "COLD_CALL",
     "DATA_SOURCE_TYPE_ID": null,
     "DESCRIPTION": "Cold Call",
+    "DESCRIPTION_ARABIC": "اتصال بارد",
     "LAST_UPDATED_STAMP": "2024-12-25 12:00:00",
     "CREATED_STAMP": "2024-12-25 12:00:00"
   },
@@ -38,6 +43,7 @@
     "DATA_SOURCE_ID": "EMAIL_CAMPAIGN",
     "DATA_SOURCE_TYPE_ID": null,
     "DESCRIPTION": "Email Campaign",
+    "DESCRIPTION_ARABIC": "حملة بريد إلكتروني",
     "LAST_UPDATED_STAMP": "2024-12-25 12:00:00",
     "CREATED_STAMP": "2024-12-25 12:00:00"
   },
@@ -45,6 +51,7 @@
     "DATA_SOURCE_ID": "TRADE_SHOW",
     "DATA_SOURCE_TYPE_ID": null,
     "DESCRIPTION": "Trade Show",
+    "DESCRIPTION_ARABIC": "معرض تجاري",
     "LAST_UPDATED_STAMP": "2024-12-25 12:00:00",
     "CREATED_STAMP": "2024-12-25 12:00:00"
   },
@@ -52,6 +59,7 @@
     "DATA_SOURCE_ID": "ADVERTISEMENT",
     "DATA_SOURCE_TYPE_ID": null,
     "DESCRIPTION": "Advertisement",
+    "DESCRIPTION_ARABIC": "إعلان",
     "LAST_UPDATED_STAMP": "2024-12-25 12:00:00",
     "CREATED_STAMP": "2024-12-25 12:00:00"
   },
@@ -59,6 +67,7 @@
     "DATA_SOURCE_ID": "INSTAGRAM",
     "DATA_SOURCE_TYPE_ID": null,
     "DESCRIPTION": "Instagram",
+    "DESCRIPTION_ARABIC": "إنستغرام",
     "LAST_UPDATED_STAMP": "2024-12-25 12:00:00",
     "CREATED_STAMP": "2024-12-25 12:00:00"
   },
@@ -66,6 +75,7 @@
     "DATA_SOURCE_ID": "TWITTER",
     "DATA_SOURCE_TYPE_ID": null,
     "DESCRIPTION": "Twitter/X",
+    "DESCRIPTION_ARABIC": "تويتر / إكس",
     "LAST_UPDATED_STAMP": "2024-12-25 12:00:00",
     "CREATED_STAMP": "2024-12-25 12:00:00"
   },
@@ -73,6 +83,7 @@
     "DATA_SOURCE_ID": "GOOGLE_ADS",
     "DATA_SOURCE_TYPE_ID": null,
     "DESCRIPTION": "Google Ads",
+    "DESCRIPTION_ARABIC": "إعلانات جوجل",
     "LAST_UPDATED_STAMP": "2024-12-25 12:00:00",
     "CREATED_STAMP": "2024-12-25 12:00:00"
   },
@@ -80,6 +91,7 @@
     "DATA_SOURCE_ID": "INDIRECT",
     "DATA_SOURCE_TYPE_ID": null,
     "DESCRIPTION": "Indirect",
+    "DESCRIPTION_ARABIC": "غير مباشر",
     "LAST_UPDATED_STAMP": "2024-12-25 12:00:00",
     "CREATED_STAMP": "2024-12-25 12:00:00"
   },
@@ -87,6 +99,7 @@
     "DATA_SOURCE_ID": "OTHER",
     "DATA_SOURCE_TYPE_ID": null,
     "DESCRIPTION": "Other",
+    "DESCRIPTION_ARABIC": "أخرى",
     "LAST_UPDATED_STAMP": "2024-12-25 12:00:00",
     "CREATED_STAMP": "2024-12-25 12:00:00"
   }

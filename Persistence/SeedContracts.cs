@@ -117,7 +117,7 @@ public class SeedContracts
         }
 
         // Sales Opportunity Stages (CRM Pipeline)
-        if (!context.SalesOpportunityStages.Any())
+         if (!context.SalesOpportunityStages.Any())
         {
             var stages = new List<SalesOpportunityStage>
             {
@@ -125,6 +125,7 @@ public class SeedContracts
                 {
                     OpportunityStageId = "SOSTG_PROSPECT",
                     Description = "Prospect",
+                    DescriptionArabic = "عميل محتمل",
                     DefaultProbability = 10,
                     SequenceNum = 1,
                     CreatedStamp = nowDateTime,
@@ -134,6 +135,7 @@ public class SeedContracts
                 {
                     OpportunityStageId = "SOSTG_QUALIFIED",
                     Description = "Qualified",
+                    DescriptionArabic = "مؤهل",
                     DefaultProbability = 25,
                     SequenceNum = 2,
                     CreatedStamp = nowDateTime,
@@ -143,6 +145,7 @@ public class SeedContracts
                 {
                     OpportunityStageId = "SOSTG_PROPOSAL",
                     Description = "Proposal",
+                    DescriptionArabic = "عرض",
                     DefaultProbability = 50,
                     SequenceNum = 3,
                     CreatedStamp = nowDateTime,
@@ -152,6 +155,7 @@ public class SeedContracts
                 {
                     OpportunityStageId = "SOSTG_NEGOTIATION",
                     Description = "Negotiation",
+                    DescriptionArabic = "تفاوض",
                     DefaultProbability = 75,
                     SequenceNum = 4,
                     CreatedStamp = nowDateTime,
@@ -161,6 +165,7 @@ public class SeedContracts
                 {
                     OpportunityStageId = "SOSTG_CLOSED_WON",
                     Description = "Closed Won",
+                    DescriptionArabic = "صفقة مكتسبة",
                     DefaultProbability = 100,
                     SequenceNum = 5,
                     CreatedStamp = nowDateTime,
@@ -170,6 +175,7 @@ public class SeedContracts
                 {
                     OpportunityStageId = "SOSTG_CLOSED_LOST",
                     Description = "Closed Lost",
+                    DescriptionArabic = "صفقة خاسرة",
                     DefaultProbability = 0,
                     SequenceNum = 6,
                     CreatedStamp = nowDateTime,
@@ -179,7 +185,6 @@ public class SeedContracts
             await context.SalesOpportunityStages.AddRangeAsync(stages);
             await context.SaveChangesAsync();
         }
-
         //Status Type 
         if (!context.StatusTypes.Any())
         {

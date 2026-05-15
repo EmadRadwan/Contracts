@@ -44,7 +44,7 @@ public class SalesOpportunitiesController : BaseApiController
     [HttpGet("stages")]
     public async Task<IActionResult> GetStages()
     {
-        return HandleResult(await Mediator.Send(new ListOpportunityStages.Query()));
+        return HandleResult(await Mediator.Send(new ListOpportunityStages.Query{Language = GetLanguage()}));
     }
 
     [HttpGet("actions")]

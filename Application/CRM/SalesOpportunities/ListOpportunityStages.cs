@@ -1,4 +1,5 @@
 using Application.Core;
+using FluentValidation.Resources;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
@@ -10,7 +11,10 @@ namespace Application.CRM.SalesOpportunities;
 /// </summary>
 public class ListOpportunityStages
 {
-    public record Query : IRequest<Result<List<OpportunityStageDto>>>;
+    public record Query : IRequest<Result<List<OpportunityStageDto>>>
+    {
+        public string Language {get; set;}
+    };
 
     public class Handler : IRequestHandler<Query, Result<List<OpportunityStageDto>>>
     {
@@ -28,7 +32,7 @@ public class ListOpportunityStages
                 .Select(s => new OpportunityStageDto
                 {
                     OpportunityStageId = s.OpportunityStageId,
-                    Description = s.Description,
+                    Description = request.Language == "ar" ? s.DescriptionArabic : s.Description,
                     DefaultProbability = s.DefaultProbability,
                     SequenceNum = s.SequenceNum
                 })

@@ -7,7 +7,10 @@ namespace Application.Common.DataSources;
 
 public class ListDataSources
 {
-    public record Query : IRequest<Result<List<DataSourceDto>>>;
+    public record Query : IRequest<Result<List<DataSourceDto>>>
+    {
+        public string Language {get; set;}
+    };
 
     public class Handler : IRequestHandler<Query, Result<List<DataSourceDto>>>
     {
@@ -25,7 +28,7 @@ public class ListDataSources
                 .Select(ds => new DataSourceDto
                 {
                     DataSourceId = ds.DataSourceId,
-                    Description = ds.Description ?? ds.DataSourceId
+                    Description = (request.Language == "ar" ? ds.DescriptionArabic : ds.Description) ?? ds.DataSourceId
                 })
                 .ToListAsync(ct);
 

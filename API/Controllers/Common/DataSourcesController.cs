@@ -8,6 +8,6 @@ public class DataSourcesController : BaseApiController
     [HttpGet]
     public async Task<IActionResult> List()
     {
-        return HandleResult(await Mediator.Send(new ListDataSources.Query()));
+        return HandleResult(await Mediator.Send(new ListDataSources.Query{Language = GetLanguage()}));
     }
 }
