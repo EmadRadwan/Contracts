@@ -30,6 +30,16 @@ export interface GlAccount {
     glResourceTypeDescription?: string
     glResourceTypeId: string
     glXbrlClassId?: string
+    glReportId?: string
+    glReportDescription?: string
+    glClassCourseId?: string
+    glClassCourseDescription?: string
+    glSubClassId?: string
+    glSubClassDescription?: string
+    glSubClass2Id?: string
+    glSubClass2Description?: string
+    glAccountCourseLabelId?: string
+    glAccountCourseLabelDescription?: string
     parentAccountName: string
     parentGlAccountId?: string
     productId?: string

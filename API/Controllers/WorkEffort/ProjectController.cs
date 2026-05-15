@@ -236,30 +236,42 @@ public class ProjectController : BaseApiController
     [HttpGet("report")]
     public async Task<ActionResult<ProjectReportDto>> GetProjectReport(
         [FromQuery] string projectId,
-        [FromQuery] DateTime? startDate,
-        [FromQuery] DateTime? endDate,
-        [FromQuery] bool allData)
+        [FromQuery] DateTime? expensesStartDate,
+        [FromQuery] DateTime? expensesEndDate,
+        [FromQuery] bool expensesAllData,
+        [FromQuery] DateTime? revenuesStartDate,
+        [FromQuery] DateTime? revenuesEndDate,
+        [FromQuery] bool revenuesAllData)
     {
         return HandleResult(Result<ProjectReportDto>.Success(await Mediator.Send(new GetProjectReport.Query
         {
             ProjectId = projectId,
-            StartDate = startDate,
-            EndDate = endDate,
-            AllData = allData
+            ExpensesStartDate = expensesStartDate,
+            ExpensesEndDate = expensesEndDate,
+            ExpensesAllData = expensesAllData,
+            RevenuesStartDate = revenuesStartDate,
+            RevenuesEndDate = revenuesEndDate,
+            RevenuesAllData = revenuesAllData
         })));
     }
 
     [HttpGet("companyReport")]
     public async Task<ActionResult<ProjectReportDto>> GetCompanyReport(
-        [FromQuery] DateTime? startDate,
-        [FromQuery] DateTime? endDate,
-        [FromQuery] bool allData)
+        [FromQuery] DateTime? expensesStartDate,
+        [FromQuery] DateTime? expensesEndDate,
+        [FromQuery] bool expensesAllData,
+        [FromQuery] DateTime? revenuesStartDate,
+        [FromQuery] DateTime? revenuesEndDate,
+        [FromQuery] bool revenuesAllData)
     {
         return HandleResult(Result<ProjectReportDto>.Success(await Mediator.Send(new Application.Accounting.Reports.GetCompanyReport.Query
         {
-            StartDate = startDate,
-            EndDate = endDate,
-            AllData = allData
+            ExpensesStartDate = expensesStartDate,
+            ExpensesEndDate = expensesEndDate,
+            ExpensesAllData = expensesAllData,
+            RevenuesStartDate = revenuesStartDate,
+            RevenuesEndDate = revenuesEndDate,
+            RevenuesAllData = revenuesAllData
         })));
     }
     

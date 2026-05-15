@@ -32,6 +32,7 @@ import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import {toast} from "react-toastify";
 import {Ribbon, RibbonContainer} from "react-ribbons";
 import {useInvoiceTotal} from "../hook/useInvoiceTotal";
+import {InvoiceExcel} from "../report/InvoiceExcel";
 
 interface Props {
     invoiceId?: string;
@@ -648,6 +649,14 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                                     />
                                 )}
                             </Menu>
+                            {invoice?.invoiceId && (
+                                <InvoiceExcel
+                                    invoice={invoice}
+                                    total={iTotal}
+                                    outstandingAmount={iOutstanding}
+                                    getTranslatedLabel={getTranslatedLabel}
+                                />
+                            )}
                         </Grid>
                     </Grid>
 

@@ -37,17 +37,8 @@ namespace API.Controllers.Accounting
         [HttpPut("{glAccountId}")]
         public async Task<IActionResult> UpdateGlAccount(string glAccountId, [FromBody] UpdateGlAccountRequest request)
         {
-            var updateRequest = new UpdateGlAccountRequest
-            {
-                GlAccountId = glAccountId,
-                AccountName = request.AccountName,
-                Description = request.Description,
-                ParentGlAccountId = request.ParentGlAccountId,
-                GlAccountTypeId = request.GlAccountTypeId,
-                GlAccountClassId = request.GlAccountClassId,
-                GlResourceTypeId = request.GlResourceTypeId
-            };
-            return HandleResults(await Mediator.Send(new UpdateGlAccount.Command { Request = updateRequest }));
+            request.GlAccountId = glAccountId;
+            return HandleResults(await Mediator.Send(new UpdateGlAccount.Command { Request = request }));
         }
         
         [HttpGet("getAllGlAccountTypes")]
@@ -60,6 +51,36 @@ namespace API.Controllers.Accounting
         public async Task<IActionResult> GetAllGlAccountClasses([FromQuery] GlAccountClassParams param)
         {
             return HandleResult(await Mediator.Send(new GetAllGlAccountClasses.Query { Params = param }));
+        }
+
+        [HttpGet("getGlReports")]
+        public async Task<IActionResult> GetGlReports([FromQuery] GlReportParams param)
+        {
+            return HandleResult(await Mediator.Send(new GetGlReports.Query { Params = param }));
+        }
+
+        [HttpGet("getGlClassCourses")]
+        public async Task<IActionResult> GetGlClassCourses([FromQuery] GlClassCourseParams param)
+        {
+            return HandleResult(await Mediator.Send(new GetGlClassCourses.Query { Params = param }));
+        }
+
+        [HttpGet("getGlSubClasses")]
+        public async Task<IActionResult> GetGlSubClasses([FromQuery] GlSubClassParams param)
+        {
+            return HandleResult(await Mediator.Send(new GetGlSubClasses.Query { Params = param }));
+        }
+
+        [HttpGet("getGlSubClasses2")]
+        public async Task<IActionResult> GetGlSubClasses2([FromQuery] GlSubClass2Params param)
+        {
+            return HandleResult(await Mediator.Send(new GetGlSubClasses2.Query { Params = param }));
+        }
+
+        [HttpGet("getGlAccountCourseLabels")]
+        public async Task<IActionResult> GetGlAccountCourseLabels([FromQuery] GlAccountCourseLabelParams param)
+        {
+            return HandleResult(await Mediator.Send(new GetGlAccountCourseLabels.Query { Params = param }));
         }
     }
 }

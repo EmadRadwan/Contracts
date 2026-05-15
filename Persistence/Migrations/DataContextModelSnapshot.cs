@@ -16831,17 +16831,47 @@ namespace Persistence.Migrations
                         .HasColumnType("varchar(36)")
                         .HasColumnName("GL_ACCOUNT_CLASS_ID");
 
+                    b.Property<string>("GlAccountCourseLabelId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("GL_ACCOUNT_COURSE_LABEL_ID");
+
                     b.Property<string>("GlAccountTypeId")
                         .HasMaxLength(36)
                         .IsUnicode(false)
                         .HasColumnType("varchar(36)")
                         .HasColumnName("GL_ACCOUNT_TYPE_ID");
 
+                    b.Property<string>("GlClassCourseId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("GL_CLASS_COURSE_ID");
+
+                    b.Property<string>("GlReportId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("GL_REPORT_ID");
+
                     b.Property<string>("GlResourceTypeId")
                         .HasMaxLength(36)
                         .IsUnicode(false)
                         .HasColumnType("varchar(36)")
                         .HasColumnName("GL_RESOURCE_TYPE_ID");
+
+                    b.Property<string>("GlSubClass2Id")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("GL_SUB_CLASS_2_ID");
+
+                    b.Property<string>("GlSubClassId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("GL_SUB_CLASS_ID");
 
                     b.Property<string>("GlXbrlClassId")
                         .HasMaxLength(36)
@@ -16870,6 +16900,16 @@ namespace Persistence.Migrations
                         .HasColumnName("PRODUCT_ID");
 
                     b.HasKey("GlAccountId");
+
+                    b.HasIndex("GlAccountCourseLabelId");
+
+                    b.HasIndex("GlClassCourseId");
+
+                    b.HasIndex("GlReportId");
+
+                    b.HasIndex("GlSubClass2Id");
+
+                    b.HasIndex("GlSubClassId");
 
                     b.HasIndex(new[] { "GlAccountClassId" }, "GLACCT_CLSS");
 
@@ -17094,6 +17134,36 @@ namespace Persistence.Migrations
                     b.HasIndex(new[] { "LastUpdatedTxStamp" }, "GL_ACCT_CLS_TXSTMP");
 
                     b.ToTable("GL_ACCOUNT_CLASS", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.GlAccountCourseLabel", b =>
+                {
+                    b.Property<string>("GlAccountCourseLabelId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("GL_ACCOUNT_COURSE_LABEL_ID");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .IsUnicode(true)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("DESCRIPTION");
+
+                    b.Property<string>("DescriptionArabic")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("DESCRIPTION_ARABIC");
+
+                    b.Property<int>("SignMultiplier")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1)
+                        .HasColumnName("SIGN_MULTIPLIER");
+
+                    b.HasKey("GlAccountCourseLabelId");
+
+                    b.ToTable("GL_ACCOUNT_COURSE_LABEL", (string)null);
                 });
 
             modelBuilder.Entity("Domain.GlAccountGroup", b =>
@@ -17613,6 +17683,30 @@ namespace Persistence.Migrations
                     b.ToTable("GL_BUDGET_XREF", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.GlClassCourse", b =>
+                {
+                    b.Property<string>("GlClassCourseId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("GL_CLASS_COURSE_ID");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .IsUnicode(true)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("DESCRIPTION");
+
+                    b.Property<string>("DescriptionArabic")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("DESCRIPTION_ARABIC");
+
+                    b.HasKey("GlClassCourseId");
+
+                    b.ToTable("GL_CLASS_COURSE", (string)null);
+                });
+
             modelBuilder.Entity("Domain.GlFiscalType", b =>
                 {
                     b.Property<string>("GlFiscalTypeId")
@@ -17864,6 +17958,30 @@ namespace Persistence.Migrations
                     b.ToTable("GL_RECONCILIATION_ENTRY", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.GlReport", b =>
+                {
+                    b.Property<string>("GlReportId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("GL_REPORT_ID");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .IsUnicode(true)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("DESCRIPTION");
+
+                    b.Property<string>("DescriptionArabic")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("DESCRIPTION_ARABIC");
+
+                    b.HasKey("GlReportId");
+
+                    b.ToTable("GL_REPORT", (string)null);
+                });
+
             modelBuilder.Entity("Domain.GlResourceType", b =>
                 {
                     b.Property<string>("GlResourceTypeId")
@@ -17907,6 +18025,54 @@ namespace Persistence.Migrations
                     b.HasIndex(new[] { "LastUpdatedTxStamp" }, "GL_RSRC_TP_TXSTMP");
 
                     b.ToTable("GL_RESOURCE_TYPE", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.GlSubClass", b =>
+                {
+                    b.Property<string>("GlSubClassId")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("GL_SUB_CLASS_ID");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .IsUnicode(true)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("DESCRIPTION");
+
+                    b.Property<string>("DescriptionArabic")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("DESCRIPTION_ARABIC");
+
+                    b.HasKey("GlSubClassId");
+
+                    b.ToTable("GL_SUB_CLASS", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.GlSubClass2", b =>
+                {
+                    b.Property<string>("GlSubClass2Id")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("GL_SUB_CLASS_2_ID");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .IsUnicode(true)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("DESCRIPTION");
+
+                    b.Property<string>("DescriptionArabic")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("DESCRIPTION_ARABIC");
+
+                    b.HasKey("GlSubClass2Id");
+
+                    b.ToTable("GL_SUB_CLASS_2", (string)null);
                 });
 
             modelBuilder.Entity("Domain.GlXbrlClass", b =>
@@ -65861,17 +66027,47 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("GLACCT_CLSS");
 
+                    b.HasOne("Domain.GlAccountCourseLabel", "GlAccountCourseLabel")
+                        .WithMany("GlAccounts")
+                        .HasForeignKey("GlAccountCourseLabelId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_GL_COURSE_LABEL");
+
                     b.HasOne("Domain.GlAccountType", "GlAccountType")
                         .WithMany("GlAccounts")
                         .HasForeignKey("GlAccountTypeId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("GLACCT_TYPE");
 
+                    b.HasOne("Domain.GlClassCourse", "GlClassCourse")
+                        .WithMany("GlAccounts")
+                        .HasForeignKey("GlClassCourseId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_GL_CLASS_COURSE");
+
+                    b.HasOne("Domain.GlReport", "GlReport")
+                        .WithMany("GlAccounts")
+                        .HasForeignKey("GlReportId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_GL_REPORT");
+
                     b.HasOne("Domain.GlResourceType", "GlResourceType")
                         .WithMany("GlAccounts")
                         .HasForeignKey("GlResourceTypeId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("GLACCT_REC");
+
+                    b.HasOne("Domain.GlSubClass2", "GlSubClass2")
+                        .WithMany("GlAccounts")
+                        .HasForeignKey("GlSubClass2Id")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_GL_SUB_CLASS_2");
+
+                    b.HasOne("Domain.GlSubClass", "GlSubClass")
+                        .WithMany("GlAccounts")
+                        .HasForeignKey("GlSubClassId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_GL_SUB_CLASS");
 
                     b.HasOne("Domain.GlXbrlClass", "GlXbrlClass")
                         .WithMany("GlAccounts")
@@ -65887,9 +66083,19 @@ namespace Persistence.Migrations
 
                     b.Navigation("GlAccountClass");
 
+                    b.Navigation("GlAccountCourseLabel");
+
                     b.Navigation("GlAccountType");
 
+                    b.Navigation("GlClassCourse");
+
+                    b.Navigation("GlReport");
+
                     b.Navigation("GlResourceType");
+
+                    b.Navigation("GlSubClass");
+
+                    b.Navigation("GlSubClass2");
 
                     b.Navigation("GlXbrlClass");
 
@@ -81306,6 +81512,11 @@ namespace Persistence.Migrations
                     b.Navigation("InverseParentClass");
                 });
 
+            modelBuilder.Entity("Domain.GlAccountCourseLabel", b =>
+                {
+                    b.Navigation("GlAccounts");
+                });
+
             modelBuilder.Entity("Domain.GlAccountGroup", b =>
                 {
                     b.Navigation("GlAccountGroupMembers");
@@ -81346,6 +81557,11 @@ namespace Persistence.Migrations
                     b.Navigation("ProductGlAccounts");
                 });
 
+            modelBuilder.Entity("Domain.GlClassCourse", b =>
+                {
+                    b.Navigation("GlAccounts");
+                });
+
             modelBuilder.Entity("Domain.GlFiscalType", b =>
                 {
                     b.Navigation("AcctgTrans");
@@ -81365,7 +81581,22 @@ namespace Persistence.Migrations
                     b.Navigation("GlReconciliationEntries");
                 });
 
+            modelBuilder.Entity("Domain.GlReport", b =>
+                {
+                    b.Navigation("GlAccounts");
+                });
+
             modelBuilder.Entity("Domain.GlResourceType", b =>
+                {
+                    b.Navigation("GlAccounts");
+                });
+
+            modelBuilder.Entity("Domain.GlSubClass", b =>
+                {
+                    b.Navigation("GlAccounts");
+                });
+
+            modelBuilder.Entity("Domain.GlSubClass2", b =>
                 {
                     b.Navigation("GlAccounts");
                 });

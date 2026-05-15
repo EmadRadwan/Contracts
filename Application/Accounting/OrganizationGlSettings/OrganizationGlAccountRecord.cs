@@ -21,6 +21,16 @@ public class OrganizationGlAccountRecord
     public string Description { get; set; }
     public string ProductId { get; set; }
     public string ExternalId { get; set; }
+    public string? GlReportId { get; set; }
+    public string? GlReportDescription { get; set; }
+    public string? GlClassCourseId { get; set; }
+    public string? GlClassCourseDescription { get; set; }
+    public string? GlSubClassId { get; set; }
+    public string? GlSubClassDescription { get; set; }
+    public string? GlSubClass2Id { get; set; }
+    public string? GlSubClass2Description { get; set; }
+    public string? GlAccountCourseLabelId { get; set; }
+    public string? GlAccountCourseLabelDescription { get; set; }
     public string? RoleTypeId { get; set; }
     public DateTime? FromDate { get; set; }
     public DateTime? ThruDate { get; set; }

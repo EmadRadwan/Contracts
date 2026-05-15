@@ -44,6 +44,7 @@ public class ListGlobalChartOfAccounts
                     GlAccountTypeDescription = language == "en" ? account.GlAccountType.Description : account.GlAccountType.DescriptionArabic,
                     GlAccountClassId = account.GlAccountClassId,
                     GlResourceTypeId = account.GlResourceTypeId,
+                    GlXbrlClassId = account.GlXbrlClassId,
                     GlAccountClassDescription = language == "en" ? account.GlAccountClass.Description : account.GlAccountClass.DescriptionArabic,
                     ParentGlAccountId = account.ParentGlAccountId,
                     Description = account.Description,
@@ -53,6 +54,18 @@ public class ListGlobalChartOfAccounts
                         .Where(a => a.GlAccountId == account.ParentGlAccountId)
                         .Select(a => a.AccountName) 
                         .FirstOrDefault(),
+                    ProductId = account.ProductId,
+                    ExternalId = account.ExternalId,
+                    GlReportId = account.GlReportId,
+                    GlReportDescription = language == "en" ? account.GlReport.Description : account.GlReport.DescriptionArabic,
+                    GlClassCourseId = account.GlClassCourseId,
+                    GlClassCourseDescription = language == "en" ? account.GlClassCourse.Description : account.GlClassCourse.DescriptionArabic,
+                    GlSubClassId = account.GlSubClassId,
+                    GlSubClassDescription = language == "en" ? account.GlSubClass.Description : account.GlSubClass.DescriptionArabic,
+                    GlSubClass2Id = account.GlSubClass2Id,
+                    GlSubClass2Description = language == "en" ? account.GlSubClass2.Description : account.GlSubClass2.DescriptionArabic,
+                    GlAccountCourseLabelId = account.GlAccountCourseLabelId,
+                    GlAccountCourseLabelDescription = language == "en" ? account.GlAccountCourseLabel.Description : account.GlAccountCourseLabel.DescriptionArabic,
                     Expanded = false
                 });
             

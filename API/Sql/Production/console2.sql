@@ -1,25 +1,16 @@
-INSERT INTO INVOICE_ITEM_TYPE (
-    INVOICE_ITEM_TYPE_ID,
-    PARENT_TYPE_ID,
-    HAS_TABLE,
-    DESCRIPTION,
-    DESCRIPTION_ARABIC,
-    DEFAULT_GL_ACCOUNT_ID,
-    LAST_UPDATED_STAMP,
-    LAST_UPDATED_TX_STAMP,
-    CREATED_STAMP,
-    CREATED_TX_STAMP,
-    IS_POSITIVE_AMOUNT
-) VALUES (
-             'INV_LAND_PARTNERSHIP_ITEM',
-             NULL,
-             'N',
-             'Invoice Land Partnership Item (Sales)',
-             'بند أراضي مشاركات (مبيعات)',
-             '250448',
-             NULL,
-             NULL,
-             NOW(),
-             NOW(),
-             NULL
-         );
+SELECT
+    p.*,
+    g.ACCOUNT_NAME_ARABIC AS GlAccountName,
+    g.PARENT_GL_ACCOUNT_ID,
+    parent.ACCOUNT_NAME AS ParentAccountName
+FROM PARTY_GL_ACCOUNT p
+         JOIN GL_ACCOUNT g ON g.GL_ACCOUNT_ID = p.GL_ACCOUNT_ID
+         LEFT JOIN GL_ACCOUNT parent ON parent.GL_ACCOUNT_ID = g.PARENT_GL_ACCOUNT_ID
+WHERE  p.ROLE_TYPE_ID = 'BILL_FROM_VENDOR'
+  AND g.PARENT_GL_ACCOUNT_ID = '250400';
+
+DELETE p FROM PARTY_GL_ACCOUNT p
+                  JOIN GL_ACCOUNT g ON g.GL_ACCOUNT_ID = p.GL_ACCOUNT_ID
+WHERE
+    p.ROLE_TYPE_ID = 'BILL_FROM_VENDOR'
+  AND g.PARENT_GL_ACCOUNT_ID = '250400';

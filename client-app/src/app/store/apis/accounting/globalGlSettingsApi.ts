@@ -70,6 +70,36 @@ const globalGlSettingsApi = createApi({
                     url: '/glAccounts/getAdvancePaymentGlAccounts',
                 }),
             }),
+            fetchGlReports: builder.query<GlReportsEnvelope, GlReportParams>({
+                query: (params) => ({
+                    url: '/glAccounts/getGlReports',
+                    params,
+                }),
+            }),
+            fetchGlClassCourses: builder.query<GlClassCoursesEnvelope, GlClassCourseParams>({
+                query: (params) => ({
+                    url: '/glAccounts/getGlClassCourses',
+                    params,
+                }),
+            }),
+            fetchGlSubClasses: builder.query<GlSubClassesEnvelope, GlSubClassParams>({
+                query: (params) => ({
+                    url: '/glAccounts/getGlSubClasses',
+                    params,
+                }),
+            }),
+            fetchGlSubClasses2: builder.query<GlSubClasses2Envelope, GlSubClass2Params>({
+                query: (params) => ({
+                    url: '/glAccounts/getGlSubClasses2',
+                    params,
+                }),
+            }),
+            fetchGlAccountCourseLabels: builder.query<GlAccountCourseLabelsEnvelope, GlAccountCourseLabelParams>({
+                query: (params) => ({
+                    url: '/glAccounts/getGlAccountCourseLabels',
+                    params,
+                }),
+            }),
             createGlAccount: builder.mutation<CreateGlAccountResponse, CreateGlAccountRequest>({
                 query: (request) => ({
                     url: '/glAccounts',
@@ -97,6 +127,11 @@ export const {
     useFetchTopLevelGlobalGlAccountsQuery,
     useFetchChildrenGlAccountsQuery,
     useFetchAdvancePaymentGlAccountsQuery,
+    useFetchGlReportsQuery,
+    useFetchGlClassCoursesQuery,
+    useFetchGlSubClassesQuery,
+    useFetchGlSubClasses2Query,
+    useFetchGlAccountCourseLabelsQuery,
     useCreateGlAccountMutation,
     useUpdateGlAccountMutation,
 } = globalGlSettingsApi;
@@ -118,6 +153,11 @@ export interface CreateGlAccountRequest {
     glAccountClassId?: string;
     parentGlAccountId?: string;
     description?: string;
+    glReportId?: string;
+    glClassCourseId?: string;
+    glSubClassId?: string;
+    glSubClass2Id?: string;
+    glAccountCourseLabelId?: string;
 }
 
 export interface CreateGlAccountResponse {
@@ -130,6 +170,13 @@ export interface CreateGlAccountResponse {
     glResourceTypeId?: string;
     parentGlAccountId?: string;
     createdDate?: string;
+    glAccountTypeDescription?: string;
+    glAccountClassDescription?: string;
+    glReportId?: string;
+    glClassCourseId?: string;
+    glSubClassId?: string;
+    glSubClass2Id?: string;
+    glAccountCourseLabelId?: string;
 }
 
 export interface UpdateGlAccountRequest {
@@ -137,6 +184,14 @@ export interface UpdateGlAccountRequest {
     accountName?: string;
     description?: string;
     parentGlAccountId?: string;
+    glAccountTypeId?: string;
+    glAccountClassId?: string;
+    glResourceTypeId?: string;
+    glReportId?: string;
+    glClassCourseId?: string;
+    glSubClassId?: string;
+    glSubClass2Id?: string;
+    glAccountCourseLabelId?: string;
 }
 
 export interface UpdateGlAccountResponse {
@@ -149,5 +204,92 @@ export interface UpdateGlAccountResponse {
     glResourceTypeId?: string;
     parentGlAccountId?: string;
     lastUpdatedDate?: string;
+    glAccountTypeDescription?: string;
+    glAccountClassDescription?: string;
+    glReportId?: string;
+    glClassCourseId?: string;
+    glSubClassId?: string;
+    glSubClass2Id?: string;
+    glAccountCourseLabelId?: string;
+}
+
+export interface GlReportDto {
+    glReportId: string;
+    description: string;
+}
+
+export interface GlReportsEnvelope {
+    glReports: GlReportDto[];
+    totalCount: number;
+}
+
+export interface GlReportParams {
+    skip?: number;
+    pageSize?: number;
+    searchTerm?: string;
+}
+
+export interface GlClassCourseDto {
+    glClassCourseId: string;
+    description: string;
+}
+
+export interface GlClassCoursesEnvelope {
+    glClassCourses: GlClassCourseDto[];
+    totalCount: number;
+}
+
+export interface GlClassCourseParams {
+    skip?: number;
+    pageSize?: number;
+    searchTerm?: string;
+}
+
+export interface GlSubClassDto {
+    glSubClassId: string;
+    description: string;
+}
+
+export interface GlSubClassesEnvelope {
+    glSubClasses: GlSubClassDto[];
+    totalCount: number;
+}
+
+export interface GlSubClassParams {
+    skip?: number;
+    pageSize?: number;
+    searchTerm?: string;
+}
+
+export interface GlSubClass2Dto {
+    glSubClass2Id: string;
+    description: string;
+}
+
+export interface GlSubClasses2Envelope {
+    glSubClasses2: GlSubClass2Dto[];
+    totalCount: number;
+}
+
+export interface GlSubClass2Params {
+    skip?: number;
+    pageSize?: number;
+    searchTerm?: string;
+}
+
+export interface GlAccountCourseLabelDto {
+    glAccountCourseLabelId: string;
+    description: string;
+}
+
+export interface GlAccountCourseLabelsEnvelope {
+    glAccountCourseLabels: GlAccountCourseLabelDto[];
+    totalCount: number;
+}
+
+export interface GlAccountCourseLabelParams {
+    skip?: number;
+    pageSize?: number;
+    searchTerm?: string;
 }
 

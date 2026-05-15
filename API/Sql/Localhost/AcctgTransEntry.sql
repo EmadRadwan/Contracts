@@ -51,4 +51,6 @@ FROM ACCTG_TRANS at
                    ON at.ACCTG_TRANS_ID = ate.ACCTG_TRANS_ID
 
          LEFT JOIN GL_ACCOUNT ga
-                   ON ate.GL_ACCOUNT_ID = ga.GL_ACCOUNT_ID;
+                   ON ate.GL_ACCOUNT_ID = ga.GL_ACCOUNT_ID
+
+WHERE ate.GL_ACCOUNT_ID = '124430';

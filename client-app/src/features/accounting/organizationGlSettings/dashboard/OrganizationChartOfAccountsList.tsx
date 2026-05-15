@@ -32,6 +32,7 @@ import { Box, Grid, Typography, Dialog, DialogTitle, DialogContent, DialogAction
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
 import { ChartOfAccountsExcel } from "../report/ChartOfAccountsExcel";
 import { useAppSelector } from "../../../../app/store/configureStore";
+import AdjustPowerBIPropsBulkEdit from "./AdjustPowerBIPropsBulkEdit";
 
 interface Props {
   companyId?: string | undefined;
@@ -77,9 +78,9 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
 
   const DetailComponent = (props: GridDetailRowProps) => {
     const { text, items } = props.dataItem
-    console.log('text', text)
+    //console.log('text', text)
 
-    console.log(props.dataItem);
+    //console.log(props.dataItem);
     if (items) {
       return (
         <KendoGrid
@@ -114,6 +115,7 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
   const [createAssignmentShow, setCreateAssignmentShow] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<GlAccount | undefined>(undefined);
   const [editMode, setEditMode] = useState<number>(0);
+  const [bulkEditView, setBulkEditView] = useState<boolean>(false);
   const [glAccounts, setGlAccounts] = React.useState<DataResult>({
     data: [],
     total: 0,
@@ -144,7 +146,7 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
 
 
 
-  console.log('data', data?.data);
+  //console.log('data', data?.data);
 
   const { data: structuredGlAccounts, isFetching: isStructuredGlFetching } =
     useFetchGlAccountOrganizationHierarchyLovQuery(companyId, {
@@ -326,14 +328,25 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
   return (
     <>
       <div className="div-container">
-        <TabContext value={value}>
-          <Box sx={{ display: "flex", typography: "body1", ml: 2, mt: 1 }}>
-            <StyledTabs onChange={handleChange} value={value}>
-              <StyledTab label={getTranslatedLabel("accounting.glAccount.tabs.accountsTree", "Accounts Tree")} value={"1"} />
-              <StyledTab label={getTranslatedLabel("accounting.glAccount.tabs.listOfAccounts", "List of Accounts")} value={"2"} />
-            </StyledTabs>
-          </Box>
-          <TabPanel value="1">
+        {bulkEditView ? (
+          <AdjustPowerBIPropsBulkEdit companyId={companyId!} onClose={() => setBulkEditView(false)} />
+        ) : (
+          <TabContext value={value}>
+            <Box sx={{ display: "flex", typography: "body1", ml: 2, mt: 1, alignItems: "center" }}>
+              <StyledTabs onChange={handleChange} value={value}>
+                <StyledTab label={getTranslatedLabel("accounting.glAccount.tabs.accountsTree", "Accounts Tree")} value={"1"} />
+                <StyledTab label={getTranslatedLabel("accounting.glAccount.tabs.listOfAccounts", "List of Accounts")} value={"2"} />
+              </StyledTabs>
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={() => setBulkEditView(true)}
+                sx={{ ml: "auto", mr: 2 }}
+              >
+                {getTranslatedLabel("accounting.glAccount.list.adjustPowerBiProps", "Adjust Power BI Props")}
+              </Button>
+            </Box>
+            <TabPanel value="1">
             <KendoGrid
               style={{ height: "65vh", flex: 1 }}
               resizable={true}
@@ -373,7 +386,7 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
           <TabPanel value="2">
             <Grid item xs={12}>
               <KendoGrid
-                style={{ height: "55vh", flex: 1 }}
+                style={{ height: "55vh", width: "60%" }}
                 resizable={true}
                 filterable={true}
                 sortable={true}
@@ -395,13 +408,19 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
                   title={getTranslatedLabel("accounting.glAccount.list.parentAccountName", "Parent Account Name")}
                   width={400}
                 />
-                <Column cell={CreateSimilarAccountCell} width={170} />
+                <Column field="glReportDescription" title={getTranslatedLabel("accounting.glAccount.list.report", "Report")} width={180} />
+                <Column field="glClassCourseDescription" title={getTranslatedLabel("accounting.glAccount.list.classCourse", "Class Course")} width={180} />
+                <Column field="glSubClassDescription" title={getTranslatedLabel("accounting.glAccount.list.subClass", "Sub Class")} width={180} />
+                <Column field="glSubClass2Description" title={getTranslatedLabel("accounting.glAccount.list.subClass2", "Sub Class 2")} width={180} />
+                <Column field="glAccountCourseLabelDescription" title={getTranslatedLabel("accounting.glAccount.list.courseLabel", "Course Label")} width={180} />
+                <Column cell={CreateSimilarAccountCell} width={170} locked={true} />
 
               </KendoGrid>
             </Grid>
           </TabPanel>
 
         </TabContext>
+        )}
         {isFetching && <LoadingComponent message={getTranslatedLabel("accounting.glAccount.list.loadingAccounts", "Loading Accounts...")} />}
       </div>
 

@@ -29,6 +29,22 @@ const organizationGlChartOfAccountsApi = createApi({
     tagTypes: ["OrganizationGlChartOfAccounts"],
     endpoints(builder) {
         return {
+            fetchOrganizationGlAccountsForBulkEdit: builder.query<ListResponse<GlAccount>, { companyId: string; dataState: State }>({
+                query: ({companyId, dataState}) => {
+                    const url = `/odata/OrganizationGlBulkEditRecords?$count=true&${toODataString(dataState)}&companyId=${companyId}`;
+                    return {url, method: "GET"};
+                },
+                transformResponse: (response: any, meta, arg) => {
+                    const {totalCount} = JSON.parse(
+                        meta!.response!.headers.get("count")!,
+                    );
+                    return {
+                        data: response,
+                        total: totalCount,
+                    };
+                },
+                providesTags: ["OrganizationGlChartOfAccounts"],
+            }),
             fetchOrganizationGlChartOfAccounts: builder.query<ListResponse<GlAccount>, { companyId?: string; dataState: State }>({
 
                 query: ({companyId, dataState}) => {
@@ -124,11 +140,20 @@ const organizationGlChartOfAccountsApi = createApi({
                 }),
                 invalidatesTags: ["OrganizationGlChartOfAccounts"],
             }),
+            bulkUpdateOrganizationGlAccountProps: builder.mutation<void, { updates: any[] }>({
+                query: (body) => ({
+                    url: `/organizationGl/bulkUpdateOrganizationGlAccountProps`,
+                    method: "POST",
+                    body,
+                }),
+                invalidatesTags: ["OrganizationGlChartOfAccounts"],
+            }),
         };
     },
 });
 
 export const {
+    useFetchOrganizationGlAccountsForBulkEditQuery,
     useFetchOrganizationGlChartOfAccountsQuery,
     useFetchOrganizationGlAccountsByClassQuery,
     useFetchOrganizationGlAccountsByTypeQuery,
@@ -137,6 +162,7 @@ export const {
     useCreateAndAssignGlAccountToOrganizationMutation,
     useCheckGlAccountAssignedQuery,
     useLazyCheckGlAccountAssignedQuery,
-    useRemoveGlAccountFromOrganizationMutation
+    useRemoveGlAccountFromOrganizationMutation,
+    useBulkUpdateOrganizationGlAccountPropsMutation
 } = organizationGlChartOfAccountsApi;
 export {organizationGlChartOfAccountsApi};

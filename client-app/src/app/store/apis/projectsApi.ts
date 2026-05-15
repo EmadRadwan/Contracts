@@ -183,13 +183,28 @@ const projectsApi = createApi({
                     params: { glAccountId, workEffortTypeId, workEffortParentId },
                 }),
             }),
-            fetchProjectReport: builder.query<ProjectReportDto, { projectId: string; startDate?: string; endDate?: string; allData: boolean }>({
+            fetchProjectReport: builder.query<ProjectReportDto, { 
+                projectId: string; 
+                expensesStartDate?: string; 
+                expensesEndDate?: string; 
+                expensesAllData: boolean;
+                revenuesStartDate?: string; 
+                revenuesEndDate?: string; 
+                revenuesAllData: boolean;
+            }>({
                 query: (params) => ({
                     url: "/project/report",
                     params,
                 }),
             }),
-            fetchCompanyReport: builder.query<ProjectReportDto, { startDate?: string; endDate?: string; allData: boolean }>({
+            fetchCompanyReport: builder.query<ProjectReportDto, { 
+                expensesStartDate?: string; 
+                expensesEndDate?: string; 
+                expensesAllData: boolean;
+                revenuesStartDate?: string; 
+                revenuesEndDate?: string; 
+                revenuesAllData: boolean;
+            }>({
                 query: (params) => ({
                     url: "/project/companyReport",
                     params,
@@ -254,6 +269,7 @@ export interface ProjectReportDto {
     revenues: ProjectRevenueRecord[];
     directPayments: Payment[];
     operatingExpenses: Payment[];
+    accountingTransactions: Payment[];
 }
 
 export interface ProjectExpenseRecord {

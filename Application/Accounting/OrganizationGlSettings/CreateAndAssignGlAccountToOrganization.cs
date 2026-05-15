@@ -74,6 +74,11 @@ public class CreateAndAssignGlAccountToOrganization
                     GlAccountClassId = dto.GlAccountClassId,
                     GlResourceTypeId = dto.GlResourceTypeId,
                     ParentGlAccountId = dto.ParentGlAccountId,
+                    GlReportId = dto.GlReportId,
+                    GlClassCourseId = dto.GlClassCourseId,
+                    GlSubClassId = dto.GlSubClassId,
+                    GlSubClass2Id = dto.GlSubClass2Id,
+                    GlAccountCourseLabelId = dto.GlAccountCourseLabelId,
                     CreatedStamp = now,
                     LastUpdatedStamp = now
                 };
@@ -120,6 +125,11 @@ public class CreateAndAssignGlAccountToOrganization
                     GlResourceTypeId = glAccount.GlResourceTypeId,
                     ParentGlAccountId = glAccount.ParentGlAccountId,
                     OrganizationPartyId = request.CompanyId,
+                    GlReportId = glAccount.GlReportId,
+                    GlClassCourseId = glAccount.GlClassCourseId,
+                    GlSubClassId = glAccount.GlSubClassId,
+                    GlSubClass2Id = glAccount.GlSubClass2Id,
+                    GlAccountCourseLabelId = glAccount.GlAccountCourseLabelId,
                     CreatedDate = glAccount.CreatedStamp
                 };
 
@@ -261,6 +271,11 @@ public class CreateAndAssignGlAccountRequest
     public string? GlAccountClassId { get; init; }
     public string? ParentGlAccountId { get; init; }
     public string? Description { get; init; }
+    public string? GlReportId { get; init; }
+    public string? GlClassCourseId { get; init; }
+    public string? GlSubClassId { get; init; }
+    public string? GlSubClass2Id { get; init; }
+    public string? GlAccountCourseLabelId { get; init; }
 }
 
 public class CreateAndAssignGlAccountResponse
@@ -274,5 +289,10 @@ public class CreateAndAssignGlAccountResponse
     public string? GlResourceTypeId { get; set; }
     public string? ParentGlAccountId { get; set; }
     public string? OrganizationPartyId { get; set; }
+    public string? GlReportId { get; set; }
+    public string? GlClassCourseId { get; set; }
+    public string? GlSubClassId { get; set; }
+    public string? GlSubClass2Id { get; set; }
+    public string? GlAccountCourseLabelId { get; set; }
     public DateTime? CreatedDate { get; set; }
 }

@@ -37,8 +37,8 @@ GRANT SELECT ON Fact_Project_DirectPayments_2 TO 'powerbi_user'@'%';
 GRANT SELECT ON Fact_Project_Revenues TO 'powerbi_user'@'%';
 GRANT SELECT ON Fact_Apartment_Payments TO 'powerbi_user'@'%';
 GRANT SELECT ON Fact_Apartment_Installment_Payment_Link TO 'powerbi_user'@'%';
-GRANT SELECT ON dim_GlAccountReportMapping TO 'powerbi_user'@'%';
 GRANT SELECT ON Fact_GL_Transactions TO 'powerbi_user'@'%';
+GRANT SELECT ON Dim_gl_account TO 'powerbi_user'@'%';
 
 -- Clean slate – remove any accidental broader privileges
 GRANT USAGE ON *.* TO 'powerbi_user'@'%';

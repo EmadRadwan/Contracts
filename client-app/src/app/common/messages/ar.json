@@ -1500,13 +1500,24 @@
         "type": "النوع",
         "class": "التصنيف",
         "resourceType": "نوع المورد",
+        "report": "التقرير",
+        "reportId": "نوع التقرير",
+        "classCourse": "تصنيف الحساب",
+        "classCourseId": "تصنيف الحساب",
+        "subClass": "التصنيف الفرعي الأول",
+        "subClassId": "التصنيف الفرعي الأول",
+        "subClass2": "التصنيف الوظيفي - الفلتر الإداري",
+        "subClass2Id": "التصنيف الوظيفي - الفلتر الإداري",
+        "courseLabel": "مسمى الحساب للتقارير",
+        "courseLabelId": "مسمى الحساب للتقارير",
         "loading": "جاري تحميل الحسابات...",
         "similar": "إنشاء حساب مشابه",
         "childAccountsFor": "الحسابات الفرعية لـ",
         "accountNumber": "رقم الحساب",
         "parentAccountName": "اسم الحساب الأب",
         "chartOfAccounts": "شجرة الحسابات",
-        "loadingAccounts": "جاري تحميل الحسابات..."
+        "loadingAccounts": "جاري تحميل الحسابات...",
+        "adjustPowerBiProps": "تعديل خصائص Power BI"
       },
       "tabs": {
         "accountsTree": "شجرة الحسابات",
@@ -1516,6 +1527,9 @@
         "title": "إنشاء حساب مشابه",
         "enterName": "أدخل اسم الحساب الجديد",
         "nameRequired": "اسم الحساب مطلوب"
+      },
+      "bulkEdit": {
+        "powerBiProps": "تعديل خصائص Power BI"
       },
       "form": {
         "new": "حساب جديد",
@@ -1527,6 +1541,12 @@
         "accountClass": "تصنيف الحساب",
         "resourceType": "نوع المورد",
         "parentAccount": "الحساب الأب",
+        "biSectionTitle": "بيانات ذكاء الأعمال (BI)",
+        "glReport": "نوع التقرير",
+        "glClassCourse": "تصنيف الحساب",
+        "glSubClass": "التصنيف الفرعي الأول",
+        "glSubClass2": "التصنيف الوظيفي - الفلتر الإداري",
+        "glAccountCourseLabel": "مسمى الحساب للتقارير",
         "description": "الوصف",
         "createAccount": "إنشاء الحساب",
         "updateAccount": "تحديث الحساب",
