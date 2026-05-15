@@ -11,9 +11,12 @@ namespace Application.Accounting.Reports
     {
         public class Query : IRequest<ProjectReportDto>
         {
-            public DateTime? StartDate { get; set; }
-            public DateTime? EndDate { get; set; }
-            public bool AllData { get; set; }
+            public DateTime? ExpensesStartDate { get; set; }
+            public DateTime? ExpensesEndDate { get; set; }
+            public bool ExpensesAllData { get; set; }
+            public DateTime? RevenuesStartDate { get; set; }
+            public DateTime? RevenuesEndDate { get; set; }
+            public bool RevenuesAllData { get; set; }
         }
 
         public class Handler : IRequestHandler<Query, ProjectReportDto>
@@ -86,16 +89,16 @@ namespace Application.Accounting.Reports
                     where !(header.WorkEffortTypeId == "PAYMENT_CERTIFICATE" && projId == null)
                     select new { header, item, projId, partyId, p, prodId, prod, paymentId = pyt.PaymentId };
 
-                if (!request.AllData)
+                if (!request.ExpensesAllData)
                 {
-                    if (request.StartDate.HasValue)
+                    if (request.ExpensesStartDate.HasValue)
                         query = query.Where(x =>
                             (x.item.ProcurementDate ?? x.item.EstimatedStartDate ??
-                                x.header.EstimatedStartDate ?? x.header.CreatedDate) >= request.StartDate.Value);
-                    if (request.EndDate.HasValue)
+                                x.header.EstimatedStartDate ?? x.header.CreatedDate) >= request.ExpensesStartDate.Value);
+                    if (request.ExpensesEndDate.HasValue)
                         query = query.Where(x =>
                             (x.item.ProcurementDate ?? x.item.EstimatedStartDate ??
-                                x.header.EstimatedStartDate ?? x.header.CreatedDate) <= request.EndDate.Value);
+                                x.header.EstimatedStartDate ?? x.header.CreatedDate) <= request.ExpensesEndDate.Value);
                 }
 
                 var results = await query.Select(x => new ProjectExpenseRecord
@@ -198,12 +201,12 @@ namespace Application.Accounting.Reports
                     let projId = apt.ProjectId ?? p.WorkEffortId
                     select new { p, pf, pt_type, sr, apt, proj, projId };
 
-                if (!request.AllData)
+                if (!request.RevenuesAllData)
                 {
-                    if (request.StartDate.HasValue)
-                        query = query.Where(x => x.p.EffectiveDate >= DateOnly.FromDateTime(request.StartDate.Value));
-                    if (request.EndDate.HasValue)
-                        query = query.Where(x => x.p.EffectiveDate <= DateOnly.FromDateTime(request.EndDate.Value));
+                    if (request.RevenuesStartDate.HasValue)
+                        query = query.Where(x => x.p.EffectiveDate >= DateOnly.FromDateTime(request.RevenuesStartDate.Value));
+                    if (request.RevenuesEndDate.HasValue)
+                        query = query.Where(x => x.p.EffectiveDate <= DateOnly.FromDateTime(request.RevenuesEndDate.Value));
                 }
 
                 var results = await query.Select(x => new ProjectRevenueRecord
@@ -422,12 +425,12 @@ namespace Application.Accounting.Reports
                             sts.DescriptionArabic)
                     };
 
-                if (!request.AllData)
+                if (!request.ExpensesAllData)
                 {
-                    if (request.StartDate.HasValue)
-                        query = query.Where(p => p.EffectiveDate >= DateOnly.FromDateTime(request.StartDate.Value));
-                    if (request.EndDate.HasValue)
-                        query = query.Where(p => p.EffectiveDate <= DateOnly.FromDateTime(request.EndDate.Value));
+                    if (request.ExpensesStartDate.HasValue)
+                        query = query.Where(p => p.EffectiveDate >= DateOnly.FromDateTime(request.ExpensesStartDate.Value));
+                    if (request.ExpensesEndDate.HasValue)
+                        query = query.Where(p => p.EffectiveDate <= DateOnly.FromDateTime(request.ExpensesEndDate.Value));
                 }
 
                 return await query.ToListAsync(ct);
@@ -490,14 +493,14 @@ namespace Application.Accounting.Reports
                         ChequeDate = pyt.ChequeDate,
                     };
 
-                // Apply date filtering if not AllData
-                if (!request.AllData)
+                // Apply date filtering if not ExpensesAllData
+                if (!request.ExpensesAllData)
                 {
-                    if (request.StartDate.HasValue)
-                        query = query.Where(p => p.EffectiveDate >= DateOnly.FromDateTime(request.StartDate.Value));
+                    if (request.ExpensesStartDate.HasValue)
+                        query = query.Where(p => p.EffectiveDate >= DateOnly.FromDateTime(request.ExpensesStartDate.Value));
 
-                    if (request.EndDate.HasValue)
-                        query = query.Where(p => p.EffectiveDate <= DateOnly.FromDateTime(request.EndDate.Value));
+                    if (request.ExpensesEndDate.HasValue)
+                        query = query.Where(p => p.EffectiveDate <= DateOnly.FromDateTime(request.ExpensesEndDate.Value));
                 }
 
                 return await query.ToListAsync(ct);

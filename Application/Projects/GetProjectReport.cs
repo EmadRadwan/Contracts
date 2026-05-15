@@ -11,9 +11,12 @@ namespace Application.Projects
         public class Query : IRequest<ProjectReportDto>
         {
             public string ProjectId { get; set; } = null!;
-            public DateTime? StartDate { get; set; }
-            public DateTime? EndDate { get; set; }
-            public bool AllData { get; set; }
+            public DateTime? ExpensesStartDate { get; set; }
+            public DateTime? ExpensesEndDate { get; set; }
+            public bool ExpensesAllData { get; set; }
+            public DateTime? RevenuesStartDate { get; set; }
+            public DateTime? RevenuesEndDate { get; set; }
+            public bool RevenuesAllData { get; set; }
         }
 
         public class Handler : IRequestHandler<Query, ProjectReportDto>
@@ -31,6 +34,7 @@ namespace Application.Projects
                 var revenues = await GetRevenues(request, cancellationToken);
                 var directPayments = await GetDirectPayments(request, cancellationToken);
                 var operatingExpenses = await GetOperatingExpenses(request, cancellationToken);
+                var accountingTransactions = await GetAccountingTransactions(request, cancellationToken);
 
                 // Filter out duplicates across expense sections
                 var expensePaymentIds = expenses
@@ -57,7 +61,8 @@ namespace Application.Projects
                     Expenses = expenses,
                     Revenues = revenues,
                     DirectPayments = filteredDirectPayments,
-                    OperatingExpenses = filteredOperatingExpenses
+                    OperatingExpenses = filteredOperatingExpenses,
+                    AccountingTransactions = accountingTransactions
                 };
             }
 
@@ -87,16 +92,16 @@ namespace Application.Projects
                     where !(header.WorkEffortTypeId == "PAYMENT_CERTIFICATE" && projId == null)
                     select new { header, item, projId, partyId, p, prodId, prod, paymentId = pyt.PaymentId };
 
-                if (!request.AllData)
+                if (!request.ExpensesAllData)
                 {
-                    if (request.StartDate.HasValue)
+                    if (request.ExpensesStartDate.HasValue)
                         query = query.Where(x =>
                             (x.item.ProcurementDate ?? x.item.EstimatedStartDate ??
-                                x.header.EstimatedStartDate ?? x.header.CreatedDate) >= request.StartDate.Value);
-                    if (request.EndDate.HasValue)
+                                x.header.EstimatedStartDate ?? x.header.CreatedDate) >= request.ExpensesStartDate.Value);
+                    if (request.ExpensesEndDate.HasValue)
                         query = query.Where(x =>
                             (x.item.ProcurementDate ?? x.item.EstimatedStartDate ??
-                                x.header.EstimatedStartDate ?? x.header.CreatedDate) <= request.EndDate.Value);
+                                x.header.EstimatedStartDate ?? x.header.CreatedDate) <= request.ExpensesEndDate.Value);
                 }
 
                 var results = await query.Select(x => new ProjectExpenseRecord
@@ -200,12 +205,12 @@ namespace Application.Projects
                     where projId == request.ProjectId
                     select new { p, pf, pt_type, sr, apt, proj, projId };
 
-                if (!request.AllData)
+                if (!request.RevenuesAllData)
                 {
-                    if (request.StartDate.HasValue)
-                        query = query.Where(x => x.p.EffectiveDate >= DateOnly.FromDateTime(request.StartDate.Value));
-                    if (request.EndDate.HasValue)
-                        query = query.Where(x => x.p.EffectiveDate <= DateOnly.FromDateTime(request.EndDate.Value));
+                    if (request.RevenuesStartDate.HasValue)
+                        query = query.Where(x => x.p.EffectiveDate >= DateOnly.FromDateTime(request.RevenuesStartDate.Value));
+                    if (request.RevenuesEndDate.HasValue)
+                        query = query.Where(x => x.p.EffectiveDate <= DateOnly.FromDateTime(request.RevenuesEndDate.Value));
                 }
 
                 var results = await query.Select(x => new ProjectRevenueRecord
@@ -358,7 +363,7 @@ namespace Application.Projects
 
                 var glAccountId = project.GlAccountId;
 
-                var query = from pyt in _context.Payments.AsNoTracking()
+                var paymentsQuery = from pyt in _context.Payments.AsNoTracking()
                     join ptt in _context.PaymentTypes.AsNoTracking() on pyt.PaymentTypeId equals ptt.PaymentTypeId
                     join sts in _context.StatusItems.AsNoTracking() on pyt.StatusId equals sts.StatusId
                     join pty in _context.Parties.AsNoTracking() on pyt.PartyIdFrom equals pty.PartyId
@@ -437,15 +442,101 @@ namespace Application.Projects
                             sts.DescriptionArabic)
                     };
 
-                if (!request.AllData)
+                if (!request.ExpensesAllData)
                 {
-                    if (request.StartDate.HasValue)
-                        query = query.Where(p => p.EffectiveDate >= DateOnly.FromDateTime(request.StartDate.Value));
-                    if (request.EndDate.HasValue)
-                        query = query.Where(p => p.EffectiveDate <= DateOnly.FromDateTime(request.EndDate.Value));
+                    if (request.ExpensesStartDate.HasValue)
+                    {
+                        var start = DateOnly.FromDateTime(request.ExpensesStartDate.Value);
+                        paymentsQuery = paymentsQuery.Where(p => p.EffectiveDate >= start);
+                    }
+                    if (request.ExpensesEndDate.HasValue)
+                    {
+                        var end = DateOnly.FromDateTime(request.ExpensesEndDate.Value);
+                        paymentsQuery = paymentsQuery.Where(p => p.EffectiveDate <= end);
+                    }
                 }
 
-                return await query.ToListAsync(ct);
+                var payments = await paymentsQuery.ToListAsync(ct);
+
+                return payments.OrderByDescending(x => x.EffectiveDate).ThenByDescending(x => x.CreatedStamp).ToList();
+            }
+
+            private async Task<List<PaymentRecord>> GetAccountingTransactions(Query request, CancellationToken ct)
+            {
+                var project = await _context.WorkEfforts.AsNoTracking()
+                    .FirstOrDefaultAsync(w => w.WorkEffortId == request.ProjectId, ct);
+
+                if (project == null) return new List<PaymentRecord>();
+
+                var glAccountId = project.GlAccountId;
+
+                var transQuery = from ate in _context.AcctgTransEntries.AsNoTracking()
+                    join at in _context.AcctgTrans.AsNoTracking() on ate.AcctgTransId equals at.AcctgTransId
+                    join att in _context.AcctgTransTypes.AsNoTracking() on at.AcctgTransTypeId equals att.AcctgTransTypeId
+                    join pty in _context.Parties.AsNoTracking() on at.PartyId equals pty.PartyId into ptyJoin
+                    from pty in ptyJoin.DefaultIfEmpty()
+                    where (glAccountId != null && ate.GlAccountId == glAccountId)
+                          && (at.AcctgTransTypeId == "GENERAL_JOURNAL" || at.AcctgTransTypeId == "OPENING_BALANCE")
+                    select new
+                    {
+                        at.AcctgTransId,
+                        ate.AcctgTransEntrySeqId,
+                        at.AcctgTransTypeId,
+                        TransTypeDescription = att.Description,
+                        at.PartyId,
+                        PartyName = pty != null ? pty.Description : string.Empty,
+                        at.IsPosted,
+                        at.TransactionDate,
+                        at.CreatedStamp,
+                        EntryDescription = ate.Description,
+                        TranDescription = at.Description,
+                        EntryVoucherRef = ate.VoucherRef,
+                        TranVoucherRef = at.VoucherRef,
+                        Amount = ate.DebitCreditFlag == "C" ? -(ate.Amount ?? 0m) : (ate.Amount ?? 0m),
+                        CurrencyUomId = ate.CurrencyUomId ?? "EGP",
+                        ate.GlAccountId
+                    };
+
+                if (!request.ExpensesAllData)
+                {
+                    if (request.ExpensesStartDate.HasValue)
+                    {
+                        transQuery = transQuery.Where(t => t.TransactionDate >= request.ExpensesStartDate.Value);
+                    }
+                    if (request.ExpensesEndDate.HasValue)
+                    {
+                        transQuery = transQuery.Where(t => t.TransactionDate <= request.ExpensesEndDate.Value);
+                    }
+                }
+
+                var transactionsData = await transQuery.ToListAsync(ct);
+
+                var transactions = transactionsData.Select(t => new PaymentRecord
+                {
+                    PaymentId = t.AcctgTransId + ":" + t.AcctgTransEntrySeqId,
+                    PaymentTypeId = t.AcctgTransTypeId,
+                    PaymentTypeDescription = t.AcctgTransTypeId == "GENERAL_JOURNAL" ? "قيد يومية عام" : 
+                                             t.AcctgTransTypeId == "OPENING_BALANCE" ? "رصيد افتتاح" : (t.TransTypeDescription ?? t.AcctgTransTypeId),
+                    PartyIdFrom = t.PartyId,
+                    PartyIdFromName = t.PartyName,
+                    StatusId = t.IsPosted == "Y" ? "POSTED" : "NOT_POSTED",
+                    StatusDescription = t.IsPosted == "Y" ? "تم الترحيل" : "غير مرحل",
+                    StatusDescriptionEnglish = t.IsPosted == "Y" ? "Posted" : "Not Posted",
+                    EffectiveDate = t.TransactionDate.HasValue ? DateOnly.FromDateTime(t.TransactionDate.Value) : null,
+                    CreatedStamp = t.CreatedStamp ?? DateTime.MinValue,
+                    Comments = t.EntryDescription ?? t.TranDescription ?? string.Empty,
+                    PaymentRefNum = t.EntryVoucherRef ?? t.TranVoucherRef ?? string.Empty,
+                    Amount = t.Amount,
+                    ActualCurrencyAmount = t.Amount,
+                    CurrencyUomId = t.CurrencyUomId,
+                    IsDisbursement = true,
+                    ProjectId = request.ProjectId,
+                    OverrideGlAccountId = t.GlAccountId,
+                    ProjectName = project.ProjectName,
+                    DueStatusArabic = t.IsPosted == "Y" ? "تم الترحيل" : "غير مرحل"
+                }).ToList();
+
+                return transactions.OrderByDescending(x => x.EffectiveDate).ThenByDescending(x => x.CreatedStamp).ToList();
             }
 
             private async Task<List<PaymentRecord>> GetOperatingExpenses(Query request, CancellationToken ct)
@@ -536,14 +627,14 @@ namespace Application.Projects
                         ChequeDate = pyt.ChequeDate,
                     };
 
-                // Apply date filtering if not AllData
-                if (!request.AllData)
+                // Apply date filtering if not ExpensesAllData
+                if (!request.ExpensesAllData)
                 {
-                    if (request.StartDate.HasValue)
-                        query = query.Where(p => p.EffectiveDate >= DateOnly.FromDateTime(request.StartDate.Value));
+                    if (request.ExpensesStartDate.HasValue)
+                        query = query.Where(p => p.EffectiveDate >= DateOnly.FromDateTime(request.ExpensesStartDate.Value));
 
-                    if (request.EndDate.HasValue)
-                        query = query.Where(p => p.EffectiveDate <= DateOnly.FromDateTime(request.EndDate.Value));
+                    if (request.ExpensesEndDate.HasValue)
+                        query = query.Where(p => p.EffectiveDate <= DateOnly.FromDateTime(request.ExpensesEndDate.Value));
                 }
 
                 var results = await query.ToListAsync(ct);

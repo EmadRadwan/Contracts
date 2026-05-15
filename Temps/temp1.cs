@@ -1,109 +1,130 @@
-// 1. Report Table Mapping
-modelBuilder.Entity<GlReport>(entity =>
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Application.Accounting.Payments;
+using Application.Core;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Persistence;
+
+namespace Application.Projects
 {
-    entity.ToTable("GL_REPORT");
-    entity.HasKey(e => e.GlReportId);
+    public class GetProjectReport
+    {
+        public class Query : IRequest<ProjectReportDto>
+        {
+            public string ProjectId { get; set; } = null!;
+            public DateTime? ExpensesStartDate { get; set; }
+            public DateTime? ExpensesEndDate { get; set; }
+            public bool ExpensesAllData { get; set; } = true;
+            public DateTime? RevenuesStartDate { get; set; }
+            public DateTime? RevenuesEndDate { get; set; }
+            public bool RevenuesAllData { get; set; } = true;
+        }
 
-    entity.Property(e => e.GlReportId)
-        .HasMaxLength(36)
-        .IsUnicode(false)
-        .HasColumnName("GL_REPORT_ID");
+        public class Handler : IRequestHandler<Query, ProjectReportDto>
+        {
+            private readonly DataContext _context;
 
-    entity.Property(e => e.Description)
-        .HasMaxLength(255)
-        .IsUnicode()
-        .HasColumnName("DESCRIPTION");
-    
-    entity.Property(e => e.DescriptionArabic)
-        .HasMaxLength(255)
-        .HasColumnName("DESCRIPTION_ARABIC");
-    
-});
+            public Handler(DataContext context)
+            {
+                _context = context;
+            }
 
-// 2. Class Course Table Mapping
-modelBuilder.Entity<GlClassCourse>(entity =>
-{
-    entity.ToTable("GL_CLASS_COURSE");
-    entity.HasKey(e => e.GlClassCourseId);
+            public async Task<ProjectReportDto> Handle(Query request, CancellationToken cancellationToken)
+            {
+                var dto = new ProjectReportDto
+                {
+                    Expenses = await GetExpenses(request, cancellationToken),
+                    Revenues = await GetRevenues(request, cancellationToken),
+                    DirectPayments = await GetDirectPayments(request, cancellationToken),
+                    OperatingExpenses = await GetOperatingExpenses(request, cancellationToken),
+                    AccountingTransactions = await GetAccountingTransactions(request, cancellationToken)
+                };
 
-    entity.Property(e => e.GlClassCourseId)
-        .HasMaxLength(36)
-        .IsUnicode(false)
-        .HasColumnName("GL_CLASS_COURSE_ID");
+                // Apply deduplication
+                DeduplicateExpenses(dto);
 
-    entity.Property(e => e.Description)
-        .HasMaxLength(255)
-        .IsUnicode()
-        .HasColumnName("DESCRIPTION");
-    
-    entity.Property(e => e.DescriptionArabic)
-        .HasMaxLength(255)
-        .HasColumnName("DESCRIPTION_ARABIC");
-});
+                // Generate summaries (This is the main new value)
+                dto.CostSummary = GenerateCostSummary(dto);
+                dto.FinancialSummary = GenerateFinancialSummary(dto);
 
-// 3. Sub Class Table Mapping
-modelBuilder.Entity<GlSubClass>(entity =>
-{
-    entity.ToTable("GL_SUB_CLASS");
-    entity.HasKey(e => e.GlSubClassId);
+                return dto;
+            }
 
-    entity.Property(e => e.GlSubClassId)
-        .HasMaxLength(36)
-        .IsUnicode(false)
-        .HasColumnName("GL_SUB_CLASS_ID");
+            private void DeduplicateExpenses(ProjectReportDto dto)
+            {
+                var expensePaymentIds = dto.Expenses
+                    .Where(e => !string.IsNullOrEmpty(e.PaymentId))
+                    .Select(e => e.PaymentId!)
+                    .ToHashSet();
 
-    entity.Property(e => e.Description)
-        .HasMaxLength(255)
-        .IsUnicode()
-        .HasColumnName("DESCRIPTION");
-    
-    entity.Property(e => e.DescriptionArabic)
-        .HasMaxLength(255)
-        .HasColumnName("DESCRIPTION_ARABIC");
-});
+                dto.DirectPayments = dto.DirectPayments
+                    .Where(dp => !expensePaymentIds.Contains(dp.PaymentId))
+                    .ToList();
 
-// 4. Sub Class 2 Table Mapping (The Functional Area table)
-modelBuilder.Entity<GlSubClass2>(entity =>
-{
-    entity.ToTable("GL_SUB_CLASS_2");
-    entity.HasKey(e => e.GlSubClass2Id);
+                var allUsedIds = new HashSet<string>(expensePaymentIds);
+                foreach (var dp in dto.DirectPayments) allUsedIds.Add(dp.PaymentId);
 
-    entity.Property(e => e.GlSubClass2Id)
-        .HasMaxLength(36)
-        .IsUnicode(false)
-        .HasColumnName("GL_SUB_CLASS_2_ID");
+                dto.OperatingExpenses = dto.OperatingExpenses
+                    .Where(oe => !allUsedIds.Contains(oe.PaymentId))
+                    .ToList();
+            }
 
-    entity.Property(e => e.Description)
-        .HasMaxLength(255)
-        .IsUnicode()
-        .HasColumnName("DESCRIPTION");
-    
-    entity.Property(e => e.DescriptionArabic)
-        .HasMaxLength(255)
-        .HasColumnName("DESCRIPTION_ARABIC");
-});
+            // ==================== NEW SUMMARY GENERATORS ====================
 
-// 5. Account Course Label Table Mapping
-modelBuilder.Entity<GlAccountCourseLabel>(entity =>
-{
-    entity.ToTable("GL_ACCOUNT_COURSE_LABEL");
-    entity.HasKey(e => e.GlAccountCourseLabelId);
+            private ProjectCostSummaryDto GenerateCostSummary(ProjectReportDto dto)
+            {
+                var summary = new ProjectCostSummaryDto();
 
-    entity.Property(e => e.GlAccountCourseLabelId)
-        .HasMaxLength(36)
-        .IsUnicode(false)
-        .HasColumnName("GL_ACCOUNT_COURSE_LABEL_ID");
+                // Direct Expenses
+                summary.TotalDirectExpenses = dto.Expenses.Sum(e => e.NetCertifiedAmount) 
+                                           + dto.DirectPayments.Sum(p => p.Amount);
 
-    entity.Property(e => e.Description)
-        .HasMaxLength(255)
-        .IsUnicode()
-        .HasColumnName("DESCRIPTION");
-    
-    entity.Property(e => e.DescriptionArabic)
-        .HasMaxLength(255)
-        .HasColumnName("DESCRIPTION_ARABIC");
+                // Operating Expenses
+                summary.TotalOperatingExpenses = dto.OperatingExpenses.Sum(p => p.Amount);
 
-    entity.Property(e => e.SignMultiplier)
-        .HasDefaultValue(1)
-        .HasColumnName("SIGN_MULTIPLIER");
-});
+                // Accounting
+                summary.TotalAccountingTransactions = dto.AccountingTransactions.Sum(p => p.Amount);
+
+                summary.GrandTotalExpenses = summary.TotalDirectExpenses 
+                                           + summary.TotalOperatingExpenses 
+                                           + summary.TotalAccountingTransactions;
+
+                // Category Breakdowns
+                summary.MainCategories = dto.OperatingExpenses
+                    .GroupBy(p => p.PaymentTypeDescription ?? "أخرى")
+                    .ToDictionary(g => g.Key, g => g.Sum(p => p.Amount));
+
+                // Marketing Breakdown
+                summary.MarketingBreakdown = dto.OperatingExpenses
+                    .Where(p => p.PaymentTypeDescription?.Contains("دعاية") == true 
+                             || p.PaymentTypeDescription?.Contains("إعلان") == true
+                             || p.Comments?.Contains("دعاية") == true)
+                    .GroupBy(p => p.PartyIdFromName ?? "غير مصنف")
+                    .ToDictionary(g => g.Key, g => g.Sum(p => p.Amount));
+
+                // You can extend ConstructionBreakdown & SubcontractorBreakdown similarly from Expenses list
+
+                return summary;
+            }
+
+            private ProjectFinancialSummaryDto GenerateFinancialSummary(ProjectReportDto dto)
+            {
+                return new ProjectFinancialSummaryDto
+                {
+                    TotalCollectedRevenue = dto.Revenues.Sum(r => r.CollectedAmount),
+                    TotalScheduledRevenue = dto.Revenues.Sum(r => r.ScheduledAmount),
+                    OutstandingRevenue = dto.Revenues.Sum(r => r.OutstandingAmount),
+                    OverdueRevenue = dto.Revenues.Sum(r => r.LateAmount),
+                    FutureRevenue = dto.Revenues.Sum(r => r.FutureAmount)
+                };
+            }
+
+            // Keep your existing private methods (GetExpenses, GetRevenues, etc.) unchanged
+            // ... (paste your original GetExpenses, GetRevenues, GetDirectPayments, etc. here)
+        }
+    }
+}

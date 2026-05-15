@@ -10,7 +10,9 @@ import {
     Box,
     CircularProgress,
     FormControlLabel,
-    Checkbox
+    Checkbox,
+    Typography,
+    Divider
 } from '@mui/material';
 import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -44,9 +46,14 @@ export const CompanyReportExcel: React.FC<CompanyReportExcelProps> = ({
                                                                           onClose
                                                                       }) => {
     const { getTranslatedLabel } = useTranslationHelper();
-    const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf('month'));
-    const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
-    const [allData, setAllData] = useState(false);
+    const [expensesStartDate, setExpensesStartDate] = useState<Dayjs | null>(dayjs().startOf('month'));
+    const [expensesEndDate, setExpensesEndDate] = useState<Dayjs | null>(dayjs());
+    const [expensesAllData, setExpensesAllData] = useState(false);
+
+    const [revenuesStartDate, setRevenuesStartDate] = useState<Dayjs | null>(dayjs().startOf('month'));
+    const [revenuesEndDate, setRevenuesEndDate] = useState<Dayjs | null>(dayjs());
+    const [revenuesAllData, setRevenuesAllData] = useState(false);
+
     const [trigger, { isFetching }] = useLazyFetchCompanyReportQuery();
     const [isGenerating, setIsGenerating] = useState(false);
 
@@ -63,8 +70,11 @@ export const CompanyReportExcel: React.FC<CompanyReportExcelProps> = ({
             console.warn('Logo not found:', e);
         }
 
-        const period = allData ? 'All_Data' :
-            `${startDate?.format('YYYY-MM-DD')}_to_${endDate?.format('YYYY-MM-DD')}`;
+        const expPeriod = expensesAllData ? 'All_Data' :
+            `${expensesStartDate?.format('YYYY-MM-DD')}_to_${expensesEndDate?.format('YYYY-MM-DD')}`;
+        
+        const revPeriod = revenuesAllData ? 'All_Data' :
+            `${revenuesStartDate?.format('YYYY-MM-DD')}_to_${revenuesEndDate?.format('YYYY-MM-DD')}`;
 
         // ====================== EXPENSES SHEET ======================
         const wsExp = workbook.addWorksheet('المصاريف');
@@ -87,7 +97,7 @@ export const CompanyReportExcel: React.FC<CompanyReportExcelProps> = ({
 
         // Main Title
         const titleCell = wsExp.getCell(`A${currentRow}`);
-        titleCell.value = utils.rtlEmbed(`تقرير المصاريف مقابل الإيرادات للشركة (${period})`);
+        titleCell.value = utils.rtlEmbed(`تقرير المصاريف مقابل الإيرادات للشركة (${expPeriod})`);
         titleCell.font = { name: 'Amiri', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
         titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E40AF' } };
         titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -336,7 +346,7 @@ export const CompanyReportExcel: React.FC<CompanyReportExcelProps> = ({
         }
 
         const revTitleCell = wsRev.getCell(`A${revRow}`);
-        revTitleCell.value = utils.rtlEmbed(`تقرير الإيرادات للشركة (${period})`);
+        revTitleCell.value = utils.rtlEmbed(`تقرير الإيرادات للشركة (${revPeriod})`);
         revTitleCell.font = { name: 'Amiri', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
         revTitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E40AF' } };
         revTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -407,20 +417,23 @@ export const CompanyReportExcel: React.FC<CompanyReportExcelProps> = ({
         wsRev.columns.forEach((col, i) => col.width = revWidths[i] || 15);
 
         return await workbook.xlsx.writeBuffer();
-    }, [allData, startDate, endDate]);
+    }, [expensesAllData, expensesStartDate, expensesEndDate, revenuesAllData, revenuesStartDate, revenuesEndDate]);
 
     const handleDownload = useCallback(async () => {
         setIsGenerating(true);
         try {
             const result = await trigger({
-                startDate: allData ? undefined : startDate?.format('YYYY-MM-DD'),
-                endDate: allData ? undefined : endDate?.format('YYYY-MM-DD'),
-                allData
+                expensesStartDate: expensesAllData ? undefined : expensesStartDate?.format('YYYY-MM-DD'),
+                expensesEndDate: expensesAllData ? undefined : expensesEndDate?.format('YYYY-MM-DD'),
+                expensesAllData,
+                revenuesStartDate: revenuesAllData ? undefined : revenuesStartDate?.format('YYYY-MM-DD'),
+                revenuesEndDate: revenuesAllData ? undefined : revenuesEndDate?.format('YYYY-MM-DD'),
+                revenuesAllData
             }).unwrap();
 
             const buffer = await generateExcel(result);
 
-            const fileName = `Company_Report_${allData ? 'All' : startDate?.format('YYYYMMDD')}.xlsx`;
+            const fileName = `Company_Report_${expensesAllData ? 'All' : expensesStartDate?.format('YYYYMMDD')}.xlsx`;
 
             const blob = new Blob([buffer], {
                 type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -434,7 +447,7 @@ export const CompanyReportExcel: React.FC<CompanyReportExcelProps> = ({
         } finally {
             setIsGenerating(false);
         }
-    }, [trigger, generateExcel, startDate, endDate, allData, onClose]);
+    }, [trigger, generateExcel, expensesStartDate, expensesEndDate, expensesAllData, revenuesStartDate, revenuesEndDate, revenuesAllData, onClose]);
 
     const isLoading = isFetching || isGenerating;
 
@@ -443,27 +456,65 @@ export const CompanyReportExcel: React.FC<CompanyReportExcelProps> = ({
             <DialogTitle>تصدير تقرير الشركة - مصاريف مقابل إيرادات</DialogTitle>
             <DialogContent>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
-                    <FormControlLabel
-                        control={<Checkbox checked={allData} onChange={(e) => setAllData(e.target.checked)} />}
-                        label="كل البيانات"
-                    />
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <DesktopDatePicker
-                            label="من تاريخ"
-                            value={startDate}
-                            onChange={setStartDate}
-                            disabled={allData}
-                            slotProps={{ textField: { fullWidth: true } }}
+                    <Box>
+                        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
+                            المصاريف (Expenses)
+                        </Typography>
+                        <FormControlLabel
+                            control={<Checkbox checked={expensesAllData} onChange={(e) => setExpensesAllData(e.target.checked)} />}
+                            label="كل البيانات"
                         />
-                        <DesktopDatePicker
-                            label="إلى تاريخ"
-                            value={endDate}
-                            minDate={startDate ?? undefined}
-                            onChange={setEndDate}
-                            disabled={allData}
-                            slotProps={{ textField: { fullWidth: true } }}
+                        <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DesktopDatePicker
+                                    label="من تاريخ"
+                                    value={expensesStartDate}
+                                    onChange={setExpensesStartDate}
+                                    disabled={expensesAllData}
+                                    slotProps={{ textField: { fullWidth: true } }}
+                                />
+                                <DesktopDatePicker
+                                    label="إلى تاريخ"
+                                    value={expensesEndDate}
+                                    minDate={expensesStartDate ?? undefined}
+                                    onChange={setExpensesEndDate}
+                                    disabled={expensesAllData}
+                                    slotProps={{ textField: { fullWidth: true } }}
+                                />
+                            </LocalizationProvider>
+                        </Box>
+                    </Box>
+
+                    <Divider />
+
+                    <Box>
+                        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
+                            الإيرادات (Revenues)
+                        </Typography>
+                        <FormControlLabel
+                            control={<Checkbox checked={revenuesAllData} onChange={(e) => setRevenuesAllData(e.target.checked)} />}
+                            label="كل البيانات"
                         />
-                    </LocalizationProvider>
+                        <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DesktopDatePicker
+                                    label="من تاريخ"
+                                    value={revenuesStartDate}
+                                    onChange={setRevenuesStartDate}
+                                    disabled={revenuesAllData}
+                                    slotProps={{ textField: { fullWidth: true } }}
+                                />
+                                <DesktopDatePicker
+                                    label="إلى تاريخ"
+                                    value={revenuesEndDate}
+                                    minDate={revenuesStartDate ?? undefined}
+                                    onChange={setRevenuesEndDate}
+                                    disabled={revenuesAllData}
+                                    slotProps={{ textField: { fullWidth: true } }}
+                                />
+                            </LocalizationProvider>
+                        </Box>
+                    </Box>
                 </Box>
             </DialogContent>
             <DialogActions>
@@ -471,7 +522,7 @@ export const CompanyReportExcel: React.FC<CompanyReportExcelProps> = ({
                 <Button
                     onClick={handleDownload}
                     variant="contained"
-                    disabled={isLoading || (!allData && (!startDate || !endDate))}
+                    disabled={isLoading || (!expensesAllData && (!expensesStartDate || !expensesEndDate)) || (!revenuesAllData && (!revenuesStartDate || !revenuesEndDate))}
                     startIcon={isLoading ? <CircularProgress size={20} /> : null}
                 >
                     {isLoading ? 'جاري الإنشاء...' : 'تحميل التقرير'}

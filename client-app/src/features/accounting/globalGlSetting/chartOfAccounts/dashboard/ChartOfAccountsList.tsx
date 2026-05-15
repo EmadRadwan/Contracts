@@ -252,11 +252,8 @@ const ChartOfAccountsList = () => {
                   </GridToolbar>
 
                   <Column field="glAccountId" title={getTranslatedLabel("accounting.glAccount.list.accountId", "Account ID")} cell={AccountIdCell} width={120} />
-                  <Column field="accountName" title={getTranslatedLabel("accounting.glAccount.list.accountName", "Account Name")} />
-                  {/* <Column field="accountNameArabic" title={getTranslatedLabel("accounting.glAccount.list.accountNameArabic", "Name (Arabic)")} width={300} /> */}
+                  <Column field="accountName" title={getTranslatedLabel("accounting.glAccount.list.accountName", "Account Name")} width={120}/>
                   <Column field="parentGlAccountId" title={getTranslatedLabel("accounting.glAccount.list.parentId", "Parent ID")} width={120} />
-                  <Column field="glAccountTypeId" title={getTranslatedLabel("accounting.glAccount.list.type", "Type")} width={180} />
-                  <Column field="glAccountClassId" title={getTranslatedLabel("accounting.glAccount.list.class", "Class")} width={180} />
                   <Column field="glReportDescription" title={getTranslatedLabel("accounting.glAccount.list.report", "Report")} width={180} />
                   <Column field="glClassCourseDescription" title={getTranslatedLabel("accounting.glAccount.list.classCourse", "Class Course")} width={180} />
                   <Column field="glSubClassDescription" title={getTranslatedLabel("accounting.glAccount.list.subClass", "Sub Class")} width={180} />
