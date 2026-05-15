@@ -468,14 +468,46 @@ namespace Application.Projects
 
                 if (project == null) return new List<PaymentRecord>();
 
-                var glAccountId = project.GlAccountId;
+                var glAccountIds = new HashSet<string>();
+                if (!string.IsNullOrEmpty(project.GlAccountId))
+                {
+                    glAccountIds.Add(project.GlAccountId);
+                }
+
+                if (!string.IsNullOrEmpty(project.OperatingExpenseGlAccountId))
+                {
+                    var parentGlAccountId = project.OperatingExpenseGlAccountId;
+                    glAccountIds.Add(parentGlAccountId);
+
+                    // Get all child GL accounts recursively
+                    var childAccounts = await _context.GlAccounts
+                        .AsNoTracking()
+                        .Select(g => new { g.GlAccountId, g.ParentGlAccountId })
+                        .ToListAsync(ct);
+
+                    void AddChildren(string parentId)
+                    {
+                        var children = childAccounts.Where(c => c.ParentGlAccountId == parentId).ToList();
+                        foreach (var child in children)
+                        {
+                            if (glAccountIds.Add(child.GlAccountId))
+                            {
+                                AddChildren(child.GlAccountId);
+                            }
+                        }
+                    }
+
+                    AddChildren(parentGlAccountId);
+                }
+
+                if (glAccountIds.Count == 0) return new List<PaymentRecord>();
 
                 var transQuery = from ate in _context.AcctgTransEntries.AsNoTracking()
                     join at in _context.AcctgTrans.AsNoTracking() on ate.AcctgTransId equals at.AcctgTransId
                     join att in _context.AcctgTransTypes.AsNoTracking() on at.AcctgTransTypeId equals att.AcctgTransTypeId
                     join pty in _context.Parties.AsNoTracking() on at.PartyId equals pty.PartyId into ptyJoin
                     from pty in ptyJoin.DefaultIfEmpty()
-                    where (glAccountId != null && ate.GlAccountId == glAccountId)
+                    where glAccountIds.Contains(ate.GlAccountId!)
                           && (at.AcctgTransTypeId == "GENERAL_JOURNAL" || at.AcctgTransTypeId == "OPENING_BALANCE")
                     select new
                     {
