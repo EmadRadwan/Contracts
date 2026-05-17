@@ -231,9 +231,9 @@ public class PartiesController : BaseApiController
     }
 
     [HttpGet("listRoleTypes")]
-    public async Task<IActionResult> ListRoleTypes()
+    public async Task<IActionResult> ListRoleTypes([FromQuery] string? searchTerm = null)
     {
-        return HandleResult(await Mediator.Send(new ListRoleTypes.Query()));
+        return HandleResult(await Mediator.Send(new ListRoleTypes.Query { SearchTerm = searchTerm }));
     }
 
     [HttpGet("{partyId}/listPartyRoles")]

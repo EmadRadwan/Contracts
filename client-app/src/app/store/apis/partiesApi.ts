@@ -292,8 +292,12 @@ const partiesApi = createApi({
             fetchEmployeeAdvancesByDateRange: builder.query<EmployeeAdvancesResponse, { fromDate: string, toDate: string }>({
                 query: ({ fromDate, toDate }) => `/humanResources/getEmployeeAdvancesByDateRange?fromDate=${fromDate}&toDate=${toDate}`,
             }),
-            fetchRolesTypes: builder.query<any[], void>({
-                query: () => '/parties/listRoleTypes',
+            fetchRolesTypes: builder.query<any[], { searchTerm?: string }>({
+                query: (queryArgs) => ({
+                    url: '/parties/listRoleTypes',
+                    method: 'GET',
+                    params: queryArgs,
+                }),
                 providesTags: ['RoleType'],
             }),
             fetchPartyRoles: builder.query<any[], string>({

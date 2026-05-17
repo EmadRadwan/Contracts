@@ -40,14 +40,14 @@ public class GetPartiesSalesRepsLov
             // REFACTOR: Removed queryByPhone and related logic since phone search is no longer needed.
             // Simplified to use only queryByName, improving code clarity and maintainability.
             var queryByName = _context.Parties
-                .Where(x => x.MainRole == "SALES_REP")
-                .Select(x => new PartyFromPartyIdDto
-                {
-                    FromPartyId = x.PartyId,
-                    FromPartyName = x.Description,
-                    FromPartyPhone = string.Empty
-                })
-                .AsQueryable();
+            .Where(x => _context.PartyRoles.Any(pr => pr.PartyId == x.PartyId && pr.RoleTypeId == "SALES_REP"))
+            .Select(x => new PartyFromPartyIdDto
+            {
+                FromPartyId = x.PartyId,
+                FromPartyName = x.Description,
+                FromPartyPhone = string.Empty
+            })
+            .AsQueryable();
 
             var query = Enumerable.Empty<PartyFromPartyIdDto>().AsQueryable();
 
