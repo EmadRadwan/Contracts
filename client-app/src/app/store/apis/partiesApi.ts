@@ -11,7 +11,7 @@ interface ListResponse<T> {
 
 const partiesApi = createApi({
     reducerPath: "parties",
-    tagTypes: ["Parties", "EmplPositionTypes", "Employee", "Party", "Parties", "Supplier", "Contractor", "Customer", "EmployeeAdvance"],
+    tagTypes: ["Parties", "EmplPositionTypes", "Employee", "Party", "Parties", "Supplier", "Contractor", "Customer", "EmployeeAdvance", "SalesRep", "Broker"],
     refetchOnMountOrArgChange: true,
     baseQuery: fetchBaseQuery({
         baseUrl: import.meta.env.VITE_API_URL,
@@ -92,6 +92,26 @@ const partiesApi = createApi({
                     };
                 },
                 providesTags: ['Contractor']
+            }),
+            fetchSalesRep: builder.query<Party, any>({
+                query: (partyId) => {
+                    return {
+                        url: `/parties/${partyId}/getSalesRep`,
+                        params: partyId,
+                        method: "GET",
+                    };
+                },
+                providesTags: ['SalesRep']
+            }),
+            fetchBroker: builder.query<Party, any>({
+                query: (partyId) => {
+                    return {
+                        url: `/parties/${partyId}/getBroker`,
+                        params: partyId,
+                        method: "GET",
+                    };
+                },
+                providesTags: ['Broker']
             }),
             fetchCompanies: builder.query<any[], any>({
                 query: () => {
@@ -193,6 +213,38 @@ const partiesApi = createApi({
                     body: contractorData,
                 }),
                 invalidatesTags: ['Contractor', 'Party', 'Parties'],
+            }),
+            createSalesRep: builder.mutation<any, any>({
+                query: (salesRepData) => ({
+                    url: '/parties/createSalesRep',
+                    method: 'POST',
+                    body: salesRepData,
+                }),
+                invalidatesTags: ['SalesRep', 'Party', 'Parties'],
+            }),
+            updateSalesRep: builder.mutation<any, any>({
+                query: (salesRepData) => ({
+                    url: '/parties/updateSalesRep',
+                    method: 'PUT',
+                    body: salesRepData,
+                }),
+                invalidatesTags: ['SalesRep', 'Party', 'Parties'],
+            }),
+            createBroker: builder.mutation<any, any>({
+                query: (brokerData) => ({
+                    url: '/parties/createBroker',
+                    method: 'POST',
+                    body: brokerData,
+                }),
+                invalidatesTags: ['Broker', 'Party', 'Parties'],
+            }),
+            updateBroker: builder.mutation<any, any>({
+                query: (brokerData) => ({
+                    url: '/parties/updateBroker',
+                    method: 'PUT',
+                    body: brokerData,
+                }),
+                invalidatesTags: ['Broker', 'Party', 'Parties'],
             }),
             fetchEmployeeAdvances: builder.query<ListResponse<EmployeeAdvance>, State>({
                 query: (queryArgs) => {
@@ -312,6 +364,8 @@ export const {
     useUpdateEmployeeMutation, useCreateCustomerMutation, useUpdateCustomerMutation,
     useCreateSupplierMutation, useUpdateSupplierMutation, useCreateContractorMutation,
     useUpdateContractorMutation, useGetPartySubLedgerQuery, useFetchEmployeeAdvancesQuery,
+    useCreateSalesRepMutation, useUpdateSalesRepMutation, useFetchSalesRepQuery,
+    useCreateBrokerMutation, useUpdateBrokerMutation, useFetchBrokerQuery,
     useCreateEmployeeAdvanceMutation,
     useUpdateEmployeeAdvanceMutation, useDeleteEmployeeAdvanceMutation, useLazyGetEmployeeAdvanceDetailQuery,
     useLazyFetchEmployeeAdvancesByDateRangeQuery,

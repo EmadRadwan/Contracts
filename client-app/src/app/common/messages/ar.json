@@ -472,6 +472,8 @@
         "createSupplier": "إنشاء مورد",
         "createEmployee": "إنشاء موظف",
         "createContractor": "إنشاء مقاول",
+        "createSalesRep": "إنشاء مندوب مبيعات",
+        "createBroker": "إنشاء وسيط",
         "export": "تصدير إلى PDF",
         "generating": "جاري إنشاء PDF...",
         "description": "الطرف",
@@ -490,7 +492,17 @@
         "manageRoles": "إدارة الأدوار",
         "newRole": "الدور الجديد",
         "roleUpdatedSuccess": "تم تحديث الدور بنجاح",
-        "roleUpdateFailed": "فشل تحديث الدور"
+        "roleUpdateFailed": "فشل تحديث الدور",
+        "deleteSuccess": "تم حذف الطرف بنجاح",
+        "deleteFailed": "فشل في حذف الطرف",
+        "deleteDialogTitle": "تأكيد الحذف",
+        "deleteDialogMessage": "هل أنت متأكد من رغبتك في حذف الطرف {0}؟ لا يمكن التراجع عن هذا الإجراء."
+      },
+      "report": {
+        "exportExcel": "تصدير الأطراف إلى إكسل",
+        "allParties": {
+          "title": "تقرير جميع الأطراف"
+        }
       }
     },
     "roles": {
@@ -498,7 +510,9 @@
       "supplier": "مورد",
       "employee": "موظف",
       "previousEmployee": "موظف سابق",
-      "contractor": "مقاول"
+      "contractor": "مقاول",
+      "salesRep": "مندوب مبيعات",
+      "broker": "وسيط"
     },
     "customers": {
       "form": {
@@ -620,6 +634,44 @@
         "accountNameArabic": "اسم الحساب (بالعربية)",
         "done": "تم / إغلاق",
         "createAnother": "إنشاء المقاول آخر"
+      }
+    },
+    "salesReps": {
+      "form": {
+        "new": "مندوب مبيعات جديد",
+        "groupName": "اسم مندوب المبيعات *",
+        "email": "البريد الإلكتروني",
+        "countryCode": "رمز البلد",
+        "mobileContactNumber": "رقم الاتصال المحمول",
+        "address1": "العنوان 1",
+        "address2": "العنوان 2",
+        "submit": "حفظ",
+        "cancel": "إلغاء",
+        "loading": "جاري تحميل مندوب المبيعات...",
+        "processing": "جاري معالجة مندوب المبيعات...",
+        "success": "تم حفظ مندوب المبيعات بنجاح!",
+        "salesRepId": "رقم مندوب المبيعات",
+        "done": "تم / إغلاق",
+        "createAnother": "إنشاء مندوب مبيعات آخر"
+      }
+    },
+    "brokers": {
+      "form": {
+        "new": "وسيط جديد",
+        "groupName": "اسم الوسيط *",
+        "email": "البريد الإلكتروني",
+        "countryCode": "رمز البلد",
+        "mobileContactNumber": "رقم الاتصال المحمول",
+        "address1": "العنوان 1",
+        "address2": "العنوان 2",
+        "submit": "حفظ",
+        "cancel": "إلغاء",
+        "loading": "جاري تحميل الوسيط...",
+        "processing": "جاري معالجة الوسيط...",
+        "success": "تم حفظ الوسيط بنجاح!",
+        "brokerId": "رقم الوسيط",
+        "done": "تم / إغلاق",
+        "createAnother": "إنشاء وسيط آخر"
       }
     },
     "financial": {

@@ -23,6 +23,8 @@ import {
 } from "@mui/material";
 import CreateCustomerForm from "../form/CreateCustomerForm";
 import CreateSupplierForm from "../form/CreateSupplierForm";
+import CreateSalesRepForm from "../form/CreateSalesRepForm";
+import CreateBrokerForm from "../form/CreateBrokerForm";
 import Button from "@mui/material/Button";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
 import {useFetchPartiesQuery, useUpdatePartyMainRoleMutation} from "../../../app/store/apis";
@@ -209,6 +211,14 @@ export default function PartiesList() {
         return <CreateEmployeeForm party={party} cancelEdit={cancelEdit} editMode={editMode}/>; // ← NEW
     }
 
+    if (editMode > 0 && form === 'SALES_REP') {
+        return <CreateSalesRepForm party={party} cancelEdit={cancelEdit} editMode={editMode}/>;
+    }
+
+    if (editMode > 0 && form === 'BROKER') {
+        return <CreateBrokerForm party={party} cancelEdit={cancelEdit} editMode={editMode}/>;
+    }
+
 
     return (
         <>
@@ -265,6 +275,26 @@ export default function PartiesList() {
                                                 }}
                                                         variant="outlined">
                                                     {getTranslatedLabel("party.parties.list.createContractor", "Create Contractor")}
+                                                </Button>
+                                            </Grid>
+
+                                            <Grid item xs={2}>
+                                                <Button color={"secondary"} onClick={() => {
+                                                    setEditMode(1);
+                                                    setForm('SALES_REP')
+                                                }}
+                                                        variant="outlined">
+                                                    {getTranslatedLabel("party.parties.list.createSalesRep", "Create Sales Rep")}
+                                                </Button>
+                                            </Grid>
+
+                                            <Grid item xs={2}>
+                                                <Button color={"secondary"} onClick={() => {
+                                                    setEditMode(1);
+                                                    setForm('BROKER')
+                                                }}
+                                                        variant="outlined">
+                                                    {getTranslatedLabel("party.parties.list.createBroker", "Create Broker")}
                                                 </Button>
                                             </Grid>
 
@@ -349,6 +379,12 @@ export default function PartiesList() {
                                                 </MenuItem>
                                                 <MenuItem value="CONTRACTOR">
                                                     {getTranslatedLabel("party.roles.contractor", "Contractor")}
+                                                </MenuItem>
+                                                <MenuItem value="SALES_REP">
+                                                    {getTranslatedLabel("party.roles.salesRep", "Sales Rep")}
+                                                </MenuItem>
+                                                <MenuItem value="BROKER">
+                                                    {getTranslatedLabel("party.roles.broker", "Broker")}
                                                 </MenuItem>
                                                 <MenuItem value="PREVIOUS_EMPLOYEE">
                                                     {getTranslatedLabel("party.roles.previousEmployee", "Previous Employee")}

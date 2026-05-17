@@ -12,9 +12,9 @@ WITH RECURSIVE gl_hierarchy AS (
         g.GL_SUB_CLASS_2_ID,
         g.GL_ACCOUNT_COURSE_LABEL_ID,
         1 AS depth -- Tracks how deep the nesting goes
-    FROM gl_account g
-             INNER JOIN gl_account_organization gao ON g.GL_ACCOUNT_ID = gao.GL_ACCOUNT_ID
-    WHERE g.GL_ACCOUNT_ID = '180000' -- Replace with your starting GL_ACCOUNT_ID
+    FROM GL_ACCOUNT g
+             INNER JOIN GL_ACCOUNT_ORGANIZATION gao ON g.GL_ACCOUNT_ID = gao.GL_ACCOUNT_ID
+    WHERE g.GL_ACCOUNT_ID = '124600' -- Replace with your starting GL_ACCOUNT_ID
 
     UNION ALL
 
@@ -31,9 +31,9 @@ WITH RECURSIVE gl_hierarchy AS (
         c.GL_SUB_CLASS_2_ID,
         c.GL_ACCOUNT_COURSE_LABEL_ID,
         h.depth + 1
-    FROM gl_account c
+    FROM GL_ACCOUNT c
              INNER JOIN gl_hierarchy h ON c.PARENT_GL_ACCOUNT_ID = h.GL_ACCOUNT_ID
-             INNER JOIN gl_account_organization gao ON c.GL_ACCOUNT_ID = gao.GL_ACCOUNT_ID
+             INNER JOIN GL_ACCOUNT_ORGANIZATION gao ON c.GL_ACCOUNT_ID = gao.GL_ACCOUNT_ID
 )
 SELECT * FROM gl_hierarchy
 ORDER BY depth, ACCOUNT_CODE;

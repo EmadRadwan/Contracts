@@ -97,6 +97,18 @@ public class PartiesController : BaseApiController
         return HandleResult(await Mediator.Send(new GetContractor.Query { PartyId = partyId }));
     }
 
+    [HttpGet("{partyId}/getSalesRep", Name = "GetSalesRep")]
+    public async Task<IActionResult> GetSalesRep(string partyId)
+    {
+        return HandleResult(await Mediator.Send(new GetSalesRep.Query { PartyId = partyId }));
+    }
+
+    [HttpGet("{partyId}/getBroker", Name = "GetBroker")]
+    public async Task<IActionResult> GetBroker(string partyId)
+    {
+        return HandleResult(await Mediator.Send(new GetBroker.Query { PartyId = partyId }));
+    }
+
     [HttpPut("updateMainRole/{partyId}")]
     public async Task<IActionResult> UpdateMainRole(string partyId, [FromBody] UpdateMainRoleDto dto)
     {
@@ -140,6 +152,18 @@ public class PartiesController : BaseApiController
         return HandleResult(await Mediator.Send(new CreateSupplier.Command { PartyDto = partyDto }));
     }
 
+    [HttpPost("createSalesRep", Name = "CreateSalesRep")]
+    public async Task<IActionResult> CreateSalesRep(PartyDto2 partyDto)
+    {
+        return HandleResult(await Mediator.Send(new CreateSalesRep.Command { PartyDto = partyDto }));
+    }
+
+    [HttpPost("createBroker", Name = "CreateBroker")]
+    public async Task<IActionResult> CreateBroker(PartyDto2 partyDto)
+    {
+        return HandleResult(await Mediator.Send(new CreateBroker.Command { PartyDto = partyDto }));
+    }
+
     [HttpPost("createLead", Name = "CreateLead")]
     public async Task<IActionResult> CreateLead(PartyDto2 partyDto)
     {
@@ -168,6 +192,18 @@ public class PartiesController : BaseApiController
     public async Task<IActionResult> UpdateContractor(PartyDto partyDto)
     {
         return HandleResult(await Mediator.Send(new UpdateContractor.Command { PartyDto = partyDto }));
+    }
+
+    [HttpPut("updateSalesRep", Name = "UpdateSalesRep")]
+    public async Task<IActionResult> UpdateSalesRep(PartyDto partyDto)
+    {
+        return HandleResult(await Mediator.Send(new UpdateSalesRep.Command { PartyDto = partyDto }));
+    }
+
+    [HttpPut("updateBroker", Name = "UpdateBroker")]
+    public async Task<IActionResult> UpdateBroker(PartyDto partyDto)
+    {
+        return HandleResult(await Mediator.Send(new UpdateBroker.Command { PartyDto = partyDto }));
     }
 
     [HttpDelete("deleteParty/{partyId}")]

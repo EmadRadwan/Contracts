@@ -1,16 +1,14 @@
-SELECT
-    p.*,
-    g.ACCOUNT_NAME_ARABIC AS GlAccountName,
-    g.PARENT_GL_ACCOUNT_ID,
-    parent.ACCOUNT_NAME AS ParentAccountName
-FROM PARTY_GL_ACCOUNT p
-         JOIN GL_ACCOUNT g ON g.GL_ACCOUNT_ID = p.GL_ACCOUNT_ID
-         LEFT JOIN GL_ACCOUNT parent ON parent.GL_ACCOUNT_ID = g.PARENT_GL_ACCOUNT_ID
-WHERE  p.ROLE_TYPE_ID = 'BILL_FROM_VENDOR'
-  AND g.PARENT_GL_ACCOUNT_ID = '250400';
-
-DELETE p FROM PARTY_GL_ACCOUNT p
-                  JOIN GL_ACCOUNT g ON g.GL_ACCOUNT_ID = p.GL_ACCOUNT_ID
-WHERE
-    p.ROLE_TYPE_ID = 'BILL_FROM_VENDOR'
-  AND g.PARENT_GL_ACCOUNT_ID = '250400';
+UPDATE SALES_OPPORTUNITY_STAGE
+SET
+    DESCRIPTION_ARABIC = CASE OPPORTUNITY_STAGE_ID
+                             WHEN 'SOSTG_PROSPECT'     THEN 'عميل محتمل'
+                             WHEN 'SOSTG_QUALIFIED'    THEN 'مؤهل'
+                             WHEN 'SOSTG_PROPOSAL'     THEN 'عرض'
+                             WHEN 'SOSTG_NEGOTIATION'  THEN 'تفاوض'
+                             WHEN 'SOSTG_CLOSED_WON'   THEN 'صفقة مكتسبة'
+                             WHEN 'SOSTG_CLOSED_LOST'  THEN 'صفقة خاسرة'
+                             ELSE DESCRIPTION_ARABIC
+        END,
+    LAST_UPDATED_STAMP = NOW()
+WHERE OPPORTUNITY_STAGE_ID IN ('SOSTG_PROSPECT', 'SOSTG_QUALIFIED', 'SOSTG_PROPOSAL',
+                               'SOSTG_NEGOTIATION', 'SOSTG_CLOSED_WON', 'SOSTG_CLOSED_LOST');

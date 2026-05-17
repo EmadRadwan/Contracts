@@ -41,7 +41,7 @@ const CreateCustomerMenu: React.FC<Props> = ({partyId, partyName}) => {
                 sx={{mt: 2, mr: 2}}
                 disabled={!partyId}
             >
-                Actions
+                {getTranslatedLabel("general.actions", "Actions")}
             </Button>
             <Menu
                 anchorEl={anchorEl}

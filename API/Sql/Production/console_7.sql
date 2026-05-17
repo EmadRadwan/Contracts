@@ -1,15 +1,23 @@
--- 1. Fix the Label Mismatch so Dokki Apartment appears in Inventory reports
-UPDATE GL_ACCOUNT
-SET GL_ACCOUNT_COURSE_LABEL_ID = 'INVENTORY',
-    ACCOUNT_NAME = 'DOKKI APT - SHEIKH ABDULAZIZ'
-WHERE GL_ACCOUNT_ID = '124438';
+-- 1. Update Land Inventory Label (Multiplier = 1)
+UPDATE `GL_ACCOUNT_COURSE_LABEL`
+SET
+    `DESCRIPTION` = 'Land Inventory',
+    `DESCRIPTION_ARABIC` = 'مخزون أراضي',
+    `SIGN_MULTIPLIER` = 1
+WHERE `GL_ACCOUNT_COURSE_LABEL_ID` = 'INVENTORY_LANDS';
 
--- 2. Consistency fix for Zayed 3 Arabic name
-UPDATE GL_ACCOUNT
-SET ACCOUNT_NAME_ARABIC = 'زايد 3'
-WHERE GL_ACCOUNT_ID = '140701';
+-- 2. Update Land Liability Label (Multiplier = -1)
+UPDATE `GL_ACCOUNT_COURSE_LABEL`
+SET
+    `DESCRIPTION` = 'Land Payables / Creditors',
+    `DESCRIPTION_ARABIC` = 'دائنو أراضي',
+    `SIGN_MULTIPLIER` = -1
+WHERE `GL_ACCOUNT_COURSE_LABEL_ID` = 'PAYABLES_LANDS';
 
--- 3. Professional Spelling for Parent (تنفيد -> تنفيذ)
-UPDATE GL_ACCOUNT
-SET ACCOUNT_NAME_ARABIC = 'اعمال تحت التنفيذ للغير'
-WHERE GL_ACCOUNT_ID = '140700';
+-- 3. Update Stock Liability Label (Multiplier = -1)
+UPDATE `GL_ACCOUNT_COURSE_LABEL`
+SET
+    `DESCRIPTION` = 'Stock Purchase Payables',
+    `DESCRIPTION_ARABIC` = 'دائنو شراء أسهم',
+    `SIGN_MULTIPLIER` = -1
+WHERE `GL_ACCOUNT_COURSE_LABEL_ID` = 'PAYABLES_STOCKS';
