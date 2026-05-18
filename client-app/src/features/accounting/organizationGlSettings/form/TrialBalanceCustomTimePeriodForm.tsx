@@ -3,13 +3,19 @@ import { Field, Form, FormElement } from "@progress/kendo-react-form";
 import React from "react";
 import { DropDownList } from "@progress/kendo-react-dropdowns";
 import { useFetchCustomTimePeriodsLovQuery } from "../../../../app/store/apis/accounting/customTimePeriodsApi";
+import {useMemo} from "react";
 
 interface TrialBalanceCustomTimePeriodFormProps {
-    onSubmit: (value: any) => void
+    onSubmit: (value: any) => void;
+    initialCustomTimePeriodId?: string;
 }
 
-const TrialBalanceCustomTimePeriodForm = ({onSubmit}: TrialBalanceCustomTimePeriodFormProps) => {
+const TrialBalanceCustomTimePeriodForm = ({onSubmit, initialCustomTimePeriodId}: TrialBalanceCustomTimePeriodFormProps) => {
   const { data: timePeriods } = useFetchCustomTimePeriodsLovQuery(undefined);
+
+  const initialPeriod = useMemo(() => {
+      return timePeriods?.find(p => p.customTimePeriodId === initialCustomTimePeriodId);
+  }, [timePeriods, initialCustomTimePeriodId]);
 
   const itemRender = (
     li: React.ReactElement<HTMLLIElement>,
@@ -51,6 +57,8 @@ const TrialBalanceCustomTimePeriodForm = ({onSubmit}: TrialBalanceCustomTimePeri
   return (
       <Form
         onSubmit={(values) => onSubmit({customTimePeriodId: values.customTimePeriodId.customTimePeriodId})}
+        initialValues={initialPeriod ? { customTimePeriodId: initialPeriod } : undefined}
+        key={initialPeriod ? initialPeriod.customTimePeriodId : 'none'}
         render={(formRenderProps) => (
           <FormElement>
             <fieldset className={"k-form-fieldset"}>

@@ -16,7 +16,7 @@ import {
   GridToolbar,
   GRID_COL_INDEX_ATTRIBUTE, GridFilterChangeEvent
 } from "@progress/kendo-react-grid";
-import {useEffect, useMemo, useState} from "react";
+import {useEffect, useMemo, useState, useCallback} from "react";
 import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
@@ -61,17 +61,28 @@ const TrialBalance = () => {
   const [runTrialBalance, { data, isLoading, isFetching, isSuccess }] =
     useLazyFetchTrialBalanceReportQuery();
 
-  const handleSelectTimePeriod = (value: any) => {
+  const handleSelectTimePeriod = useCallback((value: any) => {
     const customTimePeriodId = value.customTimePeriodId;
 
     dispatch(setSeletedCustomTimePeriodId(customTimePeriodId));
 
     if (!customTimePeriodId || !companyId) return;
 
+    localStorage.setItem("lastTrialBalanceTimePeriodId", customTimePeriodId);
+
     // Always run the report when the user clicks "Run",
     // even if they selected the same period as last time.
     runTrialBalance({ customTimePeriodId, organizationPartyId: companyId });
-  };
+  }, [companyId, dispatch, runTrialBalance]);
+
+  useEffect(() => {
+    if (companyId && !seletedCustomTimePeriodId && !isSuccess && !isLoading && !isFetching) {
+      const lastPeriodId = localStorage.getItem("lastTrialBalanceTimePeriodId");
+      if (lastPeriodId) {
+        handleSelectTimePeriod({ customTimePeriodId: lastPeriodId });
+      }
+    }
+  }, [companyId, seletedCustomTimePeriodId, isSuccess, isLoading, isFetching, handleSelectTimePeriod]);
 
   // Then compute the filtered + sorted + paged data
   const processedData = useMemo(() => {
@@ -154,6 +165,7 @@ const TrialBalance = () => {
           <Grid item xs={12} sx={{ margin: 3 }}>
             <TrialBalanceCustomTimePeriodForm
               onSubmit={handleSelectTimePeriod}
+              initialCustomTimePeriodId={seletedCustomTimePeriodId ?? undefined}
             />
           </Grid>
           {isSuccess && (

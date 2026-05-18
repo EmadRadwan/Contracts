@@ -4828,7 +4828,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 ReconcileStatusId = "AES_NOT_RECONCILED",
                 DebitCreditFlag = "D",
                 GlAccountId = projectWorkEffort.GlAccountId,
-                //GlAccountTypeId = "PROJECTS_UNDER_DEVELOPMENT",
+                Description = certificateItem.Description,
                 OrganizationPartyId = inventoryItem.OwnerPartyId,
                 ProductId = certificateItem.ProductId, // From certificate item
                 PartyId = workEffort.PartyIdContractor,
@@ -4847,6 +4847,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 AcctgTransEntryTypeId = "_NA_",
                 ReconcileStatusId = "AES_NOT_RECONCILED",
                 DebitCreditFlag = "C",
+                Description = certificateItem.Description,
                 GlAccountTypeId = "INVENTORY_ACCOUNT", // GL account 140000
                 PartyId = workEffort.PartyIdContractor,
                 OrganizationPartyId = inventoryItem.OwnerPartyId,
@@ -4862,6 +4863,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             {
                 GlFiscalTypeId = "ACTUAL",
                 AcctgTransTypeId = "INVENTORY",
+                Description = workEffort.Description,
                 WorkEffortId = workEffortId,
                 TransactionDate = DateHelper.ToDateOnly(certificateItem.ProcurementDate),
                 AcctgTransEntries = acctgTransEntries,

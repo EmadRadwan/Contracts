@@ -129,12 +129,14 @@ public class ReceiveInventoryFromPurchaseOrder
                 }
 
                 var workEffort = await _context.WorkEfforts
+                    .Include(we => we.SupplierParty)
                     .FirstOrDefaultAsync(
                         we => we.RelatedOrderId == request.OrderId && we.WorkEffortTypeId == "PROJECT_CERTIFICATE",
                         cancellationToken);
 
                 if (workEffort != null)
                 {
+                    workEffort.Description = $"طلب شراء: {request.OrderId} - {workEffort.Description}";
                     workEffort.CurrentStatusId = "WEPR_APPROVED";
                     workEffort.LastStatusUpdate = DateTime.UtcNow; // Update timestamp for auditability
                     _context.WorkEfforts.Update(workEffort);
@@ -174,6 +176,7 @@ public class ReceiveInventoryFromPurchaseOrder
                             {
                                 we.ProjectId,
                                 we.PartyIdSupplier,
+                                SupplierName = we.SupplierParty != null ? we.SupplierParty.Description : "Unknown",
                                 we.FacilityId,
                                 we.Description,
                                 we.EstimatedStartDate,
@@ -266,7 +269,7 @@ public class ReceiveInventoryFromPurchaseOrder
                             PartyIdSupplier = null,
                             FacilityId = procurementCertificate.FacilityId,
                             Description =
-                                $"إصدار مواد إلى الموقع (تكلفة مُدمجة) - مرجع: {workEffort.CertificateNumber}",
+                                $"{procurementCertificate.Description} - {procurementCertificate.SupplierName} - إصدار مواد إلى الموقع (تكلفة مُدمجة) - مرجع: {workEffort.CertificateNumber}",
                             EstimatedStartDate = procurementCertificate.EstimatedStartDate,
                             EstimatedCompletionDate = DateTime.UtcNow,
 
