@@ -85,6 +85,7 @@ public class CreateEmployee
                 DepartmentPartyId = request.PartyDto.DepartmentPartyId,
                 FingerPrintAttendanceId = request.PartyDto.FingerPrintAttendanceId,
                 AttendanceStartsAt = request.PartyDto.AttendanceStartsAt,
+                VacationBalance = request.PartyDto.VacationBalance,
                 CreatedStamp = stamp,
                 LastUpdatedStamp = stamp
             };

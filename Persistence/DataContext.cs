@@ -28561,6 +28561,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                .HasForeignKey(p => p.GlAccountIdAdvancedPayment)
                .IsRequired(false);
                
+               entity.Property(p => p.VacationBalance)
+                    .HasColumnType("decimal(10,2)")        // Allows up to 99999999.99
+                    .HasColumnName("VACATION_BALANCE")
+                    .HasDefaultValue(0.00m);
+               
                entity.HasOne(p => p.DepartmentParty)
                     .WithMany()
                     .HasForeignKey(p => p.DepartmentPartyId)

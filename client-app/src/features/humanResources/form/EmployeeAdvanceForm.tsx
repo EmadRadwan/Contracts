@@ -253,6 +253,7 @@ function EmployeeAdvanceForm({
                                                 name="advanceDate"
                                                 label={getTranslatedLabel("party.employeeAdvance.form.advanceDate", "Advance Date *")}
                                                 component={FormDatePicker}
+                                                format="dd/MM/yyyy"
                                                 validator={requiredValidator}
                                                 disabled={isReadOnly || isSubmitting}
                                             />
@@ -284,6 +285,7 @@ function EmployeeAdvanceForm({
                                                 name="startDate"
                                                 label={getTranslatedLabel("party.employeeAdvance.form.startDate", "First Installment Date")}
                                                 component={FormDatePicker}
+                                                format="dd/MM/yyyy"
                                                 disabled={isInstallmentDisabled || isReadOnly || isSubmitting}
                                             />
                                         </Grid>

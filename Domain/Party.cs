@@ -183,6 +183,7 @@ public class Party
     public string? DepartmentPartyId { get; set; }
     public string? FingerPrintAttendanceId { get; set; }
     public TimeSpan? AttendanceStartsAt { get; set; }
+    public decimal? VacationBalance { get; set; }
     public DateTime? LastUpdatedStamp { get; set; }
     public DateTime? LastUpdatedTxStamp { get; set; }
     public DateTime? CreatedStamp { get; set; }

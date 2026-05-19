@@ -48,6 +48,7 @@ public class UpdateEmployee
             party.DepartmentPartyId = request.PartyDto.DepartmentPartyId;
             party.FingerPrintAttendanceId = request.PartyDto.FingerPrintAttendanceId;
             party.AttendanceStartsAt = request.PartyDto.AttendanceStartsAt;
+            party.VacationBalance = request.PartyDto.VacationBalance;
 
             if (party.Person != null)
             {

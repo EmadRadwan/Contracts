@@ -67,6 +67,7 @@ public class PartyDto
     public string? DepartmentPartyId { get; set; }
     public string? FingerPrintAttendanceId { get; set; }
     public TimeSpan? AttendanceStartsAt { get; set; }
+    public decimal? VacationBalance { get; set; }
     
     public List<PartyGlAccountSimpleDto>? LinkedGlAccounts { get; set; } = new();
 

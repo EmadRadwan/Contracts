@@ -144,7 +144,8 @@ public class GetEmployee
                     PreferredPayrollPaymentMethodId = prty.PreferredPayrollPaymentMethodId,
                     DepartmentPartyId = prty.DepartmentPartyId,
                     FingerPrintAttendanceId = prty.FingerPrintAttendanceId,
-                    AttendanceStartsAt = prty.AttendanceStartsAt
+                    AttendanceStartsAt = prty.AttendanceStartsAt,
+                    VacationBalance = prty.VacationBalance
                 };
 
             var rawResults = await query
@@ -199,6 +200,7 @@ public class GetEmployee
                 DepartmentPartyId = firstRecord.DepartmentPartyId,
                 FingerPrintAttendanceId = firstRecord.FingerPrintAttendanceId,
                 AttendanceStartsAt = firstRecord.AttendanceStartsAt,
+                VacationBalance = firstRecord.VacationBalance,
  
                 // All linked GL accounts
                 LinkedGlAccounts = rawResults

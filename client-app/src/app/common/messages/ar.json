@@ -562,6 +562,7 @@
         "departmentPartyId": "القسم",
         "fingerPrintAttendanceId": "رقم البصمة",
         "attendanceStartsAt": "وقت الحضور",
+        "vacationBalance": "رصيد الأجازات",
         "submit": "حفظ",
         "cancel": "إلغاء",
         "loading": "جاري تحميل الموظف...",

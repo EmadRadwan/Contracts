@@ -382,6 +382,17 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
                                             />
                                         </Grid>
 
+                                        <Grid item xs={4}>
+                                            <Field
+                                                id="vacationBalance"
+                                                name="vacationBalance"
+                                                label={getTranslatedLabel("party.employees.form.vacationBalance", "Vacation Balance")}
+                                                component={FormNumericTextBox}
+                                                format="n1"
+                                                min={0}
+                                            />
+                                        </Grid>
+
                                         {/* Email, Country, Mobile, Address1, Address2 */}
                                         <Grid item xs={3}>
                                             <Field

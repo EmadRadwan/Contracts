@@ -278,15 +278,7 @@ export default function PartiesList() {
                                                 </Button>
                                             </Grid>
 
-                                            <Grid item xs={2}>
-                                                <Button color={"secondary"} onClick={() => {
-                                                    setEditMode(1);
-                                                    setForm('SALES_REP')
-                                                }}
-                                                        variant="outlined">
-                                                    {getTranslatedLabel("party.parties.list.createSalesRep", "Create Sales Rep")}
-                                                </Button>
-                                            </Grid>
+                                           
 
                                             <Grid item xs={2}>
                                                 <Button color={"secondary"} onClick={() => {

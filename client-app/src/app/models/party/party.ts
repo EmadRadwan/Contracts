@@ -27,6 +27,10 @@ export interface Party {
     city: string;
     geoId: string;
     geoName: string;
+    departmentPartyId?: string;
+    fingerPrintAttendanceId?: string;
+    attendanceStartsAt?: string | Date;
+    vacationBalance?: number;
 }
 
 export interface PartyLov {

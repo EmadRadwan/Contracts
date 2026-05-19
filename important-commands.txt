@@ -321,3 +321,7 @@ Summarize this entire conversation as a concise JSON or bullet-point outline, in
   Account → GL_ACCOUNT_COURSE_LABEL
   
   
+  
+  lets revisit the code in @file:PayrollRun.tsx and related code in @file:BatchCreatePayrollInvoices.cs as we need to create two Payments based on the `preferredPayrollPaymentMethodId` that we assign for each employee in @file:CreateEmployeeForm.tsx and that will be alwayes either '`BANK_TRANSFER`' or `CASH`. we need to create one payment for all `CASH` employees and another for all `BANK_TRANSFER` employees
+  
+  
