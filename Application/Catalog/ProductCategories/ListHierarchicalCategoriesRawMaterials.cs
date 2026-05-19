@@ -9,7 +9,7 @@ public class ListHierarchicalCategoriesRawMaterials
 {
     public class Query : IRequest<Result<List<ProductCategoryParentChildDto>>>
     {
-        public string Language { get; set; }
+        public string Language { get; set; } = "en";
     }
 
     public class Handler : IRequestHandler<Query, Result<List<ProductCategoryParentChildDto>>>
@@ -24,69 +24,75 @@ public class ListHierarchicalCategoriesRawMaterials
         public async Task<Result<List<ProductCategoryParentChildDto>>> Handle(Query request,
             CancellationToken cancellationToken)
         {
-            var language = request.Language;
-            // Retrieve the data from the ProductCategories table using Entity Framework
-            var categories = await _context.ProductCategories.ToListAsync(cancellationToken);
+            var language = (request.Language ?? "en").ToLower();
 
-            // Create a list to store the DTOs
-            var dtoList = new List<ProductCategoryParentChildDto>();
+            // Load all categories
+            var categories = await _context.ProductCategories
+                .ToListAsync(cancellationToken);
 
-            // Define a recursive function to build the DTO list
-            void BuildDtoList(string categoryId, string parentId)
+            if (!categories.Any())
+                return Result<List<ProductCategoryParentChildDto>>.Success(new List<ProductCategoryParentChildDto>());
+
+            // Dictionary for fast lookup
+            var categoryDict = categories.ToDictionary(c => c.ProductCategoryId);
+
+            var result = new List<ProductCategoryParentChildDto>();
+
+            void BuildTree(string categoryId, string? parentId, ProductCategoryParentChildDto? parentDto)
             {
-                // Find the category data for the current ID
-                var categoryData = categories.FirstOrDefault(entry => entry.ProductCategoryId == categoryId);
+                if (!categoryDict.TryGetValue(categoryId, out var cat))
+                    return;
 
-                // Check if the category should be excluded
-                if (categoryData != null)
+                var dto = new ProductCategoryParentChildDto
                 {
-                    var dto = new ProductCategoryParentChildDto
-                    {
-                        ParentProductCategoryId = parentId,
-                        ProductCategoryId = categoryId,
-                        Description = language == "ar"
-                            ? categoryData.DescriptionArabic
-                            : categoryData.Description ?? categoryData.ProductCategoryId,
-                        Text = language == "ar"
-                            ? categoryData.DescriptionArabic
-                            : categoryData.Description ?? categoryData.ProductCategoryId,
-                        Items = new List<ProductCategoryParentChildDto>() // Initialize children list
-                    };
+                    ParentProductCategoryId = parentId,
+                    ProductCategoryId = categoryId,
+                    Description = language == "ar" 
+                        ? cat.DescriptionArabic ?? cat.Description ?? categoryId 
+                        : cat.Description ?? categoryId,
+                    Text = language == "ar" 
+                        ? cat.DescriptionArabic ?? cat.Description ?? categoryId 
+                        : cat.Description ?? categoryId,
+                    Items = new List<ProductCategoryParentChildDto>()
+                };
 
-                    // Find all children of this category and recursively build the DTO list
-                    var children = categories.Where(entry => entry.PrimaryParentCategoryId == categoryId);
+                // Get direct children
+                var children = categories
+                    .Where(c => c.PrimaryParentCategoryId == categoryId)
+                    .ToList();
 
-                    dto.Items = children.Select(child => new ProductCategoryParentChildDto
-                    {
-                        ParentProductCategoryId = categoryId,
-                        ProductCategoryId = child.ProductCategoryId,
-                        Description = language == "ar"
-                            ? child.DescriptionArabic
-                            : child.Description ?? child.ProductCategoryId,
-                        Text = language == "ar"
-                            ? child.DescriptionArabic
-                            : child.Description ?? child.ProductCategoryId,
-                        Items = new List<ProductCategoryParentChildDto>() // Initialize children list
-                    }).ToList();
+                // Build children recursively
+                foreach (var child in children)
+                {
+                    BuildTree(child.ProductCategoryId, categoryId, dto);
+                }
 
-                    foreach (var child in children) BuildDtoList(child.ProductCategoryId, categoryId);
-
-                    // Skip adding top-level items to the dtoList but continue with recursive processing
-                    if (parentId != null) dtoList.Add(dto); // Add the DTO to the list for non-top-level items
+                // Add to parent or root
+                if (parentDto != null)
+                {
+                    parentDto.Items.Add(dto);
+                }
+                else
+                {
+                    result.Add(dto); // Root level (RAW_MATERIALS)
                 }
             }
 
-            // Start building the DTO list from the top-level categories
-            var topLevelCategories = new[] { "RAW_MATERIALS" };
-            var rootDtos = new List<ProductCategoryParentChildDto>();
+            // Start building from RAW_MATERIALS
+            BuildTree("RAW_MATERIALS", null, null);
 
-            foreach (var topCategory in topLevelCategories) BuildDtoList(topCategory, null);
+            // Optional: Add debug info (you can remove later)
+            if (result.Any())
+            {
+                var root = result.First();
+                Console.WriteLine($"[Debug] RAW_MATERIALS found. Children count: {root.Items.Count}");
+            }
+            else
+            {
+                Console.WriteLine("[Debug] RAW_MATERIALS category not found in database!");
+            }
 
-            // Filter out the top-level categories and add the hierarchical structure to rootDtos
-            rootDtos.AddRange(dtoList.Where(dto => topLevelCategories.Contains(dto.ParentProductCategoryId)));
-
-            // Return the root DTOs as a successful result
-            return Result<List<ProductCategoryParentChildDto>>.Success(rootDtos);
+            return Result<List<ProductCategoryParentChildDto>>.Success(result);
         }
     }
 }

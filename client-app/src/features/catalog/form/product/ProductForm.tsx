@@ -30,7 +30,6 @@ import {
 import { FormComboBoxVirtualProject } from "../../../../app/common/form/FormComboBoxVirtualProject";
 import FormNumericTextBox from "../../../../app/common/form/FormNumericTextBox";
 import ManageProductCategoryMembersModal from "./ManageProductCategoryMembersModal";
-import {FormDropDownTreeProductCategory} from "../../../../app/common/form/FormDropDownTreeProductCategory";
 import {MemoizedFormComboBox2} from "../../../../app/common/form/FormComboBox2";
 
 let renderCount = 0;
