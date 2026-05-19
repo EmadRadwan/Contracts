@@ -15,6 +15,7 @@ import {
     IconButton,
     Tooltip,
 } from "@mui/material";
+import { ComboBox, ComboBoxFilterChangeEvent, ComboBoxPageChangeEvent } from "@progress/kendo-react-dropdowns";
 import DeleteIcon from "@mui/icons-material/Delete";
 import LockIcon from "@mui/icons-material/Lock";
 import AddIcon from "@mui/icons-material/Add";
@@ -53,19 +54,20 @@ const NON_DELETABLE_ROLES = [
 
 export default function ManageRolesModal({ partyId, partyName, open, onClose }: Props) {
     const { getTranslatedLabel } = useTranslationHelper();
-    const { data: roleTypes, isLoading: isLoadingRoleTypes } = useFetchRolesTypesQuery();
+    const [searchTerm, setSearchTerm] = useState<string>("");
+    const { data: roleTypes, isLoading: isLoadingRoleTypes } = useFetchRolesTypesQuery({ searchTerm });
     const { data: partyRoles, isLoading: isLoadingPartyRoles, isFetching: isFetchingPartyRoles } = useFetchPartyRolesQuery(partyId);
     const [addPartyRole, { isLoading: isAdding }] = useAddPartyRoleMutation();
     const [deletePartyRole, { isLoading: isDeleting }] = useDeletePartyRoleMutation();
 
-    const [selectedRoleType, setSelectedRoleType] = useState<string>("");
+    const [selectedRoleType, setSelectedRoleType] = useState<{ roleTypeId: string, roleName: string } | null>(null);
 
     const handleAddRole = async () => {
         if (!selectedRoleType) return;
         try {
-            await addPartyRole({ partyId, roleTypeId: selectedRoleType }).unwrap();
+            await addPartyRole({ partyId, roleTypeId: selectedRoleType.roleTypeId }).unwrap();
             toast.success(getTranslatedLabel("party.parties.manageRoles.addedSuccess", "Role added successfully"));
-            setSelectedRoleType("");
+            setSelectedRoleType(null);
         } catch (err: any) {
             toast.error(err?.data || getTranslatedLabel("party.parties.manageRoles.addedError", "Failed to add role"));
         }
@@ -123,18 +125,22 @@ export default function ManageRolesModal({ partyId, partyName, open, onClose }: 
                                 {getTranslatedLabel("party.parties.manageRoles.addRole", "Add New Role")}
                             </Typography>
                             <FormControl fullWidth margin="normal">
-                                <InputLabel>{getTranslatedLabel("party.parties.manageRoles.roleType", "Role Type")}</InputLabel>
-                                <Select
+                                
+                                <ComboBox 
+                                    data={roleTypes || []}
                                     value={selectedRoleType}
-                                    label={getTranslatedLabel("party.parties.manageRoles.roleType", "Role Type")}
-                                    onChange={(e) => setSelectedRoleType(e.target.value as string)}
-                                >
-                                    {roleTypes?.map((role) => (
-                                        <MenuItem key={role.roleTypeId} value={role.roleTypeId}>
-                                            {role.roleName || role.roleTypeId}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
+                                    popupSettings={{ appendTo: document.querySelector(".MuiModal-root") as HTMLElement }}
+                                    textField="roleName"
+                                    placeholder={''}
+                                    label=''
+                                    dataItemKey="roleTypeId"
+                                    onChange={(e) => setSelectedRoleType(e.value)}
+                                    filterable
+                                    onFilterChange={(e: ComboBoxFilterChangeEvent) => {
+                                        const filterValue = e.filter.value || "";
+                                        setSearchTerm(filterValue);
+                                    }}
+                                />
                             </FormControl>
                             <Button
                                 variant="contained"
