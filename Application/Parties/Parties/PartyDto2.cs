@@ -62,4 +62,7 @@ public class PartyDto2
     public string? GlAccountIdAdvancedPayment { get; set; }
     public string? PreferredPayrollPaymentMethodId { get; set; }
     public string? LeadTemperatureId { get; set; }
+    public string? DepartmentPartyId { get; set; }
+    public string? FingerPrintAttendanceId { get; set; }
+    public TimeSpan? AttendanceStartsAt { get; set; }
 }

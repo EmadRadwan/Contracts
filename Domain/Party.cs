@@ -180,6 +180,9 @@ public class Party
     public string? DataSourceId { get; set; }
     public string? IsUnread { get; set; }
     public string? GlAccountIdAdvancedPayment { get; set; }
+    public string? DepartmentPartyId { get; set; }
+    public string? FingerPrintAttendanceId { get; set; }
+    public TimeSpan? AttendanceStartsAt { get; set; }
     public DateTime? LastUpdatedStamp { get; set; }
     public DateTime? LastUpdatedTxStamp { get; set; }
     public DateTime? CreatedStamp { get; set; }
@@ -198,6 +201,8 @@ public class Party
     public PartyIcsAvsOverride PartyIcsAvsOverride { get; set; } = null!;
     public Person Person { get; set; } = null!;
     public Vendor Vendor { get; set; } = null!;
+    public Party? DepartmentParty { get; set; }
+    
     public ICollection<AcctgTran> AcctgTrans { get; set; }
     public ICollection<AcctgTransEntry> AcctgTransEntries { get; set; }
     public ICollection<AgreementPartyApplic> AgreementPartyApplics { get; set; }

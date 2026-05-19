@@ -340,6 +340,13 @@ const partiesApi = createApi({
                     };
                 },
             }),
+            fetchDepartmentsLov: builder.query<any, any>({
+                query: (params) => ({
+                    url: '/parties/getDepartmentsLov',
+                    method: 'GET',
+                    params: params,
+                }),
+            }),
             fetchPayrollAdvances: builder.query<EmployeeAdvancesResponse, { invoiceDate: string; organizationPartyId: string }>({
                 query: ({ invoiceDate, organizationPartyId }) => `/humanResources/listPayrollAdvances?invoiceDate=${invoiceDate}&organizationPartyId=${organizationPartyId}`,
                 providesTags: ['EmployeeAdvance'],
@@ -374,5 +381,6 @@ export const {
     useLazyFetchAllPartiesForReportQuery,
     useFetchEmployeesWithSalaryQuery,
     useFetchPayrollAdvancesQuery,
+    useFetchDepartmentsLovQuery,
 } = partiesApi;
 export {partiesApi};

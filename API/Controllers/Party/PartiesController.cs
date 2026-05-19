@@ -37,6 +37,12 @@ public class PartiesController : BaseApiController
         return HandleResult(await Mediator.Send(new GetPartiesEmployeesLov.Query { Params = param }));
     }
 
+    [HttpGet("getDepartmentsLov", Name = "GetDepartmentsLov")]
+    public async Task<IActionResult> GetDepartmentsLov([FromQuery] PartyLovParams param)
+    {
+        return HandleResult(await Mediator.Send(new GetDepartmentsLov.Query { Params = param }));
+    }
+
     [HttpGet("getPartiesBrokersLov", Name = "GetPartiesBrokersLov")]
     public async Task<IActionResult> GetPartiesBrokersLov([FromQuery] PartyLovParams param)
     {

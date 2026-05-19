@@ -28464,6 +28464,20 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .IsUnicode(false)
                     .HasColumnName("EXTERNAL_ID")
                     .HasMaxLength(20);
+                    
+                    entity.Property(p => p.DepartmentPartyId)
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnName("DEPARTMENT_PARTY_ID");
+                    
+                    entity.Property(p => p.FingerPrintAttendanceId)
+                        .HasMaxLength(50)
+                        .IsUnicode(false)
+                        .HasColumnName("FINGER_PRINT_ATTENDANCE_ID");
+                    
+                    entity.Property(p => p.AttendanceStartsAt)
+                        .HasColumnType("time")
+                        .HasColumnName("ATTENDANCE_STARTS_AT");
 
                 entity.Property(e => e.CreatedByUserLogin)
                     .HasMaxLength(250)
@@ -28546,6 +28560,12 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                .WithMany(g => g.PartiesWithAdvancedPayment)
                .HasForeignKey(p => p.GlAccountIdAdvancedPayment)
                .IsRequired(false);
+               
+               entity.HasOne(p => p.DepartmentParty)
+                    .WithMany()
+                    .HasForeignKey(p => p.DepartmentPartyId)
+                    .HasConstraintName("PARTY_DEPARTMENT_FK")
+                    .OnDelete(DeleteBehavior.Restrict);
                
                 entity.HasOne(d => d.CreatedByUserLoginNavigation)
                     .WithMany(p => p.PartyCreatedByUserLoginNavigations)

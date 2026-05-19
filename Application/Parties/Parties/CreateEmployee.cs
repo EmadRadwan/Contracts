@@ -82,6 +82,9 @@ public class CreateEmployee
                 Description = request.PartyDto.FirstName,
                 GlAccountIdAdvancedPayment = request.PartyDto.GlAccountIdAdvancedPayment,
                 PreferredPayrollPaymentMethodId = request.PartyDto.PreferredPayrollPaymentMethodId,
+                DepartmentPartyId = request.PartyDto.DepartmentPartyId,
+                FingerPrintAttendanceId = request.PartyDto.FingerPrintAttendanceId,
+                AttendanceStartsAt = request.PartyDto.AttendanceStartsAt,
                 CreatedStamp = stamp,
                 LastUpdatedStamp = stamp
             };

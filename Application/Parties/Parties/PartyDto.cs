@@ -64,6 +64,9 @@ public class PartyDto
     public string? GlAccountIdAdvancedPayment { get; set; }
     public string? PreferredPayrollPaymentMethodId { get; set; }
     public DateTime? LastUpdatedStamp { get; set; }
+    public string? DepartmentPartyId { get; set; }
+    public string? FingerPrintAttendanceId { get; set; }
+    public TimeSpan? AttendanceStartsAt { get; set; }
     
     public List<PartyGlAccountSimpleDto>? LinkedGlAccounts { get; set; } = new();
 

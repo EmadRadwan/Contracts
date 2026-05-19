@@ -45,6 +45,9 @@ public class UpdateEmployee
             party.Description = request.PartyDto.FirstName;
             party.GlAccountIdAdvancedPayment = request.PartyDto.GlAccountIdAdvancedPayment;
             party.PreferredPayrollPaymentMethodId = request.PartyDto.PreferredPayrollPaymentMethodId;
+            party.DepartmentPartyId = request.PartyDto.DepartmentPartyId;
+            party.FingerPrintAttendanceId = request.PartyDto.FingerPrintAttendanceId;
+            party.AttendanceStartsAt = request.PartyDto.AttendanceStartsAt;
 
             if (party.Person != null)
             {

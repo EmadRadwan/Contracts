@@ -22,12 +22,14 @@ import {
     useFetchEmployeeQuery,
     useFetchGlAccountOrganizationHierarchyLovQuery,
     useGetEmplPositionTypesQuery,
-    useUpdateEmployeeMutation
+    useUpdateEmployeeMutation,
+    useFetchDepartmentsLovQuery
 } from "../../../app/store/apis";
 import {MemoizedFormComboBox2} from "../../../app/common/form/FormComboBox2";
 import {FormDropDownTreeGlAccount2} from "../../../app/common/form/FormDropDownTreeGlAccount2";
 import FormNumericTextBox from "../../../app/common/form/FormNumericTextBox";
 import {FormComboBoxVirtualPartyEmployee} from "../../../app/common/form/FormComboBoxVirtualPartyEmployee";
+import {FormTimePicker} from "../../../app/common/form/FormTimePicker";
 
 interface Props {
     party?: Party;
@@ -42,6 +44,23 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
     const { data: employee, isFetching } = useFetchEmployeeQuery(party?.partyId, {
         skip: party?.partyId === undefined || editMode !== 2,
     });
+
+    const transformedEmployee = React.useMemo(() => {
+        if (!employee) return undefined;
+        const e = { ...employee };
+        if (e.attendanceStartsAt && typeof e.attendanceStartsAt === 'string') {
+            const parts = e.attendanceStartsAt.split(':');
+            if (parts.length >= 2) {
+                const hours = parseInt(parts[0], 10);
+                const minutes = parseInt(parts[1], 10);
+                const seconds = parts.length > 2 ? parseInt(parts[2], 10) : 0;
+                const date = new Date();
+                date.setHours(hours, minutes, seconds, 0);
+                e.attendanceStartsAt = date;
+            }
+        }
+        return e;
+    }, [employee]);
 
     const [createEmployee, { isLoading: isCreating }] = useCreateEmployeeMutation();
     const [updateEmployee, { isLoading: isUpdating }] = useUpdateEmployeeMutation();
@@ -84,6 +103,18 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
       skip: !companyId,
     });
 
+    const { data: departmentsData } = useFetchDepartmentsLovQuery({ pageSize: 100 });
+    const departments = departmentsData?.parties || [];
+
+    React.useEffect(() => {
+        if (creationSuccess) {
+            const timer = setTimeout(() => {
+                cancelEdit();
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [creationSuccess, cancelEdit]);
+
     async function handleSubmitData(data: any) {
         setButtonFlag(true);
         try {
@@ -91,6 +122,17 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
             const submitData = { ...data };
             if (submitData.reportingTo && typeof submitData.reportingTo === 'object') {
                 submitData.reportingToPartyId = submitData.reportingTo.fromPartyId;
+            }
+
+            if (submitData.departmentPartyId && typeof submitData.departmentPartyId === 'object') {
+                submitData.departmentPartyId = submitData.departmentPartyId.fromPartyId;
+            }
+
+            if (submitData.attendanceStartsAt instanceof Date) {
+                // Ensure only HH:mm:00 (seconds are zeroed)
+                const hours = submitData.attendanceStartsAt.getHours().toString().padStart(2, '0');
+                const minutes = submitData.attendanceStartsAt.getMinutes().toString().padStart(2, '0');
+                submitData.attendanceStartsAt = `${hours}:${minutes}:00`;
             }
 
             let response;
@@ -118,6 +160,11 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
         }
     }
     
+
+    const amMin = new Date();
+    amMin.setHours(0, 0, 0, 0);
+    const amMax = new Date();
+    amMax.setHours(11, 59, 59, 999);
 
     return (
         <Paper elevation={5} className={`div-container-withBorderCurved`} sx={{ mt: 5 }}>
@@ -223,8 +270,8 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
                     </Grid>
 
                     <Form
-                        initialValues={editMode === 2 ? employee : undefined}
-                        key={JSON.stringify(employee)}
+                        initialValues={editMode === 2 ? transformedEmployee : undefined}
+                        key={JSON.stringify(transformedEmployee)}
                         onSubmit={(values) => handleSubmitData(values)}
                         render={(formRenderProps) => (
                             <FormElement>
@@ -300,6 +347,38 @@ export default function CreateEmployeeForm({ party, cancelEdit, editMode }: Prop
                                                 dataItemKey="preferredPayrollPaymentMethodId"
                                                 textField="description"
                                                 validator={requiredValidator}
+                                            />
+                                        </Grid>
+
+                                        <Grid item xs={4}>
+                                            <Field
+                                                id="departmentPartyId"
+                                                name="departmentPartyId"
+                                                label={getTranslatedLabel("party.employees.form.departmentPartyId", "Department")}
+                                                component={MemoizedFormComboBox2}
+                                                data={departments}
+                                                dataItemKey="fromPartyId"
+                                                textField="fromPartyName"
+                                            />
+                                        </Grid>
+
+                                        <Grid item xs={4}>
+                                            <Field
+                                                id="fingerPrintAttendanceId"
+                                                name="fingerPrintAttendanceId"
+                                                label={getTranslatedLabel("party.employees.form.fingerPrintAttendanceId", "Finger Print ID")}
+                                                component={FormInput}
+                                            />
+                                        </Grid>
+
+                                        <Grid item xs={4}>
+                                            <Field
+                                                id="attendanceStartsAt"
+                                                name="attendanceStartsAt"
+                                                label={getTranslatedLabel("party.employees.form.attendanceStartsAt", "Attendance Starts At")}
+                                                component={FormTimePicker}
+                                                min={amMin}
+                                                max={amMax}
                                             />
                                         </Grid>
 

@@ -141,7 +141,10 @@ public class GetEmployee
                     ReportingToPartyId = epfRep.PartyId,
                     ReportingToPartyName = managerParty.Description,
                     GlAccountIdAdvancedPayment = prty.GlAccountIdAdvancedPayment,
-                    PreferredPayrollPaymentMethodId = prty.PreferredPayrollPaymentMethodId
+                    PreferredPayrollPaymentMethodId = prty.PreferredPayrollPaymentMethodId,
+                    DepartmentPartyId = prty.DepartmentPartyId,
+                    FingerPrintAttendanceId = prty.FingerPrintAttendanceId,
+                    AttendanceStartsAt = prty.AttendanceStartsAt
                 };
 
             var rawResults = await query
@@ -193,6 +196,9 @@ public class GetEmployee
                 ReportingToPartyId = firstRecord.ReportingToPartyId,
                 GlAccountIdAdvancedPayment = firstRecord.GlAccountIdAdvancedPayment,
                 PreferredPayrollPaymentMethodId = firstRecord.PreferredPayrollPaymentMethodId,
+                DepartmentPartyId = firstRecord.DepartmentPartyId,
+                FingerPrintAttendanceId = firstRecord.FingerPrintAttendanceId,
+                AttendanceStartsAt = firstRecord.AttendanceStartsAt,
  
                 // All linked GL accounts
                 LinkedGlAccounts = rawResults
