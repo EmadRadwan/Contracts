@@ -36,14 +36,16 @@ const FingerprintUpload: React.FC<FingerprintUploadProps> = ({ employees, onCalc
 
                 // Group by employee and date
                 const empRecords: { [fpId: string]: { [date: string]: Date[] } } = {};
+                let globalMinDate: Date | null = null;
+                let globalMaxDate: Date | null = null;
 
                 rows.forEach(row => {
                     const fpId = row.A;
                     const timestampVal = row.D;
                     const type = typeof row.E === 'string' ? row.E.trim() : row.E;
 
-                    if (type === 'حضور' && fpId && timestampVal) {
-                        let timestamp: Date;
+                    if (timestampVal) {
+                        let timestamp: Date | null = null;
                         
                         if (timestampVal instanceof Date) {
                             timestamp = timestampVal;
@@ -76,22 +78,27 @@ const FingerprintUpload: React.FC<FingerprintUploadProps> = ({ employees, onCalc
                             } else {
                                 timestamp = new Date(timestampVal);
                             }
-                        } else {
-                            return;
                         }
 
-                        if (isNaN(timestamp.getTime())) return;
+                        if (timestamp && !isNaN(timestamp.getTime())) {
+                            // Update global range
+                            const dateOnly = new Date(timestamp.getFullYear(), timestamp.getMonth(), timestamp.getDate());
+                            if (!globalMinDate || dateOnly < globalMinDate) globalMinDate = dateOnly;
+                            if (!globalMaxDate || dateOnly > globalMaxDate) globalMaxDate = dateOnly;
 
-                        // Use a consistent date key YYYY-MM-DD
-                        const year = timestamp.getFullYear();
-                        const month = String(timestamp.getMonth() + 1).padStart(2, '0');
-                        const day = String(timestamp.getDate()).padStart(2, '0');
-                        const dateKey = `${year}-${month}-${day}`;
+                            if (type === 'حضور' && fpId) {
+                                // Use a consistent date key YYYY-MM-DD
+                                const year = timestamp.getFullYear();
+                                const month = String(timestamp.getMonth() + 1).padStart(2, '0');
+                                const day = String(timestamp.getDate()).padStart(2, '0');
+                                const dateKey = `${year}-${month}-${day}`;
 
-                        const fpIdStr = String(fpId).trim();
-                        if (!empRecords[fpIdStr]) empRecords[fpIdStr] = {};
-                        if (!empRecords[fpIdStr][dateKey]) empRecords[fpIdStr][dateKey] = [];
-                        empRecords[fpIdStr][dateKey].push(timestamp);
+                                const fpIdStr = String(fpId).trim();
+                                if (!empRecords[fpIdStr]) empRecords[fpIdStr] = {};
+                                if (!empRecords[fpIdStr][dateKey]) empRecords[fpIdStr][dateKey] = [];
+                                empRecords[fpIdStr][dateKey].push(timestamp);
+                            }
+                        }
                     }
                 });
 
@@ -100,7 +107,6 @@ const FingerprintUpload: React.FC<FingerprintUploadProps> = ({ employees, onCalc
 
                     const fpIdStr = String(emp.fingerPrintAttendanceId);
                     const records = empRecords[fpIdStr];
-                    if (!records) return;
 
                     let totalAbsence = 0;
                     
@@ -110,25 +116,44 @@ const FingerprintUpload: React.FC<FingerprintUploadProps> = ({ employees, onCalc
                     const startM = timeParts[1] || 0;
                     const startS = timeParts[2] || 0;
 
-                    Object.keys(records).forEach(dateKey => {
-                        const dailyCheckins = records[dateKey];
-                        // Find earliest check-in
-                        const earliest = new Date(Math.min(...dailyCheckins.map(d => d.getTime())));
+                    if (globalMinDate && globalMaxDate) {
+                        let current = new Date(globalMinDate);
+                        while (current <= globalMaxDate) {
+                            const dayOfWeek = current.getDay();
+                            // Fridays and Saturdays are off (5 and 6)
+                            if (dayOfWeek !== 5 && dayOfWeek !== 6) {
+                                const year = current.getFullYear();
+                                const month = String(current.getMonth() + 1).padStart(2, '0');
+                                const day = String(current.getDate()).padStart(2, '0');
+                                const dateKey = `${year}-${month}-${day}`;
 
-                        // Target time for this day
-                        const target = new Date(earliest);
-                        target.setHours(startH, startM, startS, 0);
+                                const dailyCheckins = records ? records[dateKey] : null;
 
-                        const diffMs = earliest.getTime() - target.getTime();
-                        if (diffMs > 0) {
-                            const diffHours = diffMs / (1000 * 60 * 60);
-                            if (diffHours >= 1) {
-                                totalAbsence += 0.5;
-                            } else {
-                                totalAbsence += 0.25;
+                                if (dailyCheckins && dailyCheckins.length > 0) {
+                                    // Find earliest check-in
+                                    const earliest = new Date(Math.min(...dailyCheckins.map(d => d.getTime())));
+
+                                    // Target time for this day
+                                    const target = new Date(earliest);
+                                    target.setHours(startH, startM, startS, 0);
+
+                                    const diffMs = earliest.getTime() - target.getTime();
+                                    if (diffMs > 0) {
+                                        const diffHours = diffMs / (1000 * 60 * 60);
+                                        if (diffHours >= 1) {
+                                            totalAbsence += 0.5;
+                                        } else {
+                                            totalAbsence += 0.25;
+                                        }
+                                    }
+                                } else {
+                                    // No حضور records for a workday means complete absence
+                                    totalAbsence += 1;
+                                }
                             }
+                            current.setDate(current.getDate() + 1);
                         }
-                    });
+                    }
 
                     absenceMap[emp.employeeId] = totalAbsence;
                 });
@@ -161,9 +186,6 @@ const FingerprintUpload: React.FC<FingerprintUploadProps> = ({ employees, onCalc
                         onChange={handleFileUpload}
                     />
                 </Button>
-               {/* <Typography variant="caption" color="textSecondary">
-                    {getTranslatedLabel("accounting.payroll.run.upload-hint", "Match by FingerprintAttendanceId, column A (ID), D (Time), E (Type: حضور)")}
-                </Typography>*/}
             </Box>
         </Box>
     );
