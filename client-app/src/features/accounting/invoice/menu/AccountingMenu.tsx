@@ -19,6 +19,7 @@ import { useTranslationHelper } from '../../../../app/hooks/useTranslationHelper
 import React, { useState } from "react";
 import {Can} from "../../../account/Can";
 import PayrollReport2 from "../payroll/PayrollReport2";
+import AbsenceReport from "../payroll/AbsenceReport";
 
 interface AccountingMenuProps {
     selectedMenuItem?: string;
@@ -119,6 +120,7 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
             subItems: [
                 { title: 'Payroll Run', key: 'payrollRun', path: '/invoices/payroll-run', icon: <PaidIcon sx={{ color: "#4CAF50" }} /> },
                 { title: 'Payroll Report', key: 'payrollReport', path: '/invoices/payroll-report', icon: <ReceiptLongIcon sx={{ color: "#FF4081" }} /> },
+                { title: 'Absence Report', key: 'absenceReport', path: '/invoices/absence-report', icon: <ReceiptLongIcon sx={{ color: "#FFC107" }} /> },
             ],
         },
     ];
@@ -133,9 +135,13 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
     ];
 
     const [payrollReportOpen, setPayrollReportOpen] = useState(false);
+    const [absenceReportOpen, setAbsenceReportOpen] = useState(false);
 
     const handlePayrollReportOpen = () => setPayrollReportOpen(true);
     const handlePayrollReportClose = () => setPayrollReportOpen(false);
+
+    const handleAbsenceReportOpen = () => setAbsenceReportOpen(true);
+    const handleAbsenceReportClose = () => setAbsenceReportOpen(false);
 
     return (
         <Toolbar sx={{
@@ -191,14 +197,17 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
                                             {group.subItems.map((sub) => {
                                                 const isSubSelected = normalizePath(sub.path) === normalizedSelectedMenuItem;
                                                 const isPayrollReport = sub.key === 'payrollReport';
+                                                const isAbsenceReport = sub.key === 'absenceReport';
                                                 return (
                                                     <MenuItem
                                                         key={sub.key}
-                                                        component={isPayrollReport ? 'div' : NavLink}
-                                                        {...(!isPayrollReport ? { to: sub.path } : {})}
+                                                        component={(isPayrollReport || isAbsenceReport) ? 'div' : NavLink}
+                                                        {...(!(isPayrollReport || isAbsenceReport) ? { to: sub.path } : {})}
                                                         onClick={() => {
                                                             if (isPayrollReport) {
                                                                 handlePayrollReportOpen();
+                                                            } else if (isAbsenceReport) {
+                                                                handleAbsenceReportOpen();
                                                             } else {
                                                                 handleClick(sub.key);
                                                                 if (onMenuSelect) {
@@ -257,6 +266,7 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
                 </List>
             </Box>
             <PayrollReport2 open={payrollReportOpen} onClose={handlePayrollReportClose} />
+            <AbsenceReport open={absenceReportOpen} onClose={handleAbsenceReportClose} />
         </Toolbar>
     );
 }

@@ -1,3 +1,4 @@
+using Application.Accounting.FinAccounts;
 using Application.Accounting.Services;
 using Application.Shipments.Invoices;
 using Domain;
@@ -25,6 +26,8 @@ public class BatchCreatePayrollInvoices
         public decimal OvertimeDays { get; set; }
         public decimal OvertimeValue { get; set; }
         public List<AdvanceDeductionDto> Advances { get; set; }
+        public string PreferredPayrollPaymentMethodId { get; set; }
+        public decimal NetSalary { get; set; }
     }
 
     public class AdvanceDeductionDto
@@ -39,13 +42,16 @@ public class BatchCreatePayrollInvoices
         private readonly DataContext _context;
         private readonly IInvoiceHelperService _invoiceHelperService;
         private readonly IInvoiceUtilityService _invoiceUtilityService;
+        private readonly IPaymentHelperService _paymentHelperService;
 
         public Handler(DataContext context, IInvoiceHelperService invoiceHelperService,
-            IInvoiceUtilityService invoiceUtilityService)
+            IInvoiceUtilityService invoiceUtilityService, IPaymentHelperService paymentHelperService)
         {
             _context = context;
             _invoiceHelperService = invoiceHelperService;
             _invoiceUtilityService = invoiceUtilityService;
+            _paymentHelperService =
+                paymentHelperService ?? throw new ArgumentNullException(nameof(paymentHelperService));
         }
 
         /// <summary>
@@ -80,10 +86,60 @@ public class BatchCreatePayrollInvoices
         /// <summary>
         /// Deletes payroll invoices and all related records using ExecuteDeleteAsync (EF Core 7+)
         /// </summary>
-        private async Task DeletePayrollInvoicesSafelyAsync(List<string> invoiceIds, CancellationToken ct)
+        private async Task DeletePayrollInvoicesSafelyAsync(List<string> invoiceIds, string organizationPartyId, DateOnly monthStart, DateOnly monthEnd, CancellationToken ct)
         {
             if (!invoiceIds.Any()) return;
 
+            // 1. Find and delete related aggregated Payments
+            var paymentIds = await _context.Payments
+                .Where(p => p.PaymentTypeId == "PAYROL_PAYMENT"
+                            && p.PartyIdFrom == organizationPartyId
+                            && p.PartyIdTo == "276"
+                            && p.EffectiveDate >= monthStart
+                            && p.EffectiveDate <= monthEnd)
+                .Select(p => p.PaymentId)
+                .ToListAsync(ct);
+
+            if (paymentIds.Any())
+            {
+                // Delete accounting entries for payments
+                await _context.AcctgTransEntries
+                    .Where(ate => _context.AcctgTrans
+                        .Where(at => at.PaymentId != null && paymentIds.Contains(at.PaymentId))
+                        .Select(at => at.AcctgTransId)
+                        .Contains(ate.AcctgTransId))
+                    .ExecuteDeleteAsync(ct);
+
+                // Delete accounting attributes for payments
+                await _context.AcctgTransAttributes
+                    .Where(ata => _context.AcctgTrans
+                        .Where(at => at.PaymentId != null && paymentIds.Contains(at.PaymentId))
+                        .Select(at => at.AcctgTransId)
+                        .Contains(ata.AcctgTransId))
+                    .ExecuteDeleteAsync(ct);
+
+                // Delete accounting transactions for payments
+                await _context.AcctgTrans
+                    .Where(at => at.PaymentId != null && paymentIds.Contains(at.PaymentId))
+                    .ExecuteDeleteAsync(ct);
+
+                // Delete financial account transactions for payments
+                await _context.FinAccountTrans
+                    .Where(fat => fat.PaymentId != null && paymentIds.Contains(fat.PaymentId))
+                    .ExecuteDeleteAsync(ct);
+
+                // Delete payment group memberships
+                await _context.PaymentGroupMembers
+                    .Where(pgm => paymentIds.Contains(pgm.PaymentId))
+                    .ExecuteDeleteAsync(ct);
+
+                // Finally delete the payments
+                await _context.Payments
+                    .Where(p => paymentIds.Contains(p.PaymentId))
+                    .ExecuteDeleteAsync(ct);
+            }
+
+            // 2. Delete Invoices and related records
             // Delete child records first (order is important)
             await _context.InvoiceItems
                 .Where(ii => invoiceIds.Contains(ii.InvoiceId))
@@ -91,6 +147,10 @@ public class BatchCreatePayrollInvoices
 
             await _context.Set<InvoiceRole>() // Assuming you have InvoiceRole entity
                 .Where(ir => invoiceIds.Contains(ir.InvoiceId))
+                .ExecuteDeleteAsync(ct);
+
+            await _context.InvoiceAttributes
+                .Where(ia => invoiceIds.Contains(ia.InvoiceId))
                 .ExecuteDeleteAsync(ct);
 
             await _context.Set<InvoiceStatus>()
@@ -105,6 +165,13 @@ public class BatchCreatePayrollInvoices
                     .Contains(ate.AcctgTransId))
                 .ExecuteDeleteAsync(ct);
 
+            await _context.AcctgTransAttributes
+                .Where(ata => _context.AcctgTrans
+                    .Where(at => invoiceIds.Contains(at.InvoiceId))
+                    .Select(at => at.AcctgTransId)
+                    .Contains(ata.AcctgTransId))
+                .ExecuteDeleteAsync(ct);
+
             await _context.AcctgTrans
                 .Where(at => invoiceIds.Contains(at.InvoiceId))
                 .ExecuteDeleteAsync(ct);
@@ -117,6 +184,11 @@ public class BatchCreatePayrollInvoices
 
         public async Task<Result<Unit>> Handle(Command request, CancellationToken cancellationToken)
         {
+            if (request.Employees == null)
+            {
+                return Result<Unit>.Failure("Employees list is null.");
+            }
+
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
@@ -140,7 +212,7 @@ public class BatchCreatePayrollInvoices
                     await RevertPayrollDeductionsForInvoices(existingInvoiceIds);
 
                     // Then safely delete old payroll invoices + all related artifacts using ExecuteDeleteAsync
-                    await DeletePayrollInvoicesSafelyAsync(existingInvoiceIds, cancellationToken);
+                    await DeletePayrollInvoicesSafelyAsync(existingInvoiceIds, request.OrganizationPartyId, monthStart, monthEnd, cancellationToken);
                 }
 
                 foreach (var emp in request.Employees)
@@ -154,11 +226,12 @@ public class BatchCreatePayrollInvoices
                         StatusId = "INVOICE_IN_PROCESS",
                         CurrencyUomId = "EGP", // Default for payroll as seen in existing logic
                         InvoiceDate = request.InvoiceDate,
-                        Description = $"Payroll for {request.InvoiceDate:MMMM yyyy}"
+                        Description = $"Payroll for {request.InvoiceDate.ToString("MMMM yyyy")}"
                     };
 
                     var createdInvoice = await _invoiceHelperService.CreateInvoice(invoiceDto);
-                    await _context.SaveChangesAsync(cancellationToken); // Ensure invoice is persisted for FK constraints
+                    await _context.SaveChangesAsync(
+                        cancellationToken); // Ensure invoice is persisted for FK constraints
                     var invoiceId = createdInvoice.InvoiceId;
                     var itemSeqId = 1;
 
@@ -235,8 +308,11 @@ public class BatchCreatePayrollInvoices
                             else if (adv.AdvanceTypeId == "EMPLOYEE_LONG_TERM_ADVANCE")
                             {
                                 await _context.EmployeeAdvanceSchedules
-                                    .Where(s => s.AdvanceId == adv.AdvanceId && s.PayrolInvoiceId == null && s.StatusId == "SCHEDULED"
-                                        && s.DueDate.HasValue && s.DueDate.Value.Month == request.InvoiceDate.Month && s.DueDate.Value.Year == request.InvoiceDate.Year)
+                                    .Where(s => s.AdvanceId == adv.AdvanceId && s.PayrolInvoiceId == null &&
+                                                s.StatusId == "SCHEDULED"
+                                                && s.DueDate.HasValue &&
+                                                s.DueDate.Value.Month == request.InvoiceDate.Month &&
+                                                s.DueDate.Value.Year == request.InvoiceDate.Year)
                                     .Take(1)
                                     .ExecuteUpdateAsync(s => s
                                         .SetProperty(x => x.StatusId, "PAID")
@@ -252,6 +328,63 @@ public class BatchCreatePayrollInvoices
                     // 6. Set Invoice to READY (this triggers accounting posting)
                     await _invoiceUtilityService.SetInvoiceStatus(invoiceId, "INVOICE_READY", request.InvoiceDate);
                 }
+
+                // ===================================================================
+                // STEP 3: Create Payments based on Preferred Payment Method
+                // ===================================================================
+                var cashTotal = request.Employees
+                    .Where(e => e.PreferredPayrollPaymentMethodId == "CASH")
+                    .Sum(e => e.NetSalary);
+
+                var bankTransferTotal = request.Employees
+                    .Where(e => e.PreferredPayrollPaymentMethodId == "BANK_TRANSFER")
+                    .Sum(e => e.NetSalary);
+
+                if (cashTotal > 0)
+                {
+                    var paymentResult = await _paymentHelperService.CreatePaymentAndFinAccountTrans(
+                        new CreatePaymentAndFinAccountTransRequest
+                        {
+                            PaymentTypeId = "PAYROL_PAYMENT",
+                            PartyIdFrom = request.OrganizationPartyId,
+                            PartyIdTo = "276",
+                            PaymentMethodId = "CASH",
+                            Amount = cashTotal,
+                            StatusId = "PMNT_NOT_PAID",
+                            IsBankTransfer = false,
+                            PaymentDate = request.InvoiceDate,
+                            Comments = $"دفعة رواتب نقدية - {request.InvoiceDate.ToString("MM/yyyy")}"
+                        });
+
+                    if (!paymentResult.IsSuccess)
+                    {
+                        throw new Exception($"Failed to create Cash payment: {paymentResult.Error}");
+                    }
+                }
+
+                if (bankTransferTotal > 0)
+                {
+                    var paymentResult = await _paymentHelperService.CreatePaymentAndFinAccountTrans(
+                        new CreatePaymentAndFinAccountTransRequest
+                        {
+                            PaymentTypeId = "PAYROL_PAYMENT",
+                            PartyIdFrom = request.OrganizationPartyId,
+                            PartyIdTo = "276",
+                            PaymentMethodId = "CIB_CHECKING",
+                            Amount = bankTransferTotal,
+                            StatusId = "PMNT_NOT_PAID",
+                            IsBankTransfer = true,
+                            PaymentDate = request.InvoiceDate,
+                            Comments = $"تحويل رواتب بنكي - {request.InvoiceDate.ToString("MM/yyyy")}"
+                        });
+
+                    if (!paymentResult.IsSuccess)
+                    {
+                        throw new Exception($"Failed to create Bank Transfer payment: {paymentResult.Error}");
+                    }
+                }
+
+                await _context.SaveChangesAsync(cancellationToken);
 
                 await transaction.CommitAsync(cancellationToken);
 

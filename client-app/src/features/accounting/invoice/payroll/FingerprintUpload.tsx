@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button, Box, Typography } from '@mui/material';
 import * as XLSX from 'xlsx';
+import { toast } from 'react-toastify';
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
 
 interface FingerprintUploadProps {
@@ -36,26 +37,14 @@ const FingerprintUpload: React.FC<FingerprintUploadProps> = ({ employees, onCalc
                 // Group by employee and date
                 const empRecords: { [fpId: string]: { [date: string]: Date[] } } = {};
 
-                console.log("🔍 Total rows read from Excel file:", rows.length);
-
-                rows.forEach((row, index) => {
+                rows.forEach(row => {
                     const fpId = row.A;
                     const timestampVal = row.D;
                     const type = typeof row.E === 'string' ? row.E.trim() : row.E;
-                    const fpIdStr = fpId ? String(fpId).trim() : '';
-
-                    // DEBUG LOG FOR 1019 EXCEL PARSING
-                    if (fpIdStr === '1019') {
-                        console.groupCollapsed(`📄 Row ${index + 2}: Processing 1019`);
-                        console.log(`Column A (fpId): "${fpId}"`);
-                        console.log(`Column D (timestampVal):`, timestampVal);
-                        console.log(`Column E (type): "${type}"`);
-                        console.groupEnd();
-                    }
 
                     if (type === 'حضور' && fpId && timestampVal) {
                         let timestamp: Date;
-
+                        
                         if (timestampVal instanceof Date) {
                             timestamp = timestampVal;
                         } else if (typeof timestampVal === 'string') {
@@ -71,20 +60,16 @@ const FingerprintUpload: React.FC<FingerprintUploadProps> = ({ employees, onCalc
                                     const day = parseInt(dateParts[0], 10);
                                     const month = parseInt(dateParts[1], 10);
                                     const year = parseInt(dateParts[2], 10);
-
+                                    
                                     const timeParts = timePart.split(':');
                                     let hours = parseInt(timeParts[0], 10) || 0;
                                     const minutes = parseInt(timeParts[1], 10) || 0;
                                     const seconds = parseInt(timeParts[2], 10) || 0;
-
+                                    
                                     if (ampm === 'PM' && hours < 12) hours += 12;
                                     if (ampm === 'AM' && hours === 12) hours = 0;
-
+                                    
                                     timestamp = new Date(year, month - 1, day, hours, minutes, seconds);
-
-                                    if (fpIdStr === '1019') {
-                                        console.log(`⚙️ 1019 String Parser success: ${timestamp.toISOString()}`);
-                                    }
                                 } else {
                                     timestamp = new Date(timestampVal);
                                 }
@@ -92,14 +77,10 @@ const FingerprintUpload: React.FC<FingerprintUploadProps> = ({ employees, onCalc
                                 timestamp = new Date(timestampVal);
                             }
                         } else {
-                            if (fpIdStr === '1019') console.warn(`⚠️ 1019 Row skipped: timestampVal is neither Date nor String`);
                             return;
                         }
 
-                        if (isNaN(timestamp.getTime())) {
-                            if (fpIdStr === '1019') console.error(`❌ 1019 Invalid Date generated from value:`, timestampVal);
-                            return;
-                        }
+                        if (isNaN(timestamp.getTime())) return;
 
                         // Use a consistent date key YYYY-MM-DD
                         const year = timestamp.getFullYear();
@@ -107,45 +88,22 @@ const FingerprintUpload: React.FC<FingerprintUploadProps> = ({ employees, onCalc
                         const day = String(timestamp.getDate()).padStart(2, '0');
                         const dateKey = `${year}-${month}-${day}`;
 
+                        const fpIdStr = String(fpId).trim();
                         if (!empRecords[fpIdStr]) empRecords[fpIdStr] = {};
                         if (!empRecords[fpIdStr][dateKey]) empRecords[fpIdStr][dateKey] = [];
                         empRecords[fpIdStr][dateKey].push(timestamp);
-                    } else if (fpIdStr === '1019') {
-                        // Log exactly why a row containing 1019 wasn't grouped
-                        console.warn(`⚠️ 1019 Row skipped grouping. Criteria failed: type='حضور' (${type === 'حضور'}), fpId exists (${!!fpId}), timestampVal exists (${!!timestampVal})`);
                     }
                 });
 
                 employees.forEach(emp => {
+                    if (!emp.fingerPrintAttendanceId || !emp.attendanceStartsAt) return;
+
                     const fpIdStr = String(emp.fingerPrintAttendanceId);
-                    const isTargetEmp = fpIdStr === '1019' || emp.employeeId === '1019';
-
-                    if (isTargetEmp) {
-                        console.group(`📊 CALCULATING ABSENCE FOR EMP 1019`);
-                        console.log(`Employee ID in system:`, emp.employeeId);
-                        console.log(`Fingerprint Attendance ID:`, emp.fingerPrintAttendanceId);
-                        console.log(`Expected Attendance Starts At:`, emp.attendanceStartsAt);
-                    }
-
-                    if (!emp.fingerPrintAttendanceId || !emp.attendanceStartsAt) {
-                        if (isTargetEmp) {
-                            console.error(`❌ Calculation stopped: Missing fingerPrintAttendanceId or attendanceStartsAt on employee object!`);
-                            console.groupEnd();
-                        }
-                        return;
-                    }
-
                     const records = empRecords[fpIdStr];
-                    if (!records) {
-                        if (isTargetEmp) {
-                            console.error(`❌ Calculation stopped: No grouped records found for fingerprint ID "1019" in empRecords. Current Map keys:`, Object.keys(empRecords));
-                            console.groupEnd();
-                        }
-                        return;
-                    }
+                    if (!records) return;
 
                     let totalAbsence = 0;
-
+                    
                     // Parse attendanceStartsAt "10:00:00"
                     const timeParts = String(emp.attendanceStartsAt).split(':').map(Number);
                     const startH = timeParts[0] || 0;
@@ -162,34 +120,15 @@ const FingerprintUpload: React.FC<FingerprintUploadProps> = ({ employees, onCalc
                         target.setHours(startH, startM, startS, 0);
 
                         const diffMs = earliest.getTime() - target.getTime();
-                        let dayAbsenceIncrement = 0;
-
                         if (diffMs > 0) {
                             const diffHours = diffMs / (1000 * 60 * 60);
                             if (diffHours >= 1) {
-                                dayAbsenceIncrement = 0.5;
+                                totalAbsence += 0.5;
                             } else {
-                                dayAbsenceIncrement = 0.25;
+                                totalAbsence += 0.25;
                             }
-                            totalAbsence += dayAbsenceIncrement;
-                        }
-
-                        if (isTargetEmp) {
-                            console.log(
-                                `📅 Date: ${dateKey} | ` +
-                                `Earliest Check-In: ${earliest.toTimeString().split(' ')[0]} | ` +
-                                `Shift Target: ${target.toTimeString().split(' ')[0]} | ` +
-                                `Late by: ${(diffMs > 0 ? diffMs / (1000 * 60) : 0).toFixed(1)} mins | ` +
-                                `Added Absence: +${dayAbsenceIncrement} | ` +
-                                `Running Total: ${totalAbsence}`
-                            );
                         }
                     });
-
-                    if (isTargetEmp) {
-                        console.log(`🏁 FINAL ABSENCE FOR 1019:`, totalAbsence);
-                        console.groupEnd();
-                    }
 
                     absenceMap[emp.employeeId] = totalAbsence;
                 });
@@ -197,7 +136,7 @@ const FingerprintUpload: React.FC<FingerprintUploadProps> = ({ employees, onCalc
                 onCalculated(absenceMap);
             } catch (error) {
                 console.error("Error processing fingerprint file:", error);
-                alert("Error processing file. Please ensure it is a valid Excel file with the expected format.");
+                toast.error(getTranslatedLabel("accounting.payroll.run.upload-error", "Error processing file. Please ensure it is a valid Excel file with the expected format."));
             }
         };
         reader.readAsBinaryString(file);
@@ -222,12 +161,12 @@ const FingerprintUpload: React.FC<FingerprintUploadProps> = ({ employees, onCalc
                         onChange={handleFileUpload}
                     />
                 </Button>
-                <Typography variant="caption" color="textSecondary">
+               {/* <Typography variant="caption" color="textSecondary">
                     {getTranslatedLabel("accounting.payroll.run.upload-hint", "Match by FingerprintAttendanceId, column A (ID), D (Time), E (Type: حضور)")}
-                </Typography>
+                </Typography>*/}
             </Box>
         </Box>
     );
 };
 
-export default FingerprintUpload; 2.25
+export default FingerprintUpload;

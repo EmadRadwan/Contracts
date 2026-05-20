@@ -1304,7 +1304,7 @@ public class PaymentHelperService : IPaymentHelperService
             var paymentType = await _context.PaymentTypes
                 .FirstOrDefaultAsync(pt => pt.PaymentTypeId == request.PaymentTypeId);
 
-            if (
+            if (paymentType != null &&
                 !string.IsNullOrEmpty(request.OverrideGlAccountId) && paymentType.ParentTypeId == "DISBURSEMENT" &&
                 (!string.IsNullOrEmpty(request.ChequeNumber) || request.ChequeDate.HasValue))
             {

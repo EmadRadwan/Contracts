@@ -1,3 +1,4 @@
+using System;
 using Application.Core;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,8 @@ public class ListEmployeesWithSalary
         public string GlAccountIdAdvancedPayment { get; set; }
         public string AdvancedPaymentAccountNameArabic { get; set; }
         public string PreferredPayrollPaymentMethodId { get; set; }
+        public string FingerPrintAttendanceId { get; set; }
+        public TimeSpan? AttendanceStartsAt { get; set; }
     }
 
     public class Handler : IRequestHandler<Query, Result<List<EmployeeSalaryDto>>>
@@ -64,7 +67,9 @@ public class ListEmployeesWithSalary
                     SalaryAccountNameArabic = gla.AccountNameArabic,
                     GlAccountIdAdvancedPayment = prty.GlAccountIdAdvancedPayment,
                     AdvancedPaymentAccountNameArabic = glaAdv.AccountNameArabic,
-                    PreferredPayrollPaymentMethodId = prty.PreferredPayrollPaymentMethodId
+                    PreferredPayrollPaymentMethodId = prty.PreferredPayrollPaymentMethodId,
+                    FingerPrintAttendanceId = prty.FingerPrintAttendanceId,
+                    AttendanceStartsAt = prty.AttendanceStartsAt
                 };
 
             var rawResults = await query
@@ -87,7 +92,9 @@ public class ListEmployeesWithSalary
                         SalaryAccountNameArabic = latestRate.SalaryAccountNameArabic,
                         GlAccountIdAdvancedPayment = latestRate.GlAccountIdAdvancedPayment,
                         AdvancedPaymentAccountNameArabic = latestRate.AdvancedPaymentAccountNameArabic,
-                        PreferredPayrollPaymentMethodId = latestRate.PreferredPayrollPaymentMethodId
+                        PreferredPayrollPaymentMethodId = latestRate.PreferredPayrollPaymentMethodId,
+                        FingerPrintAttendanceId = latestRate.FingerPrintAttendanceId,
+                        AttendanceStartsAt = latestRate.AttendanceStartsAt
                     };
                 })
                 .ToList();

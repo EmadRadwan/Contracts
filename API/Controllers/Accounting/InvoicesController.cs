@@ -200,6 +200,17 @@ public class InvoicesController : BaseApiController
         }));
     }
 
+    [HttpGet("listAbsenceData")]
+    public async Task<IActionResult> ListAbsenceData([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, [FromQuery] string organizationPartyId)
+    {
+        return HandleResult(await Mediator.Send(new ListAbsenceData.Query
+        {
+            FromDate = fromDate,
+            ToDate = toDate,
+            OrganizationPartyId = organizationPartyId
+        }));
+    }
+
     [HttpGet("checkExistingPayrollInvoices")]
     public async Task<IActionResult> CheckExistingPayrollInvoices([FromQuery] DateTime invoiceDate, [FromQuery] string organizationPartyId)
     {

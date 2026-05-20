@@ -13,7 +13,12 @@ import {
     TableRow,
     TextField,
     CircularProgress,
-    Button
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle
 } from "@mui/material";
 import { LoadingButton } from "@mui/lab";
 import { toast } from "react-toastify";
@@ -29,6 +34,7 @@ import {
     useFetchPayrollAdvancesQuery
 } from "../../../../app/store/apis";
 import { EmployeeAdvance } from "../../../../app/models/humanResources/employeeAdvance";
+import FingerprintUpload from "./FingerprintUpload";
 
 interface EmployeePayrollData {
     employeeId: string;
@@ -44,6 +50,8 @@ interface EmployeePayrollData {
     overtimeValue: number;
     netSalary: number;
     isSelected: boolean;
+    fingerPrintAttendanceId?: string;
+    attendanceStartsAt?: string;
     advances: {
         advanceId: string;
         advanceTypeId: string;
@@ -59,6 +67,7 @@ const PayrollRun: React.FC = () => {
     
     const [invoiceDate, setInvoiceDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [payrollData, setPayrollData] = useState<EmployeePayrollData[]>([]);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
     const totals = useMemo(() => {
         return payrollData.reduce((acc, emp) => {
@@ -169,6 +178,8 @@ const PayrollRun: React.FC = () => {
                 overtimeValue: 0,
                 netSalary: baseSalary - empAdvances.reduce((sum, adv) => sum + adv.amount, 0),
                 isSelected: baseSalary > 0 && !!(emp.advancedPaymentAccountNameArabic || emp.salaryAccountNameArabic),
+                fingerPrintAttendanceId: emp.fingerPrintAttendanceId,
+                attendanceStartsAt: emp.attendanceStartsAt,
                 advances: empAdvances
             };
         });
@@ -292,7 +303,9 @@ const PayrollRun: React.FC = () => {
                     absenceValue: emp.absenceValue,
                     overtimeDays: emp.overtimeDays,
                     overtimeValue: emp.overtimeValue,
-                    advances: emp.advances
+                    advances: emp.advances,
+                    preferredPayrollPaymentMethodId: emp.preferredPayrollPaymentMethodId,
+                    netSalary: emp.netSalary
                 })),
                 invoiceDate: invoiceDate,
                 organizationPartyId: companyId
@@ -309,10 +322,11 @@ const PayrollRun: React.FC = () => {
     };
 
     const handleDeleteExisting = async () => {
-        if (!window.confirm(getTranslatedLabel("accounting.payroll.run.confirm-delete", "Are you sure you want to delete existing invoices for this month? This action cannot be undone."))) {
-            return;
-        }
+        setIsDeleteDialogOpen(true);
+    };
 
+    const handleConfirmDelete = async () => {
+        setIsDeleteDialogOpen(false);
         try {
             await deleteInvoices({
                 invoiceDate,
@@ -324,6 +338,26 @@ const PayrollRun: React.FC = () => {
             console.error("Failed to delete payroll invoices", error);
             toast.error(getTranslatedLabel("accounting.payroll.run.delete-failed", "Failed to delete payroll invoices"));
         }
+    };
+
+    const handleFingerprintCalculated = (results: { [employeeId: string]: number }) => {
+        setPayrollData(prev => prev.map(emp => {
+            if (results[emp.employeeId] !== undefined) {
+                const newAbsenceDays = results[emp.employeeId];
+                const newAbsenceValue = Math.round((emp.baseSalary / 30) * newAbsenceDays);
+                const totalAdvances = emp.advances.reduce((sum, adv) => sum + adv.amount, 0);
+                const newNetSalary = emp.baseSalary + emp.overtimeValue - newAbsenceValue - totalAdvances;
+
+                return {
+                    ...emp,
+                    absenceDays: newAbsenceDays,
+                    absenceValue: newAbsenceValue,
+                    netSalary: Math.round(newNetSalary)
+                };
+            }
+            return emp;
+        }));
+        toast.success(getTranslatedLabel("accounting.payroll.run.fingerprint-processed", "Fingerprint data processed successfully"));
     };
 
     if (isEmployeesLoading || isAdvancesLoading) return <CircularProgress />;
@@ -378,6 +412,15 @@ const PayrollRun: React.FC = () => {
                     {getTranslatedLabel("accounting.payroll.run.save-draft", "Save as Draft")}
                 </Button>
             </Box>
+
+            <FingerprintUpload 
+                employees={payrollData.map(emp => ({
+                    employeeId: emp.employeeId,
+                    fingerPrintAttendanceId: emp.fingerPrintAttendanceId,
+                    attendanceStartsAt: emp.attendanceStartsAt
+                }))}
+                onCalculated={handleFingerprintCalculated}
+            />
 
             <TableContainer component={Paper}>
                 <Table size="small">
@@ -438,7 +481,7 @@ const PayrollRun: React.FC = () => {
                                                 value={emp.absenceDays}
                                                 onChange={(e) => handleDataChange(index, 'absenceDays', parseFloat(e.target.value) || 0)}
                                                 inputProps={{ min: 0, step: 0.5 }}
-                                                sx={{ width: '60px' }}
+                                                sx={{ width: '75px' }}
                                                 disabled={invalid}
                                             />
                                             <Button 
@@ -461,7 +504,7 @@ const PayrollRun: React.FC = () => {
                                                 value={emp.overtimeDays}
                                                 onChange={(e) => handleDataChange(index, 'overtimeDays', parseFloat(e.target.value) || 0)}
                                                 inputProps={{ min: 0, step: 0.5 }}
-                                                sx={{ width: '60px' }}
+                                                sx={{ width: '85px' }}
                                                 disabled={invalid}
                                             />
                                             <Button 
@@ -516,6 +559,37 @@ const PayrollRun: React.FC = () => {
                     {getTranslatedLabel("accounting.payroll.run.submit", "Run Payroll")}
                 </LoadingButton>
             </Box>
+
+            <Dialog
+                open={isDeleteDialogOpen}
+                onClose={() => setIsDeleteDialogOpen(false)}
+                aria-labelledby="delete-dialog-title"
+                aria-describedby="delete-dialog-description"
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle id="delete-dialog-title">
+                    {getTranslatedLabel("accounting.payroll.run.confirm-delete-title", "Confirm Delete")}
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="delete-dialog-description">
+                        {getTranslatedLabel("accounting.payroll.run.confirm-delete", "Are you sure you want to delete existing invoices for this month? This action cannot be undone.")}
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setIsDeleteDialogOpen(false)}>
+                        {getTranslatedLabel("general.cancel", "Cancel")}
+                    </Button>
+                    <LoadingButton 
+                        onClick={handleConfirmDelete} 
+                        color="error" 
+                        loading={isDeleting}
+                        variant="contained"
+                    >
+                        {getTranslatedLabel("general.delete", "Delete")}
+                    </LoadingButton>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };

@@ -250,10 +250,10 @@ cd ~/mysql-backups/contracts-golden
       > ~/mysql-backups/contracts-golden/erp_contracts_no_definer_$(date +%Y-%m-%d_%H-%M-%S).sql
 
 gzip ~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-02-01_11-35-20.sql
-scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-05-16_07-37-56.sql ~/Desktop/
+scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-05-19_13-27-43.sql ~/Desktop/
 gunzip ~/Desktop/erp_contracts_no_definer_2026-02-01_11-35-20.sql.gz
 
-mysql -u root -p erp_contracts <  erp_contracts_no_definer_2026-05-16_07-37-56.sql
+mysql -u root -p erp_contracts <  erp_contracts_no_definer_2026-05-19_13-27-43.sql
 
 
 Portainer.io:
@@ -322,6 +322,5 @@ Summarize this entire conversation as a concise JSON or bullet-point outline, in
   
   
   
-  lets revisit the code in @file:PayrollRun.tsx and related code in @file:BatchCreatePayrollInvoices.cs as we need to create two Payments based on the `preferredPayrollPaymentMethodId` that we assign for each employee in @file:CreateEmployeeForm.tsx and that will be alwayes either '`BANK_TRANSFER`' or `CASH`. we need to create one payment for all `CASH` employees and another for all `BANK_TRANSFER` employees
-  
+  in @file:AccountingMenu.tsx we have the @file:PayrollReport2.tsx excel report that is a comprehensive report for payroll data. I want to add another menu item in @file:AccountingMenu.tsx at the same level that generates a similar report but only for absence days that's already included in @file:PayrollReport2.tsx. The new report should have its own hook and backend code - endpoint and handler - and should return absence data for those parties - emps- how have Party.`FingerPrintAttendanceId` highlighted in a different color and the `FingerPrintAttendanceId` included in the report to differentiate them from those emps who have their absence days entered manually. more context can be found in @file:PayrollRun.tsx . the new report should not include salary data
   

@@ -1,98 +1,57 @@
-using AutoMapper;
+using Application.Core;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
+using Domain;                    // Assuming InvoiceView is in Domain
+using Application.Interfaces;    // For IUserAccessor
 
-namespace Application.Catalog.ProductCategories;
-
-public class ListHierarchicalCategoriesRawMaterials
+namespace Application.Accounting.Invoices
 {
-    public class Query : IRequest<Result<List<ProductCategoryParentChildDto>>>
+    public class ListInvoices
     {
-        public string Language { get; set; } = "en";
-    }
-
-    public class Handler : IRequestHandler<Query, Result<List<ProductCategoryParentChildDto>>>
-    {
-        private readonly DataContext _context;
-
-        public Handler(DataContext context)
+        public class Query : IRequest<IQueryable<InvoiceView>>
         {
-            _context = context;
+            public ODataQueryOptions<InvoiceView> Options { get; set; } = null!;
         }
 
-        public async Task<Result<List<ProductCategoryParentChildDto>>> Handle(Query request,
-            CancellationToken cancellationToken)
+        public class Handler : IRequestHandler<Query, IQueryable<InvoiceView>>
         {
-            var language = (request.Language ?? "en").ToLower();
+            private readonly DataContext _context;
+            private readonly IUserAccessor _userAccessor;
 
-            // Load all categories
-            var categories = await _context.ProductCategories
-                .ToListAsync(cancellationToken);
-
-            if (!categories.Any())
-                return Result<List<ProductCategoryParentChildDto>>.Success(new List<ProductCategoryParentChildDto>());
-
-            // Dictionary for fast lookup
-            var categoryDict = categories.ToDictionary(c => c.ProductCategoryId);
-
-            var result = new List<ProductCategoryParentChildDto>();
-
-            void BuildTree(string categoryId, string? parentId, ProductCategoryParentChildDto? parentDto)
+            public Handler(DataContext context, IUserAccessor userAccessor)
             {
-                if (!categoryDict.TryGetValue(categoryId, out var cat))
-                    return;
-
-                var dto = new ProductCategoryParentChildDto
-                {
-                    ParentProductCategoryId = parentId,
-                    ProductCategoryId = categoryId,
-                    Description = language == "ar" 
-                        ? cat.DescriptionArabic ?? cat.Description ?? categoryId 
-                        : cat.Description ?? categoryId,
-                    Text = language == "ar" 
-                        ? cat.DescriptionArabic ?? cat.Description ?? categoryId 
-                        : cat.Description ?? categoryId,
-                    Items = new List<ProductCategoryParentChildDto>()
-                };
-
-                // Get direct children
-                var children = categories
-                    .Where(c => c.PrimaryParentCategoryId == categoryId)
-                    .ToList();
-
-                // Build children recursively
-                foreach (var child in children)
-                {
-                    BuildTree(child.ProductCategoryId, categoryId, dto);
-                }
-
-                // Add to parent or root
-                if (parentDto != null)
-                {
-                    parentDto.Items.Add(dto);
-                }
-                else
-                {
-                    result.Add(dto); // Root level (RAW_MATERIALS)
-                }
+                _context = context;
+                _userAccessor = userAccessor;
             }
 
-            // Start building from RAW_MATERIALS
-            BuildTree("RAW_MATERIALS", null, null);
-
-            // Optional: Add debug info (you can remove later)
-            if (result.Any())
+            public async Task<IQueryable<InvoiceView>> Handle(Query request, CancellationToken cancellationToken)
             {
-                var root = result.First();
-                Console.WriteLine($"[Debug] RAW_MATERIALS found. Children count: {root.Items.Count}");
-            }
-            else
-            {
-                Console.WriteLine("[Debug] RAW_MATERIALS category not found in database!");
-            }
+                var query = _context.InvoiceRecords.AsQueryable();
 
-            return Result<List<ProductCategoryParentChildDto>>.Success(result);
+                // Get current username
+                var username = _userAccessor.GetUsername();
+
+                // If no user (should not happen in authorized endpoint), hide payroll invoices by default
+                if (string.IsNullOrEmpty(username))
+                {
+                    query = query.Where(i => i.InvoiceTypeId != "PAYROL_INVOICE");
+                    return query;
+                }
+
+                // Check if user has the special role
+                var hasViewPayrollRole = await _context.UserRoles
+                    .Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { ur.UserId, RoleName = r.Name })
+                    .Join(_context.Users, ur => ur.UserId, u => u.Id, (ur, u) => new { ur.RoleName, u.UserName })
+                    .AnyAsync(x => x.UserName == username && x.RoleName == "viewPayrollInvoices", cancellationToken);
+
+                if (!hasViewPayrollRole)
+                {
+                    query = query.Where(i => i.InvoiceTypeId != "PAYROL_INVOICE");
+                }
+
+                return query;
+            }
         }
     }
 }

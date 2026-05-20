@@ -59,7 +59,56 @@ public class DeletePayrollInvoices
                             .SetProperty(x => x.StatusId, "ADVANCE_APPROVED")
                             .SetProperty(x => x.LastUpdatedStamp, DateTime.UtcNow), cancellationToken);
 
-                    // 3. Delete related records and Invoices
+                    // 3. Delete related aggregated Payments
+                    var paymentIds = await _context.Payments
+                        .Where(p => p.PaymentTypeId == "PAYROL_PAYMENT"
+                                    && p.PartyIdFrom == request.OrganizationPartyId
+                                    && p.PartyIdTo == "276"
+                                    && p.EffectiveDate >= monthStart
+                                    && p.EffectiveDate <= monthEnd)
+                        .Select(p => p.PaymentId)
+                        .ToListAsync(cancellationToken);
+
+                    if (paymentIds.Any())
+                    {
+                        // Delete accounting entries for payments
+                        await _context.AcctgTransEntries
+                            .Where(ate => _context.AcctgTrans
+                                .Where(at => at.PaymentId != null && paymentIds.Contains(at.PaymentId))
+                                .Select(at => at.AcctgTransId)
+                                .Contains(ate.AcctgTransId))
+                            .ExecuteDeleteAsync(cancellationToken);
+
+                        // Delete accounting attributes for payments
+                        await _context.AcctgTransAttributes
+                            .Where(ata => _context.AcctgTrans
+                                .Where(at => at.PaymentId != null && paymentIds.Contains(at.PaymentId))
+                                .Select(at => at.AcctgTransId)
+                                .Contains(ata.AcctgTransId))
+                            .ExecuteDeleteAsync(cancellationToken);
+
+                        // Delete accounting transactions for payments
+                        await _context.AcctgTrans
+                            .Where(at => at.PaymentId != null && paymentIds.Contains(at.PaymentId))
+                            .ExecuteDeleteAsync(cancellationToken);
+
+                        // Delete financial account transactions for payments
+                        await _context.FinAccountTrans
+                            .Where(fat => fat.PaymentId != null && paymentIds.Contains(fat.PaymentId))
+                            .ExecuteDeleteAsync(cancellationToken);
+
+                        // Delete payment group memberships
+                        await _context.PaymentGroupMembers
+                            .Where(pgm => paymentIds.Contains(pgm.PaymentId))
+                            .ExecuteDeleteAsync(cancellationToken);
+
+                        // Finally delete the payments
+                        await _context.Payments
+                            .Where(p => paymentIds.Contains(p.PaymentId))
+                            .ExecuteDeleteAsync(cancellationToken);
+                    }
+
+                    // 4. Delete related records and Invoices
                     await _context.InvoiceItems
                         .Where(ii => existingInvoiceIds.Contains(ii.InvoiceId))
                         .ExecuteDeleteAsync(cancellationToken);
@@ -68,26 +117,32 @@ public class DeletePayrollInvoices
                         .Where(ir => existingInvoiceIds.Contains(ir.InvoiceId))
                         .ExecuteDeleteAsync(cancellationToken);
 
+                    await _context.InvoiceAttributes
+                        .Where(ia => existingInvoiceIds.Contains(ia.InvoiceId))
+                        .ExecuteDeleteAsync(cancellationToken);
+
                     await _context.InvoiceStatuses
                         .Where(isr => existingInvoiceIds.Contains(isr.InvoiceId))
                         .ExecuteDeleteAsync(cancellationToken);
 
                     // Delete accounting entries and transactions
-                    var transIds = await _context.AcctgTrans
+                    await _context.AcctgTransEntries
+                        .Where(ate => _context.AcctgTrans
+                            .Where(at => existingInvoiceIds.Contains(at.InvoiceId))
+                            .Select(at => at.AcctgTransId)
+                            .Contains(ate.AcctgTransId))
+                        .ExecuteDeleteAsync(cancellationToken);
+
+                    await _context.AcctgTransAttributes
+                        .Where(ata => _context.AcctgTrans
+                            .Where(at => existingInvoiceIds.Contains(at.InvoiceId))
+                            .Select(at => at.AcctgTransId)
+                            .Contains(ata.AcctgTransId))
+                        .ExecuteDeleteAsync(cancellationToken);
+
+                    await _context.AcctgTrans
                         .Where(at => existingInvoiceIds.Contains(at.InvoiceId))
-                        .Select(at => at.AcctgTransId)
-                        .ToListAsync(cancellationToken);
-
-                    if (transIds.Any())
-                    {
-                        await _context.AcctgTransEntries
-                            .Where(ate => transIds.Contains(ate.AcctgTransId))
-                            .ExecuteDeleteAsync(cancellationToken);
-
-                        await _context.AcctgTrans
-                            .Where(at => transIds.Contains(at.AcctgTransId))
-                            .ExecuteDeleteAsync(cancellationToken);
-                    }
+                        .ExecuteDeleteAsync(cancellationToken);
 
                     await _context.Invoices
                         .Where(i => existingInvoiceIds.Contains(i.InvoiceId))

@@ -173,6 +173,13 @@ const invoicesApi = createApi({
           params: { fromDate, toDate, organizationPartyId },
         }),
       }),
+      fetchAbsenceData: builder.query<any[], { fromDate: string; toDate: string; organizationPartyId: string }>({
+        query: ({ fromDate, toDate, organizationPartyId }) => ({
+          url: "/invoices/listAbsenceData",
+          method: "GET",
+          params: { fromDate, toDate, organizationPartyId },
+        }),
+      }),
       checkExistingPayrollInvoices: builder.query<boolean, { invoiceDate: string; organizationPartyId: string }>({
         query: ({ invoiceDate, organizationPartyId }) => ({
           url: "/invoices/checkExistingPayrollInvoices",
@@ -207,6 +214,8 @@ export const {
   useBatchCreatePayrollInvoicesMutation,
   useFetchPayrollDataQuery,
   useLazyFetchPayrollDataQuery,
+  useFetchAbsenceDataQuery,
+  useLazyFetchAbsenceDataQuery,
   useCheckExistingPayrollInvoicesQuery,
   useDeletePayrollInvoicesMutation,
 } = invoicesApi;
