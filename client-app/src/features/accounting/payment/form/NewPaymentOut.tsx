@@ -20,6 +20,7 @@ import {FormComboBoxVirtualProject} from "../../../../app/common/form/FormComboB
 import {MemoizedFormComboBox2} from "../../../../app/common/form/FormComboBox2";
 import CreateCostCenterModal from "./CreateCostCenterModal";
 import {MemoizedFormCheckBox} from "../../../../app/common/form/FormCheckBox";
+import {getBalanceErrorMessage, needsBalanceCheck, validatePaymentAmount} from "../util/paymentUtils";
 
 interface NewPaymentOutProps {
     partyInputRef: React.RefObject<HTMLInputElement>;
@@ -31,8 +32,6 @@ interface NewPaymentOutProps {
     onCreate: (data: { values: any; menuItem: string }) => void;
     handleCancelForm: () => void;
 }
-
-const ADVANCE_TO_VENDOR_CONTRACTOR = "ADVANCE_TO_VENDOR_CONTRACTOR";
 
 const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                          partyInputRef,
@@ -82,12 +81,12 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
     );
 
     useEffect(() => {
-        const isAdvance = currentPaymentTypeId === ADVANCE_TO_VENDOR_CONTRACTOR;
+        const shouldCheckBalance = needsBalanceCheck(currentPaymentTypeId);
         
         const hasParty = !!selectedParty;
         const hasProject = !!selectedProject;
 
-        if (isAdvance && hasParty && hasProject) {
+        if (shouldCheckBalance && hasParty && hasProject) {
             const partyId = typeof selectedParty === "string" ? selectedParty : selectedParty.fromPartyId;
             const projectId = typeof selectedProject === "string" ? selectedProject : selectedProject.projectId;
 
@@ -110,22 +109,8 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
     }, [companies]);
 
     const amountValidator = (value: number, getter: any) => {
-        if (!value || value <= 0) return "الرجاء إدخال مبلغ صحيح";
-
         const paymentTypeId = getter("paymentTypeId");
-        if (paymentTypeId !== ADVANCE_TO_VENDOR_CONTRACTOR) return; // No balance check needed
-
-        if (!balanceData) return "جاري التحقق من الرصيد...";
-
-        if (balanceData.initialBalance === 0) {
-            return "لا يمكن إنشاء دفعة مقدمة: لا يوجد سقف دفع مُعيَّن لهذا المورد على المشروع";
-        }
-
-        if (value > balanceData.remainingBalance) {
-            return `المبلغ المُدخل (${value.toLocaleString("ar-EG")}) يتجاوز الرصيد المتاح (${balanceData.remainingBalance.toLocaleString("ar-EG")})`;
-        }
-
-        return undefined;
+        return validatePaymentAmount(value, paymentTypeId, balanceData);
     };
 
 
@@ -158,11 +143,11 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                 const {valid, onSubmit, onChange, valueGetter} = formRenderProps;
                 const currentPaymentTypeId = formRenderProps.valueGetter("paymentTypeId");
                 const amount = valueGetter("amount") || 0;
-                const isAdvancePayment = currentPaymentTypeId === ADVANCE_TO_VENDOR_CONTRACTOR;
+                const shouldCheckBalance = needsBalanceCheck(currentPaymentTypeId);
                 const hasPartyAndProject = !!selectedParty && !!selectedProject;
 
                 const hasBillingAccountIssue =
-                    isAdvancePayment &&
+                    shouldCheckBalance &&
                     balanceData &&
                     (balanceData.initialBalance === 0 || amount > balanceData.remainingBalance);
 
@@ -394,7 +379,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                 component={FormComboBoxVirtualProject}
                                                 label={getTranslatedLabel("projects.certificate.form.project", "Project")}
                                                 validator={(value) =>
-                                                    isAdvancePayment ? requiredValidator(value) : undefined
+                                                    shouldCheckBalance ? requiredValidator(value) : undefined
                                                 }
                                                 onChange={(e: any) => {
                                                     const value = e.value;
@@ -432,7 +417,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                     </Grid>
                                 </Grid>
                                 
-                                {isAdvancePayment && hasPartyAndProject && (
+                                {shouldCheckBalance && hasPartyAndProject && (
                                     <Grid item xs={12}>
                                         <Box sx={{
                                             p: 2,
@@ -445,7 +430,7 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                             ) : balanceData ? (
                                                 balanceData.initialBalance === 0 ? (
                                                     <Alert severity="warning" sx={{mb: 0}}>
-                                                        {balanceData.message || "لا يوجد سقف دفع مُعيَّن لهذا المورد على المشروع"}
+                                                        {balanceData.message || getBalanceErrorMessage(0)}
                                                     </Alert>
                                                 ) : (
                                                     <Grid container spacing={2}>

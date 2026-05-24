@@ -55,13 +55,13 @@ public class GetBalancesForVendorAndProject
             decimal initialBalance = billingAccount.AccountLimit ?? 0m;
 
             // Step 2: Sum all outgoing payments linked to this billing account + project
-            // These are typically ADVANCE_TO_VENDOR_CONTRACTOR or similar, using EXT_BILLACT or direct billing account
+            // These are typically ADVANCE_TO_VENDOR_CONTRACTOR or VENDOR_PAYMENT, using EXT_BILLACT or direct billing account
             decimal usedBalance = await _context.Payments
                 .Where(p =>
                     p.WorkEffortId == projectId &&
                     p.PartyIdTo == partyId &&
                     p.StatusId == "PMNT_SENT" &&
-                    p.PaymentTypeId == "ADVANCE_TO_VENDOR_CONTRACTOR") // adjust as needed
+                    (p.PaymentTypeId == "ADVANCE_TO_VENDOR_CONTRACTOR" || p.PaymentTypeId == "VENDOR_PAYMENT"))
                 .SumAsync(p => (decimal?)p.Amount ?? 0m, ct);
             
             decimal remainingBalance = initialBalance - usedBalance;

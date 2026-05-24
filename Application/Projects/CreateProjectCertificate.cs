@@ -383,6 +383,31 @@ public class CreateProjectCertificate
                         ? statusDescriptions[workEffort.CurrentStatusId]
                         : ("Unknown", "غير معروف");
 
+                var resultItems = await _context.WorkEfforts
+                    .Where(we => we.WorkEffortParentId == workEffort.WorkEffortId && we.WorkEffortTypeId == "CERTIFICATE_ITEM")
+                    .Select(item => new CertificateItemDto
+                    {
+                        WorkEffortId = item.WorkEffortId,
+                        ProductId = item.ProductId,
+                        Description = item.Description,
+                        DeductionDescription = item.DeductionDescription,
+                        Quantity = (decimal)item.Quantity,
+                        UnitPrice = (decimal)item.Rate,
+                        TotalAmount = (decimal)item.TotalAmount,
+                        Discount = item.Discount,
+                        Insurance = item.Insurance,
+                        AdditionalInsurance = item.AdditionalInsurance,
+                        MaterialPrice = (decimal)item.MaterialPrice,
+                        LaborPrice = (decimal)item.LaborPrice,
+                        UomId = item.QuantityUomId,
+                        Deductions = item.Deductions,
+                        AchievementPercentage = item.AchievementPercent,
+                        Notes = item.Notes,
+                        ProcurementDate = item.ProcurementDate,
+                        TransportationExpenses = item.TransportationExpenses,
+                        Gratuities = item.Gratuities
+                    }).ToListAsync(cancellationToken);
+
                 var resultDto = new ProjectCertificateDto
                 {
                     WorkEffortId = workEffort.WorkEffortId,
@@ -401,7 +426,7 @@ public class CreateProjectCertificate
                     StatusDescriptionArabic = statusDescriptionArabic,
                     CurrentStatusId = workEffort.CurrentStatusId,
                     RelatedOrderId = workEffort.RelatedOrderId,
-                    CertificateItems = certificate.CertificateItems
+                    CertificateItems = resultItems
                 };
 
 

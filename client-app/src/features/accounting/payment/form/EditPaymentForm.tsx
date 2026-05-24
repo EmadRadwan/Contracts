@@ -47,6 +47,7 @@ import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
 import { version as pdfjsVersion } from 'pdfjs-dist/package.json';
 import {parseDate} from "../../../../app/util/utils";
 import {MemoizedFormCheckBox} from "../../../../app/common/form/FormCheckBox";
+import {getBalanceErrorMessage, needsBalanceCheck, validatePaymentAmount} from "../util/paymentUtils";
 
 interface EditPaymentFormProps {
     onValidityChange?: (valid: boolean) => void;
@@ -74,7 +75,6 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                          }) => {
     const localizationKey = "accounting.payments.form";
     const CASH_PAYMENT_METHOD_ID = "CASH";
-    const ADVANCE_TO_VENDOR_CONTRACTOR = "ADVANCE_TO_VENDOR_CONTRACTOR";
     const defaultLayoutPluginInstance = defaultLayoutPlugin();
 
     const [triggerBalanceFetch, {data: balanceData, isFetching: balanceLoading}] =
@@ -129,7 +129,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
 
     useEffect(() => {
         if (
-            payment?.paymentTypeId === ADVANCE_TO_VENDOR_CONTRACTOR && // only for advance
+            needsBalanceCheck(payment?.paymentTypeId) && // only for advance
             partyIdTo &&
             currentProjectId
         ) {
@@ -292,22 +292,8 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
     };
 
     const amountValidator = (value: number, getter: any) => {
-        if (!value || value <= 0) return "الرجاء إدخال مبلغ صحيح";
-
         const paymentTypeId = getter("paymentTypeId");
-        if (paymentTypeId !== ADVANCE_TO_VENDOR_CONTRACTOR) return;
-
-        if (!balanceData) return;
-
-        if (balanceData.initialBalance === 0) {
-            return "لا يمكن إنشاء دفعة مقدمة: لا يوجد سقف دفع مُعيَّن لهذا المورد على المشروع";
-        }
-
-        if (value > balanceData.remainingBalance) {
-            return `المبلغ المُدخل (${value.toLocaleString("ar-EG")}) يتجاوز الرصيد المتاح (${balanceData.remainingBalance.toLocaleString("ar-EG")})`;
-        }
-
-        return;
+        return validatePaymentAmount(value, paymentTypeId, balanceData);
     };
 
     const handleDownloadPdf = async () => {
@@ -357,9 +343,9 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
 
                     const amount = valueGetter("amount") || 0;
 
-                    const isAdvancePayment = payment?.paymentTypeId === ADVANCE_TO_VENDOR_CONTRACTOR;
+                    const shouldCheckBalance = needsBalanceCheck(payment?.paymentTypeId);
                     const hasBillingAccountIssue =
-                        isAdvancePayment &&
+                        shouldCheckBalance &&
                         balanceData &&
                         (balanceData.initialBalance === 0 || amount > balanceData.remainingBalance);
 
@@ -694,12 +680,12 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     textField="ProjectName"
                                                     // REFACTOR: Required ONLY when it's an advance payment
                                                     validator={(value) =>
-                                                        isAdvancePayment ? requiredValidator(value) : undefined
+                                                        shouldCheckBalance ? requiredValidator(value) : undefined
                                                     }
                                                     onChange={handleProjectChange}
                                                 />
                                             </Grid>
-                                            {isAdvancePayment && partyIdTo && currentProjectId && (
+                                            {shouldCheckBalance && partyIdTo && currentProjectId && (
                                                 <Grid item xs={12} sx={{mt: 2}}>
                                                     <Box sx={{
                                                         p: 2,
@@ -712,7 +698,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                         ) : balanceData ? (
                                                             balanceData.initialBalance === 0 ? (
                                                                 <Alert severity="warning">
-                                                                    {balanceData.message || "لا يوجد سقف دفع مُعيَّن لهذا المورد على المشروع"}
+                                                                    {balanceData.message || getBalanceErrorMessage(0)}
                                                                 </Alert>
                                                             ) : (
                                                                 <Grid container spacing={2}>

@@ -48,7 +48,7 @@ namespace Application.Projects
                 {
                     var stamp = DateTime.UtcNow;
                     var certificate = request.Certificate!;
-                    var newWorkEffortSerial = await _utilityService.GetNextSequence("Payment");
+                    var newWorkEffortSerial = await _utilityService.GetNextSequence("WorkEffort");
                     _logger.LogInformation("Received certificate items: {Items}",
                         JsonSerializer.Serialize(certificate.Items));
 
@@ -131,7 +131,12 @@ namespace Application.Projects
                     await transaction.CommitAsync(cancellationToken);
                     
                     var resultItems = new List<MultiPaymentItemDto>();
-                    foreach (var item in certificate.Items!)
+                    var persistedItems = await _context.WorkEfforts
+                        .Where(we => we.WorkEffortParentId == workEffort.WorkEffortId
+                                     && we.WorkEffortTypeId == "PAYMENT_CERTIFICATE_ITEM")
+                        .ToListAsync(cancellationToken);
+
+                    foreach (var item in persistedItems)
                     {
                         var supplier = item.PartyIdSupplier != null
                             ? await _context.Parties
@@ -169,27 +174,27 @@ namespace Application.Projects
                             { "EQUIPMENT", "المعدات" },
                             { "EXPENSES", "المصروفات" }
                         };
-                        var itemTypeDescription = itemTypeDescriptions.ContainsKey(item.ItemType ?? "")
-                            ? itemTypeDescriptions[item.ItemType]
+                        var itemTypeDescription = itemTypeDescriptions.ContainsKey(item.CostType ?? "")
+                            ? itemTypeDescriptions[item.CostType]
                             : "";
 
                         resultItems.Add(new MultiPaymentItemDto
                         {
-                            WorkEffortId = item.WorkEffortId, // Or generated WorkEffortId
+                            WorkEffortId = item.WorkEffortId, 
                             GlAccountId = item.GlAccountId,
-                            ItemType = item.ItemType,
+                            ItemType = item.CostType,
                             ItemTypeDescription = itemTypeDescription,
                             ServiceId = item.ServiceId,
                             ServiceName = service?.ProductName ?? "",
                             ProductId = item.ProductId,
                             ProductName = product?.ProductName ?? "",
                             Description = item.Description,
-                            Amount = item.Amount,
-                            Discount = item.Discount,
-                            DiscountMode = item.DiscountMode,
-                            TransportationExpenses = item.TransportationExpenses,
-                            Gratuities = item.Gratuities,
-                            Total = item.Total,
+                            Amount = (decimal?)item.Amount,
+                            Discount = (decimal?)item.Discount,
+                            DiscountMode = item.Discount > 0 ? "value" : "percentage",
+                            TransportationExpenses = (decimal?)item.TransportationExpenses,
+                            Gratuities = (decimal?)item.Gratuities,
+                            Total = (decimal?)item.TotalAmount,
                             EstimatedStartDate = item.EstimatedStartDate,
                             PartyIdSupplier = item.PartyIdSupplier,
                             PartyIdSupplierName = supplier?.Description ?? "",

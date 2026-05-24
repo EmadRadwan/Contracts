@@ -439,6 +439,31 @@ namespace Application.Projects
                             ? statusDescriptions[workEffortQuery.CurrentStatusId]
                             : ("Unknown", "غير معروف");
 
+                    var resultItems = await _context.WorkEfforts
+                        .Where(we => we.WorkEffortParentId == workEffortQuery.WorkEffortId && we.WorkEffortTypeId == "CERTIFICATE_ITEM")
+                        .Select(item => new CertificateItemDto
+                        {
+                            WorkEffortId = item.WorkEffortId,
+                            ProductId = item.ProductId,
+                            Description = item.Description,
+                            DeductionDescription = item.DeductionDescription,
+                            Quantity = (decimal)item.Quantity,
+                            UnitPrice = (decimal)item.Rate,
+                            TotalAmount = (decimal)item.TotalAmount,
+                            Discount = item.Discount,
+                            Insurance = item.Insurance,
+                            AdditionalInsurance = item.AdditionalInsurance,
+                            MaterialPrice = (decimal)item.MaterialPrice,
+                            LaborPrice = (decimal)item.LaborPrice,
+                            UomId = item.QuantityUomId,
+                            Deductions = item.Deductions,
+                            AchievementPercentage = item.AchievementPercent,
+                            Notes = item.Notes,
+                            ProcurementDate = item.ProcurementDate,
+                            TransportationExpenses = item.TransportationExpenses,
+                            Gratuities = item.Gratuities
+                        }).ToListAsync(cancellationToken);
+
                     var resultDto = new ProjectCertificateDto
                     {
                         WorkEffortId = workEffortQuery.WorkEffortId,
@@ -459,7 +484,7 @@ namespace Application.Projects
                         CurrentStatusId = workEffortQuery.CurrentStatusId,
                         RelatedOrderId = workEffortQuery.RelatedOrderId,
                         FacilityId = workEffortQuery.FacilityId,
-                        CertificateItems = certificate.CertificateItems
+                        CertificateItems = resultItems
                     };
 
                     return Result<ProjectCertificateDto>.Success(resultDto);
