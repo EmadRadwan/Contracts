@@ -25,7 +25,6 @@ import {useLocation, useNavigate} from "react-router";
 import {setSelectedPayment} from "../../slice/accountingSharedUiSlice";
 import {useSelector} from "react-redux";
 import {PaymentsDailyExcel} from "../report/PaymentsDailyExcel";
-import { skipToken } from '@reduxjs/toolkit/query/react';
 import {PaymentsDateRangeExcel} from "../report/PaymentsDateRangeExcel";
 import {useDeletePaymentMutation} from "../../../../app/store/apis";
 import {Can} from "../../../account/Can";
@@ -45,8 +44,6 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const companyName = useSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
-  const [dailyQueryArg, setDailyQueryArg] = React.useState<typeof skipToken | { paymentType: 'incoming' | 'outgoing' }>(skipToken);
-// near other useState declarations
   const [selectedPaymentIdForTransactions, setSelectedPaymentIdForTransactions] = useState<string | null>(null);
   const [payments, setPayments] = React.useState<DataResult>({
     data: [],
@@ -462,6 +459,11 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
       title: getTranslatedLabel(`${localizationKey}.paymentRefNum`, "Ref Number"),
       width: 140,
     },
+    {
+      field: "partyIdFrom",
+      title: getTranslatedLabel(`${localizationKey}.from`, "From Party"),
+      width: 180,
+    },
   ];
 
 // ─────────────────────────────────────────────
@@ -501,6 +503,11 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
       field: "comments",
       title: getTranslatedLabel(`${localizationKey}.comments`, "Comments"),
       width: 280,
+    },
+    {
+      field: "partyIdTo",
+      title: getTranslatedLabel(`${localizationKey}.to`, "To Party"),
+      width: 180,
     },
   ];
 

@@ -322,5 +322,4 @@ Summarize this entire conversation as a concise JSON or bullet-point outline, in
   
   
   
-  in @file:AccountingMenu.tsx we have the @file:PayrollReport2.tsx excel report that is a comprehensive report for payroll data. I want to add another menu item in @file:AccountingMenu.tsx at the same level that generates a similar report but only for absence days that's already included in @file:PayrollReport2.tsx. The new report should have its own hook and backend code - endpoint and handler - and should return absence data for those parties - emps- how have Party.`FingerPrintAttendanceId` highlighted in a different color and the `FingerPrintAttendanceId` included in the report to differentiate them from those emps who have their absence days entered manually. more context can be found in @file:PayrollRun.tsx . the new report should not include salary data
   
