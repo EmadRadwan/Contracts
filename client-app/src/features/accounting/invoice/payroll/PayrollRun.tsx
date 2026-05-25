@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     Box,
@@ -103,28 +103,61 @@ const PayrollRun: React.FC = () => {
     const [batchCreate, { isLoading: isSubmitting }] = useBatchCreatePayrollInvoicesMutation();
     const [deleteInvoices, { isLoading: isDeleting }] = useDeletePayrollInvoicesMutation();
 
+    const isInitialMount = useRef(true);
+
     // Check for draft in localStorage
     // Load draft - but only if no data yet (runs first)
     useEffect(() => {
-        const savedDraft = localStorage.getItem(`payroll_draft_${companyId}`);
-        if (savedDraft) {
-            try {
-                const { invoiceDate: savedDate, data: savedData } = JSON.parse(savedDraft);
-                if (savedDate === invoiceDate) {
-                    setPayrollData(savedData);   // This is fine as initial load
+        try {
+            const savedDraft = localStorage.getItem(`payroll_draft_${companyId}`);
+            if (savedDraft) {
+                const parsed = JSON.parse(savedDraft);
+                const { invoiceDate: savedDate, data: savedData } = parsed || {};
+
+                if (Array.isArray(savedData)) {
+                    // Filter out any invalid items to load "maximum of the data"
+                    const validData = savedData.filter((emp: any) => emp && emp.employeeId);
+
+                    if (validData.length > 0) {
+                        if (savedDate === invoiceDate) {
+                            setPayrollData(validData);
+                            if (isInitialMount.current) {
+                                toast.success(getTranslatedLabel("accounting.payroll.run.draft-loaded", "Draft loaded successfully"));
+                            }
+                        } else if (isInitialMount.current && savedDate) {
+                            // On mount, if date differs, we still load it but update the date
+                            setInvoiceDate(savedDate);
+                            setPayrollData(validData);
+                            toast.info(getTranslatedLabel("accounting.payroll.run.draft-loaded-date-mismatch", `Draft from ${savedDate} loaded`));
+                        }
+                    }
+
+                    if (validData.length < savedData.length && isInitialMount.current) {
+                        toast.warning(getTranslatedLabel("accounting.payroll.run.draft-partially-corrupted", "Draft was partially corrupted, some data might be missing"));
+                    }
                 }
-            } catch (e) {
-                console.error("Failed to parse payroll draft", e);
             }
+        } catch (e) {
+            console.error("Failed to parse payroll draft", e);
+            if (isInitialMount.current) {
+                toast.error(getTranslatedLabel("accounting.payroll.run.draft-load-failed", "Failed to load draft: corrupted data"));
+            }
+        } finally {
+            isInitialMount.current = false;
         }
     }, [companyId, invoiceDate]);
 
     const handleSaveDraft = () => {
-        localStorage.setItem(`payroll_draft_${companyId}`, JSON.stringify({
-            invoiceDate,
-            data: payrollData
-        }));
-        toast.info(getTranslatedLabel("accounting.payroll.run.draft-saved", "Draft saved locally"));
+        try {
+            localStorage.setItem(`payroll_draft_${companyId}`, JSON.stringify({
+                invoiceDate,
+                data: payrollData
+            }));
+            toast.info(getTranslatedLabel("accounting.payroll.run.draft-saved", "Draft saved locally"));
+        } catch (e) {
+            console.error("Failed to save payroll draft", e);
+            toast.error(getTranslatedLabel("accounting.payroll.run.draft-save-failed", "Failed to save draft locally"));
+        }
     };
 
     // Check for existing invoices for this month
@@ -200,9 +233,14 @@ const PayrollRun: React.FC = () => {
                     return freshEmp;
                 }
 
+                // Safely get user inputs from draft, defaulting to 0/fresh values if missing or corrupted
+                const absenceDays = Number(oldEmp.absenceDays) || 0;
+                const overtimeDays = Number(oldEmp.overtimeDays) || 0;
+                const isSelected = typeof oldEmp.isSelected === 'boolean' ? oldEmp.isSelected : freshEmp.isSelected;
+
                 // Recalculate absence and overtime values based on possibly new baseSalary
-                const calculatedAbsenceValue = Math.round((freshEmp.baseSalary / 30) * oldEmp.absenceDays);
-                const calculatedOvertimeValue = Math.round((freshEmp.baseSalary / 30) * oldEmp.overtimeDays);
+                const calculatedAbsenceValue = Math.round((freshEmp.baseSalary / 30) * absenceDays);
+                const calculatedOvertimeValue = Math.round((freshEmp.baseSalary / 30) * overtimeDays);
 
                 const totalAdvances = freshEmp.advances.reduce((sum, adv) => sum + adv.amount, 0);
 
@@ -214,11 +252,11 @@ const PayrollRun: React.FC = () => {
 
                 return {
                     ...freshEmp,                    // Fresh baseSalary, advances, accounts, etc.
-                    absenceDays: oldEmp.absenceDays,     // Keep user input
+                    absenceDays: absenceDays,
                     absenceValue: calculatedAbsenceValue,
-                    overtimeDays: oldEmp.overtimeDays,   // Keep user input
+                    overtimeDays: overtimeDays,
                     overtimeValue: calculatedOvertimeValue,
-                    isSelected: oldEmp.isSelected,       // Keep user selection
+                    isSelected: isSelected,
                     netSalary: Math.round(newNetSalary)
                 };
             });
