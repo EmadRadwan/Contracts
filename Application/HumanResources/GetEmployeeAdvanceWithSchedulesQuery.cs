@@ -63,6 +63,7 @@ namespace Application.HumanResources
                     StatusId = advance.StatusId,
                     StatusDescription = statusDesc,
                     Description = advance.Description,
+                    PayrollInvoiceId = advance.PayrollInvoiceId,
 
                     // Schedules – ordered by InstallmentNumber
                     Schedules = advance.EmployeeAdvanceSchedules
@@ -103,6 +104,7 @@ namespace Application.HumanResources
         public string? StatusId { get; set; }
         public string? StatusDescription { get; set; }
         public string? Description { get; set; }
+        public string? PayrollInvoiceId { get; set; }
 
         public List<ScheduleDto> Schedules { get; set; } = new();
     }

@@ -10,6 +10,7 @@ import FormDatePicker from "../../../app/common/form/FormDatePicker";
 import { requiredValidator } from "../../../app/common/form/Validators";
 import {EmployeeAdvance, Schedule} from "../../../app/models/humanResources/employeeAdvance";
 import EmployeeAdvanceMenu from "../menu/EmployeeAdvanceMenu";
+import {EmployeeAdvanceActionsMenu} from "../menu/EmployeeAdvanceActionsMenu";
 import FormInput from "../../../app/common/form/FormInput";
 import {useCreateEmployeeAdvanceMutation, useUpdateEmployeeAdvanceMutation} from "../../../app/store/apis";
 import {MemoizedFormComboBox2} from "../../../app/common/form/FormComboBox2";
@@ -24,6 +25,7 @@ import LoadingComponent from "../../../app/layout/LoadingComponent";
 interface DeductionSchedule {
     dueDate: string;      // YYYY-MM-DD
     scheduledAmount: number;
+    payrollInvoiceId?: string | null;
 }
 
 interface Props {
@@ -52,10 +54,19 @@ function EmployeeAdvanceForm({
     const { getTranslatedLabel } = useTranslationHelper();
     const formRef = useRef<FormRenderProps | null>(null);
 
-    const isReadOnly = editMode === 3 || advance?.statusId === "ADVANCE_APPROVED";
+    const isReadOnly = editMode === 3
+        || advance?.statusId === "ADVANCE_FULLY_PAID"
+        || advance?.statusId === "ADVANCE_CANCELLED"
+        || advance?.statusId === "ADVANCE_REJECTED";
+
+    const canEditSchedules = advance?.statusId === "ADVANCE_REQUESTED"
+        || advance?.statusId === "ADVANCE_APPROVED"
+        || advance?.statusId === "ADVANCE_ACTIVE"
+        || advance?.statusId === "ADVANCE_PARTIALLY_PAID";
+
     const isCreate = editMode === 1;
     const isEdit = editMode === 2;
-    
+
     const employeeAdvanceTypes = [{advanceTypeId: "EMPLOYEE_ADVANCE", description: "سلفة راتب"}, {advanceTypeId: "EMPLOYEE_LONG_TERM_ADVANCE", description: "سلفة طويلة الأجل "}]
 
 
@@ -68,6 +79,7 @@ function EmployeeAdvanceForm({
             const loadedSchedules = advance.schedules.map((s) => ({
                 dueDate: s.dueDate.split("T")[0], // ensure YYYY-MM-DD
                 scheduledAmount: Number(s.scheduledAmount),
+                payrollInvoiceId: s.payrollInvoiceId
             }));
 
             setCustomSchedules(loadedSchedules);
@@ -85,7 +97,7 @@ function EmployeeAdvanceForm({
                 currencyUomId: "EGP",
                 installmentCount: null,
                 startDate: null,
-                statusId: "ADVANCE_ACTIVE",
+                statusId: "ADVANCE_REQUESTED",
                 advanceTypeId: "EMPLOYEE_ADVANCE",
                 description: "",
             };
@@ -99,7 +111,7 @@ function EmployeeAdvanceForm({
             currencyUomId: advance?.currencyUomId ?? "EGP",
             installmentCount: advance?.installmentCount ?? null,
             startDate: advance?.startDate ? new Date(advance.startDate) : null,
-            statusId: advance?.statusId ?? "ADVANCE_ACTIVE",
+            statusId: advance?.statusId ?? "ADVANCE_REQUESTED",
             advanceTypeId: advance?.advanceTypeId ?? "EMPLOYEE_ADVANCE",
             description: advance?.description ?? "",
             partyId: {"fromPartyId": advance?.partyId, "fromPartyName": advance?.employeeName},
@@ -139,14 +151,15 @@ function EmployeeAdvanceForm({
             }
 
             const payload = {
-                ...values,
-                amount: Number(values.amount) || null,
+                advanceId: isCreate ? undefined : advance!.advanceId,
                 partyId: values.partyId?.fromPartyId,
+                advanceDate: values.advanceDate,
+                amount: Number(values.amount),
+                advanceTypeId: values.advanceTypeId,
+                description: values.description,
                 installmentCount: isLongTerm ? customSchedules.length : values.installmentCount,
-                startDate: isLongTerm ? null : values.startDate ? new Date(values.startDate).toISOString() : null,
-                ...(isLongTerm && customSchedules.length > 0 && {
-                    customDeductionSchedules: customSchedules,
-                }),
+                startDate: isLongTerm ? null : values.startDate,
+                customDeductionSchedules: isLongTerm && customSchedules.length > 0 ? customSchedules : undefined,
             };
 
             if (isCreate) {
@@ -154,7 +167,7 @@ function EmployeeAdvanceForm({
                 toast.success(getTranslatedLabel("party.employeeAdvance.form.created", "Employee advance created successfully"));
                 onAdvanceCreated?.(created);
             } else {
-                const updated = await updateAdvance({ advanceId: advance!.advanceId, ...payload }).unwrap();
+                const updated = await updateAdvance(payload).unwrap();
                 toast.success(getTranslatedLabel("party.employeeAdvance.form.updated", "Employee advance updated successfully"));
                 onAdvanceUpdated?.(updated);
             }
@@ -190,16 +203,28 @@ function EmployeeAdvanceForm({
             />
 
             <Paper elevation={5} className="div-container-withBorderCurved" sx={{ p: 3 }}>
-                <Typography variant="h5" gutterBottom>
-                    {isCreate
-                        ? getTranslatedLabel("party.employeeAdvance.form.new", "New Employee Advance")
-                        : isReadOnly
-                            ? getTranslatedLabel("party.employeeAdvance.form.view", "View Employee Advance")
-                            : getTranslatedLabel("party.employeeAdvance.form.edit", "Edit Employee Advance")}
-                    {advance?.advanceId && (
-                        <Box component="span" sx={{ ml: 2, color: "text.secondary", fontSize: "0.8em" }}>
-                            #{advance.advanceId}
-                        </Box>
+                <Typography variant="h5" gutterBottom display="flex" justifyContent="space-between" alignItems="center">
+                    <Box>
+                        {isCreate
+                            ? getTranslatedLabel("party.employeeAdvance.form.new", "New Employee Advance")
+                            : isReadOnly
+                                ? getTranslatedLabel("party.employeeAdvance.form.view", "View Employee Advance")
+                                : getTranslatedLabel("party.employeeAdvance.form.edit", "Edit Employee Advance")}
+                        {advance?.advanceId && (
+                            <Box component="span" sx={{ ml: 2, color: "text.secondary", fontSize: "0.8em" }}>
+                                #{advance.advanceId}
+                            </Box>
+                        )}
+                    </Box>
+
+                    {!isCreate && (
+                        <EmployeeAdvanceActionsMenu
+                            advanceId={advance?.advanceId}
+                            currentStatusId={advance?.statusId}
+                            disabled={isCreating || isUpdating}
+                            onAdvanceUpdated={onAdvanceUpdated}
+                            onAdvanceDeleted={cancelEdit}
+                        />
                     )}
                 </Typography>
 
@@ -214,10 +239,11 @@ function EmployeeAdvanceForm({
                         const advanceTypeId = valueGetter("advanceTypeId");
                         const isLongTermAdvance = advanceTypeId === "EMPLOYEE_LONG_TERM_ADVANCE";
                         const totalAmount = Number(valueGetter("amount") || 0);
-                        const canOpenPlan = isLongTermAdvance && totalAmount > 0;
+                        const canOpenPlan = isLongTermAdvance && totalAmount > 0 && (!isReadOnly || customSchedules.length > 0);
 
-                        const hasExistingPlan = !isCreate && advance?.schedules?.length > 0;
-                        const isInstallmentDisabled = !isLongTermAdvance || isReadOnly || isSubmitting;
+                        const isProcessed = !!(advance?.payrollInvoiceId || advance?.schedules?.some(s => s.payrollInvoiceId));
+                        
+                        const isInstallmentDisabled = !isLongTermAdvance || isReadOnly || isSubmitting || isProcessed;
 
                         return (
                             <FormElement>
@@ -232,7 +258,7 @@ function EmployeeAdvanceForm({
                                                 valueField="fromPartyId"
                                                 textField="fromPartyName"
                                                 validator={requiredValidator}
-                                                disabled={isReadOnly || isSubmitting}
+                                                disabled={isReadOnly || isSubmitting || isProcessed}
                                             />
                                         </Grid>
                                         <Grid item xs={12} sm={6} md={4}>
@@ -245,7 +271,7 @@ function EmployeeAdvanceForm({
                                                 textField="description"
                                                 data={employeeAdvanceTypes}
                                                 validator={requiredValidator}
-                                                disabled={isReadOnly || isSubmitting}
+                                                disabled={isReadOnly || isSubmitting || isProcessed}
                                             />
                                         </Grid>
                                         <Grid item xs={12} sm={6} md={4}>
@@ -255,7 +281,7 @@ function EmployeeAdvanceForm({
                                                 component={FormDatePicker}
                                                 format="dd/MM/yyyy"
                                                 validator={requiredValidator}
-                                                disabled={isReadOnly || isSubmitting}
+                                                disabled={isReadOnly || isSubmitting || (advanceTypeId === "EMPLOYEE_ADVANCE" && isProcessed)}
                                             />
                                         </Grid>
                                         <Grid item xs={12} sm={6} md={4}>
@@ -265,7 +291,7 @@ function EmployeeAdvanceForm({
                                                 component={FormNumericTextBox}
                                                 format="n2"
                                                 validator={requiredValidator}
-                                                disabled={isReadOnly || isSubmitting}
+                                                disabled={isReadOnly || isSubmitting || (advanceTypeId === "EMPLOYEE_ADVANCE" && isProcessed)}
                                             />
                                         </Grid>
 
@@ -316,7 +342,7 @@ function EmployeeAdvanceForm({
                                                             variant="outlined"
                                                             size="small"
                                                             onClick={() => setShowDeductionPlan(true)}
-                                                            disabled={!canOpenPlan}
+                                                            disabled={!canOpenPlan || (!canEditSchedules && !isCreate)}
                                                         >
                                                             {isReadOnly
                                                                 ? getTranslatedLabel("party.employeeAdvance.form.viewPlan", "View Plan")
@@ -387,6 +413,7 @@ function EmployeeAdvanceForm({
                                                 number: idx + 1,
                                                 dueDate: s.dueDate,
                                                 scheduledAmount: s.scheduledAmount,
+                                                payrollInvoiceId: s.payrollInvoiceId
                                             }))}
                                             initialInstallmentCount={customSchedules.length || Number(valueGetter("installmentCount")) || 12}
                                             initialStartDate={

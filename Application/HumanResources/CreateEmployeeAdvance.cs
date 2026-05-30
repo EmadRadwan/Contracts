@@ -220,7 +220,7 @@ public class CreateEmployeeAdvance
                 Amount = dto.Amount ?? 0,
                 InstallmentCount = dto.InstallmentCount ?? 0,
                 StartDate = dto.StartDate,
-                StatusId = "ADVANCE_ACTIVE",
+                StatusId = "ADVANCE_REQUESTED",
                 Description = dto.Description,
                 CreatedStamp = DateTime.Now,
                 LastUpdatedStamp = DateTime.Now

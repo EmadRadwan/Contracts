@@ -293,7 +293,7 @@ public class BatchCreatePayrollInvoices
                             Description = advanceDesc
                         });
 
-                        // Update Advance Status to PAID
+                        // Update Advance Status
                         foreach (var adv in emp.Advances)
                         {
                             if (adv.AdvanceTypeId == "EMPLOYEE_ADVANCE")
@@ -301,7 +301,7 @@ public class BatchCreatePayrollInvoices
                                 await _context.EmployeeAdvances
                                     .Where(a => a.AdvanceId == adv.AdvanceId)
                                     .ExecuteUpdateAsync(a => a
-                                        .SetProperty(x => x.StatusId, "PAID")
+                                        .SetProperty(x => x.StatusId, "ADVANCE_FULLY_PAID")
                                         .SetProperty(x => x.PayrollInvoiceId, invoiceId)
                                         .SetProperty(x => x.LastUpdatedStamp, DateTime.UtcNow), cancellationToken);
                             }
@@ -318,6 +318,16 @@ public class BatchCreatePayrollInvoices
                                         .SetProperty(x => x.StatusId, "PAID")
                                         .SetProperty(x => x.PayrolInvoiceId, invoiceId)
                                         .SetProperty(x => x.DeductedAmount, adv.Amount)
+                                        .SetProperty(x => x.LastUpdatedStamp, DateTime.UtcNow), cancellationToken);
+
+                                // Update parent advance status based on remaining schedules
+                                var hasRemaining = await _context.EmployeeAdvanceSchedules
+                                    .AnyAsync(s => s.AdvanceId == adv.AdvanceId && s.StatusId == "SCHEDULED", cancellationToken);
+
+                                await _context.EmployeeAdvances
+                                    .Where(a => a.AdvanceId == adv.AdvanceId)
+                                    .ExecuteUpdateAsync(a => a
+                                        .SetProperty(x => x.StatusId, hasRemaining ? "ADVANCE_PARTIALLY_PAID" : "ADVANCE_FULLY_PAID")
                                         .SetProperty(x => x.LastUpdatedStamp, DateTime.UtcNow), cancellationToken);
                             }
                         }

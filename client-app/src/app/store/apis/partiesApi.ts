@@ -279,6 +279,13 @@ const partiesApi = createApi({
                 }),
                 invalidatesTags: ['EmployeeAdvance'],
             }),
+            approveEmployeeAdvance: builder.mutation<EmployeeAdvance, string>({
+                query: (advanceId) => ({
+                    url: `/humanResources/approveEmployeeAdvance/${advanceId}`,
+                    method: 'POST',
+                }),
+                invalidatesTags: ['EmployeeAdvance'],
+            }),
             deleteEmployeeAdvance: builder.mutation<void, string>({
                 query: (advanceId) => ({
                     url: `/humanResources/${advanceId}`,
@@ -378,6 +385,7 @@ export const {
     useCreateSalesRepMutation, useUpdateSalesRepMutation, useFetchSalesRepQuery,
     useCreateBrokerMutation, useUpdateBrokerMutation, useFetchBrokerQuery,
     useCreateEmployeeAdvanceMutation,
+    useApproveEmployeeAdvanceMutation,
     useUpdateEmployeeAdvanceMutation, useDeleteEmployeeAdvanceMutation, useLazyGetEmployeeAdvanceDetailQuery,
     useLazyFetchEmployeeAdvancesByDateRangeQuery,
     useFetchRolesTypesQuery, useFetchPartyRolesQuery, useAddPartyRoleMutation, useDeletePartyRoleMutation,

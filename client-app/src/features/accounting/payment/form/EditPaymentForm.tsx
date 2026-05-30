@@ -47,7 +47,7 @@ import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
 import { version as pdfjsVersion } from 'pdfjs-dist/package.json';
 import {parseDate} from "../../../../app/util/utils";
 import {MemoizedFormCheckBox} from "../../../../app/common/form/FormCheckBox";
-import {getBalanceErrorMessage, needsBalanceCheck, validatePaymentAmount} from "../util/paymentUtils";
+import {needsBalanceCheck, validatePaymentAmount} from "../util/paymentUtils";
 
 interface EditPaymentFormProps {
     onValidityChange?: (valid: boolean) => void;
@@ -347,7 +347,8 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                     const hasBillingAccountIssue =
                         shouldCheckBalance &&
                         balanceData &&
-                        (balanceData.initialBalance === 0 || amount > balanceData.remainingBalance);
+                        balanceData.initialBalance > 0 &&
+                        amount > balanceData.remainingBalance;
 
                     const isSubmitDisabled = !valid || isFormDisabled || balanceLoading || hasBillingAccountIssue;
 
@@ -685,7 +686,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     onChange={handleProjectChange}
                                                 />
                                             </Grid>
-                                            {shouldCheckBalance && partyIdTo && currentProjectId && (
+                                            {shouldCheckBalance && partyIdTo && currentProjectId && (!balanceData || balanceData.initialBalance > 0) && (
                                                 <Grid item xs={12} sx={{mt: 2}}>
                                                     <Box sx={{
                                                         p: 2,
@@ -696,48 +697,42 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                         {balanceLoading ? (
                                                             <Skeleton height={80}/>
                                                         ) : balanceData ? (
-                                                            balanceData.initialBalance === 0 ? (
-                                                                <Alert severity="warning">
-                                                                    {balanceData.message || getBalanceErrorMessage(0)}
-                                                                </Alert>
-                                                            ) : (
-                                                                <Grid container spacing={2}>
-                                                                    <Grid item xs={4}>
-                                                                        <Typography variant="body2"
-                                                                                    color="text.secondary">السقف
-                                                                            المتاح</Typography>
-                                                                        <Typography variant="h6" color="success.main"
-                                                                                    fontWeight="bold">
-                                                                            {balanceData.initialBalance.toLocaleString("ar-EG")} ج.م
-                                                                        </Typography>
-                                                                    </Grid>
-                                                                    <Grid item xs={4}>
-                                                                        <Typography variant="body2"
-                                                                                    color="text.secondary">المستخدم</Typography>
-                                                                        <Typography variant="h6" color="warning.main">
-                                                                            {balanceData.usedBalance.toLocaleString("ar-EG")} ج.م
-                                                                        </Typography>
-                                                                    </Grid>
-                                                                    <Grid item xs={4}>
-                                                                        <Typography variant="body2"
-                                                                                    color="text.secondary">المتبقي</Typography>
-                                                                        <Typography variant="h6"
-                                                                                    color={balanceData.remainingBalance > 0 ? "primary" : "error"}
-                                                                                    fontWeight="bold">
-                                                                            {balanceData.remainingBalance.toLocaleString("ar-EG")} ج.م
-                                                                        </Typography>
-                                                                    </Grid>
-                                                                    {amount > balanceData.remainingBalance && (
-                                                                        <Grid item xs={12}>
-                                                                            <Alert severity="error">
-                                                                                المبلغ المطلوب
-                                                                                ({amount.toLocaleString("ar-EG")} ج.م)
-                                                                                يتجاوز الرصيد المتاح
-                                                                            </Alert>
-                                                                        </Grid>
-                                                                    )}
+                                                            <Grid container spacing={2}>
+                                                                <Grid item xs={4}>
+                                                                    <Typography variant="body2"
+                                                                                color="text.secondary">السقف
+                                                                        المتاح</Typography>
+                                                                    <Typography variant="h6" color="success.main"
+                                                                                fontWeight="bold">
+                                                                        {balanceData.initialBalance.toLocaleString("ar-EG")} ج.م
+                                                                    </Typography>
                                                                 </Grid>
-                                                            )
+                                                                <Grid item xs={4}>
+                                                                    <Typography variant="body2"
+                                                                                color="text.secondary">المستخدم</Typography>
+                                                                    <Typography variant="h6" color="warning.main">
+                                                                        {balanceData.usedBalance.toLocaleString("ar-EG")} ج.م
+                                                                    </Typography>
+                                                                </Grid>
+                                                                <Grid item xs={4}>
+                                                                    <Typography variant="body2"
+                                                                                color="text.secondary">المتبقي</Typography>
+                                                                    <Typography variant="h6"
+                                                                                color={balanceData.remainingBalance > 0 ? "primary" : "error"}
+                                                                                fontWeight="bold">
+                                                                        {balanceData.remainingBalance.toLocaleString("ar-EG")} ج.م
+                                                                    </Typography>
+                                                                </Grid>
+                                                                {amount > balanceData.remainingBalance && (
+                                                                    <Grid item xs={12}>
+                                                                        <Alert severity="error">
+                                                                            المبلغ المطلوب
+                                                                            ({amount.toLocaleString("ar-EG")} ج.م)
+                                                                            يتجاوز الرصيد المتاح
+                                                                        </Alert>
+                                                                    </Grid>
+                                                                )}
+                                                            </Grid>
                                                         ) : (
                                                             <Typography color="text.secondary">جاري تحميل بيانات
                                                                 الحساب...</Typography>

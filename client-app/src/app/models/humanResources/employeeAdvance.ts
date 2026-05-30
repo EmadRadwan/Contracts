@@ -14,6 +14,7 @@ export interface EmployeeAdvance {
     statusId: string;
     statusDescription: string;      // Translated Arabic/English
     description?: string | null;
+    payrollInvoiceId?: string | null;
 
     // Audit fields (usually returned by backend)
     createdStamp: string;

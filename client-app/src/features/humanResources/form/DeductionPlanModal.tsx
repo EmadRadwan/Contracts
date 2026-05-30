@@ -24,6 +24,7 @@ interface DeductionRow {
     number: number;
     dueDate: string;      // YYYY-MM-DD
     scheduledAmount: number;
+    payrollInvoiceId?: string | null;
 }
 
 interface EditModalData {
@@ -96,7 +97,12 @@ export default function DeductionPlanModal({
         [rows]
     );
 
-    const isValid = Math.abs(totalScheduled - totalAdvance) < 0.01;
+    const isAnyProcessed = useMemo(() => rows.some(r => !!r.payrollInvoiceId), [rows]);
+
+    const isValid = useMemo(
+        () => Math.abs(totalScheduled - totalAdvance) < 0.01,
+        [totalScheduled, totalAdvance]
+    );
 
     const validateRow = (row: DeductionRow): { dateError: string; amountError: string } => {
         let dateErr = "";
@@ -192,6 +198,7 @@ export default function DeductionPlanModal({
             sorted.map((r) => ({
                 dueDate: r.dueDate,
                 scheduledAmount: r.scheduledAmount,
+                payrollInvoiceId: r.payrollInvoiceId
             }))
         );
 
@@ -254,7 +261,7 @@ export default function DeductionPlanModal({
                                     new Date().toISOString().split("T")[0];
                                 generateEqualPlan(installmentCountHint, effectiveDate);
                             }}
-                            disabled={totalAdvance <= 0 || installmentCountHint < 1}
+                            disabled={totalAdvance <= 0 || installmentCountHint < 1 || isAnyProcessed}
                         >
                             {getTranslatedLabel("party.employeeAdvance.deductionPlan.generateEqual", "Generate Equal Plan")}
                         </Button>
@@ -292,20 +299,28 @@ export default function DeductionPlanModal({
                             <Column
                                 title={getTranslatedLabel("general.actions", "Actions")}
                                 width="120"
-                                cell={(props) => (
-                                    <td style={{ textAlign: "center" }}>
-                                        <IconButton size="small" onClick={() => openEdit(props.dataItem)}>
-                                            <EditIcon fontSize="small" />
-                                        </IconButton>
-                                        <IconButton
-                                            size="small"
-                                            color="error"
-                                            onClick={() => deleteRow(props.dataItem.id)}
-                                        >
-                                            <DeleteIcon fontSize="small" />
-                                        </IconButton>
-                                    </td>
-                                )}
+                                cell={(props) => {
+                                    const isRowProcessed = !!props.dataItem.payrollInvoiceId;
+                                    return (
+                                        <td style={{ textAlign: "center" }}>
+                                            <IconButton 
+                                                size="small" 
+                                                onClick={() => openEdit(props.dataItem)}
+                                                disabled={isRowProcessed}
+                                            >
+                                                <EditIcon fontSize="small" />
+                                            </IconButton>
+                                            <IconButton
+                                                size="small"
+                                                color="error"
+                                                onClick={() => deleteRow(props.dataItem.id)}
+                                                disabled={isRowProcessed}
+                                            >
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                        </td>
+                                    );
+                                }}
                             />
                         )}
                     </KendoGrid>

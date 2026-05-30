@@ -19,6 +19,12 @@ public class HumanResourcesController : BaseApiController
         return HandleResults(await Mediator.Send(new UpdateEmployeeAdvance.Command { AdvanceDto = advanceDto, Language = GetLanguage() }));
     }
 
+    [HttpPost("approveEmployeeAdvance/{id}")]
+    public async Task<IActionResult> ApproveEmployeeAdvance(string id)
+    {
+        return HandleResults(await Mediator.Send(new ApproveEmployeeAdvance.Command { AdvanceId = id, Language = GetLanguage() }));
+    }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteEmployeeAdvance(string id)
     {

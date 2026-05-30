@@ -27,7 +27,16 @@ function EmployeeAdvancesList() {
     const [viewMode, setViewMode] = React.useState<"list" | "form">("list");
     const [editMode, setEditMode] = React.useState(0); // 0=list, 1=create, 2=edit, 3=closed/paid
     const [selectedAdvance, setSelectedAdvance] = React.useState<EmployeeAdvance | undefined>();
-    const [dataState, setDataState] = React.useState<State>({ take: 9, skip: 0 });
+    const [dataState, setDataState] = React.useState<State>({
+        sort: [
+            {
+                field: "advanceDate",
+                dir: "desc",
+            },
+        ],
+        skip: 0,
+        take: 25,
+    });
     const [eAdvances, setEAdvances] = React.useState<DataResult>({
         data: [],
         total: 0,
@@ -83,7 +92,9 @@ function EmployeeAdvancesList() {
         }
 
         // Now decide mode based on status
-        const isClosed = fullDetail.statusId === "ADVANCE_PAID" || fullDetail.statusId === "ADVANCE_CANCELLED";
+        const isClosed = fullDetail.statusId === "ADVANCE_FULLY_PAID" 
+            || fullDetail.statusId === "ADVANCE_CANCELLED"
+            || fullDetail.statusId === "ADVANCE_REJECTED";
         setEditMode(isClosed ? 3 : 2);
         setSelectedAdvance(fullDetail);
         setViewMode("form");
@@ -126,8 +137,10 @@ function EmployeeAdvancesList() {
     };
 
     const DeleteCell = (props: any) => {
-        const isApproved = props.dataItem.statusId === "ADVANCE_APPROVED";
-        const isClosed = props.dataItem.statusId === "ADVANCE_PAID" || props.dataItem.statusId === "ADVANCE_CANCELLED";
+        const isClosed = props.dataItem.statusId === "ADVANCE_FULLY_PAID" 
+            || props.dataItem.statusId === "ADVANCE_CANCELLED"
+            || props.dataItem.statusId === "ADVANCE_REJECTED"
+            || props.dataItem.statusId === "ADVANCE_PARTIALLY_PAID";
 
         return (
             <td>
@@ -135,7 +148,7 @@ function EmployeeAdvancesList() {
                     color="error"
                     size="small"
                     onClick={() => handleDelete(props.dataItem.advanceId)}
-                    disabled={isApproved || isClosed}
+                    disabled={isClosed}
                 >
                     {getTranslatedLabel("general.delete", "Delete")}
                 </Button>

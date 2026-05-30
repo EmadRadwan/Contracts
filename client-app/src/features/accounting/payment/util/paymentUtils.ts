@@ -21,10 +21,7 @@ export const needsBalanceCheck = (paymentTypeId?: string | null): boolean => {
 /**
  * Returns a user-friendly message for when balance check is not available
  */
-export const getBalanceErrorMessage = (initialBalance: number = 0): string => {
-    if (initialBalance === 0) {
-        return "لا يمكن إنشاء الدفعة: لا يوجد سقف دفع مُعيَّن لهذا المورد على المشروع";
-    }
+export const getBalanceErrorMessage = (): string => {
     return "جاري التحقق من الرصيد...";
 };
 
@@ -42,7 +39,7 @@ export const validatePaymentAmount = (
     if (!balanceData) return getBalanceErrorMessage();
 
     if (balanceData.initialBalance === 0) {
-        return getBalanceErrorMessage(0);
+        return undefined;
     }
 
     if (value > balanceData.remainingBalance) {

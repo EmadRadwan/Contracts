@@ -40,7 +40,7 @@ public class ListPayrollAdvances
                     // Case 1: Short-term advances in this month
                     (adv.AdvanceTypeId == "EMPLOYEE_ADVANCE" && 
                      adv.AdvanceDate >= monthStart && adv.AdvanceDate <= monthEnd &&
-                     (adv.StatusId == "ADVANCE_APPROVED" || adv.StatusId == "PAID")) ||
+                     (adv.StatusId == "ADVANCE_APPROVED" || adv.StatusId == "ADVANCE_ACTIVE" || adv.StatusId == "ADVANCE_FULLY_PAID" || adv.StatusId == "ADVANCE_PARTIALLY_PAID")) ||
                     // Case 2: Long-term advances with a schedule in this month
                     (adv.AdvanceTypeId == "EMPLOYEE_LONG_TERM_ADVANCE" &&
                      adv.EmployeeAdvanceSchedules.Any(s => 

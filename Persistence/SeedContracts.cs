@@ -2915,7 +2915,8 @@ public class SeedContracts
                 // CRM Roles
                 "CRM_View",
                 "CRM_Leads_View", "CRM_Leads_Create", "CRM_Leads_Edit", "CRM_Leads_Delete",
-                "CRM_Contacts_View", "CRM_Contacts_Create", "CRM_Contacts_Edit", "CRM_Contacts_Delete"
+                "CRM_Contacts_View", "CRM_Contacts_Create", "CRM_Contacts_Edit", "CRM_Contacts_Delete",
+                "ApproveEmployeeAdvance", "DeleteEmployeeAdvance"
             };
 
             foreach (var role in requiredRoles)
@@ -3223,7 +3224,8 @@ public class SeedContracts
                     // CRM Roles
                     "CRM_View",
                     "CRM_Leads_View", "CRM_Leads_Create", "CRM_Leads_Edit", "CRM_Leads_Delete",
-                    "CRM_Contacts_View", "CRM_Contacts_Create", "CRM_Contacts_Edit", "CRM_Contacts_Delete"
+                    "CRM_Contacts_View", "CRM_Contacts_Create", "CRM_Contacts_Edit", "CRM_Contacts_Delete",
+                    "ApproveEmployeeAdvance", "DeleteEmployeeAdvance"
                 }
             },
             {

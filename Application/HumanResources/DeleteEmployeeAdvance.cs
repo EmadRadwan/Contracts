@@ -33,14 +33,14 @@ public class DeleteEmployeeAdvance
             }
 
             // Optional: Prevent deletion if already paid or deductions started
-            if (advance.StatusId == "ADVANCE_PAID")
+            if (advance.StatusId == "ADVANCE_FULLY_PAID" || advance.PayrollInvoiceId != null)
             {
-                return Results<Unit>.Failure("Cannot delete a paid advance.", "ADVANCE_PAID");
+                return Results<Unit>.Failure("Cannot delete a paid or processed advance.", "ADVANCE_FULLY_PAID");
             }
             
-            if (advance.EmployeeAdvanceSchedules.Any(s => s.DeductedAmount > 0))
+            if (advance.EmployeeAdvanceSchedules.Any(s => s.DeductedAmount > 0 || s.PayrolInvoiceId != null))
             {
-                return Results<Unit>.Failure("Cannot delete advance after deductions have started.", "DEDUCTIONS_STARTED");
+                return Results<Unit>.Failure("Cannot delete advance after deductions have started or processed in payroll.", "DEDUCTIONS_STARTED");
             }
 
             // Remove schedules first

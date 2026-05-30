@@ -13603,7 +13603,7 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
               .HasColumnName("START_DATE");
 
         entity.Property(e => e.StatusId)
-              .HasMaxLength(20)
+              .HasMaxLength(36)
               .IsUnicode(false)
               .HasColumnName("STATUS_ID");
 

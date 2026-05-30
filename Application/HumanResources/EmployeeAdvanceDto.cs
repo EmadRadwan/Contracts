@@ -17,6 +17,7 @@ public class EmployeeAdvanceDto
     public string? StatusId { get; set; }
     public string? StatusDescription { get; set; } // ← Translated
     public string? Description { get; set; }
+    public string? PayrollInvoiceId { get; set; }
     public List<EmployeeAdvanceScheduleDto>? CustomDeductionSchedules { get; set; }
     
 }
@@ -26,4 +27,6 @@ public class EmployeeAdvanceScheduleDto
     public int InstallmentNumber { get; set; }
     public DateOnly? DueDate { get; set; }
     public decimal ScheduledAmount { get; set; }
+    public string? StatusId { get; set; }
+    public string? PayrollInvoiceId { get; set; }
 }
