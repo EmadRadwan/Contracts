@@ -245,6 +245,21 @@ function EmployeeAdvanceForm({
                         
                         const isInstallmentDisabled = !isLongTermAdvance || isReadOnly || isSubmitting || isProcessed;
 
+                        // ==================== DEBUG LOGS ====================
+                        console.log("=== EmployeeAdvanceForm Debug ===");
+                        console.log("Mode:", { isCreate, isEdit, isReadOnly, editMode });
+                        console.log("Status:", advance?.statusId);
+                        console.log("isProcessed:", isProcessed);
+                        console.log("isLongTermAdvance:", isLongTermAdvance);
+                        console.log("canEditSchedules:", canEditSchedules);
+                        console.log("totalAmount:", totalAmount);
+                        console.log("customSchedules count:", customSchedules.length);
+                        console.log("canOpenPlan:", canOpenPlan);
+                        console.log("isSubmitting:", isSubmitting);
+                        console.log("Form valid/modified:", { valid, modified });
+                        console.log("=====================================");
+                        // ===================================================
+
                         return (
                             <FormElement>
                                     <Grid container spacing={2}>

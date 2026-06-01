@@ -64,6 +64,7 @@ public class GlAccount
     public string? GlSubClassId { get; set; }
     public string? GlSubClass2Id { get; set; }
     public string? GlAccountCourseLabelId { get; set; }
+    public string? GlSubAccountCourseLabelId { get; set; }   // ← Add this
     
     
     public DateTime? LastUpdatedStamp { get; set; }
@@ -83,6 +84,7 @@ public class GlAccount
     public GlSubClass? GlSubClass { get; set; }
     public GlSubClass2? GlSubClass2 { get; set; }
     public GlAccountCourseLabel? GlAccountCourseLabel { get; set; }
+    public GlSubAccountCourseLabel? GlSubAccountCourseLabel { get; set; }  // ← Add this
     
     
     public ICollection<AcctgTransEntry> AcctgTransEntries { get; set; }

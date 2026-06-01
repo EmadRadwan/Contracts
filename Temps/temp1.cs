@@ -1,126 +1,68 @@
-public class UpdateEmployeeAdvance
+modelBuilder.Entity<GlAccount>(entity =>
 {
-    public class Command : IRequest<Results<EmployeeAdvanceDto>>
-    {
-        public EmployeeAdvanceDto AdvanceDto { get; set; } = null!;
-        public string Language { get; set; } = "en";
-    }
+    entity.ToTable("GL_ACCOUNT");
+    entity.HasKey(e => e.GlAccountId);
 
-    public class Handler : IRequestHandler<Command, Results<EmployeeAdvanceDto>>
-    {
-        private readonly DataContext _context;
-        private readonly IProductStoreService _productStoreService;
-        private readonly IPaymentHelperService _paymentHelperService;
+    // Existing properties...
+    entity.Property(e => e.GlAccountId)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("GL_ACCOUNT_ID");
 
-        public Handler(DataContext context, IProductStoreService productStoreService, IPaymentHelperService paymentHelperService)
-        {
-            _context = context;
-            _productStoreService = productStoreService;
-            _paymentHelperService = paymentHelperService;
-        }
+    entity.Property(e => e.GlAccountTypeId)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("GL_ACCOUNT_TYPE_ID");
 
-        public async Task<Results<EmployeeAdvanceDto>> Handle(Command request, CancellationToken ct)
-        {
-            var dto = request.AdvanceDto;
-            var advance = await _context.EmployeeAdvances
-                .Include(a => a.EmployeeAdvanceSchedules)
-                .FirstOrDefaultAsync(x => x.AdvanceId == dto.AdvanceId, ct);
+    entity.Property(e => e.GlAccountClassId)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("GL_ACCOUNT_CLASS_ID");
 
-            if (advance == null)
-                return Results<EmployeeAdvanceDto>.Failure("Advance not found", "ADVANCE_NOT_FOUND");
+    // ... other existing properties ...
 
-            // Block updates on closed statuses
-            if (advance.StatusId is "ADVANCE_FULLY_PAID" or "ADVANCE_CANCELLED" or "ADVANCE_REJECTED")
-                return Results<EmployeeAdvanceDto>.Failure("Cannot modify a closed advance", "ADVANCE_CLOSED");
+    entity.Property(e => e.GlReportId)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("GL_REPORT_ID");
 
-            bool isLongTerm = dto.AdvanceTypeId == "EMPLOYEE_LONG_TERM_ADVANCE";
-            bool wasLongTerm = advance.AdvanceTypeId == "EMPLOYEE_LONG_TERM_ADVANCE";
+    entity.Property(e => e.GlClassCourseId)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("GL_CLASS_COURSE_ID");
 
-            // Core validations (you can keep your full validation block here)
-            if (dto.Amount <= 0)
-                return Results<EmployeeAdvanceDto>.Failure("Amount must be greater than zero");
+    entity.Property(e => e.GlSubClassId)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("GL_SUB_CLASS_ID");
 
-            decimal alreadyDeducted = advance.EmployeeAdvanceSchedules.Sum(s => s.DeductedAmount);
-            if (dto.Amount < alreadyDeducted)
-                return Results<EmployeeAdvanceDto>.Failure($"Cannot reduce amount below already deducted amount ({alreadyDeducted:N2})");
+    entity.Property(e => e.GlSubClass2Id)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("GL_SUB_CLASS2_ID");
 
-            // ──────────────────────────────────────
-            // Long-term Schedule Update Logic
-            // ──────────────────────────────────────
-            if (isLongTerm)
-            {
-                if (dto.CustomDeductionSchedules?.Any() != true)
-                    return Results<EmployeeAdvanceDto>.Failure("Long-term advance requires a deduction plan");
+    entity.Property(e => e.GlAccountCourseLabelId)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("GL_ACCOUNT_COURSE_LABEL_ID");
 
-                var totalScheduled = dto.CustomDeductionSchedules.Sum(s => s.ScheduledAmount);
-                if (Math.Abs(totalScheduled - dto.Amount) > 0.01m)
-                    return Results<EmployeeAdvanceDto>.Failure("Schedule total must match advance amount");
+    // ==================== NEW PROPERTY ====================
+    entity.Property(e => e.GlSubAccountCourseLabelId)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("GL_SUB_ACCOUNT_COURSE_LABEL_ID");
+    // ======================================================
 
-                // Remove only pending (unprocessed) schedules
-                var pendingSchedules = advance.EmployeeAdvanceSchedules
-                    .Where(s => string.IsNullOrEmpty(s.PayrolInvoiceId) && s.StatusId != "PAID")
-                    .ToList();
+    // Timestamps
+    entity.Property(e => e.LastUpdatedStamp).HasColumnName("LAST_UPDATED_STAMP");
+    entity.Property(e => e.LastUpdatedTxStamp).HasColumnName("LAST_UPDATED_TX_STAMP");
+    entity.Property(e => e.CreatedStamp).HasColumnName("CREATED_STAMP");
+    entity.Property(e => e.CreatedTxStamp).HasColumnName("CREATED_TX_STAMP");
 
-                _context.EmployeeAdvanceSchedules.RemoveRange(pendingSchedules);
-
-                // Add new schedules from DTO
-                int nextInstallment = advance.EmployeeAdvanceSchedules.Count(s => !string.IsNullOrEmpty(s.PayrolInvoiceId)) + 1;
-
-                foreach (var sch in dto.CustomDeductionSchedules.OrderBy(s => s.DueDate))
-                {
-                    if (!string.IsNullOrEmpty(sch.PayrollInvoiceId)) continue; // skip already processed
-
-                    var schedule = new EmployeeAdvanceSchedule
-                    {
-                        ScheduleId = Guid.NewGuid().ToString(),
-                        AdvanceId = advance.AdvanceId,
-                        InstallmentNumber = nextInstallment++,
-                        DueDate = sch.DueDate,
-                        ScheduledAmount = sch.ScheduledAmount,
-                        DeductedAmount = 0,
-                        StatusId = "SCHEDULED",
-                        CreatedStamp = DateTime.UtcNow,
-                        LastUpdatedStamp = DateTime.UtcNow
-                    };
-                    _context.EmployeeAdvanceSchedules.Add(schedule);
-                }
-
-                advance.InstallmentCount = advance.EmployeeAdvanceSchedules.Count(s => !string.IsNullOrEmpty(s.PayrolInvoiceId)) 
-                                         + dto.CustomDeductionSchedules.Count(s => string.IsNullOrEmpty(s.PayrollInvoiceId));
-            }
-            else if (wasLongTerm)
-            {
-                // Switching type from long-term to short-term
-                _context.EmployeeAdvanceSchedules.RemoveRange(advance.EmployeeAdvanceSchedules);
-                advance.InstallmentCount = dto.InstallmentCount ?? 0;
-            }
-
-            // Update linked Payment
-            var companyPartyId = await _productStoreService.GetProductStorePayToPartId();
-            await _paymentHelperService.UpdatePayment(new CreatePaymentParam
-            {
-                PaymentId = advance.PaymentId,
-                PartyIdFrom = companyPartyId,
-                PartyIdTo = dto.PartyId,
-                Amount = dto.Amount,
-                EffectiveDate = dto.AdvanceDate,
-                PaymentTypeId = dto.AdvanceTypeId,
-                Comments = dto.Description
-            });
-
-            // Update Advance
-            advance.PartyId = dto.PartyId;
-            advance.AdvanceDate = dto.AdvanceDate;
-            advance.Amount = dto.Amount ?? 0;
-            advance.AdvanceTypeId = dto.AdvanceTypeId;
-            advance.Description = dto.Description;
-            advance.LastUpdatedStamp = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync(ct);
-
-            // Return updated record
-            var resultRecord = await BuildEmployeeAdvanceDto(advance, request.Language, ct);
-            return Results<EmployeeAdvanceDto>.Success(resultRecord);
-        }
-    }
-}
+    // ==================== NEW RELATIONSHIP ====================
+    entity.HasOne(e => e.GlSubAccountCourseLabel)
+        .WithMany(e => e.GlAccounts)
+        .HasForeignKey(e => e.GlSubAccountCourseLabelId)
+        .OnDelete(DeleteBehavior.SetNull);   // Recommended for lookup tables
+    // =========================================================
+});

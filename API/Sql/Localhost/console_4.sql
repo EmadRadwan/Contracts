@@ -1,76 +1,12 @@
-INSERT INTO PARTY (
-    PARTY_ID,
-    PARTY_TYPE_ID,
-    MAIN_ROLE,
-    EXTERNAL_ID,
-    PREFERRED_CURRENCY_UOM_ID,
-    DESCRIPTION,
-    STATUS_ID,
-    CREATED_DATE,
-    CREATED_BY_USER_LOGIN,
-    LAST_MODIFIED_DATE,
-    LAST_MODIFIED_BY_USER_LOGIN,
-    DATA_SOURCE_ID,
-    IS_UNREAD,
-    GL_ACCOUNT_ID_ADVANCED_PAYMENT,
-    LAST_UPDATED_STAMP,
-    LAST_UPDATED_TX_STAMP,
-    CREATED_STAMP,
-    CREATED_TX_STAMP,
-    PREFERRED_PAYROLL_PMT_METHOD,
-    LEAD_TEMPRATURE_ID,
-    ATTENDANCE_STARTS_AT,
-    DEPARTMENT_PARTY_ID,
-    FINGER_PRINT_ATTENDANCE_ID
-)
-VALUES
-    (
-        '1004',
-        'TEAM',
-        NULL,
-        NULL,
-        NULL,
-        'مواقع خارجية',
-        'PARTY_ENABLED',
-        '2026-05-18 00:00:00',
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        '2026-05-18 00:00:00',
-        NULL,
-        '2026-05-18 00:00:00',
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL
-    ),
-    (
-        '1005',
-        'TEAM',
-        NULL,
-        NULL,
-        NULL,
-        'الادارة',
-        'PARTY_ENABLED',
-        '2026-05-18 00:00:00',
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        '2026-05-18 00:00:00',
-        NULL,
-        '2026-05-18 00:00:00',
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL
-    );
+SELECT
+    pga.PARTY_ID,
+    COUNT(*) AS transaction_count
+FROM PARTY_GL_ACCOUNT pga
+         INNER JOIN ACCTG_TRANS_ENTRY ate
+                    ON ate.GL_ACCOUNT_ID = pga.GL_ACCOUNT_ID
+         INNER JOIN ACCTG_TRANS at
+                    ON at.ACCTG_TRANS_ID = ate.ACCTG_TRANS_ID
+WHERE at.IS_POSTED = 'Y'
+GROUP BY pga.PARTY_ID
+ORDER BY transaction_count DESC
+LIMIT 1;

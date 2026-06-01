@@ -18758,7 +18758,10 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
     entity.Property(e => e.GlSubClassId).HasMaxLength(36).IsUnicode(false).HasColumnName("GL_SUB_CLASS_ID");
     entity.Property(e => e.GlSubClass2Id).HasMaxLength(36).IsUnicode(false).HasColumnName("GL_SUB_CLASS_2_ID");
     entity.Property(e => e.GlAccountCourseLabelId).HasMaxLength(36).IsUnicode(false).HasColumnName("GL_ACCOUNT_COURSE_LABEL_ID");
-
+entity.Property(e => e.GlSubAccountCourseLabelId)
+        .HasMaxLength(36)
+        .IsUnicode(false)
+        .HasColumnName("GL_SUB_ACCOUNT_COURSE_LABEL_ID");
 
                 entity.HasOne(d => d.GlAccountClass)
                     .WithMany(p => p.GlAccounts)
@@ -18810,6 +18813,12 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
         .WithMany(p => p.GlAccounts)
         .HasForeignKey(d => d.GlAccountCourseLabelId)
         .HasConstraintName("FK_GL_COURSE_LABEL");
+       
+        entity.HasOne(e => e.GlSubAccountCourseLabel)
+        .WithMany(e => e.GlAccounts)
+        .HasForeignKey(e => e.GlSubAccountCourseLabelId)
+        .OnDelete(DeleteBehavior.SetNull); 
+        
             });
 
             modelBuilder.Entity<GlAccountCategory>(entity =>
@@ -66321,6 +66330,26 @@ entity.HasIndex(e => e.OperatingExpenseGlAccountId, "WK_EFFRT_OP_EXP_GL");
                                 .HasDefaultValue(1)
                                 .HasColumnName("SIGN_MULTIPLIER");
                         });
+                        
+                        modelBuilder.Entity<GlSubAccountCourseLabel>(entity =>
+                            {
+                                entity.ToTable("GL_SUB_ACCOUNT_COURSE_LABEL");
+                                entity.HasKey(e => e.GlSubAccountCourseLabelId);
+                            
+                                entity.Property(e => e.GlSubAccountCourseLabelId)
+                                    .HasMaxLength(36)
+                                    .IsUnicode(false)
+                                    .HasColumnName("GL_SUB_ACCOUNT_COURSE_LABEL_ID");
+                            
+                                entity.Property(e => e.Description)
+                                    .HasMaxLength(255)
+                                    .IsUnicode()
+                                    .HasColumnName("DESCRIPTION");
+                            
+                                entity.Property(e => e.DescriptionArabic)
+                                    .HasMaxLength(255)
+                                    .HasColumnName("DESCRIPTION_ARABIC");
+                            });
 
             foreach (var foreignKey in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
                 {

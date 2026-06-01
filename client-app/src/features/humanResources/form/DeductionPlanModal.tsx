@@ -61,6 +61,7 @@ export default function DeductionPlanModal({
     const [amountError, setAmountError] = useState<string>("");
     const [installmentCountHint, setInstallmentCountHint] = useState<number>(initialInstallmentCount);
 
+    
     // ────────────────────────────────────────────────
     // Initialize rows
     // ────────────────────────────────────────────────
@@ -204,6 +205,25 @@ export default function DeductionPlanModal({
 
         onClose();
     };
+
+    // ==================== DEBUG LOGS ====================
+    console.log("=== DeductionPlanModal Debug ===");
+    console.log("Props:", {
+        isReadOnly,
+        isPreview,
+        totalAdvance,
+        initialSchedulesCount: initialSchedules.length,
+        initialInstallmentCount
+    });
+
+    console.log("State:", {
+        rowsCount: rows.length,
+        totalScheduled,
+        isValid,
+        isAnyProcessed
+    });
+    console.log("=====================================");
+    // ===================================================
 
     return (
         <Grid container spacing={2} sx={{ p: 3, minWidth: 800 }}>
