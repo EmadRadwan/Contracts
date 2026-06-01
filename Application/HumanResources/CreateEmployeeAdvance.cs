@@ -184,13 +184,23 @@ public class CreateEmployeeAdvance
                         "SCHEDULE_TOTAL_MISMATCH");
                 }
 
-                // Optional: check dates are in future / ordered / no duplicates, etc.
-                var hasPastDue = dto.CustomDeductionSchedules.Any(s => s.DueDate < DateOnly.FromDateTime(DateTime.UtcNow));
-                if (hasPastDue)
+                foreach (var s in dto.CustomDeductionSchedules.Where(s => s.DueDate < DateHelper.Today))
                 {
-                    return Results<EmployeeAdvanceDto>.Failure(
-                        "لا يمكن جدولة خصم بتاريخ سابق.",
-                        "PAST_DUE_DATE_NOT_ALLOWED");
+                    var dueDate = s.DueDate!.Value;
+                    var monthStart = new DateOnly(dueDate.Year, dueDate.Month, 1);
+                    var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+
+                    var isMonthProcessed = await _context.Invoices
+                        .AnyAsync(i => i.InvoiceTypeId == "PAYROL_INVOICE"
+                                       && i.InvoiceDate >= monthStart
+                                       && i.InvoiceDate <= monthEnd, ct);
+
+                    if (isMonthProcessed)
+                    {
+                        return Results<EmployeeAdvanceDto>.Failure(
+                            $"لا يمكن جدولة خصم في شهر تم معالجة الرواتب فيه ({dueDate:MM/yyyy}).",
+                            "PAST_DUE_DATE_NOT_ALLOWED");
+                    }
                 }
             }
 

@@ -250,6 +250,7 @@ function EmployeeAdvanceForm({
                         console.log("Mode:", { isCreate, isEdit, isReadOnly, editMode });
                         console.log("Status:", advance?.statusId);
                         console.log("isProcessed:", isProcessed);
+                        console.log("advance:", advance);
                         console.log("isLongTermAdvance:", isLongTermAdvance);
                         console.log("canEditSchedules:", canEditSchedules);
                         console.log("totalAmount:", totalAmount);
