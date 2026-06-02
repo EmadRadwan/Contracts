@@ -9,6 +9,7 @@ public class GlSubAccountCourseLabel
     public string GlSubAccountCourseLabelId { get; set; } = null!;
     public string? Description { get; set; }
     public string? DescriptionArabic { get; set; }
+    public string? SortOrder { get; set; } 
     
     public ICollection<GlAccount> GlAccounts { get; set; } = new HashSet<GlAccount>();
 }

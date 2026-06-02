@@ -131,6 +131,7 @@ export default function InvoicesList() {
                                         "total"
                                     )}
                                     width={150}
+                                    filter={"numeric"}
                                 />
                                 <Column
                                     field="orderId"

@@ -66244,6 +66244,11 @@ entity.HasIndex(e => e.OperatingExpenseGlAccountId, "WK_EFFRT_OP_EXP_GL");
                             entity.Property(e => e.DescriptionArabic)
                                 .HasMaxLength(255)
                                 .HasColumnName("DESCRIPTION_ARABIC");
+                                
+                                 entity.Property(e => e.SortOrder)
+                                    .HasMaxLength(20) 
+                                    .IsUnicode(false)
+                                    .HasColumnName("SORT_ORDER");
                             
                         });
                         
@@ -66265,6 +66270,11 @@ entity.HasIndex(e => e.OperatingExpenseGlAccountId, "WK_EFFRT_OP_EXP_GL");
                                 entity.Property(e => e.DescriptionArabic)
                                     .HasMaxLength(255)
                                     .HasColumnName("DESCRIPTION_ARABIC");
+                                    
+                                     entity.Property(e => e.SortOrder)
+                                    .HasMaxLength(20) 
+                                    .IsUnicode(false)
+                                    .HasColumnName("SORT_ORDER");
                             });
                             
                             modelBuilder.Entity<GlSubClass>(entity =>
@@ -66285,6 +66295,11 @@ entity.HasIndex(e => e.OperatingExpenseGlAccountId, "WK_EFFRT_OP_EXP_GL");
                                     entity.Property(e => e.DescriptionArabic)
                                         .HasMaxLength(255)
                                         .HasColumnName("DESCRIPTION_ARABIC");
+                                        
+                                         entity.Property(e => e.SortOrder)
+                                    .HasMaxLength(20) 
+                                    .IsUnicode(false)
+                                    .HasColumnName("SORT_ORDER");
                                 });
 
                 modelBuilder.Entity<GlSubClass2>(entity =>
@@ -66305,6 +66320,11 @@ entity.HasIndex(e => e.OperatingExpenseGlAccountId, "WK_EFFRT_OP_EXP_GL");
                         entity.Property(e => e.DescriptionArabic)
                             .HasMaxLength(255)
                             .HasColumnName("DESCRIPTION_ARABIC");
+                            
+                             entity.Property(e => e.SortOrder)
+                                    .HasMaxLength(20) 
+                                    .IsUnicode(false)
+                                    .HasColumnName("SORT_ORDER");
                     });
                     
                     modelBuilder.Entity<GlAccountCourseLabel>(entity =>
@@ -66329,6 +66349,11 @@ entity.HasIndex(e => e.OperatingExpenseGlAccountId, "WK_EFFRT_OP_EXP_GL");
                             entity.Property(e => e.SignMultiplier)
                                 .HasDefaultValue(1)
                                 .HasColumnName("SIGN_MULTIPLIER");
+                                
+                                 entity.Property(e => e.SortOrder)
+                                    .HasMaxLength(20) 
+                                    .IsUnicode(false)
+                                    .HasColumnName("SORT_ORDER");
                         });
                         
                         modelBuilder.Entity<GlSubAccountCourseLabel>(entity =>
@@ -66349,6 +66374,11 @@ entity.HasIndex(e => e.OperatingExpenseGlAccountId, "WK_EFFRT_OP_EXP_GL");
                                 entity.Property(e => e.DescriptionArabic)
                                     .HasMaxLength(255)
                                     .HasColumnName("DESCRIPTION_ARABIC");
+                                    
+                                    entity.Property(e => e.SortOrder)
+                                    .HasMaxLength(20) 
+                                    .IsUnicode(false)
+                                    .HasColumnName("SORT_ORDER");
                             });
 
             foreach (var foreignKey in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))

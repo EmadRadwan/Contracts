@@ -37,3 +37,5 @@ export default function DeductionPlanModal({ ... }: DeductionPlanModalProps) {
         onClick={handleGenerateClick}
         disabled={totalAdvance <= 0 || installmentCountHint < 1 || isAnyProcessed}
     >
+
+        GL_SUB_ACCOUNT_COURSE_LABEL_ID

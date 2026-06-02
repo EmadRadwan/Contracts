@@ -320,6 +320,8 @@ Summarize this entire conversation as a concise JSON or bullet-point outline, in
   SubClass2 → GL_SUB_CLASS_2
   Account → GL_ACCOUNT_COURSE_LABEL
   
+  01096855460  0224048000
+  
  
   
   
