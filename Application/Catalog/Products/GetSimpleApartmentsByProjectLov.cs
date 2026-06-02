@@ -92,7 +92,8 @@ public class GetSimpleApartmentsByProjectLov
                 // -----------------------------------------------------------------
                 var baseQuery = _context.Products
                     .Where(p => p.ProductTypeId == apartmentType &&
-                                p.ProjectId == request.ProjectId);
+                                p.ProjectId == request.ProjectId &&
+                                p.ApartmentStatusId == "APARTMENT_AVAILABLE");
 
                 if (!string.IsNullOrWhiteSpace(request.Params.SearchTerm))
                 {

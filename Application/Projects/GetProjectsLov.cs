@@ -48,8 +48,10 @@ public class GetProjectsLov
     {
       // REFACTOR: Optimized query to include FacilityId in the projection
       var query = _context.WorkEfforts
-        .Where(x => x.WorkEffortTypeId == "PROJECT")
-        .AsQueryable();
+    .Where(x => x.WorkEffortTypeId == "PROJECT")
+    .Where(x => _context.Products
+        .Any(p => p.ProjectId == x.WorkEffortId))
+    .AsQueryable();
 
       if (!string.IsNullOrEmpty(request.Params?.SearchTerm))
       {
