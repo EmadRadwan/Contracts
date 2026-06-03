@@ -68,6 +68,8 @@ const PayrollRun: React.FC = () => {
     const [invoiceDate, setInvoiceDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [payrollData, setPayrollData] = useState<EmployeePayrollData[]>([]);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [resetCounter, setResetCounter] = useState(0);
+    const [hasDraft, setHasDraft] = useState(false);
 
     const totals = useMemo(() => {
         return payrollData.reduce((acc, emp) => {
@@ -111,6 +113,7 @@ const PayrollRun: React.FC = () => {
         try {
             const savedDraft = localStorage.getItem(`payroll_draft_${companyId}`);
             if (savedDraft) {
+                setHasDraft(true);
                 const parsed = JSON.parse(savedDraft);
                 const { invoiceDate: savedDate, data: savedData } = parsed || {};
 
@@ -153,10 +156,24 @@ const PayrollRun: React.FC = () => {
                 invoiceDate,
                 data: payrollData
             }));
+            setHasDraft(true);
             toast.info(getTranslatedLabel("accounting.payroll.run.draft-saved", "Draft saved locally"));
         } catch (e) {
             console.error("Failed to save payroll draft", e);
             toast.error(getTranslatedLabel("accounting.payroll.run.draft-save-failed", "Failed to save draft locally"));
+        }
+    };
+
+    const handleDeleteDraft = () => {
+        try {
+            localStorage.removeItem(`payroll_draft_${companyId}`);
+            setPayrollData([]);
+            setResetCounter(prev => prev + 1);
+            setHasDraft(false);
+            toast.success(getTranslatedLabel("accounting.payroll.run.draft-deleted", "Draft deleted successfully"));
+        } catch (e) {
+            console.error("Failed to delete payroll draft", e);
+            toast.error(getTranslatedLabel("accounting.payroll.run.draft-delete-failed", "Failed to delete draft locally"));
         }
     };
 
@@ -262,7 +279,7 @@ const PayrollRun: React.FC = () => {
             });
         });
 
-    }, [employeesResponse, advancesResponse, invoiceDate]);
+    }, [employeesResponse, advancesResponse, invoiceDate, resetCounter]);
     
     const handleCalculate = (index: number, type: 'absence' | 'overtime') => {
         const newData = [...payrollData];
@@ -350,7 +367,6 @@ const PayrollRun: React.FC = () => {
             };
 
             await batchCreate(command).unwrap();
-            localStorage.removeItem(`payroll_draft_${companyId}`);
             toast.success(getTranslatedLabel("accounting.payroll.run.success", "Payroll Run completed successfully"));
             navigate("/invoicesDashboard");
         } catch (error) {
@@ -449,6 +465,11 @@ const PayrollRun: React.FC = () => {
                 <Button variant="outlined" onClick={handleSaveDraft}>
                     {getTranslatedLabel("accounting.payroll.run.save-draft", "Save as Draft")}
                 </Button>
+                {hasDraft && (
+                    <Button variant="outlined" color="error" onClick={handleDeleteDraft}>
+                        {getTranslatedLabel("accounting.payroll.run.delete-draft", "Delete Draft")}
+                    </Button>
+                )}
             </Box>
 
             <FingerprintUpload 

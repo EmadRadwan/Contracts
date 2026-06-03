@@ -29,6 +29,7 @@ public interface IGeneralLedgerService
     Task<string> QuickCreateAcctgTransAndEntries(CreateQuickAcctgTransAndEntriesParams parameters);
     Task<string> CreateAcctgTransForCustomerReturnInvoice(string invoiceId);
     Task<string> CreateAcctgTransAndEntriesForOutgoingPayment(string paymentId);
+    Task<string> CreateAcctgTransAndEntriesForPayrollPayment(string paymentId);
 
     Task<string> CreateAcctgTransForWorkEffortInventoryProduced(string workEffortId,
         string inventoryItemId);
@@ -3635,6 +3636,152 @@ public class GeneralLedgerService : IGeneralLedgerService
         {
             _logger.LogError(ex, $"Error creating AcctgTrans for outgoing payment {paymentId}");
             throw new Exception($"An error occurred while creating outgoing payment AcctgTrans for {paymentId}.", ex);
+        }
+    }
+
+    public async Task<string> CreateAcctgTransAndEntriesForPayrollPayment(string paymentId)
+    {
+        try
+        {
+            var glSettings = _acctgMiscService.GetGlArithmeticSettingsInline();
+            var ledgerDecimals = glSettings.DecimalScale;
+            var roundingMode = glSettings.RoundingMode;
+
+            var payment = await _context.Payments
+                .FirstOrDefaultAsync(p => p.PaymentId == paymentId);
+
+            if (payment == null)
+            {
+                _logger.LogWarning($"Payment with ID {paymentId} was not found.");
+                return null;
+            }
+
+            var organizationPartyId = payment.PartyIdFrom;
+            var stamp = DateTime.UtcNow;
+            var paymentAmount = _acctgMiscService.CustomRound(payment.Amount, (int)ledgerDecimals, roundingMode);
+
+            // 1. Resolve Credit Account (Bank/Cash)
+            var creditAccountParams = new GetGlAccountFromAccountTypeParams
+            {
+                OrganizationPartyId = organizationPartyId,
+                AcctgTransTypeId = "OUTGOING_PAYMENT",
+                DebitCreditFlag = "C",
+                PaymentId = paymentId
+            };
+            var creditGlAccountId = await GetGlAccountFromAccountType(creditAccountParams);
+
+            // 2. Identify relevant invoices
+            if (!payment.EffectiveDate.HasValue)
+            {
+                _logger.LogWarning($"Payment {paymentId} has no effective date.");
+                return null;
+            }
+
+            int month = payment.EffectiveDate.Value.Month;
+            int year = payment.EffectiveDate.Value.Year;
+            DateOnly monthStart = new DateOnly(year, month, 1);
+            DateOnly monthEnd = monthStart.AddMonths(1).AddDays(-1);
+
+            // PreferredPaymentMethodId mapping (CASH -> CASH, everything else -> BANK_TRANSFER)
+            string preferredMethodId = payment.PaymentMethodId == "CASH" ? "CASH" : "BANK_TRANSFER";
+
+            var invoiceData = await (from inv in _context.Invoices
+                                     join prty in _context.Parties on inv.PartyIdFrom equals prty.PartyId
+                                     where inv.InvoiceTypeId == "PAYROL_INVOICE"
+                                           && inv.PartyId == organizationPartyId
+                                           && inv.InvoiceDate >= monthStart
+                                           && inv.InvoiceDate <= monthEnd
+                                           && prty.PreferredPayrollPaymentMethodId == preferredMethodId
+                                     select new { Invoice = inv, Party = prty }).ToListAsync();
+
+            // 3. Create AcctgTrans Header (Hard-coded)
+            var acctgTransParams = new CreateAcctgTransParams
+            {
+                AcctgTransTypeId = "OUTGOING_PAYMENT",
+                GlFiscalTypeId = "ACTUAL",
+                PaymentId = payment.PaymentId,
+                TransactionDate = payment.EffectiveDate,
+                IsPosted = "Y",
+                PostedDate = stamp,
+                Description = payment.Comments,
+                PartyId = payment.PartyIdTo,
+                RoleTypeId = "BILL_FROM_VENDOR"
+            };
+            var acctgTransId = await _acctgTransService.CreateAcctgTrans(acctgTransParams);
+
+            // 4. Create Credit Entry
+            var creditEntry = new AcctgTransEntry
+            {
+                AcctgTransId = acctgTransId,
+                AcctgTransEntrySeqId = "001",
+                GlAccountId = creditGlAccountId,
+                DebitCreditFlag = "C",
+                AcctgTransEntryTypeId = "_NA_",
+                Amount = paymentAmount,
+                OrganizationPartyId = organizationPartyId,
+                PartyId = payment.PartyIdTo,
+                RoleTypeId = "BILL_FROM_VENDOR",
+                ReconcileStatusId = "AES_NOT_RECONCILED",
+                Description = payment.Comments,
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            };
+            await _acctgTransService.CreateAcctgTransEntry(creditEntry);
+
+            // 5. Create Debit Entries for each employee's invoice
+            int seq = 2;
+            foreach (var data in invoiceData)
+            {
+                var invoice = data.Invoice;
+                var party = data.Party;
+                var invoiceTotal = await _invoiceUtilityService.GetInvoiceTotal(invoice.InvoiceId, true);
+                if (invoiceTotal == 0) continue;
+
+                var accruedGlAccountId = party.GlAccountIdAdvancedPayment;
+
+                if (string.IsNullOrEmpty(accruedGlAccountId))
+                {
+                    accruedGlAccountId = await _context.PartyGlAccounts
+                        .Where(pga => pga.PartyId == invoice.PartyIdFrom &&
+                                      pga.RoleTypeId == "EMPLOYEE" &&
+                                      pga.GlAccountTypeId == "ACCOUNTS_PAYABLE")
+                        .Select(pga => pga.GlAccountId)
+                        .FirstOrDefaultAsync();
+                }
+
+                if (string.IsNullOrEmpty(accruedGlAccountId))
+                {
+                    _logger.LogWarning($"Accrued account not found for employee {invoice.PartyIdFrom}. Skipping debit entry.");
+                    continue;
+                }
+
+                var debitEntry = new AcctgTransEntry
+                {
+                    AcctgTransId = acctgTransId,
+                    AcctgTransEntrySeqId = seq.ToString("D3"),
+                    GlAccountId = accruedGlAccountId,
+                    GlAccountTypeId = "ACCOUNTS_PAYABLE",
+                    DebitCreditFlag = "D",
+                    AcctgTransEntryTypeId = "_NA_",
+                    Amount = invoiceTotal,
+                    OrganizationPartyId = organizationPartyId,
+                    PartyId = invoice.PartyIdFrom,
+                    RoleTypeId = "EMPLOYEE",
+                    ReconcileStatusId = "AES_NOT_RECONCILED",
+                    Description = invoice.Description ?? payment.Comments,
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp
+                };
+                await _acctgTransService.CreateAcctgTransEntry(debitEntry);
+                seq++;
+            }
+
+            return acctgTransId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error creating hard-coded payroll payment AcctgTrans for {paymentId}");
+            throw;
         }
     }
 

@@ -202,6 +202,8 @@ ssh ubuntu@129.146.22.240
 docker-compose -f docker-compose.vm.yml down
 docker-compose -f docker-compose.vm.yml up -d --build
 
+===========================
+===========================
 yarn build
 sudo rm -rf erp-contracts
  git clone https://github.com/EmadRadwan/Contracts.git erp-contracts
@@ -217,7 +219,8 @@ sudo rm -rf erp-contracts
    sudo docker-compose -f docker-compose.vm.yml down
  fi
  sudo docker-compose -f docker-compose.vm.yml up -d --build
- 
+ ===========================
+ ===========================
  
  
  cd ../logs/contracts
@@ -250,10 +253,10 @@ cd ~/mysql-backups/contracts-golden
       > ~/mysql-backups/contracts-golden/erp_contracts_no_definer_$(date +%Y-%m-%d_%H-%M-%S).sql
 
 gzip ~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-02-01_11-35-20.sql
-scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-06-01_08-53-47.sql ~/Desktop/
+scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-06-03_12-03-59.sql ~/Desktop/
 gunzip ~/Desktop/erp_contracts_no_definer_2026-02-01_11-35-20.sql.gz
 
-mysql -u root -p erp_contracts <  erp_contracts_no_definer_2026-06-01_08-53-47.sql
+mysql -u root -p erp_contracts <  erp_contracts_no_definer_2026-06-03_12-03-59.sql
 
 
 Portainer.io:

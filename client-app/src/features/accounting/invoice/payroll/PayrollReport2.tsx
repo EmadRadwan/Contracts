@@ -45,7 +45,7 @@ const PayrollReport2: React.FC<PayrollReport2Props> = ({ open, onClose }) => {
         const headers = [
             "م", "الاسم", "المهنة", "الراتب الاساسي", "معدل الحضور %",
             "الاجر باليوم", "أيام الإضافي", "الاضافي", "الاجمالي",
-            "السلف", "أيام الغياب", "الغياب", "الخصومات", "صافي الراتب المستحق", "الملاحظات"
+            "السلف", "أيام الغياب", "الغياب", "الخصومات", "صافي الراتب المستحق", "طريقة الصرف", "الملاحظات"
         ];
 
         ws.addRow(headers.map(h => utils.rtl(h)));
@@ -71,7 +71,8 @@ const PayrollReport2: React.FC<PayrollReport2Props> = ({ open, onClose }) => {
                 utils.num(emp.absenceValue),
                 utils.num(emp.totalDeductions),
                 utils.num(emp.netSalary),
-                utils.rtl(emp.notes || emp.paymentMethod || '')
+                utils.rtl(emp.paymentMethod || ''),
+                utils.rtl(emp.notes || '')
             ]);
         });
 
@@ -93,6 +94,7 @@ const PayrollReport2: React.FC<PayrollReport2Props> = ({ open, onClose }) => {
             totalAbsence,
             totalDeductions,
             totalNet,
+            "",
             ""
         ]);
         totalRow.font = { bold: true, size: 12 };
@@ -149,7 +151,7 @@ const PayrollReport2: React.FC<PayrollReport2Props> = ({ open, onClose }) => {
         ws.columns = [
             { width: 30 }, { width: 32 }, { width: 24 }, { width: 16 }, { width: 14 },
             { width: 14 }, { width: 12 }, { width: 14 }, { width: 16 },
-            { width: 14 }, { width: 12 }, { width: 14 }, { width: 16 }, { width: 18 }, { width: 28 }
+            { width: 14 }, { width: 12 }, { width: 14 }, { width: 16 }, { width: 18 }, { width: 18 }, { width: 28 }
         ];
 
         return await wb.xlsx.writeBuffer();

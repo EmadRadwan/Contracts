@@ -431,6 +431,7 @@ public class PaymentHelperService : IPaymentHelperService
                     .FirstOrDefaultAsync(pt => pt.PaymentTypeId == payment.PaymentTypeId);
 
                 bool isEmployeeAdvance = EmployeeAdvancePaymentTypes.Contains(payment.PaymentTypeId);
+                bool isPayrollPayment = payment.PaymentTypeId == "PAYROL_PAYMENT";
                 
                 bool isPostDatedCheque = 
                     !string.IsNullOrEmpty(payment.OverrideGlAccountId) &&
@@ -440,6 +441,10 @@ public class PaymentHelperService : IPaymentHelperService
                 if (isEmployeeAdvance)
                 {
                     await _generalLedgerService.CreateAccountingTransactionForEmployeeAdvance(payment.PaymentId);
+                }
+                else if (isPayrollPayment)
+                {
+                    await _generalLedgerService.CreateAcctgTransAndEntriesForPayrollPayment(payment.PaymentId);
                 }
                 else if (isPostDatedCheque)
                 {
