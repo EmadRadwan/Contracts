@@ -54,7 +54,9 @@ namespace Application.Accounting.OrganizationGlSettings
                         .Include(x => x.GlAccount)
                         .Where(x =>
                             x.OrganizationPartyId == request.CompanyId &&
-                            x.GlAccount.GlAccountClassId == "CASH_EQUIVALENT")
+                            (x.GlAccount.GlAccountClassId == "CASH_EQUIVALENT" ||
+                             x.GlAccount.GlAccountId == "302000" ||
+                             x.GlAccount.GlAccountId == "303000"))
                         .OrderBy(x => x.GlAccount.GlAccountId)
                         .ThenBy(x => x.OrganizationPartyId)
                         .Select(x => new GlAccountCashEquivalentDto
