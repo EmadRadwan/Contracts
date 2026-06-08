@@ -14,7 +14,6 @@ import LoadingComponent from '../../../app/layout/LoadingComponent';
 import { MemoizedFormDropDownList } from '../../../app/common/form/MemoizedFormDropDownList';
 import { requiredValidator } from '../../../app/common/form/Validators';
 import LeadPicker from '../components/LeadPicker';
-import { FormComboBoxVirtualProject } from '../../../app/common/form/FormComboBoxVirtualProject';
 import { FormSimpleComboBoxVirtualApartmentsByProject } from '../../../app/common/form/FormSimpleComboBoxVirtualApartmentsByProject';
 import CRMMenu from '../menu/CRMMenu';
 import AddActionModal from './components/AddActionsModal';
@@ -22,6 +21,9 @@ import AddIcon from '@mui/icons-material/Add';
 import AddLeadModal from '../leads/AddLeadModal';
 import { FormComboBoxVirtualPartySalesRep } from '../../../app/common/form/FormComboBoxVirtualPartySalesRep';
 import { FormComboBoxVirtualPartyBroker } from '../../../app/common/form/FormComboBoxVirtualPartyBroker';
+import {
+    FormComboBoxVirtualProjectWithApartments
+} from "../../../app/common/form/FormComboBoxVirtualProjectWithApartments";
 
 interface OpportunityFormProps {
     opportunity?: SalesOpportunity;
@@ -213,7 +215,7 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
                                     <Grid item xs={4}>
                                         <Field
                                             name="workEffortId"
-                                            component={FormComboBoxVirtualProject}
+                                            component={FormComboBoxVirtualProjectWithApartments}
                                             label={getTranslatedLabel("projects.certificate.form.project", "Project")}
                                             dataItemKey="projectId"
                                             textField="ProjectName"

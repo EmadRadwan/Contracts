@@ -114,6 +114,12 @@ public class ProjectController : BaseApiController
         return HandleResult(await Mediator.Send(new GetProjectsLov.Query { Params = param }));
     }
     
+    [HttpGet("getProjectsWithApartmentsLov", Name = "GetProjectsWithApartmentsLov")]
+    public async Task<IActionResult> GetProjectsWithApartmentsLov([FromQuery] PartyLovParams param)
+    {
+        return HandleResult(await Mediator.Send(new GetProjectsWithApartmentsLov.Query { Params = param }));
+    }
+    
     [HttpGet("subProjects/{projectId}")]
     public async Task<IActionResult> GetSubProjects(string projectId)
     {

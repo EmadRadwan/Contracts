@@ -506,6 +506,8 @@ const VehicleContents = {
 const Projects = {
     getProjectsLov: (params: URLSearchParams) =>
         axios.get<ProjectLov>("/project/getProjectsLov", { params }).then(responseBody),
+    getProjectsWithApartmentsLov: (params: URLSearchParams) =>
+        axios.get<ProjectLov>("/project/getProjectsWithApartmentsLov", { params }).then(responseBody),
 };
 
 const agent = {
