@@ -80,11 +80,9 @@ public class GetGlAccountTransactionDetails
                     select new TransactionEntryDto
                     {
                         AcctgTransId = ate.AcctgTransId,
-                        AcctgTransEntrySeqId = ate.AcctgTransEntrySeqId,
                         TransactionDate = (DateTime)act.TransactionDate,
                         AcctgTransTypeId = act.AcctgTransTypeId ?? "Unknown",
                         AcctgTransTypeDescription = att != null ? att.Description : (act.AcctgTransTypeId ?? "Unknown"),
-                        GlFiscalTypeId = act.GlFiscalTypeId,
                         InvoiceId = act.InvoiceId,
                         PaymentId = we != null && we.WorkEffortTypeId == "PAYMENT_CERTIFICATE"
                             ? we.WorkEffortId
@@ -132,7 +130,6 @@ public class GetGlAccountTransactionDetails
                 var transactions = await transactionsQuery
                     .OrderBy(x => x.TransactionDate)
                     .ThenBy(x => x.AcctgTransId)
-                    .ThenBy(x => x.AcctgTransEntrySeqId)
                     .ToListAsync(cancellationToken);
 
                 // 5. Calculate aggregates using consistent cutoffs
@@ -203,7 +200,17 @@ public class GetGlAccountTransactionDetails
                 decimal postedDebits = (decimal)(endingDebits - openingDebits);
                 decimal postedCredits = (decimal)(endingCredits - openingCredits);
 
-                // 8. Return result
+                // 8. Calculate running balance for each transaction
+                decimal runningBalance = openingBalance;
+                foreach (var t in transactions)
+                {
+                    decimal signed = t.DebitCreditFlag == "D" ? t.Amount : -t.Amount;
+                    decimal impact = isDebit ? signed : -signed;
+                    runningBalance += impact;
+                    t.RunningBalance = Math.Round(runningBalance, 2, MidpointRounding.AwayFromZero);
+                }
+
+                // 9. Return result
                 return Result<GlAccountTransactionDetails>.Success(new GlAccountTransactionDetails
                 {
                     OpeningBalance = openingBalance,

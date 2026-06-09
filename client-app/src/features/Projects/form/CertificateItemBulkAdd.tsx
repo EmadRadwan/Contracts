@@ -16,6 +16,7 @@ import {
     FormControlLabel,
     Radio,
     Popover,
+    useTheme,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
@@ -66,6 +67,8 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
     certificateType,
     localValues,
 }) => {
+    const theme = useTheme();
+    const isRtl = theme.direction === 'rtl';
     const { getTranslatedLabel } = useTranslationHelper();
     const isContracting = certificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE";
     const isSupplyProcurement = certificateType === "SUPPLY_PROCUREMENT_CERTIFICATE";
@@ -98,7 +101,15 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
     return (
         <TableRow>
             {/* Product */}
-            <TableCell sx={{ minWidth: 300 }}>
+            <TableCell sx={{ 
+                minWidth: 300,
+                width: 300,
+                maxWidth: 300,
+                position: 'sticky',
+                [isRtl ? 'right' : 'left']: 0,
+                backgroundColor: 'background.paper',
+                zIndex: 1,
+            }}>
                 <FormSimpleComboBoxVirtualProduct
                     value={row.productId}
                     onChange={(e: any) => handleRowChange(index, "productId", e.value)}
@@ -109,7 +120,15 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
             </TableCell>
 
             {/* UOM */}
-            <TableCell sx={{ minWidth: 200 }}>
+            <TableCell sx={{ 
+                minWidth: 200,
+                width: 200,
+                maxWidth: 200,
+                position: 'sticky',
+                [isRtl ? 'right' : 'left']: 300,
+                backgroundColor: 'background.paper',
+                zIndex: 1,
+            }}>
                 <FormComboBoxVirtualUOM
                     value={row.uomId}
                     onChange={(e: any) => handleRowChange(index, "uomId", e.value)}
@@ -120,7 +139,15 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
             </TableCell>
 
             {/* Description */}
-            <TableCell sx={{ minWidth: 250 }}>
+            <TableCell sx={{ 
+                minWidth: 250,
+                width: 250,
+                maxWidth: 250,
+                position: 'sticky',
+                [isRtl ? 'right' : 'left']: 500,
+                backgroundColor: 'background.paper',
+                zIndex: 1,
+            }}>
                 <TextField
                     fullWidth
                     size="small"
@@ -352,6 +379,8 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
 });
 
 const CertificateItemBulkAdd: React.FC<Props> = ({ onClose, addItem, updateItem, deleteItem, initialItems }) => {
+    const theme = useTheme();
+    const isRtl = theme.direction === 'rtl';
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = "projects.certificate.items.bulkAdd";
     const itemFormLocalizationKey = "projects.certificate.items.list";
@@ -625,12 +654,39 @@ const CertificateItemBulkAdd: React.FC<Props> = ({ onClose, addItem, updateItem,
             </Typography>
 
             <TableContainer component={Paper} sx={{ maxHeight: '70vh' }}>
-                <Table size="small" stickyHeader>
+                <Table size="small" stickyHeader sx={{ borderCollapse: 'separate' }}>
                     <TableHead>
                         <TableRow>
-                            <TableCell sx={{ minWidth: 300 }}>{getTranslatedLabel(`${itemFormLocalizationKey}.product`, "Product")}</TableCell>
-                            <TableCell sx={{ minWidth: 200 }}>{getTranslatedLabel(`${itemFormLocalizationKey}.unitOfMeasure`, "UOM")}</TableCell>
-                            <TableCell sx={{ minWidth: 250 }}>{getTranslatedLabel(`${itemFormLocalizationKey}.description`, "Description")}</TableCell>
+                            <TableCell sx={{ 
+                                minWidth: 300,
+                                width: 300,
+                                maxWidth: 300,
+                                position: 'sticky',
+                                [isRtl ? 'right' : 'left']: 0,
+                                zIndex: 3,
+                                backgroundColor: 'background.paper',
+                                top: 0,
+                            }}>{getTranslatedLabel(`${itemFormLocalizationKey}.product`, "Product")}</TableCell>
+                            <TableCell sx={{ 
+                                minWidth: 200,
+                                width: 200,
+                                maxWidth: 200,
+                                position: 'sticky',
+                                [isRtl ? 'right' : 'left']: 300,
+                                zIndex: 3,
+                                backgroundColor: 'background.paper',
+                                top: 0,
+                            }}>{getTranslatedLabel(`${itemFormLocalizationKey}.unitOfMeasure`, "UOM")}</TableCell>
+                            <TableCell sx={{ 
+                                minWidth: 250,
+                                width: 250,
+                                maxWidth: 250,
+                                position: 'sticky',
+                                [isRtl ? 'right' : 'left']: 500,
+                                zIndex: 3,
+                                backgroundColor: 'background.paper',
+                                top: 0,
+                            }}>{getTranslatedLabel(`${itemFormLocalizationKey}.description`, "Description")}</TableCell>
                             <TableCell sx={{ minWidth: 100 }}>{getTranslatedLabel(`${itemFormLocalizationKey}.quantity`, "Qty")}</TableCell>
                             {!isContracting && <TableCell sx={{ minWidth: 120 }}>{getTranslatedLabel(`${itemFormLocalizationKey}.unitPrice`, "Price")}</TableCell>}
                             {isContracting && (

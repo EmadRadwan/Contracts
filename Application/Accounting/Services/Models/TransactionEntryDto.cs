@@ -7,7 +7,6 @@ public class TransactionEntryDto
     public DateTime TransactionDate { get; set; }
     public string AcctgTransTypeId { get; set; }
     public string AcctgTransTypeDescription { get; set; }
-    public string GlFiscalTypeId { get; set; }
     public string InvoiceId { get; set; }
     public string PaymentId { get; set; }
     public string WorkEffortId { get; set; }
@@ -24,6 +23,7 @@ public class TransactionEntryDto
     public string DebitCreditFlag { get; set; }
     public string CurrencyUomId { get; set; }
     public decimal Amount { get; set; }
+    public decimal RunningBalance { get; set; }
     public string CostCenterDescription { get; set; }
     public string PaymentRefNum { get; set; }
 }

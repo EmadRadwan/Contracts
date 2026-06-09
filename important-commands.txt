@@ -323,7 +323,7 @@ Summarize this entire conversation as a concise JSON or bullet-point outline, in
   SubClass2 → GL_SUB_CLASS_2
   Account → GL_ACCOUNT_COURSE_LABEL
   
-  01096855460  0224048000
+ I want you to look @file:PartySubLedgerExcel.tsx that's called from @file:PartyFinancialHistory.tsx and how it gets data from @file:GetPartySubLedgerDetails.cs as I want to use the pattern of separate debit / credit and balance columns in another code. The code that I want to enhance starts in @file:GlAccountTransactionsModal.tsx and rendered in @file:GlAccountTransactionsExcel.tsx and the data is fetched via @file:GlAccountTransactionDetails.cs and the exact refactoring is the following 1- remove columns acctgTransEntrySeqId, glFiscalTypeId from both query and excel report. 2- column debitCreditFlag is not required any more in @file:GlAccountTransactionsExcel.tsx and I'll leave it to you if you'll need it to achieve the next one. 3- remove amount column from the excel report and replace with debit / credit / balance columns as in @file:PartySubLedgerExcel.tsx 
   
  
   

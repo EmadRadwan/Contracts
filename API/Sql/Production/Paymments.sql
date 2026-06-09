@@ -28,6 +28,7 @@ SELECT
     -- Payment Classification + Names
     -- =================================================================
     p.PAYMENT_TYPE_ID AS PaymentTypeId,
+    p.SALES_REQUEST_ID AS SalesRequestId,
     pt_type.DESCRIPTION AS PaymentTypeDescription,    -- REFACTOR: Added join to PaymentType for readable type name
     pt_type.DESCRIPTION_ARABIC AS PaymentTypeDescriptionArabic,
 
@@ -37,6 +38,8 @@ SELECT
     p.PAYMENT_REF_NUM AS PaymentRefNum,
     p.PAYMENT_METHOD_ID AS PaymentMethodId,
     pm.DESCRIPTION AS PaymentMethodName,              -- e.g. "بنك أبوظبي الإسلامي", "كاش"
+    prod.PRODUCT_ID AS ProductId,                 -- e.g. "A1-01"
+    prod.BUILDING_NUMBER AS BuildingNumber,       -- e.g. "A1"
 
     -- =================================================================
     -- Project & Cost Center + Names
@@ -46,6 +49,7 @@ SELECT
 
     p.COST_CENTER_ID AS CostCenterId,
     cc.DESCRIPTION AS CostCenterName,
+    opp.ORDER_ID                        AS OrderId,                     -- ← the main field you requested
 
     -- =================================================================
     -- Status + Names (English & Arabic)
@@ -61,15 +65,32 @@ SELECT
     DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) AS DaysUntilDue,  -- Positive = future, 0 = today, negative = overdue
 
     -- =================================================================
-    -- REFACTOR: Arabic Due Status – now ONLY applied to unpaid payments
-    -- This exactly matches the React frontend logic (getDueStatusArabic)
-    -- Previously applied to all records → misleading for paid/confirmed payments
+    -- NEW: Overdue Bucket (aligned with Fact_Project_Revenues logic)
+    -- =================================================================
+    CASE
+        WHEN p.STATUS_ID = 'PMNT_RECEIVED'
+            OR p.STATUS_ID <> 'PMNT_NOT_PAID'
+            THEN 'Received'
+        WHEN p.EFFECTIVE_DATE >= CURDATE()
+            THEN 'Upcoming'
+        WHEN DATEDIFF(CURDATE(), p.EFFECTIVE_DATE) BETWEEN 1 AND 30
+            THEN 'Late (1-30 Days)'
+        WHEN DATEDIFF(CURDATE(), p.EFFECTIVE_DATE) BETWEEN 31 AND 90
+            THEN 'Late (31-90 Days)'
+        ELSE 'Late (Over 90 Days)'
+        END AS OverdueBucket,
+    -- =================================================================
+    -- REFACTOR: Arabic Due Status – Matching C# Handler Logic Exactly
+    -- Includes Quarter + Year for long-term and very overdue cases
     -- =================================================================
     CASE
         WHEN p.STATUS_ID <> 'PMNT_NOT_PAID' THEN si.DESCRIPTION_ARABIC
+
         ELSE
+            -- Only for unpaid payments (PMNT_NOT_PAID)
             CASE
                 WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) < 0 THEN
+                    -- Overdue
                     CASE
                         WHEN ABS(DATEDIFF(p.EFFECTIVE_DATE, CURDATE())) <= 30 THEN
                             CONCAT(
@@ -77,35 +98,80 @@ SELECT
                                     ' متأخرة منذ ',
                                     ABS(DATEDIFF(p.EFFECTIVE_DATE, CURDATE())),
                                     ' يوم'
-                                )
+                            )
                         ELSE
+                            -- > 30 days overdue → "متأخرة جداً" + quarter
                             CONCAT(
                                     CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة' ELSE 'مستحق' END,
-                                    ' متأخرة جداً'
-                                )
+                                    ' متأخرة جداً ',
+                                    '(الربع ',
+                                    CASE
+                                        WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 1 AND 3 THEN 'الأول'
+                                        WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 4 AND 6 THEN 'الثاني'
+                                        WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 7 AND 9 THEN 'الثالث'
+                                        ELSE 'الرابع'
+                                        END,
+                                    ' ',
+                                    YEAR(p.EFFECTIVE_DATE),
+                                    ')'
+                            )
                         END
+
                 WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) = 0 THEN
                     CONCAT(CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END, ' اليوم')
+
                 WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) = 1 THEN
                     CONCAT(CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END, ' غداً')
+
                 WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) <= 3 THEN
                     CONCAT(
                             CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END,
                             ' بعد ',
                             DATEDIFF(p.EFFECTIVE_DATE, CURDATE()),
                             ' أيام'
-                        )
+                    )
+
                 WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) <= 7 THEN
                     CONCAT(CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END, ' هذا الأسبوع')
+
                 WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) <= 30 THEN
                     CONCAT(CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END, ' خلال الشهر')
+
                 WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) <= 90 THEN
-                    CONCAT(CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END, ' خلال 3 أشهر')
+                    -- "خلال 3 أشهر" + quarter (as in C#)
+                    CONCAT(
+                            CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END,
+                            ' خلال 3 أشهر ',
+                            '(الربع ',
+                            CASE
+                                WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 1 AND 3 THEN 'الأول'
+                                WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 4 AND 6 THEN 'الثاني'
+                                WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 7 AND 9 THEN 'الثالث'
+                                ELSE 'الرابع'
+                                END,
+                            ' ',
+                            YEAR(p.EFFECTIVE_DATE),
+                            ')'
+                    )
+
                 ELSE
-                    CONCAT(CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END, ' لاحقاً')
+                    -- Far future
+                    CONCAT(
+                            CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END,
+                            ' لاحقاً ',
+                            '(الربع ',
+                            CASE
+                                WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 1 AND 3 THEN 'الأول'
+                                WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 4 AND 6 THEN 'الثاني'
+                                WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 7 AND 9 THEN 'الثالث'
+                                ELSE 'الرابع'
+                                END,
+                            ' ',
+                            YEAR(p.EFFECTIVE_DATE),
+                            ')'
+                    )
                 END
         END AS DueStatusArabic,
-
     -- =================================================================
     -- Helpful Flags
     -- =================================================================
@@ -128,7 +194,9 @@ SELECT
     p.ChequeNumber AS ChequeNumber,
     p.ChequeDate AS ChequeDate,
     p.OVERRIDE_GL_ACCOUNT_ID AS OverrideGlAccountId,
-    p.CREATED_STAMP AS CreatedDate
+    p.CREATED_STAMP AS CreatedDate,
+    p.PAYMENT_PREFERENCE_ID             AS PaymentPreferenceId
+
 
 FROM PAYMENT p
 
@@ -144,4 +212,12 @@ FROM PAYMENT p
          LEFT JOIN PAYMENT_TYPE pt_type ON p.PAYMENT_TYPE_ID = pt_type.PAYMENT_TYPE_ID
          LEFT JOIN PAYMENT_METHOD_TYPE pmt_type ON p.PAYMENT_METHOD_TYPE_ID = pmt_type.PAYMENT_METHOD_TYPE_ID
 
+         LEFT JOIN ORDER_PAYMENT_PREFERENCE opp ON p.PAYMENT_PREFERENCE_ID = opp.ORDER_PAYMENT_PREFERENCE_ID
+         LEFT JOIN ORDER_HEADER       ord       ON opp.ORDER_ID            = ord.ORDER_ID
+
+-- NEW JOINS for ProductId & BuildingNumber
+         LEFT JOIN SALES_REQUEST sr ON p.SALES_REQUEST_ID = sr.SALES_REQUEST_ID
+         LEFT JOIN PRODUCT prod ON sr.PRODUCT_ID = prod.PRODUCT_ID
+
 ORDER BY p.EFFECTIVE_DATE DESC, p.PAYMENT_ID DESC;
+-- =============================================================

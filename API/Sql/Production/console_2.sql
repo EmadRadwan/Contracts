@@ -1,51 +1,376 @@
-INSERT INTO GL_ACCOUNT (
-    GL_ACCOUNT_ID,
-    GL_ACCOUNT_TYPE_ID,
-    GL_ACCOUNT_CLASS_ID,
-    GL_RESOURCE_TYPE_ID,
-    GL_XBRL_CLASS_ID,
-    PARENT_GL_ACCOUNT_ID,
-    ACCOUNT_CODE,
-    ACCOUNT_NAME,
-    DESCRIPTION,
-    ACCOUNT_NAME_ARABIC,
-    PRODUCT_ID,
-    EXTERNAL_ID,
-    LAST_UPDATED_STAMP,
-    LAST_UPDATED_TX_STAMP,
-    CREATED_STAMP,
-    CREATED_TX_STAMP
-) VALUES (
-             '401010',
-             NULL,
-             'REVENUE',
-             'MONEY',
-             NULL,
-             '400000',
-             '401010',
-             'Land SALES',
-             NULL,
-             'إيرادات  بيع الاراضى',
-             NULL,
-             NULL,
-             '2022-05-27 12:24:27',
-             '2022-05-27 12:24:25',
-             '2022-05-27 12:24:27',
-             '2022-05-27 12:24:25'
-         );
+DROP VIEW IF EXISTS Payments;
+CREATE OR REPLACE VIEW Payments AS
+SELECT
+    -- =================================================================
+    -- Core Keys (keep for relationships in Power BI / reporting tools)
+    -- =================================================================
+    p.PAYMENT_ID AS PaymentId,
 
-INSERT INTO INVOICE_ITEM_TYPE (
-    INVOICE_ITEM_TYPE_ID,
-    PARENT_TYPE_ID,
-    HAS_TABLE,
-    DESCRIPTION,
-    DESCRIPTION_ARABIC,
-    DEFAULT_GL_ACCOUNT_ID
-) VALUES (
-             'INV_LAND_ITEM',
-             NULL,
-             'N',
-             'Invoice Land Item (Sales)',
-             'بند أراضى (مبيعات)',
-             '401010'
-         );
+    -- =================================================================
+    -- Amounts & Currency
+    -- =================================================================
+    p.AMOUNT AS Amount,
+    p.ACTUAL_CURRENCY_AMOUNT AS ActualAmount,
+    COALESCE(p.CURRENCY_UOM_ID, 'EGP') AS CurrencyUomId,
+
+    -- =================================================================
+    -- Parties – Raw IDs + Names
+    -- =================================================================
+    p.PARTY_ID_FROM AS PartyIdFrom,
+    pf.DESCRIPTION AS PartyNameFrom,                  -- e.g. "الشركة", "محمد أحمد"
+
+    p.PARTY_ID_TO AS PartyIdTo,
+    COALESCE(pt.DESCRIPTION,
+             CASE WHEN p.PARTY_ID_TO = 'Company' THEN 'Company' ELSE p.PARTY_ID_TO END,
+             'Unknown') AS PartyNameTo,               -- Handles "Company" literal and missing parties
+
+    -- =================================================================
+    -- Payment Classification + Names
+    -- =================================================================
+    p.PAYMENT_TYPE_ID AS PaymentTypeId,
+    p.SALES_REQUEST_ID AS SalesRequestId,
+    pt_type.DESCRIPTION AS PaymentTypeDescription,    -- REFACTOR: Added join to PaymentType for readable type name
+    pt_type.DESCRIPTION_ARABIC AS PaymentTypeDescriptionArabic,
+
+    p.PAYMENT_METHOD_TYPE_ID AS PaymentMethodTypeId,
+    pmt_type.DESCRIPTION AS PaymentMethodTypeName,
+    pmt_type.DESCRIPTION_ARABIC AS PaymentMethodTypeNameArabic,
+    p.PAYMENT_REF_NUM AS PaymentRefNum,
+    p.PAYMENT_METHOD_ID AS PaymentMethodId,
+    pm.DESCRIPTION AS PaymentMethodName,              -- e.g. "بنك أبوظبي الإسلامي", "كاش"
+    prod.PRODUCT_ID AS ProductId,                 -- e.g. "A1-01"
+    prod.BUILDING_NUMBER AS BuildingNumber,       -- e.g. "A1"
+
+    -- =================================================================
+    -- Project & Cost Center + Names
+    -- =================================================================
+    p.WORK_EFFORT_ID AS ProjectId,
+    we.PROJECT_NAME AS ProjectName,
+
+    p.COST_CENTER_ID AS CostCenterId,
+    cc.DESCRIPTION AS CostCenterName,
+    opp.ORDER_ID                        AS OrderId,                     -- ← the main field you requested
+
+    -- =================================================================
+    -- Status + Names (English & Arabic)
+    -- =================================================================
+    p.STATUS_ID AS StatusId,
+    si.DESCRIPTION AS StatusNameEnglish,
+    si.DESCRIPTION_ARABIC AS StatusNameArabic,
+
+    -- =================================================================
+    -- Dates & Core Due Calculation
+    -- =================================================================
+    p.EFFECTIVE_DATE AS EffectiveDate,
+    DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) AS DaysUntilDue,  -- Positive = future, 0 = today, negative = overdue
+
+    -- =================================================================
+    -- REFACTOR: Arabic Due Status – Matching C# Handler Logic Exactly
+    -- Includes Quarter + Year for long-term and very overdue cases
+    -- =================================================================
+    CASE
+        WHEN p.STATUS_ID <> 'PMNT_NOT_PAID' THEN si.DESCRIPTION_ARABIC
+
+        ELSE
+            -- Only for unpaid payments (PMNT_NOT_PAID)
+            CASE
+                WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) < 0 THEN
+                    -- Overdue
+                    CASE
+                        WHEN ABS(DATEDIFF(p.EFFECTIVE_DATE, CURDATE())) <= 30 THEN
+                            CONCAT(
+                                    CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة' ELSE 'مستحق' END,
+                                    ' متأخرة منذ ',
+                                    ABS(DATEDIFF(p.EFFECTIVE_DATE, CURDATE())),
+                                    ' يوم'
+                            )
+                        ELSE
+                            -- > 30 days overdue → "متأخرة جداً" + quarter
+                            CONCAT(
+                                    CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة' ELSE 'مستحق' END,
+                                    ' متأخرة جداً ',
+                                    '(الربع ',
+                                    CASE
+                                        WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 1 AND 3 THEN 'الأول'
+                                        WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 4 AND 6 THEN 'الثاني'
+                                        WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 7 AND 9 THEN 'الثالث'
+                                        ELSE 'الرابع'
+                                        END,
+                                    ' ',
+                                    YEAR(p.EFFECTIVE_DATE),
+                                    ')'
+                            )
+                        END
+
+                WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) = 0 THEN
+                    CONCAT(CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END, ' اليوم')
+
+                WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) = 1 THEN
+                    CONCAT(CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END, ' غداً')
+
+                WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) <= 3 THEN
+                    CONCAT(
+                            CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END,
+                            ' بعد ',
+                            DATEDIFF(p.EFFECTIVE_DATE, CURDATE()),
+                            ' أيام'
+                    )
+
+                WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) <= 7 THEN
+                    CONCAT(CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END, ' هذا الأسبوع')
+
+                WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) <= 30 THEN
+                    CONCAT(CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END, ' خلال الشهر')
+
+                WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) <= 90 THEN
+                    -- "خلال 3 أشهر" + quarter (as in C#)
+                    CONCAT(
+                            CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END,
+                            ' خلال 3 أشهر ',
+                            '(الربع ',
+                            CASE
+                                WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 1 AND 3 THEN 'الأول'
+                                WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 4 AND 6 THEN 'الثاني'
+                                WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 7 AND 9 THEN 'الثالث'
+                                ELSE 'الرابع'
+                                END,
+                            ' ',
+                            YEAR(p.EFFECTIVE_DATE),
+                            ')'
+                    )
+
+                ELSE
+                    -- Far future
+                    CONCAT(
+                            CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END,
+                            ' لاحقاً ',
+                            '(الربع ',
+                            CASE
+                                WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 1 AND 3 THEN 'الأول'
+                                WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 4 AND 6 THEN 'الثاني'
+                                WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 7 AND 9 THEN 'الثالث'
+                                ELSE 'الرابع'
+                                END,
+                            ' ',
+                            YEAR(p.EFFECTIVE_DATE),
+                            ')'
+                    )
+                END
+        END AS DueStatusArabic,
+    -- =================================================================
+    -- Helpful Flags
+    -- =================================================================
+    CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 1 ELSE 0 END AS IsDisbursement,  -- REFACTOR: More reliable than PartyId check
+    CASE
+        WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN p.PARTY_ID_FROM   -- Outgoing: organization is From
+        ELSE p.PARTY_ID_TO                                                 -- Incoming: organization is To
+        END AS OrganizationPartyId,
+
+    CASE
+        WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'Outbound'
+        WHEN p.PARTY_ID_TO = 'Company' THEN 'Inbound'
+        ELSE 'Unknown'
+        END AS PaymentDirection,
+
+    -- =================================================================
+    -- Additional fields (kept for completeness)
+    -- =================================================================
+    p.COMMENTS AS Comments,
+    p.ChequeNumber AS ChequeNumber,
+    p.ChequeDate AS ChequeDate,
+    p.OVERRIDE_GL_ACCOUNT_ID AS OverrideGlAccountId,
+    p.CREATED_STAMP AS CreatedDate,
+    p.PAYMENT_PREFERENCE_ID             AS PaymentPreferenceId
+
+
+FROM PAYMENT p
+
+-- Required joins (inner – assumed always present)
+         LEFT JOIN PARTY pf ON p.PARTY_ID_FROM = pf.PARTY_ID
+         LEFT JOIN PARTY pt ON p.PARTY_ID_TO = pt.PARTY_ID
+         LEFT JOIN PAYMENT_METHOD pm ON p.PAYMENT_METHOD_ID = pm.PAYMENT_METHOD_ID
+         LEFT JOIN COST_CENTER cc ON p.COST_CENTER_ID = cc.COST_CENTER_ID
+         LEFT JOIN STATUS_ITEM si ON p.STATUS_ID = si.STATUS_ID
+         LEFT JOIN WORK_EFFORT we ON p.WORK_EFFORT_ID = we.WORK_EFFORT_ID
+
+-- REFACTOR: Added essential joins for accurate direction and descriptions
+         LEFT JOIN PAYMENT_TYPE pt_type ON p.PAYMENT_TYPE_ID = pt_type.PAYMENT_TYPE_ID
+         LEFT JOIN PAYMENT_METHOD_TYPE pmt_type ON p.PAYMENT_METHOD_TYPE_ID = pmt_type.PAYMENT_METHOD_TYPE_ID
+
+         LEFT JOIN ORDER_PAYMENT_PREFERENCE opp ON p.PAYMENT_PREFERENCE_ID = opp.ORDER_PAYMENT_PREFERENCE_ID
+         LEFT JOIN ORDER_HEADER       ord       ON opp.ORDER_ID            = ord.ORDER_ID
+
+-- NEW JOINS for ProductId & BuildingNumber
+         LEFT JOIN SALES_REQUEST sr ON p.SALES_REQUEST_ID = sr.SALES_REQUEST_ID
+         LEFT JOIN PRODUCT prod ON sr.PRODUCT_ID = prod.PRODUCT_ID
+
+ORDER BY p.EFFECTIVE_DATE DESC, p.PAYMENT_ID DESC;
+-- =============================================================
+
+DROP VIEW IF EXISTS Payments_2;
+
+CREATE OR REPLACE VIEW Payments_2 AS
+SELECT
+    -- =================================================================
+    -- Core Keys
+    -- =================================================================
+    p.PAYMENT_ID AS PaymentId,
+
+    -- =================================================================
+    -- Amounts & Currency
+    -- =================================================================
+    p.AMOUNT AS Amount,
+    p.ACTUAL_CURRENCY_AMOUNT AS ActualAmount,
+    COALESCE(p.CURRENCY_UOM_ID, 'EGP') AS CurrencyUomId,
+
+    -- =================================================================
+    -- Parties
+    -- =================================================================
+    p.PARTY_ID_FROM AS PartyIdFrom,
+    pf.DESCRIPTION AS PartyNameFrom,
+    p.PARTY_ID_TO AS PartyIdTo,
+    COALESCE(pt.DESCRIPTION,
+             CASE WHEN p.PARTY_ID_TO = 'Company' THEN 'Company' ELSE p.PARTY_ID_TO END,
+             'Unknown') AS PartyNameTo,
+
+    -- =================================================================
+    -- Payment Classification
+    -- =================================================================
+    p.PAYMENT_TYPE_ID AS PaymentTypeId,
+    pt_type.DESCRIPTION AS PaymentTypeDescription,
+    pt_type.DESCRIPTION_ARABIC AS PaymentTypeDescriptionArabic,
+    p.PAYMENT_METHOD_TYPE_ID AS PaymentMethodTypeId,
+    pmt_type.DESCRIPTION_ARABIC AS PaymentMethodTypeNameArabic,
+    p.PAYMENT_REF_NUM AS PaymentRefNum,
+    p.PAYMENT_METHOD_ID AS PaymentMethodId,
+    pm.DESCRIPTION AS PaymentMethodName,
+
+    prod.PRODUCT_ID AS ProductId,
+    prod.BUILDING_NUMBER AS BuildingNumber,
+
+    -- =================================================================
+    -- Project & Cost Center
+    -- =================================================================
+    p.WORK_EFFORT_ID AS ProjectId,
+    we.PROJECT_NAME AS ProjectName,
+    p.COST_CENTER_ID AS CostCenterId,
+    cc.DESCRIPTION AS CostCenterName,
+    opp.ORDER_ID AS OrderId,
+
+    -- =================================================================
+    -- Status
+    -- =================================================================
+    p.STATUS_ID AS StatusId,
+    si.DESCRIPTION_ARABIC AS StatusNameArabic,
+
+    -- =================================================================
+    -- Dates
+    -- =================================================================
+    p.EFFECTIVE_DATE AS EffectiveDate,
+    YEAR(p.EFFECTIVE_DATE) AS DueYear,
+
+    -- Quarter in Arabic (for clean tree display)
+    CONCAT('الربع ',
+    CASE
+    WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 1 AND 3 THEN 'الأول'
+    WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 4 AND 6 THEN 'الثاني'
+    WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 7 AND 9 THEN 'الثالث'
+    ELSE 'الرابع'
+    END,
+    ' ',
+    YEAR(p.EFFECTIVE_DATE)) AS DueQuarterArabic,
+
+    -- Sortable quarter number (hidden in visual, used for correct ordering)
+    CONCAT(YEAR(p.EFFECTIVE_DATE),
+    LPAD(CEILING(MONTH(p.EFFECTIVE_DATE)/3), 2, '0')) AS DueQuarterSort,
+
+    DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) AS DaysUntilDue,
+
+    -- =================================================================
+    -- DueStatusArabic (kept exactly as before)
+    -- =================================================================
+    CASE
+    WHEN p.STATUS_ID <> 'PMNT_NOT_PAID' THEN si.DESCRIPTION_ARABIC
+    ELSE
+    CASE
+    WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) < 0 THEN
+    CASE
+    WHEN ABS(DATEDIFF(p.EFFECTIVE_DATE, CURDATE())) <= 30 THEN
+    CONCAT(CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة' ELSE 'مستحق' END,
+    ' متأخرة منذ ', ABS(DATEDIFF(p.EFFECTIVE_DATE, CURDATE())), ' يوم')
+    ELSE
+    CONCAT(CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة' ELSE 'مستحق' END,
+    ' متأخرة جداً ',
+    '(الربع ',
+    CASE WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 1 AND 3 THEN 'الأول'
+    WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 4 AND 6 THEN 'الثاني'
+    WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 7 AND 9 THEN 'الثالث'
+    ELSE 'الرابع' END,
+    ' ', YEAR(p.EFFECTIVE_DATE), ')')
+END
+
+WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) = 0 THEN
+                    CONCAT(CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END, ' اليوم')
+
+                WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) = 1 THEN
+                    CONCAT(CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END, ' غداً')
+
+                WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) <= 3 THEN
+                    CONCAT(CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END,
+                           ' بعد ', DATEDIFF(p.EFFECTIVE_DATE, CURDATE()), ' أيام')
+
+                WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) <= 7 THEN
+                    CONCAT(CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END, ' هذا الأسبوع')
+
+                WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) <= 30 THEN
+                    CONCAT(CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END, ' خلال الشهر')
+
+                WHEN DATEDIFF(p.EFFECTIVE_DATE, CURDATE()) <= 90 THEN
+                    CONCAT(CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END,
+                           ' خلال 3 أشهر ',
+                           '(الربع ',
+                           CASE WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 1 AND 3 THEN 'الأول'
+                                WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 4 AND 6 THEN 'الثاني'
+                                WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 7 AND 9 THEN 'الثالث'
+                                ELSE 'الرابع' END,
+                           ' ', YEAR(p.EFFECTIVE_DATE), ')')
+
+                ELSE
+                    CONCAT(CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'دفعة مستحقة' ELSE 'مستحق' END,
+                           ' لاحقاً ',
+                           '(الربع ',
+                           CASE WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 1 AND 3 THEN 'الأول'
+                                WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 4 AND 6 THEN 'الثاني'
+                                WHEN MONTH(p.EFFECTIVE_DATE) BETWEEN 7 AND 9 THEN 'الثالث'
+                                ELSE 'الرابع' END,
+                           ' ', YEAR(p.EFFECTIVE_DATE), ')')
+END
+END AS DueStatusArabic,
+
+    -- =================================================================
+    -- Helpful Flags
+    -- =================================================================
+    CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 1 ELSE 0 END AS IsDisbursement,
+    CASE WHEN pt_type.PARENT_TYPE_ID = 'DISBURSEMENT' THEN 'Outbound'
+         WHEN p.PARTY_ID_TO = 'Company' THEN 'Inbound'
+         ELSE 'Unknown' END AS PaymentDirection,
+
+    -- Additional fields
+    p.COMMENTS AS Comments,
+    p.ChequeNumber AS ChequeNumber,
+    p.CREATED_STAMP AS CreatedDate
+
+FROM PAYMENT p
+         LEFT JOIN PARTY pf ON p.PARTY_ID_FROM = pf.PARTY_ID
+         LEFT JOIN PARTY pt ON p.PARTY_ID_TO = pt.PARTY_ID
+         LEFT JOIN PAYMENT_METHOD pm ON p.PAYMENT_METHOD_ID = pm.PAYMENT_METHOD_ID
+         LEFT JOIN COST_CENTER cc ON p.COST_CENTER_ID = cc.COST_CENTER_ID
+         LEFT JOIN STATUS_ITEM si ON p.STATUS_ID = si.STATUS_ID
+         LEFT JOIN WORK_EFFORT we ON p.WORK_EFFORT_ID = we.WORK_EFFORT_ID
+         LEFT JOIN PAYMENT_TYPE pt_type ON p.PAYMENT_TYPE_ID = pt_type.PAYMENT_TYPE_ID
+         LEFT JOIN PAYMENT_METHOD_TYPE pmt_type ON p.PAYMENT_METHOD_TYPE_ID = pmt_type.PAYMENT_METHOD_TYPE_ID
+         LEFT JOIN ORDER_PAYMENT_PREFERENCE opp ON p.PAYMENT_PREFERENCE_ID = opp.ORDER_PAYMENT_PREFERENCE_ID
+         LEFT JOIN SALES_REQUEST sr ON p.SALES_REQUEST_ID = sr.SALES_REQUEST_ID
+         LEFT JOIN PRODUCT prod ON sr.PRODUCT_ID = prod.PRODUCT_ID
+
+ORDER BY p.EFFECTIVE_DATE DESC, p.PAYMENT_ID DESC;

@@ -12,6 +12,7 @@ import {
     TableRow,
     TextField,
     IconButton,
+    useTheme,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
@@ -86,6 +87,8 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
                                                                 itemTypes,
                                                                 localAmount,
                                                             }) => {
+    const theme = useTheme();
+    const isRtl = theme.direction === 'rtl';
 
     // === Queries ===
     const { data: projects } = useFetchWorkEffortsByGlAccountIdQuery(
@@ -127,7 +130,15 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
     return (
         <TableRow key={row.tempId}>
             {/* GL Account */}
-            <TableCell sx={{ minWidth: 450 }}>
+            <TableCell sx={{ 
+                minWidth: 450,
+                width: 450,
+                maxWidth: 450,
+                position: 'sticky',
+                [isRtl ? 'right' : 'left']: 0,
+                backgroundColor: 'background.paper',
+                zIndex: 1,
+            }}>
                 <FormDropDownTreeGlAccount2
                     data={glAccounts || []}
                     value={row.glAccountId}
@@ -144,7 +155,15 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
             </TableCell>
 
             {/* Description */}
-            <TableCell sx={{ minWidth: 250 }}>
+            <TableCell sx={{ 
+                minWidth: 250,
+                width: 250,
+                maxWidth: 250,
+                position: 'sticky',
+                [isRtl ? 'right' : 'left']: 450,
+                backgroundColor: 'background.paper',
+                zIndex: 1,
+            }}>
                 <TextField
                     fullWidth
                     size="small"
@@ -154,7 +173,15 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
             </TableCell>
 
             {/* Amount */}
-            <TableCell sx={{ minWidth: 120 }}>
+            <TableCell sx={{ 
+                minWidth: 120,
+                width: 120,
+                maxWidth: 120,
+                position: 'sticky',
+                [isRtl ? 'right' : 'left']: 700,
+                backgroundColor: 'background.paper',
+                zIndex: 1,
+            }}>
                 <TextField
                     fullWidth
                     size="small"
@@ -285,6 +312,8 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
 });
 
 const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addItem, updateItem, deleteItem, initialItems }) => {
+    const theme = useTheme();
+    const isRtl = theme.direction === 'rtl';
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = "projects.multiPaymentCertificate.bulkAdd";
     const itemFormLocalizationKey = "projects.multiPaymentCertificate.itemForm";
@@ -524,12 +553,39 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
             </Typography>
 
             <TableContainer component={Paper} sx={{ maxHeight: '60vh' }}>
-                <Table size="small" stickyHeader>
+                <Table size="small" stickyHeader sx={{ borderCollapse: 'separate' }}>
                     <TableHead>
                         <TableRow>
-                            <TableCell sx={{ minWidth: 350 }}>{getTranslatedLabel(`${itemFormLocalizationKey}.glAccountId`, "GL Account")}</TableCell>
-                            <TableCell sx={{ minWidth: 250 }}>{getTranslatedLabel(`${itemFormLocalizationKey}.description`, "Description")}</TableCell>
-                            <TableCell sx={{ minWidth: 120 }}>{getTranslatedLabel(`${itemFormLocalizationKey}.amount`, "Amount")}</TableCell>
+                            <TableCell sx={{ 
+                                minWidth: 450,
+                                width: 450,
+                                maxWidth: 450,
+                                position: 'sticky',
+                                [isRtl ? 'right' : 'left']: 0,
+                                zIndex: 3,
+                                backgroundColor: 'background.paper',
+                                top: 0,
+                            }}>{getTranslatedLabel(`${itemFormLocalizationKey}.glAccountId`, "GL Account")}</TableCell>
+                            <TableCell sx={{ 
+                                minWidth: 250,
+                                width: 250,
+                                maxWidth: 250,
+                                position: 'sticky',
+                                [isRtl ? 'right' : 'left']: 450,
+                                zIndex: 3,
+                                backgroundColor: 'background.paper',
+                                top: 0,
+                            }}>{getTranslatedLabel(`${itemFormLocalizationKey}.description`, "Description")}</TableCell>
+                            <TableCell sx={{ 
+                                minWidth: 120,
+                                width: 120,
+                                maxWidth: 120,
+                                position: 'sticky',
+                                [isRtl ? 'right' : 'left']: 700,
+                                zIndex: 3,
+                                backgroundColor: 'background.paper',
+                                top: 0,
+                            }}>{getTranslatedLabel(`${itemFormLocalizationKey}.amount`, "Amount")}</TableCell>
                             <TableCell sx={{ minWidth: 150 }}>{getTranslatedLabel(`${itemFormLocalizationKey}.estimatedStartDate`, "Date")}</TableCell>
                             <TableCell sx={{ minWidth: 200 }}>{getTranslatedLabel(`${itemFormLocalizationKey}.itemType`, "Item Type")}</TableCell>
                             <TableCell sx={{ minWidth: 300 }}>{getTranslatedLabel(`${itemFormLocalizationKey}.service`, "Service")}</TableCell>

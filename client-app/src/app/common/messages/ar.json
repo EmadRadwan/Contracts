@@ -369,6 +369,7 @@
       "total": "الإجمالي",
       "advance": "المقدم",
       "project": "المشروع",
+      "isChequesDelivered": "الشيكات مسلمة",
       "comments": "التعليقات"
     },
     "report": {
@@ -1939,6 +1940,9 @@
             "productId": "اسم الصنف",
             "isPosted": "مرحّل",
             "postedDate": "تاريخ الترحيل",
+            "credit": "دائن",
+            "Debit": "مدين",
+            "Balance": "الرصيد",
             "description": "البيان"
           }
         },

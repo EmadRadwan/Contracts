@@ -10,10 +10,8 @@ import { Button } from '@mui/material';
 // Context: Client wants identical “ميتال تك” style for all reports
 interface TransactionRow {
     acctgTransId: string;
-    acctgTransEntrySeqId: string;
     transactionDate: string;          // ISO string – will be formatted in Excel
     acctgTransTypeId: string;
-    glFiscalTypeId: string;
     invoiceId?: string;
     paymentId?: string;
     workEffortId?: string;
@@ -22,6 +20,7 @@ interface TransactionRow {
     isPosted: boolean;
     debitCreditFlag: 'D' | 'C';
     amount: number;
+    runningBalance: number;
     description?: string;
     projectName?: string;
     costCenterDescription?: string;
@@ -100,7 +99,7 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
         // ---- title ------------------------------------------------------
         const titleRow = logoId ? 4 : 2;
         ws.addRow([`${getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.title', 'Transaction Details')} – ${utils.rtlEmbed(utils.safeString(accountName))} (${accountCode})`]);
-        ws.mergeCells(`A${titleRow}:Q${titleRow}`);
+        ws.mergeCells(`A${titleRow}:P${titleRow}`);
         ws.getRow(titleRow).font = { name: 'Amiri', size: 14, bold: true };
         ws.getRow(titleRow).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
         ws.addRow([]); ws.addRow([]);
@@ -121,10 +120,8 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
         // ---- table headers -----------------------------------------------
         const headers = [
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.transId', 'Acctg Trans ID'),
-            getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.transEntrySeqId', 'Entry ID'),
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.transDate', 'Transaction Date'),
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.transType', 'Acctg Trans Type'),
-            getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.fiscalType', 'Fiscal GL Type'),
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.invoiceId', 'Invoice ID'),
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.paymentId', 'Payment ID'),
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.paymentRefNum', 'Payment Ref Num'),
@@ -134,8 +131,9 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.partyId', 'Party Name'),
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.productId', 'Product Name'),
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.isPosted', 'Is Posted'),
-            getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.debitCredit', 'Debit/Credit'),
-            getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.amount', 'Amount'),
+            getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.debit', 'Debit'),
+            getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.credit', 'Credit'),
+            getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.balance', 'Balance'),
             getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.description', 'Description'),
         ];
         ws.addRow(headers);
@@ -148,10 +146,8 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
         // ---- column config -----------------------------------------------
         ws.columns = [
             { width: 14 }, // transId
-            { width: 12 }, // entryId
             { width: 18 }, // date
             { width: 16 }, // trans type
-            { width: 14 }, // fiscal
             { width: 12 }, // invoice
             { width: 12 }, // payment
             { width: 15 }, // paymentRefNum
@@ -161,20 +157,20 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
             { width: 18 }, // party
             { width: 18 }, // product
             { width: 10 }, // posted
-            { width: 10 }, // D/C
-            { width: 14 }, // amount
+            { width: 14, style: { numFmt: '#,##0.00' } }, // debit
+            { width: 14, style: { numFmt: '#,##0.00' } }, // credit
+            { width: 18, style: { numFmt: '#,##0.00' } }, // balance
             { width: 30 }, // description
         ];
-        ws.getColumn(14).numFmt = '#,##0.00';
 
         // ---- data rows --------------------------------------------------
         rows.forEach(r => {
+            const debit = r.debitCreditFlag === 'D' ? r.amount : 0;
+            const credit = r.debitCreditFlag === 'C' ? r.amount : 0;
             const row = ws.addRow([
                 utils.safeString(r.acctgTransId),
-                utils.safeString(r.acctgTransEntrySeqId),
                 r.transactionDate,
                 utils.safeString(r.acctgTransTypeId),
-                utils.safeString(r.glFiscalTypeId),
                 utils.safeString(r.invoiceId),
                 utils.safeString(r.paymentId),
                 utils.safeString(r.paymentRefNum),
@@ -184,8 +180,9 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
                 utils.rtlEmbed(utils.safeString(r.partyName)),
                 utils.rtlEmbed(utils.safeString(r.productName)),
                 r.isPosted ? 'Yes' : 'No',
-                r.debitCreditFlag,
-                r.amount,
+                debit,
+                credit,
+                r.runningBalance,
                 utils.rtlEmbed(utils.safeString(r.description)),
             ]);
             row.font = { name: 'Amiri', size: 9 };
@@ -195,15 +192,14 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
 
         // ---- totals row -------------------------------------------------
         const totRow = ws.addRow([
-            '', '', '', '', '', '', '', '', '', '',
-            getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.totalDebit', 'Total Debit'),
+            '', '', '', '', '', '', '', '', '', '', '',
+            getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.totals', 'Totals'),
             totalDebit,
-            getTranslatedLabel('accounting.orgGL.reports.trial-balance.transactions.totalCredit', 'Total Credit'),
             totalCredit,
             '', ''
         ]);
         totRow.font = { name: 'Amiri', size: 10, bold: true };
-        totRow.getCell(12).numFmt = '#,##0.00';
+        totRow.getCell(13).numFmt = '#,##0.00';
         totRow.getCell(14).numFmt = '#,##0.00';
 
         return await workbook.xlsx.writeBuffer();

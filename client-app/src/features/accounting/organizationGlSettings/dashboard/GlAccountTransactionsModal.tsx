@@ -28,7 +28,7 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
     const localizationKey = 'accounting.orgGL.reports.trial-balance.transactions';
 
     // State
-    const initialSort: SortDescriptor[] = [{ field: 'transactionDate', dir: 'asc' }, { field: 'acctgTransEntrySeqId', dir: 'asc' }];
+    const initialSort: SortDescriptor[] = [{ field: 'transactionDate', dir: 'asc' }, { field: 'acctgTransId', dir: 'asc' }];
     const [sort, setSort] = useState(initialSort);
     const [includePrePeriod, setIncludePrePeriod] = useState(false);
     const [accountingTransEntries, setAccountingTransEntries] = useState<any[]>([]);
@@ -74,10 +74,8 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
         if (!accountingTransEntries) return [];
         return accountingTransEntries.map(t => ({
             acctgTransId: t.acctgTransId ?? '',
-            acctgTransEntrySeqId: t.acctgTransEntrySeqId ?? '',
             transactionDate: t.transactionDate ?? '',
             acctgTransTypeId: t.acctgTransTypeId ?? '',
-            glFiscalTypeId: t.glFiscalTypeId ?? '',
             invoiceId: t.invoiceId,
             paymentId: t.paymentId,
             workEffortId: t.certificateNumber,
@@ -86,6 +84,7 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
             isPosted: t.isPosted ?? false,
             debitCreditFlag: t.debitCreditFlag ?? 'C',
             amount: t.amount ?? 0,
+            runningBalance: t.runningBalance ?? 0,
             description: t.description,
             projectName: t.projectName ?? '',
             costCenterDescription: t.costCenterDescription ?? '',
@@ -202,11 +201,6 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                     footerCell={TotalsFooterCell}
                                 />
                                 <Column
-                                    field="acctgTransEntrySeqId"
-                                    title={getTranslatedLabel(`${localizationKey}.transEntrySeqId`, 'Entry ID')}
-                                    width={100}
-                                />
-                                <Column
                                     field="transactionDate"
                                     title={getTranslatedLabel(`${localizationKey}.transDate`, 'Transaction Date')}
                                     width={150}
@@ -218,14 +212,27 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                     width={150}
                                 />
                                 <Column
-                                    field="debitCreditFlag"
-                                    title={getTranslatedLabel(`${localizationKey}.debitCredit`, 'Debit/Credit')}
-                                    width={100}
+                                    title={getTranslatedLabel(`${localizationKey}.debit`, 'Debit')}
+                                    width={120}
+                                    cell={(props) => (
+                                        <td>
+                                            {props.dataItem.debitCreditFlag === 'D' ? formatCurrency(props.dataItem.amount) : ''}
+                                        </td>
+                                    )}
                                 />
                                 <Column
-                                    field="amount"
-                                    title={getTranslatedLabel(`${localizationKey}.amount`, 'Amount')}
-                                    width={130}
+                                    title={getTranslatedLabel(`${localizationKey}.credit`, 'Credit')}
+                                    width={120}
+                                    cell={(props) => (
+                                        <td>
+                                            {props.dataItem.debitCreditFlag === 'C' ? formatCurrency(props.dataItem.amount) : ''}
+                                        </td>
+                                    )}
+                                />
+                                <Column
+                                    field="runningBalance"
+                                    title={getTranslatedLabel(`${localizationKey}.balance`, 'Balance')}
+                                    width={120}
                                     format="{0:c2}"
                                 />
                                 {/*<Column

@@ -3,11 +3,9 @@ import {store} from "../../configureStore";
 
 export interface TransactionEntryDto {
     acctgTransId: string;
-    acctgTransEntrySeqId: string;
     transactionDate: string;
     acctgTransTypeId: string;
     acctgTransTypeDescription: string;
-    glFiscalTypeId: string;
     invoiceId?: string;
     paymentId?: string;
     workEffortId?: string;
@@ -22,6 +20,7 @@ export interface TransactionEntryDto {
     debitCreditFlag: string;
     currencyUomId?: string;
     amount: number;
+    runningBalance: number;
     certificateNumber?: string;
     projectName?: string;
 }

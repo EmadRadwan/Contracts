@@ -152,6 +152,27 @@ function SalesRequestsList() {
         );
     };
 
+    const IsChequesDeliveredCell = (props: any) => {
+        const value = props.dataItem.isBankTransfer === 1 || props.dataItem.isChequesDelivered === true;
+
+        return (
+            <td
+                style={{
+                    ...props.style,
+                    textAlign: "center",
+                    fontSize: "18px",
+                    fontWeight: "bold",
+                }}
+            >
+                {value ? (
+                    <span style={{ color: "#2e7d32" }}>✓</span>   // Green check
+                ) : (
+                    <span style={{ color: "#c62828" }}>✕</span>   // Red cross
+                )}
+            </td>
+        );
+    };
+
     return (
         <>
             <SalesRequestMenu
@@ -239,6 +260,13 @@ function SalesRequestsList() {
                                     format="{0:n2}"
                                     filter="numeric"
                                     width={130}
+                                />
+                                <Column
+                                    field="isChequesDelivered"
+                                    title={getTranslatedLabel("salesRequest.list.isChequesDelivered", "Total")}
+                                    filter="boolean"
+                                    width={120}
+                                    cell={IsChequesDeliveredCell}
                                 />
                                 <Column
                                     field="advancePayment"
