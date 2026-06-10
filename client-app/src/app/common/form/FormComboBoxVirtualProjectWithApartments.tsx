@@ -105,7 +105,7 @@ export const FormComboBoxVirtualProjectWithApartments = (fieldRenderProps: Field
         params.append("pageSize", pageSize.toString());
         if (filter) params.append("searchTerm", filter);
 
-        agent.Projects.getProjectsLov(params).then((json) => {
+        agent.Projects.getProjectsWithApartmentsLov(params).then((json) => {
             if (json) {
                 const total = json.projectCount;
                 const items: ProjectItem[] = [];
