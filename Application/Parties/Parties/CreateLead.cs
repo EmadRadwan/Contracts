@@ -65,6 +65,53 @@ public class CreateLead
                     }.Contains(x.ContactMechPurposeTypeId))
                     .ToDictionaryAsync(x => x.ContactMechPurposeTypeId, ct);
 
+                // ---------------------
+                // DUPLICATE CHECK
+                // ---------------------
+
+                Party? existingParty = null;
+
+                if (!string.IsNullOrWhiteSpace(dto.InfoString))
+                {
+                    existingParty = await _context.ContactMeches
+                        .Where(cm =>
+                            cm.InfoString == dto.InfoString &&
+                            cm.ContactMechType.ContactMechTypeId == "EMAIL_ADDRESS")
+                        .SelectMany(cm => cm.PartyContactMeches)
+                        .Select(pcm => pcm.Party)
+                        .Where(p => p.PartyRoles.Any(r => r.RoleType.RoleTypeId == "LEAD"))
+                        .FirstOrDefaultAsync(ct);
+                }
+
+                if (existingParty == null && !string.IsNullOrWhiteSpace(dto.MobileContactNumber))
+                {
+                    existingParty = await _context.TelecomNumbers
+                        .Where(t => t.ContactNumber == dto.MobileContactNumber)
+                        .Select(t => t.ContactMech)
+                        .SelectMany(cm => cm.PartyContactMeches)
+                        .Select(pcm => pcm.Party)
+                        .Where(p => p.PartyRoles.Any(r => r.RoleType.RoleTypeId == "LEAD"))
+                        .FirstOrDefaultAsync(ct);
+                }
+
+                if (existingParty != null)
+                {
+                    await transaction.RollbackAsync(ct);
+
+                    var existingPerson = await _context.Persons
+                        .FirstOrDefaultAsync(p => p.Party == existingParty, ct);
+
+                    return Result<PartyDto2>.Success(new PartyDto2
+                    {
+                        PartyId = existingParty.PartyId,
+                        FirstName = existingPerson?.FirstName,
+                        MiddleName = existingPerson?.MiddleName,
+                        Description = existingParty.Description,
+                        PartyTypeDescription = "Lead",
+                        IsAlreadyCreated = true
+                    });
+                }
+
                 var partyId = (await _utilityService.GetNextSequence("Party")).ToString();
 
                 var fullName = $"{dto.FirstName ?? ""} {dto.MiddleName ?? ""}".Trim();
@@ -75,6 +122,7 @@ public class CreateLead
                     PartyType = partyTypePerson,
                     Status = statusEnabled,
                     Description = fullName,
+                    MainRole = "LEAD_CONTACT",
                     LeadTemperatureId = dto.LeadTemperatureId ?? "C",
                     DataSourceId = string.IsNullOrWhiteSpace(dto.DataSourceId) ? null : dto.DataSourceId,
                     CreatedStamp = stamp,

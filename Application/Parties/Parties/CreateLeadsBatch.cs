@@ -148,6 +148,8 @@ public class CreateLeadsBatch
                             Status = statusEnabled,
                             Description = fullName,
                             LeadTemperatureId = "F",
+                            MainRole = "LEAD_CONTACT",
+                            
                             DataSourceId = string.IsNullOrWhiteSpace(dto.DataSourceId)
                                 ? "OTHER"
                                 : dto.DataSourceId,

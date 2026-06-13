@@ -12,6 +12,7 @@ import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
 import { useFetchLeadsQuery } from '../../../app/store/configureStore';
 import { Lead } from '../models/lead';
 import LoadingComponent from '../../../app/layout/LoadingComponent';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface LeadsListProps {
     onCreateNew: () => void;
@@ -22,10 +23,27 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = 'crm.leads.list';
 
+    const location = useLocation();
+    const navigate = useNavigate();
+    const highlightedLeadId = location.state?.duplicateLeadId ?? null;
+    const highlightedLeadIdRef = React.useRef<string | null>(highlightedLeadId);
+
+    React.useEffect(() => {
+        if (highlightedLeadId) {
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, []);
+
     const [dataState, setDataState] = React.useState<State>({
         take: 10,
         skip: 0,
-        sort: [{ field: 'fullName', dir: 'asc' }]
+        sort: [{ field: 'partyId', dir: 'asc' }],
+        filter: highlightedLeadId
+            ? {
+                logic: 'and',
+                filters: [{ field: 'partyId', operator: 'eq', value: highlightedLeadId }],
+            }
+            : undefined,
     });
 
     const { data: leads, isLoading } = useFetchLeadsQuery(dataState);
@@ -35,6 +53,17 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
     };
 
     const processedData = leads || { data: [], total: 0 };
+
+    React.useEffect(() => {
+        if (
+            highlightedLeadIdRef.current &&
+            !isLoading &&
+            processedData.data.length === 1
+        ) {
+            onEditLead(processedData.data[0] as Lead);
+            highlightedLeadIdRef.current = null
+        }
+    }, [isLoading, processedData.data]);
 
     // Custom cell for name (clickable)
     const NameCell = (props: GridCellProps) => {
@@ -154,8 +183,14 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
                 total={processedData.total}
                 onDataStateChange={dataStateChange}
             >
-                
 
+                <Column
+                    field="partyId"
+                    title=" "
+                    width={130}
+                    headerCell={() => null}
+
+                />
                 <Column
                     field="fullName"
                     title={getTranslatedLabel(`${localizationKey}.name`, 'Name')}
@@ -179,7 +214,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
                     field="address1"
                     title={getTranslatedLabel(`${localizationKey}.address`, 'Address')}
                     cell={AddressCell}
-                    
+
                 />
             </KendoGrid>
         </div>

@@ -27,9 +27,9 @@ import {
     useFetchCountriesQuery,
     useAppSelector,
 } from '../../../app/store/configureStore';
+import { useNavigate } from "react-router";
 
 import { Lead } from '../models/lead';
-import LoadingComponent from '../../../app/layout/LoadingComponent';
 import FormInput from '../../../app/common/form/FormInput';
 import { MemoizedFormDropDownList } from '../../../app/common/form/MemoizedFormDropDownList';
 import { requiredValidator } from '../../../app/common/form/Validators';
@@ -53,6 +53,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
     isModal = false
 }) => {
     const { getTranslatedLabel } = useTranslationHelper();
+    const [duplicateLeadId, setDuplicateLeadId] = useState<string | null>(null);
     const localizationKey = 'crm.leads.form';
     const language = useAppSelector((state) => state.localization.language);
 
@@ -66,6 +67,8 @@ const LeadForm: React.FC<LeadFormProps> = ({
 
     const isProcessing = creating || updating;
     const isLoading = loadingDataSources || loadingCountries;
+
+    const navigate = useNavigate()
 
     const initialValues: Partial<Lead> = editMode === 2 && lead
         ? {
@@ -82,7 +85,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
             address1: '',
             address2: '',
             city: '',
-            geoId: '',
+            geoId: 'EGY',
             dataSourceId: '',
             leadTemperatureId: 'F',
         };
@@ -105,6 +108,11 @@ const LeadForm: React.FC<LeadFormProps> = ({
             } else {
                 // CREATE NEW LEAD
                 const result = await createLead(values).unwrap();
+
+                if (result.isAlreadyCreated) {
+                    setDuplicateLeadId(result.partyId);
+                    return; // stop — don't call onSuccess
+                }
 
                 // Prepare the lead object to be added to Opportunity's LeadPicker
                 const newLeadForOpportunity: any = {
@@ -290,6 +298,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
                                     data={countries || []}
                                     dataItemKey="geoId"
                                     textField="geoName"
+                                    validator={requiredValidator}
                                 />
                             ) : (
                                 <Field
@@ -299,6 +308,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
                                     dataItemKey="geoId"
                                     textField="geoName"
                                     data={countries || []}
+                                    validator={requiredValidator}
                                 />
                             )}
                         </Grid>
@@ -343,11 +353,56 @@ const LeadForm: React.FC<LeadFormProps> = ({
         />
     );
 
+    // Add this just before the final return statements, after formContent
+
+const duplicateAlertDialog = (
+    <Dialog
+        open={!!duplicateLeadId}
+        onClose={() => setDuplicateLeadId(null)}
+        maxWidth="xs"
+        fullWidth
+    >
+        {/* Header */}
+        <Box sx={{ p: 3, pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="h6" fontWeight="bold" sx={{ textAlign: 'center' }}>
+                {getTranslatedLabel(`${localizationKey}.duplicateLeadTitle`, 'Lead Already Exists')}
+            </Typography>
+        </Box>
+
+        {/* Body */}
+        <Box sx={{ p: 3, textAlign: 'center' }}>
+            <Typography variant="body1" sx={{ mb: 3 }}>
+                {getTranslatedLabel(`${localizationKey}.duplicateLeadMessage`, 'This lead already exists.')}
+            </Typography>
+
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+                <Button
+                    variant="outlined"
+                    onClick={() => setDuplicateLeadId(null)}
+                >
+                    {getTranslatedLabel(`${localizationKey}.dismiss`, 'Dismiss')}
+                </Button>
+                <Button
+                    variant="contained"
+                    onClick={() => {
+                        navigate(`/leads`, {state: {duplicateLeadId}}); // adjust to your route
+                        setDuplicateLeadId(null);
+                        onClose();
+                    }}
+                >
+                    {getTranslatedLabel(`${localizationKey}.goToLeadDetails`, 'Go to Lead Details')}
+                </Button>
+            </Box>
+        </Box>
+    </Dialog>
+);
+
     // ==================== MODAL MODE ====================
     if (isModal) {
         return (
             <Box sx={{ p: 3, pt: 1 }}>
                 {formContent}
+                {duplicateAlertDialog}
             </Box>
         );
     }
@@ -389,6 +444,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
                     {formContent}
                 </Box>
             </Paper>
+             {duplicateAlertDialog}
         </>
     );
 };

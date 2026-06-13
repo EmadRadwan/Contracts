@@ -66,4 +66,7 @@ public class PartyDto2
     public string? FingerPrintAttendanceId { get; set; }
     public TimeSpan? AttendanceStartsAt { get; set; }
     public decimal? VacationBalance { get; set; }
+
+    // for error feedback
+    public bool? IsAlreadyCreated {get; set;}
 }
