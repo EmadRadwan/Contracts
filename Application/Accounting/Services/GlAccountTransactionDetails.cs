@@ -97,7 +97,7 @@ public class GetGlAccountTransactionDetails
                         PostedDate = act.PostedDate,
                         DebitCreditFlag = ate.DebitCreditFlag,
                         Amount = (decimal)ate.Amount,
-                        Description = act.Description,
+                        Description = ate.Description,
                         CurrencyUomId = ate.CurrencyUomId,
                         CertificateNumber = we != null ? we.CertificateNumber : null,
                         ProjectName = we != null
