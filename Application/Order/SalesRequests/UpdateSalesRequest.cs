@@ -157,86 +157,6 @@ public class UpdateSalesRequest
                 }
 
                 await transaction.CommitAsync(ct);
-
-                // -----------------------------------------------------------------
-                // 4. Re-load party & apartment data (same logic as Create)
-                // -----------------------------------------------------------------
-                var fromParty = await _context.Parties
-                    .Where(p => p.PartyId == dto.FromPartyId)
-                    .Select(p => new { p.PartyId, p.Description, Phone = string.Empty })
-                    .FirstOrDefaultAsync(ct);
-
-                var employee = await _context.Parties
-                    .Where(p => p.PartyId == dto.EmployeePartyId)
-                    .Select(p => new { p.PartyId, p.Description })
-                    .FirstOrDefaultAsync(ct);
-
-                var apartment = await CreateSalesRequest.Handler.GetApartmentLovProjection(_context, dto.ProductId!, ct)
-                                ?? new CreateSalesRequest.ApartmentLovProjection
-                                {
-                                    ApartmentId = dto.ProductId!,
-                                    ApartmentName = string.Empty,
-                                    ApartmentType = "APARTMENT",
-                                    ProjectName = string.Empty,
-                                    FloorNumber = string.Empty,
-                                    ApartmentSpaceM2 = 0m,
-                                    GardenSpaceM2 = null,
-                                    GardenPricePerM2 = dto.GardenPricePerM2,
-                                    ApartmentPricePerM2 = (decimal)dto.ApartmentPricePerM2,
-                                    ApartmentStatusId = string.Empty,
-                                    ApartmentStatusDescription = string.Empty
-                                };
-
-                var statusDesc = await _context.StatusItems
-                    .Where(s => s.StatusId == sr.StatusId) // use the current status (unchanged)
-                    .Select(s => s.Description ?? s.StatusId)
-                    .FirstOrDefaultAsync(ct) ?? sr.StatusId;
-
-                // -----------------------------------------------------------------
-                // 5. Build flat response DTO (identical to Create)
-                // -----------------------------------------------------------------
-                var response = new CreateSalesRequest.SalesRequestResponseDto
-                {
-                    SalesRequestId = sr.SalesRequestId,
-
-                    FromPartyId = fromParty?.PartyId ?? dto.FromPartyId!,
-                    FromPartyName = fromParty?.Description ?? string.Empty,
-                    FromPartyPhone = fromParty?.Phone ?? string.Empty,
-                    EmployeePartyId = employee?.PartyId ?? dto.EmployeePartyId ?? string.Empty,
-                    EmployeeName = employee?.Description ?? string.Empty,
-                    ApartmentId = apartment.ApartmentId,
-                    ApartmentName = apartment.ApartmentName,
-                    ApartmentType = apartment.ApartmentType,
-                    ProjectName = apartment.ProjectName,
-                    FloorNumber = apartment.FloorNumber,
-                    ApartmentSpaceM2 = apartment.ApartmentSpaceM2,
-                    GardenSpaceM2 = apartment.GardenSpaceM2,
-                    GardenPricePerM2 = apartment.GardenPricePerM2 ?? dto.GardenPricePerM2,
-                    ApartmentPricePerM2 = apartment.ApartmentPricePerM2,
-                    ApartmentStatusId = apartment.ApartmentStatusId,
-                    ApartmentStatusDescription = apartment.ApartmentStatusDescription,
-
-                    ApartmentReservedBySalesRequestId = apartment.ReservedBySalesRequestId,
-
-
-                    TotalPrice = (decimal)dto.TotalPrice,
-                    Discount = dto.Discount,
-                    AdvancePayment = (decimal)dto.AdvancePayment,
-                    NumberOfInstallments = (int)dto.NumberOfInstallments,
-                    DateOfFirstInstallment = dto.DateOfFirstInstallment,
-                    MonthsBetweenInstallments = (int)dto.MonthsBetweenInstallments,
-                    MaintenanceDeposit = dto.MaintenanceDeposit,
-                    AdvancePercent = dto.AdvancePercent,
-                    MaintenancePercent = dto.MaintenancePercent,
-                    IsChequesDelivered = dto.IsChequesDelivered,
-
-                    SaleDate = dto.SaleDate!.Value,
-                    Comments = dto.Comments,
-                    StatusId = sr.StatusId,
-                    StatusDescription = statusDesc,
-                };
-
-                return Result<CreateSalesRequest.SalesRequestResponseDto>.Success(response);
             }
             catch (Exception ex)
             {
@@ -244,6 +164,86 @@ public class UpdateSalesRequest
                 return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure(
                     $"Failed to update sales request: {ex.Message}");
             }
+
+            // -----------------------------------------------------------------
+            // 4. Re-load party & apartment data (same logic as Create)
+            // -----------------------------------------------------------------
+            var fromParty = await _context.Parties
+                .Where(p => p.PartyId == dto.FromPartyId)
+                .Select(p => new { p.PartyId, p.Description, Phone = string.Empty })
+                .FirstOrDefaultAsync(ct);
+
+            var employee = await _context.Parties
+                .Where(p => p.PartyId == dto.EmployeePartyId)
+                .Select(p => new { p.PartyId, p.Description })
+                .FirstOrDefaultAsync(ct);
+
+            var apartment = await CreateSalesRequest.Handler.GetApartmentLovProjection(_context, dto.ProductId!, ct)
+                            ?? new CreateSalesRequest.ApartmentLovProjection
+                            {
+                                ApartmentId = dto.ProductId!,
+                                ApartmentName = string.Empty,
+                                ApartmentType = "APARTMENT",
+                                ProjectName = string.Empty,
+                                FloorNumber = string.Empty,
+                                ApartmentSpaceM2 = 0m,
+                                GardenSpaceM2 = null,
+                                GardenPricePerM2 = dto.GardenPricePerM2,
+                                ApartmentPricePerM2 = (decimal)dto.ApartmentPricePerM2,
+                                ApartmentStatusId = string.Empty,
+                                ApartmentStatusDescription = string.Empty
+                            };
+
+            var statusDesc = await _context.StatusItems
+                .Where(s => s.StatusId == sr.StatusId) // use the current status (unchanged)
+                .Select(s => s.Description ?? s.StatusId)
+                .FirstOrDefaultAsync(ct) ?? sr.StatusId;
+
+            // -----------------------------------------------------------------
+            // 5. Build flat response DTO (identical to Create)
+            // -----------------------------------------------------------------
+            var response = new CreateSalesRequest.SalesRequestResponseDto
+            {
+                SalesRequestId = sr.SalesRequestId,
+
+                FromPartyId = fromParty?.PartyId ?? dto.FromPartyId!,
+                FromPartyName = fromParty?.Description ?? string.Empty,
+                FromPartyPhone = fromParty?.Phone ?? string.Empty,
+                EmployeePartyId = employee?.PartyId ?? dto.EmployeePartyId ?? string.Empty,
+                EmployeeName = employee?.Description ?? string.Empty,
+                ApartmentId = apartment.ApartmentId,
+                ApartmentName = apartment.ApartmentName,
+                ApartmentType = apartment.ApartmentType,
+                ProjectName = apartment.ProjectName,
+                FloorNumber = apartment.FloorNumber,
+                ApartmentSpaceM2 = apartment.ApartmentSpaceM2,
+                GardenSpaceM2 = apartment.GardenSpaceM2,
+                GardenPricePerM2 = apartment.GardenPricePerM2 ?? dto.GardenPricePerM2,
+                ApartmentPricePerM2 = apartment.ApartmentPricePerM2,
+                ApartmentStatusId = apartment.ApartmentStatusId,
+                ApartmentStatusDescription = apartment.ApartmentStatusDescription,
+
+                ApartmentReservedBySalesRequestId = apartment.ReservedBySalesRequestId,
+
+
+                TotalPrice = (decimal)dto.TotalPrice,
+                Discount = dto.Discount,
+                AdvancePayment = (decimal)dto.AdvancePayment,
+                NumberOfInstallments = (int)dto.NumberOfInstallments,
+                DateOfFirstInstallment = dto.DateOfFirstInstallment,
+                MonthsBetweenInstallments = (int)dto.MonthsBetweenInstallments,
+                MaintenanceDeposit = dto.MaintenanceDeposit,
+                AdvancePercent = dto.AdvancePercent,
+                MaintenancePercent = dto.MaintenancePercent,
+                IsChequesDelivered = dto.IsChequesDelivered,
+
+                SaleDate = dto.SaleDate!.Value,
+                Comments = dto.Comments,
+                StatusId = sr.StatusId,
+                StatusDescription = statusDesc,
+            };
+
+            return Result<CreateSalesRequest.SalesRequestResponseDto>.Success(response);
         }
     }
 }

@@ -26,23 +26,23 @@ public class ResetSalesRequest
         {
             var salesRequestId = request.SalesRequestId;
 
+            // 1. Load SalesRequest
+            var sr = await _context.SalesRequests
+                .Include(s => s.Installments)
+                .Include(s => s.Product)
+                .FirstOrDefaultAsync(x => x.SalesRequestId == salesRequestId, ct);
+
+            if (sr == null)
+                return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure("Sales request not found");
+
+            if (sr.StatusId != "SALES_REQUEST_APPROVED")
+                return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure(
+                    "Only approved sales requests can be reset.");
+
             await using var transaction = await _context.Database.BeginTransactionAsync(ct);
 
             try
             {
-                // 1. Load SalesRequest
-                var sr = await _context.SalesRequests
-                    .Include(s => s.Installments)
-                    .Include(s => s.Product)
-                    .FirstOrDefaultAsync(x => x.SalesRequestId == salesRequestId, ct);
-
-                if (sr == null)
-                    return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure("Sales request not found");
-
-                if (sr.StatusId != "SALES_REQUEST_APPROVED")
-                    return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure(
-                        "Only approved sales requests can be reset.");
-
                 // 2. Clean up artifacts created during approval
 
                 // Delete Payments and related FinAccountTran
@@ -110,10 +110,6 @@ public class ResetSalesRequest
                 }
 
                 await transaction.CommitAsync(ct);
-
-                // 5. Return updated DTO
-                var response = await BuildResponseDto(sr, ct);
-                return Result<CreateSalesRequest.SalesRequestResponseDto>.Success(response);
             }
             catch (Exception ex)
             {
@@ -121,6 +117,10 @@ public class ResetSalesRequest
                 return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure(
                     $"Failed to reset sales request: {ex.Message}");
             }
+
+            // 5. Return updated DTO
+            var response = await BuildResponseDto(sr, ct);
+            return Result<CreateSalesRequest.SalesRequestResponseDto>.Success(response);
         }
 
         private async Task<CreateSalesRequest.SalesRequestResponseDto> BuildResponseDto(SalesRequest sr,
