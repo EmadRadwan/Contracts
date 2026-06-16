@@ -385,6 +385,7 @@ export default function ProjectCertificatesList() {
                                 field="totalAmount"
                                 title={getTranslatedLabel("projects.certificate.list.totalAmount", "Type")}
                                 width={columnWidths.totalAmount}
+                                filter={"numeric"}
                             />
                             <Column
                                 field="partyIdSupplier"

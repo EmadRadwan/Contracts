@@ -5502,7 +5502,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 AcctgTransEntryTypeId = "_NA_",
                 Amount = payment.Amount,
                 ReconcileStatusId = "AES_NOT_RECONCILED",
-                Description = debitDescription,
+                Description = payment.Comments,
                 OrganizationPartyId = companyPartyId,
                 ProductId = payment.SalesRequest.ProductId,
                 PartyId = payment.PartyIdFrom,
@@ -5514,15 +5514,6 @@ public class GeneralLedgerService : IGeneralLedgerService
             // ────────────────────────────────────────────────
             // Credit entry (reducing receivable or cheques under collection)
             // ────────────────────────────────────────────────
-            string creditDescription = payment.SalesRequest.IsChequesDelivered == true
-                ? paymentType switch
-                {
-                    "BankTransfer" => $"Bank transfer applied - reducing cheques under collection",
-                    "Cheque" => $"Clearing cheques under collection {chequeOrTransferRef}",
-                    _ => $"Cash payment applied - reducing cheques under collection"
-                }
-                : $"Receipt against customer receivable {chequeOrTransferRef}";
-
             var creditEntry = new AcctgTransEntry
             {
                 AcctgTransId = acctgTransId,
@@ -5532,7 +5523,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 AcctgTransEntryTypeId = "_NA_",
                 Amount = payment.Amount,
                 ReconcileStatusId = "AES_NOT_RECONCILED",
-                Description = creditDescription,
+                Description = payment.Comments,
                 OrganizationPartyId = companyPartyId,
                 ProductId = payment.SalesRequest.ProductId,
                 PartyId = payment.PartyIdFrom,
@@ -5639,8 +5630,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 AcctgTransEntryTypeId = "_NA_",
                 Amount = payment.Amount,
                 ReconcileStatusId = "AES_NOT_RECONCILED",
-                Description =
-                    $"Maintenance deposit received - {paymentTypeDescription} {chequeOrTransferRef} - SR {payment.SalesRequestId}  - {product.ProductId}",
+                Description = payment.Comments,
                 OrganizationPartyId = companyPartyId,
                 ProductId = payment.SalesRequest.ProductId,
                 PartyId = payment.PartyIdFrom,
@@ -5661,7 +5651,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 AcctgTransEntryTypeId = "_NA_",
                 Amount = payment.Amount,
                 ReconcileStatusId = "AES_NOT_RECONCILED",
-                Description = $"Maintenance deposit liability - SR {payment.SalesRequestId} - {product.ProductId}",
+                Description = payment.Comments,
                 OrganizationPartyId = companyPartyId,
                 ProductId = payment.SalesRequest.ProductId,
                 PartyId = payment.PartyIdFrom,
@@ -5768,7 +5758,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 AcctgTransEntryTypeId = "_NA_",
                 Amount = payment.Amount,
                 ReconcileStatusId = "AES_NOT_RECONCILED",
-                Description = $"Debit expense/liability - Postdated cheque #{payment.ChequeNumber}",
+                Description = payment.Comments,
                 OrganizationPartyId = companyPartyId,
                 PartyId = payment.PartyIdTo, // the recipient
                 CreatedStamp = stamp,
@@ -5786,7 +5776,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 AcctgTransEntryTypeId = "_NA_",
                 Amount = payment.Amount,
                 ReconcileStatusId = "AES_NOT_RECONCILED",
-                Description = $"Credit postdated cheques issued - Cheque #{payment.ChequeNumber}",
+                Description = payment.Comments,
                 OrganizationPartyId = companyPartyId,
                 PartyId = payment.PartyIdFrom, // usually the company itself
                 CreatedStamp = stamp,
@@ -5888,7 +5878,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 AcctgTransEntryTypeId = "_NA_",
                 Amount = payment.Amount,
                 ReconcileStatusId = "AES_NOT_RECONCILED",
-                Description = $"Debit – {chequeInfo} – post-dated cheque issued",
+                Description = payment.Comments,
                 OrganizationPartyId = companyPartyId,
                 PartyId = payment.PartyIdTo, // supplier / payee
                 CreatedStamp = stamp,
@@ -5910,7 +5900,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 AcctgTransEntryTypeId = "_NA_",
                 Amount = payment.Amount,
                 ReconcileStatusId = "AES_NOT_RECONCILED",
-                Description = $"Credit – {chequeInfo} – to postdated cheques issued",
+                Description = payment.Comments,
                 OrganizationPartyId = companyPartyId,
                 PartyId = payment.PartyIdFrom, // usually your company
                 CreatedStamp = stamp,

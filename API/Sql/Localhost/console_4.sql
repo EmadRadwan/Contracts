@@ -1,55 +1,27 @@
-INSERT INTO `payment_method` (
-    `PAYMENT_METHOD_ID`,
-    `PAYMENT_METHOD_TYPE_ID`,
-    `PARTY_ID`,
-    `GL_ACCOUNT_ID`,
-    `FIN_ACCOUNT_ID`,
-    `DESCRIPTION`,
-    `FROM_DATE`,
-    `THRU_DATE`,
-    `LAST_UPDATED_STAMP`,
-    `LAST_UPDATED_TX_STAMP`,
-    `CREATED_STAMP`,
-    `CREATED_TX_STAMP`
-) VALUES (
-             'CURRENT_PARTNER_AHMED_LOTFY',
-             'FIN_ACCOUNT',
-             'Company',
-             '302000',
-             NULL,
-             'جارى الشريك - احمد لطفى',
-             '2026-06-02 00:00:00',
-             NULL,
-             '2026-06-02 17:45:00',
-             '2026-06-02 17:45:00',
-             '2026-06-02 17:45:00',
-             '2026-06-02 17:45:00'
-         );
+SELECT ate.acctg_trans_id, ate.acctg_trans_entry_seq_id,
+       act.acctg_trans_type_id, p.payment_id, p.comments, ate.DESCRIPTION
+FROM acctg_trans_entry ate
+         JOIN acctg_trans act ON ate.acctg_trans_id = act.acctg_trans_id
+         JOIN payment p       ON act.payment_id = p.payment_id
+WHERE act.payment_id IS NOT NULL
+  AND p.comments IS NOT NULL
+  AND p.comments <> '' AND act.acctg_trans_type_id IN (
+                                                       'INCOMING_PAYMENT',
+                                                       'APARTMENT_MAINTENANCE_DEPOSIT',
+                                                       'CHECK_ISSUED',
+                                                       'OUTGOING_PAYMENT'
+    )    ;
 
-INSERT INTO `payment_method` (
-    `PAYMENT_METHOD_ID`,
-    `PAYMENT_METHOD_TYPE_ID`,
-    `PARTY_ID`,
-    `GL_ACCOUNT_ID`,
-    `FIN_ACCOUNT_ID`,
-    `DESCRIPTION`,
-    `FROM_DATE`,
-    `THRU_DATE`,
-    `LAST_UPDATED_STAMP`,
-    `LAST_UPDATED_TX_STAMP`,
-    `CREATED_STAMP`,
-    `CREATED_TX_STAMP`
-) VALUES (
-             'CURRENT_PARTNER_KOTB_MOKHTAR',
-             'FIN_ACCOUNT',
-             'Company',
-             '303000',
-             NULL,
-             'جارى الشريك - قطب مختار',
-             '2026-06-02 00:00:00',
-             NULL,
-             '2026-06-02 17:45:00',
-             '2026-06-02 17:45:00',
-             '2026-06-02 17:45:00',
-             '2026-06-02 17:45:00'
-         );
+
+UPDATE acctg_trans_entry ate
+    JOIN acctg_trans act ON ate.acctg_trans_id = act.acctg_trans_id
+    JOIN payment p       ON act.payment_id = p.payment_id
+SET ate.description = p.comments
+WHERE act.payment_id IS NOT NULL
+  AND p.comments IS NOT NULL
+  AND p.comments <> '' AND p.comments <> '' AND act.acctg_trans_type_id IN (
+                                                                            'INCOMING_PAYMENT',
+                                                                            'APARTMENT_MAINTENANCE_DEPOSIT',
+                                                                            'CHECK_ISSUED',
+                                                                            'OUTGOING_PAYMENT'
+    )    ;   
