@@ -350,6 +350,16 @@ const Parties = {
         axios
             .get<Party[]>(`/parties/getPartiesSalesRepsLov`, { params })
             .then(responseBody),
+    getPartiesSalesManagersLov: (params: URLSearchParams) =>
+        axios
+            .get<Party[]>(`/parties/getPartiesSalesManagersLov`, { params })
+            .then(responseBody),
+    createSalesManager: (party: any) =>
+        requests.post("/parties/createSalesManager", party),
+    createSalesRep: (party: any) =>
+        requests.post("/parties/createSalesRep", party),
+    createBroker: (party: any) =>
+        requests.post("/parties/createBroker", party),
     createCustomer: (customer: any) =>
         requests.post("/parties/createCustomer", customer),
     createEmployee: (employee: any) =>
@@ -396,6 +406,13 @@ const GlAccountTypes = {
 const GlAccountClasses = {
     getAll: (params: URLSearchParams) =>
         axios.get<GlAccountClassesEnvelope>("/glAccounts/getAllGlAccountClasses", { params }).then(responseBody),
+};
+
+const SalesRequests = {
+    getApprovedLov: (params: URLSearchParams) =>
+        axios
+            .get<any>(`/salesRequests/approvedLov`, { params })
+            .then(responseBody),
 };
 
 const Orders = {
@@ -534,7 +551,8 @@ const agent = {
     Accounting,
     VehicleContents,
     Services,
-    BillingAccounts, WorkEfforts, Projects, GlAccountTypes, GlAccountClasses
+    BillingAccounts, WorkEfforts, Projects, GlAccountTypes, GlAccountClasses,
+    SalesRequests
 };
 
 export default agent;

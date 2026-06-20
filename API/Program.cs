@@ -246,6 +246,8 @@ static IEdmModel GetEdmModel()
     modelBuilder.EntitySet<CostComponentCalcRecord>("CostComponentCalcRecord");
     modelBuilder.EntitySet<CostComponentRecord>("CostComponentRecord");
     modelBuilder.EntitySet<EmployeeAdvanceRecord>("EmployeeAdvanceRecord");
+    modelBuilder.EntitySet<ProjectCommissionRateRecord>("ProjectCommissionRateRecords");
+    modelBuilder.EntitySet<SalesCommissionRecord>("SalesCommissionRecords");
 
     var model = modelBuilder.GetEdmModel();
 

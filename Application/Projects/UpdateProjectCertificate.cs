@@ -249,15 +249,22 @@ namespace Application.Projects
 
                             if (category == "WORKMANSHIP_CONTRACTING_CERTIFICATE")
                             {
-                                // STRATEGY 1: Quantity = 1, UnitPrice = Deserved (net after deductions but before insurance)
+                                // Calculate deserved from raw fields — do not trust the frontend-supplied value
+                                // which may be 0 when Redux state was stale after a prior create/update response.
+                                var deserved = Math.Max(0m,
+                                    item.Quantity * (item.MaterialPrice + item.LaborPrice) *
+                                    ((item.AchievementPercentage ?? 0m) / 100m) -
+                                    (item.Deductions ?? 0m));
+
+                                // STRATEGY 1: Quantity = 1, UnitPrice = deserved (net after deductions but before insurance)
                                 orderItems.Add(new OrderItemDto2
                                 {
                                     OrderItemSeqId = orderItemSeqId,
                                     ProductId = item.ProductId,
                                     ProductName = item.ProductName,
                                     Quantity = 1m,
-                                    UnitPrice = item.Deserved,
-                                    SubTotal = item.Deserved,
+                                    UnitPrice = deserved,
+                                    SubTotal = deserved,
                                     UomId = item.UomId,
                                     FacilityId = certificate.FacilityId,
                                     ItemDescription = item.Description,
@@ -366,9 +373,15 @@ namespace Application.Projects
                         }
 
                         // REFACTOR: GrandTotal now matches Create logic exactly
+                        // For WORKMANSHIP: compute Net from raw fields, not the frontend-supplied Net value
                         decimal grandTotal = category switch
                         {
-                            "WORKMANSHIP_CONTRACTING_CERTIFICATE" => certificate.CertificateItems!.Sum(x => x.Net),
+                            "WORKMANSHIP_CONTRACTING_CERTIFICATE" => certificate.CertificateItems!.Sum(item =>
+                                Math.Max(0m,
+                                    Math.Max(0m,
+                                        item.Quantity * (item.MaterialPrice + item.LaborPrice) *
+                                        ((item.AchievementPercentage ?? 0m) / 100m) - (item.Deductions ?? 0m)) -
+                                    (item.Insurance ?? 0m) - (item.AdditionalInsurance ?? 0m))),
                             "SUPPLY_PROCUREMENT_CERTIFICATE" => (decimal)(orderItems.Sum(i => i.SubTotal) +
                                                                           orderAdjustments.Sum(a => a.Amount)),
                             _ => 0m
@@ -461,7 +474,19 @@ namespace Application.Projects
                             Notes = item.Notes,
                             ProcurementDate = item.ProcurementDate,
                             TransportationExpenses = item.TransportationExpenses,
-                            Gratuities = item.Gratuities
+                            Gratuities = item.Gratuities,
+                            Deserved = category == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                                ? Math.Max(0m,
+                                    (item.Quantity ?? 0m) * ((item.MaterialPrice ?? 0m) + (item.LaborPrice ?? 0m)) *
+                                    ((decimal)(item.AchievementPercent ?? 0) / 100m) - (item.Deductions ?? 0m))
+                                : 0m,
+                            Net = category == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
+                                ? Math.Max(0m,
+                                    Math.Max(0m,
+                                        (item.Quantity ?? 0m) * ((item.MaterialPrice ?? 0m) + (item.LaborPrice ?? 0m)) *
+                                        ((decimal)(item.AchievementPercent ?? 0) / 100m) - (item.Deductions ?? 0m)) -
+                                    (item.Insurance ?? 0m) - (item.AdditionalInsurance ?? 0m))
+                                : (item.TotalAmount ?? 0m)
                         }).ToListAsync(cancellationToken);
 
                     var resultDto = new ProjectCertificateDto

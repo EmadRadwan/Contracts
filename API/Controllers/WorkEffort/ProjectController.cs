@@ -280,6 +280,19 @@ public class ProjectController : BaseApiController
             RevenuesAllData = revenuesAllData
         })));
     }
-    
+
+    [HttpPost("createProjectCommissionRate", Name = "CreateProjectCommissionRate")]
+    public async Task<ActionResult<ProjectCommissionRateDto>> CreateProjectCommissionRate([FromBody] ProjectCommissionRateDto dto)
+    {
+        return HandleResult(await Mediator.Send(new CreateProjectCommissionRate.Command { Dto = dto }));
+    }
+
+    [HttpPut("updateProjectCommissionRate/{id}", Name = "UpdateProjectCommissionRate")]
+    public async Task<ActionResult<ProjectCommissionRateDto>> UpdateProjectCommissionRate(string id, [FromBody] ProjectCommissionRateDto dto)
+    {
+        dto.ProjectCommissionRateId = id;
+        return HandleResult(await Mediator.Send(new UpdateProjectCommissionRate.Command { Dto = dto }));
+    }
+
 }
 

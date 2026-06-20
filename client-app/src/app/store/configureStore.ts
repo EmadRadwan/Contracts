@@ -139,6 +139,7 @@ import {salesOpportunitiesApi} from "./apis/crm/salesOpportunitiesApi";
 import {leadsApi} from "./apis/crm/leadsApi";
 import {dataSourcesApi} from "./apis/crm/dataSourcesApi";
 import {usersApi} from "./apis/users/usersApi";
+import {salesCommissionsApi} from "./apis/salesCommissionsApi";
 
 
 // REFACTOR: Added logger middleware for debugging
@@ -328,7 +329,8 @@ export const store = configureStore({
         [usersApi.reducerPath]: usersApi.reducer,
         [salesOpportunitiesApi.reducerPath]: salesOpportunitiesApi.reducer,
         [leadsApi.reducerPath]: leadsApi.reducer,
-        [dataSourcesApi.reducerPath]: dataSourcesApi.reducer
+        [dataSourcesApi.reducerPath]: dataSourcesApi.reducer,
+        [salesCommissionsApi.reducerPath]: salesCommissionsApi.reducer,
     },
     middleware: (getDefaultMiddleware) => {
         return getDefaultMiddleware({
@@ -428,7 +430,8 @@ export const store = configureStore({
             .concat(salesOpportunitiesApi.middleware)
             .concat(leadsApi.middleware)
             .concat(dataSourcesApi.middleware)
-            .concat(usersApi.middleware);
+            .concat(usersApi.middleware)
+            .concat(salesCommissionsApi.middleware);
     },
     devTools: devToolsConfig,
 });

@@ -898,6 +898,8 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
         public DbSet<TransactionTypeAccountRule> TransactionTypeAccountRules { get; set; }
         public DbSet<SalesRequest> SalesRequests { get; set; }
         public DbSet<SalesRequestInstallment> SalesRequestInstallments { get; set; }
+        public DbSet<SalesCommission> SalesCommissions { get; set; }
+        public DbSet<ProjectCommissionRate> ProjectCommissionRates { get; set; }
         public DbSet<ReserveRequest> ReserveRequests { get; set; }
         public DbSet<EmployeeAdvance> EmployeeAdvances { get; set; }
         public DbSet<EmployeeAdvanceSchedule> EmployeeAdvanceSchedules { get; set; }
@@ -28839,6 +28841,237 @@ entity.Property(e => e.GlSubAccountCourseLabelId)
                       .HasConstraintName("FK_SALES_REQ_INST_PARENT");
             });
                         
+            modelBuilder.Entity<ProjectCommissionRate>(entity =>
+            {
+                entity.ToTable("PROJECT_COMMISSION_RATE");
+                entity.HasKey(e => e.ProjectCommissionRateId);
+
+                entity.Property(e => e.ProjectCommissionRateId)
+                      .HasMaxLength(20).IsUnicode(false)
+                      .HasColumnName("PROJECT_COMMISSION_RATE_ID");
+
+                entity.Property(e => e.ProjectId)
+                      .HasMaxLength(20).IsUnicode(false)
+                      .HasColumnName("PROJECT_ID");
+
+                entity.Property(e => e.SaleTypeId)
+                      .HasMaxLength(60).IsUnicode(false)
+                      .HasColumnName("SALE_TYPE_ID");
+
+                entity.Property(e => e.SalesRepPercent)
+                      .HasColumnType("decimal(8,4)")
+                      .HasColumnName("SALES_REP_PERCENT");
+
+                entity.Property(e => e.ManagerPercent)
+                      .HasColumnType("decimal(8,4)")
+                      .HasColumnName("MANAGER_PERCENT");
+
+                entity.Property(e => e.ExternalCompanyPercent)
+                      .HasColumnType("decimal(8,4)")
+                      .HasColumnName("EXTERNAL_COMPANY_PERCENT");
+
+                entity.Property(e => e.ExternalSalesRepPercent)
+                      .HasColumnType("decimal(8,4)")
+                      .HasColumnName("EXTERNAL_SALES_REP_PERCENT");
+
+                entity.Property(e => e.ExternalManagerPercent)
+                      .HasColumnType("decimal(8,4)")
+                      .HasColumnName("EXTERNAL_MANAGER_PERCENT");
+
+                entity.Property(e => e.LastUpdatedStamp).HasColumnName("LAST_UPDATED_STAMP");
+                entity.Property(e => e.CreatedStamp).HasColumnName("CREATED_STAMP");
+
+                entity.HasIndex(e => new { e.ProjectId, e.SaleTypeId }, "IX_PROJ_COMM_RATE_PROJ_TYPE")
+                      .IsUnique();
+
+                entity.HasOne(e => e.Project)
+                      .WithMany()
+                      .HasForeignKey(e => e.ProjectId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_PROJ_COMM_RATE_PROJECT");
+            });
+
+            modelBuilder.Entity<SalesCommission>(entity =>
+            {
+                entity.ToTable("SALES_COMMISSION");
+                entity.HasKey(e => e.SalesCommissionId);
+
+                entity.Property(e => e.SalesCommissionId)
+                      .HasMaxLength(20).IsUnicode(false)
+                      .HasColumnName("SALES_COMMISSION_ID");
+
+                entity.Property(e => e.SalesRequestId)
+                      .HasMaxLength(20).IsUnicode(false)
+                      .HasColumnName("SALES_REQUEST_ID");
+
+                entity.Property(e => e.SaleTypeId)
+                      .HasMaxLength(60).IsUnicode(false)
+                      .HasColumnName("SALE_TYPE_ID");
+
+                entity.Property(e => e.StatusId)
+                      .HasMaxLength(60).IsUnicode(false)
+                      .HasColumnName("STATUS_ID");
+
+                entity.Property(e => e.CommissionDate).HasColumnName("COMMISSION_DATE");
+
+                entity.Property(e => e.ProjectId)
+                      .HasMaxLength(20).IsUnicode(false)
+                      .HasColumnName("PROJECT_ID");
+
+                entity.Property(e => e.SalePrice)
+                      .HasColumnType("decimal(20,2)")
+                      .HasColumnName("SALE_PRICE");
+
+                entity.Property(e => e.CollectedAmount)
+                      .HasColumnType("decimal(20,2)")
+                      .HasColumnName("COLLECTED_AMOUNT");
+
+                // Internal sales rep
+                entity.Property(e => e.SalesRepPartyId)
+                      .HasMaxLength(20).IsUnicode(false)
+                      .HasColumnName("SALES_REP_PARTY_ID");
+                entity.Property(e => e.SalesRepPercent)
+                      .HasColumnType("decimal(8,4)").HasColumnName("SALES_REP_PERCENT");
+                entity.Property(e => e.SalesRepAmount)
+                      .HasColumnType("decimal(20,2)").HasColumnName("SALES_REP_AMOUNT");
+                entity.Property(e => e.SalesRepNetAmount)
+                      .HasColumnType("decimal(20,2)").HasColumnName("SALES_REP_NET_AMOUNT");
+
+                // Internal manager
+                entity.Property(e => e.ManagerPartyId)
+                      .HasMaxLength(20).IsUnicode(false)
+                      .HasColumnName("MANAGER_PARTY_ID");
+                entity.Property(e => e.ManagerPercent)
+                      .HasColumnType("decimal(8,4)").HasColumnName("MANAGER_PERCENT");
+                entity.Property(e => e.ManagerAmount)
+                      .HasColumnType("decimal(20,2)").HasColumnName("MANAGER_AMOUNT");
+                entity.Property(e => e.ManagerNetAmount)
+                      .HasColumnType("decimal(20,2)").HasColumnName("MANAGER_NET_AMOUNT");
+
+                // Second internal sales rep
+                entity.Property(e => e.SalesRep2PartyId)
+                      .HasMaxLength(20).IsUnicode(false)
+                      .HasColumnName("SALES_REP2_PARTY_ID");
+                entity.Property(e => e.SalesRep2Percent)
+                      .HasColumnType("decimal(8,4)").HasColumnName("SALES_REP2_PERCENT");
+                entity.Property(e => e.SalesRep2Amount)
+                      .HasColumnType("decimal(20,2)").HasColumnName("SALES_REP2_AMOUNT");
+                entity.Property(e => e.SalesRep2NetAmount)
+                      .HasColumnType("decimal(20,2)").HasColumnName("SALES_REP2_NET_AMOUNT");
+
+                // Second internal manager
+                entity.Property(e => e.Manager2PartyId)
+                      .HasMaxLength(20).IsUnicode(false)
+                      .HasColumnName("MANAGER2_PARTY_ID");
+                entity.Property(e => e.Manager2Percent)
+                      .HasColumnType("decimal(8,4)").HasColumnName("MANAGER2_PERCENT");
+                entity.Property(e => e.Manager2Amount)
+                      .HasColumnType("decimal(20,2)").HasColumnName("MANAGER2_AMOUNT");
+                entity.Property(e => e.Manager2NetAmount)
+                      .HasColumnType("decimal(20,2)").HasColumnName("MANAGER2_NET_AMOUNT");
+
+                // External broker company
+                entity.Property(e => e.ExternalCompanyPartyId)
+                      .HasMaxLength(20).IsUnicode(false)
+                      .HasColumnName("EXT_COMPANY_PARTY_ID");
+                entity.Property(e => e.ExternalCompanyPercent)
+                      .HasColumnType("decimal(8,4)").HasColumnName("EXT_COMPANY_PERCENT");
+                entity.Property(e => e.ExternalCompanyGrossAmount)
+                      .HasColumnType("decimal(20,2)").HasColumnName("EXT_COMPANY_GROSS_AMOUNT");
+                entity.Property(e => e.ExternalCompanyNetAmount)
+                      .HasColumnType("decimal(20,2)").HasColumnName("EXT_COMPANY_NET_AMOUNT");
+
+                // External broker's sales rep
+                entity.Property(e => e.ExternalSalesRepPartyId)
+                      .HasMaxLength(20).IsUnicode(false)
+                      .HasColumnName("EXT_SALES_REP_PARTY_ID");
+                entity.Property(e => e.ExternalSalesRepPercent)
+                      .HasColumnType("decimal(8,4)").HasColumnName("EXT_SALES_REP_PERCENT");
+                entity.Property(e => e.ExternalSalesRepAmount)
+                      .HasColumnType("decimal(20,2)").HasColumnName("EXT_SALES_REP_AMOUNT");
+                entity.Property(e => e.ExternalSalesRepNetAmount)
+                      .HasColumnType("decimal(20,2)").HasColumnName("EXT_SALES_REP_NET_AMOUNT");
+
+                // External broker's manager
+                entity.Property(e => e.ExternalManagerPartyId)
+                      .HasMaxLength(20).IsUnicode(false)
+                      .HasColumnName("EXT_MANAGER_PARTY_ID");
+                entity.Property(e => e.ExternalManagerPercent)
+                      .HasColumnType("decimal(8,4)").HasColumnName("EXT_MANAGER_PERCENT");
+                entity.Property(e => e.ExternalManagerAmount)
+                      .HasColumnType("decimal(20,2)").HasColumnName("EXT_MANAGER_AMOUNT");
+                entity.Property(e => e.ExternalManagerNetAmount)
+                      .HasColumnType("decimal(20,2)").HasColumnName("EXT_MANAGER_NET_AMOUNT");
+
+                // Tax flags
+                entity.Property(e => e.HasVatExemption).HasColumnName("HAS_VAT_EXEMPTION");
+                entity.Property(e => e.HasWithholdingTaxExemption).HasColumnName("HAS_WITHHOLDING_TAX_EXEMPTION");
+                entity.Property(e => e.VatPercent)
+                      .HasColumnType("decimal(8,4)").HasColumnName("VAT_PERCENT");
+                entity.Property(e => e.WithholdingTaxPercent)
+                      .HasColumnType("decimal(8,4)").HasColumnName("WITHHOLDING_TAX_PERCENT");
+
+                entity.Property(e => e.Notes).HasMaxLength(2000).HasColumnName("NOTES");
+                entity.Property(e => e.LastUpdatedStamp).HasColumnName("LAST_UPDATED_STAMP");
+                entity.Property(e => e.CreatedStamp).HasColumnName("CREATED_STAMP");
+
+                entity.HasIndex(e => e.SalesRequestId, "IX_SALES_COMM_SR_ID").IsUnique();
+
+                entity.HasOne(e => e.SalesRequest)
+                      .WithMany()
+                      .HasForeignKey(e => e.SalesRequestId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_SALES_COMM_SR");
+
+                entity.HasOne(e => e.Project)
+                      .WithMany()
+                      .HasForeignKey(e => e.ProjectId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_SALES_COMM_PROJECT");
+
+                entity.HasOne(e => e.SalesRepParty)
+                      .WithMany()
+                      .HasForeignKey(e => e.SalesRepPartyId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_SALES_COMM_SALES_REP");
+
+                entity.HasOne(e => e.ManagerParty)
+                      .WithMany()
+                      .HasForeignKey(e => e.ManagerPartyId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_SALES_COMM_MANAGER");
+
+                entity.HasOne(e => e.SalesRep2Party)
+                      .WithMany()
+                      .HasForeignKey(e => e.SalesRep2PartyId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_SALES_COMM_SALES_REP2");
+
+                entity.HasOne(e => e.Manager2Party)
+                      .WithMany()
+                      .HasForeignKey(e => e.Manager2PartyId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_SALES_COMM_MANAGER2");
+
+                entity.HasOne(e => e.ExternalCompanyParty)
+                      .WithMany()
+                      .HasForeignKey(e => e.ExternalCompanyPartyId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_SALES_COMM_EXT_COMPANY");
+
+                entity.HasOne(e => e.ExternalSalesRepParty)
+                      .WithMany()
+                      .HasForeignKey(e => e.ExternalSalesRepPartyId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_SALES_COMM_EXT_SR");
+
+                entity.HasOne(e => e.ExternalManagerParty)
+                      .WithMany()
+                      .HasForeignKey(e => e.ExternalManagerPartyId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .HasConstraintName("FK_SALES_COMM_EXT_MGR");
+            });
+
             modelBuilder.Entity<ReserveRequest>(entity =>
                 {
                     // --------------------------------------------------------------

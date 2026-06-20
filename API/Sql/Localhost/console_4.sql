@@ -1,27 +1,19 @@
-SELECT ate.acctg_trans_id, ate.acctg_trans_entry_seq_id,
-       act.acctg_trans_type_id, p.payment_id, p.comments, ate.DESCRIPTION
-FROM acctg_trans_entry ate
-         JOIN acctg_trans act ON ate.acctg_trans_id = act.acctg_trans_id
-         JOIN payment p       ON act.payment_id = p.payment_id
-WHERE act.payment_id IS NOT NULL
-  AND p.comments IS NOT NULL
-  AND p.comments <> '' AND act.acctg_trans_type_id IN (
-                                                       'INCOMING_PAYMENT',
-                                                       'APARTMENT_MAINTENANCE_DEPOSIT',
-                                                       'CHECK_ISSUED',
-                                                       'OUTGOING_PAYMENT'
-    )    ;
+-- 1. ROLE_TYPE: Sales Manager
+INSERT IGNORE INTO `ROLE_TYPE` (`ROLE_TYPE_ID`, `PARENT_TYPE_ID`, `HAS_TABLE`, `DESCRIPTION`, `CREATED_STAMP`, `LAST_UPDATED_STAMP`)
+VALUES ('SALES_MANAGER', 'PERSON_ROLE', 'N', 'Sales Manager', NOW(), NOW());
 
 
-UPDATE acctg_trans_entry ate
-    JOIN acctg_trans act ON ate.acctg_trans_id = act.acctg_trans_id
-    JOIN payment p       ON act.payment_id = p.payment_id
-SET ate.description = p.comments
-WHERE act.payment_id IS NOT NULL
-  AND p.comments IS NOT NULL
-  AND p.comments <> '' AND p.comments <> '' AND act.acctg_trans_type_id IN (
-                                                                            'INCOMING_PAYMENT',
-                                                                            'APARTMENT_MAINTENANCE_DEPOSIT',
-                                                                            'CHECK_ISSUED',
-                                                                            'OUTGOING_PAYMENT'
-    )    ;   
+-- 2. STATUS_TYPE: Commission Status (parent type for the statuses below)
+INSERT IGNORE INTO `STATUS_TYPE` (`STATUS_TYPE_ID`, `PARENT_TYPE_ID`, `HAS_TABLE`, `DESCRIPTION`, `CREATED_STAMP`, `LAST_UPDATED_STAMP`)
+VALUES ('COMMISSION_STATUS', NULL, 'N', 'Commission Status', NOW(), NOW());
+
+
+-- 3. STATUS_ITEM: Commission statuses
+INSERT IGNORE INTO `STATUS_ITEM` (`STATUS_ID`, `STATUS_TYPE_ID`, `STATUS_CODE`, `SEQUENCE_ID`, `DESCRIPTION`, `DESCRIPTION_ARABIC`, `CREATED_STAMP`, `LAST_UPDATED_STAMP`)
+VALUES ('COMMISSION_PENDING', 'COMMISSION_STATUS', 'PENDING', '01', 'Pending', 'قيد الانتظار', NOW(), NOW());
+
+INSERT IGNORE INTO `STATUS_ITEM` (`STATUS_ID`, `STATUS_TYPE_ID`, `STATUS_CODE`, `SEQUENCE_ID`, `DESCRIPTION`, `DESCRIPTION_ARABIC`, `CREATED_STAMP`, `LAST_UPDATED_STAMP`)
+VALUES ('COMMISSION_APPROVED', 'COMMISSION_STATUS', 'APPROVED', '02', 'Approved', 'معتمدة', NOW(), NOW());
+
+INSERT IGNORE INTO `STATUS_ITEM` (`STATUS_ID`, `STATUS_TYPE_ID`, `STATUS_CODE`, `SEQUENCE_ID`, `DESCRIPTION`, `DESCRIPTION_ARABIC`, `CREATED_STAMP`, `LAST_UPDATED_STAMP`)
+VALUES ('COMMISSION_PAID', 'COMMISSION_STATUS', 'PAID', '03', 'Paid', 'مدفوعة', NOW(), NOW());

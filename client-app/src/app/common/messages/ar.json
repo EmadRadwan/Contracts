@@ -380,7 +380,9 @@
     },
     "menu": {
       "salesRequests": "طلبات المبيعات",
-      "reserveRequests": "استمارات الحجز"
+      "reserveRequests": "استمارات الحجز",
+      "commissionRates": "معدلات العمولة",
+      "salesCommissions": "عمولات المبيعات"
     },
     "paymentPlan": {
       "title": "جدول السداد",
@@ -2502,6 +2504,103 @@
           "dateOrder": "لا يمكن أن يكون تاريخ الانتهاء قبل تاريخ البدء."
         }
       }
+    }
+  },
+  "commissionRate": {
+    "list": {
+      "create": "إنشاء معدل عمولة",
+      "id": "رقم المعدل",
+      "project": "المشروع",
+      "saleType": "نوع البيع",
+      "salesRepPercent": "نسبة المندوب %",
+      "managerPercent": "نسبة المدير %",
+      "extCompanyPercent": "نسبة شركة الوسيط %",
+      "extSalesRepPercent": "نسبة مندوب الوسيط %",
+      "extManagerPercent": "نسبة مدير الوسيط %",
+      "loading": "جاري تحميل معدلات العمولة..."
+    },
+    "form": {
+      "new": "معدل عمولة جديد",
+      "edit": "تعديل معدل العمولة",
+      "project": "المشروع",
+      "saleType": "نوع البيع",
+      "salesRepPercent": "نسبة المندوب %",
+      "managerPercent": "نسبة المدير %",
+      "extCompanyPercent": "نسبة شركة الوسيط %",
+      "extSalesRepPercent": "نسبة مندوب الوسيط %",
+      "extManagerPercent": "نسبة مدير الوسيط %",
+      "submit": "حفظ",
+      "cancel": "إلغاء",
+      "processing": "جاري المعالجة...",
+      "createSuccess": "تم إنشاء معدل العمولة بنجاح",
+      "updateSuccess": "تم تحديث معدل العمولة بنجاح",
+      "error": "فشل في حفظ معدل العمولة"
+    }
+  },
+  "salesCommission": {
+    "list": {
+      "title": "عمولات المبيعات",
+      "create": "إنشاء عمولة جديدة",
+      "id": "رقم العمولة",
+      "salesRequest": "طلب البيع",
+      "apartment": "الشقة",
+      "project": "المشروع",
+      "saleType": "نوع البيع",
+      "status": "الحالة",
+      "salePrice": "سعر البيع",
+      "salesRep": "المندوب",
+      "manager": "المدير",
+      "loading": "جاري تحميل عمولات المبيعات...",
+      "approve": "اعتماد",
+      "statusPending": "قيد الانتظار",
+      "statusApproved": "معتمدة",
+      "statusPaid": "مدفوعة"
+    },
+    "form": {
+      "new": "عمولة مبيعات جديدة",
+      "edit": "تعديل العمولة",
+      "salesRequest": "طلب البيع",
+      "saleType": "نوع البيع",
+      "commissionDate": "تاريخ العمولة",
+      "salePrice": "سعر البيع",
+      "collectedAmount": "المبلغ المحصل",
+      "internalSection": "العمولات الداخلية",
+      "salesRep1": "المندوب الأول",
+      "salesRep1Percent": "نسبة المندوب الأول %",
+      "salesRep1Amount": "مبلغ المندوب الأول",
+      "salesRep2": "المندوب الثاني",
+      "salesRep2Percent": "نسبة المندوب الثاني %",
+      "salesRep2Amount": "مبلغ المندوب الثاني",
+      "manager1": "المدير الأول",
+      "manager1Percent": "نسبة المدير الأول %",
+      "manager1Amount": "مبلغ المدير الأول",
+      "manager2": "المدير الثاني",
+      "manager2Percent": "نسبة المدير الثاني %",
+      "manager2Amount": "مبلغ المدير الثاني",
+      "externalSection": "العمولات الخارجية (الوسيط)",
+      "externalCompany": "شركة الوسيط",
+      "externalCompanyPercent": "نسبة الوسيط %",
+      "externalCompanyGross": "إجمالي الوسيط",
+      "externalCompanyNet": "صافي الوسيط",
+      "externalSalesRep": "مندوب الوسيط",
+      "externalSalesRepPercent": "نسبة مندوب الوسيط %",
+      "externalSalesRepAmount": "مبلغ مندوب الوسيط",
+      "externalManager": "مدير الوسيط",
+      "externalManagerPercent": "نسبة مدير الوسيط %",
+      "externalManagerAmount": "مبلغ مدير الوسيط",
+      "taxSection": "الضرائب",
+      "hasVatExemption": "إعفاء من ضريبة القيمة المضافة",
+      "hasWithholdingTaxExemption": "إعفاء من ضريبة الاستقطاع",
+      "vatPercent": "نسبة ضريبة القيمة المضافة %",
+      "withholdingTaxPercent": "نسبة ضريبة الاستقطاع %",
+      "notes": "ملاحظات",
+      "submit": "حفظ",
+      "cancel": "إلغاء",
+      "approve": "اعتماد",
+      "processing": "جاري المعالجة...",
+      "createSuccess": "تم إنشاء العمولة بنجاح",
+      "approveSuccess": "تم اعتماد العمولة بنجاح",
+      "error": "فشل في حفظ العمولة"
     }
   }
 }

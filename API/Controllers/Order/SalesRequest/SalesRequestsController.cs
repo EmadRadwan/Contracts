@@ -83,4 +83,18 @@ public class SalesRequestsController : BaseApiController
         var result = await Mediator.Send(query, ct);
         return Ok(result);
     }
+
+    [HttpGet("approvedLov")]
+    public async Task<IActionResult> GetApprovedSalesRequestsLov(
+        [FromQuery] string? searchTerm,
+        [FromQuery] int skip = 0,
+        [FromQuery] int pageSize = 20)
+    {
+        return HandleResult(await Mediator.Send(new GetApprovedSalesRequestsLov.Query
+        {
+            SearchTerm = searchTerm,
+            Skip = skip,
+            PageSize = pageSize
+        }));
+    }
 }

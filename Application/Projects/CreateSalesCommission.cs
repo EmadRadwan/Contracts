@@ -1,0 +1,181 @@
+using Application.Core;
+using Application.Interfaces;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Persistence;
+
+namespace Application.Projects;
+
+public class CreateSalesCommission
+{
+    public class Command : IRequest<Result<SalesCommissionDto>>
+    {
+        public SalesCommissionDto Dto { get; set; } = null!;
+    }
+
+    public class Handler : IRequestHandler<Command, Result<SalesCommissionDto>>
+    {
+        private readonly DataContext _context;
+        private readonly ILogger<Handler> _logger;
+        private readonly IUtilityService _utilityService;
+
+        public Handler(DataContext context, ILogger<Handler> logger, IUtilityService utilityService)
+        {
+            _context = context;
+            _logger = logger;
+            _utilityService = utilityService;
+        }
+
+        public async Task<Result<SalesCommissionDto>> Handle(Command request, CancellationToken cancellationToken)
+        {
+            var dto = request.Dto;
+
+            var sr = await _context.SalesRequests
+                .FirstOrDefaultAsync(x => x.SalesRequestId == dto.SalesRequestId, cancellationToken);
+
+            if (sr == null)
+                return Result<SalesCommissionDto>.Failure("Sales request not found");
+
+            if (sr.StatusId != "SALES_REQUEST_APPROVED")
+                return Result<SalesCommissionDto>.Failure("Commission can only be created for approved sales requests");
+
+            var existing = await _context.SalesCommissions
+                .FirstOrDefaultAsync(x => x.SalesRequestId == dto.SalesRequestId, cancellationToken);
+            if (existing != null)
+                return Result<SalesCommissionDto>.Failure("A commission record already exists for this sales request");
+
+            var isIndirect = dto.SaleTypeId == "COMM_SALE_INDIRECT";
+            var salePrice = dto.SalePrice;
+            var stamp = DateTime.UtcNow;
+            var newId = await _utilityService.GetNextSequence("SalesCommission");
+
+            // Calculate amounts
+            decimal salesRepAmount = salePrice * (dto.SalesRepPercent / 100m);
+            decimal managerAmount = salePrice * (dto.ManagerPercent / 100m);
+            decimal? salesRep2Amount = dto.SalesRep2Percent.HasValue
+                ? salePrice * (dto.SalesRep2Percent.Value / 100m) : null;
+            decimal? manager2Amount = dto.Manager2Percent.HasValue
+                ? salePrice * (dto.Manager2Percent.Value / 100m) : null;
+
+            decimal? extCompanyGross = null;
+            decimal? extCompanyNet = null;
+            decimal? extSalesRepAmount = null;
+            decimal? extManagerAmount = null;
+
+            if (isIndirect && dto.ExternalCompanyPercent.HasValue)
+            {
+                extCompanyGross = salePrice * (dto.ExternalCompanyPercent.Value / 100m);
+
+                if (!dto.HasVatExemption)
+                {
+                    // VAT is embedded: base = gross × 100/114, then WHT on base
+                    var vatRate = dto.VatPercent > 0 ? dto.VatPercent : 14m;
+                    var vatDivisor = 100m + vatRate;
+                    var baseAmount = extCompanyGross.Value * 100m / vatDivisor;
+                    var vatAmount = extCompanyGross.Value - baseAmount;
+
+                    if (!dto.HasWithholdingTaxExemption && dto.WithholdingTaxPercent > 0)
+                    {
+                        var whtAmount = baseAmount * (dto.WithholdingTaxPercent / 100m);
+                        extCompanyNet = extCompanyGross.Value - whtAmount;
+                    }
+                    else
+                    {
+                        extCompanyNet = extCompanyGross.Value;
+                    }
+                }
+                else
+                {
+                    extCompanyNet = extCompanyGross;
+                }
+
+                if (dto.ExternalSalesRepPercent.HasValue)
+                    extSalesRepAmount = salePrice * (dto.ExternalSalesRepPercent.Value / 100m);
+
+                if (dto.ExternalManagerPercent.HasValue)
+                    extManagerAmount = salePrice * (dto.ExternalManagerPercent.Value / 100m);
+            }
+
+            var transaction = _context.Database.BeginTransaction();
+            try
+            {
+                var commission = new Domain.SalesCommission
+                {
+                    SalesCommissionId = newId,
+                    SalesRequestId = dto.SalesRequestId,
+                    SaleTypeId = dto.SaleTypeId,
+                    StatusId = "COMMISSION_PENDING",
+                    CommissionDate = dto.CommissionDate ?? stamp,
+                    ProjectId = dto.ProjectId,
+                    SalePrice = salePrice,
+                    CollectedAmount = dto.CollectedAmount,
+                    SalesRepPartyId = dto.SalesRepPartyId,
+                    SalesRepPercent = dto.SalesRepPercent,
+                    SalesRepAmount = salesRepAmount,
+                    SalesRepNetAmount = salesRepAmount,
+                    ManagerPartyId = dto.ManagerPartyId,
+                    ManagerPercent = dto.ManagerPercent,
+                    ManagerAmount = managerAmount,
+                    ManagerNetAmount = managerAmount,
+                    SalesRep2PartyId = dto.SalesRep2PartyId,
+                    SalesRep2Percent = dto.SalesRep2Percent,
+                    SalesRep2Amount = salesRep2Amount,
+                    SalesRep2NetAmount = salesRep2Amount,
+                    Manager2PartyId = dto.Manager2PartyId,
+                    Manager2Percent = dto.Manager2Percent,
+                    Manager2Amount = manager2Amount,
+                    Manager2NetAmount = manager2Amount,
+                    ExternalCompanyPartyId = isIndirect ? dto.ExternalCompanyPartyId : null,
+                    ExternalCompanyPercent = isIndirect ? dto.ExternalCompanyPercent : null,
+                    ExternalCompanyGrossAmount = isIndirect ? extCompanyGross : null,
+                    ExternalCompanyNetAmount = isIndirect ? extCompanyNet : null,
+                    ExternalSalesRepPartyId = isIndirect ? dto.ExternalSalesRepPartyId : null,
+                    ExternalSalesRepPercent = isIndirect ? dto.ExternalSalesRepPercent : null,
+                    ExternalSalesRepAmount = isIndirect ? extSalesRepAmount : null,
+                    ExternalSalesRepNetAmount = isIndirect ? extSalesRepAmount : null,
+                    ExternalManagerPartyId = isIndirect ? dto.ExternalManagerPartyId : null,
+                    ExternalManagerPercent = isIndirect ? dto.ExternalManagerPercent : null,
+                    ExternalManagerAmount = isIndirect ? extManagerAmount : null,
+                    ExternalManagerNetAmount = isIndirect ? extManagerAmount : null,
+                    HasVatExemption = dto.HasVatExemption,
+                    HasWithholdingTaxExemption = dto.HasWithholdingTaxExemption,
+                    VatPercent = dto.VatPercent,
+                    WithholdingTaxPercent = dto.WithholdingTaxPercent,
+                    Notes = dto.Notes,
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp
+                };
+
+                _context.SalesCommissions.Add(commission);
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+
+                dto.SalesCommissionId = newId;
+                dto.StatusId = "COMMISSION_PENDING";
+                dto.SalesRepAmount = commission.SalesRepAmount;
+                dto.SalesRepNetAmount = commission.SalesRepNetAmount;
+                dto.ManagerAmount = commission.ManagerAmount;
+                dto.ManagerNetAmount = commission.ManagerNetAmount;
+                dto.SalesRep2Amount = commission.SalesRep2Amount;
+                dto.SalesRep2NetAmount = commission.SalesRep2NetAmount;
+                dto.Manager2Amount = commission.Manager2Amount;
+                dto.Manager2NetAmount = commission.Manager2NetAmount;
+                dto.ExternalCompanyGrossAmount = commission.ExternalCompanyGrossAmount;
+                dto.ExternalCompanyNetAmount = commission.ExternalCompanyNetAmount;
+                dto.ExternalSalesRepAmount = commission.ExternalSalesRepAmount;
+                dto.ExternalSalesRepNetAmount = commission.ExternalSalesRepNetAmount;
+                dto.ExternalManagerAmount = commission.ExternalManagerAmount;
+                dto.ExternalManagerNetAmount = commission.ExternalManagerNetAmount;
+
+                return Result<SalesCommissionDto>.Success(dto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create sales commission");
+                await transaction.RollbackAsync(cancellationToken);
+                return Result<SalesCommissionDto>.Failure("Failed to create sales commission");
+            }
+        }
+    }
+}

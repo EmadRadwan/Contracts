@@ -83,6 +83,7 @@ accounting, HR, CRM, manufacturing, and facilities.
   - **RTK Query** (`src/app/store/apis/`) — all API calls for modern features
   - **MobX** (`src/app/stores/`) — legacy stores (`userStore`, `modalStore`, etc.)
 - **Axios** (`src/app/api/agent.ts`) — legacy HTTP client, still used alongside RTK Query
+- Localization to Arabic must alwayes be supported via getTranslatedLabel and @ar.json
 
 ### src/ Folder Structure
 ```
@@ -184,6 +185,14 @@ export const { useFetchOrdersQuery, useAddSalesOrderMutation } = ordersApi;
 - `react-toastify` — toast notifications
 
 ---
+
+## Database Migrations
+
+- NEVER run `dotnet ef database update` or any command that applies a migration to a database.
+- NEVER run `dotnet ef migrations remove` against an already-applied migration.
+- You MAY run `dotnet ef migrations add <Name>` to generate new migration files for review.
+- You MAY run `dotnet ef migrations script` to generate a SQL script for review — this does not touch the database.
+- Applying migrations (dev, staging, or prod) is a manual, human-only step. Always stop after generating files and tell me what changed so I can review and apply it myself.
 
 ## Important Conventions & Gotchas
 - `// REFACTOR:` comments mark known tech debt — do not remove without addressing the underlying issue

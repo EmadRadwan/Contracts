@@ -149,6 +149,8 @@ import InitialBalanceTransForm from "../../features/accounting/transaction/form/
 import SalesRequestsList from "../../features/orders/form/request/dashboard/SalesRequestsList";
 import PaymentsWithDueAmountsList from "../../features/accounting/payment/dashboard/PaymentsWithDueAmountsList";
 import ReserveRequestsList from "../../features/orders/form/request/dashboard/ReserveRequestsList";
+import ProjectCommissionRatesList from "../../features/orders/form/request/dashboard/ProjectCommissionRatesList";
+import SalesCommissionsList from "../../features/orders/form/request/dashboard/SalesCommissionsList";
 import RequireRole from "./RequireRole";
 import ChangePasswordPage from "../../features/account/ChangePasswordPage";
 import CRMDashboard from "../../features/CRM/dashboard/CRMDashboard";
@@ -429,6 +431,8 @@ export const routes: RouteObject[] = [
                                     {path: "reserve-requests", element: <ReserveRequestsList/>},
                                 ],
                             },
+                            {path: "project-commission-rates", element: <ProjectCommissionRatesList/>},
+                            {path: "sales-commissions", element: <SalesCommissionsList/>},
                         ],
                     },
 

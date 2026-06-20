@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence;
 
@@ -10,9 +11,11 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20260617124856_AddSalesCommissionAndProjectCommissionRate")]
+    partial class AddSalesCommissionAndProjectCommissionRate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -45997,24 +46000,6 @@ namespace Persistence.Migrations
                         .HasColumnType("datetime(6)")
                         .HasColumnName("LAST_UPDATED_STAMP");
 
-                    b.Property<decimal?>("Manager2Amount")
-                        .HasColumnType("decimal(20,2)")
-                        .HasColumnName("MANAGER2_AMOUNT");
-
-                    b.Property<decimal?>("Manager2NetAmount")
-                        .HasColumnType("decimal(20,2)")
-                        .HasColumnName("MANAGER2_NET_AMOUNT");
-
-                    b.Property<string>("Manager2PartyId")
-                        .HasMaxLength(20)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(20)")
-                        .HasColumnName("MANAGER2_PARTY_ID");
-
-                    b.Property<decimal?>("Manager2Percent")
-                        .HasColumnType("decimal(8,4)")
-                        .HasColumnName("MANAGER2_PERCENT");
-
                     b.Property<decimal?>("ManagerAmount")
                         .HasColumnType("decimal(20,2)")
                         .HasColumnName("MANAGER_AMOUNT");
@@ -46054,24 +46039,6 @@ namespace Persistence.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(60)")
                         .HasColumnName("SALE_TYPE_ID");
-
-                    b.Property<decimal?>("SalesRep2Amount")
-                        .HasColumnType("decimal(20,2)")
-                        .HasColumnName("SALES_REP2_AMOUNT");
-
-                    b.Property<decimal?>("SalesRep2NetAmount")
-                        .HasColumnType("decimal(20,2)")
-                        .HasColumnName("SALES_REP2_NET_AMOUNT");
-
-                    b.Property<string>("SalesRep2PartyId")
-                        .HasMaxLength(20)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(20)")
-                        .HasColumnName("SALES_REP2_PARTY_ID");
-
-                    b.Property<decimal?>("SalesRep2Percent")
-                        .HasColumnType("decimal(8,4)")
-                        .HasColumnName("SALES_REP2_PERCENT");
 
                     b.Property<decimal?>("SalesRepAmount")
                         .HasColumnType("decimal(20,2)")
@@ -46120,13 +46087,9 @@ namespace Persistence.Migrations
 
                     b.HasIndex("ExternalSalesRepPartyId");
 
-                    b.HasIndex("Manager2PartyId");
-
                     b.HasIndex("ManagerPartyId");
 
                     b.HasIndex("ProjectId");
-
-                    b.HasIndex("SalesRep2PartyId");
 
                     b.HasIndex("SalesRepPartyId");
 
@@ -76008,12 +75971,6 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("FK_SALES_COMM_EXT_SR");
 
-                    b.HasOne("Domain.Party", "Manager2Party")
-                        .WithMany()
-                        .HasForeignKey("Manager2PartyId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .HasConstraintName("FK_SALES_COMM_MANAGER2");
-
                     b.HasOne("Domain.Party", "ManagerParty")
                         .WithMany()
                         .HasForeignKey("ManagerPartyId")
@@ -76025,12 +75982,6 @@ namespace Persistence.Migrations
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("FK_SALES_COMM_PROJECT");
-
-                    b.HasOne("Domain.Party", "SalesRep2Party")
-                        .WithMany()
-                        .HasForeignKey("SalesRep2PartyId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .HasConstraintName("FK_SALES_COMM_SALES_REP2");
 
                     b.HasOne("Domain.Party", "SalesRepParty")
                         .WithMany()
@@ -76051,13 +76002,9 @@ namespace Persistence.Migrations
 
                     b.Navigation("ExternalSalesRepParty");
 
-                    b.Navigation("Manager2Party");
-
                     b.Navigation("ManagerParty");
 
                     b.Navigation("Project");
-
-                    b.Navigation("SalesRep2Party");
 
                     b.Navigation("SalesRepParty");
 

@@ -3,6 +3,7 @@ import { Box, List, ListItem, ListItemIcon, Toolbar, Typography } from "@mui/mat
 import { NavLink } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import RequestQuoteOutlinedIcon from '@mui/icons-material/RequestQuoteOutlined';
+import PercentIcon from '@mui/icons-material/Percent';
 import { useAppDispatch } from "../../../../../app/store/configureStore";
 import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHelper";
 import {Can} from "../../../../account/Can";
@@ -35,6 +36,22 @@ const links = [
         translationKey: "salesRequest.menu.reserveRequests",
         icon: <RequestQuoteOutlinedIcon sx={{ color: "#4CAF50" }} />,
         requiredRole: "CreateReserveRequest" as const,
+    },
+    {
+        title: 'Commission Rates',
+        path: '/project-commission-rates',
+        key: "salesRequest.menu.commissionRates",
+        translationKey: "salesRequest.menu.commissionRates",
+        icon: <PercentIcon sx={{ color: "#2196F3" }} />,
+        requiredRole: "CreateSalesRequest" as const,
+    },
+    {
+        title: 'Sales Commissions',
+        path: '/sales-commissions',
+        key: "salesRequest.menu.salesCommissions",
+        translationKey: "salesRequest.menu.salesCommissions",
+        icon: <PercentIcon sx={{ color: "#FF9800" }} />,
+        requiredRole: "CreateSalesRequest" as const,
     },
 ];
 

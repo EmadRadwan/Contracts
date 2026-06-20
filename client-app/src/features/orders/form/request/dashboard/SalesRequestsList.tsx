@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Grid as KendoGrid,
     GRID_COL_INDEX_ATTRIBUTE,
@@ -23,6 +24,7 @@ import ModalContainer from "../../../../../app/common/modals/ModalContainer";
 import {SalesRequestsDateRangeExcel} from "../report/SalesRequestsDateRangeExcel";
 
 function SalesRequestsList() {
+    const navigate = useNavigate();
     // -----------------------------------------------------------------
     // State: editMode + selected full object
     // -----------------------------------------------------------------
@@ -148,6 +150,27 @@ function SalesRequestsList() {
                 <Button onClick={() => startEdit(props.dataItem)}>
                     {props.dataItem.salesRequestId}
                 </Button>
+            </td>
+        );
+    };
+
+    const CommissionCell = (props: any) => {
+        const navigationAttributes = useTableKeyboardNavigation(props.id);
+        const isApproved = props.dataItem.statusId === "SALES_REQUEST_APPROVED";
+        return (
+            <td className={props.className} style={props.style} colSpan={props.colSpan} role="gridcell"
+                aria-colindex={props.ariaColumnIndex} aria-selected={props.isSelected}
+                {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }} {...navigationAttributes}>
+                {isApproved && (
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        color="warning"
+                        onClick={() => navigate("/sales-commissions", { state: { salesRequestId: props.dataItem.salesRequestId } })}
+                    >
+                        عمولة
+                    </Button>
+                )}
             </td>
         );
     };
@@ -288,6 +311,13 @@ function SalesRequestsList() {
                                 <Column
                                     field="comments"
                                     title={getTranslatedLabel("salesRequest.list.comments", "Comments")}
+                                />
+                                <Column
+                                    title="عمولة"
+                                    cell={CommissionCell}
+                                    width={100}
+                                    filterable={false}
+                                    sortable={false}
                                 />
                             </KendoGrid>
 

@@ -4,6 +4,7 @@ import {State, toODataString} from "@progress/kendo-data-query";
 import {WorkEffort} from "../../models/manufacturing/workEffort";
 import {CertificateStatus} from "../../../features/Projects/hook/useProjectCertificate";
 import {Payment} from "../../models/accounting/payment";
+import {ProjectCommissionRate} from "../../models/orders/projectCommissionRate";
 
 interface ListResponse<T> {
     data: T[];
@@ -11,11 +12,12 @@ interface ListResponse<T> {
 }
 
 const REVIEW_CERTIFICATE_TAG = "ReviewCertificate" as const;
+const COMMISSION_RATE_TAG = "ProjectCommissionRate" as const;
 
 
 const projectsApi = createApi({
     reducerPath: "projects",
-    tagTypes: ["WorkEffort", "ProjectCertificates", REVIEW_CERTIFICATE_TAG],
+    tagTypes: ["WorkEffort", "ProjectCertificates", REVIEW_CERTIFICATE_TAG, COMMISSION_RATE_TAG],
     baseQuery: fetchBaseQuery({
         baseUrl: import.meta.env.VITE_API_URL,
         prepareHeaders: (headers, {getState}) => {
@@ -197,12 +199,12 @@ const projectsApi = createApi({
                     params,
                 }),
             }),
-            fetchCompanyReport: builder.query<ProjectReportDto, { 
-                expensesStartDate?: string; 
-                expensesEndDate?: string; 
+            fetchCompanyReport: builder.query<ProjectReportDto, {
+                expensesStartDate?: string;
+                expensesEndDate?: string;
                 expensesAllData: boolean;
-                revenuesStartDate?: string; 
-                revenuesEndDate?: string; 
+                revenuesStartDate?: string;
+                revenuesEndDate?: string;
                 revenuesAllData: boolean;
             }>({
                 query: (params) => ({
@@ -210,8 +212,41 @@ const projectsApi = createApi({
                     params,
                 }),
             }),
+            fetchProjectCommissionRates: builder.query<ListResponse<ProjectCommissionRate>, State>({
+                query: (queryArgs) => ({
+                    url: `/odata/ProjectCommissionRateRecords?$count=true&${toODataString(queryArgs)}`,
+                    method: "GET",
+                }),
+                transformResponse: (response: any, meta) => {
+                    const { totalCount } = JSON.parse(meta!.response!.headers.get("count")!);
+                    return { data: response, total: totalCount };
+                },
+                providesTags: [COMMISSION_RATE_TAG],
+            }),
+            addProjectCommissionRate: builder.mutation<ProjectCommissionRate, Partial<ProjectCommissionRate>>({
+                query: (dto) => ({
+                    url: "/project/createProjectCommissionRate",
+                    method: "POST",
+                    body: { ...dto },
+                }),
+                invalidatesTags: [COMMISSION_RATE_TAG],
+            }),
+            updateProjectCommissionRate: builder.mutation<ProjectCommissionRate, Partial<ProjectCommissionRate>>({
+                query: (dto) => ({
+                    url: `/project/updateProjectCommissionRate/${dto.projectCommissionRateId}`,
+                    method: "PUT",
+                    body: { ...dto },
+                }),
+                invalidatesTags: [COMMISSION_RATE_TAG],
+            }),
+            fetchProjectsLov: builder.query<{ projects: ProjectLovItem[]; projectCount: number }, void>({
+                query: () => ({
+                    url: "/project/getProjectsLov",
+                    params: { pageSize: 1000 },
+                }),
+            }),
         };
-        
+
     },
 });
 
@@ -232,9 +267,19 @@ export const {
     useFetchWorkEffortsByGlAccountIdQuery,
     useLazyFetchProjectReportQuery,
     useLazyFetchCompanyReportQuery,
+    useFetchProjectCommissionRatesQuery,
+    useAddProjectCommissionRateMutation,
+    useUpdateProjectCommissionRateMutation,
+    useFetchProjectsLovQuery,
 } = projectsApi;
 export {projectsApi};
 
+
+export interface ProjectLovItem {
+    workEffortId: string;
+    projectName: string;
+    facilityId: string;
+}
 
 interface ProjectCertificateSummaryDto {
     workEffortId: string;
