@@ -464,3 +464,4 @@ riderModule.iml
 
 
 client-app/yarn.lock
+*.lscache

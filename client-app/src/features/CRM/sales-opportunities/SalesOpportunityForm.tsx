@@ -176,7 +176,7 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                     <Typography variant="h6" fontWeight="medium">
                         {editMode === 2
-                            ? getTranslatedLabel(`${localizationKey}.editTitle`, 'Edit Opportunity')
+                            ? getTranslatedLabel(`${localizationKey}.editTitle`, 'Edit Opportunity: {0}').replace("{0}", opportunity?.salesOpportunityId || "")
                             : getTranslatedLabel(`${localizationKey}.createTitle`, 'Create New Opportunity')}
                     </Typography>
 
@@ -186,7 +186,7 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
                             startIcon={<MoreVertIcon />}
                             onClick={handleOpenAction}
                         >
-                            {getTranslatedLabel(`${localizationKey}.actionModal.title`, 'Add Action')}
+                            {getTranslatedLabel(`${localizationKey}.actionModal.menu`, 'Add Action')}
                         </Button>
                     )}
                 </Box>
@@ -270,6 +270,7 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
                                             <Button
                                                 variant="outlined"
                                                 size="small"
+                                                disabled={editMode > 1}
                                                 onClick={() => setOpenLeadModal(true)}
                                             >
                                                 <AddIcon sx={{ ml: language === "ar" ? 0.5 : 0, mr: language === "ar" ? 0 : 0.5 }} /> {getTranslatedLabel(`${localizationKey}.addNewLead`, 'Add New Lead')}
@@ -323,7 +324,7 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
                 open={openActionModal}
                 onClose={() => {
                     setOpenActionModal(false);
-                    onClose();
+                    // onClose();
                 }}
                 opportunity={opportunity || null}
             />

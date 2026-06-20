@@ -15,8 +15,10 @@ import {
     Backdrop,
     Stack,
     Avatar,
+    Tabs,
+    Tab,
 } from '@mui/material';
-import { Person as PersonIcon } from '@mui/icons-material';
+import { Person as PersonIcon, History as HistoryIcon, Assignment as AssignmentIcon } from '@mui/icons-material';
 import { useTranslationHelper } from '../../../../app/hooks/useTranslationHelper';
 import { OpportunityMeetingLocation, OpportunityMeetingType, SalesOpportunity, SalesOpportunityAction } from '../../models/salesOpportunity';
 import {
@@ -27,6 +29,7 @@ import {
     useFetchMeetingLocationsQuery,
     useFetchMeetingTypesQuery,
     useFetchOpportunityActionsQuery,
+    useFetchOpportunityHistoryQuery
 } from '../../../../app/store/configureStore';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -41,9 +44,26 @@ interface AddActionModalProps {
     opportunity: SalesOpportunity | null;
 }
 
+
+// Small helper to keep tab panels declarative and avoid unmounting state on switch
+interface TabPanelProps {
+    children?: React.ReactNode;
+    value: number;
+    index: number;
+}
+
+const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => (
+    <Box role="tabpanel" hidden={value !== index} sx={{ display: value === index ? 'block' : 'none' }}>
+        {value === index && children}
+    </Box>
+);
+
 const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportunity }: AddActionModalProps) => {
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = 'crm.opportunities.actionModal';
+
+    // Tab state
+    const [activeTab, setActiveTab] = useState(0);
 
     // Form State
     const [nextAction, setNextAction] = React.useState('FOLLOW_UP');
@@ -89,12 +109,25 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
         }
     }, [opportunity])
 
+    // Reset to the Actions tab whenever a different opportunity is opened
+    useEffect(() => {
+        if (open) setActiveTab(0);
+    }, [open, opportunity?.salesOpportunityId]);
+
     const {
         data: opportunityActions = [],
         isLoading: loadingActions
     } = useFetchOpportunityActionsQuery(
         opportunity?.salesOpportunityId!,
         { skip: !opportunity?.salesOpportunityId }
+    );
+
+    const {
+        data: opportunityHistory = [],
+        isLoading: loadingHistory
+    } = useFetchOpportunityHistoryQuery(
+        opportunity?.salesOpportunityId!,
+        { skip: !opportunity?.salesOpportunityId || activeTab !== 1 }
     );
 
     const [createAction, { isLoading: creatingAction }] = useCreateOpportunityActionMutation();
@@ -160,315 +193,383 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
                 {/* Header */}
                 <Box sx={{ p: 3, pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
                     <Typography variant="h6" fontWeight="bold" sx={{ textAlign: 'center' }}>
-                        {getTranslatedLabel(`${localizationKey}.title`, 'Add Action')}
+                        {getTranslatedLabel(`${localizationKey}.title`, 'Sales Opporunity: {0}').replace("{0}", opportunity.salesOpportunityId || "")}
                     </Typography>
                 </Box>
 
-                {/* Form Section - Fixed height, not scrollable */}
-                <Box sx={{ p: 3 }}>
-                    {/* Next Action */}
-                    <FormControl fullWidth sx={{ mb: 3 }}>
-                        <InputLabel>{getTranslatedLabel(`${localizationKey}.nextAction`, 'Next Action')}</InputLabel>
-                        <Select
-                            value={nextAction}
-                            label={getTranslatedLabel(`${localizationKey}.nextAction`, 'Next Action')}
-                            onChange={(e) => setNextAction(e.target.value)}
-                            dir={language === "ar" ? "rtl" : "ltr"}
-                            disabled={isActionDisabled}
-                        >
-                            {loadingActionTypes ? (
-                                <MenuItem value=""><em>Loading...</em></MenuItem>
-                            ) : (
-                                actionTypes?.map((action) => (
-                                    <MenuItem key={action.actionId} value={action.actionId}>
-                                        {action.description}
-                                    </MenuItem>
-                                ))
-                            )}
-                        </Select>
-                    </FormControl>
+                {/* Tabs */}
+                <Tabs
+                    value={activeTab}
+                    onChange={(_, newValue) => setActiveTab(newValue)}
+                    variant="fullWidth"
+                    dir={language === 'ar' ? 'rtl' : 'ltr'}
+                    sx={{ borderBottom: '1px solid', borderColor: 'divider' }}
+                >
+                    <Tab
+                        icon={<AssignmentIcon fontSize="small" sx={{mr: 1}} />}
+                        iconPosition={language === "ar" ? "end" : "start"}
+                        spacing={2}
+                        label={getTranslatedLabel(`${localizationKey}.actionsTab`, 'Actions')}
+                    />
+                    <Tab
+                        icon={<HistoryIcon fontSize="small" sx={{mr: 1}} />}
+                        iconPosition={language === "ar" ? "end" : "start"}
+                        label={getTranslatedLabel(`${localizationKey}.historyTab`, 'History')}
+                    />
+                </Tabs>
+                <TabPanel value={activeTab} index={0}>
 
-                    {/* Cancel Reason */}
-                    {hasCancelReasonField && (
+                    {/* Form Section - Fixed height, not scrollable */}
+                    <Box sx={{ p: 3 }}>
+                        {/* Next Action */}
                         <FormControl fullWidth sx={{ mb: 3 }}>
-                            <InputLabel>{getTranslatedLabel(`${localizationKey}.cancelReason`, 'Cancel Reason *')}</InputLabel>
+                            <InputLabel>{getTranslatedLabel(`${localizationKey}.nextAction`, 'Next Action')}</InputLabel>
                             <Select
-                                value={cancelReason}
-                                label={getTranslatedLabel(`${localizationKey}.cancelReason`, 'Cancel Reason *')}
-                                onChange={(e) => setCancelReason(e.target.value)}
+                                value={nextAction}
+                                label={getTranslatedLabel(`${localizationKey}.nextAction`, 'Next Action')}
+                                onChange={(e) => setNextAction(e.target.value)}
                                 dir={language === "ar" ? "rtl" : "ltr"}
                                 disabled={isActionDisabled}
                             >
-                                {loadingCancellationReasons ? (
+                                {loadingActionTypes ? (
                                     <MenuItem value=""><em>Loading...</em></MenuItem>
                                 ) : (
-                                    cancellationReasons?.map((reason) => (
-                                        <MenuItem key={reason.reasonId} value={reason.reasonId}>
-                                            {reason.description}
+                                    actionTypes?.map((action) => (
+                                        <MenuItem key={action.actionId} value={action.actionId}>
+                                            {action.description}
                                         </MenuItem>
                                     ))
                                 )}
                             </Select>
                         </FormControl>
-                    )}
 
-                    {/* Action Date */}
-                    {hasDateField && (
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <DateTimePicker
-                                label={getTranslatedLabel(`${localizationKey}.stageDate`, 'Next Action Date')}
-                                value={stageDate ? dayjs(stageDate) : null}
-                                onChange={(newValue) => setStageDate(newValue ? newValue.format('YYYY-MM-DDTHH:mm') : '')}
-                                disablePast
-                                dir={language === "ar" ? "rtl" : "ltr"}
-                                disabled={isActionDisabled}
-                                slotProps={{
-                                    textField: {
-                                        fullWidth: true,
-                                        sx: { mb: 3 },
-                                        required: true,
-                                    },
-                                }}
-                            />
-                        </LocalizationProvider>
-                    )}
-
-                    {isUnitRelated && (
-                        <>
-                            <Box sx={{ mb: 3 }}>
-                                <FormComboBoxVirtualProject
-                                    value={selectedProject}
-                                    label={getTranslatedLabel("projects.certificate.form.project", "Project")}
-                                    dataItemKey="projectId"
-                                    textField="ProjectName"
-                                    disabled={isActionDisabled}
-                                    popupSettings={{ appendTo: document.querySelector(".MuiModal-root") as HTMLElement }}
-                                    onChange={(e: any) => {
-                                        const newProjectId = e.value?.projectId || null;
-                                        const newProjectName = e.value?.projectName || '';
-                                        const newProject = newProjectId ? { projectId: newProjectId, projectName: newProjectName } : null;
-                                        setSelectedProject(newProject);
-                                        setSelectedUnit(null); // clear unit when project changes
-                                    }}
-                                />
-                            </Box>
-
-                            <Box sx={{ mb: 3 }}>
-                                <FormSimpleComboBoxVirtualApartmentsByProject
-                                    value={selectedUnit}
-                                    label={getTranslatedLabel(`${localizationKey}.unit`, 'Unit')}
-                                    projectId={selectedProject?.projectId || undefined}
-                                    disabled={isActionDisabled}
-                                    popupSettings={{ appendTo: document.querySelector(".MuiModal-root") as HTMLElement }}
-                                    onChange={(e: any) => {
-                                        setSelectedUnit({ apartmentId: e.value?.apartmentId, apartmentName: e.value?.apartmentName });
-                                    }}
-                                />
-                            </Box>
-                        </>
-                    )}
-
-                    {hasMeetingDropdownsAndNote && (
-                        <>
+                        {/* Cancel Reason */}
+                        {hasCancelReasonField && (
                             <FormControl fullWidth sx={{ mb: 3 }}>
-                                <InputLabel>{getTranslatedLabel(`${localizationKey}.meetingType`, 'Meeting Type *')}</InputLabel>
+                                <InputLabel>{getTranslatedLabel(`${localizationKey}.cancelReason`, 'Cancel Reason *')}</InputLabel>
                                 <Select
-                                    value={meetingType}
-                                    label={getTranslatedLabel(`${localizationKey}.meetingType`, 'Meeting Type *')}
-                                    onChange={(e) => setMeetingType(e.target.value)}
+                                    value={cancelReason}
+                                    label={getTranslatedLabel(`${localizationKey}.cancelReason`, 'Cancel Reason *')}
+                                    onChange={(e) => setCancelReason(e.target.value)}
                                     dir={language === "ar" ? "rtl" : "ltr"}
                                     disabled={isActionDisabled}
                                 >
-                                    {loadingMeetingTypes ? (
+                                    {loadingCancellationReasons ? (
                                         <MenuItem value=""><em>Loading...</em></MenuItem>
                                     ) : (
-                                        meetingTypes?.map((type: OpportunityMeetingType) => (
-                                            <MenuItem key={type.meetingTypeId} value={type.meetingTypeId}>
-                                                {type.description}
+                                        cancellationReasons?.map((reason) => (
+                                            <MenuItem key={reason.reasonId} value={reason.reasonId}>
+                                                {reason.description}
                                             </MenuItem>
                                         ))
                                     )}
                                 </Select>
                             </FormControl>
-                            <FormControl fullWidth sx={{ mb: 3 }}>
-                                <InputLabel>{getTranslatedLabel(`${localizationKey}.meetingLocation`, 'Meeting Location *')}</InputLabel>
-                                <Select
-                                    value={meetingLocation}
-                                    label={getTranslatedLabel(`${localizationKey}.meetingLocation`, 'Meeting Location *')}
-                                    onChange={(e) => setMeetingLocation(e.target.value)}
+                        )}
+
+                        {/* Action Date */}
+                        {hasDateField && (
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DateTimePicker
+                                    label={getTranslatedLabel(`${localizationKey}.stageDate`, 'Next Action Date')}
+                                    value={stageDate ? dayjs(stageDate) : null}
+                                    onChange={(newValue) => setStageDate(newValue ? newValue.format('YYYY-MM-DDTHH:mm') : '')}
+                                    disablePast
                                     dir={language === "ar" ? "rtl" : "ltr"}
                                     disabled={isActionDisabled}
-                                >
-                                    {loadingMeetingLocations ? (
-                                        <MenuItem value=""><em>Loading...</em></MenuItem>
-                                    ) : (
-                                        meetingLocations?.map((type: OpportunityMeetingLocation) => (
-                                            <MenuItem key={type.meetingLocationId} value={type.meetingLocationId}>
-                                                {type.description}
-                                            </MenuItem>
-                                        ))
-                                    )}
-                                </Select>
-                            </FormControl>
+                                    slotProps={{
+                                        textField: {
+                                            fullWidth: true,
+                                            sx: { mb: 3 },
+                                            required: true,
+                                        },
+                                    }}
+                                />
+                            </LocalizationProvider>
+                        )}
 
-                            {/* Comment */}
-                            <TextField
-                                fullWidth
-                                label={getTranslatedLabel(`${localizationKey}.note`, 'Note')}
-                                multiline
-                                rows={4}
-                                value={note}
-                                disabled={isActionDisabled}
-                                onChange={(e) => setNote(e.target.value)}
-                                placeholder={getTranslatedLabel(`${localizationKey}.notePlaceholder`, 'Note...')}
-                                sx={{ mb: 3 }}
-                                dir={language === "ar" ? "rtl" : "ltr"}
-                            />
-                        </>
+                        {isUnitRelated && (
+                            <>
+                                <Box sx={{ mb: 3 }}>
+                                    <FormComboBoxVirtualProject
+                                        value={selectedProject}
+                                        label={getTranslatedLabel("projects.certificate.form.project", "Project")}
+                                        dataItemKey="projectId"
+                                        textField="ProjectName"
+                                        disabled={isActionDisabled}
+                                        popupSettings={{ appendTo: document.querySelector(".MuiModal-root") as HTMLElement }}
+                                        onChange={(e: any) => {
+                                            const newProjectId = e.value?.projectId || null;
+                                            const newProjectName = e.value?.projectName || '';
+                                            const newProject = newProjectId ? { projectId: newProjectId, projectName: newProjectName } : null;
+                                            setSelectedProject(newProject);
+                                            setSelectedUnit(null); // clear unit when project changes
+                                        }}
+                                    />
+                                </Box>
 
-                    )}
+                                <Box sx={{ mb: 3 }}>
+                                    <FormSimpleComboBoxVirtualApartmentsByProject
+                                        value={selectedUnit}
+                                        label={getTranslatedLabel(`${localizationKey}.unit`, 'Unit')}
+                                        projectId={selectedProject?.projectId || undefined}
+                                        disabled={isActionDisabled}
+                                        popupSettings={{ appendTo: document.querySelector(".MuiModal-root") as HTMLElement }}
+                                        onChange={(e: any) => {
+                                            setSelectedUnit({ apartmentId: e.value?.apartmentId, apartmentName: e.value?.apartmentName });
+                                        }}
+                                    />
+                                </Box>
+                            </>
+                        )}
+
+                        {hasMeetingDropdownsAndNote && (
+                            <>
+                                <FormControl fullWidth sx={{ mb: 3 }}>
+                                    <InputLabel>{getTranslatedLabel(`${localizationKey}.meetingType`, 'Meeting Type *')}</InputLabel>
+                                    <Select
+                                        value={meetingType}
+                                        label={getTranslatedLabel(`${localizationKey}.meetingType`, 'Meeting Type *')}
+                                        onChange={(e) => setMeetingType(e.target.value)}
+                                        dir={language === "ar" ? "rtl" : "ltr"}
+                                        disabled={isActionDisabled}
+                                    >
+                                        {loadingMeetingTypes ? (
+                                            <MenuItem value=""><em>Loading...</em></MenuItem>
+                                        ) : (
+                                            meetingTypes?.map((type: OpportunityMeetingType) => (
+                                                <MenuItem key={type.meetingTypeId} value={type.meetingTypeId}>
+                                                    {type.description}
+                                                </MenuItem>
+                                            ))
+                                        )}
+                                    </Select>
+                                </FormControl>
+                                <FormControl fullWidth sx={{ mb: 3 }}>
+                                    <InputLabel>{getTranslatedLabel(`${localizationKey}.meetingLocation`, 'Meeting Location *')}</InputLabel>
+                                    <Select
+                                        value={meetingLocation}
+                                        label={getTranslatedLabel(`${localizationKey}.meetingLocation`, 'Meeting Location *')}
+                                        onChange={(e) => setMeetingLocation(e.target.value)}
+                                        dir={language === "ar" ? "rtl" : "ltr"}
+                                        disabled={isActionDisabled}
+                                    >
+                                        {loadingMeetingLocations ? (
+                                            <MenuItem value=""><em>Loading...</em></MenuItem>
+                                        ) : (
+                                            meetingLocations?.map((type: OpportunityMeetingLocation) => (
+                                                <MenuItem key={type.meetingLocationId} value={type.meetingLocationId}>
+                                                    {type.description}
+                                                </MenuItem>
+                                            ))
+                                        )}
+                                    </Select>
+                                </FormControl>
+
+                                {/* Comment */}
+                                <TextField
+                                    fullWidth
+                                    label={getTranslatedLabel(`${localizationKey}.note`, 'Note')}
+                                    multiline
+                                    rows={4}
+                                    value={note}
+                                    disabled={isActionDisabled}
+                                    onChange={(e) => setNote(e.target.value)}
+                                    placeholder={getTranslatedLabel(`${localizationKey}.notePlaceholder`, 'Note...')}
+                                    sx={{ mb: 3 }}
+                                    dir={language === "ar" ? "rtl" : "ltr"}
+                                />
+                            </>
+
+                        )}
 
 
 
-                    {/* Comment */}
-                    <TextField
-                        fullWidth
-                        label={getTranslatedLabel(`${localizationKey}.comment`, 'Comment')}
-                        multiline
-                        rows={4}
-                        disabled={isActionDisabled}
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                        placeholder={getTranslatedLabel(`${localizationKey}.commentPlaceholder`, 'Write your comment here...')}
-                        sx={{ mb: 3 }}
-                    />
+                        {/* Comment */}
+                        <TextField
+                            fullWidth
+                            label={getTranslatedLabel(`${localizationKey}.comment`, 'Comment')}
+                            multiline
+                            rows={4}
+                            disabled={isActionDisabled}
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                            placeholder={getTranslatedLabel(`${localizationKey}.commentPlaceholder`, 'Write your comment here...')}
+                            sx={{ mb: 3 }}
+                        />
 
-                    {/* Action Buttons */}
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                        <Button variant="outlined" onClick={onClose}>
-                            {getTranslatedLabel(`${localizationKey}.cancel`, 'Cancel')}
-                        </Button>
-                        <Button
-                            variant="contained"
-                            onClick={handleSaveAction}
-                            disabled={(hasDateField && !stageDate) || (hasCancelReasonField && !cancelReason) || creatingAction || isActionDisabled}
-                            loading={creatingAction}
-                        >
-                            {getTranslatedLabel(`${localizationKey}.saveAction`, 'Save Action')}
-                        </Button>
+                        {/* Action Buttons */}
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                            <Button variant="outlined" onClick={onClose}>
+                                {getTranslatedLabel(`${localizationKey}.cancel`, 'Cancel')}
+                            </Button>
+                            <Button
+                                variant="contained"
+                                onClick={handleSaveAction}
+                                disabled={(hasDateField && !stageDate) || (hasCancelReasonField && !cancelReason) || creatingAction || isActionDisabled}
+                                loading={creatingAction}
+                            >
+                                {getTranslatedLabel(`${localizationKey}.saveAction`, 'Save Action')}
+                            </Button>
+                        </Box>
                     </Box>
-                </Box>
 
-                <Divider />
+                    <Divider />
 
 
-                <Box sx={{ p: 3, pb: 1 }}>
-                    <Typography variant="subtitle2" gutterBottom sx={{ textAlign: language === 'ar' ? 'end' : 'start' }}>
-                        {getTranslatedLabel(`${localizationKey}.actionHistory`, 'Comments')}
-                    </Typography>
-                </Box>
-
-                <Box sx={{
-                    flex: 1,
-                    overflowY: 'auto',
-                    px: 3,
-                    pb: 3,
-                }}>
-                    {loadingActions ? (
-                        <Typography variant="body2" color="text.secondary" sx={{ textAlign: language === 'ar' ? 'end' : 'start' }}>
-                            {getTranslatedLabel(`${localizationKey}.loadingActions`, 'Loading actions...')}
+                    <Box sx={{ p: 3, pb: 1 }}>
+                        <Typography variant="subtitle2" gutterBottom sx={{ textAlign: language === 'ar' ? 'end' : 'start' }}>
+                            {getTranslatedLabel(`${localizationKey}.actionHistory`, 'Comments')}
                         </Typography>
-                    ) : opportunityActions.length === 0 ? (
-                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', textAlign: language === 'ar' ? 'end' : 'start' }}>
-                            {getTranslatedLabel(`${localizationKey}.noActionsYet`, 'No actions recorded yet.')}
-                        </Typography>
-                    ) : (
-                        <Stack spacing={2}>
-                            {opportunityActions.map((action: SalesOpportunityAction) => (
-                                <Card key={action.salesOpportunityActionId} variant="outlined" sx={{ p: 2.5 }} dir={language === 'ar' ? 'rtl' : 'ltr'}>
-                                    <Box sx={{ display: 'flex', justifyContent: 'flex-center', alignItems: 'flex-center', gap: 1.5, mb: 1.5 }} >
-                                        <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main' }}>
-                                            <PersonIcon fontSize="small" />
-                                        </Avatar>
-                                        <Box sx={{ flex: 1 }}>
-                                            <Typography variant="subtitle1" fontWeight="medium">
-                                                {action.actionTypeDescription || action.actionTypeId}
-                                            </Typography>
-                                            {action.meetingTypeId && (
-                                                <Typography variant="subtitle2" fontWeight="medium">
-                                                    {action.meetingTypeDescription || action.meetingTypeId}
+                    </Box>
+
+                    <Box sx={{
+                        flex: 1,
+                        overflowY: 'auto',
+                        px: 3,
+                        pb: 3,
+                    }}>
+                        {loadingActions ? (
+                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: language === 'ar' ? 'end' : 'start' }}>
+                                {getTranslatedLabel(`${localizationKey}.loadingActions`, 'Loading actions...')}
+                            </Typography>
+                        ) : opportunityActions.length === 0 ? (
+                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', textAlign: language === 'ar' ? 'end' : 'start' }}>
+                                {getTranslatedLabel(`${localizationKey}.noActionsYet`, 'No actions recorded yet.')}
+                            </Typography>
+                        ) : (
+                            <Stack spacing={2}>
+                                {opportunityActions.map((action: SalesOpportunityAction) => (
+                                    <Card key={action.salesOpportunityActionId} variant="outlined" sx={{ p: 2.5 }} dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'flex-center', alignItems: 'flex-center', gap: 1.5, mb: 1.5 }} >
+                                            <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main' }}>
+                                                <PersonIcon fontSize="small" />
+                                            </Avatar>
+                                            <Box sx={{ flex: 1 }}>
+                                                <Typography variant="subtitle1" fontWeight="medium">
+                                                    {action.actionTypeDescription || action.actionTypeId}
                                                 </Typography>
+                                                {action.meetingTypeId && (
+                                                    <Typography variant="subtitle2" fontWeight="medium">
+                                                        {action.meetingTypeDescription || action.meetingTypeId}
+                                                    </Typography>
+                                                )}
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {dayjs(action.createdStamp).format('ddd DD/MM/YYYY - hh:mm A')}
+                                                </Typography>
+                                            </Box>
+
+                                            {action.isAnswered && (
+                                                <Chip
+                                                    label={getTranslatedLabel(`${localizationKey}.answered`, 'Answered')}
+                                                    color="success"
+                                                    size="small"
+                                                />
                                             )}
-                                            <Typography variant="caption" color="text.secondary">
-                                                {dayjs(action.createdStamp).format('ddd DD/MM/YYYY - hh:mm A')}
-                                            </Typography>
                                         </Box>
 
-                                        {action.isAnswered && (
-                                            <Chip
-                                                label={getTranslatedLabel(`${localizationKey}.answered`, 'Answered')}
-                                                color="success"
-                                                size="small"
-                                            />
+                                        {/* Action Date */}
+                                        {action.actionDate && (
+                                            <Typography variant="body2" sx={{ mb: 1, mr: language === 'ar' ? 2 : 0, gap: 2 }}>
+                                                <strong>
+                                                    {getTranslatedLabel(`${localizationKey}.nextActionDate`, 'Action Date')}
+                                                </strong>{' '}
+                                                <p>{dayjs(action.actionDate).format('ddd DD/MM/YYYY - hh:mm A')}</p>
+                                            </Typography>
                                         )}
-                                    </Box>
 
-                                    {/* Action Date */}
-                                    {action.actionDate && (
-                                        <Typography variant="body2" sx={{ mb: 1, mr: language === 'ar' ? 2 : 0, gap: 2 }}>
-                                            <strong>
-                                                {getTranslatedLabel(`${localizationKey}.nextActionDate`, 'Action Date')}
-                                            </strong>{' '}
-                                            <p>{dayjs(action.actionDate).format('ddd DD/MM/YYYY - hh:mm A')}</p>
-                                        </Typography>
-                                    )}
+                                        {/* Cancel Reason */}
+                                        {action.cancelReasonDescription && (
+                                            <Typography variant="body2" color="error" sx={{ mb: 1 }}>
+                                                <strong>
+                                                    {getTranslatedLabel(`${localizationKey}.cancelReason`, 'Cancel Reason')}
+                                                </strong>{' '}
+                                                <p>{action.cancelReasonDescription}</p>
+                                            </Typography>
+                                        )}
 
-                                    {/* Cancel Reason */}
-                                    {action.cancelReasonDescription && (
-                                        <Typography variant="body2" color="error" sx={{ mb: 1 }}>
-                                            <strong>
-                                                {getTranslatedLabel(`${localizationKey}.cancelReason`, 'Cancel Reason')}
-                                            </strong>{' '}
-                                            <p>{action.cancelReasonDescription}</p>
-                                        </Typography>
-                                    )}
+                                        {/* Note */}
+                                        {action.note && (
+                                            <Typography
+                                                variant="body2"
+                                                sx={{ mt: 1, whiteSpace: 'pre-wrap', lineHeight: 1.6, mr: language === 'ar' ? 2 : 0 }}
+                                            >
+                                                <strong>
+                                                    {getTranslatedLabel(`${localizationKey}.note`, 'Note')}
+                                                </strong>{' '}
+                                                <p>{action.note}</p>
+                                            </Typography>
+                                        )}
 
-                                    {/* Note */}
-                                    {action.note && (
-                                        <Typography
-                                            variant="body2"
-                                            sx={{ mt: 1, whiteSpace: 'pre-wrap', lineHeight: 1.6, mr: language === 'ar' ? 2 : 0 }}
-                                        >
-                                            <strong>
-                                                {getTranslatedLabel(`${localizationKey}.note`, 'Note')}
-                                            </strong>{' '}
-                                            <p>{action.note}</p>
-                                        </Typography>
-                                    )}
+                                        {/* Comment */}
+                                        {action.comment && (
+                                            <Typography
+                                                variant="body2"
+                                                sx={{ mt: 1, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}
+                                            >
+                                                <strong>
+                                                    {getTranslatedLabel(`${localizationKey}.comment`, 'Comment')}:
+                                                </strong>{' '}
+                                                {action.comment}
+                                            </Typography>
+                                        )}
 
-                                    {/* Comment */}
-                                    {action.comment && (
-                                        <Typography
-                                            variant="body2"
-                                            sx={{ mt: 1, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}
-                                        >
-                                            <strong>
-                                                {getTranslatedLabel(`${localizationKey}.comment`, 'Comment')}:
-                                            </strong>{' '}
-                                            {action.comment}
-                                        </Typography>
-                                    )}
+                                        {!action.comment && !action.actionDate && !action.cancelReasonDescription && !action.note && (
+                                            <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                                                {getTranslatedLabel(`${localizationKey}.noDetails`, 'No additional details')}
+                                            </Typography>
+                                        )}
+                                    </Card>
+                                ))}
+                            </Stack>
+                        )}
+                    </Box>
+                </TabPanel>
 
-                                    {!action.comment && !action.actionDate && !action.cancelReasonDescription && !action.note && (
-                                        <Typography variant="body2" color="text.secondary" fontStyle="italic">
-                                            {getTranslatedLabel(`${localizationKey}.noDetails`, 'No additional details')}
-                                        </Typography>
-                                    )}
-                                </Card>
-                            ))}
-                        </Stack>
-                    )}
-                </Box>
+                {/* ===== History Tab ===== */}
+                <TabPanel value={activeTab} index={1}>
+                    <Box sx={{ p: 3 }}>
+                        {loadingHistory ? (
+                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: language === 'ar' ? 'end' : 'start' }}>
+                                {getTranslatedLabel(`${localizationKey}.loadingHistory`, 'Loading history...')}
+                            </Typography>
+                        ) : opportunityHistory.length === 0 ? (
+                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', textAlign: language === 'ar' ? 'end' : 'start' }}>
+                                {getTranslatedLabel(`${localizationKey}.noHistoryYet`, 'No history recorded yet.')}
+                            </Typography>
+                        ) : (
+                            <Stack spacing={2}>
+                                {opportunityHistory.map((entry) => (
+                                    <Card key={entry.salesOpportunityHistoryId} variant="outlined" sx={{ p: 2.5 }} dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+                                            <Box>
+                                                <Typography variant="subtitle1" fontWeight="medium">
+                                                    {entry.opportunityStageDescription || entry.opportunityStageId || getTranslatedLabel(`${localizationKey}.stageChange`, 'Stage Update')}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {dayjs(entry.createdStamp).format('ddd DD/MM/YYYY - hh:mm A')}
+                                                    {!!entry.modifiedByDisplayName && ` · ${entry.modifiedByDisplayName}`}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+
+                                        {entry.changeNote && (
+                                            <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                                                <strong>{getTranslatedLabel(`${localizationKey}.changeNote`, 'Change Note')}:</strong> {entry.changeNote}
+                                            </Typography>
+                                        )}
+
+                                        {entry.description && (
+                                            <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                                                {entry.description}
+                                            </Typography>
+                                        )}
+                                    </Card>
+                                ))}
+                            </Stack>
+                        )}
+                    </Box>
+                </TabPanel>
             </Box>
 
         </Modal>

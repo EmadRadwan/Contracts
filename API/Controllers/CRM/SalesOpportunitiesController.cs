@@ -44,7 +44,7 @@ public class SalesOpportunitiesController : BaseApiController
     [HttpGet("stages")]
     public async Task<IActionResult> GetStages()
     {
-        return HandleResult(await Mediator.Send(new ListOpportunityStages.Query{Language = GetLanguage()}));
+        return HandleResult(await Mediator.Send(new ListOpportunityStages.Query { Language = GetLanguage() }));
     }
 
     [HttpGet("actions")]
@@ -93,7 +93,7 @@ public class SalesOpportunitiesController : BaseApiController
     [HttpPost("{id}/actions")]
     public async Task<IActionResult> AddAction(string id, [FromBody] SalesOpportunityActionDto action)
     {
-        
+
         return HandleResult(await Mediator.Send(new CreateSalesOpportunityAction.Command
         {
             Action = action
@@ -106,7 +106,7 @@ public class SalesOpportunitiesController : BaseApiController
     [HttpGet("{id}/actions")]
     public async Task<IActionResult> ListSalesOpportinutyAction(string id)
     {
-        
+
         return HandleResult(await Mediator.Send(new ListSalesOpportunityActions.Query
         {
             SalesOpportunityId = id,
@@ -142,6 +142,19 @@ public class SalesOpportunitiesController : BaseApiController
         return HandleResult(await Mediator.Send(new UpdateSalesOpportunity.Command
         {
             Opportunity = opportunity
+        }));
+    }
+
+    /// <summary>
+    /// Get all history entries for a sales opportunity.
+    /// </summary>
+    [HttpGet("{id}/history")]
+    public async Task<IActionResult> ListSalesOpportunityHistory(string id)
+    {
+        return HandleResult(await Mediator.Send(new ListSalesOpportunityHistory.Query
+        {
+            SalesOpportunityId = id,
+            Language = GetLanguage()
         }));
     }
 }
