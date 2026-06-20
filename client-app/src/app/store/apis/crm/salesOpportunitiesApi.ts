@@ -9,7 +9,8 @@ import {
     OpportunityCancellationReason,
     SalesOpportunityAction,
     OpportunityMeetingType,
-    OpportunityMeetingLocation
+    OpportunityMeetingLocation,
+    SalesOpportunityHistory
 } from "../../../../features/CRM/models/salesOpportunity";
 
 /**
@@ -121,6 +122,14 @@ const salesOpportunitiesApi = createApi({
                 providesTags: [{ type: "OpportunityActions", id: "ACTION_LIST" }]
             }),
 
+            fetchOpportunityHistory: builder.query<SalesOpportunityHistory[], string>({
+                query: (id) => ({
+                    url: `/salesOpportunities/${id}/history`,
+                    method: "GET",
+                }),
+                providesTags: [{ type: "OpportunityHistory", id: "HISTORY_LIST" }]
+            }),
+
             // Update an existing opportunity
             updateOpportunity: builder.mutation<SalesOpportunity, { id: string; opportunity: SalesOpportunity }>({
                 query: ({ id, opportunity }) => ({
@@ -144,6 +153,7 @@ const salesOpportunitiesApi = createApi({
                 invalidatesTags: (result, error, { id }) => [
                     { type: "SalesOpportunity", id },
                     { type: "SalesOpportunity", id: "LIST" },
+                    { type: "OpportunityHistory", id: "HISTORY_LIST" },
                 ],
             }),
 
@@ -174,6 +184,7 @@ export const {
     useCreateOpportunityMutation,
     useCreateOpportunityActionMutation,
     useFetchOpportunityActionsQuery,
+    useFetchOpportunityHistoryQuery,
     useUpdateOpportunityMutation,
     useUpdateOpportunityStageMutation,
     useFetchMeetingTypesQuery,

@@ -157,3 +157,23 @@ export interface UpdateStageRequest {
     stageId: string;
     opportunityName: string;
 }
+
+export interface SalesOpportunityHistory {
+  salesOpportunityHistoryId: string;
+  salesOpportunityId?: string | null;
+  description?: string | null;
+  nextStep?: string | null;
+  estimatedAmount?: number | null;
+  estimatedProbability?: number | null;
+  currencyUomId?: string | null;
+  estimatedCloseDate?: string | null; // DateTime -> ISO string
+  opportunityStageId?: string | null;
+  opportunityStageDescription?: string | null;
+  changeNote?: string | null;
+  modifiedByUserLogin?: string | null;
+  modifiedTimestamp?: string | null; // DateTime -> ISO string
+  createdStamp?: string | null;
+  lastUpdatedStamp?: string | null;
+  createdTxStamp?: string | null;
+  lastUpdatedTxStamp?: string | null;
+}

@@ -68,8 +68,10 @@ public class UpdateSalesOpportunity
                 var stageChanged = opportunity.OpportunityStageId != dto.OpportunityStageId;
 
                 // Only update these fields if they are explicitly provided
-                opportunity.WorkEffortId = dto.WorkEffortId;
-                opportunity.ProductId = dto.ProductId;
+                if (dto.WorkEffortId != null)
+                    opportunity.WorkEffortId = dto.WorkEffortId;
+                if (dto.ProductId != null)
+                    opportunity.ProductId = dto.ProductId;
 
                 opportunity.LastUpdatedStamp = stamp;
 
@@ -83,6 +85,28 @@ public class UpdateSalesOpportunity
                         return Result<SalesOpportunityDto>.Failure($"Stage '{dto.OpportunityStageId}' not found");
 
                     opportunity.OpportunityStageId = dto.OpportunityStageId;
+
+                    var historyId = await _utilityService.GetNextSequence("SalesOpportunityHistory");
+                    var changeNote = stageChanged
+                        ? $"Stage changed to {newStage.Description}"
+                        : "Opportunity updated";
+
+                    _context.SalesOpportunityHistories.Add(new SalesOpportunityHistory
+                    {
+                        SalesOpportunityHistoryId = historyId,
+                        SalesOpportunityId = opportunity.SalesOpportunityId,
+                        Description = opportunity.Description,
+                        EstimatedAmount = opportunity.EstimatedAmount,
+                        EstimatedProbability = opportunity.EstimatedProbability,
+                        CurrencyUomId = opportunity.CurrencyUomId,
+                        OpportunityStageId = opportunity.OpportunityStageId,
+                        EstimatedCloseDate = opportunity.EstimatedCloseDate,
+                        ChangeNote = changeNote,
+                        ModifiedByUserLogin = userLogin?.UserLoginId,
+                        ModifiedTimestamp = stamp,
+                        CreatedStamp = stamp,
+                        LastUpdatedStamp = stamp
+                    });
 
                     // Update probability from stage default if not explicitly set
                     if (!dto.EstimatedProbability.HasValue && newStage.DefaultProbability.HasValue)
@@ -175,32 +199,6 @@ public class UpdateSalesOpportunity
                             LastUpdatedStamp = stamp
                         });
                     }
-                }
-
-                // Create history entry if significant changes
-                if (stageChanged)
-                {
-                    var historyId = await _utilityService.GetNextSequence("SalesOpportunityHistory");
-                    var changeNote = stageChanged
-                        ? $"Stage changed to {dto.OpportunityStageId}"
-                        : "Opportunity updated";
-
-                    _context.SalesOpportunityHistories.Add(new SalesOpportunityHistory
-                    {
-                        SalesOpportunityHistoryId = historyId,
-                        SalesOpportunityId = opportunity.SalesOpportunityId,
-                        Description = opportunity.Description,
-                        EstimatedAmount = opportunity.EstimatedAmount,
-                        EstimatedProbability = opportunity.EstimatedProbability,
-                        CurrencyUomId = opportunity.CurrencyUomId,
-                        OpportunityStageId = opportunity.OpportunityStageId,
-                        EstimatedCloseDate = opportunity.EstimatedCloseDate,
-                        ChangeNote = changeNote,
-                        ModifiedByUserLogin = userLogin?.UserLoginId,
-                        ModifiedTimestamp = stamp,
-                        CreatedStamp = stamp,
-                        LastUpdatedStamp = stamp
-                    });
                 }
 
                 var saved = await _context.SaveChangesAsync(ct) > 0;
