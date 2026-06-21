@@ -499,7 +499,8 @@
         "deleteSuccess": "تم حذف الطرف بنجاح",
         "deleteFailed": "فشل في حذف الطرف",
         "deleteDialogTitle": "تأكيد الحذف",
-        "deleteDialogMessage": "هل أنت متأكد من رغبتك في حذف الطرف {0}؟ لا يمكن التراجع عن هذا الإجراء."
+        "deleteDialogMessage": "هل أنت متأكد من رغبتك في حذف الطرف {0}؟ لا يمكن التراجع عن هذا الإجراء.",
+        "filterByRole": "تصفية حسب الدور"
       },
       "report": {
         "exportExcel": "تصدير الأطراف إلى إكسل",

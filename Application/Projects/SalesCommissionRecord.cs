@@ -14,8 +14,6 @@ public class SalesCommissionRecord
     public string? ProjectId { get; set; }
     public string? ProjectName { get; set; }
     public string? ApartmentName { get; set; }
-    public decimal SalePrice { get; set; }
-    public decimal? CollectedAmount { get; set; }
 
     // Internal parties - names for display
     public string? SalesRepPartyId { get; set; }

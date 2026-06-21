@@ -6,6 +6,7 @@ import {
     GridDataStateChangeEvent,
     GridToolbar,
 } from "@progress/kendo-react-grid";
+import {ComboBox, ComboBoxFilterChangeEvent} from "@progress/kendo-react-dropdowns";
 
 import {useTableKeyboardNavigation} from "@progress/kendo-react-data-tools";
 import {
@@ -27,7 +28,7 @@ import CreateSalesRepForm from "../form/CreateSalesRepForm";
 import CreateBrokerForm from "../form/CreateBrokerForm";
 import Button from "@mui/material/Button";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
-import {useFetchPartiesQuery, useUpdatePartyMainRoleMutation} from "../../../app/store/apis";
+import {useFetchPartiesQuery, useUpdatePartyMainRoleMutation, useFetchRolesTypesQuery} from "../../../app/store/apis";
 import {Party} from "../../../app/models/party/party";
 import {State} from "@progress/kendo-data-query";
 import {useTranslationHelper} from "../../../app/hooks/useTranslationHelper";
@@ -56,7 +57,14 @@ export default function PartiesList() {
 
     const [party, setParty] = useState<Party | undefined>(undefined);
 
-    const {data: parties, error, isFetching, isLoading} = useFetchPartiesQuery({...dataState});
+    const [roleFilterSearchTerm, setRoleFilterSearchTerm] = useState("");
+    const [selectedRoleFilter, setSelectedRoleFilter] = useState<{ roleTypeId: string; roleName: string } | null>(null);
+    const {data: roleFilterOptions} = useFetchRolesTypesQuery({searchTerm: roleFilterSearchTerm});
+
+    const {data: parties, error, isFetching, isLoading} = useFetchPartiesQuery({
+        state: dataState,
+        roleTypeId: selectedRoleFilter?.roleTypeId,
+    });
     const [roleDialogOpen, setRoleDialogOpen] = useState(false);
     const [manageRolesOpen, setManageRolesOpen] = useState(false);
     const [selectedPartyId, setSelectedPartyId] = useState<string | null>(null);
@@ -292,6 +300,37 @@ export default function PartiesList() {
 
                                             <Grid item xs={2}>
                                                 <PartiesExcel getTranslatedLabel={getTranslatedLabel} />
+                                            </Grid>
+
+                                            <Grid item xs={4} sx={{display: 'flex', alignItems: 'center', gap: 1, mt: 1.5}}>
+                                                <ComboBox
+                                                    data={roleFilterOptions || []}
+                                                    value={selectedRoleFilter}
+                                                    textField="roleName"
+                                                    dataItemKey="roleTypeId"
+                                                    placeholder={getTranslatedLabel("party.parties.list.filterByRole", "تصفية حسب الدور")}
+                                                    filterable
+                                                    onChange={(e) => {
+                                                        setSelectedRoleFilter(e.value);
+                                                        setDataState(prev => ({...prev, skip: 0}));
+                                                    }}
+                                                    onFilterChange={(e: ComboBoxFilterChangeEvent) =>
+                                                        setRoleFilterSearchTerm(e.filter.value || "")
+                                                    }
+                                                    style={{width: 320}}
+                                                />
+                                                {selectedRoleFilter && (
+                                                    <Button
+                                                        size="small"
+                                                        onClick={() => {
+                                                            setSelectedRoleFilter(null);
+                                                            setRoleFilterSearchTerm("");
+                                                            setDataState(prev => ({...prev, skip: 0}));
+                                                        }}
+                                                    >
+                                                        {getTranslatedLabel("common.clearFilter", "Clear")}
+                                                    </Button>
+                                                )}
                                             </Grid>
 
                                         </Grid>

@@ -7,10 +7,10 @@ namespace API.Controllers.Project;
 public class SalesCommissionController : BaseApiController
 {
     [HttpGet("defaults/{salesRequestId}")]
-    public async Task<IActionResult> GetDefaults(string salesRequestId)
+    public async Task<IActionResult> GetDefaults(string salesRequestId, [FromQuery] string? saleTypeId)
     {
         return HandleResult(await Mediator.Send(
-            new GetSalesCommissionDefaults.Query { SalesRequestId = salesRequestId }));
+            new GetSalesCommissionDefaults.Query { SalesRequestId = salesRequestId, SaleTypeId = saleTypeId }));
     }
 
     [HttpGet("bySalesRequest/{salesRequestId}")]
@@ -24,6 +24,13 @@ public class SalesCommissionController : BaseApiController
     public async Task<IActionResult> Create([FromBody] SalesCommissionDto dto)
     {
         return HandleResult(await Mediator.Send(new CreateSalesCommission.Command { Dto = dto }));
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(string id, [FromBody] SalesCommissionDto dto)
+    {
+        dto.SalesCommissionId = id;
+        return HandleResult(await Mediator.Send(new UpdateSalesCommission.Command { Dto = dto }));
     }
 
     [HttpPost("approve/{id}")]

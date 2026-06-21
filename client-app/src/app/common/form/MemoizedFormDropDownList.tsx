@@ -23,14 +23,19 @@ export const FormDropDownList = (fieldRenderProps: FieldRenderProps) => {
         name,
         onChange,
         isModal,
+        onAfterChange,
         ...others
     } = fieldRenderProps;
     const editorRef = React.useRef(null);
     const [focused, setFocused] = React.useState(false);
 
     const onChangeHandler = React.useCallback(
-        (event) => onChange({value: event.value && event.value[name]}),
-        [onChange, name]
+        (event) => {
+            const val = event.value && event.value[name];
+            onChange({ value: val });
+            onAfterChange?.(val);
+        },
+        [onChange, name, onAfterChange]
     );
 
     const showValidationMessage = !focused && touched && validationMessage;

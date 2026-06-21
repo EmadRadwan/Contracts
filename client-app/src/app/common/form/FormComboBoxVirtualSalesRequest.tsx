@@ -90,6 +90,7 @@ export const FormComboBoxVirtualSalesRequest = (fieldRenderProps: FieldRenderPro
         wrapperStyle,
         value,
         onChange,
+        onSalesRequestIdChange,
     } = fieldRenderProps;
 
     const editorRef = React.useRef(null);
@@ -183,7 +184,8 @@ export const FormComboBoxVirtualSalesRequest = (fieldRenderProps: FieldRenderPro
 
     const onChangeHandler = React.useCallback((event: any) => {
         onChange({ value: event.value ?? null });
-    }, [onChange]);
+        onSalesRequestIdChange?.(event.value?.salesRequestId ?? null);
+    }, [onChange, onSalesRequestIdChange]);
 
     return (
         <FieldWrapper style={wrapperStyle}>

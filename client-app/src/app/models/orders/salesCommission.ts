@@ -63,15 +63,21 @@ export interface SalesCommission {
     lastUpdatedStamp?: string;
 }
 
-export interface CommissionDefaults {
-    projectId?: string;
-    saleTypeId?: string;
-    salePrice: number;
+export interface CommissionRateDefaults {
     salesRepPercent: number;
     managerPercent: number;
     externalCompanyPercent?: number | null;
     externalSalesRepPercent?: number | null;
     externalManagerPercent?: number | null;
+}
+
+export interface CommissionDefaults {
+    projectId?: string;
+    salePrice: number;
+    collectedAmount: number;
+    collectedRatio: number;
+    // Key = saleTypeId (COMM_SALE_DIRECT | COMM_SALE_PERSONAL | COMM_SALE_INDIRECT)
+    rates: Record<string, CommissionRateDefaults>;
 }
 
 export interface ApprovedSalesRequestLovItem {

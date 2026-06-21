@@ -11,6 +11,7 @@ public class ListParties
     public class Query : IRequest<IQueryable<PartyRecord>>
     {
         public ODataQueryOptions<PartyRecord> Options { get; set; }
+        public string? RoleTypeId { get; set; }
     }
 
     public class Handler : IRequestHandler<Query, IQueryable<PartyRecord>>
@@ -31,10 +32,10 @@ public class ListParties
             var query =
                 from prty in _context.Parties
 
-                // --------------------------------------
-                // NEW FILTER: Only these MainRoles
-                // --------------------------------------
                 where allowedRoles.Contains(prty.MainRole)
+
+                where request.RoleTypeId == null ||
+                      _context.PartyRoles.Any(pr => pr.PartyId == prty.PartyId && pr.RoleTypeId == request.RoleTypeId)
 
                 join pt in _context.PartyTypes
                     on prty.PartyTypeId equals pt.PartyTypeId

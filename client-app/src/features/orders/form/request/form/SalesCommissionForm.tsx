@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+    Alert,
+    Box,
     Button,
     Checkbox,
     FormControlLabel,
@@ -18,9 +20,10 @@ import { FormComboBoxVirtualSalesRequest } from "../../../../../app/common/form/
 import { requiredValidator } from "../../../../../app/common/form/Validators";
 import { toast } from "react-toastify";
 import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHelper";
-import { SalesCommission } from "../../../../../app/models/orders/salesCommission";
+import { SalesCommission, CommissionRateDefaults } from "../../../../../app/models/orders/salesCommission";
 import {
     useCreateSalesCommissionMutation,
+    useUpdateSalesCommissionMutation,
     useApproveSalesCommissionMutation,
     useGetSalesCommissionDefaultsQuery,
     useGetSalesCommissionBySalesRequestQuery,
@@ -31,6 +34,13 @@ import { FormComboBoxVirtualPartyBroker } from "../../../../../app/common/form/F
 import QuickCreatePartyDialog, { PartyRole } from "../../../../../app/common/form/QuickCreatePartyDialog";
 import SalesRequestMenu from "../menu/SalesRequestMenu";
 import LoadingComponent from "../../../../../app/layout/LoadingComponent";
+
+function getThresholdStatus(ratio: number, saleTypeId: string | null) {
+    const lower = saleTypeId === "COMM_SALE_INDIRECT" ? 0.075 : 0.05;
+    if (ratio < lower) return { status: "blocked" as const, factor: 0, lower };
+    if (ratio < 0.10) return { status: "partial" as const, factor: 0.5, lower };
+    return { status: "full" as const, factor: 1, lower };
+}
 
 const saleTypeOptions = [
     { saleTypeId: "COMM_SALE_DIRECT", description: "بيع مباشر" },
@@ -53,6 +63,7 @@ interface QuickCreateState {
 
 export default function SalesCommissionForm({ commission, salesRequestId, editMode, cancelEdit }: Props) {
     const [createCommission] = useCreateSalesCommissionMutation();
+    const [updateCommission] = useUpdateSalesCommissionMutation();
     const [approveCommission, { isLoading: isApproving }] = useApproveSalesCommissionMutation();
     const [buttonFlag, setButtonFlag] = useState(false);
     const [hasTwoSalesReps, setHasTwoSalesReps] = useState(false);
@@ -61,14 +72,23 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
     const [hasWithholdingTaxExemption, setHasWithholdingTaxExemption] = useState(false);
     const [quickCreate, setQuickCreate] = useState<QuickCreateState>({ open: false, role: "SALES_REP", fieldName: "" });
     const [formApi, setFormApi] = useState<any>(null);
+    const [selectedSrId, setSelectedSrId] = useState<string | null>(null);
+    const [selectedSaleTypeId, setSelectedSaleTypeId] = useState<string | null>(null);
 
     const { getTranslatedLabel } = useTranslationHelper();
 
     const resolvedSalesRequestId = editMode === 2 ? commission?.salesRequestId : salesRequestId;
 
-    const { data: defaults } = useGetSalesCommissionDefaultsQuery(resolvedSalesRequestId!, {
-        skip: !resolvedSalesRequestId || editMode === 2,
-    });
+    // Effective SR ID: pre-set prop takes priority, then user's combobox selection
+    const effectiveSrId = resolvedSalesRequestId ?? selectedSrId ?? undefined;
+
+    // In edit mode use the commission's saved saleTypeId until the user changes the dropdown
+    const effectiveSaleTypeId = selectedSaleTypeId ?? commission?.saleTypeId ?? null;
+
+    const { data: defaults } = useGetSalesCommissionDefaultsQuery(
+        { salesRequestId: effectiveSrId!, saleTypeId: effectiveSaleTypeId },
+        { skip: !effectiveSrId }
+    );
 
     const { data: existingCommission } = useGetSalesCommissionBySalesRequestQuery(resolvedSalesRequestId!, {
         skip: !resolvedSalesRequestId || editMode === 2,
@@ -91,6 +111,31 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
         }
     }, [activeCommission]);
 
+    // Auto-populate percent fields when the user explicitly picks an SR or changes the sale type
+    useEffect(() => {
+        if (!formApi || !defaults || !defaults.rates || selectedSaleTypeId === null) return;
+        const rate = defaults.rates[selectedSaleTypeId];
+        if (!rate) return;
+
+        const repPercent = hasTwoSalesReps
+            ? Math.round(rate.salesRepPercent / 2 * 10000) / 10000
+            : rate.salesRepPercent;
+        const mgrPercent = hasTwoManagers
+            ? Math.round(rate.managerPercent / 2 * 10000) / 10000
+            : rate.managerPercent;
+
+        formApi.onChange("salesRepPercent", { value: repPercent });
+        if (hasTwoSalesReps) formApi.onChange("salesRep2Percent", { value: repPercent });
+        formApi.onChange("managerPercent", { value: mgrPercent });
+        if (hasTwoManagers) formApi.onChange("manager2Percent", { value: mgrPercent });
+        if (rate.externalCompanyPercent != null)
+            formApi.onChange("externalCompanyPercent", { value: rate.externalCompanyPercent });
+        if (rate.externalSalesRepPercent != null)
+            formApi.onChange("externalSalesRepPercent", { value: rate.externalSalesRepPercent });
+        if (rate.externalManagerPercent != null)
+            formApi.onChange("externalManagerPercent", { value: rate.externalManagerPercent });
+    }, [defaults, selectedSaleTypeId, formApi, hasTwoSalesReps, hasTwoManagers]);
+
     const initialValues = useMemo(() => {
         const srId = resolvedSalesRequestId;
         const srIdItem = srId ? { salesRequestId: srId, label: srId } : null;
@@ -98,8 +143,6 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
             return {
                 salesRequestId: srIdItem,
                 saleTypeId: activeCommission.saleTypeId,
-                salePrice: activeCommission.salePrice,
-                collectedAmount: activeCommission.collectedAmount ?? null,
                 salesRepParty: activeCommission.salesRepPartyId
                     ? { fromPartyId: activeCommission.salesRepPartyId, fromPartyName: activeCommission.salesRepName ?? "" }
                     : null,
@@ -135,23 +178,21 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
         }
         return {
             salesRequestId: srIdItem,
-            saleTypeId: defaults?.saleTypeId ?? null,
-            salePrice: defaults?.salePrice ?? 0,
-            collectedAmount: null,
+            saleTypeId: null,
             salesRepParty: null,
-            salesRepPercent: defaults?.salesRepPercent ?? 0,
+            salesRepPercent: 0,
             salesRep2Party: null,
             salesRep2Percent: null,
             managerParty: null,
-            managerPercent: defaults?.managerPercent ?? 0,
+            managerPercent: 0,
             manager2Party: null,
             manager2Percent: null,
             externalCompanyParty: null,
-            externalCompanyPercent: defaults?.externalCompanyPercent ?? null,
+            externalCompanyPercent: null,
             externalSalesRepParty: null,
-            externalSalesRepPercent: defaults?.externalSalesRepPercent ?? null,
+            externalSalesRepPercent: null,
             externalManagerParty: null,
-            externalManagerPercent: defaults?.externalManagerPercent ?? null,
+            externalManagerPercent: null,
             vatPercent: 14,
             withholdingTaxPercent: 5,
             notes: "",
@@ -166,8 +207,6 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
         const payload: Partial<SalesCommission> = {
             salesRequestId: srId,
             saleTypeId: data.saleTypeId,
-            salePrice: data.salePrice ?? 0,
-            collectedAmount: data.collectedAmount ?? null,
             salesRepPartyId: data.salesRepParty?.fromPartyId ?? null,
             salesRepPercent: data.salesRepPercent ?? 0,
             managerPartyId: data.managerParty?.fromPartyId ?? null,
@@ -190,8 +229,13 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
         };
 
         try {
-            await createCommission(payload).unwrap();
-            toast.success(getTranslatedLabel("salesCommission.form.createSuccess", "تم إنشاء العمولة بنجاح"));
+            if (activeCommission?.salesCommissionId) {
+                await updateCommission({ id: activeCommission.salesCommissionId, dto: payload }).unwrap();
+                toast.success(getTranslatedLabel("salesCommission.form.updateSuccess", "تم تحديث العمولة بنجاح"));
+            } else {
+                await createCommission(payload).unwrap();
+                toast.success(getTranslatedLabel("salesCommission.form.createSuccess", "تم إنشاء العمولة بنجاح"));
+            }
             cancelEdit();
         } catch {
             toast.error(getTranslatedLabel("salesCommission.form.error", "فشل في حفظ العمولة"));
@@ -246,7 +290,30 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                     onSubmit={handleSubmitData}
                     render={(formRenderProps) => {
                         if (!formApi) setFormApi(formRenderProps);
-                        const isIndirect = formRenderProps.valueGetter("saleTypeId") === "COMM_SALE_INDIRECT";
+                        const currentSaleTypeId: string | null = formRenderProps.valueGetter("saleTypeId") ?? activeCommission?.saleTypeId ?? null;
+                        const isIndirect = currentSaleTypeId === "COMM_SALE_INDIRECT";
+                        const threshold = getThresholdStatus(defaults?.collectedRatio ?? 0, currentSaleTypeId);
+                        const activeRate: CommissionRateDefaults | null = currentSaleTypeId ? (defaults?.rates?.[currentSaleTypeId] ?? null) : null;
+                        const salePrice = defaults?.salePrice ?? activeCommission?.salePrice ?? 0;
+                        const factor = threshold.status === "full" ? 1 : threshold.status === "partial" ? 0.5 : 0;
+
+                        const maxRepPct = activeRate
+                            ? (hasTwoSalesReps ? activeRate.salesRepPercent / 2 : activeRate.salesRepPercent)
+                            : undefined;
+                        const maxMgrPct = activeRate
+                            ? (hasTwoManagers ? activeRate.managerPercent / 2 : activeRate.managerPercent)
+                            : undefined;
+                        const maxExtPct = activeRate?.externalCompanyPercent ?? undefined;
+
+                        const repValidator = maxRepPct !== undefined
+                            ? (v: any) => (v ?? 0) > maxRepPct ? `الحد الأقصى ${maxRepPct.toFixed(4)}%` : undefined
+                            : undefined;
+                        const mgrValidator = maxMgrPct !== undefined
+                            ? (v: any) => (v ?? 0) > maxMgrPct ? `الحد الأقصى ${maxMgrPct.toFixed(4)}%` : undefined
+                            : undefined;
+                        const extValidator = maxExtPct !== undefined
+                            ? (v: any) => (v ?? 0) > maxExtPct ? `الحد الأقصى ${maxExtPct.toFixed(4)}%` : undefined
+                            : undefined;
 
                         return (
                             <FormElement>
@@ -261,6 +328,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                 component={FormComboBoxVirtualSalesRequest}
                                                 validator={requiredValidator}
                                                 disabled={!!resolvedSalesRequestId || isApproved}
+                                                onSalesRequestIdChange={setSelectedSrId}
                                             />
                                         </Grid>
                                         <Grid item xs={6} md={3}>
@@ -274,34 +342,110 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                 data={saleTypeOptions}
                                                 validator={requiredValidator}
                                                 disabled={isApproved}
+                                                onAfterChange={setSelectedSaleTypeId}
                                             />
                                         </Grid>
                                     </Grid>
 
-                                    {/* Sale Price */}
-                                    <Grid container spacing={2} sx={{ mb: 2 }}>
-                                        <Grid item xs={6} md={3}>
-                                            <Field
-                                                id="salePrice"
-                                                name="salePrice"
-                                                label={getTranslatedLabel("salesCommission.form.salePrice", "سعر البيع")}
-                                                component={FormNumericTextBox}
-                                                format="n2"
-                                                validator={requiredValidator}
-                                                disabled={isApproved}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={6} md={3}>
-                                            <Field
-                                                id="collectedAmount"
-                                                name="collectedAmount"
-                                                label={getTranslatedLabel("salesCommission.form.collectedAmount", "المبلغ المحصل")}
-                                                component={FormNumericTextBox}
-                                                format="n2"
-                                                disabled={isApproved}
-                                            />
-                                        </Grid>
-                                    </Grid>
+                                    {/* Sale Price / Collected Amount — read-only, derived from SR and payments */}
+                                    {(defaults || activeCommission) && (() => {
+                                        const salePrice = defaults?.salePrice ?? activeCommission?.salePrice ?? 0;
+                                        const collected = defaults?.collectedAmount ?? activeCommission?.collectedAmount ?? 0;
+                                        const ratio = salePrice > 0 ? collected / salePrice : 0;
+                                        const ratioColor = ratio >= 0.10 ? "green" : ratio >= 0.05 ? "orange" : "red";
+                                        return (
+                                            <Grid container spacing={2} sx={{ mb: 2, p: 1, background: "#f9f9f9", borderRadius: 1 }}>
+                                                <Grid item xs={6} md={3}>
+                                                    <Typography variant="caption" color="text.secondary" display="block">
+                                                        {getTranslatedLabel("salesCommission.form.salePrice", "سعر البيع")}
+                                                    </Typography>
+                                                    <Typography variant="body1" fontWeight="bold">
+                                                        {salePrice.toLocaleString("ar-SA", { minimumFractionDigits: 2 })}
+                                                    </Typography>
+                                                </Grid>
+                                                <Grid item xs={6} md={3}>
+                                                    <Typography variant="caption" color="text.secondary" display="block">
+                                                        {getTranslatedLabel("salesCommission.form.collectedAmount", "المبلغ المحصل")}
+                                                    </Typography>
+                                                    <Typography variant="body1" fontWeight="bold">
+                                                        {collected.toLocaleString("ar-SA", { minimumFractionDigits: 2 })}
+                                                    </Typography>
+                                                </Grid>
+                                                <Grid item xs={6} md={2}>
+                                                    <Typography variant="caption" color="text.secondary" display="block">
+                                                        {getTranslatedLabel("salesCommission.form.collectedRatio", "نسبة التحصيل")}
+                                                    </Typography>
+                                                    <Typography variant="body1" fontWeight="bold" color={ratioColor}>
+                                                        {(ratio * 100).toLocaleString("ar-SA", { minimumFractionDigits: 2 })}%
+                                                    </Typography>
+                                                </Grid>
+                                            </Grid>
+                                        );
+                                    })()}
+
+                                    {/* Configured project commission rates — shown as info Alert once SR + sale type are chosen */}
+                                    {effectiveSrId && defaults && currentSaleTypeId && !activeRate && (
+                                        <Alert severity="error" sx={{ mb: 2 }}>
+                                            {getTranslatedLabel(
+                                                "salesCommission.form.noRateConfigured",
+                                                "لا توجد أسعار عمولة مُعدَّة للمشروع لنوع البيع المحدد — لا يمكن إنشاء العمولة"
+                                            )}
+                                        </Alert>
+                                    )}
+
+                                    {activeRate && (
+                                        <Alert severity="info" sx={{ mb: 2, py: 0.5 }}>
+                                            <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px 24px" }}>
+                                                <Typography variant="caption" fontWeight="bold" sx={{ whiteSpace: "nowrap" }}>
+                                                    {getTranslatedLabel("salesCommission.form.configuredRates", "الحدود المقررة للمشروع:")}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ whiteSpace: "nowrap" }}>
+                                                    {`المندوب: ${activeRate.salesRepPercent}%`}
+                                                    {hasTwoSalesReps && ` (${(activeRate.salesRepPercent / 2).toFixed(4)}% × 2)`}
+                                                    {` ← ${(salePrice * activeRate.salesRepPercent / 100 * factor).toLocaleString("ar-SA", { maximumFractionDigits: 2 })}`}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ whiteSpace: "nowrap" }}>
+                                                    {`المدير: ${activeRate.managerPercent}%`}
+                                                    {hasTwoManagers && ` (${(activeRate.managerPercent / 2).toFixed(4)}% × 2)`}
+                                                    {` ← ${(salePrice * activeRate.managerPercent / 100 * factor).toLocaleString("ar-SA", { maximumFractionDigits: 2 })}`}
+                                                </Typography>
+                                                {isIndirect && activeRate.externalCompanyPercent != null && (
+                                                    <Typography variant="caption" sx={{ whiteSpace: "nowrap" }}>
+                                                        {`الوسيط: ${activeRate.externalCompanyPercent}%`}
+                                                        {` ← ${(salePrice * activeRate.externalCompanyPercent / 100 * factor).toLocaleString("ar-SA", { maximumFractionDigits: 2 })}`}
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        </Alert>
+                                    )}
+
+                                    {/* Threshold status alert — shown once an SR is chosen */}
+                                    {effectiveSrId && defaults && (
+                                        <Alert
+                                            severity={
+                                                threshold.status === "blocked" ? "error"
+                                                : threshold.status === "partial" ? "warning"
+                                                : "success"
+                                            }
+                                            sx={{ mb: 2 }}
+                                        >
+                                            {threshold.status === "blocked" && (
+                                                <>
+                                                    {`لا يمكن إنشاء العمولة — نسبة التحصيل (${((defaults?.collectedRatio ?? 0) * 100).toFixed(2)}%) أقل من الحد الأدنى المطلوب (${(threshold.lower * 100).toFixed(1)}%)`}
+                                                </>
+                                            )}
+                                            {threshold.status === "partial" && (
+                                                <>
+                                                    {`يُسمح بنصف العمولة فقط (50%) — نسبة التحصيل الحالية ${((defaults?.collectedRatio ?? 0) * 100).toFixed(2)}% (بين ${(threshold.lower * 100).toFixed(1)}% و10%)`}
+                                                </>
+                                            )}
+                                            {threshold.status === "full" && (
+                                                <>
+                                                    {getTranslatedLabel("salesCommission.form.thresholdFull", "نسبة التحصيل كافية — يُسمح بالعمولة الكاملة (100%)")}
+                                                </>
+                                            )}
+                                        </Alert>
+                                    )}
 
                                     {/* Internal Parties Section */}
                                     <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: "bold" }}>
@@ -319,10 +463,11 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         label={getTranslatedLabel("salesCommission.form.salesRep1", "المندوب الأول")}
                                                         component={FormComboBoxVirtualPartySalesRep}
                                                         disabled={isApproved}
+                                                        validator={requiredValidator}
                                                     />
                                                 </Grid>
                                                 <Grid item xs={1}>
-                                                    {!isApproved && (
+                                                    {!isApproved && isIndirect && (
                                                         <Tooltip title="إنشاء مندوب جديد">
                                                             <IconButton size="small" onClick={() => openQuickCreate("SALES_REP", "salesRepParty")}>
                                                                 <AddCircleOutlineIcon fontSize="small" />
@@ -340,6 +485,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                 component={FormNumericTextBox}
                                                 min={0} max={100} format="n4"
                                                 disabled={isApproved}
+                                                validator={repValidator ? [repValidator] : undefined}
                                             />
                                         </Grid>
                                         {activeCommission?.salesRepAmount && (
@@ -377,10 +523,11 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                             label={getTranslatedLabel("salesCommission.form.salesRep2", "المندوب الثاني")}
                                                             component={FormComboBoxVirtualPartySalesRep}
                                                             disabled={isApproved}
+                                                            validator={requiredValidator}
                                                         />
                                                     </Grid>
                                                     <Grid item xs={1}>
-                                                        {!isApproved && (
+                                                        {!isApproved && isIndirect && (
                                                             <Tooltip title="إنشاء مندوب جديد">
                                                                 <IconButton size="small" onClick={() => openQuickCreate("SALES_REP", "salesRep2Party")}>
                                                                     <AddCircleOutlineIcon fontSize="small" />
@@ -398,6 +545,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                     component={FormNumericTextBox}
                                                     min={0} max={100} format="n4"
                                                     disabled={isApproved}
+                                                    validator={repValidator ? [repValidator] : undefined}
                                                 />
                                             </Grid>
                                         </Grid>
@@ -414,10 +562,11 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         label={getTranslatedLabel("salesCommission.form.manager1", "المدير الأول")}
                                                         component={FormComboBoxVirtualPartySalesManager}
                                                         disabled={isApproved}
+                                                        validator={requiredValidator}
                                                     />
                                                 </Grid>
                                                 <Grid item xs={1}>
-                                                    {!isApproved && (
+                                                    {!isApproved && isIndirect && (
                                                         <Tooltip title="إنشاء مدير جديد">
                                                             <IconButton size="small" onClick={() => openQuickCreate("SALES_MANAGER", "managerParty")}>
                                                                 <AddCircleOutlineIcon fontSize="small" />
@@ -435,6 +584,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                 component={FormNumericTextBox}
                                                 min={0} max={100} format="n4"
                                                 disabled={isApproved}
+                                                validator={mgrValidator ? [mgrValidator] : undefined}
                                             />
                                         </Grid>
                                         {activeCommission?.managerAmount && (
@@ -472,10 +622,11 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                             label={getTranslatedLabel("salesCommission.form.manager2", "المدير الثاني")}
                                                             component={FormComboBoxVirtualPartySalesManager}
                                                             disabled={isApproved}
+                                                            validator={requiredValidator}
                                                         />
                                                     </Grid>
                                                     <Grid item xs={1}>
-                                                        {!isApproved && (
+                                                        {!isApproved && isIndirect && (
                                                             <Tooltip title="إنشاء مدير جديد">
                                                                 <IconButton size="small" onClick={() => openQuickCreate("SALES_MANAGER", "manager2Party")}>
                                                                     <AddCircleOutlineIcon fontSize="small" />
@@ -493,6 +644,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                     component={FormNumericTextBox}
                                                     min={0} max={100} format="n4"
                                                     disabled={isApproved}
+                                                    validator={mgrValidator ? [mgrValidator] : undefined}
                                                 />
                                             </Grid>
                                         </Grid>
@@ -589,6 +741,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         component={FormNumericTextBox}
                                                         min={0} max={100} format="n4"
                                                         disabled={isApproved}
+                                                        validator={extValidator ? [extValidator] : undefined}
                                                     />
                                                 </Grid>
                                                 {activeCommission?.externalCompanyGrossAmount && (
@@ -698,7 +851,12 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         type="submit"
                                                         color="success"
                                                         variant="contained"
-                                                        disabled={!formRenderProps.allowSubmit || buttonFlag}
+                                                        disabled={
+                                                            !formRenderProps.allowSubmit ||
+                                                            buttonFlag ||
+                                                            threshold.status === "blocked" ||
+                                                            (!!effectiveSrId && !!defaults && !!currentSaleTypeId && !activeRate)
+                                                        }
                                                     >
                                                         {getTranslatedLabel("salesCommission.form.submit", "حفظ")}
                                                     </Button>

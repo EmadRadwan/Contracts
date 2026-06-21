@@ -7,11 +7,8 @@ namespace Application.Projects;
 
 public class GetSalesCommissionDefaults
 {
-    public class CommissionDefaults
+    public class CommissionRateDefaults
     {
-        public string? ProjectId { get; set; }
-        public string? SaleTypeId { get; set; }
-        public decimal SalePrice { get; set; }
         public decimal SalesRepPercent { get; set; }
         public decimal ManagerPercent { get; set; }
         public decimal? ExternalCompanyPercent { get; set; }
@@ -19,9 +16,24 @@ public class GetSalesCommissionDefaults
         public decimal? ExternalManagerPercent { get; set; }
     }
 
+    public class CommissionDefaults
+    {
+        public string? ProjectId { get; set; }
+        public decimal SalePrice { get; set; }
+        public decimal CollectedAmount { get; set; }
+
+        public decimal CollectedRatio { get; set; }
+
+        // Key = SaleTypeId (COMM_SALE_DIRECT | COMM_SALE_PERSONAL | COMM_SALE_INDIRECT)
+        public Dictionary<string, CommissionRateDefaults> Rates { get; set; } = new();
+    }
+
     public class Query : IRequest<Result<CommissionDefaults>>
     {
         public string SalesRequestId { get; set; } = null!;
+
+        // When provided, only the rate for this sale type is returned; otherwise all rates are returned
+        public string? SaleTypeId { get; set; }
     }
 
     public class Handler : IRequestHandler<Query, Result<CommissionDefaults>>
@@ -46,23 +58,42 @@ public class GetSalesCommissionDefaults
             var projectId = sr.p.ProjectId;
             var salePrice = sr.s.TotalPrice ?? 0;
 
-            var rate = await _context.ProjectCommissionRates
-                .Where(r => r.ProjectId == projectId)
-                .FirstOrDefaultAsync(cancellationToken);
+            var collectedAmount = await _context.Payments
+                .Where(p => p.SalesRequestId == request.SalesRequestId
+                            && p.Amount > 0
+                            && (p.PaymentTypeId == "RECEIPT_ADVANCE_PAYMENT"
+                                || p.PaymentTypeId == "RECEIPT_DUE_INSTALLMENT"))
+                .SumAsync(p => (decimal?)p.Amount, cancellationToken) ?? 0m;
 
-            var defaults = new CommissionDefaults
+            var collectedRatio = salePrice > 0 ? collectedAmount / salePrice : 0m;
+
+            var ratesQuery = _context.ProjectCommissionRates
+                .Where(r => r.ProjectId == projectId);
+
+            if (!string.IsNullOrEmpty(request.SaleTypeId))
+                ratesQuery = ratesQuery.Where(r => r.SaleTypeId == request.SaleTypeId);
+
+            var ratesList = await ratesQuery.ToListAsync(cancellationToken);
+
+            var rates = ratesList.ToDictionary(
+                r => r.SaleTypeId,
+                r => new CommissionRateDefaults
+                {
+                    SalesRepPercent = r.SalesRepPercent,
+                    ManagerPercent = r.ManagerPercent,
+                    ExternalCompanyPercent = r.ExternalCompanyPercent,
+                    ExternalSalesRepPercent = r.ExternalSalesRepPercent,
+                    ExternalManagerPercent = r.ExternalManagerPercent,
+                });
+
+            return Result<CommissionDefaults>.Success(new CommissionDefaults
             {
                 ProjectId = projectId,
                 SalePrice = salePrice,
-                SaleTypeId = rate?.SaleTypeId,
-                SalesRepPercent = rate?.SalesRepPercent ?? 0,
-                ManagerPercent = rate?.ManagerPercent ?? 0,
-                ExternalCompanyPercent = rate?.ExternalCompanyPercent,
-                ExternalSalesRepPercent = rate?.ExternalSalesRepPercent,
-                ExternalManagerPercent = rate?.ExternalManagerPercent
-            };
-
-            return Result<CommissionDefaults>.Success(defaults);
+                CollectedAmount = collectedAmount,
+                CollectedRatio = collectedRatio,
+                Rates = rates,
+            });
         }
     }
 }

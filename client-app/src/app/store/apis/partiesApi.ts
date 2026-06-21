@@ -30,9 +30,10 @@ const partiesApi = createApi({
     }),
     endpoints(builder) {
         return {
-            fetchParties: builder.query<ListResponse<Party>, State>({
-                query: (queryArgs) => {
-                    const url = `/odata/partyRecords?$count=true&${toODataString(queryArgs)}`;
+            fetchParties: builder.query<ListResponse<Party>, { state: State; roleTypeId?: string }>({
+                query: ({ state, roleTypeId }) => {
+                    let url = `/odata/partyRecords?$count=true&${toODataString(state)}`;
+                    if (roleTypeId) url += `&roleTypeId=${encodeURIComponent(roleTypeId)}`;
                     return {url, method: "GET"};
                 },
                 providesTags: ["Parties"],

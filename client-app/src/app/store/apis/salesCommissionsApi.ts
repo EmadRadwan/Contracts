@@ -43,15 +43,24 @@ const salesCommissionsApi = createApi({
                 }),
                 providesTags: [COMMISSION_TAG],
             }),
-            getSalesCommissionDefaults: builder.query<CommissionDefaults, string>({
-                query: (salesRequestId) => ({
+            getSalesCommissionDefaults: builder.query<CommissionDefaults, { salesRequestId: string; saleTypeId?: string | null }>({
+                query: ({ salesRequestId, saleTypeId }) => ({
                     url: `/salesCommission/defaults/${salesRequestId}`,
+                    params: saleTypeId ? { saleTypeId } : undefined,
                 }),
             }),
             createSalesCommission: builder.mutation<SalesCommission, Partial<SalesCommission>>({
                 query: (dto) => ({
                     url: "/salesCommission/create",
                     method: "POST",
+                    body: dto,
+                }),
+                invalidatesTags: [COMMISSION_TAG],
+            }),
+            updateSalesCommission: builder.mutation<SalesCommission, { id: string; dto: Partial<SalesCommission> }>({
+                query: ({ id, dto }) => ({
+                    url: `/salesCommission/${id}`,
+                    method: "PUT",
                     body: dto,
                 }),
                 invalidatesTags: [COMMISSION_TAG],
@@ -78,6 +87,7 @@ export const {
     useGetSalesCommissionBySalesRequestQuery,
     useGetSalesCommissionDefaultsQuery,
     useCreateSalesCommissionMutation,
+    useUpdateSalesCommissionMutation,
     useApproveSalesCommissionMutation,
     useFetchApprovedSalesRequestsLovQuery,
 } = salesCommissionsApi;

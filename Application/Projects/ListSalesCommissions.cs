@@ -62,8 +62,6 @@ public class ListSalesCommissions
                         ProjectId = x.sc.ProjectId,
                         ProjectName = x.we.WorkEffortName,
                         ApartmentName = x.p.ProductName,
-                        SalePrice = x.sc.SalePrice,
-                        CollectedAmount = x.sc.CollectedAmount,
                         SalesRepPartyId = x.sc.SalesRepPartyId,
                         SalesRepName = x.salesRepParty != null ? x.salesRepParty.Description : null,
                         SalesRepPercent = x.sc.SalesRepPercent,

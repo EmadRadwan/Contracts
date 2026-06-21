@@ -9,9 +9,9 @@ public class PartyRecordsController : BaseODataController<PartyRecord>
 {
     [HttpGet]
     [EnableQuery]
-    public async Task<IActionResult> Get(ODataQueryOptions<PartyRecord> options)
+    public async Task<IActionResult> Get(ODataQueryOptions<PartyRecord> options, [FromQuery] string? roleTypeId)
     {
-        var query = await Mediator.Send(new ListParties.Query { Options = options });
+        var query = await Mediator.Send(new ListParties.Query { Options = options, RoleTypeId = roleTypeId });
         return await HandleODataQueryAsync(query, options);
     }
 }

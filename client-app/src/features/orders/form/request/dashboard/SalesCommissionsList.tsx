@@ -227,12 +227,6 @@ export default function SalesCommissionsList() {
                         width={140}
                     />
                     <Column
-                        field="salePrice"
-                        title={getTranslatedLabel("salesCommission.list.salePrice", "سعر البيع")}
-                        width={160}
-                        format="{0:n2}"
-                    />
-                    <Column
                         field="salesRepName"
                         title={getTranslatedLabel("salesCommission.list.salesRep", "المندوب")}
                         width={180}
