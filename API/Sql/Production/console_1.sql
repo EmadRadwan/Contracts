@@ -1,15 +1,43 @@
-INSERT INTO `SEQUENCE_VALUE_ITEM` (
-    `SEQ_NAME`,
-    `SEQ_ID`,
-    `LAST_UPDATED_STAMP`,
-    `LAST_UPDATED_TX_STAMP`,
-    `CREATED_STAMP`,
-    `CREATED_TX_STAMP`
+INSERT INTO ROLE_TYPE (
+    ROLE_TYPE_ID,
+    PARENT_TYPE_ID,
+    HAS_TABLE,
+    DESCRIPTION,
+    IncludeInFilter,
+    LAST_UPDATED_STAMP,
+    LAST_UPDATED_TX_STAMP,
+    CREATED_STAMP,
+    CREATED_TX_STAMP
 ) VALUES (
-             'SalesCommission',
-             11111,                    -- ← Change this to the actual sequence ID
-             '2026-06-20 15:43:00',    -- ← Update with current timestamp if needed
-             NULL,
-             '2026-06-20 15:43:00',    -- ← Usually same as LAST_UPDATED_STAMP for new entries
-             NULL
+             'EXTERNAL_SALES_REP',
+             'PERSON_ROLE',
+             'N',
+             'External Sales Representative',
+             0,
+             '2024-07-24 11:54:17',
+             '2024-07-24 11:54:17',
+             '2024-07-24 11:54:17',
+             '2024-07-24 11:54:17'
+         );
+
+INSERT INTO ROLE_TYPE (
+    ROLE_TYPE_ID,
+    PARENT_TYPE_ID,
+    HAS_TABLE,
+    DESCRIPTION,
+    IncludeInFilter,
+    LAST_UPDATED_STAMP,
+    LAST_UPDATED_TX_STAMP,
+    CREATED_STAMP,
+    CREATED_TX_STAMP
+) VALUES (
+             'EXTERNAL_SALES_MANAGER',
+             'PERSON_ROLE',
+             'N',
+             'External Sales Manager',
+             0,
+             '2026-06-22 00:00:00',
+             '2026-06-22 00:00:00',
+             '2026-06-22 00:00:00',
+             '2026-06-22 00:00:00'
          );

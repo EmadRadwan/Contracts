@@ -319,4 +319,28 @@ public class PartiesController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new GetPartiesSalesManagersLov.Query { Params = param }));
     }
+
+    [HttpGet("getPartiesExternalSalesRepsLov", Name = "GetPartiesExternalSalesRepsLov")]
+    public async Task<IActionResult> GetPartiesExternalSalesRepsLov([FromQuery] PartyLovParams param)
+    {
+        return HandleResult(await Mediator.Send(new GetPartiesExternalSalesRepsLov.Query { Params = param }));
+    }
+
+    [HttpGet("getPartiesExternalSalesManagersLov", Name = "GetPartiesExternalSalesManagersLov")]
+    public async Task<IActionResult> GetPartiesExternalSalesManagersLov([FromQuery] PartyLovParams param)
+    {
+        return HandleResult(await Mediator.Send(new GetPartiesExternalSalesManagersLov.Query { Params = param }));
+    }
+
+    [HttpPost("createExternalSalesRep", Name = "CreateExternalSalesRep")]
+    public async Task<IActionResult> CreateExternalSalesRep(PartyDto2 partyDto)
+    {
+        return HandleResult(await Mediator.Send(new CreateExternalSalesRep.Command { PartyDto = partyDto }));
+    }
+
+    [HttpPost("createExternalSalesManager", Name = "CreateExternalSalesManager")]
+    public async Task<IActionResult> CreateExternalSalesManager(PartyDto2 partyDto)
+    {
+        return HandleResult(await Mediator.Send(new CreateExternalSalesManager.Command { PartyDto = partyDto }));
+    }
 }

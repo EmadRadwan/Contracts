@@ -11,7 +11,7 @@ import {
 import { toast } from "react-toastify";
 import agent from "../../api/agent";
 
-export type PartyRole = "SALES_REP" | "SALES_MANAGER" | "BROKER";
+export type PartyRole = "SALES_REP" | "SALES_MANAGER" | "BROKER" | "EXTERNAL_SALES_REP" | "EXTERNAL_SALES_MANAGER";
 
 interface Props {
     open: boolean;
@@ -24,12 +24,16 @@ const ROLE_LABELS: Record<PartyRole, string> = {
     SALES_REP: "مندوب مبيعات",
     SALES_MANAGER: "مدير مبيعات",
     BROKER: "وسيط",
+    EXTERNAL_SALES_REP: "مندوب وسيط",
+    EXTERNAL_SALES_MANAGER: "مدير وسيط",
 };
 
 const CREATE_FN: Record<PartyRole, (data: any) => Promise<any>> = {
     SALES_REP: (data) => agent.Parties.createSalesRep(data),
     SALES_MANAGER: (data) => agent.Parties.createSalesManager(data),
     BROKER: (data) => agent.Parties.createBroker(data),
+    EXTERNAL_SALES_REP: (data) => agent.Parties.createExternalSalesRep(data),
+    EXTERNAL_SALES_MANAGER: (data) => agent.Parties.createExternalSalesManager(data),
 };
 
 export default function QuickCreatePartyDialog({ open, role, onClose, onCreated }: Props) {

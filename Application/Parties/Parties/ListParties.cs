@@ -27,7 +27,7 @@ public class ListParties
 
         public async Task<IQueryable<PartyRecord>> Handle(Query request, CancellationToken cancellationToken)
         {
-            var allowedRoles = new[] { "CUSTOMER", "SUPPLIER", "EMPLOYEE", "CONTRACTOR", "PREVIOUS_EMPLOYEE", "SALES_REP", "BROKER" };
+            var allowedRoles = new[] { "CUSTOMER", "SUPPLIER", "EMPLOYEE", "CONTRACTOR", "PREVIOUS_EMPLOYEE", "SALES_REP", "BROKER", "SALES_MANAGER", "EXTERNAL_SALES_MANAGER", "EXTERNAL_SALES_REP" };
 
             var query =
                 from prty in _context.Parties

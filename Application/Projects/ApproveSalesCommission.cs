@@ -99,6 +99,8 @@ public class ApproveSalesCommission
                         await transaction.RollbackAsync(cancellationToken);
                         return Result<SalesCommissionDto>.Failure($"فشل إنشاء دفعة العمولة للطرف {partyId}");
                     }
+                    // save changes
+                    await _context.SaveChangesAsync(cancellationToken); 
                 }
 
                 await transaction.CommitAsync(cancellationToken);

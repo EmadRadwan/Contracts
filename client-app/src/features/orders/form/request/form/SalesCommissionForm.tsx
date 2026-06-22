@@ -4,6 +4,10 @@ import {
     Box,
     Button,
     Checkbox,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
     FormControlLabel,
     Grid,
     IconButton,
@@ -11,6 +15,7 @@ import {
     Tooltip,
     Typography,
 } from "@mui/material";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import { Field, Form, FormElement } from "@progress/kendo-react-form";
 import FormNumericTextBox from "../../../../../app/common/form/FormNumericTextBox";
@@ -31,6 +36,8 @@ import {
 import { FormComboBoxVirtualPartySalesRep } from "../../../../../app/common/form/FormComboBoxVirtualPartySalesRep";
 import { FormComboBoxVirtualPartySalesManager } from "../../../../../app/common/form/FormComboBoxVirtualPartySalesManager";
 import { FormComboBoxVirtualPartyBroker } from "../../../../../app/common/form/FormComboBoxVirtualPartyBroker";
+import { FormComboBoxVirtualPartyExternalSalesRep } from "../../../../../app/common/form/FormComboBoxVirtualPartyExternalSalesRep";
+import { FormComboBoxVirtualPartyExternalSalesManager } from "../../../../../app/common/form/FormComboBoxVirtualPartyExternalSalesManager";
 import QuickCreatePartyDialog, { PartyRole } from "../../../../../app/common/form/QuickCreatePartyDialog";
 import SalesRequestMenu from "../menu/SalesRequestMenu";
 import LoadingComponent from "../../../../../app/layout/LoadingComponent";
@@ -71,6 +78,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
     const [hasVatExemption, setHasVatExemption] = useState(false);
     const [hasWithholdingTaxExemption, setHasWithholdingTaxExemption] = useState(false);
     const [quickCreate, setQuickCreate] = useState<QuickCreateState>({ open: false, role: "SALES_REP", fieldName: "" });
+    const [showExistingDialog, setShowExistingDialog] = useState(false);
     const [formApi, setFormApi] = useState<any>(null);
     const [selectedSrId, setSelectedSrId] = useState<string | null>(null);
     const [selectedSaleTypeId, setSelectedSaleTypeId] = useState<string | null>(null);
@@ -90,15 +98,15 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
         { skip: !effectiveSrId }
     );
 
-    const { data: existingCommission } = useGetSalesCommissionBySalesRequestQuery(resolvedSalesRequestId!, {
-        skip: !resolvedSalesRequestId || editMode === 2,
+    const { data: existingCommission } = useGetSalesCommissionBySalesRequestQuery(effectiveSrId!, {
+        skip: !effectiveSrId || editMode === 2,
     });
 
     useEffect(() => {
-        if (existingCommission && editMode === 1) {
-            toast.info("يوجد سجل عمولة لهذا الطلب - تم تحميله للتعديل");
+        if (defaults?.existingCommissionId && editMode === 1) {
+            setShowExistingDialog(true);
         }
-    }, [existingCommission, editMode]);
+    }, [defaults?.existingCommissionId, editMode]);
 
     const activeCommission = editMode === 2 ? commission : existingCommission ?? undefined;
 
@@ -137,7 +145,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
     }, [defaults, selectedSaleTypeId, formApi, hasTwoSalesReps, hasTwoManagers]);
 
     const initialValues = useMemo(() => {
-        const srId = resolvedSalesRequestId;
+        const srId = effectiveSrId;
         const srIdItem = srId ? { salesRequestId: srId, label: srId } : null;
         if (activeCommission) {
             return {
@@ -197,7 +205,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
             withholdingTaxPercent: 5,
             notes: "",
         };
-    }, [activeCommission, defaults, resolvedSalesRequestId]);
+    }, [activeCommission, defaults, effectiveSrId]);
 
     async function handleSubmitData(data: any) {
         setButtonFlag(true);
@@ -221,10 +229,10 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
             externalSalesRepPercent: isIndirect ? (data.externalSalesRepPercent ?? null) : null,
             externalManagerPartyId: isIndirect ? (data.externalManagerParty?.fromPartyId ?? null) : null,
             externalManagerPercent: isIndirect ? (data.externalManagerPercent ?? null) : null,
-            hasVatExemption,
-            hasWithholdingTaxExemption,
-            vatPercent: hasVatExemption ? 0 : (data.vatPercent ?? 14),
-            withholdingTaxPercent: hasWithholdingTaxExemption ? 0 : (data.withholdingTaxPercent ?? 5),
+            hasVatExemption: isIndirect ? hasVatExemption : null,
+            hasWithholdingTaxExemption: isIndirect ? hasWithholdingTaxExemption : null,
+            vatPercent: isIndirect ? (hasVatExemption ? 0 : (data.vatPercent ?? 14)) : null,
+            withholdingTaxPercent: isIndirect ? (hasWithholdingTaxExemption ? 0 : (data.withholdingTaxPercent ?? 5)) : null,
             notes: data.notes ?? null,
         };
 
@@ -314,6 +322,9 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                         const extValidator = maxExtPct !== undefined
                             ? (v: any) => (v ?? 0) > maxExtPct ? `الحد الأقصى ${maxExtPct.toFixed(4)}%` : undefined
                             : undefined;
+                        
+                        console.log("activeCommission", activeCommission);
+                        console.log("isPending", isPending);
 
                         return (
                             <FormElement>
@@ -327,7 +338,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                 label={getTranslatedLabel("salesCommission.form.salesRequest", "طلب البيع")}
                                                 component={FormComboBoxVirtualSalesRequest}
                                                 validator={requiredValidator}
-                                                disabled={!!resolvedSalesRequestId || isApproved}
+                                                disabled={!!resolvedSalesRequestId || !!activeCommission || isApproved}
                                                 onSalesRequestIdChange={setSelectedSrId}
                                             />
                                         </Grid>
@@ -720,6 +731,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                                 label={getTranslatedLabel("salesCommission.form.externalCompany", "شركة الوسيط")}
                                                                 component={FormComboBoxVirtualPartyBroker}
                                                                 disabled={isApproved}
+                                                                validator={requiredValidator}
                                                             />
                                                         </Grid>
                                                         <Grid item xs={1}>
@@ -764,14 +776,15 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                                 id="externalSalesRepParty"
                                                                 name="externalSalesRepParty"
                                                                 label={getTranslatedLabel("salesCommission.form.externalSalesRep", "مندوب الوسيط")}
-                                                                component={FormComboBoxVirtualPartySalesRep}
+                                                                component={FormComboBoxVirtualPartyExternalSalesRep}
                                                                 disabled={isApproved}
+                                                                validator={requiredValidator}
                                                             />
                                                         </Grid>
                                                         <Grid item xs={1}>
                                                             {!isApproved && (
-                                                                <Tooltip title="إنشاء مندوب جديد">
-                                                                    <IconButton size="small" onClick={() => openQuickCreate("SALES_REP", "externalSalesRepParty")}>
+                                                                <Tooltip title="إنشاء مندوب وسيط جديد">
+                                                                    <IconButton size="small" onClick={() => openQuickCreate("EXTERNAL_SALES_REP", "externalSalesRepParty")}>
                                                                         <AddCircleOutlineIcon fontSize="small" />
                                                                     </IconButton>
                                                                 </Tooltip>
@@ -800,14 +813,15 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                                 id="externalManagerParty"
                                                                 name="externalManagerParty"
                                                                 label={getTranslatedLabel("salesCommission.form.externalManager", "مدير الوسيط")}
-                                                                component={FormComboBoxVirtualPartySalesManager}
+                                                                component={FormComboBoxVirtualPartyExternalSalesManager}
                                                                 disabled={isApproved}
+                                                                validator={requiredValidator}
                                                             />
                                                         </Grid>
                                                         <Grid item xs={1}>
                                                             {!isApproved && (
-                                                                <Tooltip title="إنشاء مدير جديد">
-                                                                    <IconButton size="small" onClick={() => openQuickCreate("SALES_MANAGER", "externalManagerParty")}>
+                                                                <Tooltip title="إنشاء مدير وسيط جديد">
+                                                                    <IconButton size="small" onClick={() => openQuickCreate("EXTERNAL_SALES_MANAGER", "externalManagerParty")}>
                                                                         <AddCircleOutlineIcon fontSize="small" />
                                                                     </IconButton>
                                                                 </Tooltip>
@@ -903,6 +917,31 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                 onClose={() => setQuickCreate(q => ({ ...q, open: false }))}
                 onCreated={handlePartyCreated}
             />
+
+            <Dialog open={showExistingDialog} onClose={() => setShowExistingDialog(false)} maxWidth="sm" fullWidth>
+                <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1, color: "info.main" }}>
+                    <InfoOutlinedIcon color="info" />
+                    سجل عمولة موجود
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                        يوجد سجل عمولة مبيعات مرتبط بهذا الطلب
+                        {activeCommission?.salesCommissionId && (
+                            <Typography component="span" variant="body1" fontWeight="bold" sx={{ mx: 0.5 }}>
+                                ({activeCommission.salesCommissionId})
+                            </Typography>
+                        )}.
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        تم تحميل البيانات الموجودة تلقائياً — يمكنك مراجعتها أو تعديلها.
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setShowExistingDialog(false)} variant="contained" color="info">
+                        حسناً
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </>
     );
 }

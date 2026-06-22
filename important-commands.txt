@@ -324,6 +324,11 @@ Summarize this entire conversation as a concise JSON or bullet-point outline, in
   Account → GL_ACCOUNT_COURSE_LABEL
   
 dotnet ef migrations add AddSalesCommissionAndProjectCommissionRate --project Persistence --startup-project API --verbose 
+
+-Xmx4096m
+-Dide.managed.by.toolbox=/Applications/JetBrains Toolbox.app/Contents/MacOS/jetbrains-toolbox
+-Dtoolbox.notification.token=59ea873b-fd6a-4e66-8537-76ed6ce5e4da
+-Dtoolbox.notification.portFile=/Users/emadradwan/Library/Caches/JetBrains/Toolbox/ports/79d8b02e-9e52-447c-bbf3-72239d6a1631.port
   
   
   

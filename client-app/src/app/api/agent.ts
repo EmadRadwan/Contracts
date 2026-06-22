@@ -354,10 +354,22 @@ const Parties = {
         axios
             .get<Party[]>(`/parties/getPartiesSalesManagersLov`, { params })
             .then(responseBody),
+    getPartiesExternalSalesRepsLov: (params: URLSearchParams) =>
+        axios
+            .get<Party[]>(`/parties/getPartiesExternalSalesRepsLov`, { params })
+            .then(responseBody),
+    getPartiesExternalSalesManagersLov: (params: URLSearchParams) =>
+        axios
+            .get<Party[]>(`/parties/getPartiesExternalSalesManagersLov`, { params })
+            .then(responseBody),
     createSalesManager: (party: any) =>
         requests.post("/parties/createSalesManager", party),
     createSalesRep: (party: any) =>
         requests.post("/parties/createSalesRep", party),
+    createExternalSalesRep: (party: any) =>
+        requests.post("/parties/createExternalSalesRep", party),
+    createExternalSalesManager: (party: any) =>
+        requests.post("/parties/createExternalSalesManager", party),
     createBroker: (party: any) =>
         requests.post("/parties/createBroker", party),
     createCustomer: (customer: any) =>

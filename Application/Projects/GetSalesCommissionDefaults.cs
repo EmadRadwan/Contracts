@@ -21,8 +21,8 @@ public class GetSalesCommissionDefaults
         public string? ProjectId { get; set; }
         public decimal SalePrice { get; set; }
         public decimal CollectedAmount { get; set; }
-
         public decimal CollectedRatio { get; set; }
+        public string? ExistingCommissionId { get; set; }
 
         // Key = SaleTypeId (COMM_SALE_DIRECT | COMM_SALE_PERSONAL | COMM_SALE_INDIRECT)
         public Dictionary<string, CommissionRateDefaults> Rates { get; set; } = new();
@@ -62,10 +62,16 @@ public class GetSalesCommissionDefaults
                 .Where(p => p.SalesRequestId == request.SalesRequestId
                             && p.Amount > 0
                             && (p.PaymentTypeId == "RECEIPT_ADVANCE_PAYMENT"
-                                || p.PaymentTypeId == "RECEIPT_DUE_INSTALLMENT"))
+                                || p.PaymentTypeId == "RECEIPT_DUE_INSTALLMENT")
+                            && p.StatusId == "PMNT_RECEIVED")
                 .SumAsync(p => (decimal?)p.Amount, cancellationToken) ?? 0m;
 
             var collectedRatio = salePrice > 0 ? collectedAmount / salePrice : 0m;
+
+            var existingCommissionId = await _context.SalesCommissions
+                .Where(c => c.SalesRequestId == request.SalesRequestId)
+                .Select(c => c.SalesCommissionId)
+                .FirstOrDefaultAsync(cancellationToken);
 
             var ratesQuery = _context.ProjectCommissionRates
                 .Where(r => r.ProjectId == projectId);
@@ -92,6 +98,7 @@ public class GetSalesCommissionDefaults
                 SalePrice = salePrice,
                 CollectedAmount = collectedAmount,
                 CollectedRatio = collectedRatio,
+                ExistingCommissionId = existingCommissionId,
                 Rates = rates,
             });
         }

@@ -76,6 +76,7 @@ export interface CommissionDefaults {
     salePrice: number;
     collectedAmount: number;
     collectedRatio: number;
+    existingCommissionId?: string | null;
     // Key = saleTypeId (COMM_SALE_DIRECT | COMM_SALE_PERSONAL | COMM_SALE_INDIRECT)
     rates: Record<string, CommissionRateDefaults>;
 }
