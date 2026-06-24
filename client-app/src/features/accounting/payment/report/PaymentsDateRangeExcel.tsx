@@ -28,7 +28,7 @@ interface PaymentsDateRangeExcelProps {
     getTranslatedLabel: (key: string, defaultValue: string) => string;
 }
 
-type SubtotalBy = 'paymentTypeDescription' | 'accountNameArabic';
+type SubtotalBy = 'paymentTypeDescription' | 'accountNameArabic' | 'paymentMethodDescription' | 'partyIdToName' | 'partyIdFromName';
 
 const utils = {
     safeString: (v: any) => (v == null || typeof v === 'object') ? '' : String(v),
@@ -297,6 +297,16 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
                                         value="accountNameArabic"
                                         control={<Radio />}
                                         label={getTranslatedLabel('accounting.payments.report.subtotalByAccount', 'Override Account (GL Account)')}
+                                    />
+                                    <FormControlLabel
+                                        value="paymentMethodDescription"
+                                        control={<Radio />}
+                                        label={getTranslatedLabel('accounting.payments.report.subtotalByPaymentMethod', 'Payment Method')}
+                                    />
+                                    <FormControlLabel
+                                        value={paymentType === 'outgoing' ? 'partyIdToName' : 'partyIdFromName'}
+                                        control={<Radio />}
+                                        label={getTranslatedLabel('accounting.payments.report.subtotalByCounterparty', 'Counterparty')}
                                     />
                                 </RadioGroup>
                             </FormControl>

@@ -37,7 +37,8 @@ public class ListPaymentsByDateRange
                 join ptt in _context.PaymentTypes on pyt.PaymentTypeId equals ptt.PaymentTypeId
                 join sts in _context.StatusItems on pyt.StatusId equals sts.StatusId
                 join ptyFrom in _context.Parties on pyt.PartyIdFrom equals ptyFrom.PartyId
-                join ptyTo in _context.Parties on pyt.PartyIdTo equals ptyTo.PartyId
+                join ptyTo in _context.Parties on pyt.PartyIdTo equals ptyTo.PartyId into ptyToJoin
+                from ptyTo in ptyToJoin.DefaultIfEmpty()
                 join pmt in _context.PaymentMethodTypes
                     on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into pmtGroup
                 from pmt in pmtGroup.DefaultIfEmpty()
@@ -53,8 +54,28 @@ public class ListPaymentsByDateRange
                 join prod in _context.Products
                     on sr.ProductId equals prod.ProductId into prodJoin
                 from prod in prodJoin.DefaultIfEmpty()
+                join opp in _context.OrderPaymentPreferences
+                    on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId into oppJoin
+                from opp in oppJoin.DefaultIfEmpty()
+                join ord in _context.OrderHeaders
+                    on opp.OrderId equals ord.OrderId into ordJoin
+                from ord in ordJoin.DefaultIfEmpty()
+                join we in _context.WorkEfforts
+                    on ord.OrderId equals we.RelatedOrderId into weJoin
+                from we in weJoin.DefaultIfEmpty()
+                join approvedBy in _context.Parties
+                    on pyt.ApprovedByPartyId equals approvedBy.PartyId into approvedByJoin
+                from approvedBy in approvedByJoin.DefaultIfEmpty()
+                join createdBy in _context.Parties
+                    on pyt.CreatedByPartyId equals createdBy.PartyId into createdByJoin
+                from createdBy in createdByJoin.DefaultIfEmpty()
+                join pm in _context.PaymentMethods
+                    on pyt.PaymentMethodId equals pm.PaymentMethodId into pmJoin
+                from pm in pmJoin.DefaultIfEmpty()
+                join gl in _context.GlAccounts
+                    on pyt.OverrideGlAccountId equals gl.GlAccountId into glJoin
+                from gl in glJoin.DefaultIfEmpty()
                 where
-                    // Created OR Last Updated within the date range
                     (
                         (pyt.CreatedStamp >= fromDateTime && pyt.CreatedStamp < toDateTime) ||
                         (pyt.LastUpdatedStamp >= fromDateTime && pyt.LastUpdatedStamp < toDateTime)
@@ -69,24 +90,20 @@ public class ListPaymentsByDateRange
                     PaymentTypeDescription = request.Language == "ar"
                         ? ptt.DescriptionArabic
                         : ptt.Description,
-
                     PaymentMethodId = pyt.PaymentMethodId,
                     PaymentMethodTypeId = pyt.PaymentMethodTypeId,
                     PaymentMethodTypeDescription = pmt != null
                         ? (request.Language == "ar" ? pmt.DescriptionArabic : pmt.Description)
                         : null,
-
                     PartyIdFrom = pyt.PartyIdFrom,
                     PartyIdFromName = ptyFrom.Description ?? string.Empty,
                     PartyIdTo = pyt.PartyIdTo,
-                    PartyIdToName = ptyTo.Description ?? string.Empty,
-
+                    PartyIdToName = ptyTo != null ? ptyTo.Description : pyt.PartyIdTo,
                     StatusId = pyt.StatusId,
                     StatusDescription = request.Language == "ar"
                         ? sts.DescriptionArabic
                         : sts.Description,
                     StatusDescriptionEnglish = sts.Description,
-
                     EffectiveDate = pyt.EffectiveDate,
                     Comments = pyt.Comments,
                     PaymentRefNum = pyt.PaymentRefNum,
@@ -96,18 +113,23 @@ public class ListPaymentsByDateRange
                     OrganizationPartyId = ptt.ParentTypeId == "DISBURSEMENT"
                         ? pyt.PartyIdFrom
                         : pyt.PartyIdTo,
-
                     Amount = pyt.Amount,
                     CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
                     IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
-
+                    IsBankTransfer = pyt.IsBankTransfer,
                     ChequeNumber = pyt.ChequeNumber,
                     ChequeDate = pyt.ChequeDate,
-                    CertificateNumber = null, // Not populated
+                    OrderId = ord != null ? ord.OrderId : null,
+                    CertificateNumber = we != null ? we.CertificateNumber : null,
+                    SalesRequestId = pyt.SalesRequestId,
                     ProjectName = proj != null ? proj.ProjectName : null,
                     CostCenterDescription = cc != null ? cc.Description : null,
                     ProductId = prod != null ? prod.ProductId : null,
                     BuildingNumber = prod != null ? prod.BuildingNumber : null,
+                    ApprovedByPartyName = approvedBy != null ? approvedBy.Description : null,
+                    CreatedByPartyName = createdBy != null ? createdBy.Description : null,
+                    PaymentMethodDescription = pm != null ? pm.Description : null,
+                    AccountNameArabic = gl != null ? gl.AccountNameArabic : null,
                 };
 
             var data = await query.ToListAsync(ct);

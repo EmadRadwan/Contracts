@@ -38,9 +38,9 @@ public class  ListPaymentsDaily
                 join ptt in _context.PaymentTypes on pyt.PaymentTypeId equals ptt.PaymentTypeId
                 join sts in _context.StatusItems on pyt.StatusId equals sts.StatusId
                 join ptyFrom in _context.Parties on pyt.PartyIdFrom equals ptyFrom.PartyId
-                join ptyTo in _context.Parties on pyt.PartyIdTo equals ptyTo.PartyId
-                join pmt in _context.PaymentMethodTypes on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into
-                    pmtGroup
+                join ptyTo in _context.Parties on pyt.PartyIdTo equals ptyTo.PartyId into ptyToJoin
+                from ptyTo in ptyToJoin.DefaultIfEmpty()
+                join pmt in _context.PaymentMethodTypes on pyt.PaymentMethodTypeId equals pmt.PaymentMethodTypeId into pmtGroup
                 from pmt in pmtGroup.DefaultIfEmpty()
                 join proj in _context.WorkEfforts on pyt.WorkEffortId equals proj.WorkEffortId into projJoin
                 from proj in projJoin.DefaultIfEmpty()
@@ -50,6 +50,20 @@ public class  ListPaymentsDaily
                 from sr in srJoin.DefaultIfEmpty()
                 join prod in _context.Products on sr.ProductId equals prod.ProductId into prodJoin
                 from prod in prodJoin.DefaultIfEmpty()
+                join opp in _context.OrderPaymentPreferences on pyt.PaymentPreferenceId equals opp.OrderPaymentPreferenceId into oppJoin
+                from opp in oppJoin.DefaultIfEmpty()
+                join ord in _context.OrderHeaders on opp.OrderId equals ord.OrderId into ordJoin
+                from ord in ordJoin.DefaultIfEmpty()
+                join we in _context.WorkEfforts on ord.OrderId equals we.RelatedOrderId into weJoin
+                from we in weJoin.DefaultIfEmpty()
+                join approvedBy in _context.Parties on pyt.ApprovedByPartyId equals approvedBy.PartyId into approvedByJoin
+                from approvedBy in approvedByJoin.DefaultIfEmpty()
+                join createdBy in _context.Parties on pyt.CreatedByPartyId equals createdBy.PartyId into createdByJoin
+                from createdBy in createdByJoin.DefaultIfEmpty()
+                join pm in _context.PaymentMethods on pyt.PaymentMethodId equals pm.PaymentMethodId into pmJoin
+                from pm in pmJoin.DefaultIfEmpty()
+                join gl in _context.GlAccounts on pyt.OverrideGlAccountId equals gl.GlAccountId into glJoin
+                from gl in glJoin.DefaultIfEmpty()
                 where (pyt.CreatedStamp >= startOfDayEgypt
                        && pyt.CreatedStamp < endOfDayEgypt) ||
                       (pyt.LastUpdatedStamp >= startOfDayEgypt && pyt.LastUpdatedStamp < endOfDayEgypt)
@@ -69,11 +83,11 @@ public class  ListPaymentsDaily
                     PartyIdFrom = pyt.PartyIdFrom,
                     PartyIdFromName = ptyFrom.Description ?? string.Empty,
                     PartyIdTo = pyt.PartyIdTo,
-                    PartyIdToName = ptyTo.Description ?? string.Empty,
+                    PartyIdToName = ptyTo != null ? ptyTo.Description : pyt.PartyIdTo,
                     StatusId = pyt.StatusId,
                     StatusDescription = request.Language == "ar" ? sts.DescriptionArabic : sts.Description,
                     StatusDescriptionEnglish = sts.Description,
-                    EffectiveDate = pyt.EffectiveDate, // DateOnly?
+                    EffectiveDate = pyt.EffectiveDate,
                     Comments = pyt.Comments,
                     PaymentRefNum = pyt.PaymentRefNum,
                     PaymentPreferenceId = pyt.PaymentPreferenceId,
@@ -85,13 +99,20 @@ public class  ListPaymentsDaily
                     Amount = pyt.Amount,
                     CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
                     IsDisbursement = ptt.ParentTypeId == "DISBURSEMENT",
+                    IsBankTransfer = pyt.IsBankTransfer,
                     ChequeNumber = pyt.ChequeNumber,
                     ChequeDate = pyt.ChequeDate,
-                    CertificateNumber = null, // was never populated
+                    OrderId = ord != null ? ord.OrderId : null,
+                    CertificateNumber = we != null ? we.CertificateNumber : null,
+                    SalesRequestId = pyt.SalesRequestId,
                     ProjectName = proj != null ? proj.ProjectName : null,
                     CostCenterDescription = cc != null ? cc.Description : null,
                     ProductId = prod != null ? prod.ProductId : null,
                     BuildingNumber = prod != null ? prod.BuildingNumber : null,
+                    ApprovedByPartyName = approvedBy != null ? approvedBy.Description : null,
+                    CreatedByPartyName = createdBy != null ? createdBy.Description : null,
+                    PaymentMethodDescription = pm != null ? pm.Description : null,
+                    AccountNameArabic = gl != null ? gl.AccountNameArabic : null,
                 };
 
             var data = await query.ToListAsync(ct);
@@ -175,9 +196,6 @@ public class  ListPaymentsDaily
     }
 }
 
-// REFACTOR: Removed unused properties from DTO to match actual data returned
-// Purpose: Prevent confusion and reduce object size
-// Improvement: CreditCardNumber, CreditCardExpiryDate, OrderId, CertificateNumber are never set
 public class PaymentRecordDto
 {
     public string PaymentId { get; set; } = null!;
@@ -185,11 +203,11 @@ public class PaymentRecordDto
     public string PaymentTypeDescription { get; set; } = null!;
     public string? PaymentMethodId { get; set; }
     public string PaymentMethodTypeId { get; set; } = null!;
-    public string PaymentMethodTypeDescription { get; set; } = null!;
+    public string? PaymentMethodTypeDescription { get; set; }
     public string PartyIdFrom { get; set; } = null!;
     public string PartyIdFromName { get; set; } = null!;
     public string PartyIdTo { get; set; } = null!;
-    public string PartyIdToName { get; set; } = null!;
+    public string? PartyIdToName { get; set; }
     public string StatusId { get; set; } = null!;
     public string StatusDescription { get; set; } = null!;
     public string StatusDescriptionEnglish { get; set; } = null!;
@@ -204,13 +222,20 @@ public class PaymentRecordDto
     public string CurrencyUomId { get; set; } = null!;
     public string? FinAccountTransId { get; set; }
     public bool IsDisbursement { get; set; }
+    public bool? IsBankTransfer { get; set; }
     public string? ChequeNumber { get; set; }
     public DateOnly? ChequeDate { get; set; }
-    public string? CertificateNumber { get; set; } // From WorkEffort via Order chain
-    public string? ProjectName { get; set; } // Direct from Payment.WorkEffortId
+    public string? OrderId { get; set; }
+    public string? CertificateNumber { get; set; }
+    public string? SalesRequestId { get; set; }
+    public string? ProjectName { get; set; }
     public string? CostCenterDescription { get; set; }
     public string? ProductId { get; set; }
     public string? BuildingNumber { get; set; }
+    public string? ApprovedByPartyName { get; set; }
+    public string? CreatedByPartyName { get; set; }
+    public string? PaymentMethodDescription { get; set; }
+    public string? AccountNameArabic { get; set; }
     public int DaysUntilDue { get; set; }
     public string? DueStatusArabic { get; set; }
 }
