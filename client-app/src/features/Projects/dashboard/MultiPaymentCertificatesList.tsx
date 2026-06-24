@@ -26,6 +26,7 @@ import {Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle} fr
 import {toast} from "react-toastify";
 import MultiPaymentCertificatesDateRangeExcel from "../report/MultiPaymentCertificatesDateRangeExcel";
 import MultiPaymentItemsDateRangeExcel from "../report/MultiPaymentItemsDateRangeExcel";
+import MultiPaymentItemsGlAccountExcel from "../report/MultiPaymentItemsGlAccountExcel";
 import { StyledTabs } from "../../../app/components/StyledTabs";
 import { StyledTab } from "../../../app/components/StyledTab";
 import dayjs, { Dayjs } from "dayjs";
@@ -298,6 +299,7 @@ export default function MultiPaymentCertificatesList() {
                                     </Button>
                                     <MultiPaymentCertificatesDateRangeExcel />
                                     <MultiPaymentItemsDateRangeExcel />
+                                    <MultiPaymentItemsGlAccountExcel />
                                 </GridToolbar>
                                 <Column
                                     field="workEffortId"
@@ -454,6 +456,7 @@ export default function MultiPaymentCertificatesList() {
                                         </Box>
                                     </LocalizationProvider>
                                     <MultiPaymentItemsDateRangeExcel />
+                                    <MultiPaymentItemsGlAccountExcel />
                                 </GridToolbar>
                                 <Column
                                     field="parentWorkEffortId"

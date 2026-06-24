@@ -12,10 +12,12 @@ import {
     TableRow,
     TextField,
     IconButton,
+    Tooltip,
     useTheme,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { toast } from "react-toastify";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import { MultiPaymentItem } from "../../../app/models/project/MultiPaymentItem";
@@ -74,6 +76,7 @@ interface BulkAddRowItemProps {
     costCenters: any[];
     itemTypes: any[];
     localAmount: string;
+    prevGlAccountId?: string;
 }
 
 const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
@@ -86,9 +89,11 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
                                                                 costCenters,
                                                                 itemTypes,
                                                                 localAmount,
+                                                                prevGlAccountId,
                                                             }) => {
     const theme = useTheme();
     const isRtl = theme.direction === 'rtl';
+    const { getTranslatedLabel } = useTranslationHelper();
 
     // === Queries ===
     const { data: projects } = useFetchWorkEffortsByGlAccountIdQuery(
@@ -130,7 +135,7 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
     return (
         <TableRow key={row.tempId}>
             {/* GL Account */}
-            <TableCell sx={{ 
+            <TableCell sx={{
                 minWidth: 450,
                 width: 450,
                 maxWidth: 450,
@@ -139,19 +144,37 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
                 backgroundColor: 'background.paper',
                 zIndex: 1,
             }}>
-                <FormDropDownTreeGlAccount2
-                    data={glAccounts || []}
-                    value={row.glAccountId}
-                    onChange={(e: any) => handleRowChange(index, "glAccountId", e.value)}
-                    dataItemKey="glAccountId"
-                    textField="text"
-                    selectField="selected"
-                    expandField="expanded"
-                    name="glAccountId"
-                    touched={false}
-                    visited={false}
-                    modified={false}
-                />
+                <Box display="flex" alignItems="center" gap={0.5}>
+                    <Box flex={1}>
+                        <FormDropDownTreeGlAccount2
+                            data={glAccounts || []}
+                            value={row.glAccountId}
+                            onChange={(e: any) => handleRowChange(index, "glAccountId", e.value)}
+                            dataItemKey="glAccountId"
+                            textField="text"
+                            selectField="selected"
+                            expandField="expanded"
+                            name="glAccountId"
+                            touched={false}
+                            visited={false}
+                            modified={false}
+                        />
+                    </Box>
+                    {index > 0 && (
+                        <Tooltip title={getTranslatedLabel("projects.multiPaymentCertificate.bulkAdd.copyGlFromAbove", "نسخ الحساب من الصف السابق")}>
+                            <span>
+                                <IconButton
+                                    size="small"
+                                    onClick={() => prevGlAccountId && handleRowChange(index, "glAccountId", prevGlAccountId)}
+                                    disabled={!prevGlAccountId}
+                                    sx={{ flexShrink: 0 }}
+                                >
+                                    <ContentCopyIcon fontSize="small" />
+                                </IconButton>
+                            </span>
+                        </Tooltip>
+                    )}
+                </Box>
             </TableCell>
 
             {/* Description */}
@@ -609,6 +632,7 @@ const MultiPaymentItemBulkAdd: React.FC<Props> = ({ onClose, workEffortId, addIt
                                 costCenters={costCenters}
                                 itemTypes={itemTypes}
                                 localAmount={localAmounts[row.tempId] || "0"}
+                                prevGlAccountId={index > 0 ? rows[index - 1].glAccountId : undefined}
                             />
                         ))}
                     </TableBody>

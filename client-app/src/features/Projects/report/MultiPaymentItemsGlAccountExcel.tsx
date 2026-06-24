@@ -21,13 +21,13 @@ import dayjs, { Dayjs } from "dayjs";
 
 const utils = {
     safeString: (v: any) => (v == null || typeof v === "object") ? "N/A" : String(v),
-    rtlEmbed: (t: string) => /\p{Script=Arabic}/u.test(t) ? `\u202B${t}` : t,
+    rtlEmbed: (t: string) => /\p{Script=Arabic}/u.test(t) ? `‫${t}` : t,
     formatNumber: (v: number | undefined, dec = 2) =>
         v == null ? "0.00" : v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec }),
     formatDate: (d: string | Date | undefined) => d ? new Date(d).toLocaleDateString("en-GB") : "N/A",
 };
 
-export default function MultiPaymentItemsDateRangeExcel() {
+export default function MultiPaymentItemsGlAccountExcel() {
     const { getTranslatedLabel } = useTranslationHelper();
     const dispatch = useAppDispatch();
     const [open, setOpen] = useState(false);
@@ -54,7 +54,7 @@ export default function MultiPaymentItemsDateRangeExcel() {
         }
 
         const period = `${startDate?.format("YYYY-MM-DD") || "start"}_to_${endDate?.format("YYYY-MM-DD") || "end"}`;
-        const safeSheetName = `Items ${period}`.replace(/[*\?\\:\[\]\/]/g, "_").slice(0, 31);
+        const safeSheetName = `GL Items ${period}`.replace(/[*\?\\:\[\]\/]/g, "_").slice(0, 31);
         const ws = workbook.addWorksheet(safeSheetName);
         ws.pageSetup = { paperSize: 9, orientation: "landscape" };
         ws.views = [{ rightToLeft: true }];
@@ -76,8 +76,8 @@ export default function MultiPaymentItemsDateRangeExcel() {
 
         const title = utils.rtlEmbed(
             getTranslatedLabel(
-                "projects.multiPaymentCertificate.excel.itemsTitle",
-                `Multi Payment Certificate Items (${startDate?.format("DD/MM/YYYY") || ""} - ${endDate?.format("DD/MM/YYYY") || ""})`
+                "projects.multiPaymentCertificate.excel.itemsGlAccountTitle",
+                `Multi Payment Certificate Items by GL Account (${startDate?.format("DD/MM/YYYY") || ""} - ${endDate?.format("DD/MM/YYYY") || ""})`
             ).replace("{0}", startDate?.format("DD/MM/YYYY") || "").replace("{1}", endDate?.format("DD/MM/YYYY") || "")
         );
         ws.getCell(`A${startRow}`).value = title;
@@ -110,76 +110,56 @@ export default function MultiPaymentItemsDateRangeExcel() {
         headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE0E0E0" } };
         headerRow.alignment = { horizontal: "center", vertical: "middle" };
 
-        // Group by parentWorkEffortId → glAccountName
-        const groupedByCert: Record<string, Record<string, any[]>> = {};
+        // Group by glAccountName only
+        const groupedByGl: Record<string, any[]> = {};
         data.forEach((item: any) => {
-            const certId = item.parentWorkEffortId || "";
             const glAccount = item.glAccountName || "";
-            if (!groupedByCert[certId]) groupedByCert[certId] = {};
-            if (!groupedByCert[certId][glAccount]) groupedByCert[certId][glAccount] = [];
-            groupedByCert[certId][glAccount].push(item);
+            if (!groupedByGl[glAccount]) groupedByGl[glAccount] = [];
+            groupedByGl[glAccount].push(item);
         });
 
         let grandTotal = 0;
 
-        Object.entries(groupedByCert).forEach(([certId, glGroups]) => {
-            let certTotal = 0;
+        Object.entries(groupedByGl).forEach(([glAccount, items]) => {
+            let glTotal = 0;
 
-            Object.entries(glGroups).forEach(([glAccount, items]) => {
-                let glTotal = 0;
-
-                items.forEach((item: any) => {
-                    const row = ws.addRow([
-                        utils.rtlEmbed(utils.safeString(item.parentWorkEffortId)),
-                        utils.formatDate(item.certificateDate),
-                        utils.rtlEmbed(utils.safeString(item.parentDescription)),
-                        utils.rtlEmbed(utils.safeString(item.glAccountName)),
-                        utils.rtlEmbed(utils.safeString(item.description)),
-                        utils.formatNumber(item.amount),
-                        utils.rtlEmbed(utils.safeString(item.itemTypeDescription)),
-                        utils.formatDate(item.estimatedStartDate),
-                        utils.rtlEmbed(utils.safeString(item.serviceName)),
-                        utils.rtlEmbed(utils.safeString(item.productName)),
-                        utils.rtlEmbed(utils.safeString(item.partyIdSupplierName)),
-                        utils.rtlEmbed(utils.safeString(item.projectName)),
-                        utils.rtlEmbed(utils.safeString(item.subProjectName)),
-                        utils.rtlEmbed(utils.safeString(item.costCenterName)),
-                    ]);
-                    row.font = { name: "Amiri", size: 10 };
-                    row.alignment = { horizontal: "right", wrapText: true };
-                    row.height = 22;
-                    glTotal += item.amount || 0;
-                });
-
-                // GL Account subtotal row
-                const glSubtotalRow = ws.addRow([
-                    "", "", "",
-                    utils.rtlEmbed(`${getTranslatedLabel("common.subtotal", "Subtotal")}: ${utils.safeString(glAccount)}`),
-                    "",
-                    utils.formatNumber(glTotal),
-                    "", "", "", "", "", "", "", "",
+            items.forEach((item: any) => {
+                const row = ws.addRow([
+                    utils.rtlEmbed(utils.safeString(item.parentWorkEffortId)),
+                    utils.formatDate(item.certificateDate),
+                    utils.rtlEmbed(utils.safeString(item.parentDescription)),
+                    utils.rtlEmbed(utils.safeString(item.glAccountName)),
+                    utils.rtlEmbed(utils.safeString(item.description)),
+                    utils.formatNumber(item.amount),
+                    utils.rtlEmbed(utils.safeString(item.itemTypeDescription)),
+                    utils.formatDate(item.estimatedStartDate),
+                    utils.rtlEmbed(utils.safeString(item.serviceName)),
+                    utils.rtlEmbed(utils.safeString(item.productName)),
+                    utils.rtlEmbed(utils.safeString(item.partyIdSupplierName)),
+                    utils.rtlEmbed(utils.safeString(item.projectName)),
+                    utils.rtlEmbed(utils.safeString(item.subProjectName)),
+                    utils.rtlEmbed(utils.safeString(item.costCenterName)),
                 ]);
-                glSubtotalRow.font = { name: "Amiri", size: 10, italic: true, bold: true };
-                glSubtotalRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFDCE6F1" } };
-                glSubtotalRow.alignment = { horizontal: "right" };
-                glSubtotalRow.height = 22;
-
-                certTotal += glTotal;
+                row.font = { name: "Amiri", size: 10 };
+                row.alignment = { horizontal: "right", wrapText: true };
+                row.height = 22;
+                glTotal += item.amount || 0;
             });
 
-            // Certificate subtotal row
-            const certSubtotalRow = ws.addRow([
-                utils.rtlEmbed(`${getTranslatedLabel("common.subtotal", "Subtotal")}: ${certId}`),
-                "", "", "", "",
-                utils.formatNumber(certTotal),
+            // GL Account subtotal row
+            const glSubtotalRow = ws.addRow([
+                "", "", "",
+                utils.rtlEmbed(`${getTranslatedLabel("common.subtotal", "Subtotal")}: ${utils.safeString(glAccount)}`),
+                "",
+                utils.formatNumber(glTotal),
                 "", "", "", "", "", "", "", "",
             ]);
-            certSubtotalRow.font = { name: "Amiri", size: 11, bold: true };
-            certSubtotalRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFBDD7EE" } };
-            certSubtotalRow.alignment = { horizontal: "right" };
-            certSubtotalRow.height = 24;
+            glSubtotalRow.font = { name: "Amiri", size: 11, bold: true };
+            glSubtotalRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFBDD7EE" } };
+            glSubtotalRow.alignment = { horizontal: "right" };
+            glSubtotalRow.height = 24;
 
-            grandTotal += certTotal;
+            grandTotal += glTotal;
         });
 
         // Grand total row
@@ -195,20 +175,20 @@ export default function MultiPaymentItemsDateRangeExcel() {
         grandTotalRow.height = 26;
 
         ws.columns = [
-            { width: 15 }, // Parent ID
-            { width: 15 }, // Parent Date
-            { width: 30 }, // Parent Description
-            { width: 25 }, // GL Account
-            { width: 35 }, // Item Description
-            { width: 15 }, // Amount
-            { width: 15 }, // Item Type
-            { width: 15 }, // Date
-            { width: 25 }, // Service
-            { width: 25 }, // Product
-            { width: 25 }, // Supplier
-            { width: 25 }, // Project
-            { width: 20 }, // Sub Project
-            { width: 20 }, // Cost Center
+            { width: 15 },
+            { width: 15 },
+            { width: 30 },
+            { width: 25 },
+            { width: 35 },
+            { width: 15 },
+            { width: 15 },
+            { width: 15 },
+            { width: 25 },
+            { width: 25 },
+            { width: 25 },
+            { width: 25 },
+            { width: 20 },
+            { width: 20 },
         ];
         ws.getColumn(6).numFmt = "#,##0.00";
 
@@ -238,13 +218,13 @@ export default function MultiPaymentItemsDateRangeExcel() {
             const buffer = await generateExcel(result);
             if (buffer) {
                 const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-                saveAs(blob, `MultiPaymentCertificateItems_${startDate.format("YYYYMMDD")}_to_${endDate.format("YYYYMMDD")}.xlsx`);
-                toast.success(getTranslatedLabel("projects.multiPaymentCertificate.excel.itemsSuccess", "Items Excel report generated successfully"));
+                saveAs(blob, `MultiPaymentItems_ByGLAccount_${startDate.format("YYYYMMDD")}_to_${endDate.format("YYYYMMDD")}.xlsx`);
+                toast.success(getTranslatedLabel("projects.multiPaymentCertificate.excel.itemsGlAccountSuccess", "GL Account items report generated successfully"));
             }
             handleClose();
         } catch (error) {
             console.error("Export failed", error);
-            toast.error(getTranslatedLabel("projects.multiPaymentCertificate.excel.itemsError", "Failed to generate items Excel report"));
+            toast.error(getTranslatedLabel("projects.multiPaymentCertificate.excel.itemsGlAccountError", "Failed to generate GL Account items report"));
         } finally {
             setIsGenerating(false);
         }
@@ -254,17 +234,19 @@ export default function MultiPaymentItemsDateRangeExcel() {
         <>
             <Button
                 variant="contained"
-                color="info"
+                color="secondary"
                 onClick={handleOpen}
                 disabled={isGenerating}
                 style={{ margin: "5px" }}
             >
-                {isGenerating ? getTranslatedLabel("common.exporting", "Exporting...") : getTranslatedLabel("common.exportItemsByCertAndGl", "Export Items by Cert & GL Account")}
+                {isGenerating
+                    ? getTranslatedLabel("common.exporting", "Exporting...")
+                    : getTranslatedLabel("common.exportItemsByGlAccount", "Export Items by GL Account")}
             </Button>
 
             <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
                 <DialogTitle>
-                    {getTranslatedLabel("projects.multiPaymentCertificate.excel.itemsDialogTitle", "Select Date Range for Multi Payment Items")}
+                    {getTranslatedLabel("projects.multiPaymentCertificate.excel.itemsGlAccountDialogTitle", "Select Date Range for Items by GL Account")}
                 </DialogTitle>
                 <DialogContent>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>

@@ -64,6 +64,9 @@
     "toDate": "إلى تاريخ",
     "exportToExcel": "تصدير إلى إكسل",
     "exportItemsToExcel": "تصدير البنود إلى إكسل",
+    "exportItemsByCertAndGl": "تصدير البنود (شهادة وحساب)",
+    "exportItemsByGlAccount": "تصدير البنود (حسب الحساب)",
+    "subtotal": "مجموع فرعي",
     "exporting": "جاري التصدير...",
     "generating": "جاري التحميل...",
     "download": "تحميل",
@@ -285,7 +288,15 @@
         "error": "فشل إنشاء تقرير الإكسل",
         "itemsError": "فشل إنشاء تقرير بنود الإكسل",
         "dialogTitle": "اختر الفترة الزمنية لمستندات الصرف المتعددة",
-        "itemsDialogTitle": "اختر الفترة الزمنية لبنود مستندات الصرف المتعددة"
+        "itemsDialogTitle": "اختر الفترة الزمنية لبنود مستندات الصرف المتعددة",
+        "itemsGlAccountTitle": "بنود مستندات الصرف المتعددة حسب حساب دفتر الأستاذ ({0} - {1})",
+        "itemsGlAccountDialogTitle": "اختر الفترة لتقرير البنود حسب الحساب",
+        "itemsGlAccountSuccess": "تم إنشاء تقرير البنود حسب الحساب بنجاح",
+        "itemsGlAccountError": "فشل إنشاء تقرير البنود حسب الحساب"
+      },
+      "bulkAdd": {
+        "title": "إضافة بنود المدفوعات",
+        "copyGlFromAbove": "نسخ الحساب من الصف السابق"
       }
     }
   },
@@ -1240,7 +1251,6 @@
           "addQtyRejected": "أضف الكمية المرفوضة",
           "comment": "تعليق"
         },
-
         "declareandproduce": {
           "title": "إعلان وإنتاج",
           "productId": "المنتج",
@@ -1786,6 +1796,22 @@
           "totalDebit": "إجمالي المدين",
           "totalCredit": "إجمالي الدائن"
         }
+      },
+      "report": {
+        "daily": {
+          "title": "الدفعات اليومية",
+          "excel": "تصدير دفعات اليوم",
+          "dialogTitle": "خيارات تقرير الدفعات اليومية"
+        },
+        "daterange": {
+          "title": "الدفعات حسب الفترة الزمنية",
+          "excel": "تصدير حسب الفترة"
+        },
+        "subtotalBy": "تجميع المبالغ حسب",
+        "subtotalByPaymentType": "نوع الدفعة",
+        "subtotalByAccount": "الحساب (حساب الأستاذ)",
+        "subtotal": "المجموع الفرعي",
+        "grandTotal": "الإجمالي الكلي"
       }
     },
     "orgGL": {
@@ -2242,7 +2268,6 @@
       }
     }
   },
-
   "crm": {
     "menu": {
       "salesOpportunities": "فرص البيع",
@@ -2259,7 +2284,7 @@
       "label": "العملاء المحتملين",
       "placeholder": "ابحث عن عميل...",
       "noLeads": "لا يوجد عملاء مطابقون",
-      "loading":"جاري التحميل..."
+      "loading": "جاري التحميل..."
     },
     "leads": {
       "title": "العملاء المحتملين",
@@ -2379,10 +2404,9 @@
       "unit": "الوحدة",
       "owner": "المسؤول *",
       "stage": "المرحلة *",
-      "broker": "الوسيط *" ,
+      "broker": "الوسيط *",
       "linkedLeads": "العملاء",
-      "loading":"جاري تحميل فرص البيع...",
-
+      "loading": "جاري تحميل فرص البيع...",
       "actionModal": {
         "title": "فرصة البيع: {0}",
         "actionsTab": "الإجراءات",
