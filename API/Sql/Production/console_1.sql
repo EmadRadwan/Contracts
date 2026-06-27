@@ -1,43 +1,27 @@
-INSERT INTO ROLE_TYPE (
-    ROLE_TYPE_ID,
-    PARENT_TYPE_ID,
-    HAS_TABLE,
+INSERT INTO PAYMENT_METHOD (
+    PAYMENT_METHOD_ID,
+    PAYMENT_METHOD_TYPE_ID,
+    PARTY_ID,
+    GL_ACCOUNT_ID,
+    FIN_ACCOUNT_ID,
     DESCRIPTION,
-    IncludeInFilter,
+    FROM_DATE,
+    THRU_DATE,
     LAST_UPDATED_STAMP,
     LAST_UPDATED_TX_STAMP,
     CREATED_STAMP,
     CREATED_TX_STAMP
 ) VALUES (
-             'EXTERNAL_SALES_REP',
-             'PERSON_ROLE',
-             'N',
-             'External Sales Representative',
-             0,
-             '2024-07-24 11:54:17',
-             '2024-07-24 11:54:17',
-             '2024-07-24 11:54:17',
-             '2024-07-24 11:54:17'
-         );
-
-INSERT INTO ROLE_TYPE (
-    ROLE_TYPE_ID,
-    PARENT_TYPE_ID,
-    HAS_TABLE,
-    DESCRIPTION,
-    IncludeInFilter,
-    LAST_UPDATED_STAMP,
-    LAST_UPDATED_TX_STAMP,
-    CREATED_STAMP,
-    CREATED_TX_STAMP
-) VALUES (
-             'EXTERNAL_SALES_MANAGER',
-             'PERSON_ROLE',
-             'N',
-             'External Sales Manager',
-             0,
-             '2026-06-22 00:00:00',
-             '2026-06-22 00:00:00',
-             '2026-06-22 00:00:00',
-             '2026-06-22 00:00:00'
+             'QNB_CHECKING_USD',
+             'COMPANY_CHECK',
+             'Company',
+             '114300',
+             NULL,
+             'QNB - USD',
+             '2026-06-22 19:06:32',
+             NULL,
+             '2026-06-22 19:06:32',
+             '2026-06-22 19:06:32',
+             '2026-06-22 19:06:32',
+             '2026-06-22 19:06:32'
          );

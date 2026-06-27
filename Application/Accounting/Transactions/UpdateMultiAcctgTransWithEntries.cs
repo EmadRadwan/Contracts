@@ -60,6 +60,7 @@ namespace Application.Accounting.Transactions
                         Description = request.UpdateMultiAcctgTransParams.HeaderDescription,
                         GlFiscalTypeId = request.UpdateMultiAcctgTransParams.GlFiscalTypeId,
                         PartyId = request.UpdateMultiAcctgTransParams.PartyId,
+                        CostCenterId = request.UpdateMultiAcctgTransParams.CostCenterId,
                         LastUpdatedStamp = DateTime.UtcNow
                     };
                     var updateMessages = await _acctgTransService.UpdateAcctgTrans(acctgTrans);
@@ -159,6 +160,7 @@ namespace Application.Accounting.Transactions
         public string? HeaderDescription { get; set; }
         public string? IsPosted { get; set; }
         public string? PartyId { get; set; }
+        public string? CostCenterId { get; set; }
         public string? GlFiscalTypeId { get; set; }
     }
 

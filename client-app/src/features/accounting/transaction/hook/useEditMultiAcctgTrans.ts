@@ -21,6 +21,7 @@ export interface UpdateMultiAcctgTransWithEntriesParams {
     description: string;
     isPosted?: string;
     partyId?: string;
+    costCenterId?: string;
     glFiscalTypeId?: string;
   };
   entries: MultiAcctgTransEntryParams[];

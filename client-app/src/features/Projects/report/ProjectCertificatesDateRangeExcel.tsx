@@ -1,12 +1,14 @@
 import React, { useCallback, useState } from "react";
 import {
     Button,
+    Checkbox,
     Dialog,
     DialogTitle,
     DialogContent,
     DialogActions,
     Box,
     CircularProgress,
+    FormControlLabel,
 } from "@mui/material";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
@@ -18,6 +20,12 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DesktopDatePicker } from "@mui/x-date-pickers/DesktopDatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
+import {
+    CompositeFilterDescriptor,
+    FilterDescriptor,
+    State,
+    toODataString,
+} from "@progress/kendo-data-query";
 
 const utils = {
     safeString: (v: any) => (v == null || typeof v === "object") ? "N/A" : String(v),
@@ -27,18 +35,78 @@ const utils = {
     formatDate: (d: string | Date | undefined) => d ? new Date(d).toLocaleDateString("en-GB") : "N/A",
 };
 
-export default function ProjectCertificatesDateRangeExcel() {
+const FIELD_LABELS: Record<string, string> = {
+    certificateNumber: "\u0631\u0642\u0645 \u0627\u0644\u0634\u0647\u0627\u062F\u0629",
+    projectName: "\u0627\u0633\u0645 \u0627\u0644\u0645\u0634\u0631\u0648\u0639",
+    certificateCategoryDescription: "\u0627\u0644\u0646\u0648\u0639",
+    statusDescription: "\u0627\u0644\u062D\u0627\u0644\u0629",
+    totalAmount: "\u0627\u0644\u0645\u0628\u0644\u063A \u0627\u0644\u0625\u062C\u0645\u0627\u0644\u064A",
+    partyIdSupplier: "\u0631\u0642\u0645 \u0627\u0644\u0645\u0648\u0631\u062F",
+    partyNameSupplier: "\u0627\u0633\u0645 \u0627\u0644\u0645\u0648\u0631\u062F",
+    partyIdContractor: "\u0631\u0642\u0645 \u0627\u0644\u0645\u0642\u0627\u0648\u0644",
+    partyNameContractor: "\u0627\u0633\u0645 \u0627\u0644\u0645\u0642\u0627\u0648\u0644",
+    description: "\u0627\u0644\u0648\u0635\u0641",
+    estimatedStartDate: "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0628\u062F\u0627\u064A\u0629",
+    estimatedCompletionDate: "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0625\u062A\u0645\u0627\u0645",
+    facilityName: "\u0627\u0633\u0645 \u0627\u0644\u0645\u0646\u0634\u0623\u0629",
+};
+
+const OPERATOR_LABELS: Record<string, string> = {
+    eq: "=",
+    neq: "\u2260",
+    contains: "\u064A\u062D\u062A\u0648\u064A \u0639\u0644\u0649",
+    doesnotcontain: "\u0644\u0627 \u064A\u062D\u062A\u0648\u064A \u0639\u0644\u0649",
+    startswith: "\u064A\u0628\u062F\u0623 \u0628\u0640",
+    endswith: "\u064A\u0646\u062A\u0647\u064A \u0628\u0640",
+    gte: "\u2265",
+    gt: ">",
+    lte: "\u2264",
+    lt: "<",
+    isnull: "\u0641\u0627\u0631\u063A",
+    isnotnull: "\u063A\u064A\u0631 \u0641\u0627\u0631\u063A",
+    isempty: "\u0641\u0627\u0631\u063A",
+    isnotempty: "\u063A\u064A\u0631 \u0641\u0627\u0631\u063A",
+};
+
+const NO_VALUE_OPS = new Set(["isnull", "isnotnull", "isempty", "isnotempty"]);
+
+function describeFilter(f: CompositeFilterDescriptor | FilterDescriptor): string {
+    if ("filters" in f) {
+        const parts = (f as CompositeFilterDescriptor).filters
+            .map(child => describeFilter(child as CompositeFilterDescriptor | FilterDescriptor))
+            .filter(Boolean);
+        if (parts.length === 0) return "";
+        const sep = (f as CompositeFilterDescriptor).logic === "and" ? " \u0648 " : " \u0623\u0648 ";
+        return parts.length === 1 ? parts[0] : `(${parts.join(sep)})`;
+    }
+    const fd = f as FilterDescriptor;
+    const field = fd.field as string;
+    const label = FIELD_LABELS[field] ?? field;
+    const op = OPERATOR_LABELS[fd.operator as string] ?? String(fd.operator);
+    if (NO_VALUE_OPS.has(fd.operator as string)) return `${label} ${op}`;
+    const val = fd.value instanceof Date
+        ? new Date(fd.value).toLocaleDateString("en-GB")
+        : fd.value == null ? "" : String(fd.value);
+    return `${label} ${op} "${val}"`;
+}
+
+interface Props {
+    dataState?: State;
+}
+
+export default function ProjectCertificatesDateRangeExcel({ dataState }: Props) {
     const { getTranslatedLabel } = useTranslationHelper();
     const dispatch = useAppDispatch();
     const [open, setOpen] = useState(false);
     const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf("month"));
     const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
     const [isGenerating, setIsGenerating] = useState(false);
+    const [respectFilters, setRespectFilters] = useState(false);
 
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
 
-    const generateExcel = useCallback(async (data: any[]) => {
+    const generateExcel = useCallback(async (data: any[], filterInfo: string) => {
         if (!data || data.length === 0) return null;
 
         const workbook = new ExcelJS.Workbook();
@@ -85,6 +153,14 @@ export default function ProjectCertificatesDateRangeExcel() {
         ws.getRow(startRow).font = { name: "Amiri", size: 18, bold: true };
         ws.getRow(startRow).alignment = { horizontal: "center", vertical: "middle" };
         ws.getRow(startRow).height = 40;
+
+        // Filter info row — addRow places it at startRow+1 (next after the getCell-defined title row),
+        // which also corrects the pre-existing off-by-one where headerRowNum = startRow+2 was unreachable.
+        const filterInfoRow = ws.addRow([utils.rtlEmbed(filterInfo)]);
+        ws.mergeCells(`A${startRow + 1}:K${startRow + 1}`);
+        filterInfoRow.font = { name: "Amiri", size: 9, italic: true, color: { argb: "FF555555" } };
+        filterInfoRow.alignment = { horizontal: "right", vertical: "middle", wrapText: true };
+        filterInfoRow.height = 18;
 
         const headerRowNum = startRow + 2;
         const headers = [
@@ -166,12 +242,35 @@ export default function ProjectCertificatesDateRangeExcel() {
         }
         setIsGenerating(true);
         try {
-            const result = await dispatch(
-                projectsApi.endpoints.fetchProjectCertificatesByDateRange.initiate({
-                    startDate: startDate.toISOString(),
-                    endDate: endDate.toISOString(),
-                })
-            ).unwrap();
+            let result: any[];
+
+            if (respectFilters && dataState) {
+                const dateRangeFilter: CompositeFilterDescriptor = {
+                    logic: "and",
+                    filters: [
+                        { field: "estimatedStartDate", operator: "gte", value: startDate.toDate() } as FilterDescriptor,
+                        { field: "estimatedStartDate", operator: "lte", value: endDate.toDate() } as FilterDescriptor,
+                    ],
+                };
+                const combinedFilter: CompositeFilterDescriptor = {
+                    logic: "and",
+                    filters: [
+                        dateRangeFilter,
+                        ...(dataState.filter ? [dataState.filter as CompositeFilterDescriptor] : []),
+                    ],
+                };
+                const oDataQuery = toODataString({ filter: combinedFilter, sort: dataState.sort });
+                result = await dispatch(
+                    projectsApi.endpoints.fetchProjectCertificatesForExport.initiate(oDataQuery)
+                ).unwrap();
+            } else {
+                result = await dispatch(
+                    projectsApi.endpoints.fetchProjectCertificatesByDateRange.initiate({
+                        startDate: startDate.toISOString(),
+                        endDate: endDate.toISOString(),
+                    })
+                ).unwrap();
+            }
 
             if (!result || result.length === 0) {
                 toast.warn(getTranslatedLabel("projects.certificate.excel.noData", "No data found for the selected range"));
@@ -179,7 +278,16 @@ export default function ProjectCertificatesDateRangeExcel() {
                 return;
             }
 
-            const buffer = await generateExcel(result);
+            const filterParts: string[] = [
+                `الفترة: ${startDate!.format("DD/MM/YYYY")} - ${endDate!.format("DD/MM/YYYY")}`,
+            ];
+            if (respectFilters && dataState?.filter) {
+                const gridText = describeFilter(dataState.filter as CompositeFilterDescriptor);
+                if (gridText) filterParts.push(`الفلاتر: ${gridText}`);
+            }
+            const filterInfo = filterParts.join("  |  ");
+
+            const buffer = await generateExcel(result, filterInfo);
             if (buffer) {
                 const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
                 saveAs(blob, `ProjectCertificates_${startDate.format("YYYYMMDD")}_to_${endDate.format("YYYYMMDD")}.xlsx`);
@@ -225,6 +333,20 @@ export default function ProjectCertificatesDateRangeExcel() {
                                 onChange={(newValue) => setEndDate(newValue)}
                                 slotProps={{ textField: { fullWidth: true } }}
                             />
+                            {dataState && (
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={respectFilters}
+                                            onChange={(e) => setRespectFilters(e.target.checked)}
+                                        />
+                                    }
+                                    label={getTranslatedLabel(
+                                        "projects.certificate.excel.respectFilters",
+                                        "مراعاة فلاتر قائمة الشهادات"
+                                    )}
+                                />
+                            )}
                         </Box>
                     </LocalizationProvider>
                 </DialogContent>

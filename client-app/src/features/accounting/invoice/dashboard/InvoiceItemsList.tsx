@@ -268,12 +268,14 @@ export default function InvoiceItemsList({invoiceId, canEdit, refreshTotal}: Pro
                         field="amount"
                         title={getTranslatedLabel(`${localizationKey}.columns.amount`, "Amount")}
                         width={100}
+                        filter={"numeric"}
                     />
 
                     <Column
                         field="quantity"
                         title={getTranslatedLabel(`${localizationKey}.columns.quantity`, "Quantity")}
                         width={100}
+                        filter={"numeric"}
                     />
                     <Column
                         field="overrideGlAccountId"

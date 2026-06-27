@@ -163,6 +163,11 @@ label.k-label {
     pointer-events: none;
 }
 
+.grid-disabled textarea {
+    pointer-events: auto;
+    cursor: default;
+}
+
 .grid-normal {
     pointer-events: auto;
 }

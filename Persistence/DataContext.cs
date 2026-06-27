@@ -1300,6 +1300,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
                     .HasColumnType("datetime")
                     .HasColumnName("LAST_UPDATED_TX_STAMP");
 
+                entity.Property(e => e.CostCenterId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("COST_CENTER_ID");
+
                 entity.Property(e => e.PartyId)
                     .HasMaxLength(36)
                     .IsUnicode(false)
@@ -1365,6 +1370,11 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
         .HasMaxLength(36)
         .IsUnicode(false)
         .HasColumnName("SALES_REQUEST_ID");
+
+                entity.HasOne(d => d.CostCenter)
+                    .WithMany(p => p.AcctgTrans)
+                    .HasForeignKey(d => d.CostCenterId)
+                    .HasConstraintName("ACCTTX_COST_CENTER");
 
                 entity.HasOne(d => d.AcctgTransType)
                     .WithMany(p => p.AcctgTrans)

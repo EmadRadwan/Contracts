@@ -103,6 +103,7 @@ const BillingAccountOrders = () => {
                 field="maxAmount"
                 title="Maximum Amount"
                 format="{0: c2}"
+                filter={"numeric"}
               />
             </KendoGrid>
           </div>

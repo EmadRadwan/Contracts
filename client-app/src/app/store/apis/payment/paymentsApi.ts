@@ -291,6 +291,14 @@ const paymentsApi = createApi({
                 }),
                 providesTags: ['PaymentsByDateRange'],
             }),
+            fetchPaymentsForExport: builder.query<Payment[], { oDataQuery: string; paymentType: 'incoming' | 'outgoing' }>({
+                query: ({ oDataQuery, paymentType }) => ({
+                    url: `/odata/paymentRecords?${oDataQuery}&paymentType=${paymentType}`,
+                    method: 'GET',
+                }),
+                transformResponse: (response: any) =>
+                    Array.isArray(response) ? response : (response?.value ?? []),
+            }),
             deletePayment: builder.mutation<void, string>({
                 query: (paymentId) => ({
                     url: `/payments/${paymentId}`,
@@ -341,5 +349,6 @@ export const {
     useLazyFetchPaymentsByDateRangeQuery,
     useDeletePaymentMutation,
     useDuplicatePaymentMutation, useResetPaymentMutation,
+    useLazyFetchPaymentsForExportQuery,
 } = paymentsApi;
 export {paymentsApi};

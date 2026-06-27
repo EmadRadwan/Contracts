@@ -49,7 +49,8 @@ namespace Application.Accounting.Transactions
                         TransactionDate = request.CreateMultiAcctgTransParams.TransactionDate,
                         IsPosted = request.CreateMultiAcctgTransParams.IsPosted,
                         PartyId = request.CreateMultiAcctgTransParams.PartyId,
-                        Description = request.CreateMultiAcctgTransParams.HeaderDescription, // REFACTOR: Use HeaderDescription
+                        CostCenterId = request.CreateMultiAcctgTransParams.CostCenterId,
+                        Description = request.CreateMultiAcctgTransParams.HeaderDescription,
                         GlFiscalTypeId = request.CreateMultiAcctgTransParams.GlFiscalTypeId,
                     };
                     var acctgTransId = await _acctgTransService.CreateAcctgTrans(acctgTransParams);

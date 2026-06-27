@@ -218,6 +218,7 @@ export default function OrdersList({ orderType }: OrdersListProps) {
                                     field="grandTotal"
                                     title={getTranslatedLabel("order.list.amount", "Amount")}
                                     width={130}
+                                    filter={"numeric"}
                                 />
                                 <Column
                                     field="currencyUomDescription"

@@ -14,6 +14,7 @@ namespace Application.Accounting.Services.Models
         public string? WorkEffortId { get; set; }              // WORK_EFFORT_ID
         public string? PartyId { get; set; }                   // PARTY_ID
         public string? RoleTypeId { get; set; }                // ROLE_TYPE_ID
+        public string? CostCenterId { get; set; }              // COST_CENTER_ID
         public string? Description { get; set; }               // DESCRIPTION
         public DateOnly? TransactionDate { get; set; }         // TRANSACTION_DATE
         public DateTime? PostedDate { get; set; }              // POSTED_DATE

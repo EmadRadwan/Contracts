@@ -172,8 +172,8 @@ const BillingAccountInvoicesList = () => {
                 title="Is Paid?"
                 cell={InvoicePaidCell}
               />
-              <Column field="amountToApply" title="Amount to apply" />
-              <Column field="total" title="Total" />
+              <Column field="amountToApply" title="Amount to apply" filter={"numeric"} />
+              <Column field="total" title="Total" filter={"numeric"} />
             </KendoGrid>
           </div>
         </Grid>

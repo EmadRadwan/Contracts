@@ -208,8 +208,8 @@ export default function PayrollInvoiceItemsList({ invoiceId, canEdit, refreshTot
                     />
 
                     <Column field="description" title={getTranslatedLabel("accounting.invoices.payroll.description", "Description")} width={300} />
-                    <Column field="quantity" title={getTranslatedLabel("accounting.invoices.payroll.quantity", "Quantity/Hrs")} width={120} format="{0:n2}" />
-                    <Column field="amount" title={getTranslatedLabel("accounting.invoices.payroll.amount", "Amount")} width={120} format="{0:n2}" />
+                    <Column field="quantity" title={getTranslatedLabel("accounting.invoices.payroll.quantity", "Quantity/Hrs")} width={120} format="{0:n2}" filter={"numeric"} />
+                    <Column field="amount" title={getTranslatedLabel("accounting.invoices.payroll.amount", "Amount")} width={120} format="{0:n2}" filter={"numeric"} />
                     
                 </KendoGrid>
 

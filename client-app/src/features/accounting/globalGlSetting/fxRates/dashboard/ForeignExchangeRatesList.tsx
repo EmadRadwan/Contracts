@@ -70,7 +70,7 @@ const ForeignExchangeRatesList = () => {
                   </GridToolbar>
                   <Column field="uomId" title="From Currency" />
                   <Column field="uomIdTo" title="To Currency" />
-                  <Column field="conversionFactor" title="Rate" />
+                  <Column field="conversionFactor" title="Rate" filter={"numeric"} />
                   <Column
                     field="fromDate"
                     title="From Date"

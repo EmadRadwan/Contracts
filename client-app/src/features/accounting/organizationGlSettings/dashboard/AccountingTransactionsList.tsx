@@ -410,6 +410,11 @@ export default function AccountingTransactionsList() {
                     "Party Name"
                 )}
                         width={100} />
+                <Column field="costCenterDescription" title={getTranslatedLabel(
+                    "accounting.orgGL.accounting.summary.txns.costCenter",
+                    "Cost Center"
+                )}
+                        width={130} />
                 <Column field="isPosted" title={getTranslatedLabel(
                     "accounting.orgGL.accounting.summary.txns.isPosted",
                     "Is Posted"

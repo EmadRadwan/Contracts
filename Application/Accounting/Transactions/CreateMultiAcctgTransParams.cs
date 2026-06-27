@@ -9,6 +9,7 @@ namespace Application.Accounting.Transactions
         public string Description { get; set; } // REFACTOR: Retained for backward compatibility or alternative use
         public string IsPosted { get; set; }
         public string? PartyId { get; set; }
+        public string? CostCenterId { get; set; }
         public string GlFiscalTypeId { get; set; }
     }
     

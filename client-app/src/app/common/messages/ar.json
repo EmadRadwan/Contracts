@@ -1857,6 +1857,7 @@
             "isPosted": "تم الترحيل",
             "debitTotal": "الاجمالى",
             "postedDate": "تاريخ الترحيل",
+            "costCenter": "مركز التكلفة",
             "deleteButton": "حذف",
             "deleteDialogTitle": "تأكيد الحذف",
             "deleteDialogMessage": "هل أنت متأكد من رغبتك في حذف القيد المحاسبي {0}؟ هذا الإجراء لا يمكن التراجع عنه.",

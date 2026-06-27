@@ -597,11 +597,13 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
                         companyName={companyName}
                         paymentType={paymentType}
                         getTranslatedLabel={getTranslatedLabel}
+                        dataState={dataState}
                     />
                     <PaymentsDateRangeExcel
                         companyName={companyName}
                         paymentType={paymentType}
                         getTranslatedLabel={getTranslatedLabel}
+                        dataState={dataState}
                     />
                   </GridToolbar>
                   {gridColumns.map((col, index) => (

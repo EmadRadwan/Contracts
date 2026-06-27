@@ -245,6 +245,14 @@ const projectsApi = createApi({
                     params: { pageSize: 1000 },
                 }),
             }),
+            fetchProjectCertificatesForExport: builder.query<WorkEffort[], string>({
+                query: (oDataQuery) => ({
+                    url: `/odata/ProjectCertificateRecords?${oDataQuery}`,
+                    method: "GET",
+                }),
+                transformResponse: (response: any) =>
+                    Array.isArray(response) ? response : (response?.value ?? []),
+            }),
         };
 
     },
@@ -271,6 +279,7 @@ export const {
     useAddProjectCommissionRateMutation,
     useUpdateProjectCommissionRateMutation,
     useFetchProjectsLovQuery,
+    useLazyFetchProjectCertificatesForExportQuery,
 } = projectsApi;
 export {projectsApi};
 

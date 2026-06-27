@@ -68,6 +68,42 @@ namespace Application.Projects
 
             private async Task<List<ProjectExpenseRecord>> GetExpenses(Query request, CancellationToken ct)
             {
+                // Build the full set of GL accounts owned by this project:
+                // the project's direct GlAccountId plus OperatingExpenseGlAccountId and all
+                // its descendants. Items whose GlAccountId falls in this set are included even
+                // when their WorkEffort.ProjectId was never populated.
+                var projectGlAccountIds = new HashSet<string>();
+
+                var projectRecord = await _context.WorkEfforts.AsNoTracking()
+                    .Where(w => w.WorkEffortId == request.ProjectId)
+                    .Select(w => new { w.GlAccountId, w.OperatingExpenseGlAccountId })
+                    .FirstOrDefaultAsync(ct);
+
+                if (!string.IsNullOrEmpty(projectRecord?.GlAccountId))
+                    projectGlAccountIds.Add(projectRecord.GlAccountId);
+
+                if (!string.IsNullOrEmpty(projectRecord?.OperatingExpenseGlAccountId))
+                {
+                    var parentGlId = projectRecord.OperatingExpenseGlAccountId;
+                    projectGlAccountIds.Add(parentGlId);
+
+                    var allGlAccounts = await _context.GlAccounts
+                        .AsNoTracking()
+                        .Select(g => new { g.GlAccountId, g.ParentGlAccountId })
+                        .ToListAsync(ct);
+
+                    void AddDescendants(string parentId)
+                    {
+                        foreach (var child in allGlAccounts.Where(c => c.ParentGlAccountId == parentId))
+                        {
+                            if (projectGlAccountIds.Add(child.GlAccountId))
+                                AddDescendants(child.GlAccountId);
+                        }
+                    }
+
+                    AddDescendants(parentGlId);
+                }
+
                 var query = from header in _context.WorkEfforts.AsNoTracking()
                     join item in _context.WorkEfforts.AsNoTracking()
                         on header.WorkEffortId equals item.WorkEffortParentId
@@ -89,7 +125,10 @@ namespace Application.Projects
                               item.WorkEffortTypeId == "PAYMENT_CERTIFICATE_ITEM")
                     let projId = header.ProjectId ?? item.ProjectId
                     where projId == request.ProjectId
-                    where !(header.WorkEffortTypeId == "PAYMENT_CERTIFICATE" && projId == null)
+                          || (projectGlAccountIds.Count > 0 && projectGlAccountIds.Contains(item.GlAccountId!))
+                    where header.WorkEffortTypeId != "PAYMENT_CERTIFICATE"
+                          || projId != null
+                          || (projectGlAccountIds.Count > 0 && projectGlAccountIds.Contains(item.GlAccountId!))
                     select new { header, item, projId, partyId, p, prodId, prod, paymentId = pyt.PaymentId };
 
                 if (!request.ExpensesAllData)
@@ -104,7 +143,7 @@ namespace Application.Projects
                                 x.header.EstimatedStartDate ?? x.header.CreatedDate) <= request.ExpensesEndDate.Value);
                 }
 
-                var results = await query.Select(x => new ProjectExpenseRecord
+                var rawResults = await query.Select(x => new ProjectExpenseRecord
                 {
                     ExpenseItemKey = x.item.WorkEffortId,
                     CertificateKey = x.header.WorkEffortId,
@@ -167,6 +206,12 @@ namespace Application.Projects
                             ? 100m
                             : (x.item.AchievementPercent ?? 0m))
                 }).ToListAsync(ct);
+
+                // Deduplicate: a certificate's related order may have multiple payments, which fans out each item
+                var results = rawResults
+                    .GroupBy(r => r.ExpenseItemKey)
+                    .Select(g => g.OrderByDescending(r => !string.IsNullOrEmpty(r.PaymentId)).First())
+                    .ToList();
 
                 foreach (var r in results)
                 {

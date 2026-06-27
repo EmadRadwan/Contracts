@@ -30,4 +30,6 @@ export interface AcctgTrans {
     debitTotal?: number | null;
     creditTotal?: number | null;
     netAmount?: number | null;
+    costCenterId?: string;
+    costCenterDescription?: string;
 }

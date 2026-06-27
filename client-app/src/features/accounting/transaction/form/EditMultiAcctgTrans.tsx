@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
-import {Grid, Paper, Typography, Button, Skeleton, Chip, Menu, MenuItem} from "@mui/material";
+import {Grid, Paper, Typography, Button, Skeleton, Chip, Menu, MenuItem, TextField, Autocomplete, Box} from "@mui/material";
 import { Form, FormElement, Field } from "@progress/kendo-react-form";
 import { Grid as KendoGrid, GridColumn as Column, GridSortChangeEvent, GridPageChangeEvent, GridRowProps, GridCellProps, GridToolbar } from "@progress/kendo-react-grid";
 import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
@@ -23,6 +23,8 @@ import useDuplicateAcctgTrans from "../hook/useDuplicateAcctgTrans";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import {MultiAcctgTransExcel} from "../report/MultiAcctgTransExcel";
 import {Can} from "../../../account/Can";
+import {useGetCostCentersQuery} from "../../../../app/store/apis/accounting/paymentTypesApi";
+import CreateCostCenterModal from "../../payment/form/CreateCostCenterModal";
 
 interface TransEntry {
     id: string;
@@ -78,6 +80,9 @@ export default function EditMultiAcctgTrans() {
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const openActions = Boolean(anchorEl);
+    const [showCreateCostCenter, setShowCreateCostCenter] = useState(false);
+
+    const { data: costCenters = [] } = useGetCostCentersQuery();
 
     const handleActionsClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
@@ -98,6 +103,7 @@ export default function EditMultiAcctgTrans() {
                 fromPartyName: initialTransFromState.partyName || "",
             }
             : null,
+        costCenterId: initialTransFromState?.costCenterId || "",
     }));
 
     // Populate entries when data arrives (using currentTransId)
@@ -226,6 +232,7 @@ export default function EditMultiAcctgTrans() {
                     headerDescription: headerValues.headerDescription,
                     description: transEntries[0]?.description || "",
                     partyId: headerValues.party?.fromPartyId || undefined,
+                    costCenterId: headerValues.costCenterId || undefined,
                 },
                 entries: transEntries.map((entry) => ({
                     acctgTransEntrySeqId: entry.acctgTransEntrySeqId,
@@ -426,7 +433,7 @@ export default function EditMultiAcctgTrans() {
                         </Grid>
                     )}
                 </Grid>
-                <Grid container spacing={2} sx={{ mb: 2 }}>
+                <Grid container spacing={2} sx={{ mb: 2 }} alignItems="flex-end">
                     <Grid item xs={3}>
                         <FormDatePicker
                             id="transactionDate"
@@ -468,7 +475,50 @@ export default function EditMultiAcctgTrans() {
                             disabled={isPosted}
                         />
                     </Grid>
+                    <Grid item xs={3}>
+                        <Box sx={{ display: "flex", alignItems: "flex-end", gap: 1 }}>
+                            <Autocomplete
+                                options={costCenters}
+                                getOptionLabel={(option) => option.description || ""}
+                                value={costCenters.find(c => c.costCenterId === headerValues.costCenterId) || null}
+                                onChange={(_event, newValue) => {
+                                    setHeaderValues(prev => ({
+                                        ...prev,
+                                        costCenterId: newValue?.costCenterId || "",
+                                    }));
+                                }}
+                                isOptionEqualToValue={(option, value) =>
+                                    option.costCenterId === value?.costCenterId
+                                }
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label={getTranslatedLabel(`${localizationKey}.costCenter`, "Cost Center")}
+                                        variant="outlined"
+                                        size="small"
+                                    />
+                                )}
+                                sx={{ flex: 1 }}
+                                disabled={isPosted}
+                            />
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                color="secondary"
+                                onClick={() => setShowCreateCostCenter(true)}
+                                disabled={isPosted}
+                                sx={{ minWidth: 36, height: 40, flexShrink: 0 }}
+                            >
+                                +
+                            </Button>
+                        </Box>
+                    </Grid>
                 </Grid>
+                <CreateCostCenterModal
+                    open={showCreateCostCenter}
+                    onClose={() => setShowCreateCostCenter(false)}
+                    isOutPayment={false}
+                />
                 <Form
                     initialValues={initialFormValues}
                     key={formResetCounter}

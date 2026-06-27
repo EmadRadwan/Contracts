@@ -251,7 +251,7 @@ const FinancialAccountTransactions = () => {
                     title="Entry Date"
                     format="{0: dd/MM/yyyy}"
                   />
-                  <Column field="amount" title="Amount" format="{0: n2}" />
+                  <Column field="amount" title="Amount" format="{0: n2}" filter={"numeric"} />
                   <Column field="paymentId" title="Payment Id" />
                   <Column field="statusDescription" title="Status" />
                   {/* <Column field="paymentTypeDescription" title="Payment Type" format="{0: n2}" />

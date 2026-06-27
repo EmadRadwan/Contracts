@@ -87,6 +87,8 @@ public class ListAccountingTransactions
                 from project in projGroup.DefaultIfEmpty()
                 join party in _context.Parties on transaction.PartyId equals party.PartyId into partyGroup
                 from party in partyGroup.DefaultIfEmpty()
+                join costCenter in _context.CostCenters on transaction.CostCenterId equals costCenter.CostCenterId into costCenterGroup
+                from costCenter in costCenterGroup.DefaultIfEmpty()
                 where glAccountOrg.OrganizationPartyId == request.CompanyId // Filter by companyId
                 select new AccountingTransactionRecord
                 {
@@ -95,6 +97,8 @@ public class ListAccountingTransactions
                     AcctgTransTypeDescription = transactionType.Description,
                     PartyId = transaction.PartyId,
                     PartyName = party != null ? party.Description : null,
+                    CostCenterId = transaction.CostCenterId,
+                    CostCenterDescription = costCenter != null ? costCenter.Description : null,
                     PaymentId = transaction.PaymentId,
                     TransactionDate = transaction.TransactionDate,
                     IsPosted = transaction.IsPosted,

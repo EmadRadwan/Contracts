@@ -48,6 +48,7 @@ public class AcctgTransService : IAcctgTransService
             PaymentId = parameters.PaymentId,
             PartyId = parameters.PartyId,
             RoleTypeId = parameters.RoleTypeId,
+            CostCenterId = parameters.CostCenterId,
             ShipmentId = parameters.ShipmentId,
             WorkEffortId = parameters.WorkEffortId,
             SalesRequestId = parameters.SalesRequestId,
@@ -243,6 +244,9 @@ public class AcctgTransService : IAcctgTransService
 
         if (parameters.PartyId != null)
             lookedUpValue.PartyId = parameters.PartyId;
+
+        if (parameters.CostCenterId != null)
+            lookedUpValue.CostCenterId = parameters.CostCenterId;
 
         if (parameters.RoleTypeId != null)
             lookedUpValue.RoleTypeId = parameters.RoleTypeId;

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import {Grid, GridCellProps, GridColumn, GridToolbar} from "@progress/kendo-react-grid";
+import {Grid, GridCellProps, GridColumn, GridPageChangeEvent, GridToolbar} from "@progress/kendo-react-grid";
 import {Button, Typography} from "@mui/material";
 import { MultiPaymentItem } from "../../../app/models/project/MultiPaymentItem";
 import ModalContainer from "../../../app/common/modals/ModalContainer";
@@ -18,6 +18,11 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
     const { getTranslatedLabel } = useTranslationHelper();
     const localizationKey = "projects.multiPaymentCertificate.items";
     const [showBulk, setShowBulk] = useState<boolean>(false);
+    const [page, setPage] = useState({ skip: 0, take: 10 });
+
+    const handlePageChange = (e: GridPageChangeEvent) => {
+        setPage({ skip: e.page.skip, take: e.page.take });
+    };
 
     const handleBulkClose = () => {
         setShowBulk(false);
@@ -113,7 +118,11 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
     return (
         <>
             <Grid
-                data={gridData} 
+                data={gridData.slice(page.skip, page.skip + page.take)}
+                total={gridData.length}
+                skip={page.skip}
+                take={page.take}
+                onPageChange={handlePageChange}
                 sortable={true}
                 resizable={true}
                 pageable={true}

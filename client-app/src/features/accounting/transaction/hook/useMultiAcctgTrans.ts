@@ -17,7 +17,8 @@ export interface CreateMultiAcctgTransWithEntriesParams {
         Description: string;
         IsPosted?: string;
         GlFiscalTypeId: string;
-        partyId?: string;                    // ← NEW: Optional partyId at header level
+        partyId?: string;
+        CostCenterId?: string;
     };
     Entries: MultiAcctgTransEntryParams[];
 }

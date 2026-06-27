@@ -3,6 +3,7 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import {
     Button,
+    Checkbox,
     Dialog,
     DialogTitle,
     DialogContent,
@@ -10,9 +11,9 @@ import {
     Box,
     CircularProgress,
     FormControl,
+    FormControlLabel,
     FormLabel,
     RadioGroup,
-    FormControlLabel,
     Radio,
     Divider,
 } from '@mui/material';
@@ -20,12 +21,19 @@ import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs';
-import { useLazyFetchPaymentsByDateRangeQuery } from "../../../../app/store/apis";
+import { useLazyFetchPaymentsByDateRangeQuery, useLazyFetchPaymentsForExportQuery } from "../../../../app/store/apis";
+import {
+    CompositeFilterDescriptor,
+    FilterDescriptor,
+    State,
+    toODataString,
+} from '@progress/kendo-data-query';
 
 interface PaymentsDateRangeExcelProps {
     companyName: string;
     paymentType: 'incoming' | 'outgoing';
     getTranslatedLabel: (key: string, defaultValue: string) => string;
+    dataState?: State;
 }
 
 type SubtotalBy = 'paymentTypeDescription' | 'accountNameArabic' | 'paymentMethodDescription' | 'partyIdToName' | 'partyIdFromName';
@@ -87,20 +95,82 @@ function groupByField(data: any[], field: SubtotalBy): Map<string, any[]> {
     return groups;
 }
 
+const FIELD_LABELS: Record<string, string> = {
+    paymentId: "رقم الدفعة",
+    paymentRefNum: "رقم المرجع",
+    paymentTypeDescription: "نوع الدفعة",
+    effectiveDate: "تاريخ الدفعة",
+    statusDescription: "الحالة",
+    dueStatusArabic: "حالة الاستحقاق",
+    amount: "المبلغ",
+    paymentMethodTypeDescription: "نوع طريقة الدفع",
+    isBankTransfer: "تحويل بنكي",
+    chequeNumber: "رقم الشيك",
+    orderId: "رقم الطلب",
+    certificateNumber: "رقم الشهادة",
+    salesRequestId: "رقم طلب البيع",
+    productId: "رقم المنتج",
+    buildingNumber: "رقم المبنى",
+    projectName: "المشروع",
+    costCenterDescription: "مركز التكلفة",
+    partyIdFromName: "من طرف",
+    partyIdToName: "إلى طرف",
+    comments: "ملاحظات",
+    paymentMethodDescription: "طريقة الدفع",
+    accountNameArabic: "الحساب",
+    approvedByPartyName: "اعتمد بواسطة",
+    createdByPartyName: "أنشئ بواسطة",
+};
+
+const OPERATOR_LABELS: Record<string, string> = {
+    eq: "=", neq: "≠",
+    contains: "يحتوي على", doesnotcontain: "لا يحتوي على",
+    startswith: "يبدأ بـ", endswith: "ينتهي بـ",
+    gte: "≥", gt: ">", lte: "≤", lt: "<",
+    isnull: "فارغ", isnotnull: "غير فارغ",
+    isempty: "فارغ", isnotempty: "غير فارغ",
+};
+
+const NO_VALUE_OPS = new Set(["isnull", "isnotnull", "isempty", "isnotempty"]);
+
+function describeFilter(f: CompositeFilterDescriptor | FilterDescriptor): string {
+    if ("filters" in f) {
+        const parts = (f as CompositeFilterDescriptor).filters
+            .map(child => describeFilter(child as CompositeFilterDescriptor | FilterDescriptor))
+            .filter(Boolean);
+        if (parts.length === 0) return "";
+        const sep = (f as CompositeFilterDescriptor).logic === "and" ? " و " : " أو ";
+        return parts.length === 1 ? parts[0] : `(${parts.join(sep)})`;
+    }
+    const fd = f as FilterDescriptor;
+    const field = fd.field as string;
+    const label = FIELD_LABELS[field] ?? field;
+    const op = OPERATOR_LABELS[fd.operator as string] ?? String(fd.operator);
+    if (NO_VALUE_OPS.has(fd.operator as string)) return `${label} ${op}`;
+    const val = fd.value instanceof Date
+        ? new Date(fd.value).toLocaleDateString("en-GB")
+        : fd.value == null ? "" : String(fd.value);
+    return `${label} ${op} "${val}"`;
+}
+
 export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
     paymentType,
     getTranslatedLabel,
+    dataState,
 }) => {
     const [open, setOpen] = useState(false);
     const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf('month'));
     const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
     const [subtotalBy, setSubtotalBy] = useState<SubtotalBy>('paymentTypeDescription');
+    const [respectFilters, setRespectFilters] = useState(false);
     const [trigger, { isFetching }] = useLazyFetchPaymentsByDateRangeQuery();
+    const [exportTrigger, { isFetching: isExportFetching }] = useLazyFetchPaymentsForExportQuery();
     const [isGenerating, setIsGenerating] = useState(false);
 
     const generateExcel = useCallback(async (
         data: { data: any[]; total: number },
-        groupBy: SubtotalBy
+        groupBy: SubtotalBy,
+        filterInfo: string,
     ) => {
         if (!data || data.data.length === 0) return null;
 
@@ -144,7 +214,14 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
         ws.getRow(startRow).alignment = { horizontal: 'center', vertical: 'middle' };
         ws.getRow(startRow).height = 40;
 
-        // Header row
+        // Filter info row at startRow+1
+        const filterInfoRow = ws.addRow([utils.rtlEmbed(filterInfo)]);
+        ws.mergeCells(`A${startRow + 1}:${LAST_COL_LETTER}${startRow + 1}`);
+        filterInfoRow.font = { name: 'Amiri', size: 9, italic: true, color: { argb: 'FF555555' } };
+        filterInfoRow.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
+        filterInfoRow.height = 18;
+
+        // Header row (now correctly at startRow+2)
         const headerRowNum = startRow + 2;
         const headers = COLUMN_DEFS.map(c => utils.rtlEmbed(getTranslatedLabel(c.headerKey, c.defaultHeader)));
         ws.addRow(headers);
@@ -226,13 +303,45 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
         }
         setIsGenerating(true);
         try {
-            const result = await trigger({
-                paymentType,
-                fromDate: startDate.format('YYYY-MM-DD'),
-                toDate: endDate.format('YYYY-MM-DD'),
-            }).unwrap();
+            let result: { data: any[]; total: number };
 
-            const buffer = await generateExcel(result, subtotalBy);
+            if (respectFilters && dataState) {
+                const dateRangeFilter: CompositeFilterDescriptor = {
+                    logic: "and",
+                    filters: [
+                        { field: "effectiveDate", operator: "gte", value: startDate.toDate() } as FilterDescriptor,
+                        { field: "effectiveDate", operator: "lte", value: endDate.toDate() } as FilterDescriptor,
+                    ],
+                };
+                const combinedFilter: CompositeFilterDescriptor = {
+                    logic: "and",
+                    filters: [
+                        dateRangeFilter,
+                        ...(dataState.filter ? [dataState.filter as CompositeFilterDescriptor] : []),
+                    ],
+                };
+                const oDataQuery = toODataString({ filter: combinedFilter, sort: dataState.sort });
+                const flat = await exportTrigger({ oDataQuery, paymentType }, false).unwrap();
+                result = { data: flat, total: flat.length };
+            } else {
+                result = await trigger({
+                    paymentType,
+                    fromDate: startDate.format('YYYY-MM-DD'),
+                    toDate: endDate.format('YYYY-MM-DD'),
+                }).unwrap();
+            }
+
+            // Build filter info text for Excel
+            const filterParts: string[] = [
+                `الفترة: ${startDate.format("DD/MM/YYYY")} - ${endDate.format("DD/MM/YYYY")}`,
+            ];
+            if (respectFilters && dataState?.filter) {
+                const gridText = describeFilter(dataState.filter as CompositeFilterDescriptor);
+                if (gridText) filterParts.push(`الفلاتر: ${gridText}`);
+            }
+            const filterInfo = filterParts.join("  |  ");
+
+            const buffer = await generateExcel(result, subtotalBy, filterInfo);
             if (buffer) {
                 const fileName = `${paymentType}_Payments_${startDate.format('YYYYMMDD')}_to_${endDate.format('YYYYMMDD')}.xlsx`;
                 saveAs(
@@ -247,9 +356,9 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
         } finally {
             setIsGenerating(false);
         }
-    }, [trigger, generateExcel, paymentType, startDate, endDate, subtotalBy]);
+    }, [trigger, exportTrigger, generateExcel, paymentType, startDate, endDate, subtotalBy, respectFilters, dataState]);
 
-    const isLoading = isFetching || isGenerating;
+    const isLoading = isFetching || isExportFetching || isGenerating;
 
     return (
         <>
@@ -310,6 +419,21 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
                                     />
                                 </RadioGroup>
                             </FormControl>
+
+                            {dataState && (
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={respectFilters}
+                                            onChange={(e) => setRespectFilters(e.target.checked)}
+                                        />
+                                    }
+                                    label={getTranslatedLabel(
+                                        "accounting.payments.report.respectFilters",
+                                        "مراعاة فلاتر قائمة الدفعات"
+                                    )}
+                                />
+                            )}
                         </Box>
                     </LocalizationProvider>
                 </DialogContent>

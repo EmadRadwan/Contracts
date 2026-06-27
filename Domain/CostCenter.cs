@@ -13,7 +13,8 @@ public class CostCenter
     public CostCenter()
     {
         Payments = new HashSet<Payment>();
-        WorkEfforts = new HashSet<WorkEffort>();   // ← Add this
+        WorkEfforts = new HashSet<WorkEffort>();
+        AcctgTrans = new HashSet<AcctgTran>();
     }
 
     public string CostCenterId { get; set; } = null!;
@@ -27,6 +28,6 @@ public class CostCenter
 
     public virtual ICollection<Payment> Payments { get; set; }
     
-    // NEW: Navigation to WorkEfforts
     public virtual ICollection<WorkEffort> WorkEfforts { get; set; } = new HashSet<WorkEffort>();
+    public virtual ICollection<AcctgTran> AcctgTrans { get; set; }
 }

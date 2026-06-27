@@ -144,6 +144,7 @@ export default function ProductPricesList() {
                                     field="price"
                                     title={getTranslatedLabel(`${localizationKey}.price`, 'Price')}
                                     width={150}
+                                    filter={"numeric"}
                                 />
                                 <Column field="rowVersion" title="rowVersion" width={0} />
                                 <Column

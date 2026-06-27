@@ -340,7 +340,7 @@ export default function ProjectCertificatesList() {
                         </Menu>
                     </Grid>
                     <Grid item xs={9}>
-                        <ProjectCertificatesDateRangeExcel />
+                        <ProjectCertificatesDateRangeExcel dataState={dataState} />
                     </Grid>
                     <Grid item xs={12}>
                         <KendoGrid

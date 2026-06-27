@@ -265,6 +265,7 @@ const BalanceSheet = () => {
                                                 "Balance"
                                             )}
                                             format="{0:n2}"
+                                            filter={"numeric"}
                                         />
                                     </KendoGrid>
                                 </div>
@@ -316,6 +317,7 @@ const BalanceSheet = () => {
                                                 "Balance"
                                             )}
                                             format="{0:n2}"
+                                            filter={"numeric"}
                                         />
                                     </KendoGrid>
                                 </div>
@@ -367,6 +369,7 @@ const BalanceSheet = () => {
                                                 "Balance"
                                             )}
                                             format="{0:n2}"
+                                            filter={"numeric"}
                                         />
                                     </KendoGrid>
                                 </div>

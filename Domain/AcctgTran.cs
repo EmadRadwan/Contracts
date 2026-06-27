@@ -29,6 +29,7 @@ public class AcctgTran
     public string? PhysicalInventoryId { get; set; }
     public string? PartyId { get; set; }
     public string? RoleTypeId { get; set; }
+    public string? CostCenterId { get; set; }
     public string? InvoiceId { get; set; }
     public string? PaymentId { get; set; }
     public string? FinAccountTransId { get; set; }
@@ -47,6 +48,7 @@ public class AcctgTran
     public DateTime? CreatedStamp { get; set; }
     public DateTime? CreatedTxStamp { get; set; }
 
+    public CostCenter? CostCenter { get; set; }
     public AcctgTransType? AcctgTransType { get; set; }
     public FinAccountTran? FinAccountTrans { get; set; }
     public FixedAsset? FixedAsset { get; set; }

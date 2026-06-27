@@ -33,11 +33,37 @@ public class ListWorkEffortsByGlAccount
 
         public async Task<Result<List<WorkEffortDto>>> Handle(Query request, CancellationToken cancellationToken)
         {
-            var query = _context.WorkEfforts.AsQueryable();
+            // Build ancestor chain: the selected GL account + all its parents up the tree.
+            // A project whose GlAccountId or OperatingExpenseGlAccountId appears anywhere in
+            // this chain is considered the owner of the selected account.
+            var ancestorIds = new HashSet<string>();
 
             if (!string.IsNullOrEmpty(request.GlAccountId))
             {
-                query = query.Where(x => x.GlAccountId == request.GlAccountId);
+                ancestorIds.Add(request.GlAccountId);
+
+                var allGlAccounts = await _context.GlAccounts
+                    .AsNoTracking()
+                    .Select(g => new { g.GlAccountId, g.ParentGlAccountId })
+                    .ToListAsync(cancellationToken);
+
+                var currentId = request.GlAccountId;
+                while (true)
+                {
+                    var current = allGlAccounts.FirstOrDefault(g => g.GlAccountId == currentId);
+                    if (current?.ParentGlAccountId == null) break;
+                    ancestorIds.Add(current.ParentGlAccountId);
+                    currentId = current.ParentGlAccountId;
+                }
+            }
+
+            var query = _context.WorkEfforts.AsQueryable();
+
+            if (ancestorIds.Count > 0)
+            {
+                query = query.Where(x =>
+                    ancestorIds.Contains(x.GlAccountId) ||
+                    ancestorIds.Contains(x.OperatingExpenseGlAccountId));
             }
 
             if (!string.IsNullOrEmpty(request.WorkEffortTypeId))

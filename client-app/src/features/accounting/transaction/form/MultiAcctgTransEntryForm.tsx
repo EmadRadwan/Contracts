@@ -1,5 +1,5 @@
 import React, {useState, useCallback, useMemo, useEffect} from "react";
-import {Grid, Paper, Typography, Button, Skeleton, TextField, Chip, Autocomplete, Menu, MenuItem} from "@mui/material";
+import {Grid, Paper, Typography, Button, Skeleton, TextField, Chip, Autocomplete, Menu, MenuItem, Box} from "@mui/material";
 import {Form, FormElement, Field} from "@progress/kendo-react-form";
 import {
     Grid as KendoGrid,
@@ -26,6 +26,8 @@ import {FormComboBoxVirtualParty} from "../../../../app/common/form/FormComboBox
 import useDuplicateAcctgTrans from "../hook/useDuplicateAcctgTrans";
 import {MultiAcctgTransExcel} from "../report/MultiAcctgTransExcel";
 import {Can} from "../../../account/Can";
+import {useGetCostCentersQuery} from "../../../../app/store/apis/accounting/paymentTypesApi";
+import CreateCostCenterModal from "../../payment/form/CreateCostCenterModal";
 
 interface TransEntry {
     id: string;
@@ -68,12 +70,17 @@ export default function MultiAcctgTransEntryForm() {
 
     const { data: acctgTransTypes, isLoading: isLoadingTransTypes } = useFetchAcctgTransTypesQuery(undefined);
     const { duplicate, isDuplicating } = useDuplicateAcctgTrans();
+    const {
+        data: costCenters = [],
+    } = useGetCostCentersQuery();
+
     // REFACTOR: Manage header-level fields outside the form to persist across resets
     const [headerValues, setHeaderValues] = useState({
         transactionDate: new Date(),
         headerDescription: "",
         party: null as { fromPartyId: string; fromPartyName: string } | null,
-        acctgTransTypeId: null as string | null, // ← NEW
+        acctgTransTypeId: null as string | null,
+        costCenterId: "" as string,
     });
 
     console.log("transEntries", transEntries);
@@ -83,6 +90,7 @@ export default function MultiAcctgTransEntryForm() {
     const [transactionId, setTransactionId] = useState<string | null>(null);
     const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
 
+    const [showCreateCostCenter, setShowCreateCostCenter] = useState(false);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const openActions = Boolean(anchorEl);
 
@@ -205,6 +213,7 @@ export default function MultiAcctgTransEntryForm() {
                         IsPosted: "N",
                         GlFiscalTypeId: "ACTUAL",
                         partyId: headerValues.party?.fromPartyId || undefined,
+                        CostCenterId: headerValues.costCenterId || undefined,
                     },
                     Entries: transEntries.map((entry) => ({
                         debitGlAccountId: entry.debitGlAccountId,
@@ -231,8 +240,9 @@ export default function MultiAcctgTransEntryForm() {
         setHeaderValues({
             transactionDate: new Date(),
             headerDescription: "",
-            partyId: "" ,
-            acctgTransTypeId: null
+            party: null,
+            acctgTransTypeId: null,
+            costCenterId: "",
         });
         setTransactionId(null);
         setJustPosted(false);
@@ -496,18 +506,61 @@ export default function MultiAcctgTransEntryForm() {
                         <FormComboBoxVirtualParty
                             id="partyId"
                             label={getTranslatedLabel(`${localizationKey}.party`, "Employee")}
-                            value={headerValues.party}  
+                            value={headerValues.party}
                             onChange={(e: any) => setHeaderValues((prev) => ({
                                 ...prev,
-                                party: e.value 
+                                party: e.value
                             }))}
                             valueField="fromPartyId"
                             textField="fromPartyName"
                             disabled={isPosted}
                         />
                     </Grid>
+                    <Grid item xs={3}>
+                        <Box sx={{ display: "flex", alignItems: "flex-end", gap: 1 }}>
+                            <Autocomplete
+                                options={costCenters}
+                                getOptionLabel={(option) => option.description || ""}
+                                value={costCenters.find(c => c.costCenterId === headerValues.costCenterId) || null}
+                                onChange={(_event, newValue) => {
+                                    setHeaderValues(prev => ({
+                                        ...prev,
+                                        costCenterId: newValue?.costCenterId || "",
+                                    }));
+                                }}
+                                isOptionEqualToValue={(option, value) =>
+                                    option.costCenterId === value?.costCenterId
+                                }
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label={getTranslatedLabel(`${localizationKey}.costCenter`, "Cost Center")}
+                                        variant="outlined"
+                                        size="small"
+                                    />
+                                )}
+                                sx={{ flex: 1 }}
+                                disabled={isPosted}
+                            />
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                color="secondary"
+                                onClick={() => setShowCreateCostCenter(true)}
+                                disabled={isPosted}
+                                sx={{ minWidth: 36, height: 40, flexShrink: 0 }}
+                            >
+                                +
+                            </Button>
+                        </Box>
+                    </Grid>
 
                 </Grid>
+                <CreateCostCenterModal
+                    open={showCreateCostCenter}
+                    onClose={() => setShowCreateCostCenter(false)}
+                    isOutPayment={false}
+                />
                 <Form
                     initialValues={initialFormValues}
                     key={formResetCounter}
