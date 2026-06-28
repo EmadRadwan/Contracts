@@ -23,7 +23,8 @@ public class ListSalesCommissions
                 from sc in _context.SalesCommissions
                 join sr in _context.SalesRequests on sc.SalesRequestId equals sr.SalesRequestId
                 join p in _context.Products on sr.ProductId equals p.ProductId
-                join we in _context.WorkEfforts on p.ProjectId equals we.WorkEffortId
+                join we in _context.WorkEfforts on sc.ProjectId equals we.WorkEffortId into weGroup
+                from we in weGroup.DefaultIfEmpty()
                 join salesRepParty in _context.Parties on sc.SalesRepPartyId equals salesRepParty.PartyId into salesRepGroup
                 from salesRepParty in salesRepGroup.DefaultIfEmpty()
                 join managerParty in _context.Parties on sc.ManagerPartyId equals managerParty.PartyId into managerGroup
@@ -46,8 +47,10 @@ public class ListSalesCommissions
                     StatusId = sc.StatusId,
                     CommissionDate = sc.CommissionDate,
                     ProjectId = sc.ProjectId,
-                    ProjectName = we.WorkEffortName,
+                    ProjectName = we != null ? we.ProjectName : null,
                     ApartmentName = p.ProductName,
+                    SalePrice = sc.SalePrice,
+                    CollectedAmount = sc.CollectedAmount,
                     SalesRepPartyId = sc.SalesRepPartyId,
                     SalesRepName = salesRepParty != null ? salesRepParty.Description : null,
                     SalesRepPercent = sc.SalesRepPercent,

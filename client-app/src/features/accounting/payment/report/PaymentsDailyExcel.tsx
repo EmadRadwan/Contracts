@@ -300,27 +300,19 @@ export const PaymentsDailyExcel: React.FC<PaymentsDailyExcelProps> = ({
             let result: { data: any[]; total: number };
 
             if (respectFilters && dataState) {
-                const todayStart = new Date(today);
-                todayStart.setHours(0, 0, 0, 0);
-                const todayEnd = new Date(today);
-                todayEnd.setHours(23, 59, 59, 999);
-
-                const todayFilter: CompositeFilterDescriptor = {
-                    logic: "and",
-                    filters: [
-                        { field: "effectiveDate", operator: "gte", value: todayStart } as FilterDescriptor,
-                        { field: "effectiveDate", operator: "lte", value: todayEnd } as FilterDescriptor,
-                    ],
-                };
-                const combinedFilter: CompositeFilterDescriptor = {
-                    logic: "and",
-                    filters: [
-                        todayFilter,
-                        ...(dataState.filter ? [dataState.filter as CompositeFilterDescriptor] : []),
-                    ],
-                };
-                const oDataQuery = toODataString({ filter: combinedFilter, sort: dataState.sort });
-                const flat = await exportTrigger({ oDataQuery, paymentType }, false).unwrap();
+                // Pass the date as a dedicated URL param to avoid OData DateOnly parsing failures.
+                // Only the grid's non-date filters go into the OData $filter so ApplyTo succeeds.
+                const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+                const oDataQuery = toODataString({
+                    ...(dataState.filter ? { filter: dataState.filter } : {}),
+                    sort: dataState.sort,
+                });
+                const flat = await exportTrigger({
+                    oDataQuery,
+                    paymentType,
+                    fromDate: todayStr,
+                    toDate: todayStr,
+                }, false).unwrap();
                 result = { data: flat, total: flat.length };
             } else {
                 result = await trigger({ paymentType }, false).unwrap();

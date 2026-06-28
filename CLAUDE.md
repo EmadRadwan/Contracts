@@ -164,6 +164,127 @@ export const { useFetchOrdersQuery, useAddSalesOrderMutation } = ordersApi;
 
 ---
 
+## Menu-Exit Pattern for Form/List Switching
+
+When a feature renders a form in place of a list (via state, not a route change), the form must handle menu clicks so the user can return to the list by clicking the active menu item.
+
+### How it works
+
+1. The list component controls `editMode` state. When `editMode > 0` it renders the form instead of the grid. `cancelEdit()` resets `editMode` to 0 and returns to the grid.
+2. The form receives `cancelEdit` as a prop and passes an `onMenuSelect` callback to `SalesRequestMenu`:
+
+```tsx
+<SalesRequestMenu
+  selectedMenuItem="my-feature"
+  onMenuSelect={(key) => {
+    if (key === "salesRequest.menu.myFeature") cancelEdit();
+  }}
+/>
+```
+
+3. The menu component calls `onMenuSelect(link.key)` on every click; the form ignores keys it doesn't own.
+
+### Rules
+- The key passed to `onMenuSelect` is the `translationKey` / `key` field defined in the links array inside `SalesRequestMenu`.
+- Never rely on route change alone to exit a form rendered this way; the route does not change when list and form share the same path.
+
+### Example implementations
+- `SalesRequestForm` → watches `"salesRequest.menu.salesRequests"`
+- `SalesCommissionForm` → watches `"salesRequest.menu.salesCommissions"`
+
+---
+
+## Actions Menu Pattern (Form-Level)
+
+When a form needs status-changing actions (approve, reset, delete, etc.), encapsulate them in a dedicated `*ActionsMenu` component rather than scattering buttons across the form.
+
+**Reference files:** `menu/SalesCommissionActionsMenu.tsx` (component), `form/SalesCommissionForm.tsx` (usage), `menu/SalesRequestActionsMenu.tsx` (more complex example with reset + delete).
+
+### Component structure
+- Accepts `entityId`, `currentStatusId`, `disabled`, and one `onXxx` callback per action.
+- Renders a single MUI `Button` ("Actions") that opens a MUI `Menu`.
+- Each `MenuItem` is disabled when the current status makes the action invalid — disabled logic lives **inside** the menu component, not in the caller.
+- Each destructive/irreversible action opens a `Dialog` for confirmation before firing the mutation.
+- The button carries no top/bottom margin — the parent controls spacing.
+
+### Form header layout (title row + actions menu + status ribbon)
+
+The form header row uses a MUI `Grid` to place the title/actions on the left columns and the status ribbon in the last `xs={1}` column. Reference: `SalesCommissionForm.tsx`.
+
+```tsx
+<Grid container alignItems="center" sx={{ mb: 2 }}>
+  <Grid item xs={editMode === 2 && record?.id ? 11 : 12}>
+    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <Typography variant="h4">
+        {title}
+        {record?.id && (
+          <Typography component="span" variant="h5" color="grey" sx={{ ml: 1 }}>
+            ({record.id})
+          </Typography>
+        )}
+      </Typography>
+
+      {/* Only rendered in edit mode, never in create mode */}
+      {editMode === 2 && record?.id && (
+        <EntityActionsMenu
+          entityId={record.id}
+          currentStatusId={record.statusId}
+          disabled={false}
+          onActionDone={cancelEdit}
+        />
+      )}
+    </Box>
+  </Grid>
+
+  {editMode === 2 && record?.id && (
+    <Grid item xs={1}>
+      <RibbonContainer>
+        <Ribbon
+          side="left"
+          type="corner"
+          size="large"
+          backgroundColor={ribbonBg[record.statusId] ?? "#757575"}
+          color="#ffffff"
+          fontFamily="sans-serif"
+        >
+          {ribbonLabel[record.statusId] ?? record.statusId}
+        </Ribbon>
+      </RibbonContainer>
+    </Grid>
+  )}
+</Grid>
+```
+
+### Rules
+- `justifyContent: "space-between"` on the inner `Box` puts the title at the RTL start and the Actions button at the RTL end (left side).
+- Gate both the menu and ribbon on `editMode === 2 && record?.id` — neither appears in create mode.
+- `onActionDone` is `cancelEdit` in form context and `refetch` in list/grid context.
+- The `xs={1}` ribbon column only renders in edit mode; the title column expands to `xs={12}` in create mode.
+
+## Status Ribbon Pattern
+
+Use `react-ribbons` (`RibbonContainer` + `Ribbon`) to show entity status in the top corner of a form. `side="left"` for Arabic RTL layout.
+
+Define status → color and status → label maps above the `return`:
+
+```tsx
+const ribbonBg: Record<string, string> = {
+  MY_STATUS_PENDING:  "#ff9800",  // orange
+  MY_STATUS_APPROVED: "#4caf50",  // green
+  MY_STATUS_PAID:     "#1976d2",  // blue
+};
+const ribbonLabels: Record<string, string> = {
+  MY_STATUS_PENDING:  getTranslatedLabel("entity.status.pending",  "قيد الانتظار"),
+  MY_STATUS_APPROVED: getTranslatedLabel("entity.status.approved", "معتمد"),
+  MY_STATUS_PAID:     getTranslatedLabel("entity.status.paid",     "مدفوع"),
+};
+const statusId = record?.statusId ?? "";
+```
+
+Then render inside the `xs={1}` grid column as shown in the Actions Menu layout above.
+
+---
+
 ## Key Libraries
 
 ### Backend NuGet
@@ -183,6 +304,7 @@ export const { useFetchOrdersQuery, useAddSalesOrderMutation } = ordersApi;
 - `react-router-dom` v6
 - `axios` — legacy HTTP client
 - `react-toastify` — toast notifications
+- `react-ribbons` — corner status ribbons on form headers
 
 ---
 

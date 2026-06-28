@@ -38,4 +38,16 @@ public class SalesCommissionController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new ApproveSalesCommission.Command { SalesCommissionId = id }));
     }
+
+    [HttpPost("reset/{id}")]
+    public async Task<IActionResult> Reset(string id)
+    {
+        return HandleResult(await Mediator.Send(new ResetSalesCommission.Command { SalesCommissionId = id }));
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(string id)
+    {
+        return HandleResult(await Mediator.Send(new DeleteSalesCommission.Command { SalesCommissionId = id }));
+    }
 }

@@ -14,6 +14,8 @@ public class ListPayments
         public ODataQueryOptions<PaymentRecord> Options { get; set; } = null!;
         public string Language { get; set; } = "en";
         public string? PaymentType { get; set; } // "incoming" or "outgoing"
+        public DateOnly? FromDate { get; set; }
+        public DateOnly? ToDate { get; set; }
     }
 
     public class Handler : IRequestHandler<Query, IQueryable<PaymentRecord>>
@@ -142,6 +144,12 @@ public class ListPayments
                 var isOutgoing = request.PaymentType.ToLower() == "outgoing";
                 query = query.Where(p => p.IsDisbursement == isOutgoing);
             }
+
+            // Date range filter passed as dedicated params (avoids OData DateOnly parsing issues)
+            if (request.FromDate.HasValue)
+                query = query.Where(p => p.EffectiveDate >= request.FromDate.Value);
+            if (request.ToDate.HasValue)
+                query = query.Where(p => p.EffectiveDate <= request.ToDate.Value);
 
             // 1. Intercept OData $filter to remove "dueStatusArabic" or handle effectiveDate before ApplyTo
             // This is needed because dueStatusArabic is a computed field and effectiveDate might have translation issues

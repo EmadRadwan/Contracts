@@ -33,7 +33,13 @@ const salesCommissionsApi = createApi({
                 }),
                 transformResponse: (response: any, meta) => {
                     const {totalCount} = JSON.parse(meta!.response!.headers.get("count")!);
-                    return {data: response, total: totalCount};
+                    const data = (response as any[]).map((item) => ({
+                        ...item,
+                        commissionDate: item.commissionDate ? new Date(item.commissionDate) : null,
+                        createdStamp: item.createdStamp ? new Date(item.createdStamp) : null,
+                        lastUpdatedStamp: item.lastUpdatedStamp ? new Date(item.lastUpdatedStamp) : null,
+                    }));
+                    return { data, total: Number(totalCount) };
                 },
                 providesTags: [COMMISSION_TAG],
             }),
@@ -72,11 +78,33 @@ const salesCommissionsApi = createApi({
                 }),
                 invalidatesTags: [COMMISSION_TAG],
             }),
+            resetSalesCommission: builder.mutation<void, string>({
+                query: (id) => ({
+                    url: `/salesCommission/reset/${id}`,
+                    method: "POST",
+                }),
+                invalidatesTags: [COMMISSION_TAG],
+            }),
+            deleteSalesCommission: builder.mutation<void, string>({
+                query: (id) => ({
+                    url: `/salesCommission/${id}`,
+                    method: "DELETE",
+                }),
+                invalidatesTags: [COMMISSION_TAG],
+            }),
             fetchApprovedSalesRequestsLov: builder.query<ApprovedSalesRequestEnvelope, { skip: number; pageSize: number; searchTerm?: string }>({
                 query: ({ skip, pageSize, searchTerm }) => ({
                     url: "/salesRequests/approvedLov",
                     params: { skip, pageSize, ...(searchTerm ? { searchTerm } : {}) },
                 }),
+            }),
+            fetchSalesCommissionsForExport: builder.query<SalesCommission[], string>({
+                query: (oDataQuery) => ({
+                    url: `/odata/SalesCommissionRecords?${oDataQuery}`,
+                    method: "GET",
+                }),
+                transformResponse: (response: any) =>
+                    Array.isArray(response) ? response : (response?.value ?? []),
             }),
         };
     },
@@ -89,7 +117,10 @@ export const {
     useCreateSalesCommissionMutation,
     useUpdateSalesCommissionMutation,
     useApproveSalesCommissionMutation,
+    useResetSalesCommissionMutation,
+    useDeleteSalesCommissionMutation,
     useFetchApprovedSalesRequestsLovQuery,
+    useLazyFetchSalesCommissionsForExportQuery,
 } = salesCommissionsApi;
 
 export {salesCommissionsApi};

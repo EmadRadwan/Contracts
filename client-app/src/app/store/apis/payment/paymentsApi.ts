@@ -291,11 +291,13 @@ const paymentsApi = createApi({
                 }),
                 providesTags: ['PaymentsByDateRange'],
             }),
-            fetchPaymentsForExport: builder.query<Payment[], { oDataQuery: string; paymentType: 'incoming' | 'outgoing' }>({
-                query: ({ oDataQuery, paymentType }) => ({
-                    url: `/odata/paymentRecords?${oDataQuery}&paymentType=${paymentType}`,
-                    method: 'GET',
-                }),
+            fetchPaymentsForExport: builder.query<Payment[], { oDataQuery: string; paymentType: 'incoming' | 'outgoing'; fromDate?: string; toDate?: string }>({
+                query: ({ oDataQuery, paymentType, fromDate, toDate }) => {
+                    let url = `/odata/paymentRecords?${oDataQuery}&paymentType=${paymentType}`;
+                    if (fromDate) url += `&fromDate=${fromDate}`;
+                    if (toDate) url += `&toDate=${toDate}`;
+                    return { url, method: 'GET' };
+                },
                 transformResponse: (response: any) =>
                     Array.isArray(response) ? response : (response?.value ?? []),
             }),

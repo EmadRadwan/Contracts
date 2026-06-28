@@ -3,7 +3,7 @@ export interface SalesCommission {
     salesRequestId: string;
     saleTypeId: string;
     statusId?: string;
-    commissionDate?: string;
+    commissionDate?: Date | string | null;
 
     projectId?: string;
     projectName?: string;
@@ -59,8 +59,8 @@ export interface SalesCommission {
     withholdingTaxPercent: number;
 
     notes?: string | null;
-    createdStamp?: string;
-    lastUpdatedStamp?: string;
+    createdStamp?: Date | string | null;
+    lastUpdatedStamp?: Date | string | null;
 }
 
 export interface CommissionRateDefaults {

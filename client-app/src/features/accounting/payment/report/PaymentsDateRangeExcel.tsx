@@ -306,22 +306,18 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
             let result: { data: any[]; total: number };
 
             if (respectFilters && dataState) {
-                const dateRangeFilter: CompositeFilterDescriptor = {
-                    logic: "and",
-                    filters: [
-                        { field: "effectiveDate", operator: "gte", value: startDate.toDate() } as FilterDescriptor,
-                        { field: "effectiveDate", operator: "lte", value: endDate.toDate() } as FilterDescriptor,
-                    ],
-                };
-                const combinedFilter: CompositeFilterDescriptor = {
-                    logic: "and",
-                    filters: [
-                        dateRangeFilter,
-                        ...(dataState.filter ? [dataState.filter as CompositeFilterDescriptor] : []),
-                    ],
-                };
-                const oDataQuery = toODataString({ filter: combinedFilter, sort: dataState.sort });
-                const flat = await exportTrigger({ oDataQuery, paymentType }, false).unwrap();
+                // Pass date range as dedicated URL params to avoid OData DateOnly parsing failures.
+                // Only the grid's non-date filters go into the OData $filter so ApplyTo succeeds.
+                const oDataQuery = toODataString({
+                    ...(dataState.filter ? { filter: dataState.filter } : {}),
+                    sort: dataState.sort,
+                });
+                const flat = await exportTrigger({
+                    oDataQuery,
+                    paymentType,
+                    fromDate: startDate.format('YYYY-MM-DD'),
+                    toDate: endDate.format('YYYY-MM-DD'),
+                }, false).unwrap();
                 result = { data: flat, total: flat.length };
             } else {
                 result = await trigger({

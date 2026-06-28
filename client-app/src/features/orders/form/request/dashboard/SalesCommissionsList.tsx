@@ -13,13 +13,13 @@ import { DataResult, State } from "@progress/kendo-data-query";
 import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHelper";
 import {
     useFetchSalesCommissionsQuery,
-    useApproveSalesCommissionMutation,
 } from "../../../../../app/store/apis/salesCommissionsApi";
+import { SalesCommissionActionsMenu } from "../menu/SalesCommissionActionsMenu";
 import { SalesCommission } from "../../../../../app/models/orders/salesCommission";
 import LoadingComponent from "../../../../../app/layout/LoadingComponent";
 import SalesRequestMenu from "../menu/SalesRequestMenu";
 import SalesCommissionForm from "../form/SalesCommissionForm";
-import { toast } from "react-toastify";
+import SalesCommissionsDateRangeExcel from "../report/SalesCommissionsDateRangeExcel";
 
 const SALE_TYPE_LABELS: Record<string, string> = {
     COMM_SALE_DIRECT: "بيع مباشر",
@@ -44,7 +44,6 @@ export default function SalesCommissionsList() {
     const [dataState, setDataState] = useState<State>({ take: 10, skip: 0 });
 
     const { data, isFetching, refetch } = useFetchSalesCommissionsQuery({ ...dataState });
-    const [approveCommission, { isLoading: isApproving }] = useApproveSalesCommissionMutation();
     const { getTranslatedLabel } = useTranslationHelper();
 
     useEffect(() => {
@@ -65,17 +64,6 @@ export default function SalesCommissionsList() {
         setEditMode(0);
         setSelectedCommission(undefined);
         setOpenSalesRequestId(undefined);
-    }
-
-    async function handleApprove(commissionId: string, e: React.MouseEvent) {
-        e.stopPropagation();
-        try {
-            await approveCommission(commissionId).unwrap();
-            toast.success(getTranslatedLabel("salesCommission.form.approveSuccess", "تم اعتماد العمولة بنجاح"));
-            refetch();
-        } catch {
-            toast.error(getTranslatedLabel("salesCommission.form.error", "فشل في حفظ العمولة"));
-        }
     }
 
     const dataStateChange = (e: GridDataStateChangeEvent) => {
@@ -132,24 +120,31 @@ export default function SalesCommissionsList() {
         );
     };
 
-    const ApproveCell = (props: any) => {
+    const BooleanCell = (props: any) => {
         const navigationAttributes = useTableKeyboardNavigation(props.id);
-        const isPending = props.dataItem.statusId === "COMMISSION_PENDING";
         return (
             <td className={props.className} style={props.style} colSpan={props.colSpan} role="gridcell"
                 aria-colindex={props.ariaColumnIndex} aria-selected={props.isSelected}
                 {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }} {...navigationAttributes}>
-                {isPending && (
-                    <Button
-                        size="small"
-                        variant="outlined"
-                        color="success"
-                        disabled={isApproving}
-                        onClick={(e) => handleApprove(props.dataItem.salesCommissionId, e)}
-                    >
-                        {getTranslatedLabel("salesCommission.list.approve", "اعتماد")}
-                    </Button>
-                )}
+                {props.dataItem[props.field] ? "نعم" : "لا"}
+            </td>
+        );
+    };
+
+    const ActionsCell = (props: any) => {
+        const navigationAttributes = useTableKeyboardNavigation(props.id);
+        return (
+            <td className={props.className} style={props.style} colSpan={props.colSpan} role="gridcell"
+                aria-colindex={props.ariaColumnIndex} aria-selected={props.isSelected}
+                {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }} {...navigationAttributes}>
+                <SalesCommissionActionsMenu
+                    salesCommissionId={props.dataItem.salesCommissionId}
+                    currentStatusId={props.dataItem.statusId}
+                    disabled={false}
+                    onCommissionApproved={refetch}
+                    onCommissionReset={refetch}
+                    onCommissionDeleted={refetch}
+                />
             </td>
         );
     };
@@ -180,7 +175,7 @@ export default function SalesCommissionsList() {
                     onDataStateChange={dataStateChange}
                 >
                     <GridToolbar>
-                        <Grid container>
+                        <Grid container alignItems="center">
                             <Grid item xs={5}>
                                 <Button
                                     color="secondary"
@@ -189,6 +184,9 @@ export default function SalesCommissionsList() {
                                 >
                                     {getTranslatedLabel("salesCommission.list.create", "إنشاء عمولة جديدة")}
                                 </Button>
+                            </Grid>
+                            <Grid item>
+                                <SalesCommissionsDateRangeExcel dataState={dataState} />
                             </Grid>
                         </Grid>
                     </GridToolbar>
@@ -237,9 +235,237 @@ export default function SalesCommissionsList() {
                         width={180}
                     />
                     <Column
-                        title={getTranslatedLabel("salesCommission.list.approve", "اعتماد")}
-                        cell={ApproveCell}
-                        width={120}
+                        field="commissionDate"
+                        title={getTranslatedLabel("salesCommission.list.commissionDate", "تاريخ العمولة")}
+                        width={160}
+                        filter="date"
+                        format="{0:dd/MM/yyyy}"
+                    />
+                    <Column
+                        field="salePrice"
+                        title={getTranslatedLabel("salesCommission.list.salePrice", "سعر البيع")}
+                        width={150}
+                        filter="numeric"
+                        format="{0:n2}"
+                    />
+                    <Column
+                        field="collectedAmount"
+                        title={getTranslatedLabel("salesCommission.list.collectedAmount", "المبلغ المحصل")}
+                        width={150}
+                        filter="numeric"
+                        format="{0:n2}"
+                    />
+                    <Column
+                        field="salesRepPercent"
+                        title={getTranslatedLabel("salesCommission.list.salesRepPercent", "نسبة المندوب %")}
+                        width={140}
+                        filter="numeric"
+                        format="{0:n4}"
+                    />
+                    <Column
+                        field="salesRepAmount"
+                        title={getTranslatedLabel("salesCommission.list.salesRepAmount", "مبلغ المندوب")}
+                        width={150}
+                        filter="numeric"
+                        format="{0:n2}"
+                    />
+                    <Column
+                        field="salesRepNetAmount"
+                        title={getTranslatedLabel("salesCommission.list.salesRepNetAmount", "صافي المندوب")}
+                        width={150}
+                        filter="numeric"
+                        format="{0:n2}"
+                    />
+                    <Column
+                        field="salesRep2Name"
+                        title={getTranslatedLabel("salesCommission.list.salesRep2", "المندوب الثاني")}
+                        width={180}
+                    />
+                    <Column
+                        field="salesRep2Percent"
+                        title={getTranslatedLabel("salesCommission.list.salesRep2Percent", "نسبة المندوب الثاني %")}
+                        width={160}
+                        filter="numeric"
+                        format="{0:n4}"
+                    />
+                    <Column
+                        field="salesRep2Amount"
+                        title={getTranslatedLabel("salesCommission.list.salesRep2Amount", "مبلغ المندوب الثاني")}
+                        width={170}
+                        filter="numeric"
+                        format="{0:n2}"
+                    />
+                    <Column
+                        field="salesRep2NetAmount"
+                        title={getTranslatedLabel("salesCommission.list.salesRep2NetAmount", "صافي المندوب الثاني")}
+                        width={170}
+                        filter="numeric"
+                        format="{0:n2}"
+                    />
+                    <Column
+                        field="managerPercent"
+                        title={getTranslatedLabel("salesCommission.list.managerPercent", "نسبة المدير %")}
+                        width={140}
+                        filter="numeric"
+                        format="{0:n4}"
+                    />
+                    <Column
+                        field="managerAmount"
+                        title={getTranslatedLabel("salesCommission.list.managerAmount", "مبلغ المدير")}
+                        width={150}
+                        filter="numeric"
+                        format="{0:n2}"
+                    />
+                    <Column
+                        field="managerNetAmount"
+                        title={getTranslatedLabel("salesCommission.list.managerNetAmount", "صافي المدير")}
+                        width={150}
+                        filter="numeric"
+                        format="{0:n2}"
+                    />
+                    <Column
+                        field="manager2Name"
+                        title={getTranslatedLabel("salesCommission.list.manager2", "المدير الثاني")}
+                        width={180}
+                    />
+                    <Column
+                        field="manager2Percent"
+                        title={getTranslatedLabel("salesCommission.list.manager2Percent", "نسبة المدير الثاني %")}
+                        width={160}
+                        filter="numeric"
+                        format="{0:n4}"
+                    />
+                    <Column
+                        field="manager2Amount"
+                        title={getTranslatedLabel("salesCommission.list.manager2Amount", "مبلغ المدير الثاني")}
+                        width={170}
+                        filter="numeric"
+                        format="{0:n2}"
+                    />
+                    <Column
+                        field="manager2NetAmount"
+                        title={getTranslatedLabel("salesCommission.list.manager2NetAmount", "صافي المدير الثاني")}
+                        width={170}
+                        filter="numeric"
+                        format="{0:n2}"
+                    />
+                    <Column
+                        field="externalCompanyName"
+                        title={getTranslatedLabel("salesCommission.list.externalCompany", "شركة الوسيط")}
+                        width={200}
+                    />
+                    <Column
+                        field="externalCompanyPercent"
+                        title={getTranslatedLabel("salesCommission.list.externalCompanyPercent", "نسبة الوسيط %")}
+                        width={140}
+                        filter="numeric"
+                        format="{0:n4}"
+                    />
+                    <Column
+                        field="externalCompanyGrossAmount"
+                        title={getTranslatedLabel("salesCommission.list.externalCompanyGross", "إجمالي الوسيط")}
+                        width={160}
+                        filter="numeric"
+                        format="{0:n2}"
+                    />
+                    <Column
+                        field="externalCompanyNetAmount"
+                        title={getTranslatedLabel("salesCommission.list.externalCompanyNet", "صافي الوسيط")}
+                        width={150}
+                        filter="numeric"
+                        format="{0:n2}"
+                    />
+                    <Column
+                        field="externalSalesRepName"
+                        title={getTranslatedLabel("salesCommission.list.externalSalesRep", "مندوب الوسيط")}
+                        width={180}
+                    />
+                    <Column
+                        field="externalSalesRepPercent"
+                        title={getTranslatedLabel("salesCommission.list.externalSalesRepPercent", "نسبة مندوب الوسيط %")}
+                        width={180}
+                        filter="numeric"
+                        format="{0:n4}"
+                    />
+                    <Column
+                        field="externalSalesRepAmount"
+                        title={getTranslatedLabel("salesCommission.list.externalSalesRepAmount", "مبلغ مندوب الوسيط")}
+                        width={180}
+                        filter="numeric"
+                        format="{0:n2}"
+                    />
+                    <Column
+                        field="externalSalesRepNetAmount"
+                        title={getTranslatedLabel("salesCommission.list.externalSalesRepNetAmount", "صافي مندوب الوسيط")}
+                        width={180}
+                        filter="numeric"
+                        format="{0:n2}"
+                    />
+                    <Column
+                        field="externalManagerName"
+                        title={getTranslatedLabel("salesCommission.list.externalManager", "مدير الوسيط")}
+                        width={180}
+                    />
+                    <Column
+                        field="externalManagerPercent"
+                        title={getTranslatedLabel("salesCommission.list.externalManagerPercent", "نسبة مدير الوسيط %")}
+                        width={180}
+                        filter="numeric"
+                        format="{0:n4}"
+                    />
+                    <Column
+                        field="externalManagerAmount"
+                        title={getTranslatedLabel("salesCommission.list.externalManagerAmount", "مبلغ مدير الوسيط")}
+                        width={180}
+                        filter="numeric"
+                        format="{0:n2}"
+                    />
+                    <Column
+                        field="externalManagerNetAmount"
+                        title={getTranslatedLabel("salesCommission.list.externalManagerNetAmount", "صافي مدير الوسيط")}
+                        width={180}
+                        filter="numeric"
+                        format="{0:n2}"
+                    />
+                    <Column
+                        field="hasVatExemption"
+                        title={getTranslatedLabel("salesCommission.list.hasVatExemption", "إعفاء ض.ق.م")}
+                        cell={BooleanCell}
+                        width={130}
+                        filterable={false}
+                        sortable={false}
+                    />
+                    <Column
+                        field="hasWithholdingTaxExemption"
+                        title={getTranslatedLabel("salesCommission.list.hasWithholdingTaxExemption", "إعفاء ض.استقطاع")}
+                        cell={BooleanCell}
+                        width={150}
+                        filterable={false}
+                        sortable={false}
+                    />
+                    <Column
+                        field="vatPercent"
+                        title={getTranslatedLabel("salesCommission.list.vatPercent", "نسبة ض.ق.م %")}
+                        width={130}
+                        filter="numeric"
+                        format="{0:n2}"
+                    />
+                    <Column
+                        field="withholdingTaxPercent"
+                        title={getTranslatedLabel("salesCommission.list.withholdingTaxPercent", "نسبة ض.استقطاع %")}
+                        width={160}
+                        filter="numeric"
+                        format="{0:n2}"
+                    />
+                    <Column
+                        field="notes"
+                        title={getTranslatedLabel("salesCommission.list.notes", "ملاحظات")}
+                        width={200}
+                    />
+                    <Column
+                        title={getTranslatedLabel("salesCommission.list.actions", "إجراءات")}
+                        cell={ActionsCell}
+                        width={140}
                         filterable={false}
                         sortable={false}
                     />
