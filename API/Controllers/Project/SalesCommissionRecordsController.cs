@@ -9,9 +9,17 @@ public class SalesCommissionRecordsController : BaseODataController<SalesCommiss
 {
     [HttpGet]
     [EnableQuery]
-    public async Task<IActionResult> Get(ODataQueryOptions<SalesCommissionRecord> options)
+    public async Task<IActionResult> Get(
+        ODataQueryOptions<SalesCommissionRecord> options,
+        [FromQuery] DateOnly? fromDate = null,
+        [FromQuery] DateOnly? toDate = null)
     {
-        var query = await Mediator.Send(new ListSalesCommissions.Query { Options = options });
+        var query = await Mediator.Send(new ListSalesCommissions.Query
+        {
+            Options = options,
+            FromDate = fromDate,
+            ToDate = toDate,
+        });
         return await HandleODataQueryAsync(query, options);
     }
 }

@@ -1,27 +1,14 @@
-INSERT INTO PAYMENT_METHOD (
-    PAYMENT_METHOD_ID,
-    PAYMENT_METHOD_TYPE_ID,
-    PARTY_ID,
-    GL_ACCOUNT_ID,
-    FIN_ACCOUNT_ID,
-    DESCRIPTION,
-    FROM_DATE,
-    THRU_DATE,
-    LAST_UPDATED_STAMP,
-    LAST_UPDATED_TX_STAMP,
-    CREATED_STAMP,
-    CREATED_TX_STAMP
-) VALUES (
-             'QNB_CHECKING_USD',
-             'COMPANY_CHECK',
-             'Company',
-             '114300',
-             NULL,
-             'QNB - USD',
-             '2026-06-22 19:06:32',
-             NULL,
-             '2026-06-22 19:06:32',
-             '2026-06-22 19:06:32',
-             '2026-06-22 19:06:32',
-             '2026-06-22 19:06:32'
-         );
+UPDATE PAYMENT
+SET PARTY_ID_TO = '40'
+WHERE PAYMENT_ID IN (
+                     '14638','14660','14057','14770','14250','14055','15082','14044',
+                     '11541','11543','12182','13430','13896','15101','15368','15370',
+                     '14284','14746','14766','15124','15123','14034','14025','13988',
+                     '15362','15533','15605'
+    );
+
+UPDATE PAYMENT
+SET PARTY_ID_FROM = '40'
+WHERE PAYMENT_ID IN (
+                     '15059','15217','14826','14833','11609','15617'
+    );

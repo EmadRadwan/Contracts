@@ -9,6 +9,8 @@ public class ListSalesCommissions
     public class Query : IRequest<IQueryable<SalesCommissionRecord>>
     {
         public ODataQueryOptions<SalesCommissionRecord>? Options { get; set; }
+        public DateOnly? FromDate { get; set; }
+        public DateOnly? ToDate { get; set; }
     }
 
     public class Handler : IRequestHandler<Query, IQueryable<SalesCommissionRecord>>
@@ -50,7 +52,13 @@ public class ListSalesCommissions
                     ProjectName = we != null ? we.ProjectName : null,
                     ApartmentName = p.ProductName,
                     SalePrice = sc.SalePrice,
-                    CollectedAmount = sc.CollectedAmount,
+                    CollectedAmount = _context.Payments
+                        .Where(p => p.SalesRequestId == sc.SalesRequestId
+                                 && p.Amount > 0
+                                 && (p.PaymentTypeId == "RECEIPT_ADVANCE_PAYMENT"
+                                     || p.PaymentTypeId == "RECEIPT_DUE_INSTALLMENT")
+                                 && p.StatusId == "PMNT_RECEIVED")
+                        .Sum(p => (decimal?)p.Amount) ?? 0m,
                     SalesRepPartyId = sc.SalesRepPartyId,
                     SalesRepName = salesRepParty != null ? salesRepParty.Description : null,
                     SalesRepPercent = sc.SalesRepPercent,
@@ -95,6 +103,17 @@ public class ListSalesCommissions
                     LastUpdatedStamp = sc.LastUpdatedStamp
                 }
             ).AsQueryable();
+
+            if (request.FromDate.HasValue)
+            {
+                var from = request.FromDate.Value.ToDateTime(TimeOnly.MinValue);
+                query = query.Where(sc => sc.CommissionDate >= from);
+            }
+            if (request.ToDate.HasValue)
+            {
+                var to = request.ToDate.Value.ToDateTime(TimeOnly.MaxValue);
+                query = query.Where(sc => sc.CommissionDate <= to);
+            }
 
             return Task.FromResult(query);
         }

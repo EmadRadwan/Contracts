@@ -245,11 +245,13 @@ const projectsApi = createApi({
                     params: { pageSize: 1000 },
                 }),
             }),
-            fetchProjectCertificatesForExport: builder.query<WorkEffort[], string>({
-                query: (oDataQuery) => ({
-                    url: `/odata/ProjectCertificateRecords?${oDataQuery}`,
-                    method: "GET",
-                }),
+            fetchProjectCertificatesForExport: builder.query<WorkEffort[], { oDataQuery: string; fromDate?: string; toDate?: string }>({
+                query: ({ oDataQuery, fromDate, toDate }) => {
+                    let url = `/odata/ProjectCertificateRecords?${oDataQuery}`;
+                    if (fromDate) url += `&fromDate=${fromDate}`;
+                    if (toDate) url += `&toDate=${toDate}`;
+                    return { url, method: "GET" };
+                },
                 transformResponse: (response: any) =>
                     Array.isArray(response) ? response : (response?.value ?? []),
             }),

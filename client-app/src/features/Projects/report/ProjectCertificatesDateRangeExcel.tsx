@@ -244,33 +244,19 @@ export default function ProjectCertificatesDateRangeExcel({ dataState }: Props) 
         try {
             let result: any[];
 
-            if (respectFilters && dataState) {
-                const dateRangeFilter: CompositeFilterDescriptor = {
-                    logic: "and",
-                    filters: [
-                        { field: "estimatedStartDate", operator: "gte", value: startDate.toDate() } as FilterDescriptor,
-                        { field: "estimatedStartDate", operator: "lte", value: endDate.toDate() } as FilterDescriptor,
-                    ],
-                };
-                const combinedFilter: CompositeFilterDescriptor = {
-                    logic: "and",
-                    filters: [
-                        dateRangeFilter,
-                        ...(dataState.filter ? [dataState.filter as CompositeFilterDescriptor] : []),
-                    ],
-                };
-                const oDataQuery = toODataString({ filter: combinedFilter, sort: dataState.sort });
-                result = await dispatch(
-                    projectsApi.endpoints.fetchProjectCertificatesForExport.initiate(oDataQuery)
-                ).unwrap();
-            } else {
-                result = await dispatch(
-                    projectsApi.endpoints.fetchProjectCertificatesByDateRange.initiate({
-                        startDate: startDate.toISOString(),
-                        endDate: endDate.toISOString(),
-                    })
-                ).unwrap();
-            }
+            // Pass date range as dedicated URL params to avoid OData DateTime parsing edge cases.
+            // Only the grid's non-date filters go into the OData $filter so ApplyTo stays reliable.
+            const oDataQuery = toODataString({
+                ...(respectFilters && dataState?.filter ? { filter: dataState.filter } : {}),
+                sort: dataState?.sort,
+            });
+            result = await dispatch(
+                projectsApi.endpoints.fetchProjectCertificatesForExport.initiate({
+                    oDataQuery,
+                    fromDate: startDate.format('YYYY-MM-DD'),
+                    toDate: endDate.format('YYYY-MM-DD'),
+                })
+            ).unwrap();
 
             if (!result || result.length === 0) {
                 toast.warn(getTranslatedLabel("projects.certificate.excel.noData", "No data found for the selected range"));

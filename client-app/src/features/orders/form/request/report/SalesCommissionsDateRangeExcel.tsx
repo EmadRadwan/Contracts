@@ -387,31 +387,18 @@ export default function SalesCommissionsDateRangeExcel({ dataState }: Props) {
         }
         setIsGenerating(true);
         try {
-            // Always apply the date range filter; optionally also apply grid filters
-            const dateRangeFilter: CompositeFilterDescriptor = {
-                logic: "and",
-                filters: [
-                    { field: "commissionDate", operator: "gte", value: startDate.toDate() } as FilterDescriptor,
-                    { field: "commissionDate", operator: "lte", value: endDate.toDate() } as FilterDescriptor,
-                ],
-            };
-
-            const combinedFilter: CompositeFilterDescriptor = {
-                logic: "and",
-                filters: [
-                    dateRangeFilter,
-                    ...(respectFilters && dataState?.filter
-                        ? [dataState.filter as CompositeFilterDescriptor]
-                        : []),
-                ],
-            };
-
+            // Pass date range as dedicated URL params to avoid OData DateTime parsing edge cases.
+            // Only the grid's non-date filters go into the OData $filter so ApplyTo stays reliable.
             const oDataQuery = toODataString({
-                filter: combinedFilter,
+                ...(respectFilters && dataState?.filter ? { filter: dataState.filter } : {}),
                 sort: dataState?.sort,
             });
 
-            const result = await trigger(oDataQuery, false).unwrap();
+            const result = await trigger({
+                oDataQuery,
+                fromDate: startDate.format('YYYY-MM-DD'),
+                toDate: endDate.format('YYYY-MM-DD'),
+            }, false).unwrap();
 
             if (!result || result.length === 0) {
                 toast.info(getTranslatedLabel('salesCommission.report.noData', 'لا توجد عمولات في الفترة المحددة'));

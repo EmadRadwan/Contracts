@@ -98,11 +98,13 @@ const salesCommissionsApi = createApi({
                     params: { skip, pageSize, ...(searchTerm ? { searchTerm } : {}) },
                 }),
             }),
-            fetchSalesCommissionsForExport: builder.query<SalesCommission[], string>({
-                query: (oDataQuery) => ({
-                    url: `/odata/SalesCommissionRecords?${oDataQuery}`,
-                    method: "GET",
-                }),
+            fetchSalesCommissionsForExport: builder.query<SalesCommission[], { oDataQuery: string; fromDate?: string; toDate?: string }>({
+                query: ({ oDataQuery, fromDate, toDate }) => {
+                    let url = `/odata/SalesCommissionRecords?${oDataQuery}`;
+                    if (fromDate) url += `&fromDate=${fromDate}`;
+                    if (toDate) url += `&toDate=${toDate}`;
+                    return { url, method: "GET" };
+                },
                 transformResponse: (response: any) =>
                     Array.isArray(response) ? response : (response?.value ?? []),
             }),

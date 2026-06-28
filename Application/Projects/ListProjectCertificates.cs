@@ -15,6 +15,8 @@ namespace Application.Projects
         {
             public ODataQueryOptions<ProjectCertificateRecord> Options { get; set; }
             public string Language { get; set; }
+            public DateOnly? FromDate { get; set; }
+            public DateOnly? ToDate { get; set; }
         }
 
         public class Handler : IRequestHandler<Query, IQueryable<ProjectCertificateRecord>>
@@ -87,6 +89,17 @@ namespace Application.Projects
                             ),
                         CreatedDate = we.CreatedDate
                     };
+
+                if (request.FromDate.HasValue)
+                {
+                    var from = request.FromDate.Value.ToDateTime(TimeOnly.MinValue);
+                    query = query.Where(we => we.EstimatedStartDate >= from);
+                }
+                if (request.ToDate.HasValue)
+                {
+                    var to = request.ToDate.Value.ToDateTime(TimeOnly.MaxValue);
+                    query = query.Where(we => we.EstimatedStartDate <= to);
+                }
 
                 return query;
             }

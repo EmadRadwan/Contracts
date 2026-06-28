@@ -75,8 +75,8 @@ public class CreateSalesCommission
                 .Where(p => p.SalesRequestId == dto.SalesRequestId
                          && p.Amount > 0
                          && (p.PaymentTypeId == "RECEIPT_ADVANCE_PAYMENT"
-                             || p.PaymentTypeId == "RECEIPT_DUE_INSTALLMENT"
-                             || p.PaymentTypeId == "RECEIPT_MAINTENANCE_AMOUNT"))
+                             || p.PaymentTypeId == "RECEIPT_DUE_INSTALLMENT")
+                         && p.StatusId == "PMNT_RECEIVED")
                 .SumAsync(p => (decimal?)p.Amount, cancellationToken) ?? 0m;
 
             // Threshold rules

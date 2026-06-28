@@ -404,9 +404,9 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                     </Grid>
 
                                     {/* Sale Price / Collected Amount — read-only, derived from SR and payments */}
-                                    {(defaults || activeCommission) && (() => {
-                                        const salePrice = defaults?.salePrice ?? activeCommission?.salePrice ?? 0;
-                                        const collected = defaults?.collectedAmount ?? activeCommission?.collectedAmount ?? 0;
+                                    {defaults && (() => {
+                                        const salePrice = defaults.salePrice;
+                                        const collected = defaults.collectedAmount;
                                         const ratio = salePrice > 0 ? collected / salePrice : 0;
                                         const ratioColor = ratio >= 0.10 ? "green" : ratio >= 0.05 ? "orange" : "red";
                                         return (
