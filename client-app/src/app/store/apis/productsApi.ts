@@ -1,9 +1,9 @@
-import {createApi, fetchBaseQuery} from "@reduxjs/toolkit/query/react";
-import {store} from "../configureStore";
-import {Product, ServiceProductPriceParams,} from "../../models/product/product";
-import {State, toODataString} from "@progress/kendo-data-query";
-import {Quantity} from "../../models/common/quantity";
-import {Currency} from "../../models/common/currency";
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { store } from "../configureStore";
+import { Product, ServiceProductPriceParams, } from "../../models/product/product";
+import { State, toODataString } from "@progress/kendo-data-query";
+import { Quantity } from "../../models/common/quantity";
+import { Currency } from "../../models/common/currency";
 
 interface ListResponse<T> {
     data: T[];
@@ -14,13 +14,13 @@ const productsApi = createApi({
     reducerPath: "products",
     baseQuery: fetchBaseQuery({
         baseUrl: import.meta.env.VITE_API_URL,
-        prepareHeaders: (headers, {getState}) => {
+        prepareHeaders: (headers, { getState }) => {
             // By default, if we have a token in the store, let's use that for authenticated requests
             const token = store.getState().account.user?.token;
             if (token) {
                 headers.set("authorization", `Bearer ${token}`);
             }
-            const lang = store.getState().localization.language ;
+            const lang = store.getState().localization.language;
             if (lang) {
                 headers.set("Accept-Language", `${lang}`);
             }
@@ -32,21 +32,21 @@ const productsApi = createApi({
         return {
             fetchProducts: builder.query<ListResponse<Product>,
                 State>({
-                query: (queryArgs) => {
-                    const url = `/odata/productRecords?$count=true&${toODataString(queryArgs)}`;
-                    return {url, method: "GET"};
-                },
-                providesTags: ["Products"],
-                transformResponse: (response: any, meta, arg) => {
-                    const {totalCount} = JSON.parse(
-                        meta!.response!.headers.get("count")!,
-                    );
-                    return {
-                        data: response,
-                        total: totalCount,
-                    };
-                },
-            }),
+                    query: (queryArgs) => {
+                        const url = `/odata/productRecords?$count=true&${toODataString(queryArgs)}`;
+                        return { url, method: "GET" };
+                    },
+                    providesTags: ["Products"],
+                    transformResponse: (response: any, meta, arg) => {
+                        const { totalCount } = JSON.parse(
+                            meta!.response!.headers.get("count")!,
+                        );
+                        return {
+                            data: response,
+                            total: totalCount,
+                        };
+                    },
+                }),
             fetchProductUOMs: builder.query<string, any>({
                 query: () => {
                     return {
@@ -68,7 +68,7 @@ const productsApi = createApi({
                 query: (product) => ({
                     url: "/products/createProduct",
                     method: "POST",
-                    body: { productDto2: product }, 
+                    body: { productDto2: product },
                 }),
                 invalidatesTags: ["Products"],
             }),
@@ -83,6 +83,15 @@ const productsApi = createApi({
                 }),
                 invalidatesTags: ["Products"],
             }),
+
+            reserveApartment: builder.mutation({
+                query: (productId: string) => ({
+                    url: `/products/${productId}/reserve`,
+                    method: "PATCH",
+                }),
+                invalidatesTags: ["Products"],
+            }),
+
             fetchProductStoreFacilities: builder.query<any[], undefined>({
                 query: () => {
                     return {
@@ -119,7 +128,7 @@ const productsApi = createApi({
                 // Maps to the GET endpoint and transforms the Result wrapper to extract the Value
                 query: (productId) => `productSuppliers/${productId}`,
                 providesTags: ["ProductSuppliers"]
-                    
+
             }),
             createProductSupplier: builder.mutation<SupplierProductDto, SupplierProductCreateDto>({
                 query: (dto) => ({
@@ -175,15 +184,16 @@ export const {
     useFetchProductUOMsQuery,
     useAddProductMutation,
     useUpdateProductMutation,
+    useReserveApartmentMutation,
     useFetchProductStoreFacilitiesQuery,
     useGetServiceProductPriceQuery, useFetchFinishedProductsForWIPQuery,
     endpoints: productsEndpoints, useFetchProductQuantityUomQuery,
-    useGetProductPriceQuery, useGetProductDetailsQuery, 
+    useGetProductPriceQuery, useGetProductDetailsQuery,
     useGetProductSuppliersQuery, useUpdateProductSupplierMutation,
     useCreateProductSupplierMutation, useGetCurrenciesQuery,
     useGetQuantitiesQuery, useFetchInventoryItemColorsQuery, useGetLastUnitPriceQuery,
 } = productsApi;
-export {productsApi};
+export { productsApi };
 
 interface SupplierProductDto {
     FromPartyId: OrderPartyDto;

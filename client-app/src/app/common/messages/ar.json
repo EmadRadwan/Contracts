@@ -822,7 +822,10 @@
         "category": "فئة المنتج",
         "projectName": "المشروع",
         "buildingNumber": "رقم البناية",
-        "description": "وصف المنتج"
+        "description": "وصف المنتج",
+        "available": "شقة متاحة",
+        "reserved": "شقة محجوزة",
+        "sold": "شقة مباعة"
       },
       "form": {
         "id": "كود الصنف *",
@@ -858,6 +861,13 @@
           "costs": "التكاليف",
           "locations": "المواقع"
         }
+      },
+      "reserve": {
+        "title": "حجز الشقة",
+        "confirm": "هل أنت متأكد أنك تريد حجز الشقة",
+        "cancel": "إلغاء",
+        "confirmButton": "تأكيد الحجز",
+        "reserving": "جارٍ الحجز..."
       }
     },
     "category": {

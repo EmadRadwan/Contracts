@@ -35,7 +35,7 @@ public class ProductsController : BaseApiController
     public async Task<IActionResult> GetProductDetails(string productId)
     {
         return HandleResult(await Mediator.Send(new GetProductDetailsById.Query
-            { ProductId = productId, Language = GetLanguage() }));
+        { ProductId = productId, Language = GetLanguage() }));
     }
 
     [HttpGet("getPhysicalInventoryProductsLov", Name = "GetPhysicalInventoryProductsLov")]
@@ -43,7 +43,7 @@ public class ProductsController : BaseApiController
     {
         var language = GetLanguage();
         return HandleResult(await Mediator.Send(new GetPhysicalInventoryProductsLov.Query
-            { Params = param, Language = language }));
+        { Params = param, Language = language }));
     }
 
 
@@ -54,7 +54,7 @@ public class ProductsController : BaseApiController
         return HandleResult(
             await Mediator.Send(new GetPurchaseProductsLov.Query { Params = param, Language = language }));
     }
-    
+
     [HttpGet("getSimplePurchaseProductsLov", Name = "GetSimplePurchaseProductsLov")]
     public async Task<IActionResult> GetSimplePurchaseProductsLov([FromQuery] ProductLovParams param)
     {
@@ -62,13 +62,13 @@ public class ProductsController : BaseApiController
         return HandleResult(
             await Mediator.Send(new GetSimplePurchaseProductsLov.Query { Params = param, Language = language }));
     }
-    
+
     [HttpGet("getSimpleProductsLov", Name = "GetSimpleProductsLov")]
     public async Task<IActionResult> GetSimpleProductsLov([FromQuery] ProductLovParams param)
     {
         return HandleResult(await Mediator.Send(new GetSimpleProductsLov.Query { Params = param }));
     }
-    
+
     [HttpGet("getSimpleApartmentsLov", Name = "GetSimpleApartmentsLov")]
     public async Task<IActionResult> GetSimpleApartmentsLov([FromQuery] ApartmentLovParams param)
     {
@@ -82,7 +82,7 @@ public class ProductsController : BaseApiController
         // REFACTOR: Route to the new MediatR handler
         return HandleResult(await Mediator.Send(new GetSimpleApartmentsByProjectLov.Query { ProjectId = projectId, Params = param }));
     }
-    
+
     [HttpGet("getRawMaterialProductsLov")]
     public async Task<IActionResult> GetRawMaterialProductsLov([FromQuery] ProductLovParams param)
     {
@@ -165,21 +165,21 @@ public class ProductsController : BaseApiController
     public async Task<IActionResult> ApplyOrderItemPromo(OrderItemDto2 orderItemDto2)
     {
         return HandleResult(await Mediator.Send(new ApplyOrderItemPromo.Command
-            { OrderItemDto2 = orderItemDto2 }));
+        { OrderItemDto2 = orderItemDto2 }));
     }
 
     [HttpPost("applyQuoteItemPromo", Name = "ApplyQuoteItemPromo")]
     public async Task<IActionResult> ApplyQuoteItemPromo(QuoteItemDto2 quoteItemDto2)
     {
         return HandleResult(await Mediator.Send(new ApplyQuoteItemPromo.Command
-            { QuoteItemDto2 = quoteItemDto2 }));
+        { QuoteItemDto2 = quoteItemDto2 }));
     }
 
     [HttpPost("calculateQuoteItemPromoProductDiscount", Name = "CalculateQuoteItemPromoProductDiscount")]
     public async Task<IActionResult> CalculateQuoteItemPromoProductDiscount(QuoteItemDto2 quoteItemDto2)
     {
         return HandleResult(await Mediator.Send(new CalculateQuoteItemPromoProductDiscount.Command
-            { QuoteItemDto2 = quoteItemDto2 }));
+        { QuoteItemDto2 = quoteItemDto2 }));
     }
 
 
@@ -188,6 +188,12 @@ public class ProductsController : BaseApiController
     {
         // REFACTOR: No change needed – Mediator already receives the wrapped command
         return HandleResult(await Mediator.Send(command));
+    }
+
+    [HttpPatch("{productId}/reserve")]
+    public async Task<IActionResult> ReserveApartment(string productId)
+    {
+        return HandleResult(await Mediator.Send(new ReserveApartment.Command { ProductId = productId }));
     }
 
     [HttpPost("createProduct", Name = "CreateProduct")]
@@ -207,7 +213,7 @@ public class ProductsController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new GetProductQuantityUom.Query { ProductId = productId }));
     }
-    
+
     // Presentation/API/Controllers/ProductController.cs
     [HttpGet("lastUnitPrice")]
     public async Task<IActionResult> GetLastUnitPrice(

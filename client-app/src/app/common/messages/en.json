@@ -56,7 +56,10 @@
         "create": "Create Product",
         "type": "Product Type",
         "category": "Product Category",
-        "description": "Product Description"
+        "description": "Product Description",
+        "available": "Apartment Available",
+        "reserved": "Apartment Reserved",
+        "sold": "Apartment Sold"
       },
       "form": {
         "name": "Product Name *",
@@ -79,6 +82,13 @@
           "costs": "Costs",
           "locations": "Locations"
         }
+      },
+      "reserve": {
+        "title": "Reserve Apartment",
+        "confirm": "Are you sure you want to reserve apartment",
+        "cancel": "Cancel",
+        "confirmButton": "Confirm Reserve",
+        "reserving": "Reserving..."
       }
     },
     "promos": {
@@ -133,7 +143,7 @@
       "list": {
         "type": "Price Type",
         "currency": "Currency",
-        "from":"From Date",
+        "from": "From Date",
         "thru": "Thru Date",
         "price": "Price",
         "title": "Prices for",
@@ -145,8 +155,8 @@
         "prod-price": "Product Price *",
         "currency": "Currency *",
         "from": "From Date *",
-        "thru":"Thru Date",
-        "price":"Price *"
+        "thru": "Thru Date",
+        "price": "Price *"
       }
     }
   },
@@ -625,17 +635,17 @@
   },
   "accounting": {
     "menu": {
-        "invoices": "Invoices",
-        "payments": "Payments",
-        "pay-group": "Payment Groups",
-        "fixedAssets": "Fixed Assets",
-        "taxAuthorities": "Tax Authorities",
-        "agreements": "Agreements",
-        "financialAccount": "Financial Account",
-        "billingAccounts": "Billing Accounts",
-        "globalGLSettings": "Global GL Settings",
-        "organizationGLSettings": "Organization GL Settings"
-      },
+      "invoices": "Invoices",
+      "payments": "Payments",
+      "pay-group": "Payment Groups",
+      "fixedAssets": "Fixed Assets",
+      "taxAuthorities": "Tax Authorities",
+      "agreements": "Agreements",
+      "financialAccount": "Financial Account",
+      "billingAccounts": "Billing Accounts",
+      "globalGLSettings": "Global GL Settings",
+      "organizationGLSettings": "Organization GL Settings"
+    },
     "chartOfAccounts": {
       "excel": "Export to Excel"
     },
@@ -831,11 +841,11 @@
       "reports": {
         "title": "Select a report to display",
         "menu": {
-          "trial-balance": "Trial Balance", 
+          "trial-balance": "Trial Balance",
           "transaction-totals": "Transaction Totals",
           "income-statement": "Income Statement",
           "cash-flow-statement": "Cash Flow Statement",
-          "balance-sheet": "Balance Sheet", 
+          "balance-sheet": "Balance Sheet",
           "comparative-income-statement": "Comparative Income Statement",
           "comparative-cash-flow-statement": "Comparative Cash Flow Statement",
           "comparative-balance-sheet": "Comparative Balance Sheet",
@@ -891,7 +901,7 @@
             "debit": "DR",
             "credit": "CR",
             "balance": "Balance"
-          }, 
+          },
           "form": {
             "month": "Month",
             "fiscalType": "GL Fiscal Type *",
@@ -903,7 +913,7 @@
           "list": {
             "title": "Cash Flow Statement For: ",
             "loading": "Loading Report Data..."
-          }, 
+          },
           "form": {
             "month": "Month",
             "fiscalType": "GL Fiscal Type *",
@@ -1010,35 +1020,35 @@
       }
     },
     "billingAccounts": {
-    "menu": {
-      "billingAccounts": "Billing Accounts"
-    },
-    "list": {
-      "title": "Billing Accounts",
-      "new": "New Billing Account",
-      "accountId": "Account ID",
-      "party": "Party",
-      "project": "Project",
-      "limit": "Account Limit",
-      "balance": "Available Balance",
-      "currency": "Currency",
-      "fromDate": "From Date",
-      "thruDate": "Thru Date",
-      "description": "Description"
-    },
-    "form": {
-      "new": "New Billing Account",
-      "title": "Billing Account",
-      "accountLimit": "Account Limit",
-      "currency": "Account Currency",
-      "party": "Customer / Party",
-      "project": "Project",
-      "fromDate": "Start Date",
-      "thruDate": "End Date",
-      "availableBalance": "Available Balance",
-      "description": "Description"
+      "menu": {
+        "billingAccounts": "Billing Accounts"
+      },
+      "list": {
+        "title": "Billing Accounts",
+        "new": "New Billing Account",
+        "accountId": "Account ID",
+        "party": "Party",
+        "project": "Project",
+        "limit": "Account Limit",
+        "balance": "Available Balance",
+        "currency": "Currency",
+        "fromDate": "From Date",
+        "thruDate": "Thru Date",
+        "description": "Description"
+      },
+      "form": {
+        "new": "New Billing Account",
+        "title": "Billing Account",
+        "accountLimit": "Account Limit",
+        "currency": "Account Currency",
+        "party": "Customer / Party",
+        "project": "Project",
+        "fromDate": "Start Date",
+        "thruDate": "End Date",
+        "availableBalance": "Available Balance",
+        "description": "Description"
+      }
     }
-  }
   },
   "crm": {
     "menu": {
@@ -1094,7 +1104,7 @@
         "status": "Status",
         "startDate": "Start Date",
         "completionDate": "Completion Date",
-        "glAccount":"GL Account",
+        "glAccount": "GL Account",
         "loading": "Loading Projects..."
       },
       "form": {

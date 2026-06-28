@@ -114,7 +114,7 @@ const SalesOpportunityBoard: React.FC<SalesOpportunityBoardProps> = ({ onEditOpp
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, stage.opportunityStageId)}
                         sx={{
-                            minWidth: 280,
+                            minWidth: 216,
                             maxWidth: 320,
                             bgcolor: isDropTarget ? 'action.hover' : 'background.paper',
                             borderRadius: 2,

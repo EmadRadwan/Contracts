@@ -141,10 +141,42 @@ public class CreateSalesOpportunityAction
 
                 if (dto.ActionTypeId == "DONE_DEAL")
                 {
+
+                    var doneDealStage = await _context.SalesOpportunityStages
+                        .FirstOrDefaultAsync(s => s.OpportunityStageId == "SOSTG_CLOSED_WON", ct);
+
+                    var apartment = await _context.Products
+                        .FirstOrDefaultAsync(p => p.ProductId == dto.ProductId, ct);
+
+                    if (apartment != null)
+                    {
+                        apartment.ApartmentStatusId = "APARTMENT_RESERVED";
+                    }
+
                     opportunity.IsWon = true;
-                    opportunity.OpportunityStageId = "SOSTG_CLOSED_WON";
+                    opportunity.OpportunityStageId = doneDealStage.OpportunityStageId;
                     opportunity.LastUpdatedStamp = stamp;
                     opportunity.LastUpdatedTxStamp = stamp;
+
+                    var historyId = await _utilityService.GetNextSequence("SalesOpportunityHistory");
+                    var changeNote = $"Stage changed to {doneDealStage.Description}";
+
+                    _context.SalesOpportunityHistories.Add(new SalesOpportunityHistory
+                    {
+                        SalesOpportunityHistoryId = historyId,
+                        SalesOpportunityId = opportunity.SalesOpportunityId,
+                        Description = opportunity.Description,
+                        EstimatedAmount = opportunity.EstimatedAmount,
+                        EstimatedProbability = opportunity.EstimatedProbability,
+                        CurrencyUomId = opportunity.CurrencyUomId,
+                        OpportunityStageId = opportunity.OpportunityStageId,
+                        EstimatedCloseDate = opportunity.EstimatedCloseDate,
+                        ChangeNote = changeNote,
+                        ModifiedByUserLogin = userLogin?.UserLoginId,
+                        ModifiedTimestamp = stamp,
+                        CreatedStamp = stamp,
+                        LastUpdatedStamp = stamp
+                    });
                 }
 
                 // Generate next sequence ID

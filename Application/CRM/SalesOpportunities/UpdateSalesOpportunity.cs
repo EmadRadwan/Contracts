@@ -91,6 +91,15 @@ public class UpdateSalesOpportunity
                         ? $"Stage changed to {newStage.Description}"
                         : "Opportunity updated";
 
+                    if (newStage.OpportunityStageId == "SOSTG_CLOSED_WON")
+                    {
+                        var apartment = await _context.Products
+                        .FirstOrDefaultAsync(p => p.ProductId == opportunity.ProductId, ct);
+
+                        if (apartment != null)
+                            apartment.ApartmentStatusId = "APARTMENT_RESERVED";
+                    }
+
                     _context.SalesOpportunityHistories.Add(new SalesOpportunityHistory
                     {
                         SalesOpportunityHistoryId = historyId,
