@@ -5,6 +5,7 @@ export interface EmployeeAdvance {
     partyId: string;
     employeeName: string;           // ← Full employee name from Party.Description
     paymentId?: string | null;
+    paymentStatusId?: string | null;
     advanceDate: string;            // ISO string from backend (or Date if you parse it)
     amount: number;
     currencyUomId: string;          // e.g. "EGP"

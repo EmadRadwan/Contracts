@@ -26,9 +26,9 @@ public class HumanResourcesController : BaseApiController
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteEmployeeAdvance(string id)
+    public async Task<IActionResult> DeleteEmployeeAdvance(string id, [FromQuery] bool dropPayment = false)
     {
-        return HandleResults(await Mediator.Send(new DeleteEmployeeAdvance.Command { AdvanceId = id }));
+        return HandleResults(await Mediator.Send(new DeleteEmployeeAdvance.Command { AdvanceId = id, DropPayment = dropPayment }));
     }
     
     [HttpGet("{id}")]

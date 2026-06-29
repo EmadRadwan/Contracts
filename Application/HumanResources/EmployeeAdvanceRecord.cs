@@ -10,6 +10,7 @@ public class EmployeeAdvanceRecord
     public string? AdvanceTypeId { get; set; }
     public string? AdvanceTypeDescription { get; set; }
     public string? PaymentId { get; set; }
+    public string? PaymentStatusId { get; set; }
     public DateOnly? AdvanceDate { get; set; }
     public decimal? Amount { get; set; }
     public int? InstallmentCount { get; set; }

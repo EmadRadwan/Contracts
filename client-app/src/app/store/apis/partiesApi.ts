@@ -287,9 +287,9 @@ const partiesApi = createApi({
                 }),
                 invalidatesTags: ['EmployeeAdvance'],
             }),
-            deleteEmployeeAdvance: builder.mutation<void, string>({
-                query: (advanceId) => ({
-                    url: `/humanResources/${advanceId}`,
+            deleteEmployeeAdvance: builder.mutation<void, { advanceId: string; dropPayment?: boolean }>({
+                query: ({ advanceId, dropPayment }) => ({
+                    url: `/humanResources/${advanceId}${dropPayment ? '?dropPayment=true' : ''}`,
                     method: 'DELETE',
                 }),
                 invalidatesTags: ['EmployeeAdvance'],

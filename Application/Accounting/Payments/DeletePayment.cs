@@ -43,6 +43,18 @@ public class DeletePayment
                         $"لا يمكن حذف الدفعة لأنها مرتبطة بطلب مبيعات رقم: {payment.SalesRequestId}");
                 }
 
+                // Prevent deletion if payment is linked to an employee advance — must be managed from the advance screen
+                var linkedAdvance = await _context.EmployeeAdvances
+                    .Where(a => a.PaymentId == request.PaymentId)
+                    .Select(a => a.AdvanceId)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (linkedAdvance != null)
+                {
+                    return Result<Unit>.Failure(
+                        $"لا يمكن حذف الدفعة لأنها مرتبطة بسلفة موظف رقم: {linkedAdvance}. يرجى حذفها من خلال شاشة سلف الموظفين.");
+                }
+
 
                 // Rule 2: Prevent deletion if payment is linked to a Project Certificate via PaymentPreference → Order → WorkEffort
                 var isLinkedToProjectCertificate = await _context.Payments

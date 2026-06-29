@@ -28,31 +28,34 @@ public class ListEmployeeAdvancesQuery
                 from party in p.DefaultIfEmpty()
                 join status in _context.StatusItems on adv.StatusId equals status.StatusId into s
                 from status in s.DefaultIfEmpty()
+                join pmt in _context.Payments on adv.PaymentId equals pmt.PaymentId into pm
+                from pmt in pm.DefaultIfEmpty()
                 select new EmployeeAdvanceRecord
                 {
-                    AdvanceId         = adv.AdvanceId,
-                    PartyId   = adv.PartyId,
-                    EmployeeName      = party != null ? party.Description : adv.PartyId,
-                    PaymentId         = adv.PaymentId,
-                    AdvanceDate       = adv.AdvanceDate,
-                    AdvanceTypeId     = adv.AdvanceTypeId,
+                    AdvanceId              = adv.AdvanceId,
+                    PartyId                = adv.PartyId,
+                    EmployeeName           = party != null ? party.Description : adv.PartyId,
+                    PaymentId              = adv.PaymentId,
+                    PaymentStatusId        = pmt != null ? pmt.StatusId : null,
+                    AdvanceDate            = adv.AdvanceDate,
+                    AdvanceTypeId          = adv.AdvanceTypeId,
                     AdvanceTypeDescription = adv.AdvanceTypeId == "EMPLOYEE_ADVANCE" ? "سلفة راتب" : "سلفة طويلة الأجل",
-                    Amount            = adv.Amount,
-                    InstallmentCount  = adv.InstallmentCount,
-                    StartDate         = adv.StartDate,
-                    StatusId          = adv.StatusId,
-                    StatusDescription = status != null ? (language == "ar" ? status.DescriptionArabic : status.Description) : adv.StatusId,
-                    Description       = adv.Description,
+                    Amount                 = adv.Amount,
+                    InstallmentCount       = adv.InstallmentCount,
+                    StartDate              = adv.StartDate,
+                    StatusId               = adv.StatusId,
+                    StatusDescription      = status != null ? (language == "ar" ? status.DescriptionArabic : status.Description) : adv.StatusId,
+                    Description            = adv.Description,
                     Schedules = adv.EmployeeAdvanceSchedules.Select(s => new EmployeeAdvanceScheduleRecord
                     {
-                        ScheduleId = s.ScheduleId,
+                        ScheduleId        = s.ScheduleId,
                         InstallmentNumber = s.InstallmentNumber,
-                        DueDate = s.DueDate,
-                        ScheduledAmount = s.ScheduledAmount,
-                        DeductedAmount = s.DeductedAmount,
-                        StatusId = s.StatusId,
-                        PayrolInvoiceId = s.PayrolInvoiceId,
-                        Notes = s.Notes
+                        DueDate           = s.DueDate,
+                        ScheduledAmount   = s.ScheduledAmount,
+                        DeductedAmount    = s.DeductedAmount,
+                        StatusId          = s.StatusId,
+                        PayrolInvoiceId   = s.PayrolInvoiceId,
+                        Notes             = s.Notes
                     }).ToList()
                 };
 

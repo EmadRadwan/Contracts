@@ -72,7 +72,7 @@ export const EmployeeAdvanceActionsMenu: React.FC<EmployeeAdvanceActionsMenuProp
         if (!advanceId) return;
 
         try {
-            await deleteAdvance(advanceId).unwrap();
+            await deleteAdvance({ advanceId }).unwrap();
             toast.success(getTranslatedLabel("party.employeeAdvance.deleted", "Employee Advance Deleted"));
             onAdvanceDeleted?.();
         } catch (error) {

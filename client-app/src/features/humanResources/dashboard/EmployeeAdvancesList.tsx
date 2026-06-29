@@ -43,11 +43,10 @@ function EmployeeAdvancesList() {
     });
     const { getTranslatedLabel } = useTranslationHelper();
     const { data, isFetching } = useFetchEmployeeAdvancesQuery({...dataState});
-    const [triggerGetDetail, { data: detailData, isLoading: isDetailLoading, error: detailError }] =
-        useLazyGetEmployeeAdvanceDetailQuery();
+    const [triggerGetDetail] = useLazyGetEmployeeAdvanceDetailQuery();
     const [deleteAdvance] = useDeleteEmployeeAdvanceMutation();
     const [confirmDialogOpen, setConfirmDialogOpen] = React.useState(false);
-    const [advanceToDelete, setAdvanceToDelete] = React.useState<string | null>(null);
+    const [advanceToDelete, setAdvanceToDelete] = React.useState<EmployeeAdvance | null>(null);
     
     React.useEffect(() => {
         if (data) {
@@ -106,17 +105,21 @@ function EmployeeAdvancesList() {
         setViewMode("list");
     };
 
-    const handleDelete = async (advanceId: string) => {
-        setAdvanceToDelete(advanceId);
+    const hasSentPayment = advanceToDelete?.paymentStatusId === "PMNT_SENT";
+
+    const handleDelete = async (advance: EmployeeAdvance) => {
+        setAdvanceToDelete(advance);
         setConfirmDialogOpen(true);
     };
 
     const confirmDelete = async () => {
         if (advanceToDelete) {
             try {
-                await deleteAdvance(advanceToDelete).unwrap();
+                await deleteAdvance({ advanceId: advanceToDelete.advanceId, dropPayment: hasSentPayment }).unwrap();
                 toast.success(getTranslatedLabel("general.deleteSuccess", "Record deleted successfully"));
-            } catch (err) {
+            } catch (err: any) {
+                const message = err?.data?.title || err?.data?.error || getTranslatedLabel("general.deleteFailed", "Delete failed");
+                toast.error(message);
                 console.error("Delete failed:", err);
             } finally {
                 setConfirmDialogOpen(false);
@@ -137,17 +140,15 @@ function EmployeeAdvancesList() {
     };
 
     const DeleteCell = (props: any) => {
-        const isClosed = props.dataItem.statusId === "ADVANCE_FULLY_PAID" 
-            || props.dataItem.statusId === "ADVANCE_CANCELLED"
-            || props.dataItem.statusId === "ADVANCE_REJECTED"
-            || props.dataItem.statusId === "ADVANCE_PARTIALLY_PAID";
+        const isClosed = props.dataItem.statusId === "ADVANCE_CANCELLED"
+            || props.dataItem.statusId === "ADVANCE_REJECTED";
 
         return (
             <td>
                 <Button
                     color="error"
                     size="small"
-                    onClick={() => handleDelete(props.dataItem.advanceId)}
+                    onClick={() => handleDelete(props.dataItem as EmployeeAdvance)}
                     disabled={isClosed}
                 >
                     {getTranslatedLabel("general.delete", "Delete")}
@@ -237,7 +238,12 @@ function EmployeeAdvancesList() {
                 </DialogTitle>
                 <DialogContent>
                     <DialogContentText id="alert-dialog-description">
-                        {getTranslatedLabel("general.confirmDelete", "Are you sure you want to delete this record?")}
+                        {hasSentPayment
+                            ? getTranslatedLabel(
+                                "party.employeeAdvance.delete.hasSentPayment",
+                                "هذه السلفة مرتبطة بدفعة مُرسلة. سيتم حذف السلفة والدفعة وجميع القيود المحاسبية المرتبطة بها. هل تريد المتابعة؟"
+                            )
+                            : getTranslatedLabel("general.confirmDelete", "Are you sure you want to delete this record?")}
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
