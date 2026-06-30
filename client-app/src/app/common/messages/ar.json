@@ -66,6 +66,8 @@
     "exportItemsToExcel": "تصدير البنود إلى إكسل",
     "exportItemsByCertAndGl": "تصدير البنود (شهادة وحساب)",
     "exportItemsByGlAccount": "تصدير البنود (حسب الحساب)",
+    "exportSingleCertificate": "تصدير مستند",
+    "exportItemsByGlAccountFilter": "تصدير بنود حساب",
     "subtotal": "مجموع فرعي",
     "exporting": "جاري التصدير...",
     "generating": "جاري التحميل...",
@@ -257,7 +259,8 @@
         "total": "الإجمالي",
         "addItem": "إضافة بند دفع",
         "bulkAdd": "إضافة بند دفع",
-        "totalAmount": "الإجمالي"
+        "totalAmount": "الإجمالي",
+        "sectionTitle": "بنود المستند"
       },
       "HeaderList": {
         "createNew": "إنشاء مستند جديد",
@@ -292,7 +295,20 @@
         "itemsGlAccountTitle": "بنود مستندات الصرف المتعددة حسب حساب دفتر الأستاذ ({0} - {1})",
         "itemsGlAccountDialogTitle": "اختر الفترة لتقرير البنود حسب الحساب",
         "itemsGlAccountSuccess": "تم إنشاء تقرير البنود حسب الحساب بنجاح",
-        "itemsGlAccountError": "فشل إنشاء تقرير البنود حسب الحساب"
+        "itemsGlAccountError": "فشل إنشاء تقرير البنود حسب الحساب",
+        "singleTitle": "مستند صرف متعدد",
+        "singleDialogTitle": "تصدير تقرير مستند الصرف",
+        "singleIdRequired": "يرجى إدخال رقم المستند.",
+        "singleNotFound": "المستند غير موجود.",
+        "singleSuccess": "تم إنشاء تقرير المستند بنجاح",
+        "singleError": "فشل إنشاء تقرير المستند",
+        "glAccountFilterTitle": "بنود مستندات الصرف - الحساب: {0} ({1} - {2})",
+        "glAccountFilterDialogTitle": "تصدير بنود حساب دفتر الأستاذ",
+        "glAccountRequired": "يرجى اختيار حساب دفتر الأستاذ.",
+        "glAccountHint": "اختر الحساب من القائمة.",
+        "glAccountNoData": "لا توجد بنود لهذا الحساب في الفترة المحددة.",
+        "glAccountFilterSuccess": "تم إنشاء تقرير حساب دفتر الأستاذ بنجاح",
+        "glAccountFilterError": "فشل إنشاء تقرير حساب دفتر الأستاذ"
       },
       "bulkAdd": {
         "title": "إضافة بنود المدفوعات",

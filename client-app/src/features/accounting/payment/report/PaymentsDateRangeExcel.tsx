@@ -36,7 +36,7 @@ interface PaymentsDateRangeExcelProps {
     dataState?: State;
 }
 
-type SubtotalBy = 'paymentTypeDescription' | 'accountNameArabic' | 'paymentMethodDescription' | 'partyIdToName' | 'partyIdFromName';
+type SubtotalBy = 'none' | 'paymentTypeDescription' | 'accountNameArabic' | 'paymentMethodDescription' | 'partyIdToName' | 'partyIdFromName';
 
 const utils = {
     safeString: (v: any) => (v == null || typeof v === 'object') ? '' : String(v),
@@ -206,7 +206,7 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
         // Title
         const title = utils.rtlEmbed(
             getTranslatedLabel('accounting.payments.report.daterange.title',
-                `${paymentType === 'incoming' ? 'Incoming' : 'Outgoing'} Payments (${startDate?.format('DD/MM/YYYY') || ''} - ${endDate?.format('DD/MM/YYYY') || ''})`)
+                `${paymentType === 'incoming' ? 'المدفوعات الواردة' : 'المدفوعات الصادرة'} (${startDate?.format('DD/MM/YYYY') || ''} - ${endDate?.format('DD/MM/YYYY') || ''})`)
         );
         ws.getCell(`A${startRow}`).value = title;
         ws.mergeCells(`A${startRow}:${LAST_COL_LETTER}${startRow}`);
@@ -232,63 +232,93 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
         headerRow.height = 22;
 
         // Data with subtotals
-        const subtotalLabel = getTranslatedLabel('accounting.payments.report.subtotal', 'Subtotal');
-        const grandTotalLabel = getTranslatedLabel('accounting.payments.report.grandTotal', 'Grand Total');
-        const groups = groupByField(data.data, groupBy);
-        let grandTotal = 0;
+        const subtotalLabel = getTranslatedLabel('accounting.payments.report.subtotal', 'المجموع الفرعي');
+        const grandTotalLabel = getTranslatedLabel('accounting.payments.report.grandTotal', 'المجموع الكلي');
+        const amountField = COLUMN_DEFS[AMOUNT_COL_INDEX - 1].field;
 
-        groups.forEach((rows, groupName) => {
-            const groupTotal = rows.reduce((s, p) => s + (p.amount || 0), 0);
-            grandTotal += groupTotal;
-
-            // Group header row
-            const groupHeaderRow = ws.addRow([utils.rtlEmbed(groupName)]);
-            ws.mergeCells(`A${groupHeaderRow.number}:${LAST_COL_LETTER}${groupHeaderRow.number}`);
-            groupHeaderRow.font = { name: 'Amiri', size: 11, bold: true, color: { argb: 'FF1A237E' } };
-            groupHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EAF6' } };
-            groupHeaderRow.alignment = { horizontal: 'right', vertical: 'middle' };
-            groupHeaderRow.height = 20;
-
-            // Data rows
-            rows.forEach(payment => {
+        if (groupBy === 'none') {
+            let firstDataRowNum = -1;
+            let lastDataRowNum = -1;
+            data.data.forEach(payment => {
                 const row = ws.addRow(COLUMN_DEFS.map(c => buildCellValue(c, payment)));
+                if (firstDataRowNum === -1) firstDataRowNum = row.number;
+                lastDataRowNum = row.number;
                 row.font = { name: 'Amiri', size: 10 };
                 row.alignment = { horizontal: 'right', wrapText: true };
                 row.height = 22;
                 row.getCell(AMOUNT_COL_INDEX).numFmt = '#,##0.00';
             });
 
-            // Subtotal row
-            const subtotalRowData = COLUMN_DEFS.map((_c, i) => {
-                if (i === AMOUNT_COL_INDEX - 2) return utils.rtlEmbed(`${subtotalLabel}: ${groupName}`);
-                if (i === AMOUNT_COL_INDEX - 1) return groupTotal;
+            const amountColLetter = String.fromCharCode(64 + AMOUNT_COL_INDEX);
+            const totalRowData = COLUMN_DEFS.map((_c, i) => {
+                if (i === AMOUNT_COL_INDEX - 2) return utils.rtlEmbed(grandTotalLabel);
                 return '';
             });
-            const subtotalRow = ws.addRow(subtotalRowData);
-            ws.mergeCells(`A${subtotalRow.number}:F${subtotalRow.number}`);
-            subtotalRow.font = { name: 'Amiri', size: 11, bold: true, color: { argb: 'FF1B5E20' } };
-            subtotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F5E9' } };
-            subtotalRow.alignment = { horizontal: 'right', vertical: 'middle' };
-            subtotalRow.getCell(AMOUNT_COL_INDEX).numFmt = '#,##0.00';
-            subtotalRow.height = 20;
+            const totalRow = ws.addRow(totalRowData);
+            ws.mergeCells(`A${totalRow.number}:F${totalRow.number}`);
+            totalRow.font = { name: 'Amiri', size: 13, bold: true };
+            totalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3E0' } };
+            totalRow.alignment = { horizontal: 'right', vertical: 'middle' };
+            totalRow.getCell(AMOUNT_COL_INDEX).value = { formula: `SUBTOTAL(9,${amountColLetter}${firstDataRowNum}:${amountColLetter}${lastDataRowNum})` };
+            totalRow.getCell(AMOUNT_COL_INDEX).numFmt = '#,##0.00';
+            totalRow.height = 24;
+        } else {
+            const groups = groupByField(data.data, groupBy);
+            let grandTotal = 0;
 
-            // Empty row between groups
-            ws.addRow([]);
-        });
+            groups.forEach((rows, groupName) => {
+                const groupTotal = rows.reduce((s, p) => s + (p[amountField] || 0), 0);
+                grandTotal += groupTotal;
 
-        // Grand total row
-        const grandTotalRowData = COLUMN_DEFS.map((_c, i) => {
-            if (i === AMOUNT_COL_INDEX - 2) return utils.rtlEmbed(grandTotalLabel);
-            if (i === AMOUNT_COL_INDEX - 1) return grandTotal;
-            return '';
-        });
-        const grandTotalRow = ws.addRow(grandTotalRowData);
-        ws.mergeCells(`A${grandTotalRow.number}:F${grandTotalRow.number}`);
-        grandTotalRow.font = { name: 'Amiri', size: 13, bold: true };
-        grandTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3E0' } };
-        grandTotalRow.alignment = { horizontal: 'right', vertical: 'middle' };
-        grandTotalRow.getCell(AMOUNT_COL_INDEX).numFmt = '#,##0.00';
-        grandTotalRow.height = 24;
+                // Group header row
+                const groupHeaderRow = ws.addRow([utils.rtlEmbed(groupName)]);
+                ws.mergeCells(`A${groupHeaderRow.number}:${LAST_COL_LETTER}${groupHeaderRow.number}`);
+                groupHeaderRow.font = { name: 'Amiri', size: 11, bold: true, color: { argb: 'FF1A237E' } };
+                groupHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EAF6' } };
+                groupHeaderRow.alignment = { horizontal: 'right', vertical: 'middle' };
+                groupHeaderRow.height = 20;
+
+                // Data rows
+                rows.forEach(payment => {
+                    const row = ws.addRow(COLUMN_DEFS.map(c => buildCellValue(c, payment)));
+                    row.font = { name: 'Amiri', size: 10 };
+                    row.alignment = { horizontal: 'right', wrapText: true };
+                    row.height = 22;
+                    row.getCell(AMOUNT_COL_INDEX).numFmt = '#,##0.00';
+                });
+
+                // Subtotal row
+                const subtotalRowData = COLUMN_DEFS.map((_c, i) => {
+                    if (i === AMOUNT_COL_INDEX - 2) return utils.rtlEmbed(`${subtotalLabel}: ${groupName}`);
+                    if (i === AMOUNT_COL_INDEX - 1) return groupTotal;
+                    return '';
+                });
+                const subtotalRow = ws.addRow(subtotalRowData);
+                ws.mergeCells(`A${subtotalRow.number}:F${subtotalRow.number}`);
+                subtotalRow.font = { name: 'Amiri', size: 11, bold: true, color: { argb: 'FF1B5E20' } };
+                subtotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F5E9' } };
+                subtotalRow.alignment = { horizontal: 'right', vertical: 'middle' };
+                subtotalRow.getCell(AMOUNT_COL_INDEX).numFmt = '#,##0.00';
+                subtotalRow.height = 20;
+
+                // Empty row between groups
+                ws.addRow([]);
+            });
+
+            // Grand total row
+            const grandTotalRowData = COLUMN_DEFS.map((_c, i) => {
+                if (i === AMOUNT_COL_INDEX - 2) return utils.rtlEmbed(grandTotalLabel);
+                if (i === AMOUNT_COL_INDEX - 1) return grandTotal;
+                return '';
+            });
+            const grandTotalRow = ws.addRow(grandTotalRowData);
+            ws.mergeCells(`A${grandTotalRow.number}:F${grandTotalRow.number}`);
+            grandTotalRow.font = { name: 'Amiri', size: 13, bold: true };
+            grandTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3E0' } };
+            grandTotalRow.alignment = { horizontal: 'right', vertical: 'middle' };
+            grandTotalRow.getCell(AMOUNT_COL_INDEX).numFmt = '#,##0.00';
+            grandTotalRow.height = 24;
+        }
 
         // Column widths
         ws.columns = COLUMN_DEFS.map(c => ({ width: c.width }));
@@ -364,19 +394,19 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
 
             <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
                 <DialogTitle>
-                    {getTranslatedLabel('accounting.payments.report.daterange.title', 'Select Date Range for Export')}
+                    {getTranslatedLabel('accounting.payments.report.daterange.title', 'اختر نطاق التاريخ للتصدير')}
                 </DialogTitle>
                 <DialogContent>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
                             <DesktopDatePicker
-                                label={getTranslatedLabel('common.fromDate', 'From Date')}
+                                label={getTranslatedLabel('common.fromDate', 'من تاريخ')}
                                 value={startDate}
                                 onChange={(newValue) => setStartDate(newValue)}
                                 slotProps={{ textField: { fullWidth: true } }}
                             />
                             <DesktopDatePicker
-                                label={getTranslatedLabel('common.toDate', 'To Date')}
+                                label={getTranslatedLabel('common.toDate', 'إلى تاريخ')}
                                 value={endDate}
                                 minDate={startDate ?? undefined}
                                 onChange={(newValue) => setEndDate(newValue)}
@@ -387,31 +417,36 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
 
                             <FormControl component="fieldset">
                                 <FormLabel component="legend">
-                                    {getTranslatedLabel('accounting.payments.report.subtotalBy', 'Subtotal By')}
+                                    {getTranslatedLabel('accounting.payments.report.subtotalBy', 'المجموع الفرعي حسب')}
                                 </FormLabel>
                                 <RadioGroup
                                     value={subtotalBy}
                                     onChange={(e) => setSubtotalBy(e.target.value as SubtotalBy)}
                                 >
                                     <FormControlLabel
+                                        value="none"
+                                        control={<Radio />}
+                                        label={getTranslatedLabel('accounting.payments.report.subtotalByNone', 'بدون تجميع')}
+                                    />
+                                    <FormControlLabel
                                         value="paymentTypeDescription"
                                         control={<Radio />}
-                                        label={getTranslatedLabel('accounting.payments.report.subtotalByPaymentType', 'Payment Type')}
+                                        label={getTranslatedLabel('accounting.payments.report.subtotalByPaymentType', 'نوع الدفعة')}
                                     />
                                     <FormControlLabel
                                         value="accountNameArabic"
                                         control={<Radio />}
-                                        label={getTranslatedLabel('accounting.payments.report.subtotalByAccount', 'Override Account (GL Account)')}
+                                        label={getTranslatedLabel('accounting.payments.report.subtotalByAccount', 'الحساب')}
                                     />
                                     <FormControlLabel
                                         value="paymentMethodDescription"
                                         control={<Radio />}
-                                        label={getTranslatedLabel('accounting.payments.report.subtotalByPaymentMethod', 'Payment Method')}
+                                        label={getTranslatedLabel('accounting.payments.report.subtotalByPaymentMethod', 'طريقة الدفع')}
                                     />
                                     <FormControlLabel
                                         value={paymentType === 'outgoing' ? 'partyIdToName' : 'partyIdFromName'}
                                         control={<Radio />}
-                                        label={getTranslatedLabel('accounting.payments.report.subtotalByCounterparty', 'Counterparty')}
+                                        label={getTranslatedLabel('accounting.payments.report.subtotalByCounterparty', 'الطرف الآخر')}
                                     />
                                 </RadioGroup>
                             </FormControl>

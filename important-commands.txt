@@ -325,6 +325,5 @@ Summarize this entire conversation as a concise JSON or bullet-point outline, in
   
 dotnet ef migrations add AddSalesCommissionAndProjectCommissionRate --project Persistence --startup-project API --verbose 
 
-مع حضرتك عنود القائد من طرف الحج عاطف شركة جورا
   
   

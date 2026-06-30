@@ -133,6 +133,17 @@ public class ProjectController : BaseApiController
         return HandleResult(await Mediator.Send(new ListMultiPaymentItems.Query { WorkEffortId = workEffortId }));
     }
     
+    [HttpGet("multiPaymentCertificate/{workEffortId}")]
+    public async Task<IActionResult> GetMultiPaymentCertificate(string workEffortId)
+    {
+        var language = GetLanguage();
+        return HandleResult(await Mediator.Send(new GetMultiPaymentCertificate.Query
+        {
+            WorkEffortId = workEffortId,
+            Language = language
+        }));
+    }
+
     [HttpPost("multiPaymentCertificate")]
     public async Task<ActionResult<MultiPaymentCertificateDto>> CreateMultiPaymentCertificate([FromBody] MultiPaymentCertificateDto certificate)
     {

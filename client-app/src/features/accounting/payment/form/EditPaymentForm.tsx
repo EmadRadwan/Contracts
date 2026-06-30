@@ -264,6 +264,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
             costCenterId: payment.costCenterId || "",
             paymentRefNum: payment.paymentRefNum || "",
             isBankTransfer: payment.isBankTransfer || false,
+            isCollectionDate: false,
         };
     }, [payment]);
     
@@ -635,6 +636,17 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                     <Grid item xs={12}>
                                         <Grid container spacing={1} alignItems="flex-end">
                                             <Grid item xs={2}>
+                                                {(valueGetter("chequeDate") || valueGetter("chequeNumber")) && (
+                                                    <Field
+                                                        id="isCollectionDate"
+                                                        name="isCollectionDate"
+                                                        label={getTranslatedLabel(
+                                                            `${localizationKey}.isCollectionDate`,
+                                                            "تحديد كتاريخ تحصيل"
+                                                        )}
+                                                        component={MemoizedFormCheckBox}
+                                                    />
+                                                )}
                                                 <Field
                                                     id="effectiveDate"
                                                     name="effectiveDate"
@@ -644,7 +656,16 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                     )}
                                                     component={FormDatePicker}
                                                     format="yyyy-MM-dd"
-                                                    validator={requiredValidator}
+                                                    validator={(value: any) => {
+                                                        const required = requiredValidator(value);
+                                                        if (required) return required;
+                                                        if (valueGetter("isCollectionDate")) {
+                                                            const chequeDate = valueGetter("chequeDate");
+                                                            if (chequeDate && value && new Date(value) <= new Date(chequeDate))
+                                                                return "تاريخ التحصيل يجب أن يكون بعد تاريخ الشيك";
+                                                        }
+                                                        return undefined;
+                                                    }}
                                                 />
                                             </Grid>
 

@@ -21,7 +21,7 @@ import {
 } from "../slice/certificateSelectors";
 import {useFetchCertificateItemsQuery} from "../../../app/store/apis/certificateItemsApi";
 import {CertificateItemFormMemo} from "../form/CertificateItemForm";
-import CertificateItemKendoBulkAdd from "../form/CertificateItemKendoBulkAdd";
+import CertificateItemKendoBulkAdd from "../form/CertificateItemKendoBulkAddV2";
 import {
     setProcessedCertificateItems,
     setUiCertificateItems,

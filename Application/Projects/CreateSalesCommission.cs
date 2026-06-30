@@ -131,7 +131,9 @@ public class CreateSalesCommission
             decimal? extCompanyGross = null;
             decimal? extCompanyNet = null;
             decimal? extSalesRepAmount = null;
+            decimal? extSalesRepNetAmount = null;
             decimal? extManagerAmount = null;
+            decimal? extManagerNetAmount = null;
 
             if (isIndirect && dto.ExternalCompanyPercent.HasValue)
             {
@@ -161,10 +163,20 @@ public class CreateSalesCommission
                 }
 
                 if (dto.ExternalSalesRepPercent.HasValue)
+                {
                     extSalesRepAmount = salePrice * (dto.ExternalSalesRepPercent.Value / 100m) * commissionFactor;
+                    extSalesRepNetAmount = (!dto.HasExternalSalesRepWithholdingTaxExemption && dto.WithholdingTaxPercent > 0)
+                        ? extSalesRepAmount.Value - extSalesRepAmount.Value * (dto.WithholdingTaxPercent / 100m)
+                        : extSalesRepAmount;
+                }
 
                 if (dto.ExternalManagerPercent.HasValue)
+                {
                     extManagerAmount = salePrice * (dto.ExternalManagerPercent.Value / 100m) * commissionFactor;
+                    extManagerNetAmount = (!dto.HasExternalManagerWithholdingTaxExemption && dto.WithholdingTaxPercent > 0)
+                        ? extManagerAmount.Value - extManagerAmount.Value * (dto.WithholdingTaxPercent / 100m)
+                        : extManagerAmount;
+                }
             }
 
             var transaction = _context.Database.BeginTransaction();
@@ -203,11 +215,15 @@ public class CreateSalesCommission
                     ExternalSalesRepPartyId = isIndirect ? dto.ExternalSalesRepPartyId : null,
                     ExternalSalesRepPercent = isIndirect ? dto.ExternalSalesRepPercent : null,
                     ExternalSalesRepAmount = isIndirect ? extSalesRepAmount : null,
-                    ExternalSalesRepNetAmount = isIndirect ? extSalesRepAmount : null,
+                    ExternalSalesRepNetAmount = isIndirect ? extSalesRepNetAmount : null,
+                    HasExternalSalesRepWithholdingTaxExemption = isIndirect && dto.HasExternalSalesRepWithholdingTaxExemption,
+                    ExternalSalesRepNationalId = isIndirect ? dto.ExternalSalesRepNationalId : null,
                     ExternalManagerPartyId = isIndirect ? dto.ExternalManagerPartyId : null,
                     ExternalManagerPercent = isIndirect ? dto.ExternalManagerPercent : null,
                     ExternalManagerAmount = isIndirect ? extManagerAmount : null,
-                    ExternalManagerNetAmount = isIndirect ? extManagerAmount : null,
+                    ExternalManagerNetAmount = isIndirect ? extManagerNetAmount : null,
+                    HasExternalManagerWithholdingTaxExemption = isIndirect && dto.HasExternalManagerWithholdingTaxExemption,
+                    ExternalManagerNationalId = isIndirect ? dto.ExternalManagerNationalId : null,
                     HasVatExemption = dto.HasVatExemption,
                     HasWithholdingTaxExemption = dto.HasWithholdingTaxExemption,
                     VatPercent = dto.VatPercent,
@@ -237,6 +253,8 @@ public class CreateSalesCommission
                 dto.ExternalSalesRepNetAmount = commission.ExternalSalesRepNetAmount;
                 dto.ExternalManagerAmount = commission.ExternalManagerAmount;
                 dto.ExternalManagerNetAmount = commission.ExternalManagerNetAmount;
+                dto.HasExternalSalesRepWithholdingTaxExemption = commission.HasExternalSalesRepWithholdingTaxExemption;
+                dto.HasExternalManagerWithholdingTaxExemption = commission.HasExternalManagerWithholdingTaxExemption;
 
                 return Result<SalesCommissionDto>.Success(dto);
             }

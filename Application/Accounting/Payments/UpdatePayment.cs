@@ -63,7 +63,15 @@ public class UpdatePayment
                     return Results<PaymentDto>.Failure("الدفعة غير موجودة", "PAYMENT_NOT_FOUND");
 
                 // === NORMALIZE TO DATE-ONLY (Timezone Safe) ===
-                DateOnly effectiveDate = dto.ChequeDate ?? dto.EffectiveDate ?? original.EffectiveDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
+                // When IsCollectionDate is flagged the user explicitly set effectiveDate as the cheque
+                // collection date, which must be later than the cheque date itself.
+                if (dto.IsCollectionDate == true && dto.ChequeDate.HasValue && dto.EffectiveDate.HasValue
+                    && dto.EffectiveDate.Value <= dto.ChequeDate.Value)
+                    return Results<PaymentDto>.Failure("تاريخ التحصيل يجب أن يكون بعد تاريخ الشيك", "INVALID_COLLECTION_DATE");
+
+                DateOnly effectiveDate = dto.IsCollectionDate == true
+                    ? dto.EffectiveDate ?? original.EffectiveDate ?? DateOnly.FromDateTime(DateTime.UtcNow)
+                    : dto.ChequeDate ?? dto.EffectiveDate ?? original.EffectiveDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
 
                 // Get payment type once
                 var paymentType = await _context.PaymentTypes

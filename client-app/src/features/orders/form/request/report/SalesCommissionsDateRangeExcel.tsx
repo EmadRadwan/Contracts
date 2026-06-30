@@ -59,8 +59,8 @@ const utils = {
 };
 
 // ─── column definitions ───────────────────────────────────────────────────────
-// 42 columns → last column = AP
-const LAST_COL_LETTER = 'AP';
+// 46 columns → last column = AT
+const LAST_COL_LETTER = 'AT';
 // First 9 cols (A-I) are text/date — subtotal label merges these
 const SUBTOTAL_LABEL_END = 'I';
 
@@ -106,12 +106,16 @@ const COLUMN_DEFS: ColDef[] = [
     { field: 'externalCompanyNetAmount',  header: 'صافي الوسيط',               width: 16, isNumeric: true, isAmount: true },
     { field: 'externalSalesRepName',      header: 'مندوب الوسيط',              width: 22 },
     { field: 'externalSalesRepPercent',   header: 'نسبة مندوب الوسيط %',       width: 16, isNumeric: true },
-    { field: 'externalSalesRepAmount',    header: 'مبلغ مندوب الوسيط',         width: 16, isNumeric: true, isAmount: true },
-    { field: 'externalSalesRepNetAmount', header: 'صافي مندوب الوسيط',         width: 16, isNumeric: true, isAmount: true },
-    { field: 'externalManagerName',       header: 'مدير الوسيط',               width: 22 },
-    { field: 'externalManagerPercent',    header: 'نسبة مدير الوسيط %',        width: 16, isNumeric: true },
-    { field: 'externalManagerAmount',     header: 'مبلغ مدير الوسيط',          width: 16, isNumeric: true, isAmount: true },
-    { field: 'externalManagerNetAmount',  header: 'صافي مدير الوسيط',          width: 16, isNumeric: true, isAmount: true },
+    { field: 'externalSalesRepAmount',                      header: 'مبلغ مندوب الوسيط',                  width: 16, isNumeric: true, isAmount: true },
+    { field: 'externalSalesRepNetAmount',                   header: 'صافي مندوب الوسيط',                  width: 16, isNumeric: true, isAmount: true },
+    { field: 'hasExternalSalesRepWithholdingTaxExemption',  header: 'إعفاء ض.استقطاع مندوب الوسيط',       width: 18, isBoolean: true },
+    { field: 'externalSalesRepNationalId',                  header: 'الرقم القومي (مندوب الوسيط)',         width: 20 },
+    { field: 'externalManagerName',                         header: 'مدير الوسيط',                        width: 22 },
+    { field: 'externalManagerPercent',                      header: 'نسبة مدير الوسيط %',                 width: 16, isNumeric: true },
+    { field: 'externalManagerAmount',                       header: 'مبلغ مدير الوسيط',                   width: 16, isNumeric: true, isAmount: true },
+    { field: 'externalManagerNetAmount',                    header: 'صافي مدير الوسيط',                   width: 16, isNumeric: true, isAmount: true },
+    { field: 'hasExternalManagerWithholdingTaxExemption',   header: 'إعفاء ض.استقطاع مدير الوسيط',        width: 18, isBoolean: true },
+    { field: 'externalManagerNationalId',                   header: 'الرقم القومي (مدير الوسيط)',          width: 20 },
     { field: 'hasVatExemption',           header: 'إعفاء ض.ق.م',               width: 12, isBoolean: true },
     { field: 'hasWithholdingTaxExemption',header: 'إعفاء ض.استقطاع',            width: 14, isBoolean: true },
     { field: 'vatPercent',                header: 'نسبة ض.ق.م %',              width: 12, isNumeric: true },
@@ -191,10 +195,14 @@ const FIELD_LABELS: Record<string, string> = {
     externalSalesRepPercent: "نسبة مندوب الوسيط %",
     externalSalesRepAmount: "مبلغ مندوب الوسيط",
     externalSalesRepNetAmount: "صافي مندوب الوسيط",
+    hasExternalSalesRepWithholdingTaxExemption: "إعفاء ض.استقطاع مندوب الوسيط",
+    externalSalesRepNationalId: "الرقم القومي (مندوب الوسيط)",
     externalManagerName: "مدير الوسيط",
     externalManagerPercent: "نسبة مدير الوسيط %",
     externalManagerAmount: "مبلغ مدير الوسيط",
     externalManagerNetAmount: "صافي مدير الوسيط",
+    hasExternalManagerWithholdingTaxExemption: "إعفاء ض.استقطاع مدير الوسيط",
+    externalManagerNationalId: "الرقم القومي (مدير الوسيط)",
     hasVatExemption: "إعفاء ض.ق.م",
     hasWithholdingTaxExemption: "إعفاء ض.استقطاع",
     vatPercent: "نسبة ض.ق.م %",

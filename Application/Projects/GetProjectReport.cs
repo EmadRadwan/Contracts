@@ -436,7 +436,7 @@ namespace Application.Projects
                     from createdBy in createdByJoin.DefaultIfEmpty()
                     where (
                               (glAccountId != null && pyt.OverrideGlAccountId == glAccountId))
-                          && pyt.StatusId == "PMNT_SENT"
+                          //&& pyt.StatusId == "PMNT_SENT"
                           && ptt.ParentTypeId == "DISBURSEMENT"
                     select new PaymentRecord
                     {

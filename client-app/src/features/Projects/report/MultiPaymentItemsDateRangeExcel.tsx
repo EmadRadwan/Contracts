@@ -74,12 +74,7 @@ export default function MultiPaymentItemsDateRangeExcel() {
 
         const startRow = logoBuffer ? 5 : 3;
 
-        const title = utils.rtlEmbed(
-            getTranslatedLabel(
-                "projects.multiPaymentCertificate.excel.itemsTitle",
-                `Multi Payment Certificate Items (${startDate?.format("DD/MM/YYYY") || ""} - ${endDate?.format("DD/MM/YYYY") || ""})`
-            ).replace("{0}", startDate?.format("DD/MM/YYYY") || "").replace("{1}", endDate?.format("DD/MM/YYYY") || "")
-        );
+        const title = `‫بنود مستندات الصرف المتعددة (${startDate?.format("DD/MM/YYYY") || ""} - ${endDate?.format("DD/MM/YYYY") || ""})`;
         ws.getCell(`A${startRow}`).value = title;
         ws.mergeCells(`A${startRow}:N${startRow}`);
         ws.getRow(startRow).font = { name: "Amiri", size: 18, bold: true };

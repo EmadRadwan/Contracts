@@ -29001,6 +29001,11 @@ entity.Property(e => e.GlSubAccountCourseLabelId)
                       .HasColumnType("decimal(20,2)").HasColumnName("EXT_SALES_REP_AMOUNT");
                 entity.Property(e => e.ExternalSalesRepNetAmount)
                       .HasColumnType("decimal(20,2)").HasColumnName("EXT_SALES_REP_NET_AMOUNT");
+                entity.Property(e => e.HasExternalSalesRepWithholdingTaxExemption)
+                      .HasColumnName("HAS_EXT_SALES_REP_WHT_EXEMPTION");
+                entity.Property(e => e.ExternalSalesRepNationalId)
+                      .HasMaxLength(20).IsUnicode(false)
+                      .HasColumnName("EXT_SALES_REP_NATIONAL_ID");
 
                 // External broker's manager
                 entity.Property(e => e.ExternalManagerPartyId)
@@ -29012,6 +29017,11 @@ entity.Property(e => e.GlSubAccountCourseLabelId)
                       .HasColumnType("decimal(20,2)").HasColumnName("EXT_MANAGER_AMOUNT");
                 entity.Property(e => e.ExternalManagerNetAmount)
                       .HasColumnType("decimal(20,2)").HasColumnName("EXT_MANAGER_NET_AMOUNT");
+                entity.Property(e => e.HasExternalManagerWithholdingTaxExemption)
+                      .HasColumnName("HAS_EXT_MANAGER_WHT_EXEMPTION");
+                entity.Property(e => e.ExternalManagerNationalId)
+                      .HasMaxLength(20).IsUnicode(false)
+                      .HasColumnName("EXT_MANAGER_NATIONAL_ID");
 
                 // Tax flags
                 entity.Property(e => e.HasVatExemption).HasColumnName("HAS_VAT_EXEMPTION");

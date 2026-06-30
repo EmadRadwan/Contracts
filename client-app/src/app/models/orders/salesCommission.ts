@@ -46,12 +46,16 @@ export interface SalesCommission {
     externalSalesRepPercent?: number | null;
     externalSalesRepAmount?: number | null;
     externalSalesRepNetAmount?: number | null;
+    hasExternalSalesRepWithholdingTaxExemption: boolean;
+    externalSalesRepNationalId?: string | null;
 
     externalManagerPartyId?: string | null;
     externalManagerName?: string | null;
     externalManagerPercent?: number | null;
     externalManagerAmount?: number | null;
     externalManagerNetAmount?: number | null;
+    hasExternalManagerWithholdingTaxExemption: boolean;
+    externalManagerNationalId?: string | null;
 
     hasVatExemption: boolean;
     hasWithholdingTaxExemption: boolean;

@@ -72,6 +72,8 @@ public class SalesCommission
     public decimal? ExternalSalesRepPercent { get; set; }
     public decimal? ExternalSalesRepAmount { get; set; }
     public decimal? ExternalSalesRepNetAmount { get; set; }
+    public bool HasExternalSalesRepWithholdingTaxExemption { get; set; }
+    public string? ExternalSalesRepNationalId { get; set; }
 
     // -----------------------------------------------------------------
     // External broker's manager — INDIRECT only
@@ -80,6 +82,8 @@ public class SalesCommission
     public decimal? ExternalManagerPercent { get; set; }
     public decimal? ExternalManagerAmount { get; set; }
     public decimal? ExternalManagerNetAmount { get; set; }
+    public bool HasExternalManagerWithholdingTaxExemption { get; set; }
+    public string? ExternalManagerNationalId { get; set; }
 
     // -----------------------------------------------------------------
     // Tax configuration (applies to external company invoice)

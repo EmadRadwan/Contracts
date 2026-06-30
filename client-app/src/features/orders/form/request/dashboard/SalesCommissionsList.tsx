@@ -402,6 +402,19 @@ export default function SalesCommissionsList() {
                         format="{0:n2}"
                     />
                     <Column
+                        field="hasExternalSalesRepWithholdingTaxExemption"
+                        title={getTranslatedLabel("salesCommission.list.hasExternalSalesRepWhtExemption", "إعفاء ض.استقطاع مندوب الوسيط")}
+                        cell={BooleanCell}
+                        width={170}
+                        filterable={false}
+                        sortable={false}
+                    />
+                    <Column
+                        field="externalSalesRepNationalId"
+                        title={getTranslatedLabel("salesCommission.list.externalSalesRepNationalId", "الرقم القومي (مندوب الوسيط)")}
+                        width={180}
+                    />
+                    <Column
                         field="externalManagerName"
                         title={getTranslatedLabel("salesCommission.list.externalManager", "مدير الوسيط")}
                         width={180}
@@ -426,6 +439,19 @@ export default function SalesCommissionsList() {
                         width={180}
                         filter="numeric"
                         format="{0:n2}"
+                    />
+                    <Column
+                        field="hasExternalManagerWithholdingTaxExemption"
+                        title={getTranslatedLabel("salesCommission.list.hasExternalManagerWhtExemption", "إعفاء ض.استقطاع مدير الوسيط")}
+                        cell={BooleanCell}
+                        width={170}
+                        filterable={false}
+                        sortable={false}
+                    />
+                    <Column
+                        field="externalManagerNationalId"
+                        title={getTranslatedLabel("salesCommission.list.externalManagerNationalId", "الرقم القومي (مدير الوسيط)")}
+                        width={180}
                     />
                     <Column
                         field="hasVatExemption"

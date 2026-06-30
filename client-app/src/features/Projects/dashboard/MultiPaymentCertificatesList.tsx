@@ -27,6 +27,8 @@ import {toast} from "react-toastify";
 import MultiPaymentCertificatesDateRangeExcel from "../report/MultiPaymentCertificatesDateRangeExcel";
 import MultiPaymentItemsDateRangeExcel from "../report/MultiPaymentItemsDateRangeExcel";
 import MultiPaymentItemsGlAccountExcel from "../report/MultiPaymentItemsGlAccountExcel";
+import MultiPaymentCertificateSingleExcel from "../report/MultiPaymentCertificateSingleExcel";
+import MultiPaymentItemsByGlAccountFilterExcel from "../report/MultiPaymentItemsByGlAccountFilterExcel";
 import { StyledTabs } from "../../../app/components/StyledTabs";
 import { StyledTab } from "../../../app/components/StyledTab";
 import dayjs, { Dayjs } from "dayjs";
@@ -300,6 +302,8 @@ export default function MultiPaymentCertificatesList() {
                                     <MultiPaymentCertificatesDateRangeExcel />
                                     <MultiPaymentItemsDateRangeExcel />
                                     <MultiPaymentItemsGlAccountExcel />
+                                    <MultiPaymentCertificateSingleExcel />
+                                    <MultiPaymentItemsByGlAccountFilterExcel />
                                 </GridToolbar>
                                 <Column
                                     field="workEffortId"

@@ -52,14 +52,10 @@ const paymentsApi = createApi({
                 providesTags: ['Payments'],
 
                 query: (queryArgs) => {
-                    // REFACTOR: Removed paymentType parameter handling
-                    // The new endpoint returns both incoming and outgoing payments by default,
-                    // so we no longer append &paymentType=... to the URL.
-                    // This simplifies the query string and avoids sending an unnecessary parameter.
                     const baseUrl = `/odata/paymentRecordsWithDueStatus?count=true&${toODataString(queryArgs)}`;
-
+                    const paymentTypeParam = queryArgs.paymentType ? `&paymentType=${queryArgs.paymentType}` : '';
                     return {
-                        url: baseUrl,
+                        url: `${baseUrl}${paymentTypeParam}`,
                         method: 'GET',
                     };
                 },
@@ -80,6 +76,16 @@ const paymentsApi = createApi({
                     url: `/odata/paymentRecordsWithDueStatus/by-date-range?fromDate=${fromDate}&toDate=${toDate}`,
                     method: 'GET',
                 }),
+            }),
+            fetchPaymentsWithDueStatusForExport: builder.query<any[], { oDataQuery: string; fromDate?: string; toDate?: string }>({
+                query: ({ oDataQuery, fromDate, toDate }) => {
+                    let url = `/odata/paymentRecordsWithDueStatus?${oDataQuery}`;
+                    if (fromDate) url += `&fromDate=${fromDate}`;
+                    if (toDate) url += `&toDate=${toDate}`;
+                    return { url, method: 'GET' };
+                },
+                transformResponse: (response: any) =>
+                    Array.isArray(response) ? response : (response?.value ?? []),
             }),
             addSalesOrderPayments: builder.mutation({
                 invalidatesTags: ["Payments"],
@@ -347,6 +353,7 @@ export const {
     useLazyFetchDailyPaymentsLazyQuery,
     useFetchPaymentsWithDueStatusQuery,
     useLazyFetchPaymentsWithDueStatusByDateRangeQuery,
+    useLazyFetchPaymentsWithDueStatusForExportQuery,
     useLazyGetPaymentReportPdfQuery,
     useLazyFetchPaymentsByDateRangeQuery,
     useDeletePaymentMutation,

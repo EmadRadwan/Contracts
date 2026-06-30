@@ -9,9 +9,9 @@ import {
     GridDataStateChangeEvent,
     GridToolbar
 } from "@progress/kendo-react-grid";
-import { DataResult, State } from "@progress/kendo-data-query";
+import { CompositeFilterDescriptor, DataResult, FilterDescriptor, State } from "@progress/kendo-data-query";
 import Button from "@mui/material/Button";
-import { Grid, Paper } from "@mui/material";
+import { Grid, Paper, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import { handleDatesArray } from "../../../../app/util/utils";
@@ -42,6 +42,7 @@ export default function PaymentsWithDueAmountsList() {
     });
 
     const formEditMode = useAppSelector((s) => s.paymentsUi.formEditMode);
+    const [paymentFilter, setPaymentFilter] = useState<'all' | 'incoming' | 'outgoing'>('incoming');
 
     useEffect(() => {
         if (location.state?.resetPaymentForm) {
@@ -54,9 +55,20 @@ export default function PaymentsWithDueAmountsList() {
         setDataState(e.dataState);
     };
 
-    // REFACTOR: Switched to new query hook and removed paymentType argument
-    // The new endpoint returns both payment directions and includes DueStatusArabic
-    const { data, error, isFetching, refetch } = useFetchPaymentsWithDueStatusQuery(dataState);
+    const effectiveDataState = React.useMemo((): State => {
+        if (paymentFilter === 'all') return dataState;
+        const disbursementFilter: FilterDescriptor = {
+            field: 'isDisbursement',
+            operator: 'eq',
+            value: paymentFilter === 'outgoing',
+        };
+        const merged: CompositeFilterDescriptor = dataState.filter
+            ? { logic: 'and', filters: [dataState.filter as CompositeFilterDescriptor, disbursementFilter] }
+            : { logic: 'and', filters: [disbursementFilter] };
+        return { ...dataState, filter: merged };
+    }, [dataState, paymentFilter]);
+
+    const { data, error, isFetching, refetch } = useFetchPaymentsWithDueStatusQuery(effectiveDataState);
 
     React.useEffect(() => {
         if (data) {
@@ -179,11 +191,25 @@ export default function PaymentsWithDueAmountsList() {
                                 onDataStateChange={dataStateChange}
                             >
                                 <GridToolbar>
-                                    <Grid container justifyContent="flex-start" alignItems="center">
+                                    <Grid container justifyContent="flex-start" alignItems="center" spacing={1}>
+                                        <Grid item>
+                                            <ToggleButtonGroup
+                                                value={paymentFilter}
+                                                exclusive
+                                                onChange={(_e, v) => { if (v !== null) setPaymentFilter(v); }}
+                                                size="small"
+                                            >
+                                                <ToggleButton value="all">الكل</ToggleButton>
+                                                <ToggleButton value="incoming">واردة</ToggleButton>
+                                                <ToggleButton value="outgoing">صادرة</ToggleButton>
+                                            </ToggleButtonGroup>
+                                        </Grid>
                                         <Grid item>
                                             <PaymentsWithDueStatusDateRangeExcel
                                                 companyName={companyName}
                                                 getTranslatedLabel={getTranslatedLabel}
+                                                dataState={dataState}
+                                                paymentFilter={paymentFilter}
                                             />
                                         </Grid>
                                     </Grid>

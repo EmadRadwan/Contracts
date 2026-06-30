@@ -14,6 +14,7 @@ export interface Payment {
   partyIdTo?: any;
   partyIdToName?: string;
   isBankTransfer?: boolean;
+  isCollectionDate?: boolean;
   isDepositWithDrawPayment?: string;
   roleTypeIdTo?: any;
   statusId?: string;

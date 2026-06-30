@@ -386,6 +386,7 @@ const handleCreate = async (data: {
         costCenterId: data.values.costCenterId || null,
       isBankTransfer: data.values.isBankTransfer || payment.isBankTransfer || false,
       paymentRefNum: data.values.paymentRefNum || payment.paymentRefNum || "",
+      isCollectionDate: data.values.isCollectionDate || false,
     };
 
     await updatePaymentData(updated);

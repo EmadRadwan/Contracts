@@ -121,7 +121,8 @@ public class UpdateSalesCommission
                 ? salePrice * (dto.Manager2Percent.Value / 100m) * commissionFactor : null;
 
             decimal? extCompanyGross = null, extCompanyNet = null;
-            decimal? extSalesRepAmount = null, extManagerAmount = null;
+            decimal? extSalesRepAmount = null, extSalesRepNetAmount = null;
+            decimal? extManagerAmount = null, extManagerNetAmount = null;
 
             if (isIndirect && dto.ExternalCompanyPercent.HasValue)
             {
@@ -142,9 +143,19 @@ public class UpdateSalesCommission
                 }
 
                 if (dto.ExternalSalesRepPercent.HasValue)
+                {
                     extSalesRepAmount = salePrice * (dto.ExternalSalesRepPercent.Value / 100m) * commissionFactor;
+                    extSalesRepNetAmount = (!dto.HasExternalSalesRepWithholdingTaxExemption && dto.WithholdingTaxPercent > 0)
+                        ? extSalesRepAmount.Value - extSalesRepAmount.Value * (dto.WithholdingTaxPercent / 100m)
+                        : extSalesRepAmount;
+                }
                 if (dto.ExternalManagerPercent.HasValue)
+                {
                     extManagerAmount = salePrice * (dto.ExternalManagerPercent.Value / 100m) * commissionFactor;
+                    extManagerNetAmount = (!dto.HasExternalManagerWithholdingTaxExemption && dto.WithholdingTaxPercent > 0)
+                        ? extManagerAmount.Value - extManagerAmount.Value * (dto.WithholdingTaxPercent / 100m)
+                        : extManagerAmount;
+                }
             }
 
             var stamp = DateTime.UtcNow;
@@ -176,11 +187,15 @@ public class UpdateSalesCommission
                 commission.ExternalSalesRepPartyId = isIndirect ? dto.ExternalSalesRepPartyId : null;
                 commission.ExternalSalesRepPercent = isIndirect ? dto.ExternalSalesRepPercent : null;
                 commission.ExternalSalesRepAmount = isIndirect ? extSalesRepAmount : null;
-                commission.ExternalSalesRepNetAmount = isIndirect ? extSalesRepAmount : null;
+                commission.ExternalSalesRepNetAmount = isIndirect ? extSalesRepNetAmount : null;
+                commission.HasExternalSalesRepWithholdingTaxExemption = isIndirect && dto.HasExternalSalesRepWithholdingTaxExemption;
+                commission.ExternalSalesRepNationalId = isIndirect ? dto.ExternalSalesRepNationalId : null;
                 commission.ExternalManagerPartyId = isIndirect ? dto.ExternalManagerPartyId : null;
                 commission.ExternalManagerPercent = isIndirect ? dto.ExternalManagerPercent : null;
                 commission.ExternalManagerAmount = isIndirect ? extManagerAmount : null;
-                commission.ExternalManagerNetAmount = isIndirect ? extManagerAmount : null;
+                commission.ExternalManagerNetAmount = isIndirect ? extManagerNetAmount : null;
+                commission.HasExternalManagerWithholdingTaxExemption = isIndirect && dto.HasExternalManagerWithholdingTaxExemption;
+                commission.ExternalManagerNationalId = isIndirect ? dto.ExternalManagerNationalId : null;
                 commission.HasVatExemption = dto.HasVatExemption;
                 commission.HasWithholdingTaxExemption = dto.HasWithholdingTaxExemption;
                 commission.VatPercent = dto.VatPercent;
@@ -205,7 +220,11 @@ public class UpdateSalesCommission
                 dto.ExternalCompanyGrossAmount = commission.ExternalCompanyGrossAmount;
                 dto.ExternalCompanyNetAmount = commission.ExternalCompanyNetAmount;
                 dto.ExternalSalesRepAmount = commission.ExternalSalesRepAmount;
+                dto.ExternalSalesRepNetAmount = commission.ExternalSalesRepNetAmount;
                 dto.ExternalManagerAmount = commission.ExternalManagerAmount;
+                dto.ExternalManagerNetAmount = commission.ExternalManagerNetAmount;
+                dto.HasExternalSalesRepWithholdingTaxExemption = commission.HasExternalSalesRepWithholdingTaxExemption;
+                dto.HasExternalManagerWithholdingTaxExemption = commission.HasExternalManagerWithholdingTaxExemption;
 
                 return Result<SalesCommissionDto>.Success(dto);
             }

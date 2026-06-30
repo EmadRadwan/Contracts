@@ -77,6 +77,8 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
     const [hasTwoManagers, setHasTwoManagers] = useState(false);
     const [hasVatExemption, setHasVatExemption] = useState(false);
     const [hasWithholdingTaxExemption, setHasWithholdingTaxExemption] = useState(false);
+    const [hasExternalSalesRepWhtExemption, setHasExternalSalesRepWhtExemption] = useState(false);
+    const [hasExternalManagerWhtExemption, setHasExternalManagerWhtExemption] = useState(false);
     const [quickCreate, setQuickCreate] = useState<QuickCreateState>({ open: false, role: "SALES_REP", fieldName: "" });
     const [showExistingDialog, setShowExistingDialog] = useState(false);
     const [formApi, setFormApi] = useState<any>(null);
@@ -116,6 +118,8 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
             setHasTwoManagers(!!activeCommission.manager2PartyId);
             setHasVatExemption(activeCommission.hasVatExemption ?? false);
             setHasWithholdingTaxExemption(activeCommission.hasWithholdingTaxExemption ?? false);
+            setHasExternalSalesRepWhtExemption(activeCommission.hasExternalSalesRepWithholdingTaxExemption ?? false);
+            setHasExternalManagerWhtExemption(activeCommission.hasExternalManagerWithholdingTaxExemption ?? false);
         }
     }, [activeCommission]);
 
@@ -182,10 +186,12 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                     ? { fromPartyId: activeCommission.externalSalesRepPartyId, fromPartyName: activeCommission.externalSalesRepName ?? "" }
                     : null,
                 externalSalesRepPercent: activeCommission.externalSalesRepPercent ?? null,
+                externalSalesRepNationalId: activeCommission.externalSalesRepNationalId ?? "",
                 externalManagerParty: activeCommission.externalManagerPartyId
                     ? { fromPartyId: activeCommission.externalManagerPartyId, fromPartyName: activeCommission.externalManagerName ?? "" }
                     : null,
                 externalManagerPercent: activeCommission.externalManagerPercent ?? null,
+                externalManagerNationalId: activeCommission.externalManagerNationalId ?? "",
                 vatPercent: activeCommission.vatPercent,
                 withholdingTaxPercent: activeCommission.withholdingTaxPercent,
                 notes: activeCommission.notes ?? "",
@@ -206,8 +212,10 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
             externalCompanyPercent: null,
             externalSalesRepParty: null,
             externalSalesRepPercent: null,
+            externalSalesRepNationalId: "",
             externalManagerParty: null,
             externalManagerPercent: null,
+            externalManagerNationalId: "",
             vatPercent: 14,
             withholdingTaxPercent: 5,
             notes: "",
@@ -234,8 +242,12 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
             externalCompanyPercent: isIndirect ? (data.externalCompanyPercent ?? null) : null,
             externalSalesRepPartyId: isIndirect ? (data.externalSalesRepParty?.fromPartyId ?? null) : null,
             externalSalesRepPercent: isIndirect ? (data.externalSalesRepPercent ?? null) : null,
+            hasExternalSalesRepWithholdingTaxExemption: isIndirect ? hasExternalSalesRepWhtExemption : false,
+            externalSalesRepNationalId: isIndirect ? (data.externalSalesRepNationalId ?? null) : null,
             externalManagerPartyId: isIndirect ? (data.externalManagerParty?.fromPartyId ?? null) : null,
             externalManagerPercent: isIndirect ? (data.externalManagerPercent ?? null) : null,
+            hasExternalManagerWithholdingTaxExemption: isIndirect ? hasExternalManagerWhtExemption : false,
+            externalManagerNationalId: isIndirect ? (data.externalManagerNationalId ?? null) : null,
             hasVatExemption: isIndirect ? hasVatExemption : false,
             hasWithholdingTaxExemption: isIndirect ? hasWithholdingTaxExemption : false,
             vatPercent: isIndirect ? (hasVatExemption ? 0 : (data.vatPercent ?? 14)) : 0,
@@ -369,8 +381,6 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                             ? (v: any) => (v ?? 0) > maxExtPct ? `الحد الأقصى ${maxExtPct.toFixed(4)}%` : undefined
                             : undefined;
                         
-                        console.log("activeCommission", activeCommission);
-
                         return (
                             <FormElement>
                                 <fieldset className="k-form-fieldset">
@@ -714,7 +724,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                             </Typography>
 
                                             {/* Tax flags */}
-                                            <Grid container spacing={2} sx={{ mb: 1 }}>
+                                            <Grid container spacing={2} alignItems="flex-end" sx={{ mb: 1 }}>
                                                 <Grid item>
                                                     <FormControlLabel
                                                         control={
@@ -847,6 +857,28 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         disabled={isApproved}
                                                     />
                                                 </Grid>
+                                                <Grid item xs={6} md={2}>
+                                                    <FormControlLabel
+                                                        control={
+                                                            <Checkbox
+                                                                checked={hasExternalSalesRepWhtExemption}
+                                                                onChange={(e) => setHasExternalSalesRepWhtExemption(e.target.checked)}
+                                                                disabled={isApproved}
+                                                                size="small"
+                                                            />
+                                                        }
+                                                        label={getTranslatedLabel("salesCommission.form.hasExternalSalesRepWhtExemption", "إعفاء ض.استقطاع")}
+                                                    />
+                                                </Grid>
+                                                <Grid item xs={6} md={2}>
+                                                    <Field
+                                                        id="externalSalesRepNationalId"
+                                                        name="externalSalesRepNationalId"
+                                                        label={getTranslatedLabel("salesCommission.form.externalSalesRepNationalId", "الرقم القومي (مندوب الوسيط)")}
+                                                        component={FormInput}
+                                                        disabled={isApproved}
+                                                    />
+                                                </Grid>
                                                 {activeCommission?.externalSalesRepAmount && (
                                                     <Grid item xs={6} md={3}>
                                                         <Typography variant="body2" sx={{ mt: 3 }}>
@@ -891,6 +923,28 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         label={getTranslatedLabel("salesCommission.form.externalManagerPercent", "نسبة مدير الوسيط %")}
                                                         component={FormNumericTextBox}
                                                         min={0} max={100} format="n4"
+                                                        disabled={isApproved}
+                                                    />
+                                                </Grid>
+                                                <Grid item xs={6} md={2}>
+                                                    <FormControlLabel
+                                                        control={
+                                                            <Checkbox
+                                                                checked={hasExternalManagerWhtExemption}
+                                                                onChange={(e) => setHasExternalManagerWhtExemption(e.target.checked)}
+                                                                disabled={isApproved}
+                                                                size="small"
+                                                            />
+                                                        }
+                                                        label={getTranslatedLabel("salesCommission.form.hasExternalManagerWhtExemption", "إعفاء ض.استقطاع")}
+                                                    />
+                                                </Grid>
+                                                <Grid item xs={6} md={2}>
+                                                    <Field
+                                                        id="externalManagerNationalId"
+                                                        name="externalManagerNationalId"
+                                                        label={getTranslatedLabel("salesCommission.form.externalManagerNationalId", "الرقم القومي (مدير الوسيط)")}
+                                                        component={FormInput}
                                                         disabled={isApproved}
                                                     />
                                                 </Grid>
