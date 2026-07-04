@@ -215,6 +215,8 @@ public class BatchCreatePayrollInvoices
                     await DeletePayrollInvoicesSafelyAsync(existingInvoiceIds, request.OrganizationPartyId, monthStart, monthEnd, cancellationToken);
                 }
 
+                var employeeInvoiceTotals = new Dictionary<string, decimal>();
+
                 foreach (var emp in request.Employees)
                 {
                     // 1. Create Invoice Header
@@ -250,29 +252,38 @@ public class BatchCreatePayrollInvoices
                     }
 
                     // 3. Add Absence Item
+                    // GetInvoiceTotal / CreateAcctgTransForPayrollInvoice sum Quantity * Amount, so Amount must be
+                    // the per-day rate (not the already-computed total) or the days factor gets counted twice
+                    // (dailyRate * days * days). Deriving the rate as AbsenceValue / AbsenceDays keeps Quantity
+                    // holding the real day count (other reports read Quantity as days) while still reconstructing
+                    // AbsenceValue exactly via Quantity * Amount — including when a manager has overridden
+                    // AbsenceValue without changing AbsenceDays. Falls back to Quantity=1 when AbsenceDays is 0
+                    // (e.g. a value entered with no corresponding days) so the amount isn't multiplied away.
                     if (emp.AbsenceValue > 0)
                     {
+                        var absenceQuantity = emp.AbsenceDays > 0 ? emp.AbsenceDays : 1m;
                         await _invoiceHelperService.CreateInvoiceItem(new InvoiceItemParameters
                         {
                             InvoiceId = invoiceId,
                             InvoiceItemSeqId = (itemSeqId++).ToString("D5"),
                             InvoiceItemTypeId = "PAYROL_DD_ABSENCE",
-                            Amount = emp.AbsenceValue,
-                            Quantity = emp.AbsenceDays,
+                            Amount = emp.AbsenceValue / absenceQuantity,
+                            Quantity = absenceQuantity,
                             Description = $"Absence: {emp.AbsenceDays} days"
                         });
                     }
 
-                    // 4. Add Overtime Item
+                    // 4. Add Overtime Item (same per-day-rate reasoning as the absence item above)
                     if (emp.OvertimeValue > 0)
                     {
+                        var overtimeQuantity = emp.OvertimeDays > 0 ? emp.OvertimeDays : 1m;
                         await _invoiceHelperService.CreateInvoiceItem(new InvoiceItemParameters
                         {
                             InvoiceId = invoiceId,
                             InvoiceItemSeqId = (itemSeqId++).ToString("D5"),
                             InvoiceItemTypeId = "PAYROL_OVERTIME",
-                            Amount = emp.OvertimeValue,
-                            Quantity = emp.OvertimeDays,
+                            Amount = emp.OvertimeValue / overtimeQuantity,
+                            Quantity = overtimeQuantity,
                             Description = $"Overtime: {emp.OvertimeDays} days"
                         });
                     }
@@ -337,6 +348,12 @@ public class BatchCreatePayrollInvoices
 
                     // 6. Set Invoice to READY (this triggers accounting posting)
                     await _invoiceUtilityService.SetInvoiceStatus(invoiceId, "INVOICE_READY", request.InvoiceDate);
+
+                    // Record the actual persisted invoice total (not the client-submitted NetSalary) so the
+                    // payment amount below always matches what CreateAcctgTransAndEntriesForPayrollPayment
+                    // will later sum from the same invoices — otherwise the payment (credit) and the
+                    // per-employee accrued-salary debits it posts can silently diverge.
+                    employeeInvoiceTotals[emp.EmployeeId] = await _invoiceUtilityService.GetInvoiceTotal(invoiceId, true);
                 }
 
                 // ===================================================================
@@ -344,11 +361,11 @@ public class BatchCreatePayrollInvoices
                 // ===================================================================
                 var cashTotal = request.Employees
                     .Where(e => e.PreferredPayrollPaymentMethodId == "CASH")
-                    .Sum(e => e.NetSalary);
+                    .Sum(e => employeeInvoiceTotals.GetValueOrDefault(e.EmployeeId));
 
                 var bankTransferTotal = request.Employees
                     .Where(e => e.PreferredPayrollPaymentMethodId == "BANK_TRANSFER")
-                    .Sum(e => e.NetSalary);
+                    .Sum(e => employeeInvoiceTotals.GetValueOrDefault(e.EmployeeId));
 
                 if (cashTotal > 0)
                 {

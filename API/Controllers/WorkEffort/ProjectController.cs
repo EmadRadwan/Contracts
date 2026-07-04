@@ -197,14 +197,16 @@ public class ProjectController : BaseApiController
     [HttpGet("multiPaymentCertificates/by-date-range")]
     public async Task<IActionResult> GetMultiPaymentCertificatesByDateRange(
         [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate)
+        [FromQuery] DateTime endDate,
+        [FromQuery] string glAccountId = null)
     {
         var language = GetLanguage();
         var result = await Mediator.Send(new ListMultiPaymentCertificatesByDateRange.Query
         {
             StartDate = startDate,
             EndDate = endDate,
-            Language = language
+            Language = language,
+            GlAccountId = glAccountId
         });
         return HandleResult(result);
     }
@@ -212,12 +214,14 @@ public class ProjectController : BaseApiController
     [HttpGet("multiPaymentItems/by-date-range")]
     public async Task<IActionResult> GetMultiPaymentItemsByDateRange(
         [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate)
+        [FromQuery] DateTime endDate,
+        [FromQuery] string glAccountId = null)
     {
         var result = await Mediator.Send(new ListMultiPaymentItemsByDateRange.Query
         {
             StartDate = startDate,
-            EndDate = endDate
+            EndDate = endDate,
+            GlAccountId = glAccountId
         });
         return HandleResult(result);
     }

@@ -97,15 +97,17 @@ public class ListPayrollData2
                 var baseSalary = invItems.Where(i => i.InvoiceItemTypeId == "PAYROL_SALARY")
                     .Sum(i => (i.Amount ?? 0) * (i.Quantity ?? 1));
 
+                // Amount here is the per-day rate (Quantity holds OvertimeDays/AbsenceDays), so the actual
+                // earned/deducted value is Quantity * Amount — matching GetInvoiceTotal's convention.
                 var overtimeDays = invItems.Where(i => i.InvoiceItemTypeId == "PAYROL_OVERTIME")
                     .Sum(i => i.Quantity ?? 0);
                 var overtimeValue = invItems.Where(i => i.InvoiceItemTypeId == "PAYROL_OVERTIME")
-                    .Sum(i => i.Amount ?? 0);
+                    .Sum(i => (i.Amount ?? 0) * (i.Quantity ?? 0));
 
                 var absenceDays = invItems.Where(i => i.InvoiceItemTypeId == "PAYROL_DD_ABSENCE")
                     .Sum(i => i.Quantity ?? 0);
                 var absenceValue = invItems.Where(i => i.InvoiceItemTypeId == "PAYROL_DD_ABSENCE")
-                    .Sum(i => i.Amount ?? 0);
+                    .Sum(i => (i.Amount ?? 0) * (i.Quantity ?? 0));
 
                 var advances = invItems.Where(i => i.InvoiceItemTypeId == "PAYROL_DD_ADVANCE")
                     .Sum(i => i.Amount ?? 0);

@@ -308,7 +308,8 @@
         "glAccountHint": "اختر الحساب من القائمة.",
         "glAccountNoData": "لا توجد بنود لهذا الحساب في الفترة المحددة.",
         "glAccountFilterSuccess": "تم إنشاء تقرير حساب دفتر الأستاذ بنجاح",
-        "glAccountFilterError": "فشل إنشاء تقرير حساب دفتر الأستاذ"
+        "glAccountFilterError": "فشل إنشاء تقرير حساب دفتر الأستاذ",
+        "includeItems": "تضمين بنود المستندات"
       },
       "bulkAdd": {
         "title": "إضافة بنود المدفوعات",
@@ -1497,6 +1498,7 @@
         "base-salary": "الراتب الأساسي",
         "absence-days": "أيام الغياب",
         "absence-value": "قيمة الغياب",
+        "absence-value-overridden": "تم التعديل يدوياً — لا تطابق الحساب التلقائي (الأيام × السعر اليومي)",
         "overtime-days": "أيام الإضافي",
         "overtime-value": "قيمة الإضافي",
         "net-salary": "صافي الراتب",

@@ -12,6 +12,7 @@ namespace Application.Projects
             public DateTime StartDate { get; set; }
             public DateTime EndDate { get; set; }
             public string Language { get; set; }
+            public string GlAccountId { get; set; }
         }
 
         public class Handler : IRequestHandler<Query, Result<List<MultiPaymentCertificateRecord>>>
@@ -45,6 +46,7 @@ namespace Application.Projects
                             where we.WorkEffortTypeId == "PAYMENT_CERTIFICATE"
                                   && we.EstimatedStartDate >= request.StartDate
                                   && we.EstimatedStartDate <= request.EndDate
+                                  && (string.IsNullOrEmpty(request.GlAccountId) || we.GlAccountId == request.GlAccountId)
 
                             select new MultiPaymentCertificateRecord
                             {

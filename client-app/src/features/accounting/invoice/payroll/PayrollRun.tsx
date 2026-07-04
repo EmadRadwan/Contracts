@@ -46,6 +46,7 @@ interface EmployeePayrollData {
     preferredPayrollPaymentMethodId: string;
     absenceDays: number;
     absenceValue: number;
+    isAbsenceValueManual?: boolean;
     overtimeDays: number;
     overtimeValue: number;
     netSalary: number;
@@ -224,6 +225,7 @@ const PayrollRun: React.FC = () => {
                 preferredPayrollPaymentMethodId: emp.preferredPayrollPaymentMethodId || "",
                 absenceDays: 0,
                 absenceValue: 0,
+                isAbsenceValueManual: false,
                 overtimeDays: 0,
                 overtimeValue: 0,
                 netSalary: baseSalary - empAdvances.reduce((sum, adv) => sum + adv.amount, 0),
@@ -254,10 +256,17 @@ const PayrollRun: React.FC = () => {
                 const absenceDays = Number(oldEmp.absenceDays) || 0;
                 const overtimeDays = Number(oldEmp.overtimeDays) || 0;
                 const isSelected = typeof oldEmp.isSelected === 'boolean' ? oldEmp.isSelected : freshEmp.isSelected;
+                const isAbsenceValueManual = !!oldEmp.isAbsenceValueManual;
 
-                // Recalculate absence and overtime values based on possibly new baseSalary
-                const calculatedAbsenceValue = Math.round((freshEmp.baseSalary / 30) * absenceDays);
+                // Recalculate overtime value based on possibly new baseSalary
                 const calculatedOvertimeValue = Math.round((freshEmp.baseSalary / 30) * overtimeDays);
+
+                // Absence value is normally recalculated from days like overtime, but if the user (e.g. a
+                // manager) manually overrode it, keep their exact override across data refreshes instead of
+                // recomputing it away from absenceDays.
+                const calculatedAbsenceValue = isAbsenceValueManual
+                    ? (Number(oldEmp.absenceValue) || 0)
+                    : Math.round((freshEmp.baseSalary / 30) * absenceDays);
 
                 const totalAdvances = freshEmp.advances.reduce((sum, adv) => sum + adv.amount, 0);
 
@@ -271,6 +280,7 @@ const PayrollRun: React.FC = () => {
                     ...freshEmp,                    // Fresh baseSalary, advances, accounts, etc.
                     absenceDays: absenceDays,
                     absenceValue: calculatedAbsenceValue,
+                    isAbsenceValueManual: isAbsenceValueManual,
                     overtimeDays: overtimeDays,
                     overtimeValue: calculatedOvertimeValue,
                     isSelected: isSelected,
@@ -287,6 +297,7 @@ const PayrollRun: React.FC = () => {
 
         if (type === 'absence') {
             row.absenceValue = Math.round((row.baseSalary / 30) * row.absenceDays);
+            row.isAbsenceValueManual = false;
         } else {
             row.overtimeValue = Math.round((row.baseSalary / 30) * row.overtimeDays);
         }
@@ -309,6 +320,7 @@ const PayrollRun: React.FC = () => {
             // Auto-calculate the monetary value immediately when days change
             if (field === 'absenceDays') {
                 row.absenceValue = Math.round((row.baseSalary / 30) * numValue);
+                row.isAbsenceValueManual = false; // days changed, so a stale override no longer applies
             } else {
                 row.overtimeValue = Math.round((row.baseSalary / 30) * numValue);
             }
@@ -320,6 +332,23 @@ const PayrollRun: React.FC = () => {
         else {
             row[field] = value;
         }
+
+        newData[index] = row;
+        setPayrollData(newData);
+    };
+
+    // Lets a manager override the calculated Absence Value directly (e.g. to reduce a deduction as an
+    // exception) without touching the recorded absenceDays, which stays as the source attendance data.
+    const handleAbsenceValueChange = (index: number, value: string) => {
+        const newData = [...payrollData];
+        const row = { ...newData[index] };
+
+        const numValue = value === '' ? 0 : parseFloat(value);
+        row.absenceValue = Math.max(0, isNaN(numValue) ? 0 : numValue);
+        row.isAbsenceValueManual = true;
+
+        const totalAdvances = row.advances.reduce((sum, adv) => sum + adv.amount, 0);
+        row.netSalary = Math.round(row.baseSalary + row.overtimeValue - row.absenceValue - totalAdvances);
 
         newData[index] = row;
         setPayrollData(newData);
@@ -406,6 +435,7 @@ const PayrollRun: React.FC = () => {
                     ...emp,
                     absenceDays: newAbsenceDays,
                     absenceValue: newAbsenceValue,
+                    isAbsenceValueManual: false,
                     netSalary: Math.round(newNetSalary)
                 };
             }
@@ -554,7 +584,27 @@ const PayrollRun: React.FC = () => {
                                             </Button>
                                         </Box>
                                     </TableCell>
-                                    <TableCell align="center">{emp.absenceValue}</TableCell>
+                                    <TableCell>
+                                        <TextField
+                                            type="number"
+                                            size="small"
+                                            value={emp.absenceValue}
+                                            onChange={(e) => handleAbsenceValueChange(index, e.target.value)}
+                                            inputProps={{ min: 0, step: 1 }}
+                                            sx={{
+                                                width: '90px',
+                                                ...(emp.isAbsenceValueManual && {
+                                                    '& .MuiOutlinedInput-root': {
+                                                        backgroundColor: 'rgba(255, 152, 0, 0.12)'
+                                                    }
+                                                })
+                                            }}
+                                            disabled={invalid}
+                                            title={emp.isAbsenceValueManual
+                                                ? getTranslatedLabel("accounting.payroll.run.absence-value-overridden", "Manually overridden — does not match calculated days × rate")
+                                                : undefined}
+                                        />
+                                    </TableCell>
                                     <TableCell>
                                         <Box display="flex" alignItems="center" gap={1} justifyContent="center">
                                             <TextField

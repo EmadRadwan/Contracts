@@ -31,7 +31,7 @@ export default function MultiPaymentCertificatesDateRangeExcel() {
     const { getTranslatedLabel } = useTranslationHelper();
     const dispatch = useAppDispatch();
     const [open, setOpen] = useState(false);
-    const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf("month"));
+    const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().subtract(1, 'month'));
     const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
     const [isGenerating, setIsGenerating] = useState(false);
 
@@ -156,8 +156,8 @@ export default function MultiPaymentCertificatesDateRangeExcel() {
         try {
             const result = await dispatch(
                 multiPaymentCertificateApi.endpoints.fetchMultiPaymentCertificatesByDateRange.initiate({
-                    startDate: startDate.toISOString(),
-                    endDate: endDate.toISOString(),
+                    startDate: startDate.startOf('day').toISOString(),
+                    endDate: endDate.endOf('day').toISOString(),
                 })
             ).unwrap();
 
@@ -204,12 +204,14 @@ export default function MultiPaymentCertificatesDateRangeExcel() {
                             <DesktopDatePicker
                                 label={getTranslatedLabel("common.fromDate", "From Date")}
                                 value={startDate}
+                                format="DD/MM/YYYY"
                                 onChange={(newValue) => setStartDate(newValue)}
                                 slotProps={{ textField: { fullWidth: true } }}
                             />
                             <DesktopDatePicker
                                 label={getTranslatedLabel("common.toDate", "To Date")}
                                 value={endDate}
+                                format="DD/MM/YYYY"
                                 minDate={startDate ?? undefined}
                                 onChange={(newValue) => setEndDate(newValue)}
                                 slotProps={{ textField: { fullWidth: true } }}

@@ -325,3 +325,11 @@ Then render inside the `xs={1}` grid column as shown in the Actions Menu layout 
 - Both RTK Query and Axios (`agent.ts`) coexist — prefer RTK Query for new features
 - Both MobX and Redux coexist — prefer Redux slices + RTK Query for new features
 - `QuestPDF.Settings.UseEnvironmentFonts = false` is set globally — do not rely on system fonts in PDF templates
+
+- Do not spawn subagents unless explicitly asked. Work sequentially.
+
+## Build Rules
+- NEVER run `dotnet build`, `dotnet run`, `dotnet watch`, or any build/compile command after modifying files
+- NEVER run `npm run build`, `npm start`, or any frontend build commands after modifying files
+- After making code changes, stop and report what was changed — do not attempt to verify by building
+- The developer will manually re-run/re-debug after all changes are complete

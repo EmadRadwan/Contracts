@@ -3730,12 +3730,14 @@ public class GeneralLedgerService : IGeneralLedgerService
 
             // 5. Create Debit Entries for each employee's invoice
             int seq = 2;
+            decimal debitTotal = 0m;
             foreach (var data in invoiceData)
             {
                 var invoice = data.Invoice;
                 var party = data.Party;
                 var invoiceTotal = await _invoiceUtilityService.GetInvoiceTotal(invoice.InvoiceId, true);
                 if (invoiceTotal == 0) continue;
+                debitTotal += invoiceTotal;
 
                 var accruedGlAccountId = party.GlAccountIdAdvancedPayment;
 
@@ -3774,6 +3776,15 @@ public class GeneralLedgerService : IGeneralLedgerService
                 };
                 await _acctgTransService.CreateAcctgTransEntry(debitEntry);
                 seq++;
+            }
+
+            if (debitTotal != paymentAmount)
+            {
+                _logger.LogError(
+                    $"Unbalanced payroll AcctgTrans {acctgTransId} for payment {paymentId}: " +
+                    $"credit (payment amount) = {paymentAmount}, sum of debit entries = {debitTotal}, " +
+                    $"difference = {paymentAmount - debitTotal}. Invoices used: month {month}/{year}, " +
+                    $"preferred payment method {preferredMethodId}.");
             }
 
             return acctgTransId;
@@ -6113,18 +6124,21 @@ public class GeneralLedgerService : IGeneralLedgerService
         var stamp = DateTime.UtcNow;
         var seq = 0;
 
-        // 1. Debit: Salaries and Wages (601000 or GlAccountIdAdvancedPayment)
-        // This is actual cost for the company: Additions - (Absence + Penalties)
-        if (debitAmount > 0)
+        // 1. Salaries and Wages (601000 or GlAccountIdAdvancedPayment)
+        // This is actual cost for the company: Additions - (Absence + Penalties).
+        // When deductions exceed additions, debitAmount is negative, so this leg
+        // posts as a credit (reducing expense) instead of being dropped, keeping
+        // the transaction balanced against entry 3 below.
+        if (debitAmount != 0)
         {
             var debitEntry = new AcctgTransEntry
             {
                 AcctgTransId = acctgTransId,
                 AcctgTransEntrySeqId = (++seq).ToString("D3"),
                 GlAccountId = debitGlAccountId,
-                DebitCreditFlag = "D",
+                DebitCreditFlag = debitAmount > 0 ? "D" : "C",
                 AcctgTransEntryTypeId = "_NA_",
-                Amount = debitAmount,
+                Amount = Math.Abs(debitAmount),
                 ReconcileStatusId = "AES_NOT_RECONCILED",
                 Description = $"Salaries and Wages - Invoice {invoice.InvoiceId}",
                 OrganizationPartyId = organizationPartyId,
@@ -6156,19 +6170,25 @@ public class GeneralLedgerService : IGeneralLedgerService
             await _acctgTransService.CreateAcctgTransEntry(advanceEntry);
         }
 
-        // 3. Credit: Net Salary (Accrued Salaries)
-        if (netSalary > 0 && !string.IsNullOrEmpty(accruedGlAccountId))
+        // 3. Net Salary (Accrued Salaries).
+        // When loan/expense deductions exceed the salary additions, netSalary is
+        // negative (the employee owes the company rather than being owed), so this
+        // leg posts as a debit instead of being dropped, keeping the transaction
+        // balanced against entry 1 above.
+        if (netSalary != 0 && !string.IsNullOrEmpty(accruedGlAccountId))
         {
             var accruedEntry = new AcctgTransEntry
             {
                 AcctgTransId = acctgTransId,
                 AcctgTransEntrySeqId = (++seq).ToString("D3"),
                 GlAccountId = accruedGlAccountId,
-                DebitCreditFlag = "C",
+                DebitCreditFlag = netSalary > 0 ? "C" : "D",
                 AcctgTransEntryTypeId = "_NA_",
-                Amount = netSalary,
+                Amount = Math.Abs(netSalary),
                 ReconcileStatusId = "AES_NOT_RECONCILED",
-                Description = $"Net Salary Payable - Invoice {invoice.InvoiceId}",
+                Description = netSalary > 0
+                    ? $"Net Salary Payable - Invoice {invoice.InvoiceId}"
+                    : $"Net Amount Due from Employee - Invoice {invoice.InvoiceId}",
                 OrganizationPartyId = organizationPartyId,
                 PartyId = employeePartyId,
                 CreatedStamp = stamp,

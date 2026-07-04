@@ -98,12 +98,20 @@ const multiPaymentCertificateApi = createApi({
                 }),
                 invalidatesTags: ['MultiPaymentCertificates'],
             }),
-            fetchMultiPaymentCertificatesByDateRange: builder.query<MultiPaymentCertificate[], { startDate: string; endDate: string }>({
-                query: ({ startDate, endDate }) => `/project/multiPaymentCertificates/by-date-range?startDate=${startDate}&endDate=${endDate}`,
+            fetchMultiPaymentCertificatesByDateRange: builder.query<MultiPaymentCertificate[], { startDate: string; endDate: string; glAccountId?: string }>({
+                query: ({ startDate, endDate, glAccountId }) => {
+                    let url = `/project/multiPaymentCertificates/by-date-range?startDate=${startDate}&endDate=${endDate}`;
+                    if (glAccountId) url += `&glAccountId=${glAccountId}`;
+                    return url;
+                },
                 providesTags: ["MultiPaymentCertificates"],
             }),
-            fetchMultiPaymentItemsByDateRange: builder.query<any[], { startDate: string; endDate: string }>({
-                query: ({ startDate, endDate }) => `/project/multiPaymentItems/by-date-range?startDate=${startDate}&endDate=${endDate}`,
+            fetchMultiPaymentItemsByDateRange: builder.query<any[], { startDate: string; endDate: string; glAccountId?: string }>({
+                query: ({ startDate, endDate, glAccountId }) => {
+                    let url = `/project/multiPaymentItems/by-date-range?startDate=${startDate}&endDate=${endDate}`;
+                    if (glAccountId) url += `&glAccountId=${glAccountId}`;
+                    return url;
+                },
                 providesTags: ["MultiPaymentItems"],
             }),
             fetchMultiPaymentCertificateById: builder.query<any, string>({
