@@ -121,4 +121,9 @@ JOIN DimProject dp
 WHERE (ptt.PARENT_TYPE_ID = 'DISBURSEMENT'
     OR ptt.PAYMENT_TYPE_ID = 'DISBURSEMENT')
   AND pyt.STATUS_ID = 'PMNT_SENT' AND dp.GlAccountType = 'PROJECT_MAIN'
-  AND pyt.OVERRIDE_GL_ACCOUNT_ID IS NOT NULL;
+  AND pyt.OVERRIDE_GL_ACCOUNT_ID IS NOT NULL
+  -- Exclude payments already counted in the expenses section
+  AND NOT EXISTS (
+      SELECT 1 FROM Fact_Project_Expenses fpe
+      WHERE fpe.PaymentId = pyt.PAYMENT_ID
+  );

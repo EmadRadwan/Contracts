@@ -396,6 +396,9 @@
       "saleDate": "تاريخ البيع",
       "total": "الإجمالي",
       "advance": "المقدم",
+      "maintenanceDeposit": "دفعة الصيانة",
+      "apartmentSpace": "مساحة الشقة (م²)",
+      "gardenSpace": "مساحة الحديقة (م²)",
       "project": "المشروع",
       "isChequesDelivered": "الشيكات مسلمة",
       "comments": "التعليقات"

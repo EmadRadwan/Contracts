@@ -74,4 +74,13 @@ FROM PAYMENT pyt
 
 WHERE (ptt.PARENT_TYPE_ID = 'DISBURSEMENT'
     OR ptt.PAYMENT_TYPE_ID = 'DISBURSEMENT') AND dp.GlAccountType <> 'PROJECT_MAIN'
-  AND pyt.OVERRIDE_GL_ACCOUNT_ID IS NOT NULL;
+  AND pyt.OVERRIDE_GL_ACCOUNT_ID IS NOT NULL
+  -- Exclude payments already counted in the expenses or direct-payments sections
+  AND NOT EXISTS (
+      SELECT 1 FROM Fact_Project_Expenses fpe
+      WHERE fpe.PaymentId = pyt.PAYMENT_ID
+  )
+  AND NOT EXISTS (
+      SELECT 1 FROM Fact_Project_DirectPayments_2 fdp
+      WHERE fdp.PaymentId = pyt.PAYMENT_ID
+  );

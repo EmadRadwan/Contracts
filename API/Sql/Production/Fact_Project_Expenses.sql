@@ -1,4 +1,5 @@
 CREATE OR REPLACE VIEW Fact_Project_Expenses AS
+WITH RawExpenses AS (
 SELECT
     item.WORK_EFFORT_ID AS ExpenseItemKey,
     header.WORK_EFFORT_ID AS CertificateKey,
@@ -94,7 +95,15 @@ SELECT
     item.AchievementPercent AS OriginalAchievementPercent,
 
     GREATEST(COALESCE(header.LAST_UPDATED_STAMP, '1900-01-01'),
-             COALESCE(item.LAST_UPDATED_STAMP, '1900-01-01')) AS LastUpdatedStamp
+             COALESCE(item.LAST_UPDATED_STAMP, '1900-01-01')) AS LastUpdatedStamp,
+
+    -- Deduplicate: one certificate item can fan out into N rows when its related
+    -- purchase order has multiple payment preferences. Keep the row that has a
+    -- PaymentId; fall back to the null-PaymentId row only when none exist.
+    ROW_NUMBER() OVER (
+        PARTITION BY item.WORK_EFFORT_ID
+        ORDER BY CASE WHEN pyt.PAYMENT_ID IS NOT NULL THEN 0 ELSE 1 END
+    ) AS _rn
 
 FROM WORK_EFFORT header
          INNER JOIN WORK_EFFORT item
@@ -115,4 +124,17 @@ FROM WORK_EFFORT header
 WHERE header.CURRENT_STATUS_ID = 'WEPR_APPROVED'
   AND COALESCE(header.CERTIFICATE_CATEGORY, '') <> 'COMPANY_SUPPLY_SALE_CERTIFICATE'
   AND NOT (header.WORK_EFFORT_TYPE_ID = 'PAYMENT_CERTIFICATE'
-    AND COALESCE(header.PROJECT_ID, item.PROJECT_ID) IS NULL);
+    AND COALESCE(header.PROJECT_ID, item.PROJECT_ID) IS NULL)
+)
+SELECT
+    ExpenseItemKey, CertificateKey, CertificateNumber, PaymentId,
+    ProjectId, PartyId, PartyName, ProductId, ProductName, ExpenseDate,
+    RecordType, CertificateType, CertificateTypeArabic, CertificateCategoryCode,
+    CertificateDescription, ItemDescription, RelatedPurchaseOrderId,
+    IsSupplyProcurement, IsWorkmanship, IsMultiPaymentCertificate,
+    Quantity, UnitRate, GrossAmount, DiscountAmount, DeductionsAmount,
+    InsuranceAmount, TransportationExpensesAmount, GratuitiesAmount,
+    NetCertifiedAmount, AchievementPercentage, OriginalAchievementPercent,
+    LastUpdatedStamp
+FROM RawExpenses
+WHERE _rn = 1;

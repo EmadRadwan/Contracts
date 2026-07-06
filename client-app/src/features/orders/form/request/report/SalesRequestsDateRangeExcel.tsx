@@ -14,6 +14,7 @@ import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs';
+import 'dayjs/locale/en-gb';
 import { useLazyFetchSalesRequestsByDateRangeQuery } from "../../../../../app/store/apis/salesRequestApi";
 
 interface SalesRequestsDateRangeExcelProps {
@@ -23,8 +24,6 @@ interface SalesRequestsDateRangeExcelProps {
 const utils = {
     safeString: (v: any) => (v == null || typeof v === 'object') ? 'N/A' : String(v),
     rtlEmbed: (t: string) => /\p{Script=Arabic}/u.test(t) ? `\u202B${t}` : t,
-    formatNumber: (v: number | undefined | null, dec = 2) =>
-        v == null ? '0.00' : v.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec }),
     formatDate: (d: string | Date | undefined | null) => d ? new Date(d).toLocaleDateString('en-GB') : 'N/A',
 };
 
@@ -87,7 +86,7 @@ export const SalesRequestsDateRangeExcel: React.FC<SalesRequestsDateRangeExcelPr
             .replace('{1}', endDate?.format('DD/MM/YYYY') || '')
         );
         ws.getCell(`A${startRow}`).value = title;
-        ws.mergeCells(`A${startRow}:K${startRow}`); // 11 columns
+        ws.mergeCells(`A${startRow}:N${startRow}`); // 14 columns
         ws.getRow(startRow).font = { name: 'Amiri', size: 18, bold: true };
         ws.getRow(startRow).alignment = { horizontal: 'center', vertical: 'middle' };
         ws.getRow(startRow).height = 40;
@@ -103,6 +102,9 @@ export const SalesRequestsDateRangeExcel: React.FC<SalesRequestsDateRangeExcelPr
             getTranslatedLabel('salesRequest.list.saleDate', 'Sale Date'),
             getTranslatedLabel('salesRequest.list.total', 'Total'),
             getTranslatedLabel('salesRequest.list.advance', 'Advance'),
+            getTranslatedLabel('salesRequest.list.maintenanceDeposit', 'Maintenance'),
+            getTranslatedLabel('salesRequest.list.apartmentSpace', 'Apartment Space (m²)'),
+            getTranslatedLabel('salesRequest.list.gardenSpace', 'Garden Space (m²)'),
             getTranslatedLabel('salesRequest.list.project', 'Project'),
             getTranslatedLabel('salesRequest.list.comments', 'Comments'),
         ];
@@ -122,8 +124,11 @@ export const SalesRequestsDateRangeExcel: React.FC<SalesRequestsDateRangeExcelPr
                 utils.rtlEmbed(utils.safeString(sr.employeeName ?? '')),
                 utils.rtlEmbed(utils.safeString(sr.statusDescription ?? '')),
                 utils.formatDate(sr.saleDate),
-                utils.formatNumber(sr.totalPrice),
-                utils.formatNumber(sr.advancePayment),
+                sr.totalPrice ?? 0,
+                sr.advancePayment ?? 0,
+                sr.maintenanceDeposit ?? 0,
+                sr.apartmentSpaceM2 ?? 0,
+                sr.gardenSpaceM2 ?? 0,
                 utils.rtlEmbed(utils.safeString(sr.projectName ?? '')),
                 utils.rtlEmbed(utils.safeString(sr.comments ?? '')),
             ]);
@@ -133,17 +138,33 @@ export const SalesRequestsDateRangeExcel: React.FC<SalesRequestsDateRangeExcelPr
         });
 
         if (data.length > 0) {
-            const totalSum = data.reduce((sum: number, sr: any) => sum + (sr.totalPrice || 0), 0);
-            const totalRowNum = headerRowNum + data.length + 1;
+            const dataStartRow = headerRowNum + 1;
+            const dataEndRow = headerRowNum + data.length;
+            const totalRowNum = dataEndRow + 1;
+
+            // AutoFilter on the data range so the user can filter rows in Excel.
+            ws.autoFilter = {
+                from: { row: headerRowNum, column: 1 },
+                to: { row: dataEndRow, column: headers.length },
+            };
+
             ws.addRow([
                 '', '', '', '', '', '',
-                utils.rtlEmbed(getTranslatedLabel('common.total', 'Total')),
-                utils.formatNumber(totalSum),
-                '', '', ''
+                utils.rtlEmbed(getTranslatedLabel('common.subtotal', 'Subtotal')),
+                '', '', '', '', '', '', ''
             ]);
+
+            // SUBTOTAL (109 = SUM, ignoring filtered/hidden rows) so each value
+            // recalculates live in Excel as the user applies filters.
+            const subtotalColumns = ['H', 'I', 'J', 'K', 'L'];
+            subtotalColumns.forEach(col => {
+                const cell = ws.getCell(`${col}${totalRowNum}`);
+                cell.value = { formula: `SUBTOTAL(109,${col}${dataStartRow}:${col}${dataEndRow})` };
+                cell.font = { bold: true };
+            });
+
             ws.mergeCells(`A${totalRowNum}:G${totalRowNum}`);
             ws.getRow(totalRowNum).font = { name: 'Amiri', size: 12, bold: true };
-            ws.getCell(`H${totalRowNum}`).font = { bold: true };
         }
 
         ws.columns = [
@@ -156,11 +177,17 @@ export const SalesRequestsDateRangeExcel: React.FC<SalesRequestsDateRangeExcelPr
             { width: 15 }, // G Sale Date
             { width: 15 }, // H Total
             { width: 15 }, // I Advance
-            { width: 25 }, // J Project
-            { width: 35 }  // K Comments
+            { width: 18 }, // J Maintenance
+            { width: 20 }, // K Apartment Space (m²)
+            { width: 20 }, // L Garden Space (m²)
+            { width: 25 }, // M Project
+            { width: 35 }  // N Comments
         ];
-        ws.getColumn(8).numFmt = '#,##0.00'; 
+        ws.getColumn(8).numFmt = '#,##0.00';
         ws.getColumn(9).numFmt = '#,##0.00';
+        ws.getColumn(10).numFmt = '#,##0.00';
+        ws.getColumn(11).numFmt = '#,##0.00';
+        ws.getColumn(12).numFmt = '#,##0.00';
 
         return await workbook.xlsx.writeBuffer();
     }, [getTranslatedLabel, startDate, endDate]);
@@ -207,12 +234,13 @@ export const SalesRequestsDateRangeExcel: React.FC<SalesRequestsDateRangeExcelPr
                     {getTranslatedLabel('salesRequest.report.daterange.title', 'Select Date Range for Export')}
                 </DialogTitle>
                 <DialogContent>
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="en-gb">
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
                             <DesktopDatePicker
                                 label={getTranslatedLabel('common.fromDate', 'From Date')}
                                 value={startDate}
                                 onChange={(newValue) => setStartDate(newValue)}
+                                format="DD/MM/YYYY"
                                 slotProps={{ textField: { fullWidth: true } }}
                             />
                             <DesktopDatePicker
@@ -220,6 +248,7 @@ export const SalesRequestsDateRangeExcel: React.FC<SalesRequestsDateRangeExcelPr
                                 value={endDate}
                                 minDate={startDate ?? undefined}
                                 onChange={(newValue) => setEndDate(newValue)}
+                                format="DD/MM/YYYY"
                                 slotProps={{ textField: { fullWidth: true } }}
                             />
                         </Box>

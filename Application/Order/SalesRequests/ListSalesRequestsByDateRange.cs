@@ -70,7 +70,8 @@ public class ListSalesRequestsByDateRange
                                 from cust in custGroup.DefaultIfEmpty()
                             join employee in _context.Parties on sr.EmployeePartyId equals employee.PartyId into empGroup
                                 from emp in empGroup.DefaultIfEmpty()
-                            where sr.CreatedStamp >= request.FromDate && sr.CreatedStamp <= request.ToDate
+                            where sr.StatusId == "SALES_REQUEST_APPROVED"
+                                  && sr.SaleDate >= DateOnly.FromDateTime(request.FromDate) && sr.SaleDate <= DateOnly.FromDateTime(request.ToDate)
                             select new
                             {
                                 sr.SalesRequestId,
