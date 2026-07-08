@@ -3,6 +3,7 @@ import { Grid, Box, Typography } from "@mui/material";
 import { Ribbon, RibbonContainer } from "react-ribbons";
 import { SalesRequest } from "../../../../../app/models/order/SalesRequest";
 import {SalesRequestActionsMenu} from "../menu/SalesRequestActionsMenu";
+import {Can} from "../../../../account/Can";
 
 interface SalesRequestHeaderProps {
     salesRequest?: SalesRequest;
@@ -80,13 +81,16 @@ export const SalesRequestHeader: React.FC<SalesRequestHeaderProps> = React.memo(
                     </Typography>
 
                     {(editMode === 2 || editMode === 3) && (
-                        <SalesRequestActionsMenu
-                            salesRequestId={salesRequest?.salesRequestId}
-                            currentStatusId={salesRequest?.statusId}
-                            disabled={disabledActions}
-                            onSalesRequestUpdated={onSalesRequestUpdated}
-                            onSalesRequestDeleted={onSalesRequestDeleted}
-                        />
+                        // ViewSalesRequest-only users are read-only: never expose approve/reset/delete actions
+                        <Can perform="CreateSalesRequest">
+                            <SalesRequestActionsMenu
+                                salesRequestId={salesRequest?.salesRequestId}
+                                currentStatusId={salesRequest?.statusId}
+                                disabled={disabledActions}
+                                onSalesRequestUpdated={onSalesRequestUpdated}
+                                onSalesRequestDeleted={onSalesRequestDeleted}
+                            />
+                        </Can>
                     )}
                 </Box>
             </Grid>

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
     Grid as KendoGrid,
@@ -39,6 +40,10 @@ function SalesRequestsList() {
 
     const { getTranslatedLabel } = useTranslationHelper();
 
+    // REFACTOR: ViewSalesRequest grants read-only access; only CreateSalesRequest allows create/edit
+    const roles = useSelector((state: any) => state.account.user?.roles || []);
+    const canCreate = roles.includes("CreateSalesRequest");
+
     // -----------------------------------------------------------------
     // Grid data
     // -----------------------------------------------------------------
@@ -70,18 +75,19 @@ function SalesRequestsList() {
     // -----------------------------------------------------------------
     const startEdit = (sr?: SalesRequest) => {
         if (!sr) {
-            // Create mode
+            // Create mode — unreachable for read-only viewers since the Create button is hidden
             setSelectedSR(undefined);
             setEditMode(1);
             setViewMode("form");
             return;
         }
 
-        // Edit or View mode — decide based on status
+        // Edit or View mode — decide based on status, but read-only viewers always get the
+        // read-only form (editMode 3) regardless of status, since they lack CreateSalesRequest
         const isApproved = sr.statusId === "SALES_REQUEST_APPROVED";
 
         setSelectedSR(sr);
-        setEditMode(isApproved ? 3 : 2);  // ← THIS IS THE KEY LINE
+        setEditMode(!canCreate || isApproved ? 3 : 2);  // ← THIS IS THE KEY LINE
         setViewMode("form");
     };
 
@@ -218,15 +224,17 @@ function SalesRequestsList() {
                             >
                                 <GridToolbar>
                                     <Grid container>
-                                        <Grid item xs={2}>
-                                            <Button
-                                                color="secondary"
-                                                onClick={() => startEdit()}
-                                                variant="outlined"
-                                            >
-                                                {getTranslatedLabel("salesRequest.list.create", "Create Sales Request")}
-                                            </Button>
-                                        </Grid>
+                                        {canCreate && (
+                                            <Grid item xs={2}>
+                                                <Button
+                                                    color="secondary"
+                                                    onClick={() => startEdit()}
+                                                    variant="outlined"
+                                                >
+                                                    {getTranslatedLabel("salesRequest.list.create", "Create Sales Request")}
+                                                </Button>
+                                            </Grid>
+                                        )}
                                         <Grid item xs={2}>
                                             <Button
                                                 color="primary"

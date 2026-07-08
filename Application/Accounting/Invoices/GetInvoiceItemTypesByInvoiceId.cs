@@ -56,6 +56,7 @@ namespace Application.Accounting.Invoices
                         "ITM_FEE",
                         "INV_LAND_ITEM",
                         "INV_LAND_PARTNERSHIP_ITEM",
+                        "INV_STOCK_ITEM",
                     }
                 },
                 {

@@ -27,7 +27,7 @@ const links = [
         key: "salesRequest.menu.salesRequests",
         translationKey: "salesRequest.menu.salesRequests",
         icon: <RequestQuoteOutlinedIcon sx={{ color: "#4CAF50" }} />,
-        requiredRole: "CreateSalesRequest" as const,
+        requiredRole: ["CreateSalesRequest", "ViewSalesRequest"],
     },
     {
         title: 'Reserve Requests',

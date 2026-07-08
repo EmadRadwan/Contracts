@@ -420,7 +420,7 @@ export const routes: RouteObject[] = [
                             {path: "returns/:returnId/items", element: <OrderReturnItems/>},
                             {path: "quotes", element: <QuotesList/>},
                             {
-                                element: <RequireRole allowedRoles="CreateSalesRequest" />,
+                                element: <RequireRole allowedRoles={["CreateSalesRequest", "ViewSalesRequest"]} />,
                                 children: [
                                     {path: "sales-requests", element: <SalesRequestsList/>},
                                 ],

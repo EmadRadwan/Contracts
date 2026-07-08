@@ -38,9 +38,9 @@ namespace Infrastructure.Pdf
             {
                 container.Page(page =>
                 {
-                    page.Size(PageSizes.A5.Portrait());
-                    page.Margin(15);
-                    page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Lato", "Noto Sans Arabic"));
+                    page.Size(PageSizes.A4.Portrait());
+                    page.Margin(30);
+                    page.DefaultTextStyle(x => x.FontSize(14).FontFamily("Lato", "Noto Sans Arabic"));
 
                     page.Content().Column(mainCol =>
                     {
@@ -52,11 +52,10 @@ namespace Infrastructure.Pdf
                             {
                                 if (logoBytes != null)
                                 {
-                                    logoCol.Item().MaxWidth(40).Image(logoBytes).FitWidth();
+                                    logoCol.Item().MaxWidth(70).Image(logoBytes).FitWidth();
                                 }
                             });
 
-                            // Center: Title
                             // Center: Title
                             headerRow.RelativeItem(3).AlignCenter().AlignMiddle().Column(titleCol =>
                             {
@@ -70,79 +69,79 @@ namespace Infrastructure.Pdf
                                     titleText = "إيصال صرف";
                                 }
 
-                                titleCol.Item().AlignCenter().Text(titleText).FontSize(16).Bold()
+                                titleCol.Item().AlignCenter().Text(titleText).FontSize(26).Bold()
                                     .FontFamily("Lato", "Noto Sans Arabic");
-                                titleCol.Item().AlignCenter().Text(data.PaymentId).FontSize(16).Bold();
+                                titleCol.Item().AlignCenter().Text(data.PaymentId).FontSize(26).Bold();
                             });
 
                             // Right: Company Name in Arabic
                             headerRow.RelativeItem(2).AlignRight().AlignMiddle().Column(companyCol =>
                             {
-                                companyCol.Item().AlignRight().Text("جولدن لاند").FontSize(12).Bold()
+                                companyCol.Item().AlignRight().Text("جولدن لاند").FontSize(19).Bold()
                                     .FontFamily("Lato", "Noto Sans Arabic");
-                                companyCol.Item().AlignRight().Text("للتطوير العقارى").FontSize(9)
+                                companyCol.Item().AlignRight().Text("للتطوير العقارى").FontSize(14)
                                     .FontFamily("Lato", "Noto Sans Arabic");
-                                companyCol.Item().AlignRight().Text("ش.م.م").FontSize(7)
+                                companyCol.Item().AlignRight().Text("ش.م.م").FontSize(11)
                                     .FontFamily("Lato", "Noto Sans Arabic");
                             });
                         });
 
-                        mainCol.Item().PaddingVertical(3).LineHorizontal(1).LineColor(Colors.Grey.Medium);
+                        mainCol.Item().PaddingVertical(6).LineHorizontal(1).LineColor(Colors.Grey.Medium);
 
                         // ===== PAYMENT METHOD CHECKBOXES =====
-                        mainCol.Item().PaddingTop(3).AlignCenter().Row(checkRow =>
+                        mainCol.Item().PaddingTop(6).AlignCenter().Row(checkRow =>
                         {
                             // Bank Transfer checkbox
-                            checkRow.AutoItem().PaddingHorizontal(4).Row(r =>
+                            checkRow.AutoItem().PaddingHorizontal(7).Row(r =>
                             {
-                                r.AutoItem().Border(1).Width(9).Height(9).AlignCenter().AlignMiddle()
-                                    .Text(isBankTransfer ? "X" : "").FontSize(7);
-                                r.AutoItem().PaddingLeft(2).Text("تحويل بنكى").FontSize(7)
+                                r.AutoItem().Border(1).Width(14).Height(14).AlignCenter().AlignMiddle()
+                                    .Text(isBankTransfer ? "X" : "").FontSize(11);
+                                r.AutoItem().PaddingLeft(4).Text("تحويل بنكى").FontSize(11)
                                     .FontFamily("Lato", "Noto Sans Arabic");
                             });
 
                             // Cheque checkbox
-                            checkRow.AutoItem().PaddingHorizontal(4).Row(r =>
+                            checkRow.AutoItem().PaddingHorizontal(7).Row(r =>
                             {
-                                r.AutoItem().Border(1).Width(9).Height(9).AlignCenter().AlignMiddle()
-                                    .Text(isCheque ? "X" : "").FontSize(7);
-                                r.AutoItem().PaddingLeft(2).Text("شيكات").FontSize(7)
+                                r.AutoItem().Border(1).Width(14).Height(14).AlignCenter().AlignMiddle()
+                                    .Text(isCheque ? "X" : "").FontSize(11);
+                                r.AutoItem().PaddingLeft(4).Text("شيكات").FontSize(11)
                                     .FontFamily("Lato", "Noto Sans Arabic");
                             });
 
                             // Cash checkbox
-                            checkRow.AutoItem().PaddingHorizontal(4).Row(r =>
+                            checkRow.AutoItem().PaddingHorizontal(7).Row(r =>
                             {
-                                r.AutoItem().Border(1).Width(9).Height(9).AlignCenter().AlignMiddle()
-                                    .Text(isCash ? "X" : "").FontSize(7);
-                                r.AutoItem().PaddingLeft(2).Text("نقدية").FontSize(7)
+                                r.AutoItem().Border(1).Width(14).Height(14).AlignCenter().AlignMiddle()
+                                    .Text(isCash ? "X" : "").FontSize(11);
+                                r.AutoItem().PaddingLeft(4).Text("نقدية").FontSize(11)
                                     .FontFamily("Lato", "Noto Sans Arabic");
                             });
                         });
 
                         // ===== DATE ROW =====
-                        mainCol.Item().PaddingTop(6).AlignRight().Row(r =>
+                        mainCol.Item().PaddingTop(12).AlignRight().Row(r =>
                         {
-                            r.AutoItem().Text(FormatArabicDate(data.EffectiveDate)).FontSize(9);
-                            r.AutoItem().Text(": تحريراً فى").FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
+                            r.AutoItem().Text(FormatArabicDate(data.EffectiveDate)).FontSize(14);
+                            r.AutoItem().Text(": تحريراً فى").FontSize(14).FontFamily("Lato", "Noto Sans Arabic");
                         });
 
                         // ===== AMOUNT ROW =====
-                        mainCol.Item().PaddingTop(6).AlignCenter().Row(r =>
+                        mainCol.Item().PaddingTop(12).AlignCenter().Row(r =>
                         {
                             // Amount boxes (RTL: [amount box] جنيه [piasters box] قرش)
-                            r.AutoItem().AlignMiddle().Text("قرش").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
-                            r.AutoItem().PaddingHorizontal(4).Border(1).BorderColor(Colors.Grey.Medium).Padding(2)
+                            r.AutoItem().AlignMiddle().Text("قرش").FontSize(13).FontFamily("Lato", "Noto Sans Arabic");
+                            r.AutoItem().PaddingHorizontal(7).Border(1).BorderColor(Colors.Grey.Medium).Padding(4)
                                 .Text(ToArabicNumerals(((int)((data.Amount - (int)data.Amount) * 100)).ToString("00")))
-                                .FontSize(8);
-                            r.AutoItem().PaddingLeft(8).AlignMiddle().Text("جنيه").FontSize(8)
+                                .FontSize(13);
+                            r.AutoItem().PaddingLeft(12).AlignMiddle().Text("جنيه").FontSize(13)
                                 .FontFamily("Lato", "Noto Sans Arabic");
-                            r.AutoItem().PaddingHorizontal(4).Border(1).BorderColor(Colors.Grey.Medium).Padding(2)
-                                .Text(ToArabicNumerals(((int)data.Amount).ToString("N0"))).FontSize(8);
+                            r.AutoItem().PaddingHorizontal(7).Border(1).BorderColor(Colors.Grey.Medium).Padding(4)
+                                .Text(ToArabicNumerals(((int)data.Amount).ToString("N0"))).FontSize(13);
                         });
 
                         // ===== RECIPIENT ROW =====
-                        mainCol.Item().PaddingTop(6).AlignRight().Row(r =>
+                        mainCol.Item().PaddingTop(12).AlignRight().Row(r =>
                         {
                             bool isReceipt = string.Equals(data.PaymentParentTypeDescription?.Trim(),
                                 "RECEIPT",
@@ -153,106 +152,106 @@ namespace Infrastructure.Pdf
                                 // Logical order (left → right in code) = visual right → left in PDF
                                 // استلمنا ...   من السيد/السادة   [FromPartyName]
 
-                                r.RelativeItem(1).BorderBottom(1).BorderColor(Colors.Grey.Medium).PaddingHorizontal(6)
+                                r.RelativeItem(1).BorderBottom(1).BorderColor(Colors.Grey.Medium).PaddingHorizontal(9)
                                     .AlignMiddle().AlignRight()
                                     .Text(data.FromPartyName ?? "")
-                                    .FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
+                                    .FontSize(14).FontFamily("Lato", "Noto Sans Arabic");
 
-                                r.AutoItem().AlignMiddle().PaddingHorizontal(8).Text("من السيد / السادة")
-                                    .FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
+                                r.AutoItem().AlignMiddle().PaddingHorizontal(11).Text("من السيد / السادة")
+                                    .FontSize(14).FontFamily("Lato", "Noto Sans Arabic");
 
                                 r.AutoItem().AlignMiddle().Text("استلمنا نحن / جولدن لاند للتطوير العقاري")
-                                    .FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
+                                    .FontSize(14).FontFamily("Lato", "Noto Sans Arabic");
                             }
                             else
                             {
                                 // Payment style (original):
                                 // صرفنا إلى السيد / السادة   [ToPartyName]
 
-                                r.RelativeItem(1).BorderBottom(1).BorderColor(Colors.Grey.Medium).PaddingHorizontal(6)
+                                r.RelativeItem(1).BorderBottom(1).BorderColor(Colors.Grey.Medium).PaddingHorizontal(9)
                                     .AlignMiddle().AlignRight()
                                     .Text(data.ToPartyName ?? "")
-                                    .FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
+                                    .FontSize(14).FontFamily("Lato", "Noto Sans Arabic");
 
-                                r.AutoItem().AlignMiddle().PaddingLeft(8).Text("صرفنا إلى السيد / السادة :")
-                                    .FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
+                                r.AutoItem().AlignMiddle().PaddingLeft(11).Text("صرفنا إلى السيد / السادة :")
+                                    .FontSize(14).FontFamily("Lato", "Noto Sans Arabic");
                             }
                         });
 
                         // ===== AMOUNT IN WORDS ROW =====
-                        mainCol.Item().PaddingTop(6).Row(r =>
+                        mainCol.Item().PaddingTop(12).Row(r =>
                         {
                             r.RelativeItem().BorderBottom(1).BorderColor(Colors.Grey.Medium);
                             r.AutoItem().AlignMiddle().BorderBottom(1).BorderColor(Colors.Grey.Medium)
-                                .Text(amountInWords).FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
-                            r.AutoItem().AlignMiddle().Text(" : فقط وقدره").FontSize(9)
+                                .Text(amountInWords).FontSize(14).FontFamily("Lato", "Noto Sans Arabic");
+                            r.AutoItem().AlignMiddle().Text(" : فقط وقدره").FontSize(14)
                                 .FontFamily("Lato", "Noto Sans Arabic");
                         });
 
                         // ===== CHEQUE DETAILS ROW 1 =====
-                        mainCol.Item().PaddingTop(6).Row(r =>
+                        mainCol.Item().PaddingTop(12).Row(r =>
                         {
                             // Payment type
                             r.RelativeItem().BorderBottom(1).BorderColor(Colors.Grey.Medium)
                                 .AlignCenter().AlignMiddle().Text(isCash ? "نقداً" : (isCheque ? "شيك" : ""))
-                                .FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
-                            r.AutoItem().AlignMiddle().Text(" : نقداً / بموجب").FontSize(8)
+                                .FontSize(13).FontFamily("Lato", "Noto Sans Arabic");
+                            r.AutoItem().AlignMiddle().Text(" : نقداً / بموجب").FontSize(13)
                                 .FontFamily("Lato", "Noto Sans Arabic");
                         });
 
                         // ===== CHEQUE DETAILS ROW 2 (Bank) =====
-                        mainCol.Item().PaddingTop(4).Row(r =>
+                        mainCol.Item().PaddingTop(8).Row(r =>
                         {
                             r.RelativeItem().BorderBottom(1).BorderColor(Colors.Grey.Medium);
-                            r.AutoItem().AlignMiddle().Text(" مسحوب على بنك").FontSize(8)
+                            r.AutoItem().AlignMiddle().Text(" مسحوب على بنك").FontSize(13)
                                 .FontFamily("Lato", "Noto Sans Arabic");
                         });
 
                         // ===== CHEQUE DETAILS ROW 3 (Number & Date) =====
-                        mainCol.Item().PaddingTop(4).AlignRight().Row(r =>
+                        mainCol.Item().PaddingTop(8).AlignRight().Row(r =>
                         {
                             // Date placeholder
                             var chequeDateText = data.ChequeDate.HasValue
                                 ? FormatArabicDate(data.ChequeDate.Value)
                                 : "٢٠    /    /    ";
-                            r.AutoItem().Text(chequeDateText).FontSize(8);
-                            r.AutoItem().Text(" حق  ").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
+                            r.AutoItem().Text(chequeDateText).FontSize(13);
+                            r.AutoItem().Text(" حق  ").FontSize(13).FontFamily("Lato", "Noto Sans Arabic");
 
                             // Cheque number
-                            r.AutoItem().BorderBottom(1).BorderColor(Colors.Grey.Medium).PaddingHorizontal(10)
-                                .Text(ToArabicNumerals(data.ChequeNumber ?? "")).FontSize(8)
+                            r.AutoItem().BorderBottom(1).BorderColor(Colors.Grey.Medium).PaddingHorizontal(14)
+                                .Text(ToArabicNumerals(data.ChequeNumber ?? "")).FontSize(13)
                                 .FontFamily("Lato", "Noto Sans Arabic");
-                            r.AutoItem().Text(" رقم").FontSize(8).FontFamily("Lato", "Noto Sans Arabic");
+                            r.AutoItem().Text(" رقم").FontSize(13).FontFamily("Lato", "Noto Sans Arabic");
                         });
 
                         // ===== BANK TRANSFER ROW =====
-                        mainCol.Item().PaddingTop(6).Row(r =>
+                        mainCol.Item().PaddingTop(12).Row(r =>
                         {
                             r.RelativeItem().BorderBottom(1).BorderColor(Colors.Grey.Medium);
                             r.AutoItem().AlignMiddle().BorderBottom(1).BorderColor(Colors.Grey.Medium)
-                                .Text(isCheque ? (data.PaymentMethodDescription ?? "") : "").FontSize(8)
+                                .Text(isCheque ? (data.PaymentMethodDescription ?? "") : "").FontSize(13)
                                 .FontFamily("Lato", "Noto Sans Arabic");
-                            r.AutoItem().AlignMiddle().Text(" : تحويل ( بنكى ، اون لاين )").FontSize(8)
+                            r.AutoItem().AlignMiddle().Text(" : تحويل ( بنكى ، اون لاين )").FontSize(13)
                                 .FontFamily("Lato", "Noto Sans Arabic");
                         });
 
                         // ===== PURPOSE ROW =====
-                        mainCol.Item().PaddingTop(6).Column(purposeCol =>
+                        mainCol.Item().PaddingTop(12).Column(purposeCol =>
                         {
                             purposeCol.Item().AlignRight()
                                 .Text("وذلك عن :")
-                                .FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
+                                .FontSize(14).FontFamily("Lato", "Noto Sans Arabic");
 
-                            purposeCol.Item().PaddingTop(2)
+                            purposeCol.Item().PaddingTop(3)
                                 .BorderBottom(1).BorderColor(Colors.Grey.Medium)
-                                .PaddingBottom(2)
+                                .PaddingBottom(3)
                                 .Text(data.Comments ?? "")
-                                .FontSize(9).FontFamily("Lato", "Noto Sans Arabic")
+                                .FontSize(14).FontFamily("Lato", "Noto Sans Arabic")
                                 .WrapAnywhere();
                         });
 
                         // ===== SPACER =====
-                        mainCol.Item().PaddingVertical(15);
+                        mainCol.Item().PaddingVertical(30);
 
                         // ===== SIGNATURE SECTION =====
                         mainCol.Item().Row(sigRow =>
@@ -260,40 +259,40 @@ namespace Infrastructure.Pdf
                             // Left: Approved
                             sigRow.RelativeItem().AlignLeft().Column(c =>
                             {
-                                c.Item().Text("...يعتمد").FontSize(9).FontFamily("Lato", "Noto Sans Arabic");
-                                c.Item().PaddingTop(20).BorderBottom(1);
+                                c.Item().Text("...يعتمد").FontSize(14).FontFamily("Lato", "Noto Sans Arabic");
+                                c.Item().PaddingTop(35).BorderBottom(1);
                             });
 
                             // Center: Accountant
-                            sigRow.RelativeItem().PaddingHorizontal(10).AlignCenter().Column(c =>
+                            sigRow.RelativeItem().PaddingHorizontal(14).AlignCenter().Column(c =>
                             {
-                                c.Item().AlignCenter().Text("المحاسب").FontSize(9)
+                                c.Item().AlignCenter().Text("المحاسب").FontSize(14)
                                     .FontFamily("Lato", "Noto Sans Arabic");
-                                c.Item().PaddingTop(20).AlignCenter().BorderBottom(1);
+                                c.Item().PaddingTop(35).AlignCenter().BorderBottom(1);
                             });
 
                             // Right: Recipient
                             sigRow.RelativeItem().AlignRight().Column(c =>
                             {
-                                c.Item().AlignRight().Text("المستلم").FontSize(9)
+                                c.Item().AlignRight().Text("المستلم").FontSize(14)
                                     .FontFamily("Lato", "Noto Sans Arabic");
-                                c.Item().PaddingTop(8).Row(r =>
+                                c.Item().PaddingTop(12).Row(r =>
                                 {
                                     r.RelativeItem().BorderBottom(1);
-                                    r.AutoItem().PaddingLeft(3).Text("الاسم").FontSize(8)
+                                    r.AutoItem().PaddingLeft(4).Text("الاسم").FontSize(13)
                                         .FontFamily("Lato", "Noto Sans Arabic");
                                 });
-                                c.Item().PaddingTop(8).Row(r =>
+                                c.Item().PaddingTop(12).Row(r =>
                                 {
                                     r.RelativeItem().BorderBottom(1);
-                                    r.AutoItem().PaddingLeft(3).Text("التوقيع").FontSize(8)
+                                    r.AutoItem().PaddingLeft(4).Text("التوقيع").FontSize(13)
                                         .FontFamily("Lato", "Noto Sans Arabic");
                                 });
                             });
                         });
 
                         // ===== PAYMENT ID (small reference) =====
-                        mainCol.Item().PaddingTop(5).AlignLeft().Text($"مرجع: {data.PaymentId}").FontSize(6)
+                        mainCol.Item().PaddingTop(8).AlignLeft().Text($"مرجع: {data.PaymentId}").FontSize(9)
                             .FontColor(Colors.Grey.Medium);
                     });
                 });
@@ -356,7 +355,7 @@ namespace Infrastructure.Pdf
 
             return ToArabicNumerals(date.Value.ToString("yyyy/MM/dd"));
         }
-        
+
         private string FormatArabicNumber(decimal number)
         {
             return ToArabicNumerals(((int)number).ToString("N0"));

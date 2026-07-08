@@ -2902,7 +2902,7 @@ public class SeedContracts
                 "Party_View",
                 "Accounting_View",
                 "Projects_View",
-                "Sales_View", "CreateSalesRequest", "ApproveSalesRequest", "DeleteSalesRequest", "CreateReserveRequest",
+                "Sales_View", "CreateSalesRequest", "ViewSalesRequest", "ApproveSalesRequest", "DeleteSalesRequest", "CreateReserveRequest",
                 "Accounting_Invoices_View",
                 "Accounting_Payments_View",
                 "Accounting_Payments_Due_View",
@@ -3282,7 +3282,7 @@ public class SeedContracts
             {
                 "mhamdy@gmail.com", new[]
                 {
-                    "Projects_View", "ApproveCertificate", "ReviewCertificate"
+                    "Projects_View", "ApproveCertificate", "ReviewCertificate", "Sales_View", "ViewSalesRequest"
                 }
             },
             {

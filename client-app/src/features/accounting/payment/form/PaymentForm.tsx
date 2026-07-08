@@ -12,7 +12,7 @@ import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import {Payment} from "../../../../app/models/accounting/payment";
 import ModalContainer from "../../../../app/common/modals/ModalContainer";
 import {setFormEditMode, setPaymentType} from "../slice/paymentsUiSlice";
-import { Grid, Paper} from "@mui/material";
+import { Box, Grid, Paper} from "@mui/material";
 import PaymentTransactionsList from "../../transaction/dashboard/PaymentTransactionsList";
 import {RibbonContainer} from "react-ribbons";
 import PaymentHeader from "./PaymentHeader";
@@ -334,18 +334,19 @@ export default function PaymentForm({
                         />
                     </Grid>
                 </Grid>
-                {renderForm()}
+                <Box sx={{position: 'relative'}}>
+                    {renderForm()}
 
-                
-
-                {(isLoading || hookLoading) && (
-                    <LoadingComponent
-                        message={getTranslatedLabel(
-                            `${localizationKey}.loading`,
-                            "Processing Payment..."
-                        )}
-                    />
-                )}
+                    {(isLoading || hookLoading) && (
+                        <LoadingComponent
+                            scoped
+                            message={getTranslatedLabel(
+                                `${localizationKey}.loading`,
+                                "Processing Payment..."
+                            )}
+                        />
+                    )}
+                </Box>
                 {showNewCustomer && (
                     <ModalContainer
                         show={showNewCustomer}
