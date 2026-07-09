@@ -313,14 +313,19 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
             const now = new Date();
             const oneWeekAgo = new Date(now);
             oneWeekAgo.setDate(now.getDate() - 7);
+            // Purpose: Pre-populate the project (and its linked facility) when arriving from the
+            // project list's "create certificate" row buttons, which set these without a workEffortId.
             return {
                 description: "",
-                projectId: undefined,
+                projectId: selectedCertificate?.projectId ? {
+                    projectId: selectedCertificate.projectId,
+                    projectName: selectedCertificate.projectName || ""
+                } : undefined,
                 partyIdSupplier: undefined,
                 partyIdContractor: undefined,
                 estimatedStartDate: oneWeekAgo,
                 estimatedCompletionDate: now,
-                facilityId: undefined,
+                facilityId: selectedCertificate?.facilityId || undefined,
             };
         }
         return {
@@ -357,6 +362,33 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
         },
         [facilities, dispatch]
     );
+
+    // Purpose: Manually picking a project runs the facility resolution above via the ComboBox's
+    // onChange. A project that arrives pre-selected (e.g. from the project list's certificate
+    // buttons) never fires that event, so replicate the same validate-against-loaded-facilities
+    // logic here once the facility list is available.
+    useEffect(() => {
+        if (
+            editMode !== 1 ||
+            selectedCertificate?.workEffortId ||
+            !selectedCertificate?.projectId ||
+            !selectedCertificate?.facilityId ||
+            facilities.length === 0
+        ) {
+            return;
+        }
+        const isValidFacility = facilities.some((f: any) => f.facilityId === selectedCertificate.facilityId);
+        const resolvedFacilityId = isValidFacility ? selectedCertificate.facilityId : undefined;
+        formRenderPropsRef.current?.onChange("facilityId", { value: resolvedFacilityId });
+        dispatch(setCurrentFacilityId(resolvedFacilityId));
+    }, [
+        editMode,
+        selectedCertificate?.workEffortId,
+        selectedCertificate?.projectId,
+        selectedCertificate?.facilityId,
+        facilities,
+        dispatch,
+    ]);
 
     const handleSubmit = useCallback(
         async (formProps: any) => {

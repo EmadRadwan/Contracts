@@ -7,15 +7,44 @@ import {
 } from "@progress/kendo-react-grid";
 import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
 import { Grid, Paper, Button } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import {WorkEffort} from "../../../app/models/manufacturing/workEffort";
 import {useFetchProjectsQuery} from "../../../app/store/apis/projectsApi";
+import {useAppDispatch, useAppSelector} from "../../../app/store/configureStore";
 import ProjectForm from "../form/ProjectForm";
 import ProjectMenu from "../menu/ProjectMenu";
 import {DataResult, State} from "@progress/kendo-data-query";
 import {handleDatesArray} from "../../../app/util/utils";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
 import {ProjectReportExcel} from "../report/ProjectReportExcel";
+import {Can} from "../../account/Can";
+import {
+    resetCertificateUi,
+    setCertificateFormEditMode,
+    setCurrentCertificateType,
+    setSelectedCertificate,
+} from "../slice/certificateUiSlice";
+import {resetUiCertificateItems} from "../slice/certificateItemsUiSlice";
+import {CertificateStatus} from "../../../app/models/project/certificate";
+
+const certificateTypeButtons = [
+    {
+        type: "SUPPLY_PROCUREMENT_CERTIFICATE",
+        labelKey: "projects.certificate.list.supplyProcurement",
+        labelDefault: "Supply Procurement",
+    },
+    {
+        type: "WORKMANSHIP_CONTRACTING_CERTIFICATE",
+        labelKey: "projects.certificate.list.workmanshipContracting",
+        labelDefault: "Workmanship Contracting",
+    },
+    {
+        type: "COMPANY_SUPPLY_SALE_CERTIFICATE",
+        labelKey: "projects.certificate.list.companySupplySale",
+        labelDefault: "Company Supply Sale",
+    },
+];
 
 export default function ProjectsList() {
     const [editMode, setEditMode] = useState(0);
@@ -28,6 +57,12 @@ export default function ProjectsList() {
     const [dataState, setDataState] = React.useState<State>({take: 6, skip: 0});
     const { data, error, isFetching, isLoading } = useFetchProjectsQuery({...dataState});
     const { getTranslatedLabel } = useTranslationHelper();
+    const dispatch = useAppDispatch();
+    const navigate = useNavigate();
+    // Purpose: Mirror the <Can perform="RunProjectReport"> check so the ID column width
+    // can shrink when the Project Report button isn't rendered for this user.
+    const { user } = useAppSelector((state) => state.account);
+    const canRunProjectReport = (user?.roles || []).includes("RunProjectReport");
 
     useEffect(() => {
         if (data) {
@@ -54,6 +89,32 @@ export default function ProjectsList() {
         setEditMode(0);
     }
 
+    // Purpose: Start a new project certificate pre-populated with the project the user came from.
+    // Context: ProjectCertificateForm reads selectedCertificate from redux; ProjectCertificatesList
+    // switches to form view on mount when certificateFormEditMode > 0.
+    function handleCreateCertificateForProject(dataItem: WorkEffort, certificateType: string) {
+        dispatch(resetCertificateUi());
+        dispatch(resetUiCertificateItems());
+        dispatch(setCurrentCertificateType(certificateType));
+        dispatch(setSelectedCertificate({
+            workEffortId: "",
+            certificateNumber: "",
+            projectId: dataItem.workEffortId || "",
+            projectName: (dataItem as any).projectName || dataItem.workEffortName || "",
+            currentStatusId: CertificateStatus.CREATED,
+            description: "",
+            estimatedStartDate: null,
+            estimatedCompletionDate: null,
+            statusDescription: "",
+            relatedOrderId: "",
+            // Purpose: Project and facility are linked — pre-populate the facility too.
+            facilityId: dataItem.facilityId || "",
+            facilityName: dataItem.facilityName || "",
+        }));
+        dispatch(setCertificateFormEditMode(1));
+        navigate("/projectCertificates");
+    }
+
 
     // REFACTOR: Customized cell for ProjectNum to include clickable button linking to project details, consistent with FacilitiesList pattern.
     const ProjectNumCell = (props: any) => {
@@ -75,25 +136,57 @@ export default function ProjectsList() {
                     <Button onClick={() => handleSelectProject(props.dataItem.workEffortId)}>
                         {props.dataItem.workEffortId}
                     </Button>
-                    <Button 
-                        size="small" 
-                        variant="outlined" 
-                        color="success"
-                        onClick={() => {
-                            setSelectedProjectForReport({
-                                id: props.dataItem.workEffortId,
-                                name: props.dataItem.projectName
-                            });
-                            setReportDialogOpen(true);
-                        }}
-                    >
-                        {getTranslatedLabel("project.projects.report", "Project Report")}
-                    </Button>
+                    <Can perform="RunProjectReport">
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            color="success"
+                            onClick={() => {
+                                setSelectedProjectForReport({
+                                    id: props.dataItem.workEffortId,
+                                    name: props.dataItem.projectName
+                                });
+                                setReportDialogOpen(true);
+                            }}
+                        >
+                            {getTranslatedLabel("project.projects.report", "Project Report")}
+                        </Button>
+                    </Can>
                 </div>
             </td>
         );
     };
-    
+
+    // Row-based buttons to start a new project certificate of a given type for this project.
+    const CertificateButtonsCell = (props: any) => {
+        const navigationAttributes = useTableKeyboardNavigation(props.id);
+        return (
+            <td
+                className={props.className}
+                style={props.style}
+                colSpan={props.colSpan}
+                role={"gridcell"}
+                aria-colindex={props.ariaColumnIndex}
+                aria-selected={props.isSelected}
+                {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
+                {...navigationAttributes}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                    {certificateTypeButtons.map(({ type, labelKey, labelDefault }) => (
+                        <Button
+                            key={type}
+                            size="small"
+                            variant="outlined"
+                            onClick={() => handleCreateCertificateForProject(props.dataItem, type)}
+                        >
+                            {getTranslatedLabel(labelKey, labelDefault)}
+                        </Button>
+                    ))}
+                </div>
+            </td>
+        );
+    };
+
 
     // REFACTOR: Conditionally render ProjectForm in edit or create mode, ensuring seamless navigation from grid to form.
     if (editMode) {
@@ -131,13 +224,21 @@ export default function ProjectsList() {
                         field="workEffortId"
                         title={getTranslatedLabel("project.projects.list.num", "Project Number")}
                         cell={ProjectNumCell}
-                        width={320}
+                        width={canRunProjectReport ? 320 : 160}
                         locked={true}
                     />
                     <Column
                         field="projectName"
                         title={getTranslatedLabel("project.projects.list.name", "Project Name")}
                         width={300}
+                    />
+                    <Column
+                        field="certificateActions"
+                        title={getTranslatedLabel("project.projects.list.createCertificate", "Create Certificate")}
+                        cell={CertificateButtonsCell}
+                        width={480}
+                        sortable={false}
+                        filterable={false}
                     />
                     <Column
                         field="glAccountName"

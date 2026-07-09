@@ -1101,6 +1101,7 @@
       "list": {
         "num": "Project Number",
         "name": "Project Name",
+        "createCertificate": "Create Certificate",
         "status": "Status",
         "startDate": "Start Date",
         "completionDate": "Completion Date",

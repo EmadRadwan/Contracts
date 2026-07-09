@@ -56,6 +56,7 @@ public class ProjectsList
 
                     GlAccountId = we.GlAccountId,
                     OperatingExpenseGlAccountId = we.OperatingExpenseGlAccountId,
+                    FacilityId = we.FacilityId,
 
                     GlAccountName = ga != null 
                         ? $"{(request.Language == "ar" ? ga.AccountNameArabic : ga.AccountName)} - ({ga.AccountCode})" 

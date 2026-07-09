@@ -251,7 +251,9 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
             hasVatExemption: isIndirect ? hasVatExemption : false,
             hasWithholdingTaxExemption: isIndirect ? hasWithholdingTaxExemption : false,
             vatPercent: isIndirect ? (hasVatExemption ? 0 : (data.vatPercent ?? 14)) : 0,
-            withholdingTaxPercent: isIndirect ? (hasWithholdingTaxExemption ? 0 : (data.withholdingTaxPercent ?? 5)) : 0,
+            // Not zeroed by hasWithholdingTaxExemption: this rate also drives the external
+            // sales rep / manager net calc, gated independently by their own exemption flags.
+            withholdingTaxPercent: isIndirect ? (data.withholdingTaxPercent ?? 5) : 0,
             notes: data.notes ?? null,
         };
 
@@ -761,18 +763,16 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         />
                                                     </Grid>
                                                 )}
-                                                {!hasWithholdingTaxExemption && (
-                                                    <Grid item xs={6} md={2}>
-                                                        <Field
-                                                            id="withholdingTaxPercent"
-                                                            name="withholdingTaxPercent"
-                                                            label={getTranslatedLabel("salesCommission.form.withholdingTaxPercent", "نسبة ضريبة الاستقطاع %")}
-                                                            component={FormNumericTextBox}
-                                                            min={0} max={100} format="n2"
-                                                            disabled={isApproved}
-                                                        />
-                                                    </Grid>
-                                                )}
+                                                <Grid item xs={6} md={2}>
+                                                    <Field
+                                                        id="withholdingTaxPercent"
+                                                        name="withholdingTaxPercent"
+                                                        label={getTranslatedLabel("salesCommission.form.withholdingTaxPercent", "نسبة ضريبة الاستقطاع %")}
+                                                        component={FormNumericTextBox}
+                                                        min={0} max={100} format="n2"
+                                                        disabled={isApproved}
+                                                    />
+                                                </Grid>
                                             </Grid>
 
                                             {/* External Company */}

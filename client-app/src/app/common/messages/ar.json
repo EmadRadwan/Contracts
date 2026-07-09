@@ -2544,6 +2544,7 @@
       "list": {
         "num": "رقم المشروع",
         "name": "اسم المشروع",
+        "createCertificate": "إنشاء مستخلص",
         "glAccount": "حساب دفتر الأستاذ",
         "operatingExpenseGlAccount": "حساب دفتر الأستاذ للتكاليف التشغيلية",
         "status": "الحالة",

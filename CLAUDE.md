@@ -285,6 +285,28 @@ Then render inside the `xs={1}` grid column as shown in the Actions Menu layout 
 
 ---
 
+## Role-Based Access Control (Frontend-Only)
+
+Roles are plain strings (ASP.NET Identity `ApplicationRole.Name`). **There is no backend authorization** — no controller uses `[Authorize(Roles=...)]`; the global filter only requires an authenticated user. All role gating below is a frontend UX concern, not a security boundary.
+
+### Two gating layers per module
+Most modules use **two separate role strings**, not one:
+1. **Module-level `_View` role** (e.g. `Sales_View`, `Projects_View`, `Accounting_View`) — gates whether the top-nav module link appears at all. Checked in `client-app/src/app/layout/Header.tsx` via a `moduleRoleMap` + `<Can>`.
+2. **Feature-level role(s)** (e.g. `CreateSalesRequest`, `ViewSalesRequest`) — gates the specific route/sub-menu once inside the module. Checked via `<RequireRole allowedRoles={[...]} />` (route protection, `client-app/src/app/router/Routes.tsx`) and `<Can perform={...}>` (menu/UI visibility, e.g. `SalesRequestMenu.tsx`).
+
+A user needs **both** roles to actually use a feature. Granting only the feature-level role hides the module from the top nav entirely. Granting only the module-level role shows the nav link, but the inner route silently redirects to `/not-found` when clicked — this looks like a routing bug but isn't; check the user's exact role list first.
+
+### Read-only vs. full-access convention
+For read-only access to a feature, add a separate `ViewX` role (e.g. `ViewSalesRequest`) alongside the existing `CreateX` role — don't overload `CreateX`. Enforce read-only client-side by reusing the form's existing highest read-only `editMode` (e.g. `editMode = 3` in `SalesRequestForm`, already used for locked/approved records) rather than adding a parallel code path. Explicitly wrap any status-changing action menu (approve/reset/delete) in `<Can perform="CreateX">` — action-menu components (e.g. `SalesRequestActionsMenu`) are separate from the form and are **not** automatically covered by form-level read-only state.
+
+### Seeding roles — production/staging caveat
+In `Persistence/SeedContracts.cs`:
+- The `requiredRoles` string array + role-creation loop runs **unconditionally on every startup** — adding a new role name there is enough for the role to exist in any environment (including production) after a deploy.
+- The `userRoles` dictionary + `AssignRoles(...)` call that grants specific roles to specific seeded emails only runs **when `AppUserLogins` is completely empty** (fresh DB). On any environment with existing users, editing this dictionary has **no effect** — it never re-runs against existing users.
+- **Consequence:** to grant a new role to an existing user outside a fresh DB (staging/production), assign it through the live Users admin UI (`/users` → edit user → add role) — not by editing `SeedContracts.cs`, which only seeds brand-new databases.
+
+---
+
 ## Key Libraries
 
 ### Backend NuGet

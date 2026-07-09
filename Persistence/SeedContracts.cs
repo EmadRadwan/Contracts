@@ -2901,7 +2901,7 @@ public class SeedContracts
                 "Facility_View",
                 "Party_View",
                 "Accounting_View",
-                "Projects_View",
+                "Projects_View", "RunProjectReport",
                 "Sales_View", "CreateSalesRequest", "ViewSalesRequest", "ApproveSalesRequest", "DeleteSalesRequest", "CreateReserveRequest",
                 "Accounting_Invoices_View",
                 "Accounting_Payments_View",

@@ -70,7 +70,11 @@ export default function ProjectCertificatesList() {
     const dispatch = useAppDispatch();
     const [certificate, setCertificate] = useState<ProjectCertificate | undefined>(undefined);
     const { data, isFetching } = useFetchProjectCertificatesQuery({ ...dataState });
-    const [viewMode, setViewMode] = useState<"list" | "form">("list");
+    // Purpose: Open straight into the form when navigated in with a certificate type/project
+    // already selected (e.g. from the project list's per-row certificate buttons).
+    const [viewMode, setViewMode] = useState<"list" | "form">(
+        certificateFormEditMode > 0 ? "form" : "list"
+    );
 
     
     const debounce = (func: Function, wait: number) => {
