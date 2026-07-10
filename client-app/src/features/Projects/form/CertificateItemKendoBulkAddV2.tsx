@@ -7,14 +7,21 @@ import {
     GridCellProps,
 } from "@progress/kendo-react-grid";
 import { Button, Box, Typography } from "@mui/material";
+import { NumericTextBox, NumericTextBoxChangeEvent } from "@progress/kendo-react-inputs";
 import { toast } from "react-toastify";
 
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import { CertificateItem } from "../../../app/models/project/certificateItem";
 import { useAppSelector } from "../../../app/store/configureStore";
-import { FormSimpleComboBoxVirtualProduct } from "../../../app/common/form/FormSimpleComboBoxVirtualProduct";
+import { FormSimpleComboBoxVirtualProductWithCategory } from "../../../app/common/form/FormSimpleComboBoxVirtualProductWithCategory";
 import { FormComboBoxVirtualUOM } from "../../../app/common/form/FormComboBoxVirtualUOM";
 import { v4 as uuidv4 } from "uuid";
+
+// Purpose: Plain <td> totals (read-only cells / toolbar text) don't get Kendo's built-in
+// numeric-editor thousands separator, unlike the editable numeric columns — mirrors the
+// formatNumber convention already used elsewhere (e.g. IncomeStatement.tsx, CertificateItemsList.tsx).
+const formatNumber = (value: number | undefined) =>
+    (value ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -52,7 +59,7 @@ const GridCtx = createContext<GridCtxValue>({
 
 const ProductCell = ({ dataItem, onChange }: GridCellProps) => (
     <td>
-        <FormSimpleComboBoxVirtualProduct
+        <FormSimpleComboBoxVirtualProductWithCategory
             value={dataItem.productId}
             onChange={(e: any) =>
                 onChange!({ dataItem, field: "productId", value: e.value ? { ...e.value } : null } as any)
@@ -72,6 +79,24 @@ const UomCell = ({ dataItem, onChange }: GridCellProps) => (
             }
             textField="description"
             dataItemKey="uomId"
+        />
+    </td>
+);
+
+// Purpose: Every row in this grid is always in edit mode (`inEdit: true` is hardcoded — see
+// BulkAddRow), so Kendo never uses the Column's `format` prop for this field; `format` only
+// formats the static (non-edit) display cell, and Kendo's built-in `editor="numeric"` always
+// falls back to NumericTextBox's own default format (2 decimals) regardless of Column.format.
+// A custom cell with an explicit NumericTextBox `format="n9"` is the only way to keep the
+// agreed 9-decimal precision visible while the value is being edited.
+const AchievementPercentageCell = ({ dataItem, field, onChange }: GridCellProps) => (
+    <td>
+        <NumericTextBox
+            value={dataItem.achievementPercentage ?? 0}
+            format="n9"
+            onChange={(e: NumericTextBoxChangeEvent) =>
+                onChange!({ dataItem, field: field || "achievementPercentage", value: e.value ?? 0 } as any)
+            }
         />
     </td>
 );
@@ -127,10 +152,10 @@ const CertificateItemKendoBulkAddV2: React.FC<Props> = ({
 
     // ── Row factory ─────────────────────────────────────────────────────────────
 
-    const createEmptyRow = useCallback((): BulkAddRow => ({
+    const createEmptyRow = useCallback((productId: any = null): BulkAddRow => ({
         workEffortId: `TEMP-${uuidv4()}`,
         inEdit: true,
-        productId: null,
+        productId,
         uomId: null,
         description: "",
         quantity: 0,
@@ -216,11 +241,37 @@ const CertificateItemKendoBulkAddV2: React.FC<Props> = ({
         return { total, deserved, net, discount: disc, insurance: ins, additionalInsurance: addIns };
     }, [isContracting, isSupplyProcurement, isCompanySupply]);
 
-    const validateRow = useCallback((row: BulkAddRow): boolean => {
-        const base = !!row.productId && !!row.uomId && !!row.description && row.quantity > 0;
-        if (isContracting) return base && (row.materialPrice! > 0 || row.laborPrice! > 0) && row.achievementPercentage! > 0;
-        return base && row.unitPrice! > 0;
-    }, [isContracting]);
+    // Purpose: description is only mandatory for Workmanship Contracting Certificates;
+    // shared here so both the validity check and the toast message stay in sync on which
+    // fields are actually required for the current certificate type.
+    const getMissingFieldLabels = useCallback((row: BulkAddRow): string[] => {
+        const missing: string[] = [];
+
+        if (!row.productId) missing.push(getTranslatedLabel(`${itemKey}.product`, "المنتج"));
+        if (!row.uomId) missing.push(getTranslatedLabel(`${itemKey}.unitOfMeasure`, "وحدة القياس"));
+        if (!(row.quantity > 0)) missing.push(getTranslatedLabel(`${itemKey}.quantity`, "الكمية"));
+
+        if (isContracting) {
+            if (!row.description) missing.push(getTranslatedLabel(`${itemKey}.description`, "الوصف"));
+            if (!((row.materialPrice || 0) > 0 || (row.laborPrice || 0) > 0)) {
+                missing.push(
+                    `${getTranslatedLabel(`${itemKey}.materialPrice`, "سعر المواد")}/${getTranslatedLabel(`${itemKey}.laborPrice`, "سعر العمالة")}`
+                );
+            }
+            if (!((row.achievementPercentage || 0) > 0)) {
+                missing.push(getTranslatedLabel(`${itemKey}.achievementPercentage`, "نسبة الإنجاز"));
+            }
+        } else if (!((row.unitPrice || 0) > 0)) {
+            missing.push(getTranslatedLabel(`${itemKey}.unitPrice`, "سعر الوحدة"));
+        }
+
+        return missing;
+    }, [isContracting, getTranslatedLabel]);
+
+    const validateRow = useCallback(
+        (row: BulkAddRow): boolean => getMissingFieldLabels(row).length === 0,
+        [getMissingFieldLabels]
+    );
 
     const serializeRow = useCallback((row: BulkAddRow): CertificateItem => {
         const { total, deserved, net, discount, insurance, additionalInsurance } = calculateRowTotals(row);
@@ -315,11 +366,17 @@ const CertificateItemKendoBulkAddV2: React.FC<Props> = ({
     const addNewRow = useCallback(() => {
         const lastRow = data[data.length - 1];
         if (lastRow && !lastRow._isValid) {
-            toast.warning(getTranslatedLabel("general.mandatoryFieldsMissing", "Please fill all required fields in the current row first."));
+            const missing = getMissingFieldLabels(lastRow);
+            toast.warning(
+                `${getTranslatedLabel(`${localizationKey}.missingFields`, "يرجى استكمال الحقول التالية")}: ${missing.join("، ")}`
+            );
             return;
         }
-        setData(prev => [...prev, createEmptyRow()]);
-    }, [data, createEmptyRow, getTranslatedLabel]);
+        // Purpose: Carrying the previous row's product forward saves re-picking it when a user
+        // is entering several consecutive rows for the same product (e.g. different batches/dates).
+        const carriedProductId = lastRow?.productId ? { ...lastRow.productId } : null;
+        setData(prev => [...prev, createEmptyRow(carriedProductId)]);
+    }, [data, createEmptyRow, getTranslatedLabel, getMissingFieldLabels]);
 
     // Flush any debounced saves that haven't fired yet before closing
     const handleClose = useCallback(() => {
@@ -364,10 +421,9 @@ const CertificateItemKendoBulkAddV2: React.FC<Props> = ({
 
     const gridColumns = useMemo(() => {
         const cols: React.ReactElement[] = [
-            <Column key="commands" cell={CommandCell} width={110} locked />,
-            <Column key="productId"   field="productId"   title={getTranslatedLabel(`${itemKey}.product`,        "Product")}     cell={ProductCell} width={280} />,
-            <Column key="uomId"       field="uomId"       title={getTranslatedLabel(`${itemKey}.unitOfMeasure`,  "UOM")}         cell={UomCell}     width={180} />,
+            <Column key="productId"   field="productId"   title={isContracting ? getTranslatedLabel(`${itemKey}.product`, "Work Item") : getTranslatedLabel(`${itemKey}.productItem`, "Item")}     cell={ProductCell} width={280} />,
             <Column key="description" field="description" title={getTranslatedLabel(`${itemKey}.description`,    "Description")}                    width={250} />,
+            <Column key="uomId"       field="uomId"       title={getTranslatedLabel(`${itemKey}.unitOfMeasure`,  "UOM")}         cell={UomCell}     width={180} />,
             <Column key="quantity"    field="quantity"    title={getTranslatedLabel(`${itemKey}.quantity`,       "Qty")}  editor="numeric"           width={100} />,
         ];
 
@@ -375,9 +431,9 @@ const CertificateItemKendoBulkAddV2: React.FC<Props> = ({
             cols.push(
                 <Column key="materialPrice"        field="materialPrice"        title={getTranslatedLabel(`${itemKey}.materialPrice`,        "Mat. Price")}   editor="numeric"  width={130} />,
                 <Column key="laborPrice"           field="laborPrice"           title={getTranslatedLabel(`${itemKey}.laborPrice`,           "Lab. Price")}   editor="numeric"  width={130} />,
-                <Column key="achievementPercentage" field="achievementPercentage" title={getTranslatedLabel(`${itemKey}.achievementPercentage`, "Ach. %")}   editor="numeric"  width={110} />,
-                <Column key="totalAmount"          field="totalAmount"          title={getTranslatedLabel(`${itemKey}.totalAmount`,          "Total")}        editable={false}  width={110} cell={p => <td>{(p.dataItem.totalAmount || 0).toFixed(2)}</td>} />,
-                <Column key="deserved"             field="deserved"             title={getTranslatedLabel(`${itemKey}.deserved`,             "Deserved")}     editable={false}  width={110} cell={p => <td>{(p.dataItem.deserved || 0).toFixed(2)}</td>} />,
+                <Column key="achievementPercentage" field="achievementPercentage" title={getTranslatedLabel(`${itemKey}.achievementPercentage`, "Ach. %")}   cell={AchievementPercentageCell}  width={200} />,
+                <Column key="totalAmount"          field="totalAmount"          title={getTranslatedLabel(`${itemKey}.totalAmount`,          "Total")}        editable={false}  width={110} cell={p => <td>{formatNumber(p.dataItem.totalAmount)}</td>} />,
+                <Column key="deserved"             field="deserved"             title={getTranslatedLabel(`${itemKey}.deserved`,             "Deserved")}     editable={false}  width={110} cell={p => <td>{formatNumber(p.dataItem.deserved)}</td>} />,
                 <Column key="insurance"            field="insurance"            title={getTranslatedLabel(`${itemKey}.insurance`,            "Insurance")}    editor="numeric"  width={130} />,
                 <Column key="additionalInsurance"  field="additionalInsurance"  title={getTranslatedLabel(`${itemKey}.additionalInsurance`,  "Add. Ins.")}    editor="numeric"  width={130} />,
                 <Column key="deductions"           field="deductions"           title={getTranslatedLabel(`${itemKey}.deductions`,           "Deduc.")}       editor="numeric"  width={110} />,
@@ -410,8 +466,9 @@ const CertificateItemKendoBulkAddV2: React.FC<Props> = ({
                 title={getTranslatedLabel(`${itemKey}.net`, "Net")}
                 editable={false}
                 width={120}
-                cell={p => <td><strong>{(p.dataItem.net || 0).toFixed(2)}</strong></td>}
+                cell={p => <td><strong>{formatNumber(p.dataItem.net)}</strong></td>}
             />,
+            <Column key="commands" cell={CommandCell} width={110} locked />,
         );
 
         return cols;
@@ -444,7 +501,7 @@ const CertificateItemKendoBulkAddV2: React.FC<Props> = ({
                             </Button>
                             <Typography variant="h6" fontWeight="bold">
                                 {getTranslatedLabel("projects.certificate.list.totalAmount", "Total Net")}:{" "}
-                                {totalNet.toFixed(2)}
+                                {formatNumber(totalNet)}
                             </Typography>
                         </Box>
                     </GridToolbar>

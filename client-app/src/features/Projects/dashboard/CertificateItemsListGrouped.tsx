@@ -24,7 +24,6 @@ import {
     nonDeletedCertificateItemsSelector,
 } from "../slice/certificateSelectors";
 import { useFetchCertificateItemsQuery } from "../../../app/store/apis/certificateItemsApi";
-import { CertificateItemFormMemo } from "../form/CertificateItemForm";
 import CertificateItemKendoBulkAdd from "../form/CertificateItemKendoBulkAddV2";
 import { setProcessedCertificateItems } from "../slice/certificateItemsUiSlice";
 
@@ -33,6 +32,12 @@ interface Props {
     workEffortId?: string;
     isFormCollapsed: boolean;
 }
+
+// Purpose: Kendo Column `format` props (e.g. "{0:n2}") already render thousands separators for
+// grid cells, but plain toolbar/text totals built with template strings or .toFixed() don't —
+// this mirrors the formatNumber convention already used elsewhere (e.g. IncomeStatement.tsx).
+const formatNumber = (value: number | undefined) =>
+    (value ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /* -------------------------------------------------------------------------- */
 /*  Main Component                                                            */
@@ -46,10 +51,7 @@ export default function CertificateItemsListGrouped({
     const initialSort: SortDescriptor[] = [{ field: "productName", dir: "asc" }];
     const [sort, setSort] = useState<SortDescriptor[]>(initialSort);
     const [page, setPage] = useState<State>({ skip: 0, take: 4 });
-    const [show, setShow] = useState(false);
     const [showBulkAdd, setShowBulkAdd] = useState(false);
-    const [itemEditMode, setItemEditMode] = useState(0);
-    const [certificateItem, setCertificateItem] = useState<CertificateItem | undefined>(undefined);
 
     const dispatch = useAppDispatch();
     const { getTranslatedLabel } = useTranslationHelper();
@@ -85,41 +87,6 @@ export default function CertificateItemsListGrouped({
     const sortChange = (e: GridSortChangeEvent) => setSort(e.sort);
 
     /* --------------------------- Row Actions ------------------------------- */
-    const handleSelect = useCallback(
-        (workEffortId: string) => {
-            const src = uiItems.find((i) => i.workEffortId === workEffortId);
-            if (!src) return;
-
-            const item: CertificateItem = {
-                ...src,
-                productId: {
-                    ProductId: src.productId,
-                    ProductName: src.productName ?? "",
-                    ProductType: "",
-                },
-                uomId: {
-                    UomId: src.uomId,
-                    Description: src.uomName ?? "",
-                },
-                gratuities: src.gratuities ?? 0,
-                transportationExpenses: src.transportationExpenses ?? 0,
-                discount: src.discount ?? 0,
-                materialPrice: src.materialPrice ?? 0,
-                laborPrice: src.laborPrice ?? 0,
-                procurementDate: src.procurementDate ? new Date(src.procurementDate) : new Date(),
-                additionalInsurance: src.additionalInsurance ?? 0,
-                deductionDescription: src.deductionDescription ?? "",
-                insuranceMode: src.insuranceMode ?? "value",
-                additionalInsuranceMode: src.additionalInsuranceMode ?? "value",
-            };
-
-            setCertificateItem(item);
-            setItemEditMode(2);
-            setShow(true);
-        },
-        [uiItems]
-    );
-
     const remove = useCallback(
         (dataItem: CertificateItem) => {
             const updated = nonDeletedItems.map((i) =>
@@ -131,26 +98,21 @@ export default function CertificateItemsListGrouped({
     );
 
     /* --------------------------- Custom Cells ------------------------------ */
+    // Purpose: Item edits now happen exclusively through the "Items" bulk-add grid — these
+    // cells are plain read-only text, not click targets, so there's a single entry point
+    // for creating/editing certificate items instead of two competing ones.
     const deductionDescriptionCell = (props: GridCellProps) => (
         <td>
-            {props.dataItem.deductionDescription ? (
-                <Button onClick={() => handleSelect(props.dataItem.workEffortId)}>
-                    {props.dataItem.deductionDescription.length > 50
-                        ? `${props.dataItem.deductionDescription.substring(0, 50)}...`
-                        : props.dataItem.deductionDescription}
-                </Button>
-            ) : (
-                "-"
-            )}
+            {props.dataItem.deductionDescription
+                ? (props.dataItem.deductionDescription.length > 50
+                    ? `${props.dataItem.deductionDescription.substring(0, 50)}...`
+                    : props.dataItem.deductionDescription)
+                : "-"}
         </td>
     );
 
     const descriptionCell = (props: GridCellProps) => (
-        <td>
-            <Button onClick={() => handleSelect(props.dataItem.workEffortId)}>
-                {props.dataItem.productName}
-            </Button>
-        </td>
+        <td>{props.dataItem.productName}</td>
     );
 
     const DeleteCell = (props: GridCellProps) => (
@@ -171,17 +133,10 @@ export default function CertificateItemsListGrouped({
     );
 
     /* --------------------------- Toolbar ----------------------------------- */
-    const openAddModal = () => {
-        setCertificateItem(undefined);
-        setItemEditMode(1);
-        setShow(true);
-    };
-
     const openBulkAddModal = () => {
         setShowBulkAdd(true);
     };
 
-    const closeModal = useCallback(() => setShow(false), []);
     const closeBulkModal = useCallback(() => setShowBulkAdd(false), []);
 
     const addItem = useCallback((item: CertificateItem) => {
@@ -211,7 +166,7 @@ export default function CertificateItemsListGrouped({
                             ? `${props.dataItem.code} (${getTranslatedLabel(
                                 `${localizationKey}.productSubtotal`,
                                 "Subtotal"
-                            )}: ${props.dataItem.productSubtotal})`
+                            )}: ${formatNumber(props.dataItem.productSubtotal)})`
                             : props.dataItem.code}
                     </td>
                 ),
@@ -238,26 +193,15 @@ export default function CertificateItemsListGrouped({
             { field: "insurance", title: getTranslatedLabel(`${localizationKey}.insurance`, "Insurance"), format: "{0:n2}", width: 120 },
             { field: "additionalInsurance", title: getTranslatedLabel(`${localizationKey}.additionalInsurance`, "Additional Insurance"), format: "{0:n2}", width: 140 },
             { field: "net", title: getTranslatedLabel(`${localizationKey}.net`, "Net"), format: "{0:n2}", width: 120 },
-            { field: "achievementPercentage", title: getTranslatedLabel(`${localizationKey}.achievementPercentage`, "Achievement %"), format: "{0:n9}", width: 140 },
+            { field: "achievementPercentage", title: getTranslatedLabel(`${localizationKey}.achievementPercentage`, "Achievement %"), format: "{0:n9}", width: 150 },
             { cell: CommandCell, width: 100 },
         ],
-        [editMode, getTranslatedLabel, localizationKey, handleSelect, remove]
+        [editMode, getTranslatedLabel, localizationKey, remove]
     );
     /* --------------------------- Render ------------------------------------ */
     return (
         <>
             {/* ---------- Modals ---------- */}
-            {show && (
-                <ModalContainer show={show} onClose={closeModal} width={1200}>
-                    <CertificateItemFormMemo
-                        certificateItem={certificateItem}
-                        editMode={itemEditMode}
-                        onClose={closeModal}
-                        formEditMode={editMode}
-                    />
-                </ModalContainer>
-            )}
-
             {showBulkAdd && (
                 <ModalContainer show={showBulkAdd} onClose={closeBulkModal} width="95%">
                     <CertificateItemKendoBulkAdd
@@ -285,7 +229,7 @@ export default function CertificateItemsListGrouped({
                         <Grid item xs={12}>
                             <KendoGrid
                                 className="main-grid"
-                                style={{ height: isFormCollapsed ? "60vh" : "30vh" }}
+                                style={{ height: isFormCollapsed ? "65vh" : "40vh" }}
                                 scrollable="scrollable"
                                 resizable={true}
                                 sortable
@@ -303,26 +247,17 @@ export default function CertificateItemsListGrouped({
                                     <Grid container justifyContent="space-between">
                                         <Grid item>
                                             <Button
-                                                color="secondary"
-                                                onClick={openAddModal}
-                                                variant="outlined"
-                                                disabled={editMode > 3}
-                                            >
-                                                {getTranslatedLabel(`${localizationKey}.addItem`, "Add Item")}
-                                            </Button>
-                                            <Button
                                                 color="primary"
                                                 onClick={openBulkAddModal}
                                                 variant="outlined"
                                                 disabled={editMode > 3}
-                                                sx={{ ml: 1 }}
                                             >
-                                                {getTranslatedLabel(`${localizationKey}.bulkAdd`, "Bulk Add")}
+                                                {getTranslatedLabel(`${localizationKey}.bulkAdd`, "Items")}
                                             </Button>
                                         </Grid>
                                         <Grid item>
                                             <Typography>
-                                                {getTranslatedLabel(`${localizationKey}.subtotal`, "Total")}: {total.toFixed(2)}
+                                                {getTranslatedLabel(`${localizationKey}.subtotal`, "Total")}: {formatNumber(total)}
                                             </Typography>
                                         </Grid>
                                     </Grid>

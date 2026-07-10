@@ -308,6 +308,24 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
 
     const showContractor = ["WORKMANSHIP_CONTRACTING_CERTIFICATE", "COMPANY_SUPPLY_SALE_CERTIFICATE"].includes(currentCertificateType);
 
+    const showFacility = ["SUPPLY_PROCUREMENT_CERTIFICATE", "COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE"].includes(currentCertificateType);
+
+    // Purpose: Keep every header field on a single grid row now that estimatedCompletionDate
+    // no longer renders — the date column shrinks to its minimum usable width and description
+    // absorbs whatever width the other (conditionally-rendered) columns leave behind.
+    const PROJECT_WIDTH = 2;
+    const PARTY_WIDTH = 2; // supplier / contractor — mutually exclusive, only one renders
+    const NEW_PARTY_BUTTON_WIDTH = 1;
+    const FACILITY_WIDTH = 2;
+    const START_DATE_WIDTH = 1.5;
+    const usedWidth =
+        PROJECT_WIDTH +
+        (showSupplier || showContractor ? PARTY_WIDTH : 0) +
+        NEW_PARTY_BUTTON_WIDTH +
+        (showFacility ? FACILITY_WIDTH : 0) +
+        START_DATE_WIDTH;
+    const descriptionWidth = Math.max(12 - usedWidth, 3);
+
     const initialFormValues = useMemo(() => {
         if (editMode === 1 || !selectedCertificate?.workEffortId) {
             const now = new Date();
@@ -736,7 +754,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                         <Grid container alignItems="start" justifyContent="start" spacing={1}>
                                             <Grid container spacing={1} alignItems="flex-end" justifyContent="flex-start"
                                                   sx={{paddingLeft: 3}}>
-                                                <Grid item xs={3}
+                                                <Grid item xs={PROJECT_WIDTH}
                                                       className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
                                                     <Field
                                                         id="projectId"
@@ -751,7 +769,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                                     />
                                                 </Grid>
                                                 {showSupplier && (
-                                                    <Grid item xs={showContractor ? 2 : 3}
+                                                    <Grid item xs={PARTY_WIDTH}
                                                           className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
                                                         <Field
                                                             id="partyIdSupplier"
@@ -767,7 +785,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                                     </Grid>
                                                 )}
                                                 {showContractor && (
-                                                    <Grid item xs={showSupplier ? 2 : 3}
+                                                    <Grid item xs={PARTY_WIDTH}
                                                           className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
                                                         <Field
                                                             id="partyIdContractor"
@@ -782,7 +800,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                                         />
                                                     </Grid>
                                                 )}
-                                                <Grid item xs={1}>
+                                                <Grid item xs={NEW_PARTY_BUTTON_WIDTH}>
                                                     <Button
                                                         color="secondary"
                                                         onClick={() => setShowNewCustomer(true)}
@@ -791,8 +809,8 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                                         +
                                                     </Button>
                                                 </Grid>
-                                                {["SUPPLY_PROCUREMENT_CERTIFICATE", "COMPANY_SUPPLY_SALE_CERTIFICATE", "CONTRACTOR_PURCHASE_CERTIFICATE"].includes(currentCertificateType) && (
-                                                    <Grid item xs={2}
+                                                {showFacility && (
+                                                    <Grid item xs={FACILITY_WIDTH}
                                                           className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
                                                         <Field
                                                             id="facilityId"
@@ -808,7 +826,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                                         />
                                                     </Grid>
                                                 )}
-                                                <Grid item xs={showSupplier && showContractor ? 1.5 : 2}
+                                                <Grid item xs={START_DATE_WIDTH}
                                                       className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
                                                     <Field
                                                         name="estimatedStartDate"
@@ -819,18 +837,9 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                                         validator={requiredValidator}
                                                     />
                                                 </Grid>
-                                                <Grid item xs={showSupplier && showContractor ? 1.5 : 2}
-                                                      className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
-                                                    <Field
-                                                        name="estimatedCompletionDate"
-                                                        id="estimatedCompletionDate"
-                                                        label={getTranslatedLabel("projects.certificate.form.completionDate", "Completion Date")}
-                                                        disabled={editMode > 3}
-                                                        component={FormDatePicker}
-                                                        validator={requiredValidator}
-                                                    />
-                                                </Grid>
-                                                <Grid item xs={6.5}
+                                                {/* estimatedCompletionDate intentionally not rendered; value still flows through
+                                                    initialFormValues / handleSubmit and is sent to the backend unchanged. */}
+                                                <Grid item xs={descriptionWidth}
                                                       className={editMode > 3 ? "grid-disabled" : "grid-normal"}>
                                                     <Field
                                                         id="description"
@@ -909,6 +918,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                 contractorId={contractorId}
                 supplierId={supplierId}
                 certificateType={currentCertificateType}
+                canCopyItems={editMode === 1}
             />
 
             <ReviewCommentsDialog

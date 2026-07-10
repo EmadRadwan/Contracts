@@ -7,7 +7,7 @@ import {
   GridToolbar,
 } from "@progress/kendo-react-grid";
 import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
-import { Grid, Paper } from "@mui/material";
+import { Grid, Paper, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { BookOnline } from "@mui/icons-material";
 import ProductForm from "../../form/product/ProductForm";
 import {
@@ -32,6 +32,13 @@ const colorMap = {
   "sold": "red"
 }
 
+const productTypeFilterOptions = [
+  { value: "ALL", label: "الكل" },
+  { value: "APARTMENT", label: "شقة سكنية" },
+  { value: "SERVICE", label: "بند أعمال" },
+  { value: "RAW_MATERIAL", label: "صنف" },
+];
+
 
 function ProductsList() {
   const [editMode, setEditMode] = useState(0);
@@ -39,9 +46,29 @@ function ProductsList() {
   const dispatch = useAppDispatch();
   const { getTranslatedLabel } = useTranslationHelper();
   const [dataState, setDataState] = React.useState<State>({ take: 9, skip: 0 });
+  const [productTypeFilter, setProductTypeFilter] = useState<string>("ALL");
 
   const [reserveTargetId, setReserveTargetId] = useState<string | null>(null);
   const [reserveApartment, { isLoading: isReserving }] = useReserveApartmentMutation();
+
+  const handleProductTypeFilterChange = (
+    _event: React.MouseEvent<HTMLElement>,
+    newValue: string | null
+  ) => {
+    if (!newValue) return;
+    setProductTypeFilter(newValue);
+    setDataState((prev) => ({
+      ...prev,
+      skip: 0,
+      filter:
+        newValue === "ALL"
+          ? undefined
+          : {
+              logic: "and",
+              filters: [{ field: "productTypeId", operator: "eq", value: newValue }],
+            },
+    }));
+  };
 
 
 
@@ -196,7 +223,7 @@ function ProductsList() {
                 onDataStateChange={dataStateChange}
               >
                 <GridToolbar>
-                  <Grid container>
+                  <Grid container alignItems="center">
                     <Grid item xs={2}>
                       <Button
                         color={"secondary"}
@@ -208,6 +235,20 @@ function ProductsList() {
                           "Create Product"
                         )}
                       </Button>
+                    </Grid>
+                    <Grid item xs={10}>
+                      <ToggleButtonGroup
+                        value={productTypeFilter}
+                        exclusive
+                        onChange={handleProductTypeFilterChange}
+                        size="small"
+                      >
+                        {productTypeFilterOptions.map((option) => (
+                          <ToggleButton key={option.value} value={option.value}>
+                            {option.label}
+                          </ToggleButton>
+                        ))}
+                      </ToggleButtonGroup>
                     </Grid>
                     {/* REFACTOR: Removed PDF export button and all related PDF generation logic */}
                     {/* Purpose: Eliminate unused imports, components, and UI elements tied to PDF export */}

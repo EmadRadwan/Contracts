@@ -90,7 +90,7 @@
         "subProject": "بنود المشروع",
         "title": "رقم المستخلص",
         "new": "شهادة مشروع جديدة",
-        "startDate": "تاريخ البدء",
+        "startDate": "تاريخ المستخلص",
         "completionDate": "تاريخ الانتهاء",
         "description": "الوصف",
         "create": "إنشاء المستخلص",
@@ -122,6 +122,28 @@
         "deserved": "المستحق",
         "loading": "جاري تحميل المستخلصات..."
       },
+      "modal": {
+        "titleWorkmanship": "قائمة المستخلصات - مقاولة",
+        "titleSupply": "قائمة المستخلصات - توريد",
+        "certificateLabel": "شهادة",
+        "subtotal": "الإجمالي الفرعي ←",
+        "loadError": "فشل في تحميل المستخلصات",
+        "itemsLabel": "بند",
+        "certificatesLabel": "مستخلص",
+        "allProjects": "كل المشاريع",
+        "party": "الطرف",
+        "copyItems": "نسخ البنود إلى المستخلص الحالي",
+        "copyItemsDisabled": "متاح فقط عند إنشاء مستخلص جديد",
+        "copySuccess": "تم نسخ البنود إلى المستخلص الحالي بنجاح"
+      },
+      "certificateNumber": "رقم المستخلص",
+      "projectName": "المشروع",
+      "productName": "المنتج / الخدمة",
+      "totalPrice": "السعر الإجمالي (100%)",
+      "deserved": "المستحق",
+      "achievement": "نسبة الإنجاز",
+      "status": "الحالة",
+      "grandTotal": "الإجمالي الكلي",
       "type": "النوع",
       "date": "التاريخ",
       "description": "الوصف",
@@ -150,7 +172,8 @@
           "addRow": "إضافة بند",
           "modeValue": "قيمة",
           "modePercentage": "%",
-          "selectMode": "اختر النوع"
+          "selectMode": "اختر النوع",
+          "missingFields": "يرجى استكمال الحقول التالية"
         },
         "list": {
           "code": "رقم البند",
@@ -164,7 +187,7 @@
           "insurance": "التأمين",
           "additionalInsurance": "التأمين الإضافي",
           "net": "الصافي",
-          "achievementPercentage": "نسبة الإنجاز",
+          "achievementPercentage": "نسبة الإنجاز %",
           "unitPrice": "سعر الوحدة",
           "discount": "الخصم",
           "procurementDate": "تاريخ الشراء",
@@ -173,6 +196,7 @@
           "productSubtotal": "إجمالي المنتج",
           "noData": "لا توجد بنود متاحة",
           "product": "بند الاعمال",
+          "productItem": "الصنف",
           "discountValue": "القيمة",
           "discountPercentage": "النسبة المئوية",
           "deductionDescription": "وصف الخصم",
@@ -180,7 +204,8 @@
           "insuranceValue": "القيمة",
           "insurancePercentage": "النسبة المئوية",
           "additionalInsuranceValue": "القيمة",
-          "additionalInsurancePercentage": "النسبة المئوية"
+          "additionalInsurancePercentage": "النسبة المئوية",
+          "bulkAdd": "بنود"
         },
         "mainDescription": "وصف البند الرئيسي",
         "discountNote": "ملاحظة الخصم"

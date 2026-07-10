@@ -77,13 +77,38 @@ const certificateItemsApi = createApi({
                     'CertificateItems',
                 ],
                 transformResponse: (response: any) => {
+                    // Purpose: Keep achievementPercentage a plain number straight from the API —
+                    // appending "%" here turned it into a display string that leaked into every
+                    // consumer, including the editable NumericTextBox in the bulk-add grid, which
+                    // then showed "50%" inside the input box itself. Formatting (adding "%") is a
+                    // presentation concern for column headers / read-only labels, not the data.
                     return response.map((item: any) => ({
                         ...item,
                         id: item.id || `item-${item.workEffortId}-${Date.now()}`,
-                        achievementPercentage:
-                            typeof item.achievementPercentage === 'number'
-                                ? `${item.achievementPercentage}%`
-                                : item.achievementPercentage || 'N/A',
+                    })) as CertificateItem[];
+                },
+            }),
+
+            // Purpose: Read-only fetch used by the certificate detail/"view old certificates" modal.
+            // Context: Deliberately has NO onQueryStarted side effects — unlike fetchCertificateItems,
+            // it must NOT dispatch into the shared certificateItemsUi slice, since that slice backs
+            // whatever certificate is currently open for editing in the form behind this modal.
+            fetchCertificateItemsReadOnly: builder.query<CertificateItem[], string>({
+                query: (workEffortId) => {
+                    if (!workEffortId) {
+                        throw new Error('workEffortId is required');
+                    }
+                    return {
+                        url: `/project/${workEffortId}/getCertificateItems`,
+                        method: 'GET',
+                    };
+                },
+                transformResponse: (response: any) => {
+                    // Purpose: Same as fetchCertificateItems above — keep achievementPercentage a
+                    // plain number, not a "50%" display string.
+                    return response.map((item: any) => ({
+                        ...item,
+                        id: item.id || `item-${item.workEffortId}-${Date.now()}`,
                     })) as CertificateItem[];
                 },
             }),
@@ -142,6 +167,7 @@ const certificateItemsApi = createApi({
 // Context: Matches orderItemsApi exports
 export const {
     useFetchCertificateItemsQuery,
+    useFetchCertificateItemsReadOnlyQuery,
     useFetchCertificateItemProductQuery,
     useAddCertificateItemsMutation,
     useUpdateCertificateItemsMutation,

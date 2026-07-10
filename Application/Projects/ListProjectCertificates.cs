@@ -51,11 +51,15 @@ namespace Application.Projects
                         WorkEffortId = we.WorkEffortId,
                         CertificateNumber = we.CertificateNumber,
                         CertificateCategory = we.CertificateCategory,
-                        CertificateCategoryDescription =
-                            we.CertificateCategory == "SUPPLY_PROCUREMENT_CERTIFICATE" ? "Supply Procurement Certificate" :
-                            we.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE" ? "Workmanship Contracting Certificate" :
-                            we.CertificateCategory == "COMPANY_SUPPLY_SALE_CERTIFICATE" ? "Company Supply Sale Certificate" :
-                            "Unknown Certificate",
+                        CertificateCategoryDescription = language == "ar" ?
+                            (we.CertificateCategory == "SUPPLY_PROCUREMENT_CERTIFICATE" ? "مستخلص توريدات" :
+                             we.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE" ? "مستخلص مقاوله" :
+                             we.CertificateCategory == "COMPANY_SUPPLY_SALE_CERTIFICATE" ? "مستخلص توريدات من مخازن الشركة" :
+                             "شهادة غير معروفة") :
+                            (we.CertificateCategory == "SUPPLY_PROCUREMENT_CERTIFICATE" ? "Supply Procurement Certificate" :
+                             we.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE" ? "Workmanship Contracting Certificate" :
+                             we.CertificateCategory == "COMPANY_SUPPLY_SALE_CERTIFICATE" ? "Company Supply Sale Certificate" :
+                             "Unknown Certificate"),
                         ProjectId = we.ProjectId,
                         ProjectName = proj != null ? proj.ProjectName : we.ProjectName,
                         Description = we.Description,

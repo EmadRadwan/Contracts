@@ -16,6 +16,11 @@ public class GetCertificatesByParty
     public class ProjectCertificateSummaryDto
     {
         public string WorkEffortId { get; set; } = default!;
+        // Purpose: WorkEffortId is overloaded to the certificate ITEM's id for workmanship rows
+        // (one row per item) but the certificate's own id for other categories (one row per
+        // certificate) — this field always carries the parent certificate's id regardless of
+        // category, so callers can reliably fetch that certificate's items/details.
+        public string CertificateWorkEffortId { get; set; } = default!;
         public string CertificateNumber { get; set; } = default!;
         public string ProjectId { get; set; } = default!;
         public string ProjectName { get; set; } = default!;
@@ -190,6 +195,7 @@ public class GetCertificatesByParty
                         return g.Where(x => x.ItemId != null).Select(i => new ProjectCertificateSummaryDto
                         {
                             WorkEffortId = i.ItemId!, // ← from item
+                            CertificateWorkEffortId = key.WorkEffortId ?? "",
                             CertificateNumber = key.CertificateNumber ?? "",
                             ProjectId = key.ProjectId ?? "",
                             ProjectName = key.ProjectName,
@@ -251,6 +257,7 @@ public class GetCertificatesByParty
                             new ProjectCertificateSummaryDto
                             {
                                 WorkEffortId = key.WorkEffortId,
+                                CertificateWorkEffortId = key.WorkEffortId ?? "",
                                 CertificateNumber = key.CertificateNumber ?? "",
                                 ProjectId = key.ProjectId ?? "",
                                 ProjectName = key.ProjectName,

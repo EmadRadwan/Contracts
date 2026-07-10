@@ -1,146 +1,3841 @@
-[
-  {
-    "GL_ACCOUNT_ID": "300000",
-    "GL_ACCOUNT_TYPE_ID": null,
-    "GL_ACCOUNT_CLASS_ID": "EQUITY",
-    "GL_RESOURCE_TYPE_ID": "MONEY",
-    "GL_XBRL_CLASS_ID": null,
-    "PARENT_GL_ACCOUNT_ID": null,
-    "ACCOUNT_CODE": "300000",
-    "ACCOUNT_NAME": "CAPITAL AND EQUITY",
-    "DESCRIPTION": null,
-    "ACCOUNT_NAME_ARABIC": "رأس المال وحقوق الملكية",
-    "PRODUCT_ID": null,
-    "EXTERNAL_ID": null,
-    "LAST_UPDATED_STAMP": "2022-05-27 12:24:27",
-    "LAST_UPDATED_TX_STAMP": "2022-05-27 12:24:25",
-    "CREATED_STAMP": "2022-05-27 12:24:27",
-    "CREATED_TX_STAMP": "2022-05-27 12:24:25",
-    "GL_ACCOUNT_COURSE_LABEL_ID": "SHARE_CAPITAL",
-    "GL_CLASS_COURSE_ID": "LIABILITIES_AND_OWNERS_EQUITY",
-    "GL_REPORT_ID": "BALANCE_SHEET",
-    "GL_SUB_CLASS_2_ID": "SHARE_CAPITAL",
-    "GL_SUB_CLASS_ID": "OWNERS_EQUITY",
-    "GL_SUB_ACCOUNT_COURSE_LABEL_ID": null
-  },
-  {
-    "GL_ACCOUNT_ID": "301000",
-    "GL_ACCOUNT_TYPE_ID": "OWNERS_EQUITY",
-    "GL_ACCOUNT_CLASS_ID": "EQUITY",
-    "GL_RESOURCE_TYPE_ID": "MONEY",
-    "GL_XBRL_CLASS_ID": null,
-    "PARENT_GL_ACCOUNT_ID": "310000",
-    "ACCOUNT_CODE": "301000",
-    "ACCOUNT_NAME": "Capital - Partner Kotb Mokhtar",
-    "DESCRIPTION": "Current accounts for partners in parent company",
-    "ACCOUNT_NAME_ARABIC": "راس مال الشريك قطب مختار",
-    "PRODUCT_ID": null,
-    "EXTERNAL_ID": null,
-    "LAST_UPDATED_STAMP": "2026-04-15 05:47:32",
-    "LAST_UPDATED_TX_STAMP": "2025-09-17 15:36:25",
-    "CREATED_STAMP": "2025-09-17 15:36:25",
-    "CREATED_TX_STAMP": "2025-09-17 15:36:25",
-    "GL_ACCOUNT_COURSE_LABEL_ID": "SHARE_CAPITAL",
-    "GL_CLASS_COURSE_ID": "LIABILITIES_AND_OWNERS_EQUITY",
-    "GL_REPORT_ID": "BALANCE_SHEET",
-    "GL_SUB_CLASS_2_ID": "SHARE_CAPITAL",
-    "GL_SUB_CLASS_ID": "OWNERS_EQUITY",
-    "GL_SUB_ACCOUNT_COURSE_LABEL_ID": "Share Capital"
-  },
-  {
-    "GL_ACCOUNT_ID": "302000",
-    "GL_ACCOUNT_TYPE_ID": "OWNERS_EQUITY",
-    "GL_ACCOUNT_CLASS_ID": "EQUITY",
-    "GL_RESOURCE_TYPE_ID": "MONEY",
-    "GL_XBRL_CLASS_ID": null,
-    "PARENT_GL_ACCOUNT_ID": "304000",
-    "ACCOUNT_CODE": "302000",
-    "ACCOUNT_NAME": "Current AC - Partner Ahmed Lotfy",
-    "DESCRIPTION": "Current account for Partner A",
-    "ACCOUNT_NAME_ARABIC": "جارى الشريك - احمد لطفى",
-    "PRODUCT_ID": null,
-    "EXTERNAL_ID": null,
-    "LAST_UPDATED_STAMP": "2026-01-04 20:16:46",
-    "LAST_UPDATED_TX_STAMP": "2025-09-17 15:37:25",
-    "CREATED_STAMP": "2025-09-17 15:37:25",
-    "CREATED_TX_STAMP": "2025-09-17 15:37:25",
-    "GL_ACCOUNT_COURSE_LABEL_ID": "SHARE_CAPITAL",
-    "GL_CLASS_COURSE_ID": "LIABILITIES_AND_OWNERS_EQUITY",
-    "GL_REPORT_ID": "BALANCE_SHEET",
-    "GL_SUB_CLASS_2_ID": "SHARE_CAPITAL",
-    "GL_SUB_CLASS_ID": "OWNERS_EQUITY",
-    "GL_SUB_ACCOUNT_COURSE_LABEL_ID": "Partner Current Accounts"
-  },
-  {
-    "GL_ACCOUNT_ID": "303000",
-    "GL_ACCOUNT_TYPE_ID": "OWNERS_EQUITY",
-    "GL_ACCOUNT_CLASS_ID": "EQUITY",
-    "GL_RESOURCE_TYPE_ID": "MONEY",
-    "GL_XBRL_CLASS_ID": null,
-    "PARENT_GL_ACCOUNT_ID": "304000",
-    "ACCOUNT_CODE": "303000",
-    "ACCOUNT_NAME": "Current AC - Partner Kotb Mokhtar",
-    "DESCRIPTION": "Current account for Partner B",
-    "ACCOUNT_NAME_ARABIC": "جارى الشريك - قطب مختار",
-    "PRODUCT_ID": null,
-    "EXTERNAL_ID": null,
-    "LAST_UPDATED_STAMP": "2026-01-04 20:17:27",
-    "LAST_UPDATED_TX_STAMP": "2025-09-17 15:38:25",
-    "CREATED_STAMP": "2025-09-17 15:38:25",
-    "CREATED_TX_STAMP": "2025-09-17 15:38:25",
-    "GL_ACCOUNT_COURSE_LABEL_ID": "SHARE_CAPITAL",
-    "GL_CLASS_COURSE_ID": "LIABILITIES_AND_OWNERS_EQUITY",
-    "GL_REPORT_ID": "BALANCE_SHEET",
-    "GL_SUB_CLASS_2_ID": "SHARE_CAPITAL",
-    "GL_SUB_CLASS_ID": "OWNERS_EQUITY",
-    "GL_SUB_ACCOUNT_COURSE_LABEL_ID": "Partner Current Accounts"
-  },
-  {
-    "GL_ACCOUNT_ID": "304000",
-    "GL_ACCOUNT_TYPE_ID": "OWNERS_EQUITY",
-    "GL_ACCOUNT_CLASS_ID": "EQUITY",
-    "GL_RESOURCE_TYPE_ID": "MONEY",
-    "GL_XBRL_CLASS_ID": null,
-    "PARENT_GL_ACCOUNT_ID": "300000",
-    "ACCOUNT_CODE": "304000",
-    "ACCOUNT_NAME": "Project Developers Partners' Current",
-    "DESCRIPTION": "Current accounts for project partners",
-    "ACCOUNT_NAME_ARABIC": "جارى الشركاء",
-    "PRODUCT_ID": null,
-    "EXTERNAL_ID": null,
-    "LAST_UPDATED_STAMP": "2026-01-04 20:13:37",
-    "LAST_UPDATED_TX_STAMP": "2025-09-17 15:38:25",
-    "CREATED_STAMP": "2025-09-17 15:38:25",
-    "CREATED_TX_STAMP": "2025-09-17 15:38:25",
-    "GL_ACCOUNT_COURSE_LABEL_ID": "SHARE_CAPITAL",
-    "GL_CLASS_COURSE_ID": "LIABILITIES_AND_OWNERS_EQUITY",
-    "GL_REPORT_ID": "BALANCE_SHEET",
-    "GL_SUB_CLASS_2_ID": "SHARE_CAPITAL",
-    "GL_SUB_CLASS_ID": "OWNERS_EQUITY",
-    "GL_SUB_ACCOUNT_COURSE_LABEL_ID": "Share Capital"
-  },
-  {
-    "GL_ACCOUNT_ID": "311100",
-    "GL_ACCOUNT_TYPE_ID": "OWNERS_EQUITY",
-    "GL_ACCOUNT_CLASS_ID": "EQUITY",
-    "GL_RESOURCE_TYPE_ID": "MONEY",
-    "GL_XBRL_CLASS_ID": null,
-    "PARENT_GL_ACCOUNT_ID": "310000",
-    "ACCOUNT_CODE": "311100",
-    "ACCOUNT_NAME": "Capital - Partner Ahmed Lotfy",
-    "DESCRIPTION": "Current accounts for partners in parent company",
-    "ACCOUNT_NAME_ARABIC": "راس مال الشريك احمد لطفى",
-    "PRODUCT_ID": null,
-    "EXTERNAL_ID": null,
-    "LAST_UPDATED_STAMP": "2026-04-15 05:48:44",
-    "LAST_UPDATED_TX_STAMP": "2025-09-17 15:36:25",
-    "CREATED_STAMP": "2025-09-17 15:36:25",
-    "CREATED_TX_STAMP": "2025-09-17 15:36:25",
-    "GL_ACCOUNT_COURSE_LABEL_ID": "SHARE_CAPITAL",
-    "GL_CLASS_COURSE_ID": "LIABILITIES_AND_OWNERS_EQUITY",
-    "GL_REPORT_ID": "BALANCE_SHEET",
-    "GL_SUB_CLASS_2_ID": "SHARE_CAPITAL",
-    "GL_SUB_CLASS_ID": "OWNERS_EQUITY",
-    "GL_SUB_ACCOUNT_COURSE_LABEL_ID": "Share Capital"
-  }
-]
+{
+  "partyNameList": null,
+  "postedDebitsTotal": 1321673453.729,
+  "postedCreditsTotal": 1321681353.729,
+  "accountBalances": [
+    {
+      "glAccountId": "100071",
+      "accountCode": "100071",
+      "accountName": "احمد ماهر-عهدة مستديمة",
+      "openingBalance": 50000.000,
+      "postedDebits": 6042772.000,
+      "postedCredits": 5320193.500,
+      "endingBalance": 772578.500
+    },
+    {
+      "glAccountId": "100072",
+      "accountCode": "100072",
+      "accountName": "محمد مختار-عهدة مستديمة",
+      "openingBalance": 0.000,
+      "postedDebits": 2155120.000,
+      "postedCredits": 2070745.000,
+      "endingBalance": 84375.000
+    },
+    {
+      "glAccountId": "100073",
+      "accountCode": "100073",
+      "accountName": "مختار عادل-عهدة مستديمة",
+      "openingBalance": 10039.000,
+      "postedDebits": 1421437.000,
+      "postedCredits": 1271093.000,
+      "endingBalance": 160383.000
+    },
+    {
+      "glAccountId": "100076",
+      "accountCode": "100076",
+      "accountName": "احمد لطفى-عهدة مستديمة",
+      "openingBalance": 250000.000,
+      "postedDebits": 10794620.000,
+      "postedCredits": 7411320.000,
+      "endingBalance": 3633300.000
+    },
+    {
+      "glAccountId": "100077",
+      "accountCode": "100077",
+      "accountName": "احمد عجيبه-عهدة مستديمة",
+      "openingBalance": 0.000,
+      "postedDebits": 220040.000,
+      "postedCredits": 220040.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "100078",
+      "accountCode": "100078",
+      "accountName": "محمود رضا-عهدة مستديمة-برجولة قرية السدة",
+      "openingBalance": 0.000,
+      "postedDebits": 210000.000,
+      "postedCredits": 110605.000,
+      "endingBalance": 99395.000
+    },
+    {
+      "glAccountId": "100079",
+      "accountCode": "100079",
+      "accountName": "اشرف عجيبه-عهدة مستديمة",
+      "openingBalance": 0.000,
+      "postedDebits": 1693794.500,
+      "postedCredits": 1688661.610,
+      "endingBalance": 5132.890
+    },
+    {
+      "glAccountId": "100081",
+      "accountCode": "100081",
+      "accountName": "ماهر مختار-عهدة مستديمة",
+      "openingBalance": 0.000,
+      "postedDebits": 30000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 30000.000
+    },
+    {
+      "glAccountId": "100082",
+      "accountCode": "100082",
+      "accountName": "الجد مختار قطب-عهدة مستديمة",
+      "openingBalance": 0.000,
+      "postedDebits": 441000.000,
+      "postedCredits": 441000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "100083",
+      "accountCode": "100083",
+      "accountName": "محمد حمدي-عهدة مستديمة",
+      "openingBalance": 0.000,
+      "postedDebits": 1104865.000,
+      "postedCredits": 1104865.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "100084",
+      "accountCode": "100084",
+      "accountName": "على مرسي-عهدة مستديمة",
+      "openingBalance": 0.000,
+      "postedDebits": 213191.000,
+      "postedCredits": 213191.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "110100",
+      "accountCode": "110100",
+      "accountName": "البنك التجاري الدولى",
+      "openingBalance": 11118958.000,
+      "postedDebits": 98873724.870,
+      "postedCredits": 107717263.970,
+      "endingBalance": 2275418.900
+    },
+    {
+      "glAccountId": "110200",
+      "accountCode": "110200",
+      "accountName": "بيت التمويل الكويتي",
+      "openingBalance": 2275235.000,
+      "postedDebits": 26785054.500,
+      "postedCredits": 29038982.010,
+      "endingBalance": 21307.490
+    },
+    {
+      "glAccountId": "110300",
+      "accountCode": "110300",
+      "accountName": "بنك أبو ظبي الإسلامي",
+      "openingBalance": 4091279.000,
+      "postedDebits": 24155018.950,
+      "postedCredits": 21255150.270,
+      "endingBalance": 6991147.680
+    },
+    {
+      "glAccountId": "111010",
+      "accountCode": "111010",
+      "accountName": "النقدية",
+      "openingBalance": 718513.000,
+      "postedDebits": 53449435.000,
+      "postedCredits": 49840066.420,
+      "endingBalance": 4327881.580
+    },
+    {
+      "glAccountId": "111701",
+      "accountCode": "111701",
+      "accountName": "النقدية بالصندوق USD",
+      "openingBalance": 0.000,
+      "postedDebits": 247100.000,
+      "postedCredits": 0.000,
+      "endingBalance": 247100.000
+    },
+    {
+      "glAccountId": "112300",
+      "accountCode": "112300",
+      "accountName": "QNB",
+      "openingBalance": 0.000,
+      "postedDebits": 6405522.750,
+      "postedCredits": 5601357.720,
+      "endingBalance": 804165.030
+    },
+    {
+      "glAccountId": "113300",
+      "accountCode": "113300",
+      "accountName": "البنك الاهلي المصري NBE",
+      "openingBalance": 0.000,
+      "postedDebits": 10000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 10000.000
+    },
+    {
+      "glAccountId": "114300",
+      "accountCode": "114300",
+      "accountName": "QNB - USD",
+      "openingBalance": 0.000,
+      "postedDebits": 5400.000,
+      "postedCredits": 616.020,
+      "endingBalance": 4783.980
+    },
+    {
+      "glAccountId": "115300",
+      "accountCode": "115300",
+      "accountName": "SAIB",
+      "openingBalance": 0.000,
+      "postedDebits": 50000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 50000.000
+    },
+    {
+      "glAccountId": "120001",
+      "accountCode": "120001",
+      "accountName": "مدينون - اسلام وحيد بسيونى",
+      "openingBalance": 0.000,
+      "postedDebits": 4006032.000,
+      "postedCredits": 350825.000,
+      "endingBalance": 3655207.000
+    },
+    {
+      "glAccountId": "120002",
+      "accountCode": "120002",
+      "accountName": "مدينون - يوسف مدحت الخولى",
+      "openingBalance": 0.000,
+      "postedDebits": 7506000.000,
+      "postedCredits": 6950000.000,
+      "endingBalance": 556000.000
+    },
+    {
+      "glAccountId": "120004",
+      "accountCode": "120004",
+      "accountName": "مدينون - دولت حسين عبدالخالق",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 413000.000,
+      "endingBalance": -413000.000
+    },
+    {
+      "glAccountId": "120005",
+      "accountCode": "120005",
+      "accountName": "مدينون - هاني عبدالرحمن زكى",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 1355500.000,
+      "endingBalance": -1355500.000
+    },
+    {
+      "glAccountId": "120008",
+      "accountCode": "120008",
+      "accountName": "مدينون - تميم عبدالكريم",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 520000.000,
+      "endingBalance": -520000.000
+    },
+    {
+      "glAccountId": "120010",
+      "accountCode": "120010",
+      "accountName": "مدينون - محمد محمود سليمان",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 170500.000,
+      "endingBalance": -170500.000
+    },
+    {
+      "glAccountId": "120013",
+      "accountCode": "120013",
+      "accountName": "مدينون - سمر احمد حامد",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 225440.000,
+      "endingBalance": -225440.000
+    },
+    {
+      "glAccountId": "120014",
+      "accountCode": "120014",
+      "accountName": "مدينون - عبدالرحمن علي  القاضي",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 900000.000,
+      "endingBalance": -900000.000
+    },
+    {
+      "glAccountId": "120015",
+      "accountCode": "120015",
+      "accountName": "مدينون - نادي محمد الصغير",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 347500.000,
+      "endingBalance": -347500.000
+    },
+    {
+      "glAccountId": "120016",
+      "accountCode": "120016",
+      "accountName": "مدينون - محمد احمد ابوالوفا ",
+      "openingBalance": 0.000,
+      "postedDebits": 5430978.000,
+      "postedCredits": 5028683.000,
+      "endingBalance": 402295.000
+    },
+    {
+      "glAccountId": "120017",
+      "accountCode": "120017",
+      "accountName": "مدينون - شريف محمد عبدالخالق",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 700000.000,
+      "endingBalance": -700000.000
+    },
+    {
+      "glAccountId": "120019",
+      "accountCode": "120019",
+      "accountName": "مدينون - جورج يوسف وديع",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 250000.000,
+      "endingBalance": -250000.000
+    },
+    {
+      "glAccountId": "120020",
+      "accountCode": "120020",
+      "accountName": "مدينون - محمد محمد ابراهيم",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 1605000.000,
+      "endingBalance": -1605000.000
+    },
+    {
+      "glAccountId": "120021",
+      "accountCode": "120021",
+      "accountName": "مدينون - احمد ابراهيم الدسوقي",
+      "openingBalance": 0.000,
+      "postedDebits": 2320000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 2320000.000
+    },
+    {
+      "glAccountId": "120026",
+      "accountCode": "120026",
+      "accountName": "ذمم الموظفين - حسنة حمادة سعد محمد",
+      "openingBalance": 0.000,
+      "postedDebits": 27000.000,
+      "postedCredits": 10000.000,
+      "endingBalance": 17000.000
+    },
+    {
+      "glAccountId": "120030",
+      "accountCode": "120030",
+      "accountName": "مدينون - احمد يحيي حسني ",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 477343.000,
+      "endingBalance": -477343.000
+    },
+    {
+      "glAccountId": "120035",
+      "accountCode": "120035",
+      "accountName": "مدينون - حسين محمد حسين",
+      "openingBalance": 0.000,
+      "postedDebits": 6326575.000,
+      "postedCredits": 5857940.000,
+      "endingBalance": 468635.000
+    },
+    {
+      "glAccountId": "120036",
+      "accountCode": "120036",
+      "accountName": "مدينون - عبدالواحد محمد",
+      "openingBalance": 0.000,
+      "postedDebits": 6021469.000,
+      "postedCredits": 5575434.000,
+      "endingBalance": 446035.000
+    },
+    {
+      "glAccountId": "120038",
+      "accountCode": "120038",
+      "accountName": "مدينون - ابراهيم محمد عبدالحميد عزام",
+      "openingBalance": 0.000,
+      "postedDebits": 6194196.000,
+      "postedCredits": 704367.000,
+      "endingBalance": 5489829.000
+    },
+    {
+      "glAccountId": "120039",
+      "accountCode": "120039",
+      "accountName": "مدينون - مصطفي محمود - ماجد المتولي",
+      "openingBalance": 0.000,
+      "postedDebits": 5153803.000,
+      "postedCredits": 4772040.000,
+      "endingBalance": 381763.000
+    },
+    {
+      "glAccountId": "120042",
+      "accountCode": "120042",
+      "accountName": "مدينون - عمرو فوزي اسماعيل",
+      "openingBalance": 0.000,
+      "postedDebits": 7585669.000,
+      "postedCredits": 7023768.000,
+      "endingBalance": 561901.000
+    },
+    {
+      "glAccountId": "120043",
+      "accountCode": "120043",
+      "accountName": "مدينون - عبدالباقي ابراهيم عبدالباقي",
+      "openingBalance": 0.000,
+      "postedDebits": 6453091.000,
+      "postedCredits": 432472.000,
+      "endingBalance": 6020619.000
+    },
+    {
+      "glAccountId": "120047",
+      "accountCode": "120047",
+      "accountName": "مدينون - بتول حمدي ",
+      "openingBalance": 0.000,
+      "postedDebits": 6016977.000,
+      "postedCredits": 5571275.000,
+      "endingBalance": 445702.000
+    },
+    {
+      "glAccountId": "120048",
+      "accountCode": "120048",
+      "accountName": "مدينون - انس و نور الدين امير غريب",
+      "openingBalance": 0.000,
+      "postedDebits": 5234088.000,
+      "postedCredits": 4889315.000,
+      "endingBalance": 344773.000
+    },
+    {
+      "glAccountId": "120049",
+      "accountCode": "120049",
+      "accountName": "مدينون - محمد حسام الدين شوقى",
+      "openingBalance": 0.000,
+      "postedDebits": 7492837.000,
+      "postedCredits": 6937812.000,
+      "endingBalance": 555025.000
+    },
+    {
+      "glAccountId": "120050",
+      "accountCode": "120050",
+      "accountName": "مدينون - محمد حجاج محمد مصطفي",
+      "openingBalance": 0.000,
+      "postedDebits": 7444574.000,
+      "postedCredits": 6893124.000,
+      "endingBalance": 551450.000
+    },
+    {
+      "glAccountId": "120051",
+      "accountCode": "120051",
+      "accountName": "ذمم الموظفين - محمد مختار قطب",
+      "openingBalance": 0.000,
+      "postedDebits": 40000.000,
+      "postedCredits": 10000.000,
+      "endingBalance": 30000.000
+    },
+    {
+      "glAccountId": "120057",
+      "accountCode": "120057",
+      "accountName": "مدينون - هبة وليد احمد ",
+      "openingBalance": 0.000,
+      "postedDebits": 7319894.000,
+      "postedCredits": 6777680.000,
+      "endingBalance": 542214.000
+    },
+    {
+      "glAccountId": "120059",
+      "accountCode": "120059",
+      "accountName": "مدينون - محمد الصاوي",
+      "openingBalance": 0.000,
+      "postedDebits": 19537262.000,
+      "postedCredits": 904503.000,
+      "endingBalance": 18632759.000
+    },
+    {
+      "glAccountId": "120060",
+      "accountCode": "120060",
+      "accountName": "مدينون - عيد مجدي عيد",
+      "openingBalance": 0.000,
+      "postedDebits": 6750721.000,
+      "postedCredits": 626601.000,
+      "endingBalance": 6124120.000
+    },
+    {
+      "glAccountId": "120061",
+      "accountCode": "120061",
+      "accountName": "مدينون - نورهان ياسر امين ",
+      "openingBalance": 0.000,
+      "postedDebits": 5044126.000,
+      "postedCredits": 4670487.000,
+      "endingBalance": 373639.000
+    },
+    {
+      "glAccountId": "120062",
+      "accountCode": "120062",
+      "accountName": "ذمم الموظفين - عبدالرحمن صالح مبروك عبدالظاهر",
+      "openingBalance": 0.000,
+      "postedDebits": 7825.000,
+      "postedCredits": 0.000,
+      "endingBalance": 7825.000
+    },
+    {
+      "glAccountId": "120063",
+      "accountCode": "120063",
+      "accountName": "ذمم الموظفين - مصطفى نادي مسعود عبدالظاهر",
+      "openingBalance": 0.000,
+      "postedDebits": 26845.000,
+      "postedCredits": 7000.000,
+      "endingBalance": 19845.000
+    },
+    {
+      "glAccountId": "120064",
+      "accountCode": "120064",
+      "accountName": "ذمم الموظفين - صالح نادي مسعود عبدالظاهر",
+      "openingBalance": 0.000,
+      "postedDebits": 10750.000,
+      "postedCredits": 0.000,
+      "endingBalance": 10750.000
+    },
+    {
+      "glAccountId": "120065",
+      "accountCode": "120065",
+      "accountName": "ذمم الموظفين - احمد محمود حمايه يوسف",
+      "openingBalance": 0.000,
+      "postedDebits": 4500.000,
+      "postedCredits": 0.000,
+      "endingBalance": 4500.000
+    },
+    {
+      "glAccountId": "120066",
+      "accountCode": "120066",
+      "accountName": "ذمم الموظفين - حماده حنفي محمود احمد",
+      "openingBalance": 0.000,
+      "postedDebits": 26600.000,
+      "postedCredits": 4600.000,
+      "endingBalance": 22000.000
+    },
+    {
+      "glAccountId": "120067",
+      "accountCode": "120067",
+      "accountName": "ذمم الموظفين - محمود حسن طه سالم",
+      "openingBalance": 0.000,
+      "postedDebits": 5200.000,
+      "postedCredits": 0.000,
+      "endingBalance": 5200.000
+    },
+    {
+      "glAccountId": "120068",
+      "accountCode": "120068",
+      "accountName": "ذمم الموظفين - احمد محمد ناجي",
+      "openingBalance": 0.000,
+      "postedDebits": 100000.000,
+      "postedCredits": 198000.000,
+      "endingBalance": -98000.000
+    },
+    {
+      "glAccountId": "120070",
+      "accountCode": "120070",
+      "accountName": "مدينون - وليد جمال",
+      "openingBalance": 0.000,
+      "postedDebits": 6173227.000,
+      "postedCredits": 5715951.000,
+      "endingBalance": 457276.000
+    },
+    {
+      "glAccountId": "120072",
+      "accountCode": "120072",
+      "accountName": "مدينون - محمود علي",
+      "openingBalance": 0.000,
+      "postedDebits": 7505018.000,
+      "postedCredits": 828290.000,
+      "endingBalance": 6676728.000
+    },
+    {
+      "glAccountId": "120073",
+      "accountCode": "120073",
+      "accountName": "مدينون - احمد ضياء ",
+      "openingBalance": 0.000,
+      "postedDebits": 139000.000,
+      "postedCredits": 139000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "120076",
+      "accountCode": "120076",
+      "accountName": "مدينون - محمد عبدالشفيع",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 284000.000,
+      "endingBalance": -284000.000
+    },
+    {
+      "glAccountId": "120078",
+      "accountCode": "120078",
+      "accountName": "مدينون - احمد محمد رجب",
+      "openingBalance": 0.000,
+      "postedDebits": 2903436.000,
+      "postedCredits": 2688367.000,
+      "endingBalance": 215069.000
+    },
+    {
+      "glAccountId": "120081",
+      "accountCode": "120081",
+      "accountName": "مدينون - حبيبة قطب احمد",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 247084.000,
+      "endingBalance": -247084.000
+    },
+    {
+      "glAccountId": "120085",
+      "accountCode": "120085",
+      "accountName": "مدينون - فاروق حافظ فاروق عبدالحافظ ",
+      "openingBalance": 0.000,
+      "postedDebits": 5882509.000,
+      "postedCredits": 5446768.000,
+      "endingBalance": 435741.000
+    },
+    {
+      "glAccountId": "120086",
+      "accountCode": "120086",
+      "accountName": "مدينون - كنزي - كارما هشام احمد مهني عمر",
+      "openingBalance": 0.000,
+      "postedDebits": 7255872.000,
+      "postedCredits": 829400.000,
+      "endingBalance": 6426472.000
+    },
+    {
+      "glAccountId": "120087",
+      "accountCode": "120087",
+      "accountName": "مدينون - مهاب احمد فاروق ",
+      "openingBalance": 0.000,
+      "postedDebits": 7391304.000,
+      "postedCredits": 6843800.000,
+      "endingBalance": 547504.000
+    },
+    {
+      "glAccountId": "120092",
+      "accountCode": "120092",
+      "accountName": "ذمم الموظفين - محمد صلاح رياض",
+      "openingBalance": 0.000,
+      "postedDebits": 26000.000,
+      "postedCredits": 9000.000,
+      "endingBalance": 17000.000
+    },
+    {
+      "glAccountId": "120093",
+      "accountCode": "120093",
+      "accountName": "ذمم الموظفين - محمود السيد عبدالحافظ",
+      "openingBalance": 0.000,
+      "postedDebits": 12100.000,
+      "postedCredits": 3000.000,
+      "endingBalance": 9100.000
+    },
+    {
+      "glAccountId": "120096",
+      "accountCode": "120096",
+      "accountName": "ذمم الموظفين - محمد جمال السيد",
+      "openingBalance": 0.000,
+      "postedDebits": 4100.000,
+      "postedCredits": 0.000,
+      "endingBalance": 4100.000
+    },
+    {
+      "glAccountId": "120097",
+      "accountCode": "120097",
+      "accountName": "ذمم الموظفين - انس انور محروس",
+      "openingBalance": 0.000,
+      "postedDebits": 7200.000,
+      "postedCredits": 0.000,
+      "endingBalance": 7200.000
+    },
+    {
+      "glAccountId": "120098",
+      "accountCode": "120098",
+      "accountName": "ذمم الموظفين - احمد عيد إبراهيم طاحون",
+      "openingBalance": 0.000,
+      "postedDebits": 10000.000,
+      "postedCredits": 1000.000,
+      "endingBalance": 9000.000
+    },
+    {
+      "glAccountId": "120099",
+      "accountCode": "120099",
+      "accountName": "ذمم الموظفين - سعيد عادل عبدالحفيظ \" حماده \"",
+      "openingBalance": 0.000,
+      "postedDebits": 29000.000,
+      "postedCredits": 9500.000,
+      "endingBalance": 19500.000
+    },
+    {
+      "glAccountId": "120100",
+      "accountCode": "120100",
+      "accountName": "ذمم الموظفين - عبدالرحمن صديق احمد",
+      "openingBalance": 0.000,
+      "postedDebits": 19500.000,
+      "postedCredits": 7000.000,
+      "endingBalance": 12500.000
+    },
+    {
+      "glAccountId": "120107",
+      "accountCode": "120107",
+      "accountName": "ذمم الموظفين - محمد جمال محمد حسين",
+      "openingBalance": 0.000,
+      "postedDebits": 7000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 7000.000
+    },
+    {
+      "glAccountId": "120113",
+      "accountCode": "120113",
+      "accountName": "مدينون - مصطفى نبيل مصطفي كمال",
+      "openingBalance": 0.000,
+      "postedDebits": 10260000.000,
+      "postedCredits": 9500000.000,
+      "endingBalance": 760000.000
+    },
+    {
+      "glAccountId": "120114",
+      "accountCode": "120114",
+      "accountName": "ذمم الموظفين - خالد حمد طاهر",
+      "openingBalance": 0.000,
+      "postedDebits": 5000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 5000.000
+    },
+    {
+      "glAccountId": "120115",
+      "accountCode": "120115",
+      "accountName": "ذمم الموظفين - ادهم ابراهيم احمد",
+      "openingBalance": 0.000,
+      "postedDebits": 16000.000,
+      "postedCredits": 10000.000,
+      "endingBalance": 6000.000
+    },
+    {
+      "glAccountId": "120117",
+      "accountCode": "120117",
+      "accountName": "ذمم الموظفين - محمد فهد مسعود عبدالظاهر",
+      "openingBalance": 0.000,
+      "postedDebits": 6520.000,
+      "postedCredits": 0.000,
+      "endingBalance": 6520.000
+    },
+    {
+      "glAccountId": "120120",
+      "accountCode": "120120",
+      "accountName": "مدينون - صادق مصطفي الصادق ",
+      "openingBalance": 0.000,
+      "postedDebits": 7239292.000,
+      "postedCredits": 6703048.000,
+      "endingBalance": 536244.000
+    },
+    {
+      "glAccountId": "120125",
+      "accountCode": "120125",
+      "accountName": "مدينون - عبدالله رجب عبدالله",
+      "openingBalance": 0.000,
+      "postedDebits": 6750000.000,
+      "postedCredits": 1250000.000,
+      "endingBalance": 5500000.000
+    },
+    {
+      "glAccountId": "120127",
+      "accountCode": "120127",
+      "accountName": "مدينون - منه الله علاء الدين",
+      "openingBalance": 0.000,
+      "postedDebits": 18620.000,
+      "postedCredits": 469016.000,
+      "endingBalance": -450396.000
+    },
+    {
+      "glAccountId": "120128",
+      "accountCode": "120128",
+      "accountName": "مدينون - عنايات عبدالله محمد",
+      "openingBalance": 0.000,
+      "postedDebits": 7522728.000,
+      "postedCredits": 371000.000,
+      "endingBalance": 7151728.000
+    },
+    {
+      "glAccountId": "1201300",
+      "accountCode": "1201300",
+      "accountName": "ايه ام ايه - سيتى ووك",
+      "openingBalance": 0.000,
+      "postedDebits": 8670872.000,
+      "postedCredits": 7376404.000,
+      "endingBalance": 1294468.000
+    },
+    {
+      "glAccountId": "1201301",
+      "accountCode": "1201301",
+      "accountName": "مطعم السدة",
+      "openingBalance": 0.000,
+      "postedDebits": 1196800.000,
+      "postedCredits": 897530.000,
+      "endingBalance": 299270.000
+    },
+    {
+      "glAccountId": "1201302",
+      "accountCode": "1201302",
+      "accountName": "جعارة - الصحراوى 2 فدان",
+      "openingBalance": 0.000,
+      "postedDebits": 583443.000,
+      "postedCredits": 583443.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "1201303",
+      "accountCode": "1201303",
+      "accountName": "ادير - جولدن ووك",
+      "openingBalance": 0.000,
+      "postedDebits": 9332400.000,
+      "postedCredits": 9332400.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "1201304",
+      "accountCode": "1201304",
+      "accountName": "معمل و سكن مطعم السدة",
+      "openingBalance": 0.000,
+      "postedDebits": 199000.000,
+      "postedCredits": 199000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "120131",
+      "accountCode": "120131",
+      "accountName": "مدينون - عمرو سيد محمود ",
+      "openingBalance": 0.000,
+      "postedDebits": 7631640.000,
+      "postedCredits": 570000.000,
+      "endingBalance": 7061640.000
+    },
+    {
+      "glAccountId": "120133",
+      "accountCode": "120133",
+      "accountName": "مدينون - شبل احمد محمود شبل",
+      "openingBalance": 0.000,
+      "postedDebits": 2808000.000,
+      "postedCredits": 240000.000,
+      "endingBalance": 2568000.000
+    },
+    {
+      "glAccountId": "120134",
+      "accountCode": "120134",
+      "accountName": "ذمم الموظفين - يوسف حازم حامد محمد بكر",
+      "openingBalance": 0.000,
+      "postedDebits": 32500.000,
+      "postedCredits": 17300.000,
+      "endingBalance": 15200.000
+    },
+    {
+      "glAccountId": "120135",
+      "accountCode": "120135",
+      "accountName": "ذمم الموظفين - اية خالد",
+      "openingBalance": 0.000,
+      "postedDebits": 20000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 20000.000
+    },
+    {
+      "glAccountId": "120138",
+      "accountCode": "120138",
+      "accountName": "مدينون - محمد عبدالعزيز عيد",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 309000.000,
+      "endingBalance": -309000.000
+    },
+    {
+      "glAccountId": "120140",
+      "accountCode": "120140",
+      "accountName": "مدينون - احمد حامد محمد و خديجة فتحي عبد الحكيم",
+      "openingBalance": 0.000,
+      "postedDebits": 9791768.000,
+      "postedCredits": 450000.000,
+      "endingBalance": 9341768.000
+    },
+    {
+      "glAccountId": "120147",
+      "accountCode": "120147",
+      "accountName": "مدينون - زينب احمد محمد عبدالفتاح ",
+      "openingBalance": 0.000,
+      "postedDebits": 6696000.000,
+      "postedCredits": 6200000.000,
+      "endingBalance": 496000.000
+    },
+    {
+      "glAccountId": "120149",
+      "accountCode": "120149",
+      "accountName": "مدينون - احمد محمد عبدالفتاح ",
+      "openingBalance": 0.000,
+      "postedDebits": 13284000.000,
+      "postedCredits": 12300000.000,
+      "endingBalance": 984000.000
+    },
+    {
+      "glAccountId": "120156",
+      "accountCode": "120156",
+      "accountName": "مدينون - عبدالرحمن عز مصطفي محمد",
+      "openingBalance": 0.000,
+      "postedDebits": 5741650.000,
+      "postedCredits": 651634.000,
+      "endingBalance": 5090016.000
+    },
+    {
+      "glAccountId": "120158",
+      "accountCode": "120158",
+      "accountName": "مدينون - عصام محمد معوض ابراهيم ",
+      "openingBalance": 0.000,
+      "postedDebits": 7756847.000,
+      "postedCredits": 718227.000,
+      "endingBalance": 7038620.000
+    },
+    {
+      "glAccountId": "120159",
+      "accountCode": "120159",
+      "accountName": "مدينون - سمر سامي احمد رمضان",
+      "openingBalance": 0.000,
+      "postedDebits": 5933296.000,
+      "postedCredits": 5493793.000,
+      "endingBalance": 439503.000
+    },
+    {
+      "glAccountId": "120179",
+      "accountCode": "120179",
+      "accountName": "ذمم الموظفين - محمود على حسن سليم",
+      "openingBalance": 0.000,
+      "postedDebits": 2000.000,
+      "postedCredits": 1300.000,
+      "endingBalance": 700.000
+    },
+    {
+      "glAccountId": "120182",
+      "accountCode": "120182",
+      "accountName": "مدينون - وليد محمد عبدالحافظ",
+      "openingBalance": 0.000,
+      "postedDebits": 7081114.000,
+      "postedCredits": 6556587.000,
+      "endingBalance": 524527.000
+    },
+    {
+      "glAccountId": "120183",
+      "accountCode": "120183",
+      "accountName": "مدينون - محمود سليمان حسن احمد",
+      "openingBalance": 0.000,
+      "postedDebits": 7147563.000,
+      "postedCredits": 6618114.000,
+      "endingBalance": 529449.000
+    },
+    {
+      "glAccountId": "120186",
+      "accountCode": "120186",
+      "accountName": "ذمم الموظفين - محمد على محمد",
+      "openingBalance": 0.000,
+      "postedDebits": 1300.000,
+      "postedCredits": 1300.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "120189",
+      "accountCode": "120189",
+      "accountName": "مدينون - حسن محمد سيد",
+      "openingBalance": 0.000,
+      "postedDebits": 6806023.000,
+      "postedCredits": 6301873.000,
+      "endingBalance": 504150.000
+    },
+    {
+      "glAccountId": "120191",
+      "accountCode": "120191",
+      "accountName": "مدينون - محمد جمال راغب العشماوي",
+      "openingBalance": 0.000,
+      "postedDebits": 7636929.000,
+      "postedCredits": 450000.000,
+      "endingBalance": 7186929.000
+    },
+    {
+      "glAccountId": "120192",
+      "accountCode": "120192",
+      "accountName": "مدينون - مسعود انور عوض مسعود",
+      "openingBalance": 0.000,
+      "postedDebits": 8141274.000,
+      "postedCredits": 7538217.000,
+      "endingBalance": 603057.000
+    },
+    {
+      "glAccountId": "120195",
+      "accountCode": "120195",
+      "accountName": "مدينون - محمد ياسر الكعكي",
+      "openingBalance": 0.000,
+      "postedDebits": 6900000.000,
+      "postedCredits": 3550000.000,
+      "endingBalance": 3350000.000
+    },
+    {
+      "glAccountId": "120199",
+      "accountCode": "120199",
+      "accountName": "مدينون - محمد عبدالجواد فضل عبدالجواد",
+      "openingBalance": 0.000,
+      "postedDebits": 7358364.000,
+      "postedCredits": 6813300.000,
+      "endingBalance": 545064.000
+    },
+    {
+      "glAccountId": "120202",
+      "accountCode": "120202",
+      "accountName": "ذمم الموظفين - بيتر هانى",
+      "openingBalance": 0.000,
+      "postedDebits": 1000.000,
+      "postedCredits": 1000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "120203",
+      "accountCode": "120203",
+      "accountName": "مدينون - حنفي ابو شادي محمد السبيعي",
+      "openingBalance": 0.000,
+      "postedDebits": 8289678.000,
+      "postedCredits": 7675628.000,
+      "endingBalance": 614050.000
+    },
+    {
+      "glAccountId": "120204",
+      "accountCode": "120204",
+      "accountName": "ذمم الموظفين - عبد الرحمن محمد علي حسن",
+      "openingBalance": 0.000,
+      "postedDebits": 400.000,
+      "postedCredits": 400.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "120205",
+      "accountCode": "120205",
+      "accountName": "ذمم الموظفين - محمد احمد حمام توفيق",
+      "openingBalance": 0.000,
+      "postedDebits": 500.000,
+      "postedCredits": 500.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "120206",
+      "accountCode": "120206",
+      "accountName": "مدينون - محمد احمد محمد العسال",
+      "openingBalance": 0.000,
+      "postedDebits": 7404696.000,
+      "postedCredits": 6856200.000,
+      "endingBalance": 548496.000
+    },
+    {
+      "glAccountId": "120207",
+      "accountCode": "120207",
+      "accountName": "مدينون - علي عبدالحكيم مهدي الشرقاوي",
+      "openingBalance": 0.000,
+      "postedDebits": 6458044.000,
+      "postedCredits": 5979670.000,
+      "endingBalance": 478374.000
+    },
+    {
+      "glAccountId": "120209",
+      "accountCode": "120209",
+      "accountName": "مدينون - عائشة مبارك خميس علي",
+      "openingBalance": 0.000,
+      "postedDebits": 7054000.000,
+      "postedCredits": 5050000.000,
+      "endingBalance": 2004000.000
+    },
+    {
+      "glAccountId": "120211",
+      "accountCode": "120211",
+      "accountName": "مدينون - ابراهيم بن محمد بن ابراهيم قبوري",
+      "openingBalance": 0.000,
+      "postedDebits": 5659200.000,
+      "postedCredits": 2096000.000,
+      "endingBalance": 3563200.000
+    },
+    {
+      "glAccountId": "120217",
+      "accountCode": "120217",
+      "accountName": "مدينون - عابدين عبداللاه اسماعيل",
+      "openingBalance": 0.000,
+      "postedDebits": 7277780.000,
+      "postedCredits": 5532000.000,
+      "endingBalance": 1745780.000
+    },
+    {
+      "glAccountId": "120220",
+      "accountCode": "120220",
+      "accountName": "مدينون - احمد محمود عبدالحليم محمد",
+      "openingBalance": 0.000,
+      "postedDebits": 7058526.000,
+      "postedCredits": 6535672.000,
+      "endingBalance": 522854.000
+    },
+    {
+      "glAccountId": "120221",
+      "accountCode": "120221",
+      "accountName": "مدينون - عبدالرحمن علي صلاح علي موسى",
+      "openingBalance": 0.000,
+      "postedDebits": 6123600.000,
+      "postedCredits": 5670000.000,
+      "endingBalance": 453600.000
+    },
+    {
+      "glAccountId": "120222",
+      "accountCode": "120222",
+      "accountName": "مدينون - احمد ماهر سيد احمد القاضي",
+      "openingBalance": 0.000,
+      "postedDebits": 7277998.000,
+      "postedCredits": 6738887.000,
+      "endingBalance": 539111.000
+    },
+    {
+      "glAccountId": "120223",
+      "accountCode": "120223",
+      "accountName": "ذمم الموظفين - احمد عادل حمام توفيق",
+      "openingBalance": 0.000,
+      "postedDebits": 700.000,
+      "postedCredits": 700.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "120228",
+      "accountCode": "120228",
+      "accountName": "مدينون - شيماء عبدالستار فكري ",
+      "openingBalance": 0.000,
+      "postedDebits": 7710001.000,
+      "postedCredits": 7138890.000,
+      "endingBalance": 571111.000
+    },
+    {
+      "glAccountId": "120229",
+      "accountCode": "120229",
+      "accountName": "مدينون - عمرو مدكور عبدالعزيز",
+      "openingBalance": 0.000,
+      "postedDebits": 5698117.000,
+      "postedCredits": 5276034.000,
+      "endingBalance": 422083.000
+    },
+    {
+      "glAccountId": "121100",
+      "accountCode": "121100",
+      "accountName": "عملاء مشاريع تحت التنفيذ",
+      "openingBalance": 0.000,
+      "postedDebits": 9556985.000,
+      "postedCredits": 13426060.000,
+      "endingBalance": -3869075.000
+    },
+    {
+      "glAccountId": "1211001",
+      "accountCode": "1211001",
+      "accountName": "مدينون - احمد صالح",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 3350986.000,
+      "endingBalance": -3350986.000
+    },
+    {
+      "glAccountId": "1211003",
+      "accountCode": "1211003",
+      "accountName": "مدينون - محمد أبو جامع",
+      "openingBalance": 0.000,
+      "postedDebits": 5394000.000,
+      "postedCredits": 748700.000,
+      "endingBalance": 4645300.000
+    },
+    {
+      "glAccountId": "1211004",
+      "accountCode": "1211004",
+      "accountName": "مدينون - رضا فتحى",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 2085150.000,
+      "endingBalance": -2085150.000
+    },
+    {
+      "glAccountId": "1211007",
+      "accountCode": "1211007",
+      "accountName": "مدينون - فاطمة نبيل",
+      "openingBalance": 0.000,
+      "postedDebits": 5409200.000,
+      "postedCredits": 1479600.000,
+      "endingBalance": 3929600.000
+    },
+    {
+      "glAccountId": "1211009",
+      "accountCode": "1211009",
+      "accountName": "مدينون - علاء خاطر",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 1351000.000,
+      "endingBalance": -1351000.000
+    },
+    {
+      "glAccountId": "1211012",
+      "accountCode": "1211012",
+      "accountName": "مدينون - محمد القاضي",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 348000.000,
+      "endingBalance": -348000.000
+    },
+    {
+      "glAccountId": "1211022",
+      "accountCode": "1211022",
+      "accountName": "جولدن لاند الادارة",
+      "openingBalance": 0.000,
+      "postedDebits": 83500.000,
+      "postedCredits": 0.000,
+      "endingBalance": 83500.000
+    },
+    {
+      "glAccountId": "124100",
+      "accountCode": "124100",
+      "accountName": "ذمم الموظفين",
+      "openingBalance": 0.000,
+      "postedDebits": 1500.000,
+      "postedCredits": 0.000,
+      "endingBalance": 1500.000
+    },
+    {
+      "glAccountId": "124101",
+      "accountCode": "124101",
+      "accountName": "ذمم الموظفين - هيثم ادريس حسن محمد",
+      "openingBalance": 0.000,
+      "postedDebits": 23300.000,
+      "postedCredits": 8200.000,
+      "endingBalance": 15100.000
+    },
+    {
+      "glAccountId": "124102",
+      "accountCode": "124102",
+      "accountName": "ذمم الموظفين - اشرف محمد عجيبة",
+      "openingBalance": 0.000,
+      "postedDebits": 12000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 12000.000
+    },
+    {
+      "glAccountId": "124103",
+      "accountCode": "124103",
+      "accountName": "ذمم الموظفين - عبدالله عادل سرور",
+      "openingBalance": 0.000,
+      "postedDebits": 6500.000,
+      "postedCredits": 1000.000,
+      "endingBalance": 5500.000
+    },
+    {
+      "glAccountId": "124104",
+      "accountCode": "124104",
+      "accountName": "ذمم الموظفين - احمد محمد عجيبه",
+      "openingBalance": 0.000,
+      "postedDebits": 35000.000,
+      "postedCredits": 5000.000,
+      "endingBalance": 30000.000
+    },
+    {
+      "glAccountId": "124105",
+      "accountCode": "124105",
+      "accountName": "ذمم الموظفين - محمود رضا محمود احمد موسى",
+      "openingBalance": 0.000,
+      "postedDebits": 193000.000,
+      "postedCredits": 25000.000,
+      "endingBalance": 168000.000
+    },
+    {
+      "glAccountId": "124106",
+      "accountCode": "124106",
+      "accountName": "ذمم الموظفين - محمد حمدي محمد عبد الواحد",
+      "openingBalance": 0.000,
+      "postedDebits": 678299.400,
+      "postedCredits": 638859.000,
+      "endingBalance": 39440.400
+    },
+    {
+      "glAccountId": "124112",
+      "accountCode": "124112",
+      "accountName": "ذمم الموظفين - مختار عادل مختار قطب",
+      "openingBalance": 0.000,
+      "postedDebits": 24950.000,
+      "postedCredits": 10500.000,
+      "endingBalance": 14450.000
+    },
+    {
+      "glAccountId": "124116",
+      "accountCode": "124116",
+      "accountName": "ذمم الموظفين - امام عبد المنعم حسين امام عمار",
+      "openingBalance": 0.000,
+      "postedDebits": 7000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 7000.000
+    },
+    {
+      "glAccountId": "124118",
+      "accountCode": "124118",
+      "accountName": "ذمم الموظفين - عبد الله",
+      "openingBalance": 0.000,
+      "postedDebits": 14200.000,
+      "postedCredits": 3000.000,
+      "endingBalance": 11200.000
+    },
+    {
+      "glAccountId": "124119",
+      "accountCode": "124119",
+      "accountName": "ذمم الموظفين - صبحي احمد رمضان الشعراوي",
+      "openingBalance": 0.000,
+      "postedDebits": 2000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 2000.000
+    },
+    {
+      "glAccountId": "124120",
+      "accountCode": "124120",
+      "accountName": "ذمم الموظفين - محمد السيد ابو جابر",
+      "openingBalance": 0.000,
+      "postedDebits": 13000.000,
+      "postedCredits": 4000.000,
+      "endingBalance": 9000.000
+    },
+    {
+      "glAccountId": "124121",
+      "accountCode": "124121",
+      "accountName": "ذمم الموظفين - صالح مبروك",
+      "openingBalance": 0.000,
+      "postedDebits": 7680.000,
+      "postedCredits": 1920.000,
+      "endingBalance": 5760.000
+    },
+    {
+      "glAccountId": "124122",
+      "accountCode": "124122",
+      "accountName": "ذمم الموظفين - احمد حسين محمد حسن",
+      "openingBalance": 0.000,
+      "postedDebits": 5000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 5000.000
+    },
+    {
+      "glAccountId": "124400",
+      "accountCode": "124400",
+      "accountName": "تأمينات مستردة",
+      "openingBalance": 0.000,
+      "postedDebits": 2000000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 2000000.000
+    },
+    {
+      "glAccountId": "124410",
+      "accountCode": "124410",
+      "accountName": "شيكات تحت التحصيل",
+      "openingBalance": 0.000,
+      "postedDebits": 226344480.000,
+      "postedCredits": 35368327.000,
+      "endingBalance": 190976153.000
+    },
+    {
+      "glAccountId": "124421",
+      "accountCode": "124421",
+      "accountName": "مشروع لادريس التجمع ",
+      "openingBalance": 8944128.000,
+      "postedDebits": 3230.000,
+      "postedCredits": 0.000,
+      "endingBalance": 8947358.000
+    },
+    {
+      "glAccountId": "124422",
+      "accountCode": "124422",
+      "accountName": "مشروع لادريس أكتوبر",
+      "openingBalance": 0.000,
+      "postedDebits": 2236429.000,
+      "postedCredits": 0.000,
+      "endingBalance": 2236429.000
+    },
+    {
+      "glAccountId": "124424",
+      "accountCode": "124424",
+      "accountName": "قرية السدة - الصحراوى 2 فدان",
+      "openingBalance": 0.000,
+      "postedDebits": 1610363.500,
+      "postedCredits": 0.000,
+      "endingBalance": 1610363.500
+    },
+    {
+      "glAccountId": "124425",
+      "accountCode": "124425",
+      "accountName": "الصحراوى 10.5 فدان",
+      "openingBalance": 0.000,
+      "postedDebits": 173247.000,
+      "postedCredits": 50000.000,
+      "endingBalance": 123247.000
+    },
+    {
+      "glAccountId": "124426",
+      "accountCode": "124426",
+      "accountName": "الاسطبل الجديد الصحراوى 3 فدان",
+      "openingBalance": 0.000,
+      "postedDebits": 2851177.059,
+      "postedCredits": 0.000,
+      "endingBalance": 2851177.059
+    },
+    {
+      "glAccountId": "124428",
+      "accountCode": "124428",
+      "accountName": "الثروة الخضراء - علاء العمدة",
+      "openingBalance": 0.000,
+      "postedDebits": 7102000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 7102000.000
+    },
+    {
+      "glAccountId": "124430",
+      "accountCode": "124430",
+      "accountName": "نسيم - الثروة الخضراء",
+      "openingBalance": 0.000,
+      "postedDebits": 23727895.000,
+      "postedCredits": 40000.000,
+      "endingBalance": 23687895.000
+    },
+    {
+      "glAccountId": "124434",
+      "accountCode": "124434",
+      "accountName": "مشروع الواحات",
+      "openingBalance": 0.000,
+      "postedDebits": 5565351.000,
+      "postedCredits": 2035000.000,
+      "endingBalance": 3530351.000
+    },
+    {
+      "glAccountId": "124435",
+      "accountCode": "124435",
+      "accountName": "مزرعة السنية",
+      "openingBalance": 0.000,
+      "postedDebits": 1635101.000,
+      "postedCredits": 431327.830,
+      "endingBalance": 1203773.170
+    },
+    {
+      "glAccountId": "124436",
+      "accountCode": "124436",
+      "accountName": "مكتب الثالث - تجديد و صيانة و ديكورات",
+      "openingBalance": 0.000,
+      "postedDebits": 10000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 10000.000
+    },
+    {
+      "glAccountId": "124437",
+      "accountCode": "124437",
+      "accountName": "سوا",
+      "openingBalance": 0.000,
+      "postedDebits": 2394803.000,
+      "postedCredits": 0.000,
+      "endingBalance": 2394803.000
+    },
+    {
+      "glAccountId": "124438",
+      "accountCode": "124438",
+      "accountName": "شقة الدقي - الشيخ عبدالعزيز",
+      "openingBalance": 0.000,
+      "postedDebits": 887386.000,
+      "postedCredits": 6900000.000,
+      "endingBalance": -6012614.000
+    },
+    {
+      "glAccountId": "124439",
+      "accountCode": "124439",
+      "accountName": "ورشة النجف - الصحراوي 3 فدان",
+      "openingBalance": 0.000,
+      "postedDebits": 2300.000,
+      "postedCredits": 0.000,
+      "endingBalance": 2300.000
+    },
+    {
+      "glAccountId": "124600",
+      "accountCode": "124600",
+      "accountName": "ذمم مدينة أخرى",
+      "openingBalance": 0.000,
+      "postedDebits": 1000000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 1000000.000
+    },
+    {
+      "glAccountId": "124620",
+      "accountCode": "124620",
+      "accountName": " مطعم السدة",
+      "openingBalance": 0.000,
+      "postedDebits": 1423526.000,
+      "postedCredits": 1077107.000,
+      "endingBalance": 346419.000
+    },
+    {
+      "glAccountId": "124630",
+      "accountCode": "124630",
+      "accountName": " الشيخ عبد العزيز",
+      "openingBalance": 610642.000,
+      "postedDebits": 8666207.000,
+      "postedCredits": 7356449.000,
+      "endingBalance": 1920400.000
+    },
+    {
+      "glAccountId": "124640",
+      "accountCode": "124640",
+      "accountName": "محمد مختار",
+      "openingBalance": -106200.000,
+      "postedDebits": 666780.000,
+      "postedCredits": 1508140.000,
+      "endingBalance": -947560.000
+    },
+    {
+      "glAccountId": "124650",
+      "accountCode": "124650",
+      "accountName": "محمود مختار ذمم مدينة اخرى",
+      "openingBalance": 720000.000,
+      "postedDebits": 20000.000,
+      "postedCredits": 215000.000,
+      "endingBalance": 525000.000
+    },
+    {
+      "glAccountId": "124660",
+      "accountCode": "124660",
+      "accountName": "الشيخ عبد الله - الشيخ عبد العزيز",
+      "openingBalance": 10000.000,
+      "postedDebits": 540380.000,
+      "postedCredits": 550000.000,
+      "endingBalance": 380.000
+    },
+    {
+      "glAccountId": "124670",
+      "accountCode": "124670",
+      "accountName": "صالح - الشيخ عبد العزيز",
+      "openingBalance": 20000.000,
+      "postedDebits": 0.000,
+      "postedCredits": 0.000,
+      "endingBalance": 20000.000
+    },
+    {
+      "glAccountId": "124680",
+      "accountCode": "124680",
+      "accountName": "محمد الصاوى",
+      "openingBalance": 0.000,
+      "postedDebits": 639936.000,
+      "postedCredits": 639936.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "124690",
+      "accountCode": "124690",
+      "accountName": "محمد القاضى",
+      "openingBalance": 20000.000,
+      "postedDebits": 0.000,
+      "postedCredits": 20000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "124710",
+      "accountCode": "124710",
+      "accountName": "حسام الدين مصطفى",
+      "openingBalance": 27166.000,
+      "postedDebits": 289650.000,
+      "postedCredits": 316800.000,
+      "endingBalance": 16.000
+    },
+    {
+      "glAccountId": "124720",
+      "accountCode": "124720",
+      "accountName": "عابدين - الشيخ عبد العزيز",
+      "openingBalance": 0.000,
+      "postedDebits": 150000.000,
+      "postedCredits": 150000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "124740",
+      "accountCode": "124740",
+      "accountName": "محمد صلاح - كابيتال هيلز",
+      "openingBalance": 0.000,
+      "postedDebits": 6000000.000,
+      "postedCredits": 7000000.000,
+      "endingBalance": -1000000.000
+    },
+    {
+      "glAccountId": "124760",
+      "accountCode": "124760",
+      "accountName": "عيسى النميسى - ارض شارع 9",
+      "openingBalance": -10000000.000,
+      "postedDebits": 10000000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "124770",
+      "accountCode": "124770",
+      "accountName": "محمد الصاوى - ارض شارع 9",
+      "openingBalance": -4000000.000,
+      "postedDebits": 10767066.670,
+      "postedCredits": 6767066.670,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "124780",
+      "accountCode": "124780",
+      "accountName": "ابو زياد و ابو خليفة - ارض 4 فدان على مهران",
+      "openingBalance": -12000000.000,
+      "postedDebits": 12000000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "124790",
+      "accountCode": "124790",
+      "accountName": "ياسر سعودي",
+      "openingBalance": 0.000,
+      "postedDebits": 1631595.000,
+      "postedCredits": 1500861.000,
+      "endingBalance": 130734.000
+    },
+    {
+      "glAccountId": "124800",
+      "accountCode": "124800",
+      "accountName": "شركة المتحده",
+      "openingBalance": 0.000,
+      "postedDebits": 3753500.000,
+      "postedCredits": 2800000.000,
+      "endingBalance": 953500.000
+    },
+    {
+      "glAccountId": "124810",
+      "accountCode": "124810",
+      "accountName": "حق انتفاع الجهاز -  شركاء سيتى ووك",
+      "openingBalance": 0.000,
+      "postedDebits": 7406590.000,
+      "postedCredits": 1917160.000,
+      "endingBalance": 5489430.000
+    },
+    {
+      "glAccountId": "124820",
+      "accountCode": "124820",
+      "accountName": "حق انتفاع الجهاز - الوسام",
+      "openingBalance": 0.000,
+      "postedDebits": 927000.000,
+      "postedCredits": 927074.500,
+      "endingBalance": -74.500
+    },
+    {
+      "glAccountId": "124830",
+      "accountCode": "124830",
+      "accountName": "مصاريف تأسيس شركة بست فيو - ياسر سعودي",
+      "openingBalance": 0.000,
+      "postedDebits": 37395.000,
+      "postedCredits": 0.000,
+      "endingBalance": 37395.000
+    },
+    {
+      "glAccountId": "124840",
+      "accountCode": "124840",
+      "accountName": "وائل - شركة كابيتال",
+      "openingBalance": 0.000,
+      "postedDebits": 4000000.000,
+      "postedCredits": 1950000.000,
+      "endingBalance": 2050000.000
+    },
+    {
+      "glAccountId": "124850",
+      "accountCode": "124850",
+      "accountName": "وحيد كامل - شراء 5 فدان مزرعة السنية",
+      "openingBalance": 0.000,
+      "postedDebits": 7250000.000,
+      "postedCredits": 5750000.000,
+      "endingBalance": 1500000.000
+    },
+    {
+      "glAccountId": "124860",
+      "accountCode": "124860",
+      "accountName": "اشرف عبود - شراء 1 فدان مزرعة السنية",
+      "openingBalance": 0.000,
+      "postedDebits": 1450000.000,
+      "postedCredits": 1450000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "124870",
+      "accountCode": "124870",
+      "accountName": "محمد القاضي - شراء 5% اسهم تريو ايه",
+      "openingBalance": -6873050.000,
+      "postedDebits": 8750000.000,
+      "postedCredits": 1878000.000,
+      "endingBalance": -1050.000
+    },
+    {
+      "glAccountId": "124880",
+      "accountCode": "124880",
+      "accountName": "محمد الصاوى - ارض 3 فدان ابو غالب",
+      "openingBalance": 0.000,
+      "postedDebits": 4263503.000,
+      "postedCredits": 4063888.670,
+      "endingBalance": 199614.330
+    },
+    {
+      "glAccountId": "124890",
+      "accountCode": "124890",
+      "accountName": "مصطفى صبحي - شراء  4 فدان مزرعة السنية",
+      "openingBalance": 0.000,
+      "postedDebits": 6800000.000,
+      "postedCredits": 3800000.000,
+      "endingBalance": 3000000.000
+    },
+    {
+      "glAccountId": "124900",
+      "accountCode": "124900",
+      "accountName": "احمد صالح ابو زياد - مالك ثلث ارض 10.5 فدان صحراوى",
+      "openingBalance": 10333542.000,
+      "postedDebits": 0.000,
+      "postedCredits": 3444514.000,
+      "endingBalance": 6889028.000
+    },
+    {
+      "glAccountId": "124910",
+      "accountCode": "124910",
+      "accountName": "الشيخ عبد العزيز - مالك 22% ارض 10.5 فدان صحراوى",
+      "openingBalance": 4611278.000,
+      "postedDebits": 0.000,
+      "postedCredits": 4611278.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "124920",
+      "accountCode": "124920",
+      "accountName": "عماد سلوم - مالك 22% ارض 10.5 فدان صحراوى",
+      "openingBalance": 3986111.000,
+      "postedDebits": 0.000,
+      "postedCredits": 1328704.000,
+      "endingBalance": 2657407.000
+    },
+    {
+      "glAccountId": "124950",
+      "accountCode": "124950",
+      "accountName": "الشيخ عبد العزيز شقة الدقى ذ.م",
+      "openingBalance": 0.000,
+      "postedDebits": 3800000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 3800000.000
+    },
+    {
+      "glAccountId": "124960",
+      "accountCode": "124960",
+      "accountName": "محمد مختار - مالك 1000 متر ارض 4 فدان على مهران",
+      "openingBalance": 0.000,
+      "postedDebits": 500000.000,
+      "postedCredits": 500000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "124990",
+      "accountCode": "124990",
+      "accountName": "محمد رمضان - سبتى ووك",
+      "openingBalance": 0.000,
+      "postedDebits": 814046.000,
+      "postedCredits": 814046.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "125020",
+      "accountCode": "125020",
+      "accountName": "حسابات معلقة ذمم مدينة",
+      "openingBalance": 0.000,
+      "postedDebits": 4500.000,
+      "postedCredits": 0.000,
+      "endingBalance": 4500.000
+    },
+    {
+      "glAccountId": "125040",
+      "accountCode": "125040",
+      "accountName": "عماد سلوم - شراء اسهم تريو ايه",
+      "openingBalance": 0.000,
+      "postedDebits": 8687500.000,
+      "postedCredits": 0.000,
+      "endingBalance": 8687500.000
+    },
+    {
+      "glAccountId": "125050",
+      "accountCode": "125050",
+      "accountName": "ياسر ملاك ميخائيل - شراء  2 فدان مزرعة السنية",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 1800000.000,
+      "endingBalance": -1800000.000
+    },
+    {
+      "glAccountId": "140000",
+      "accountCode": "140000",
+      "accountName": "مخزون",
+      "openingBalance": 0.000,
+      "postedDebits": 2996480.000,
+      "postedCredits": 3571213.309,
+      "endingBalance": -574733.309
+    },
+    {
+      "glAccountId": "140701",
+      "accountCode": "140701",
+      "accountName": "شقة الثالث زايد",
+      "openingBalance": 0.000,
+      "postedDebits": 122780.000,
+      "postedCredits": 1000.000,
+      "endingBalance": 121780.000
+    },
+    {
+      "glAccountId": "140702",
+      "accountCode": "140702",
+      "accountName": "شقتين السابع زايد",
+      "openingBalance": 0.000,
+      "postedDebits": 749586.750,
+      "postedCredits": 11000.000,
+      "endingBalance": 738586.750
+    },
+    {
+      "glAccountId": "140705",
+      "accountCode": "140705",
+      "accountName": "شقق بغرض الاستثمار",
+      "openingBalance": 0.000,
+      "postedDebits": 6000000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 6000000.000
+    },
+    {
+      "glAccountId": "140723",
+      "accountCode": "140723",
+      "accountName": "مكتب تريو ايه",
+      "openingBalance": 0.000,
+      "postedDebits": 3200.000,
+      "postedCredits": 0.000,
+      "endingBalance": 3200.000
+    },
+    {
+      "glAccountId": "170000",
+      "accountCode": "170000",
+      "accountName": "الأثاث - التجهيزات",
+      "openingBalance": 0.000,
+      "postedDebits": 147518.000,
+      "postedCredits": 0.000,
+      "endingBalance": 147518.000
+    },
+    {
+      "glAccountId": "171000",
+      "accountCode": "171000",
+      "accountName": "المعدات المكتبية",
+      "openingBalance": 0.000,
+      "postedDebits": 14000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 14000.000
+    },
+    {
+      "glAccountId": "172000",
+      "accountCode": "172000",
+      "accountName": "أجهزة كمبيوتر",
+      "openingBalance": 0.000,
+      "postedDebits": 276468.000,
+      "postedCredits": 0.000,
+      "endingBalance": 276468.000
+    },
+    {
+      "glAccountId": "173000",
+      "accountCode": "173000",
+      "accountName": "برامج وتراخيص الكمبيوتر",
+      "openingBalance": 0.000,
+      "postedDebits": 134500.000,
+      "postedCredits": 0.000,
+      "endingBalance": 134500.000
+    },
+    {
+      "glAccountId": "174000",
+      "accountCode": "174000",
+      "accountName": "سيارات",
+      "openingBalance": 0.000,
+      "postedDebits": 394500.000,
+      "postedCredits": 0.000,
+      "endingBalance": 394500.000
+    },
+    {
+      "glAccountId": "210001",
+      "accountCode": "210001",
+      "accountName": "الدائنون - عبدالله احمد عبدالحكم محمد عبدالصمد",
+      "openingBalance": 0.000,
+      "postedDebits": 1089585.000,
+      "postedCredits": 1089665.000,
+      "endingBalance": 80.000
+    },
+    {
+      "glAccountId": "210002",
+      "accountCode": "210002",
+      "accountName": "الدائنون - الجارحي للخرسانة المسلحة",
+      "openingBalance": 0.000,
+      "postedDebits": 80000.000,
+      "postedCredits": 80000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210003",
+      "accountCode": "210003",
+      "accountName": "الدائنون - عوض عيد دومه صميده دومه",
+      "openingBalance": 0.000,
+      "postedDebits": 59988.000,
+      "postedCredits": 59988.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210004",
+      "accountCode": "210004",
+      "accountName": "الدائنون - الجواد احمد مصطفى",
+      "openingBalance": 0.000,
+      "postedDebits": 74812.000,
+      "postedCredits": 74812.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210008",
+      "accountCode": "210008",
+      "accountName": "الدائنون - شدوان",
+      "openingBalance": 0.000,
+      "postedDebits": 281300.000,
+      "postedCredits": 323600.000,
+      "endingBalance": 42300.000
+    },
+    {
+      "glAccountId": "210011",
+      "accountCode": "210011",
+      "accountName": "الدائنون - احمد الحصري",
+      "openingBalance": 0.000,
+      "postedDebits": 322000.000,
+      "postedCredits": 0.000,
+      "endingBalance": -322000.000
+    },
+    {
+      "glAccountId": "210021",
+      "accountCode": "210021",
+      "accountName": "الدائنون - م عماد سمير حنفي محمود",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 70000.000,
+      "endingBalance": 70000.000
+    },
+    {
+      "glAccountId": "210025",
+      "accountCode": "210025",
+      "accountName": "الدائنون - عماد فتحي رضوان",
+      "openingBalance": 0.000,
+      "postedDebits": 35000.000,
+      "postedCredits": 80000.000,
+      "endingBalance": 45000.000
+    },
+    {
+      "glAccountId": "210041",
+      "accountCode": "210041",
+      "accountName": "الدائنون - بلاك استور - احمد رجب",
+      "openingBalance": 0.000,
+      "postedDebits": 115000.000,
+      "postedCredits": 180500.000,
+      "endingBalance": 65500.000
+    },
+    {
+      "glAccountId": "210052",
+      "accountCode": "210052",
+      "accountName": "الدائنون - فتحي البنا",
+      "openingBalance": 0.000,
+      "postedDebits": 185100.000,
+      "postedCredits": 185100.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210057",
+      "accountCode": "210057",
+      "accountName": "الدائنون - مصطفى فاروق عبدالوهاب (مصطفى الناظر)",
+      "openingBalance": 0.000,
+      "postedDebits": 42150.000,
+      "postedCredits": 42150.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210059",
+      "accountCode": "210059",
+      "accountName": "الدائنون - ماجد المتولي",
+      "openingBalance": 0.000,
+      "postedDebits": 126100.000,
+      "postedCredits": 126100.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210061",
+      "accountCode": "210061",
+      "accountName": "الدائنون - ياسر سلامة",
+      "openingBalance": 0.000,
+      "postedDebits": 258705.000,
+      "postedCredits": 258705.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210063",
+      "accountCode": "210063",
+      "accountName": "الدائنون - اشرف مبروك",
+      "openingBalance": 0.000,
+      "postedDebits": 45000.000,
+      "postedCredits": 45000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210066",
+      "accountCode": "210066",
+      "accountName": "الدائنون - سيد سليمان محمد",
+      "openingBalance": 0.000,
+      "postedDebits": 147500.000,
+      "postedCredits": 147500.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210070",
+      "accountCode": "210070",
+      "accountName": "الدائنون - عمرو حسين",
+      "openingBalance": 0.000,
+      "postedDebits": 25191.000,
+      "postedCredits": 25191.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210071",
+      "accountCode": "210071",
+      "accountName": "الدائنون - صبحي انترلوك",
+      "openingBalance": 0.000,
+      "postedDebits": 37600.000,
+      "postedCredits": 37600.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210072",
+      "accountCode": "210072",
+      "accountName": "الدائنون - ياسر الدعبس",
+      "openingBalance": 0.000,
+      "postedDebits": 70274.000,
+      "postedCredits": 70274.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210081",
+      "accountCode": "210081",
+      "accountName": "الدائنون - شركة الغول",
+      "openingBalance": 0.000,
+      "postedDebits": 30600.000,
+      "postedCredits": 30600.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210082",
+      "accountCode": "210082",
+      "accountName": "الدائنون - رضا عيد متولي",
+      "openingBalance": 0.000,
+      "postedDebits": 15000.000,
+      "postedCredits": 50000.000,
+      "endingBalance": 35000.000
+    },
+    {
+      "glAccountId": "210084",
+      "accountCode": "210084",
+      "accountName": "الدائنون - سعيد شعبان",
+      "openingBalance": 0.000,
+      "postedDebits": 293569.000,
+      "postedCredits": 314179.000,
+      "endingBalance": 20610.000
+    },
+    {
+      "glAccountId": "210089",
+      "accountCode": "210089",
+      "accountName": "الدائنون - محمد عز العرب طه",
+      "openingBalance": 0.000,
+      "postedDebits": 63100.000,
+      "postedCredits": 63138.000,
+      "endingBalance": 38.000
+    },
+    {
+      "glAccountId": "210094",
+      "accountCode": "210094",
+      "accountName": "الدائنون - محمد عبدالعليم",
+      "openingBalance": 0.000,
+      "postedDebits": 208000.000,
+      "postedCredits": 208000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210100",
+      "accountCode": "210100",
+      "accountName": "الدائنون - ماجد المتولى - مورد ",
+      "openingBalance": 0.000,
+      "postedDebits": 470915.000,
+      "postedCredits": 757915.000,
+      "endingBalance": 287000.000
+    },
+    {
+      "glAccountId": "210101",
+      "accountCode": "210101",
+      "accountName": "المقاولون - كريم ايهاب ",
+      "openingBalance": 0.000,
+      "postedDebits": 82000.000,
+      "postedCredits": 82000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210102",
+      "accountCode": "210102",
+      "accountName": "المقاولون - احمد السيد لودر ",
+      "openingBalance": 0.000,
+      "postedDebits": 3000.000,
+      "postedCredits": 3000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210103",
+      "accountCode": "210103",
+      "accountName": "المقاولون - جمعة البنا ",
+      "openingBalance": 0.000,
+      "postedDebits": 42400.000,
+      "postedCredits": 42400.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210104",
+      "accountCode": "210104",
+      "accountName": "المقاولون - محمد الحداد ",
+      "openingBalance": 0.000,
+      "postedDebits": 15300.000,
+      "postedCredits": 15300.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210105",
+      "accountCode": "210105",
+      "accountName": "المقاولون - اسلام مأمون",
+      "openingBalance": 0.000,
+      "postedDebits": 26184.000,
+      "postedCredits": 26184.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210106",
+      "accountCode": "210106",
+      "accountName": "المقاولون - اشرف محارة",
+      "openingBalance": 0.000,
+      "postedDebits": 207652.000,
+      "postedCredits": 235399.000,
+      "endingBalance": 27747.000
+    },
+    {
+      "glAccountId": "210113",
+      "accountCode": "210113",
+      "accountName": "المقاولون - احمد خرسانة",
+      "openingBalance": 0.000,
+      "postedDebits": 132500.000,
+      "postedCredits": 132500.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210114",
+      "accountCode": "210114",
+      "accountName": "المقاولون - مبروك",
+      "openingBalance": 0.000,
+      "postedDebits": 41000.000,
+      "postedCredits": 41000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210116",
+      "accountCode": "210116",
+      "accountName": "المقاولون - هليوبوليس لمقاولات حمامات السباحة - مختار ابراهيم",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 4000.000,
+      "endingBalance": 4000.000
+    },
+    {
+      "glAccountId": "210122",
+      "accountCode": "210122",
+      "accountName": "الدائنون - شركة الغول بيت الوطن",
+      "openingBalance": 0.000,
+      "postedDebits": 34900.000,
+      "postedCredits": 34900.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210130",
+      "accountCode": "210130",
+      "accountName": "المقاولون - احمد فوزي",
+      "openingBalance": 0.000,
+      "postedDebits": 59000.000,
+      "postedCredits": 59000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210131",
+      "accountCode": "210131",
+      "accountName": "الدائنون - شركة ارو",
+      "openingBalance": 0.000,
+      "postedDebits": 61555.000,
+      "postedCredits": 0.000,
+      "endingBalance": -61555.000
+    },
+    {
+      "glAccountId": "210175",
+      "accountCode": "210175",
+      "accountName": "المقاولون - كريم سيد صلاح",
+      "openingBalance": 0.000,
+      "postedDebits": 32000.000,
+      "postedCredits": 32000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210178",
+      "accountCode": "210178",
+      "accountName": "المقاولون - الحاج يوسف نقل الاثاثات",
+      "openingBalance": 0.000,
+      "postedDebits": 74900.000,
+      "postedCredits": 74900.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210182",
+      "accountCode": "210182",
+      "accountName": "المقاولون - ابو العيون محمد عبدالرحمن",
+      "openingBalance": 0.000,
+      "postedDebits": 212250.000,
+      "postedCredits": 212250.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210194",
+      "accountCode": "210194",
+      "accountName": "الدائنون - مطار سفنكس",
+      "openingBalance": 0.000,
+      "postedDebits": 215000.000,
+      "postedCredits": 215000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210198",
+      "accountCode": "210198",
+      "accountName": "الدائنون - اشرف مبروك",
+      "openingBalance": 0.000,
+      "postedDebits": 131100.000,
+      "postedCredits": 131100.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210199",
+      "accountCode": "210199",
+      "accountName": "المقاولون - الفا باور تريد للمصاعد الكهربائية",
+      "openingBalance": 0.000,
+      "postedDebits": 112500.000,
+      "postedCredits": 112500.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210200",
+      "accountCode": "210200",
+      "accountName": "الدائنون - شركة النصر لصناعة المحولات والمنتجات الكهربائية",
+      "openingBalance": 0.000,
+      "postedDebits": 93600.000,
+      "postedCredits": 0.000,
+      "endingBalance": -93600.000
+    },
+    {
+      "glAccountId": "210201",
+      "accountCode": "210201",
+      "accountName": "الدائنون - شركة فيوتشر للخرسانات الجاهزة",
+      "openingBalance": 0.000,
+      "postedDebits": 229500.000,
+      "postedCredits": 229500.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210202",
+      "accountCode": "210202",
+      "accountName": "المقاولون - مصطفى ساقية",
+      "openingBalance": 0.000,
+      "postedDebits": 60000.000,
+      "postedCredits": 60000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210207",
+      "accountCode": "210207",
+      "accountName": "المقاولون - الحاج فرج احمد عبد الوهاب ",
+      "openingBalance": 0.000,
+      "postedDebits": 600000.000,
+      "postedCredits": 600000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210215",
+      "accountCode": "210215",
+      "accountName": "المقاولون - عيد كهرباء",
+      "openingBalance": 0.000,
+      "postedDebits": 45000.000,
+      "postedCredits": 45000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210216",
+      "accountCode": "210216",
+      "accountName": "الدائنون - نكست اوفيس فورنيتشر",
+      "openingBalance": 0.000,
+      "postedDebits": 3500.000,
+      "postedCredits": 7500.000,
+      "endingBalance": 4000.000
+    },
+    {
+      "glAccountId": "210219",
+      "accountCode": "210219",
+      "accountName": "الدائنون - عكش للدعاية",
+      "openingBalance": 0.000,
+      "postedDebits": 4800.000,
+      "postedCredits": 4800.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "210220",
+      "accountCode": "210220",
+      "accountName": "الدائنون - عبدالمنصف عبداللطيف عبدالمنصف",
+      "openingBalance": 0.000,
+      "postedDebits": 1350000.000,
+      "postedCredits": 1350000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "220001",
+      "accountCode": "220001",
+      "accountName": "مستحقات رواتب - هيثم ادريس حسن محمد",
+      "openingBalance": 0.000,
+      "postedDebits": 6800.000,
+      "postedCredits": 14134.000,
+      "endingBalance": 7334.000
+    },
+    {
+      "glAccountId": "220002",
+      "accountCode": "220002",
+      "accountName": "مستحقات رواتب - اشرف محمد عجيبة",
+      "openingBalance": 0.000,
+      "postedDebits": 18000.000,
+      "postedCredits": 33600.000,
+      "endingBalance": 15600.000
+    },
+    {
+      "glAccountId": "220003",
+      "accountCode": "220003",
+      "accountName": "مستحقات رواتب - عبدالله عادل سرور",
+      "openingBalance": 0.000,
+      "postedDebits": 10000.000,
+      "postedCredits": 21000.000,
+      "endingBalance": 11000.000
+    },
+    {
+      "glAccountId": "220004",
+      "accountCode": "220004",
+      "accountName": "مستحقات رواتب - احمد محمد عجيبه",
+      "openingBalance": 0.000,
+      "postedDebits": 20000.000,
+      "postedCredits": 45000.000,
+      "endingBalance": 25000.000
+    },
+    {
+      "glAccountId": "220005",
+      "accountCode": "220005",
+      "accountName": "مستحقات رواتب - محمود رضا محمود احمد موسى",
+      "openingBalance": 0.000,
+      "postedDebits": 10000.000,
+      "postedCredits": 35800.000,
+      "endingBalance": 25800.000
+    },
+    {
+      "glAccountId": "220006",
+      "accountCode": "220006",
+      "accountName": "مستحقات رواتب - محمد حمدي محمد عبد الواحد",
+      "openingBalance": 0.000,
+      "postedDebits": 23311.000,
+      "postedCredits": 41141.000,
+      "endingBalance": 17830.000
+    },
+    {
+      "glAccountId": "220007",
+      "accountCode": "220007",
+      "accountName": "مستحقات رواتب - انجى عماد عريان زكى",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 10000.000,
+      "endingBalance": 10000.000
+    },
+    {
+      "glAccountId": "220008",
+      "accountCode": "220008",
+      "accountName": "مستحقات رواتب - احمد عبد الرحمن محمود مرسي",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 120000.000,
+      "endingBalance": 120000.000
+    },
+    {
+      "glAccountId": "220009",
+      "accountCode": "220009",
+      "accountName": "مستحقات رواتب - بشوي نبيل ميلاد راغب",
+      "openingBalance": 0.000,
+      "postedDebits": 20000.000,
+      "postedCredits": 40000.000,
+      "endingBalance": 20000.000
+    },
+    {
+      "glAccountId": "220010",
+      "accountCode": "220010",
+      "accountName": "مستحقات رواتب - علي احمد مرسي عبد الباقي",
+      "openingBalance": 0.000,
+      "postedDebits": 22167.000,
+      "postedCredits": 41167.000,
+      "endingBalance": 19000.000
+    },
+    {
+      "glAccountId": "220011",
+      "accountCode": "220011",
+      "accountName": "مستحقات رواتب - عبد الرحمن وائل",
+      "openingBalance": 0.000,
+      "postedDebits": 15000.000,
+      "postedCredits": 34500.000,
+      "endingBalance": 19500.000
+    },
+    {
+      "glAccountId": "220012",
+      "accountCode": "220012",
+      "accountName": "مستحقات رواتب - مختار عادل مختار قطب",
+      "openingBalance": 0.000,
+      "postedDebits": 8000.000,
+      "postedCredits": 15933.000,
+      "endingBalance": 7933.000
+    },
+    {
+      "glAccountId": "220013",
+      "accountCode": "220013",
+      "accountName": "مستحقات رواتب - احمد عبد العال احمد",
+      "openingBalance": 0.000,
+      "postedDebits": 10000.000,
+      "postedCredits": 23750.000,
+      "endingBalance": 13750.000
+    },
+    {
+      "glAccountId": "220014",
+      "accountCode": "220014",
+      "accountName": "مستحقات رواتب - محمد عادل عباس",
+      "openingBalance": 0.000,
+      "postedDebits": 11600.000,
+      "postedCredits": 23200.000,
+      "endingBalance": 11600.000
+    },
+    {
+      "glAccountId": "220017",
+      "accountCode": "220017",
+      "accountName": "مستحقات رواتب - هبه عبد اللطيف عبد السلام",
+      "openingBalance": 0.000,
+      "postedDebits": 9000.000,
+      "postedCredits": 18000.000,
+      "endingBalance": 9000.000
+    },
+    {
+      "glAccountId": "220018",
+      "accountCode": "220018",
+      "accountName": "مستحقات رواتب - عبد الله",
+      "openingBalance": 0.000,
+      "postedDebits": 13467.000,
+      "postedCredits": 35967.000,
+      "endingBalance": 22500.000
+    },
+    {
+      "glAccountId": "220019",
+      "accountCode": "220019",
+      "accountName": "مستحقات رواتب - صبحي احمد رمضان الشعراوي",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 20530.000,
+      "endingBalance": 20530.000
+    },
+    {
+      "glAccountId": "220020",
+      "accountCode": "220020",
+      "accountName": "مستحقات رواتب - محمد السيد ابو جابر",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 17667.000,
+      "endingBalance": 17667.000
+    },
+    {
+      "glAccountId": "220021",
+      "accountCode": "220021",
+      "accountName": "مستحقات رواتب - صالح مبروك",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 7080.000,
+      "endingBalance": 7080.000
+    },
+    {
+      "glAccountId": "220023",
+      "accountCode": "220023",
+      "accountName": "مستحقات رواتب - احمد ماهر مختار",
+      "openingBalance": 0.000,
+      "postedDebits": 30000.000,
+      "postedCredits": 60000.000,
+      "endingBalance": 30000.000
+    },
+    {
+      "glAccountId": "220026",
+      "accountCode": "220026",
+      "accountName": "مستحقات رواتب - حسنة حمادة سعد محمد",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 16134.000,
+      "endingBalance": 16134.000
+    },
+    {
+      "glAccountId": "220027",
+      "accountCode": "220027",
+      "accountName": "مستحقات رواتب - محمد مختار قطب",
+      "openingBalance": 0.000,
+      "postedDebits": 50000.000,
+      "postedCredits": 75000.000,
+      "endingBalance": 25000.000
+    },
+    {
+      "glAccountId": "220029",
+      "accountCode": "220029",
+      "accountName": "مستحقات رواتب - مصطفى نادي مسعود عبدالظاهر",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 3000.000,
+      "endingBalance": 3000.000
+    },
+    {
+      "glAccountId": "220031",
+      "accountCode": "220031",
+      "accountName": "مستحقات رواتب - احمد محمود حمايه يوسف",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 17000.000,
+      "endingBalance": 17000.000
+    },
+    {
+      "glAccountId": "220032",
+      "accountCode": "220032",
+      "accountName": "مستحقات رواتب - حماده حنفي محمود احمد",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 12683.000,
+      "endingBalance": 12683.000
+    },
+    {
+      "glAccountId": "220034",
+      "accountCode": "220034",
+      "accountName": "مستحقات رواتب - احمد محمد ناجي",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 19800.000,
+      "endingBalance": 19800.000
+    },
+    {
+      "glAccountId": "220035",
+      "accountCode": "220035",
+      "accountName": "مستحقات رواتب - ايمان صلاح عاشور عبدالوهاب",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 24398.500,
+      "endingBalance": 24398.500
+    },
+    {
+      "glAccountId": "220036",
+      "accountCode": "220036",
+      "accountName": "مستحقات رواتب - ريهام وسيم صدقى بطرس",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 54400.000,
+      "endingBalance": 54400.000
+    },
+    {
+      "glAccountId": "220037",
+      "accountCode": "220037",
+      "accountName": "مستحقات رواتب - محمد صلاح رياض",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 11000.000,
+      "endingBalance": 11000.000
+    },
+    {
+      "glAccountId": "220038",
+      "accountCode": "220038",
+      "accountName": "مستحقات رواتب - محمود السيد عبدالحافظ",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 17000.000,
+      "endingBalance": 17000.000
+    },
+    {
+      "glAccountId": "220039",
+      "accountCode": "220039",
+      "accountName": "مستحقات رواتب - يحيى عبدالوهاب توني محمود",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 16000.000,
+      "endingBalance": 16000.000
+    },
+    {
+      "glAccountId": "220040",
+      "accountCode": "220040",
+      "accountName": "مستحقات رواتب - عبير سيد محمد الشحات ( ام احمد )",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 6000.000,
+      "endingBalance": 6000.000
+    },
+    {
+      "glAccountId": "220043",
+      "accountCode": "220043",
+      "accountName": "مستحقات رواتب - احمد عيد إبراهيم طاحون",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 10600.000,
+      "endingBalance": 10600.000
+    },
+    {
+      "glAccountId": "220044",
+      "accountCode": "220044",
+      "accountName": "مستحقات رواتب - سعيد عادل عبدالحفيظ \" حماده \"",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 6650.000,
+      "endingBalance": 6650.000
+    },
+    {
+      "glAccountId": "220045",
+      "accountCode": "220045",
+      "accountName": "مستحقات رواتب - عبدالرحمن صديق احمد",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 23000.000,
+      "endingBalance": 23000.000
+    },
+    {
+      "glAccountId": "220046",
+      "accountCode": "220046",
+      "accountName": "مستحقات رواتب - ياسمين ياسر امين طوطح",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 15402.000,
+      "endingBalance": 15402.000
+    },
+    {
+      "glAccountId": "220048",
+      "accountCode": "220048",
+      "accountName": "مستحقات رواتب - هبة الله السيد محمد ابوشادى",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 34200.000,
+      "endingBalance": 34200.000
+    },
+    {
+      "glAccountId": "220049",
+      "accountCode": "220049",
+      "accountName": "مستحقات رواتب - هاجر عماد اسماعيل حامد",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 19599.000,
+      "endingBalance": 19599.000
+    },
+    {
+      "glAccountId": "220052",
+      "accountCode": "220052",
+      "accountName": "مستحقات رواتب - محمد جمال محمد حسين",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 36600.000,
+      "endingBalance": 36600.000
+    },
+    {
+      "glAccountId": "220053",
+      "accountCode": "220053",
+      "accountName": "مستحقات رواتب - محمد مدحت محمد  الغندور",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 19599.000,
+      "endingBalance": 19599.000
+    },
+    {
+      "glAccountId": "220054",
+      "accountCode": "220054",
+      "accountName": "مستحقات رواتب - ريهام ايمن اسماعيل مصطفى",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 24471.750,
+      "endingBalance": 24471.750
+    },
+    {
+      "glAccountId": "220055",
+      "accountCode": "220055",
+      "accountName": "مستحقات رواتب - الاء سمير زكى على محمد",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 17065.000,
+      "endingBalance": 17065.000
+    },
+    {
+      "glAccountId": "220057",
+      "accountCode": "220057",
+      "accountName": "مستحقات رواتب - مارك سعيد تادرس",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 30600.000,
+      "endingBalance": 30600.000
+    },
+    {
+      "glAccountId": "220058",
+      "accountCode": "220058",
+      "accountName": "مستحقات رواتب - يوسف حازم حامد محمد بكر",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 5767.000,
+      "endingBalance": 5767.000
+    },
+    {
+      "glAccountId": "220059",
+      "accountCode": "220059",
+      "accountName": "مستحقات رواتب - خالد حمد طاهر",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 14935.000,
+      "endingBalance": 14935.000
+    },
+    {
+      "glAccountId": "220060",
+      "accountCode": "220060",
+      "accountName": "مستحقات رواتب - ادهم ابراهيم احمد",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 7733.000,
+      "endingBalance": 7733.000
+    },
+    {
+      "glAccountId": "220064",
+      "accountCode": "220064",
+      "accountName": "مستحقات رواتب - محمود على حسن سليم",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 7000.000,
+      "endingBalance": 7000.000
+    },
+    {
+      "glAccountId": "220066",
+      "accountCode": "220066",
+      "accountName": "مستحقات رواتب - محمد على محمد",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 12100.000,
+      "endingBalance": 12100.000
+    },
+    {
+      "glAccountId": "220067",
+      "accountCode": "220067",
+      "accountName": "مستحقات رواتب - احلام ناجى",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 21934.000,
+      "endingBalance": 21934.000
+    },
+    {
+      "glAccountId": "220068",
+      "accountCode": "220068",
+      "accountName": "مستحقات رواتب - بيتر هانى",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 13933.000,
+      "endingBalance": 13933.000
+    },
+    {
+      "glAccountId": "220069",
+      "accountCode": "220069",
+      "accountName": "مستحقات رواتب - احمد عادل حمام توفيق",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 6067.000,
+      "endingBalance": 6067.000
+    },
+    {
+      "glAccountId": "220071",
+      "accountCode": "220071",
+      "accountName": "مستحقات رواتب - محمد احمد حمام توفيق",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 6700.000,
+      "endingBalance": 6700.000
+    },
+    {
+      "glAccountId": "220072",
+      "accountCode": "220072",
+      "accountName": "مستحقات رواتب - يوسف محمد حسن سليم",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 4500.000,
+      "endingBalance": 4500.000
+    },
+    {
+      "glAccountId": "221100",
+      "accountCode": "221100",
+      "accountName": "العمولات المستحقة",
+      "openingBalance": 0.000,
+      "postedDebits": 114348.000,
+      "postedCredits": 0.000,
+      "endingBalance": -114348.000
+    },
+    {
+      "glAccountId": "236001",
+      "accountCode": "236001",
+      "accountName": "عدد و ادوات",
+      "openingBalance": 0.000,
+      "postedDebits": 29398.000,
+      "postedCredits": 0.000,
+      "endingBalance": 29398.000
+    },
+    {
+      "glAccountId": "236002",
+      "accountCode": "236002",
+      "accountName": "الات ومعدات",
+      "openingBalance": 0.000,
+      "postedDebits": 1350000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 1350000.000
+    },
+    {
+      "glAccountId": "250100",
+      "accountCode": "250100",
+      "accountName": "شيكات صادرة مؤجلة",
+      "openingBalance": 0.000,
+      "postedDebits": 75277390.000,
+      "postedCredits": 128876460.000,
+      "endingBalance": 53599070.000
+    },
+    {
+      "glAccountId": "250120",
+      "accountCode": "250120",
+      "accountName": "دفعات مقدمة من العملاء",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 369374550.000,
+      "endingBalance": 369374550.000
+    },
+    {
+      "glAccountId": "250130",
+      "accountCode": "250130",
+      "accountName": "ودائع صيانة العملاء",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 28424221.000,
+      "endingBalance": 28424221.000
+    },
+    {
+      "glAccountId": "250280",
+      "accountCode": "250280",
+      "accountName": "احمد ماهر - مشاركات مشروع الواحات",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 200000.000,
+      "endingBalance": 200000.000
+    },
+    {
+      "glAccountId": "250281",
+      "accountCode": "250281",
+      "accountName": "عادل مختار - مشاركات مشروع الواحات",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 171000.000,
+      "endingBalance": 171000.000
+    },
+    {
+      "glAccountId": "250282",
+      "accountCode": "250282",
+      "accountName": "محمود مختار - مشاركات مشروع الواحات",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 100000.000,
+      "endingBalance": 100000.000
+    },
+    {
+      "glAccountId": "250283",
+      "accountCode": "250283",
+      "accountName": "اشرف كمال - مشاركات مشروع الواحات",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 1000000.000,
+      "endingBalance": 1000000.000
+    },
+    {
+      "glAccountId": "250310",
+      "accountCode": "250310",
+      "accountName": "مشاركات مؤقتة - تامر عفيفي ",
+      "openingBalance": 2500000.000,
+      "postedDebits": 314500.000,
+      "postedCredits": 1363500.000,
+      "endingBalance": 3549000.000
+    },
+    {
+      "glAccountId": "250320",
+      "accountCode": "250320",
+      "accountName": "مشاركات مؤقتة - خالد السيد",
+      "openingBalance": 1500000.000,
+      "postedDebits": 135000.000,
+      "postedCredits": 125000.000,
+      "endingBalance": 1490000.000
+    },
+    {
+      "glAccountId": "250330",
+      "accountCode": "250330",
+      "accountName": "مشاركات مؤقتة - ايمن لطفى",
+      "openingBalance": 250000.000,
+      "postedDebits": 30000.000,
+      "postedCredits": 30000.000,
+      "endingBalance": 250000.000
+    },
+    {
+      "glAccountId": "250340",
+      "accountCode": "250340",
+      "accountName": "مشاركات مؤقتة - الجد مختار قطب",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 100000.000,
+      "endingBalance": 100000.000
+    },
+    {
+      "glAccountId": "250350",
+      "accountCode": "250350",
+      "accountName": "احمد ماهر - مشاركات مؤقتة",
+      "openingBalance": 336000.000,
+      "postedDebits": 802500.000,
+      "postedCredits": 476167.000,
+      "endingBalance": 9667.000
+    },
+    {
+      "glAccountId": "250360",
+      "accountCode": "250360",
+      "accountName": "مشاركات مؤقتة - عادل مختار",
+      "openingBalance": 0.000,
+      "postedDebits": 171000.000,
+      "postedCredits": 171000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "250370",
+      "accountCode": "250370",
+      "accountName": "احمد ماهر - مشاركات بيت الوطن الحزام الاخضر",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 602500.000,
+      "endingBalance": 602500.000
+    },
+    {
+      "glAccountId": "250380",
+      "accountCode": "250380",
+      "accountName": "ابو زياد و ابو خليفة - مشاركات حصة السدة",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 2800000.000,
+      "endingBalance": 2800000.000
+    },
+    {
+      "glAccountId": "250390",
+      "accountCode": "250390",
+      "accountName": "ابو زياد - مشاركات قرية السدة",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 3624600.000,
+      "endingBalance": 3624600.000
+    },
+    {
+      "glAccountId": "250403",
+      "accountCode": "250403",
+      "accountName": "محمد مختار - سيتي ووك مشاركات ايجار",
+      "openingBalance": 0.000,
+      "postedDebits": 228996.000,
+      "postedCredits": 267862.000,
+      "endingBalance": 38866.000
+    },
+    {
+      "glAccountId": "250405",
+      "accountCode": "250405",
+      "accountName": "محمود مختار - سيتي ووك مشاركات ايجار",
+      "openingBalance": 0.000,
+      "postedDebits": 228970.000,
+      "postedCredits": 267862.000,
+      "endingBalance": 38892.000
+    },
+    {
+      "glAccountId": "250406",
+      "accountCode": "250406",
+      "accountName": "اشرف كمال - مطعم السدة مشاركات ايجار",
+      "openingBalance": 363375.000,
+      "postedDebits": 533639.200,
+      "postedCredits": 199856.000,
+      "endingBalance": 29591.800
+    },
+    {
+      "glAccountId": "250407",
+      "accountCode": "250407",
+      "accountName": "علاء خاطر - مطعم السدة مشاركات ايجار",
+      "openingBalance": 242250.000,
+      "postedDebits": 277780.000,
+      "postedCredits": 133240.000,
+      "endingBalance": 97710.000
+    },
+    {
+      "glAccountId": "250408",
+      "accountCode": "250408",
+      "accountName": "محمد القاضي - مطعم السدة مشاركات ايجار",
+      "openingBalance": 121125.000,
+      "postedDebits": 368000.000,
+      "postedCredits": 492021.000,
+      "endingBalance": 245146.000
+    },
+    {
+      "glAccountId": "250409",
+      "accountCode": "250409",
+      "accountName": "احمد لطفى - سيتي ووك مشاركات ايجار",
+      "openingBalance": 0.000,
+      "postedDebits": 1976064.000,
+      "postedCredits": 2205658.000,
+      "endingBalance": 229594.000
+    },
+    {
+      "glAccountId": "250410",
+      "accountCode": "250410",
+      "accountName": "تريو ايه - ايجارات مستحقة",
+      "openingBalance": 0.000,
+      "postedDebits": 693000.000,
+      "postedCredits": 693000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "250411",
+      "accountCode": "250411",
+      "accountName": "قطب مختار - سيتي ووك مشاركات ايجار",
+      "openingBalance": 0.000,
+      "postedDebits": 1976064.000,
+      "postedCredits": 2205658.000,
+      "endingBalance": 229594.000
+    },
+    {
+      "glAccountId": "250412",
+      "accountCode": "250412",
+      "accountName": "المتحدة - مطعم السدة مشاركات ايجار",
+      "openingBalance": 106250.000,
+      "postedDebits": 236840.000,
+      "postedCredits": 133240.000,
+      "endingBalance": 2650.000
+    },
+    {
+      "glAccountId": "250413",
+      "accountCode": "250413",
+      "accountName": "عادل مختار - مطعم السدة مشاركات ايجار",
+      "openingBalance": 12250.000,
+      "postedDebits": 131500.000,
+      "postedCredits": 133240.000,
+      "endingBalance": 13990.000
+    },
+    {
+      "glAccountId": "250414",
+      "accountCode": "250414",
+      "accountName": "مشاركات ايجار عقارات - جولدن ووك",
+      "openingBalance": 0.000,
+      "postedDebits": 78750.000,
+      "postedCredits": 0.000,
+      "endingBalance": -78750.000
+    },
+    {
+      "glAccountId": "250422",
+      "accountCode": "250422",
+      "accountName": "احمد لطفى - مطعم السدة مشاركات ايجار",
+      "openingBalance": 484500.000,
+      "postedDebits": 711892.000,
+      "postedCredits": 266475.000,
+      "endingBalance": 39083.000
+    },
+    {
+      "glAccountId": "250423",
+      "accountCode": "250423",
+      "accountName": "قطب مختار - مطعم السدة مشاركات ايجار",
+      "openingBalance": 726750.000,
+      "postedDebits": 1067840.000,
+      "postedCredits": 399715.000,
+      "endingBalance": 58625.000
+    },
+    {
+      "glAccountId": "250424",
+      "accountCode": "250424",
+      "accountName": "اشرف كمال - جولدن ووك مشاركات ايجار",
+      "openingBalance": 0.000,
+      "postedDebits": 1692870.000,
+      "postedCredits": 1692870.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "250425",
+      "accountCode": "250425",
+      "accountName": "علاء خاطر - جولدن ووك مشاركات ايجار",
+      "openingBalance": 0.000,
+      "postedDebits": 1578580.000,
+      "postedCredits": 1578580.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "250426",
+      "accountCode": "250426",
+      "accountName": "محمود مختار - جولدن ووك مشاركات ايجار",
+      "openingBalance": 0.000,
+      "postedDebits": 224250.000,
+      "postedCredits": 224250.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "250427",
+      "accountCode": "250427",
+      "accountName": "محمد مختار - جولدن ووك مشاركات ايجار",
+      "openingBalance": 0.000,
+      "postedDebits": 274250.000,
+      "postedCredits": 224250.000,
+      "endingBalance": -50000.000
+    },
+    {
+      "glAccountId": "250428",
+      "accountCode": "250428",
+      "accountName": "ماهر مختار - جولدن ووك مشاركات ايجار",
+      "openingBalance": 0.000,
+      "postedDebits": 608500.000,
+      "postedCredits": 448500.000,
+      "endingBalance": -160000.000
+    },
+    {
+      "glAccountId": "250429",
+      "accountCode": "250429",
+      "accountName": "محمد القاضى - جولدن ووك مشاركات ايجار",
+      "openingBalance": 0.000,
+      "postedDebits": 425400.000,
+      "postedCredits": 425400.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "250431",
+      "accountCode": "250431",
+      "accountName": "احمد لطفى - جولدن ووك مشاركات ايجار",
+      "openingBalance": 0.000,
+      "postedDebits": 1276200.000,
+      "postedCredits": 1276200.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "250432",
+      "accountCode": "250432",
+      "accountName": "قطب مختار - جولدن ووك مشاركات ايجار",
+      "openingBalance": 0.000,
+      "postedDebits": 2127000.000,
+      "postedCredits": 2127000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "250433",
+      "accountCode": "250433",
+      "accountName": "‫المتحدة - جولدن ووك مشاركات ايجار",
+      "openingBalance": 0.000,
+      "postedDebits": 1764630.000,
+      "postedCredits": 1843380.000,
+      "endingBalance": 78750.000
+    },
+    {
+      "glAccountId": "250435",
+      "accountCode": "250435",
+      "accountName": "احمد لطفى-  مول الصحراوى 2 فدان مشاركات ايجار",
+      "openingBalance": 0.000,
+      "postedDebits": 391221.500,
+      "postedCredits": 407721.500,
+      "endingBalance": 16500.000
+    },
+    {
+      "glAccountId": "250436",
+      "accountCode": "250436",
+      "accountName": "قطب مختار-  مول الصحراوى 2 فدان مشاركات ايجار",
+      "openingBalance": 0.000,
+      "postedDebits": 391221.500,
+      "postedCredits": 407721.500,
+      "endingBalance": 16500.000
+    },
+    {
+      "glAccountId": "250437",
+      "accountCode": "250437",
+      "accountName": "جدية حجز مشروع نسيم",
+      "openingBalance": 0.000,
+      "postedDebits": 2526726.000,
+      "postedCredits": 1778452.200,
+      "endingBalance": -748273.800
+    },
+    {
+      "glAccountId": "250439",
+      "accountCode": "250439",
+      "accountName": "مالك ارض 10.50 فدان سامي احمد حمودة - دائنون",
+      "openingBalance": 0.000,
+      "postedDebits": 8200000.000,
+      "postedCredits": 0.000,
+      "endingBalance": -8200000.000
+    },
+    {
+      "glAccountId": "250440",
+      "accountCode": "250440",
+      "accountName": "عماد سلوم",
+      "openingBalance": 0.000,
+      "postedDebits": 9299965.070,
+      "postedCredits": 2640378.750,
+      "endingBalance": -6659586.320
+    },
+    {
+      "glAccountId": "250443",
+      "accountCode": "250443",
+      "accountName": "الضرائب المستحقة عن العقارات المؤجرة ( ضريبة )",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 149072.000,
+      "endingBalance": 149072.000
+    },
+    {
+      "glAccountId": "250444",
+      "accountCode": "250444",
+      "accountName": "ياسر سعودي - مالك ارض 500 متر",
+      "openingBalance": -4500000.000,
+      "postedDebits": 5500000.000,
+      "postedCredits": 10000000.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "250446",
+      "accountCode": "250446",
+      "accountName": "محمد عبداللاه بكري - نسيم القطعة المضافة",
+      "openingBalance": 0.000,
+      "postedDebits": 4800000.000,
+      "postedCredits": 0.000,
+      "endingBalance": -4800000.000
+    },
+    {
+      "glAccountId": "250448",
+      "accountCode": "250448",
+      "accountName": "ملاك اراضى المشاركات",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 15500000.000,
+      "endingBalance": 15500000.000
+    },
+    {
+      "glAccountId": "250452",
+      "accountCode": "250452",
+      "accountName": "قروض قصيرة الأجل",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 2400500.000,
+      "endingBalance": 2400500.000
+    },
+    {
+      "glAccountId": "250453",
+      "accountCode": "250453",
+      "accountName": "جدية حجز مشروع سوا",
+      "openingBalance": 0.000,
+      "postedDebits": 50000.000,
+      "postedCredits": 1208990.000,
+      "endingBalance": 1158990.000
+    },
+    {
+      "glAccountId": "250454",
+      "accountCode": "250454",
+      "accountName": "مبالغ محولة غير معلومة المصدر",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 50000.000,
+      "endingBalance": 50000.000
+    },
+    {
+      "glAccountId": "250459",
+      "accountCode": "250459",
+      "accountName": "جدية حجز مشروع لادريس اكتوبر",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 100000.000,
+      "endingBalance": 100000.000
+    },
+    {
+      "glAccountId": "250460",
+      "accountCode": "250460",
+      "accountName": "تريو ايه - شراء اسهم",
+      "openingBalance": 10205000.000,
+      "postedDebits": 5205000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 5000000.000
+    },
+    {
+      "glAccountId": "250470",
+      "accountCode": "250470",
+      "accountName": "وليد البدرى - بيت الوطن لادريس التجمع",
+      "openingBalance": 145668.000,
+      "postedDebits": 178795.000,
+      "postedCredits": 0.000,
+      "endingBalance": -33127.000
+    },
+    {
+      "glAccountId": "250480",
+      "accountCode": "250480",
+      "accountName": "ذمم دائنة اخرى حساب جديد",
+      "openingBalance": 22000.000,
+      "postedDebits": 0.000,
+      "postedCredits": 0.000,
+      "endingBalance": 22000.000
+    },
+    {
+      "glAccountId": "250510",
+      "accountCode": "250510",
+      "accountName": "حسام الدين مصطفى - شراء اسهم سيتى ووك",
+      "openingBalance": 10000000.000,
+      "postedDebits": 10000000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 0.000
+    },
+    {
+      "glAccountId": "250530",
+      "accountCode": "250530",
+      "accountName": "محمد عاكف - شراء سيتى ووك",
+      "openingBalance": 0.000,
+      "postedDebits": 32500000.000,
+      "postedCredits": 0.000,
+      "endingBalance": -32500000.000
+    },
+    {
+      "glAccountId": "302000",
+      "accountCode": "302000",
+      "accountName": "جارى الشريك - احمد لطفى",
+      "openingBalance": 0.000,
+      "postedDebits": 4277824.130,
+      "postedCredits": 5658267.500,
+      "endingBalance": 1380443.370
+    },
+    {
+      "glAccountId": "303000",
+      "accountCode": "303000",
+      "accountName": "جارى الشريك - قطب مختار",
+      "openingBalance": 0.000,
+      "postedDebits": 37935578.830,
+      "postedCredits": 23521998.500,
+      "endingBalance": -14413580.330
+    },
+    {
+      "glAccountId": "400030",
+      "accountCode": "400030",
+      "accountName": "إيرادات إدارة عقارات للغير",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 485913.000,
+      "endingBalance": 485913.000
+    },
+    {
+      "glAccountId": "400040",
+      "accountCode": "400040",
+      "accountName": "إيرادات خدمات وصيانة",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 69335.000,
+      "endingBalance": 69335.000
+    },
+    {
+      "glAccountId": "400060",
+      "accountCode": "400060",
+      "accountName": "إيرادات رسوم إعادة البيع",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 80000.000,
+      "endingBalance": 80000.000
+    },
+    {
+      "glAccountId": "401000",
+      "accountCode": "401000",
+      "accountName": "إيرادات بيع الوحدات",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 17437500.000,
+      "endingBalance": 17437500.000
+    },
+    {
+      "glAccountId": "401010",
+      "accountCode": "401010",
+      "accountName": "إيرادات  بيع الاراضى",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 35300000.000,
+      "endingBalance": 35300000.000
+    },
+    {
+      "glAccountId": "409000",
+      "accountCode": "409000",
+      "accountName": "إيرادات أخرى",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 283118.000,
+      "endingBalance": 283118.000
+    },
+    {
+      "glAccountId": "440000",
+      "accountCode": "440000",
+      "accountName": "ايرادات ارباح بنكية - حسابات استثمارية",
+      "openingBalance": 0.000,
+      "postedDebits": 0.000,
+      "postedCredits": 109823.030,
+      "endingBalance": 109823.030
+    },
+    {
+      "glAccountId": "600000",
+      "accountCode": "600000",
+      "accountName": "المصروفات العمومية والإدارية",
+      "openingBalance": 0.000,
+      "postedDebits": 2163578.000,
+      "postedCredits": 0.000,
+      "endingBalance": 2163578.000
+    },
+    {
+      "glAccountId": "600010",
+      "accountCode": "600010",
+      "accountName": "المصروفات التمويلية",
+      "openingBalance": 0.000,
+      "postedDebits": 533500.000,
+      "postedCredits": 0.000,
+      "endingBalance": 533500.000
+    },
+    {
+      "glAccountId": "600012",
+      "accountCode": "600012",
+      "accountName": "مصاريف تمويلية أخرى",
+      "openingBalance": 0.000,
+      "postedDebits": 58186.000,
+      "postedCredits": 0.000,
+      "endingBalance": 58186.000
+    },
+    {
+      "glAccountId": "600021",
+      "accountCode": "600021",
+      "accountName": "المصروفات التشغيلية - جولدن ووك",
+      "openingBalance": 0.000,
+      "postedDebits": 62995.000,
+      "postedCredits": 0.000,
+      "endingBalance": 62995.000
+    },
+    {
+      "glAccountId": "600022",
+      "accountCode": "600022",
+      "accountName": "المصروفات التشغيلية - مول الصحراوى",
+      "openingBalance": 0.000,
+      "postedDebits": 18625.000,
+      "postedCredits": 0.000,
+      "endingBalance": 18625.000
+    },
+    {
+      "glAccountId": "600023",
+      "accountCode": "600023",
+      "accountName": "المصروفات التشغيلية - سيتى ووك",
+      "openingBalance": 0.000,
+      "postedDebits": 664046.000,
+      "postedCredits": 406665.000,
+      "endingBalance": 257381.000
+    },
+    {
+      "glAccountId": "600024",
+      "accountCode": "600024",
+      "accountName": "المصروفات التشغيلية - مشروع نسيم",
+      "openingBalance": 0.000,
+      "postedDebits": 17678795.650,
+      "postedCredits": 0.000,
+      "endingBalance": 17678795.650
+    },
+    {
+      "glAccountId": "600025",
+      "accountCode": "600025",
+      "accountName": "نسيم عمولات خارجية شركات",
+      "openingBalance": 0.000,
+      "postedDebits": 7450460.000,
+      "postedCredits": 0.000,
+      "endingBalance": 7450460.000
+    },
+    {
+      "glAccountId": "600026",
+      "accountCode": "600026",
+      "accountName": "نسيم عمولات خارجية موظفي المبيعات",
+      "openingBalance": 0.000,
+      "postedDebits": 3537845.000,
+      "postedCredits": 0.000,
+      "endingBalance": 3537845.000
+    },
+    {
+      "glAccountId": "600027",
+      "accountCode": "600027",
+      "accountName": "نسيم عمولات داخلية موظفي جولدن لاند",
+      "openingBalance": 0.000,
+      "postedDebits": 3989575.000,
+      "postedCredits": 0.000,
+      "endingBalance": 3989575.000
+    },
+    {
+      "glAccountId": "600028",
+      "accountCode": "600028",
+      "accountName": "الاسطبل القديم الصحراوي 2 فدان - مصروفات تشغيلية",
+      "openingBalance": 0.000,
+      "postedDebits": 9300.000,
+      "postedCredits": 0.000,
+      "endingBalance": 9300.000
+    },
+    {
+      "glAccountId": "600029",
+      "accountCode": "600029",
+      "accountName": "رواتب واجور مصاريف تشغيلية نسيم",
+      "openingBalance": 0.000,
+      "postedDebits": 615476.250,
+      "postedCredits": 0.000,
+      "endingBalance": 615476.250
+    },
+    {
+      "glAccountId": "600030",
+      "accountCode": "600030",
+      "accountName": "المصروفات التشغيلية لادريس اكتوبر",
+      "openingBalance": 0.000,
+      "postedDebits": 312952.000,
+      "postedCredits": 0.000,
+      "endingBalance": 312952.000
+    },
+    {
+      "glAccountId": "600031",
+      "accountCode": "600031",
+      "accountName": "المصروفات التشغيلية سوا",
+      "openingBalance": 0.000,
+      "postedDebits": 63064.000,
+      "postedCredits": 0.000,
+      "endingBalance": 63064.000
+    },
+    {
+      "glAccountId": "600100",
+      "accountCode": "600100",
+      "accountName": "بدلات ومكافآت",
+      "openingBalance": 0.000,
+      "postedDebits": 33650.000,
+      "postedCredits": 0.000,
+      "endingBalance": 33650.000
+    },
+    {
+      "glAccountId": "600400",
+      "accountCode": "600400",
+      "accountName": "الاتصالات والإنترنت",
+      "openingBalance": 0.000,
+      "postedDebits": 1201.000,
+      "postedCredits": 0.000,
+      "endingBalance": 1201.000
+    },
+    {
+      "glAccountId": "600500",
+      "accountCode": "600500",
+      "accountName": "الأدوات المكتبية",
+      "openingBalance": 0.000,
+      "postedDebits": 19188.000,
+      "postedCredits": 0.000,
+      "endingBalance": 19188.000
+    },
+    {
+      "glAccountId": "600700",
+      "accountCode": "600700",
+      "accountName": "النقل والمواصلات",
+      "openingBalance": 0.000,
+      "postedDebits": 42602.000,
+      "postedCredits": 0.000,
+      "endingBalance": 42602.000
+    },
+    {
+      "glAccountId": "600800",
+      "accountCode": "600800",
+      "accountName": "الصيانة والإصلاح",
+      "openingBalance": 0.000,
+      "postedDebits": 15790.000,
+      "postedCredits": 0.000,
+      "endingBalance": 15790.000
+    },
+    {
+      "glAccountId": "600910",
+      "accountCode": "600910",
+      "accountName": "بنزين سيارات",
+      "openingBalance": 0.000,
+      "postedDebits": 89487.000,
+      "postedCredits": 0.000,
+      "endingBalance": 89487.000
+    },
+    {
+      "glAccountId": "600920",
+      "accountCode": "600920",
+      "accountName": "صيانة سيارات",
+      "openingBalance": 0.000,
+      "postedDebits": 63450.000,
+      "postedCredits": 0.000,
+      "endingBalance": 63450.000
+    },
+    {
+      "glAccountId": "600940",
+      "accountCode": "600940",
+      "accountName": "رسوم بنكية",
+      "openingBalance": 0.000,
+      "postedDebits": 21544.650,
+      "postedCredits": 2063.000,
+      "endingBalance": 19481.650
+    },
+    {
+      "glAccountId": "600950",
+      "accountCode": "600950",
+      "accountName": "لوازم كمبيوتر",
+      "openingBalance": 0.000,
+      "postedDebits": 1785.000,
+      "postedCredits": 0.000,
+      "endingBalance": 1785.000
+    },
+    {
+      "glAccountId": "600970",
+      "accountCode": "600970",
+      "accountName": "مياه شرب نقية",
+      "openingBalance": 0.000,
+      "postedDebits": 13655.000,
+      "postedCredits": 0.000,
+      "endingBalance": 13655.000
+    },
+    {
+      "glAccountId": "600980",
+      "accountCode": "600980",
+      "accountName": "مصاريف بوفيه و ضيافة",
+      "openingBalance": 0.000,
+      "postedDebits": 89507.000,
+      "postedCredits": 0.000,
+      "endingBalance": 89507.000
+    },
+    {
+      "glAccountId": "600990",
+      "accountCode": "600990",
+      "accountName": "رسوم وتراخيص حكومية",
+      "openingBalance": 0.000,
+      "postedDebits": 90593.500,
+      "postedCredits": 0.000,
+      "endingBalance": 90593.500
+    },
+    {
+      "glAccountId": "601000",
+      "accountCode": "601000",
+      "accountName": "الرواتب والأجور",
+      "openingBalance": 0.000,
+      "postedDebits": 2541613.000,
+      "postedCredits": 13985.000,
+      "endingBalance": 2527628.000
+    },
+    {
+      "glAccountId": "601210",
+      "accountCode": "601210",
+      "accountName": "رسوم تجديد وتراخيص سيارات",
+      "openingBalance": 0.000,
+      "postedDebits": 16100.000,
+      "postedCredits": 0.000,
+      "endingBalance": 16100.000
+    },
+    {
+      "glAccountId": "601220",
+      "accountCode": "601220",
+      "accountName": "رسوم بريدية وشحن",
+      "openingBalance": 0.000,
+      "postedDebits": 8200.000,
+      "postedCredits": 1800.000,
+      "endingBalance": 6400.000
+    },
+    {
+      "glAccountId": "601230",
+      "accountCode": "601230",
+      "accountName": "مصاريف طبية ودوائية",
+      "openingBalance": 0.000,
+      "postedDebits": 17340.000,
+      "postedCredits": 0.000,
+      "endingBalance": 17340.000
+    },
+    {
+      "glAccountId": "601240",
+      "accountCode": "601240",
+      "accountName": "مصاريف قانونية واستشارية",
+      "openingBalance": 0.000,
+      "postedDebits": 100000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 100000.000
+    },
+    {
+      "glAccountId": "601250",
+      "accountCode": "601250",
+      "accountName": "مصاريف متنوعة",
+      "openingBalance": 0.000,
+      "postedDebits": 11842.000,
+      "postedCredits": 0.000,
+      "endingBalance": 11842.000
+    },
+    {
+      "glAccountId": "601280",
+      "accountCode": "601280",
+      "accountName": "مصاريف برامج وأنظمة",
+      "openingBalance": 0.000,
+      "postedDebits": 18790.000,
+      "postedCredits": 0.000,
+      "endingBalance": 18790.000
+    },
+    {
+      "glAccountId": "830000",
+      "accountCode": "830000",
+      "accountName": "مصاريف ضيافة و علاقات عامة",
+      "openingBalance": 0.000,
+      "postedDebits": 562516.000,
+      "postedCredits": 0.000,
+      "endingBalance": 562516.000
+    },
+    {
+      "glAccountId": "840000",
+      "accountCode": "840000",
+      "accountName": "مزايا وحوافز عينية للموظفين",
+      "openingBalance": 0.000,
+      "postedDebits": 21500.000,
+      "postedCredits": 0.000,
+      "endingBalance": 21500.000
+    },
+    {
+      "glAccountId": "860000",
+      "accountCode": "860000",
+      "accountName": "انترنت هوائي 01034530246 - المبيعات",
+      "openingBalance": 0.000,
+      "postedDebits": 7809.000,
+      "postedCredits": 0.000,
+      "endingBalance": 7809.000
+    },
+    {
+      "glAccountId": "860010",
+      "accountCode": "860010",
+      "accountName": "انترنت هوائي 01068410822 - القسم الفني / السكرتارية",
+      "openingBalance": 0.000,
+      "postedDebits": 9955.000,
+      "postedCredits": 0.000,
+      "endingBalance": 9955.000
+    },
+    {
+      "glAccountId": "860020",
+      "accountCode": "860020",
+      "accountName": "انترنت هوائي 01558449652 قسم الحسابات",
+      "openingBalance": 0.000,
+      "postedDebits": 4545.000,
+      "postedCredits": 0.000,
+      "endingBalance": 4545.000
+    },
+    {
+      "glAccountId": "860030",
+      "accountCode": "860030",
+      "accountName": "اتصالات 01508881222",
+      "openingBalance": 0.000,
+      "postedDebits": 5803.000,
+      "postedCredits": 0.000,
+      "endingBalance": 5803.000
+    },
+    {
+      "glAccountId": "860040",
+      "accountCode": "860040",
+      "accountName": "اتصالات 01508881333",
+      "openingBalance": 0.000,
+      "postedDebits": 666.500,
+      "postedCredits": 0.000,
+      "endingBalance": 666.500
+    },
+    {
+      "glAccountId": "870000",
+      "accountCode": "870000",
+      "accountName": "تنظيف الواجهات الخارجية شركة جولدن",
+      "openingBalance": 0.000,
+      "postedDebits": 20000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 20000.000
+    },
+    {
+      "glAccountId": "880000",
+      "accountCode": "880000",
+      "accountName": "عيديات الموظفين",
+      "openingBalance": 0.000,
+      "postedDebits": 112500.000,
+      "postedCredits": 0.000,
+      "endingBalance": 112500.000
+    },
+    {
+      "glAccountId": "890000",
+      "accountCode": "890000",
+      "accountName": "مطبوعات داخلية",
+      "openingBalance": 0.000,
+      "postedDebits": 8850.000,
+      "postedCredits": 0.000,
+      "endingBalance": 8850.000
+    },
+    {
+      "glAccountId": "910000",
+      "accountCode": "910000",
+      "accountName": "رمضان افطار وجبات كراتين",
+      "openingBalance": 0.000,
+      "postedDebits": 762500.000,
+      "postedCredits": 78750.000,
+      "endingBalance": 683750.000
+    },
+    {
+      "glAccountId": "920000",
+      "accountCode": "920000",
+      "accountName": "اجهزة لاب توب و طابعات",
+      "openingBalance": 0.000,
+      "postedDebits": 5899.000,
+      "postedCredits": 0.000,
+      "endingBalance": 5899.000
+    },
+    {
+      "glAccountId": "930000",
+      "accountCode": "930000",
+      "accountName": "غسيل سيارة",
+      "openingBalance": 0.000,
+      "postedDebits": 1800.000,
+      "postedCredits": 0.000,
+      "endingBalance": 1800.000
+    },
+    {
+      "glAccountId": "940000",
+      "accountCode": "940000",
+      "accountName": "رسوم كارتة طريق",
+      "openingBalance": 0.000,
+      "postedDebits": 355.000,
+      "postedCredits": 0.000,
+      "endingBalance": 355.000
+    },
+    {
+      "glAccountId": "950000",
+      "accountCode": "950000",
+      "accountName": "سفر وانتقالات - تذاكر طيران",
+      "openingBalance": 0.000,
+      "postedDebits": 22920.000,
+      "postedCredits": 0.000,
+      "endingBalance": 22920.000
+    },
+    {
+      "glAccountId": "960000",
+      "accountCode": "960000",
+      "accountName": "خصم معتمد على سعر الوحدات",
+      "openingBalance": 0.000,
+      "postedDebits": 85500.000,
+      "postedCredits": 0.000,
+      "endingBalance": 85500.000
+    },
+    {
+      "glAccountId": "970000",
+      "accountCode": "970000",
+      "accountName": "المساهمة التكافلية للشركات المساهمة",
+      "openingBalance": 0.000,
+      "postedDebits": 66000.000,
+      "postedCredits": 0.000,
+      "endingBalance": 66000.000
+    }
+  ]
+}

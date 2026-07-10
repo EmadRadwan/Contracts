@@ -20,7 +20,6 @@ import {
     nonDeletedCertificateItemsSelector
 } from "../slice/certificateSelectors";
 import {useFetchCertificateItemsQuery} from "../../../app/store/apis/certificateItemsApi";
-import {CertificateItemFormMemo} from "../form/CertificateItemForm";
 import CertificateItemKendoBulkAdd from "../form/CertificateItemKendoBulkAddV2";
 import {
     setProcessedCertificateItems,
@@ -35,14 +34,17 @@ interface Props {
     isFormCollapsed: boolean;
 }
 
+// Purpose: Kendo Column `format` props (e.g. "{0:n2}") already render thousands separators for
+// grid cells, but plain toolbar/text totals built with template strings or .toFixed() don't —
+// this mirrors the formatNumber convention already used elsewhere (e.g. IncomeStatement.tsx).
+const formatNumber = (value: number | undefined) =>
+    (value ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 export default function CertificateItemsList({editMode, workEffortId, isFormCollapsed}: Props) {
     const initialSort: Array<SortDescriptor> = [{field: "productName", dir: "asc"}];
     const [sort, setSort] = useState(initialSort);
     const initialDataState: State = {skip: 0, take: 4};
     const [page, setPage] = useState<State>(initialDataState);
-    const [show, setShow] = useState(false);
-    const [itemEditMode, setItemEditMode] = useState(0);
-    const [certificateItem, setCertificateItem] = useState<CertificateItem | undefined>(undefined);
     const [showBulkAdd, setShowBulkAdd] = useState(false);
     const dispatch = useAppDispatch();
     const {getTranslatedLabel} = useTranslationHelper();
@@ -66,15 +68,10 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
         }
     }, [certificateItemsData, isFetching, isLoading, dispatch]);
 
-    const memoizedOnClose = useCallback(() => {
-        setShow(false);
-    }, []);
-
     const memoizedOnBulkClose = useCallback(() => {
         setShowBulkAdd(false);
     }, []);
 
-    const modalWidth = isWorkmanship ? 1200 : 700;
     const bulkModalWidth = "95%";
 
     const addItem = useCallback((item: CertificateItem) => {
@@ -89,42 +86,6 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
         dispatch(setProcessedCertificateItems([{ workEffortId: itemId, isDeleted: true } as CertificateItem]));
     }, [dispatch]);
 
-    const handleSelectCertificateItem = useCallback(
-        (workEffortId: string) => {
-            const selectedCertificateItem = uiCertificateItems.find((item) => item.workEffortId === workEffortId);
-            if (!selectedCertificateItem) return;
-            const certificateItem: CertificateItem = {
-                ...selectedCertificateItem,
-                productId: {
-                    ProductId: selectedCertificateItem.productId,
-                    ProductName: selectedCertificateItem.productName || "",
-                    ProductType: "",
-                },
-                uomId: {
-                    UomId: selectedCertificateItem.uomId,
-                    Description: selectedCertificateItem.uomName || "",
-                },
-                gratuities: selectedCertificateItem.gratuities || 0,
-                transportationExpenses: selectedCertificateItem.transportationExpenses || 0,
-                discount: selectedCertificateItem.discount || 0,
-                unitPrice: selectedCertificateItem.unitPrice || 0,
-                materialPrice: selectedCertificateItem.materialPrice || 0,
-                laborPrice: selectedCertificateItem.laborPrice || 0,
-                procurementDate: selectedCertificateItem.procurementDate
-                    ? new Date(selectedCertificateItem.procurementDate)
-                    : new Date(),
-                additionalInsurance: selectedCertificateItem.additionalInsurance || 0,
-                deductionDescription: selectedCertificateItem.deductionDescription || "",
-                insuranceMode: selectedCertificateItem.insuranceMode || "value",
-                additionalInsuranceMode: selectedCertificateItem.additionalInsuranceMode || "value",
-            };
-            setCertificateItem(certificateItem);
-            setItemEditMode(2);
-            setShow(true);
-        },
-        [uiCertificateItems]
-    );
-
     const remove = useCallback(
         (dataItem: CertificateItem, nonDeletedItems: CertificateItem[]) => {
             const newCertificateItems = nonDeletedItems.map((item) =>
@@ -135,26 +96,21 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
         [dispatch]
     );
 
+    // Purpose: Item edits now happen exclusively through the "Items" bulk-add grid — these
+    // cells are plain read-only text, not click targets, so there's a single entry point
+    // for creating/editing certificate items instead of two competing ones.
     const deductionDescriptionCell = (props: GridCellProps) => (
         <td>
-            {props.dataItem.deductionDescription ? (
-                <Button onClick={() => handleSelectCertificateItem(props.dataItem.workEffortId)}>
-                    {props.dataItem.deductionDescription.length > 50
-                        ? `${props.dataItem.deductionDescription.substring(0, 50)}...`
-                        : props.dataItem.deductionDescription}
-                </Button>
-            ) : (
-                "-"
-            )}
+            {props.dataItem.deductionDescription
+                ? (props.dataItem.deductionDescription.length > 50
+                    ? `${props.dataItem.deductionDescription.substring(0, 50)}...`
+                    : props.dataItem.deductionDescription)
+                : "-"}
         </td>
     );
 
     const descriptionCell = (props: GridCellProps) => (
-        <td>
-            <Button onClick={() => handleSelectCertificateItem(props.dataItem.workEffortId)}>
-                {props.dataItem.productName}
-            </Button>
-        </td>
+        <td>{props.dataItem.productName}</td>
     );
 
     const DeleteCertificateItemCell = (props: GridCellProps) => (
@@ -187,7 +143,7 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
             cell: (props: GridCellProps) => (
                 <td>
                     {props.dataItem.isLastInGroup && props.dataItem.productSubtotal !== undefined
-                        ? `${props.dataItem.code} (${getTranslatedLabel(`${localizationKey}.productSubtotal`, 'Subtotal')}: ${props.dataItem.productSubtotal})`
+                        ? `${props.dataItem.code} (${getTranslatedLabel(`${localizationKey}.productSubtotal`, 'Subtotal')}: ${formatNumber(props.dataItem.productSubtotal)})`
                         : props.dataItem.code}
                 </td>
             ),
@@ -225,7 +181,7 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
                 { field: "insurance", title: getTranslatedLabel(`${localizationKey}.insurance`, "Insurance"), format: "{0:n2}", width: 120 },
                 { field: "additionalInsurance", title: getTranslatedLabel(`${localizationKey}.additionalInsurance`, "Additional Insurance"), format: "{0:n2}", width: 140 },
                 { field: "net", title: getTranslatedLabel(`${localizationKey}.net`, "Net"), format: "{0:n2}", width: 120 },
-                { field: "achievementPercentage", title: getTranslatedLabel(`${localizationKey}.achievementPercentage`, "Achievement %"), format: "{0:n9}", width: 140 },
+                { field: "achievementPercentage", title: getTranslatedLabel(`${localizationKey}.achievementPercentage`, "Achievement %"), format: "{0:n9}", width: 150 },
             ]
             : [
                 {
@@ -301,16 +257,6 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
 
     return (
         <>
-            {show && (
-                <ModalContainer show={show} onClose={memoizedOnClose} width={modalWidth}>
-                    <CertificateItemFormMemo
-                        certificateItem={certificateItem}
-                        editMode={itemEditMode}
-                        onClose={memoizedOnClose}
-                        formEditMode={editMode}
-                    />
-                </ModalContainer>
-            )}
             {showBulkAdd && (
                 <ModalContainer show={showBulkAdd} onClose={memoizedOnBulkClose} width={bulkModalWidth}>
                     <CertificateItemKendoBulkAdd
@@ -340,7 +286,7 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
                         <Grid item xs={12}>
                             <KendoGrid
                                 className="main-grid"
-                                style={{height: isFormCollapsed ? "60vh" : "30vh"}}
+                                style={{height: isFormCollapsed ? "65vh" : "40vh"}}
                                 data={dataWithSummaries.data}
                                 sortable
                                 scrollable="scrollable"
@@ -357,33 +303,20 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
                                     <Grid container justifyContent="space-between">
                                         <Grid item>
                                             <Button
-                                                color="secondary"
-                                                onClick={() => {
-                                                    setCertificateItem(undefined);
-                                                    setItemEditMode(1);
-                                                    setShow(true);
-                                                }}
-                                                variant="outlined"
-                                                disabled={editMode > 3}
-                                            >
-                                                {getTranslatedLabel(`${localizationKey}.addItem`, "Add Item")}
-                                            </Button>
-                                            <Button
                                                 color="primary"
                                                 onClick={() => {
                                                     setShowBulkAdd(true);
                                                 }}
                                                 variant="outlined"
                                                 disabled={editMode > 3}
-                                                sx={{ml: 1}}
                                             >
-                                                {getTranslatedLabel(`${localizationKey}.bulkAdd`, "Bulk Add")}
+                                                {getTranslatedLabel(`${localizationKey}.bulkAdd`, "Items")}
                                             </Button>
                                         </Grid>
                                         {(isSupplyWithDiscount || isSupplyWithoutDiscount || isWorkmanship) && (
                                             <Grid item>
                                                 <Typography>
-                                                    {getTranslatedLabel(`${localizationKey}.Total`, "Total")}: {subtotal.toFixed(2)}
+                                                    {getTranslatedLabel(`${localizationKey}.Total`, "Total")}: {formatNumber(subtotal)}
                                                 </Typography>
                                             </Grid>
                                         )}

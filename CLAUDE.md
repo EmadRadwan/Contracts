@@ -355,3 +355,8 @@ In `Persistence/SeedContracts.cs`:
 - NEVER run `npm run build`, `npm start`, or any frontend build commands after modifying files
 - After making code changes, stop and report what was changed — do not attempt to verify by building
 - The developer will manually re-run/re-debug after all changes are complete
+
+## Local Dev Login (browser verification only)
+- Only use when the developer explicitly asks for a live browser check (e.g. via chrome-devtools tools) against the already-running local dev server (`http://localhost:3000`, API on `:5001`). Never start the dev server yourself — see Build Rules above.
+- Email: `eradwan1967@gmail.com`
+- Password: `Pa$$w0rd`

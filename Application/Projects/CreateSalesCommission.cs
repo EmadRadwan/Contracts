@@ -179,7 +179,7 @@ public class CreateSalesCommission
                 }
             }
 
-            var transaction = _context.Database.BeginTransaction();
+            var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
                 var commission = new Domain.SalesCommission

@@ -43,6 +43,10 @@ import QuickCreatePartyDialog, { PartyRole } from "../../../../../app/common/for
 import SalesRequestMenu from "../menu/SalesRequestMenu";
 import LoadingComponent from "../../../../../app/layout/LoadingComponent";
 
+function formatEGP(value: number | null | undefined) {
+    return Math.round(value ?? 0).toLocaleString("ar-SA");
+}
+
 function getThresholdStatus(ratio: number, saleTypeId: string | null) {
     const lower = saleTypeId === "COMM_SALE_INDIRECT" ? 0.075 : 0.05;
     if (ratio < lower) return { status: "blocked" as const, factor: 0, lower };
@@ -365,19 +369,41 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                         const salePrice = defaults?.salePrice ?? activeCommission?.salePrice ?? 0;
                         const factor = threshold.status === "full" ? 1 : threshold.status === "partial" ? 0.5 : 0;
 
-                        const maxRepPct = activeRate
-                            ? (hasTwoSalesReps ? activeRate.salesRepPercent / 2 : activeRate.salesRepPercent)
-                            : undefined;
-                        const maxMgrPct = activeRate
-                            ? (hasTwoManagers ? activeRate.managerPercent / 2 : activeRate.managerPercent)
-                            : undefined;
+                        const maxRepPct = activeRate?.salesRepPercent;
+                        const maxMgrPct = activeRate?.managerPercent;
                         const maxExtPct = activeRate?.externalCompanyPercent ?? undefined;
 
                         const repValidator = maxRepPct !== undefined
-                            ? (v: any) => (v ?? 0) > maxRepPct ? `الحد الأقصى ${maxRepPct.toFixed(4)}%` : undefined
+                            ? (v: any) => {
+                                const rep2 = hasTwoSalesReps ? (formRenderProps.valueGetter("salesRep2Percent") ?? 0) : 0;
+                                return (v ?? 0) + rep2 > maxRepPct
+                                    ? `إجمالي نسبة المندوبين يتجاوز الحد الأقصى ${maxRepPct.toFixed(4)}%`
+                                    : undefined;
+                            }
+                            : undefined;
+                        const rep2Validator = maxRepPct !== undefined
+                            ? (v: any) => {
+                                const rep1 = formRenderProps.valueGetter("salesRepPercent") ?? 0;
+                                return rep1 + (v ?? 0) > maxRepPct
+                                    ? `إجمالي نسبة المندوبين يتجاوز الحد الأقصى ${maxRepPct.toFixed(4)}%`
+                                    : undefined;
+                            }
                             : undefined;
                         const mgrValidator = maxMgrPct !== undefined
-                            ? (v: any) => (v ?? 0) > maxMgrPct ? `الحد الأقصى ${maxMgrPct.toFixed(4)}%` : undefined
+                            ? (v: any) => {
+                                const mgr2 = hasTwoManagers ? (formRenderProps.valueGetter("manager2Percent") ?? 0) : 0;
+                                return (v ?? 0) + mgr2 > maxMgrPct
+                                    ? `إجمالي نسبة المديرين يتجاوز الحد الأقصى ${maxMgrPct.toFixed(4)}%`
+                                    : undefined;
+                            }
+                            : undefined;
+                        const mgr2Validator = maxMgrPct !== undefined
+                            ? (v: any) => {
+                                const mgr1 = formRenderProps.valueGetter("managerPercent") ?? 0;
+                                return mgr1 + (v ?? 0) > maxMgrPct
+                                    ? `إجمالي نسبة المديرين يتجاوز الحد الأقصى ${maxMgrPct.toFixed(4)}%`
+                                    : undefined;
+                            }
                             : undefined;
                         const extValidator = maxExtPct !== undefined
                             ? (v: any) => (v ?? 0) > maxExtPct ? `الحد الأقصى ${maxExtPct.toFixed(4)}%` : undefined
@@ -428,7 +454,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         {getTranslatedLabel("salesCommission.form.salePrice", "سعر البيع")}
                                                     </Typography>
                                                     <Typography variant="body1" fontWeight="bold">
-                                                        {salePrice.toLocaleString("ar-SA", { minimumFractionDigits: 2 })}
+                                                        {formatEGP(salePrice)}
                                                     </Typography>
                                                 </Grid>
                                                 <Grid item xs={6} md={3}>
@@ -436,7 +462,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         {getTranslatedLabel("salesCommission.form.collectedAmount", "المبلغ المحصل")}
                                                     </Typography>
                                                     <Typography variant="body1" fontWeight="bold">
-                                                        {collected.toLocaleString("ar-SA", { minimumFractionDigits: 2 })}
+                                                        {formatEGP(collected)}
                                                     </Typography>
                                                 </Grid>
                                                 <Grid item xs={6} md={2}>
@@ -470,17 +496,17 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                 <Typography variant="caption" sx={{ whiteSpace: "nowrap" }}>
                                                     {`المندوب: ${activeRate.salesRepPercent}%`}
                                                     {hasTwoSalesReps && ` (${(activeRate.salesRepPercent / 2).toFixed(4)}% × 2)`}
-                                                    {` ← ${(salePrice * activeRate.salesRepPercent / 100 * factor).toLocaleString("ar-SA", { maximumFractionDigits: 2 })}`}
+                                                    {` ← ${formatEGP(salePrice * activeRate.salesRepPercent / 100 * factor)}`}
                                                 </Typography>
                                                 <Typography variant="caption" sx={{ whiteSpace: "nowrap" }}>
                                                     {`المدير: ${activeRate.managerPercent}%`}
                                                     {hasTwoManagers && ` (${(activeRate.managerPercent / 2).toFixed(4)}% × 2)`}
-                                                    {` ← ${(salePrice * activeRate.managerPercent / 100 * factor).toLocaleString("ar-SA", { maximumFractionDigits: 2 })}`}
+                                                    {` ← ${formatEGP(salePrice * activeRate.managerPercent / 100 * factor)}`}
                                                 </Typography>
                                                 {isIndirect && activeRate.externalCompanyPercent != null && (
                                                     <Typography variant="caption" sx={{ whiteSpace: "nowrap" }}>
                                                         {`الوسيط: ${activeRate.externalCompanyPercent}%`}
-                                                        {` ← ${(salePrice * activeRate.externalCompanyPercent / 100 * factor).toLocaleString("ar-SA", { maximumFractionDigits: 2 })}`}
+                                                        {` ← ${formatEGP(salePrice * activeRate.externalCompanyPercent / 100 * factor)}`}
                                                     </Typography>
                                                 )}
                                             </Box>
@@ -559,7 +585,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                         {activeCommission?.salesRepAmount && (
                                             <Grid item xs={6} md={2}>
                                                 <Typography variant="body2" sx={{ mt: 3 }}>
-                                                    {getTranslatedLabel("salesCommission.form.salesRep1Amount", "مبلغ المندوب الأول")}: {activeCommission.salesRepAmount?.toLocaleString("ar-SA", { minimumFractionDigits: 2 })}
+                                                    {getTranslatedLabel("salesCommission.form.salesRep1Amount", "مبلغ المندوب الأول")}: {formatEGP(activeCommission.salesRepAmount)}
                                                 </Typography>
                                             </Grid>
                                         )}
@@ -613,7 +639,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                     component={FormNumericTextBox}
                                                     min={0} max={100} format="n4"
                                                     disabled={isApproved}
-                                                    validator={repValidator ? [repValidator] : undefined}
+                                                    validator={rep2Validator ? [rep2Validator] : undefined}
                                                 />
                                             </Grid>
                                         </Grid>
@@ -658,7 +684,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                         {activeCommission?.managerAmount && (
                                             <Grid item xs={6} md={2}>
                                                 <Typography variant="body2" sx={{ mt: 3 }}>
-                                                    {getTranslatedLabel("salesCommission.form.manager1Amount", "مبلغ المدير الأول")}: {activeCommission.managerAmount?.toLocaleString("ar-SA", { minimumFractionDigits: 2 })}
+                                                    {getTranslatedLabel("salesCommission.form.manager1Amount", "مبلغ المدير الأول")}: {formatEGP(activeCommission.managerAmount)}
                                                 </Typography>
                                             </Grid>
                                         )}
@@ -712,7 +738,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                     component={FormNumericTextBox}
                                                     min={0} max={100} format="n4"
                                                     disabled={isApproved}
-                                                    validator={mgrValidator ? [mgrValidator] : undefined}
+                                                    validator={mgr2Validator ? [mgr2Validator] : undefined}
                                                 />
                                             </Grid>
                                         </Grid>
@@ -814,9 +840,9 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                 {activeCommission?.externalCompanyGrossAmount && (
                                                     <Grid item xs={6} md={3}>
                                                         <Typography variant="body2" sx={{ mt: 3 }}>
-                                                            {getTranslatedLabel("salesCommission.form.externalCompanyGross", "إجمالي الوسيط")}: {activeCommission.externalCompanyGrossAmount?.toLocaleString("ar-SA", { minimumFractionDigits: 2 })}
+                                                            {getTranslatedLabel("salesCommission.form.externalCompanyGross", "إجمالي الوسيط")}: {formatEGP(activeCommission.externalCompanyGrossAmount)}
                                                             {" / "}
-                                                            {getTranslatedLabel("salesCommission.form.externalCompanyNet", "صافي الوسيط")}: {activeCommission.externalCompanyNetAmount?.toLocaleString("ar-SA", { minimumFractionDigits: 2 })}
+                                                            {getTranslatedLabel("salesCommission.form.externalCompanyNet", "صافي الوسيط")}: {formatEGP(activeCommission.externalCompanyNetAmount)}
                                                         </Typography>
                                                     </Grid>
                                                 )}
@@ -882,9 +908,9 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                 {activeCommission?.externalSalesRepAmount && (
                                                     <Grid item xs={6} md={3}>
                                                         <Typography variant="body2" sx={{ mt: 3 }}>
-                                                            {getTranslatedLabel("salesCommission.form.externalSalesRepAmount", "مبلغ مندوب الوسيط")}: {activeCommission.externalSalesRepAmount?.toLocaleString("ar-SA", { minimumFractionDigits: 2 })}
+                                                            {getTranslatedLabel("salesCommission.form.externalSalesRepAmount", "مبلغ مندوب الوسيط")}: {formatEGP(activeCommission.externalSalesRepAmount)}
                                                             {activeCommission.externalSalesRepNetAmount != null && (
-                                                                <>{" / "}{getTranslatedLabel("salesCommission.form.externalSalesRepNet", "صافي مندوب الوسيط")}: {activeCommission.externalSalesRepNetAmount?.toLocaleString("ar-SA", { minimumFractionDigits: 2 })}</>
+                                                                <>{" / "}{getTranslatedLabel("salesCommission.form.externalSalesRepNet", "صافي مندوب الوسيط")}: {formatEGP(activeCommission.externalSalesRepNetAmount)}</>
                                                             )}
                                                         </Typography>
                                                     </Grid>
@@ -951,9 +977,9 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                 {activeCommission?.externalManagerAmount && (
                                                     <Grid item xs={6} md={3}>
                                                         <Typography variant="body2" sx={{ mt: 3 }}>
-                                                            {getTranslatedLabel("salesCommission.form.externalManagerAmount", "مبلغ مدير الوسيط")}: {activeCommission.externalManagerAmount?.toLocaleString("ar-SA", { minimumFractionDigits: 2 })}
+                                                            {getTranslatedLabel("salesCommission.form.externalManagerAmount", "مبلغ مدير الوسيط")}: {formatEGP(activeCommission.externalManagerAmount)}
                                                             {activeCommission.externalManagerNetAmount != null && (
-                                                                <>{" / "}{getTranslatedLabel("salesCommission.form.externalManagerNet", "صافي مدير الوسيط")}: {activeCommission.externalManagerNetAmount?.toLocaleString("ar-SA", { minimumFractionDigits: 2 })}</>
+                                                                <>{" / "}{getTranslatedLabel("salesCommission.form.externalManagerNet", "صافي مدير الوسيط")}: {formatEGP(activeCommission.externalManagerNetAmount)}</>
                                                             )}
                                                         </Typography>
                                                     </Grid>

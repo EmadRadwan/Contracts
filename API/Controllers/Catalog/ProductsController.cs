@@ -66,7 +66,8 @@ public class ProductsController : BaseApiController
     [HttpGet("getSimpleProductsLov", Name = "GetSimpleProductsLov")]
     public async Task<IActionResult> GetSimpleProductsLov([FromQuery] ProductLovParams param)
     {
-        return HandleResult(await Mediator.Send(new GetSimpleProductsLov.Query { Params = param }));
+        var language = GetLanguage();
+        return HandleResult(await Mediator.Send(new GetSimpleProductsLov.Query { Params = param, Language = language }));
     }
 
     [HttpGet("getSimpleApartmentsLov", Name = "GetSimpleApartmentsLov")]
