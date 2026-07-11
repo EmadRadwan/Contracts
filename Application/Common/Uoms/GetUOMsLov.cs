@@ -56,29 +56,40 @@ public class GetUOMsLov
                 // REFACTOR: Define allowed UOM IDs
                 // Purpose: Restrict query to specific UOMs from provided JSON list
                 // Context: Filters UOMs to match client-provided list
-                var allowedUomIds = new List<string> { 
-                    "LN_m", 
-                    "AR_m2", 
-                    "VL_m3", 
-                    "LN_m_linear", 
-                    "LN_m_half", 
-                    "LN_m_third", 
-                    "LN_mm", 
-                    "LN_in", 
-                    "VL_l", 
-                    "WT_kg", 
-                    "VL_bbl", 
-                    "VL_bastila", 
-                    "WT_t", 
-                    "TM_day", 
-                    "TM_hr", 
+                var allowedUomIds = new List<string> {
+                    "LN_m",
+                    "AR_m2",
+                    "VL_m3",
+                    "LN_m_linear",
+                    "LN_m_half",
+                    "LN_m_third",
+                    "LN_mm",
+                    "LN_in",
+                    "VL_l",
+                    "WT_kg",
+                    "VL_bbl",
+                    "VL_bastila",
+                    "WT_t",
+                    "TM_day",
+                    "TM_hr",
                     "QT_thousand",
                     "WT_shikara",
                     "LN_m_2x",      // Added: Linear Meter x2
                     "LN_m_3x",      // Added: Linear Meter x3
                     "AR_m2_2x",     // Added: Square Meter x2
                     "AR_m2_1.5x",   // Added: Square Meter x1.5
-                    "CUST_phase"    // Added: Phase
+                    "CUST_phase",   // Added: Phase
+                    "CUST_lump_sum",    // Added: Lump Sum / مقطوعية
+                    "CUST_trip",        // Added: Trip (negotiated capacity) / نقلة
+                    "CUST_trip_3m3",    // Added: Trip (3 m3) / نقلة 3
+                    "CUST_trip_4m3",    // Added: Trip (4 m3) / نقلة 4
+                    "CUST_trip_10m3",   // Added: Trip (10 m3) / نقلة 10
+                    "CUST_trip_12m3",   // Added: Trip (12 m3) / نقلة 12
+                    "CUST_trip_18m3",   // Added: Trip (18 m3) / نقلة 18
+                    "CUST_trip_20m3",   // Added: Trip (20 m3) / نقلة 20
+                    "CUST_errand",      // Added: Errand / مشوار
+                    "CUST_cart",        // Added: Cart / عربية
+                    "LN_m_1.5x"         // Added: Linear Meter x1.5
                 };
 
                 // REFACTOR: Determine language preference
@@ -103,7 +114,9 @@ public class GetUOMsLov
 
                 var total = await query.CountAsync(cancellationToken);
                 var uoms = await query
-                    .OrderBy(u => useArabic ? u.DescriptionArabic : u.Description)
+                    .OrderBy(u => u.SortOrder == null)
+                    .ThenBy(u => u.SortOrder)
+                    .ThenBy(u => useArabic ? u.DescriptionArabic : u.Description)
                     .Skip(request.Params.Skip)
                     .Take(request.Params.PageSize)
                     .Select(u => new UomDto

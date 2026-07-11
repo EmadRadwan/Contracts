@@ -8,6 +8,7 @@ public class Uom
 {
     public Uom()
     {
+        DerivedUoms = new HashSet<Uom>();
         AcctgTransEntryCurrencyUoms = new HashSet<AcctgTransEntry>();
         AcctgTransEntryOrigCurrencyUoms = new HashSet<AcctgTransEntry>();
         BillingAccountTerms = new HashSet<BillingAccountTerm>();
@@ -107,12 +108,18 @@ public class Uom
     public string? Description { get; set; }
     public string? DescriptionArabic { get; set; }
     public string? DescriptionTurkish { get; set; }
+    public int? SortOrder { get; set; }
+    // Multiplier applied to the entered quantity to get the true quantity in BaseUom terms (e.g. 3 for "trip of 3 m3"). Null means factor 1.
+    public double? QuantityFactor { get; set; }
+    public string? BaseUomId { get; set; }
     public DateTime? LastUpdatedStamp { get; set; }
     public DateTime? LastUpdatedTxStamp { get; set; }
     public DateTime? CreatedStamp { get; set; }
     public DateTime? CreatedTxStamp { get; set; }
 
     public UomType? UomType { get; set; }
+    public Uom? BaseUom { get; set; }
+    public ICollection<Uom> DerivedUoms { get; set; }
     public ICollection<AcctgTransEntry> AcctgTransEntryCurrencyUoms { get; set; }
     public ICollection<AcctgTransEntry> AcctgTransEntryOrigCurrencyUoms { get; set; }
     public ICollection<BillingAccountTerm> BillingAccountTerms { get; set; }

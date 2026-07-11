@@ -60265,6 +60265,8 @@ entity.HasOne(d => d.CreatedByUserLoginNavigation)
 
                 entity.HasIndex(e => e.UomTypeId, "UOM_TO_TYPE");
 
+                entity.HasIndex(e => e.BaseUomId, "UOM_TO_BASE_UOM");
+
                 entity.HasIndex(e => e.CreatedTxStamp, "UOM_TXCRTS");
 
                 entity.HasIndex(e => e.LastUpdatedTxStamp, "UOM_TXSTMP");
@@ -60312,6 +60314,15 @@ entity.HasOne(d => d.CreatedByUserLoginNavigation)
 
                 entity.Property(e => e.NumericCode).HasColumnName("NUMERIC_CODE");
 
+                entity.Property(e => e.SortOrder).HasColumnName("SORT_ORDER");
+
+                entity.Property(e => e.QuantityFactor).HasColumnName("QUANTITY_FACTOR");
+
+                entity.Property(e => e.BaseUomId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("BASE_UOM_ID");
+
                 entity.Property(e => e.UomTypeId)
                     .HasMaxLength(36)
                     .IsUnicode(false)
@@ -60321,8 +60332,11 @@ entity.HasOne(d => d.CreatedByUserLoginNavigation)
                     .WithMany(p => p.Uoms)
                     .HasForeignKey(d => d.UomTypeId)
                     .HasConstraintName("UOM_TO_TYPE");
-                    
-               
+
+                entity.HasOne(d => d.BaseUom)
+                    .WithMany(p => p.DerivedUoms)
+                    .HasForeignKey(d => d.BaseUomId)
+                    .HasConstraintName("UOM_TO_BASE_UOM");
 
             entity.HasMany(u => u.OrderItemsByRecurringFreqUom)
                   .WithOne(o => o.RecurringFreqUom)

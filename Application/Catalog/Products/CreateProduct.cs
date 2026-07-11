@@ -1,3 +1,4 @@
+using Application.Core;
 using Application.Interfaces;
 using AutoMapper;
 using Domain;
@@ -19,11 +20,13 @@ public class CreateProduct
     {
         private readonly DataContext _context;
         private readonly IUserAccessor _userAccessor;
+        private readonly IUtilityService _utilityService;
 
-        public Handler(DataContext context, IUserAccessor userAccessor)
+        public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService)
         {
             _userAccessor = userAccessor;
             _context = context;
+            _utilityService = utilityService;
         }
 
         public async Task<Result<ProductDto2>> Handle(Command request, CancellationToken cancellationToken)
@@ -38,7 +41,16 @@ public class CreateProduct
             if (user == null) return Result<ProductDto2>.Failure("User not found");
 
             // --------------------------------------------------------------------
-            // 2. Duplicate ProductId check
+            // 2. Auto-assign ProductId when left blank, using the same SEQUENCE_VALUE_ITEM
+            // mechanism already used for OrderHeader/BillingAccount/etc. ("Product" row
+            // already exists in the table but was never wired up since IDs were always
+            // typed manually).
+            // --------------------------------------------------------------------
+            if (string.IsNullOrWhiteSpace(dto.ProductId))
+                dto.ProductId = await _utilityService.GetNextSequence("Product");
+
+            // --------------------------------------------------------------------
+            // 3. Duplicate ProductId check
             // --------------------------------------------------------------------
             if (await _context.Products.AnyAsync(p => p.ProductId == dto.ProductId, cancellationToken))
                 return Result<ProductDto2>.Failure("Product ID already exists");

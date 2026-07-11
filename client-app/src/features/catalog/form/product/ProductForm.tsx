@@ -272,12 +272,15 @@ function ProductForm({
                               name="productId"
                               label={getTranslatedLabel(
                                   "product.products.form.id",
-                                  "Product ID *"
+                                  "Product ID"
+                              )}
+                              hint={getTranslatedLabel(
+                                  "product.products.form.idHint",
+                                  "Leave blank to auto-generate"
                               )}
                               component={FormInput}
                               autoComplete="off"
                               disabled={editMode === 2}
-                              validator={requiredValidator}
                           />
                         </Grid>
                         <Grid item xs={9}>

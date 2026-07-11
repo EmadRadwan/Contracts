@@ -423,7 +423,7 @@ const CertificateItemKendoBulkAddV2: React.FC<Props> = ({
         const cols: React.ReactElement[] = [
             <Column key="productId"   field="productId"   title={isContracting ? getTranslatedLabel(`${itemKey}.product`, "Work Item") : getTranslatedLabel(`${itemKey}.productItem`, "Item")}     cell={ProductCell} width={280} />,
             <Column key="description" field="description" title={getTranslatedLabel(`${itemKey}.description`,    "Description")}                    width={250} />,
-            <Column key="uomId"       field="uomId"       title={getTranslatedLabel(`${itemKey}.unitOfMeasure`,  "UOM")}         cell={UomCell}     width={180} />,
+            <Column key="uomId"       field="uomId"       title={getTranslatedLabel(`${itemKey}.unitOfMeasure`,  "UOM")}         cell={UomCell}     width={260} />,
             <Column key="quantity"    field="quantity"    title={getTranslatedLabel(`${itemKey}.quantity`,       "Qty")}  editor="numeric"           width={100} />,
         ];
 
