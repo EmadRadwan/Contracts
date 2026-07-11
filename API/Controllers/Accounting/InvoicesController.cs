@@ -13,6 +13,16 @@ public class InvoicesController : BaseApiController
             { InvoiceId = invoiceId, Language = GetLanguage() }));
     }
 
+    // One-off remediation for the SUPPLY_PROCUREMENT_CERTIFICATE accounting-skip bug (see
+    // RemediateSupplyCertificateAccounting.cs). PartyIdSuppliers is a required allowlist —
+    // this intentionally does not offer a "remediate everything" mode.
+    [HttpPost("remediateSupplyCertificateAccounting", Name = "RemediateSupplyCertificateAccounting")]
+    public async Task<IActionResult> RemediateSupplyCertificateAccounting(
+        [FromBody] RemediateSupplyCertificateAccounting.Command command)
+    {
+        return HandleResult(await Mediator.Send(command));
+    }
+
 
     [HttpPost("createInvoice", Name = "CreateInvoice")]
     public async Task<IActionResult> CreateInvoice(InvoiceDto3 invoiceDto)

@@ -2287,6 +2287,19 @@ public class GeneralLedgerService : IGeneralLedgerService
                             i.InvoiceItemTypeId != "PITM_SALES_TAX")
                 .ToListAsync();
 
+            // Resolve the certificate (if any) this invoice was generated from — used below both as a
+            // fallback description for entries whose invoiceItem.Description is empty, and to stamp
+            // WorkEffortId onto the AcctgTrans header so GetGlAccountTransactionDetails' report can
+            // resolve the certificate number/project for these entries the same way it already does
+            // for OUTGOING_PAYMENT transactions.
+            var certificate = await _context.OrderItemBillings
+                .Where(ob => ob.InvoiceId == invoiceId)
+                .Join(_context.WorkEfforts.Where(w => w.WorkEffortTypeId == "PROJECT_CERTIFICATE"),
+                    ob => ob.OrderId, w => w.RelatedOrderId, (ob, w) => new { w.WorkEffortId, w.Description })
+                .FirstOrDefaultAsync();
+            string? certificateWorkEffortId = certificate?.WorkEffortId;
+            string? certificateDescription = certificate?.Description;
+
             var acctgTransEntries = new List<AcctgTransEntry>();
             int seqNum = 1; // Initialize sequence number for AcctgTransEntrySeqId
 
@@ -2358,7 +2371,8 @@ public class GeneralLedgerService : IGeneralLedgerService
                         ProductId = invoiceItem.ProductId,
                         GlAccountTypeId = "PURCHASE_PRICE_VAR",
                         OrigAmount = varianceAmount,
-                        OrigCurrencyUomId = invoice.CurrencyUomId
+                        OrigCurrencyUomId = invoice.CurrencyUomId,
+                        Description = invoiceItem.Description ?? certificateDescription
                     };
 
                     acctgTransEntries.Add(debitEntryVariance);
@@ -2382,7 +2396,8 @@ public class GeneralLedgerService : IGeneralLedgerService
                     GlAccountTypeId = invoiceItem.InvoiceItemTypeId,
                     GlAccountId = invoiceItem.OverrideGlAccountId,
                     OrigAmount = finalAmount,
-                    OrigCurrencyUomId = invoice.CurrencyUomId
+                    OrigCurrencyUomId = invoice.CurrencyUomId,
+                    Description = invoiceItem.Description ?? certificateDescription
                 };
 
                 acctgTransEntries.Add(debitEntryOrder);
@@ -2465,7 +2480,8 @@ public class GeneralLedgerService : IGeneralLedgerService
                 OrigAmount = totalWithTax,
                 OrigCurrencyUomId = invoice.CurrencyUomId,
                 PartyId = invoice.PartyIdFrom,
-                RoleTypeId = "BILL_FROM_VENDOR"
+                RoleTypeId = "BILL_FROM_VENDOR",
+                Description = certificateDescription ?? invoice.Description
             };
 
             acctgTransEntries.Add(creditEntry);
@@ -2480,7 +2496,8 @@ public class GeneralLedgerService : IGeneralLedgerService
                 PartyId = invoice.PartyIdFrom,
                 RoleTypeId = "BILL_FROM_VENDOR",
                 TransactionDate = invoice.InvoiceDate,
-                AcctgTransEntries = acctgTransEntries
+                AcctgTransEntries = acctgTransEntries,
+                WorkEffortId = certificateWorkEffortId
             };
 
             // Call createAcctgTransAndEntries service and return the acctgTransId

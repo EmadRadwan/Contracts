@@ -144,20 +144,13 @@ public class InvoiceUtilityService : IInvoiceUtilityService
                 var ledgerService = _generalLedgerService.Value;
                 try
                 {
-                    bool isSupplyCertificate = await _context.InvoiceItems
-                        .AnyAsync(ii => ii.InvoiceId == invoiceId &&
-                                        ii.InvoiceItemTypeId == "PINV_CERTIFICATE_SUPPLY_ITEM");
-
-                    if (isSupplyCertificate)
-                    {
-                        _logger.LogInformation(
-                            "Invoice {InvoiceId} is a supply certificate (PINV_CERTIFICATE_SUPPLY_ITEM) → skipping all accounting transactions",
-                            invoiceId);
-                        goto SkipAccounting; // ← EARLY EXIT: No accounting needed
-                    }
-
-                    bool isConstructionCertificate = false;
-                    isConstructionCertificate = await _context.InvoiceItems
+                    // Note: PINV_CERTIFICATE_SUPPLY_ITEM (SUPPLY_PROCUREMENT_CERTIFICATE invoices) used to be
+                    // skipped here entirely, so those invoices never posted an AP liability. They're standard
+                    // purchase-order-driven invoices, so they fall through to CreateAcctgTransForPurchaseInvoice
+                    // below like any other purchase invoice — its item-type/party GL account resolution already
+                    // maps PINV_CERTIFICATE_SUPPLY_ITEM to the org's default account and the vendor's
+                    // party-specific ACCOUNTS_PAYABLE account correctly.
+                    bool isConstructionCertificate = await _context.InvoiceItems
                         .AnyAsync(ii => ii.InvoiceId == invoiceId &&
                                         ii.InvoiceItemTypeId == "PINV_CERTIFICATE_ITEM");
 
@@ -168,7 +161,7 @@ public class InvoiceUtilityService : IInvoiceUtilityService
                     }
                     else if (invoiceTypeId != "CUST_RTN_INVOICE")
                     {
-                        // All other cases: normal purchase/sales invoices
+                        // All other cases: normal purchase/sales invoices (includes supply certificates)
                         await ledgerService.CreateAcctgTransForPurchaseInvoice(invoiceId);
                         await ledgerService.CreateAcctgTransForSalesInvoice_2(invoiceId);
                     }
@@ -181,8 +174,6 @@ public class InvoiceUtilityService : IInvoiceUtilityService
                 {
                     _logger.LogError(ex, $"Failed to create accounting transactions for invoice {invoiceId}");
                 }
-
-                SkipAccounting:
 
                 // ECA: Check payment applications and capture payments
                 try

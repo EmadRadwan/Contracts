@@ -158,6 +158,34 @@ public class ReceiveInventoryFromPurchaseOrder
                     _logger.LogDebug("Persisted WorkEffort status update for OrderId: {OrderId}", request.OrderId);
                 }
 
+                // REFACTOR: Complete the PO and generate its purchase invoice for supply certificates.
+                // Previously, receiving inventory only updated stock and the certificate status — the PO was
+                // left at ORDER_APPROVED and no invoice (hence no AP liability) was ever created for the
+                // supplier. This mirrors the WORKMANSHIP_CONTRACTING_CERTIFICATE path (ProcessWorkmanCertificatePurchaseOrder),
+                // reusing the same command via mediator so order completion/invoicing logic isn't duplicated.
+                // Runs inside the existing transaction (this handler already owns/shares one).
+                if (workEffort != null && workEffort.CertificateCategory == "SUPPLY_PROCUREMENT_CERTIFICATE")
+                {
+                    var completeOrderResult = await _mediator.Send(
+                        new ProcessWorkmanCertificatePurchaseOrder.Command { WorkEffortId = workEffort.WorkEffortId },
+                        cancellationToken);
+
+                    if (completeOrderResult.IsSuccess)
+                    {
+                        _logger.LogInformation(
+                            "Completed OrderId {OrderId} and triggered invoice creation for supply certificate {WorkEffortId}",
+                            request.OrderId, workEffort.WorkEffortId);
+                    }
+                    else
+                    {
+                        // Not failing the receipt: goods have physically arrived and should stay received
+                        // even if invoice generation needs to be resolved separately.
+                        _logger.LogError(
+                            "Failed to complete OrderId {OrderId} / generate invoice for supply certificate {WorkEffortId}: {Error}",
+                            request.OrderId, workEffort.WorkEffortId, completeOrderResult.Error);
+                    }
+                }
+
                 if (request.DeliverToSite && workEffort != null &&
                     workEffort.CertificateCategory == "SUPPLY_PROCUREMENT_CERTIFICATE")
                 {
