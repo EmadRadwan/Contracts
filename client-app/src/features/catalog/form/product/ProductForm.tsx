@@ -19,7 +19,6 @@ import {
   Typography,
 } from "@mui/material";
 import { requiredValidator } from "../../../../app/common/form/Validators";
-import { MemoizedFormMuiAutoCompleteProductCategory } from "../../../../app/common/form/FormMuiAutoCompleteProductCategory";
 import { toast } from "react-toastify";
 import CatalogMenu from "../../menu/CatalogMenu";
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";

@@ -6,6 +6,7 @@ export interface CertificateItem {
     quantity?: number;
     uomId?: string;
     uomName?: string;
+    uomAbbreviation?: string;
     materialPrice?: number; // Used for WORKMANSHIP_CONTRACTING_CERTIFICATE
     laborPrice?: number;    // Used for WORKMANSHIP_CONTRACTING_CERTIFICATE
     unitPrice?: number;     // Sum of materialPrice and laborPrice for WORKMANSHIP_CONTRACTING_CERTIFICATE, or standalone for other types

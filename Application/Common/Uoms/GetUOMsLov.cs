@@ -122,7 +122,8 @@ public class GetUOMsLov
                     .Select(u => new UomDto
                     {
                         UomId = u.UomId,
-                        Description = useArabic ? u.DescriptionArabic ?? u.Description : u.Description
+                        Description = useArabic ? u.DescriptionArabic ?? u.Description : u.Description,
+                        Abbreviation = u.Abbreviation
                     })
                     .ToListAsync(cancellationToken);
 
@@ -157,4 +158,5 @@ public class UomDto
 {
     public string UomId { get; set; }
     public string Description { get; set; }
+    public string Abbreviation { get; set; }
 }

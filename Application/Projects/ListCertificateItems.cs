@@ -109,6 +109,7 @@ public class ListCertificateItems
                         UomName = x.Uom != null
                             ? (language == "ar" ? x.Uom.DescriptionArabic : x.Uom.Description)
                             : null,
+                        UomAbbreviation = x.Uom != null ? x.Uom.Abbreviation : null,
                         Quantity = x.WorkEffort.Quantity ?? 0m,
                         UnitPrice = (decimal)(x.WorkEffort.Rate ?? 0m),
                         MaterialPrice = x.WorkEffort.MaterialPrice ?? 0m,

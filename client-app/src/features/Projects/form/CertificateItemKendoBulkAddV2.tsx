@@ -14,7 +14,7 @@ import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import { CertificateItem } from "../../../app/models/project/certificateItem";
 import { useAppSelector } from "../../../app/store/configureStore";
 import { FormSimpleComboBoxVirtualProductWithCategory } from "../../../app/common/form/FormSimpleComboBoxVirtualProductWithCategory";
-import { FormComboBoxVirtualUOM } from "../../../app/common/form/FormComboBoxVirtualUOM";
+import { FormComboBoxVirtualUOMAbbreviation } from "../../../app/common/form/FormComboBoxVirtualUOMAbbreviation";
 import { v4 as uuidv4 } from "uuid";
 
 // Purpose: Plain <td> totals (read-only cells / toolbar text) don't get Kendo's built-in
@@ -72,7 +72,7 @@ const ProductCell = ({ dataItem, onChange }: GridCellProps) => (
 
 const UomCell = ({ dataItem, onChange }: GridCellProps) => (
     <td>
-        <FormComboBoxVirtualUOM
+        <FormComboBoxVirtualUOMAbbreviation
             value={dataItem.uomId}
             onChange={(e: any) =>
                 onChange!({ dataItem, field: "uomId", value: e.value ? { ...e.value } : null } as any)
@@ -192,7 +192,11 @@ const CertificateItemKendoBulkAddV2: React.FC<Props> = ({
                         ? { ProductId: item.productId, ProductName: item.productName || "" }
                         : null,
                     uomId: item.uomId
-                        ? { UomId: item.uomId, Description: item.uomName || "" }
+                        ? {
+                            UomId: item.uomId,
+                            Description: item.uomName || "",
+                            Abbreviation: item.uomAbbreviation || item.uomName || "",
+                        }
                         : null,
                     _isValid: true,     // server-persisted rows are assumed valid
                 } as BulkAddRow));
@@ -423,7 +427,7 @@ const CertificateItemKendoBulkAddV2: React.FC<Props> = ({
         const cols: React.ReactElement[] = [
             <Column key="productId"   field="productId"   title={isContracting ? getTranslatedLabel(`${itemKey}.product`, "Work Item") : getTranslatedLabel(`${itemKey}.productItem`, "Item")}     cell={ProductCell} width={280} />,
             <Column key="description" field="description" title={getTranslatedLabel(`${itemKey}.description`,    "Description")}                    width={250} />,
-            <Column key="uomId"       field="uomId"       title={getTranslatedLabel(`${itemKey}.unitOfMeasure`,  "UOM")}         cell={UomCell}     width={290} />,
+            <Column key="uomId"       field="uomId"       title={getTranslatedLabel(`${itemKey}.unitOfMeasure`,  "UOM")}         cell={UomCell}     width={150} />,
             <Column key="quantity"    field="quantity"    title={getTranslatedLabel(`${itemKey}.quantity`,       "Qty")}  editor="numeric"           width={100} />,
         ];
 
