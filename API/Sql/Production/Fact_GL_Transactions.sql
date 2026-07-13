@@ -6,6 +6,7 @@ SELECT
     t.ACCTG_TRANS_ID,
     t.ACCTG_TRANS_TYPE_ID,
     t.GL_FISCAL_TYPE_ID,
+    t.IS_POSTED,
 
     DATE(t.TRANSACTION_DATE) AS transaction_date,
     DATE(t.POSTED_DATE)      AS posted_date,
@@ -45,4 +46,6 @@ FROM ACCTG_TRANS t
       AND DESCRIPTION <> ''
     GROUP BY ACCTG_TRANS_ID
 ) ed
-                   ON t.ACCTG_TRANS_ID = ed.ACCTG_TRANS_ID;
+                   ON t.ACCTG_TRANS_ID = ed.ACCTG_TRANS_ID
+
+WHERE t.IS_POSTED = 'Y';

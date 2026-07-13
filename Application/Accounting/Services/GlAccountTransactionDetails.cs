@@ -160,8 +160,25 @@ public class GetGlAccountTransactionDetails
                     select ate.Amount
                 ).SumAsync(cancellationToken);
 
-                // Ending = everything up to end of period (≤ ThruDate)
-                var endingDebits = await (
+                // Accounts that have never had a proper OPENING_BALANCE reset entry (e.g. customer
+                // receivable sub-accounts) are not meant to be period-bounded: their opening balance
+                // is always 0, so bounding period activity to >= periodStart would zero out real
+                // pre-period history and make the account look like it started fresh this period.
+                // For those, fall back to the lifetime-to-date total (bounded only by periodEnd),
+                // matching how they've always been used. Accounts with a real reset entry (banks,
+                // cash) get the strict [periodStart, periodEnd] bound.
+                bool hasOpeningBalanceEntry = await (
+                    from ate in _context.AcctgTransEntries
+                    join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
+                    where ate.OrganizationPartyId == request.OrganizationPartyId
+                          && ate.GlAccountId == request.GlAccountId
+                          && act.IsPosted == "Y"
+                          && act.GlFiscalTypeId == "ACTUAL"
+                          && act.AcctgTransTypeId == "OPENING_BALANCE"
+                    select ate.AcctgTransId
+                ).AnyAsync(cancellationToken);
+
+                var periodDebits = await (
                     from ate in _context.AcctgTransEntries
                     join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
                     where ate.OrganizationPartyId == request.OrganizationPartyId
@@ -169,11 +186,12 @@ public class GetGlAccountTransactionDetails
                           && act.IsPosted == "Y"
                           && ate.DebitCreditFlag == "D"
                           && act.GlFiscalTypeId == "ACTUAL"
+                          && (!hasOpeningBalanceEntry || act.TransactionDate >= periodStart)
                           && act.TransactionDate <= periodEnd
                     select ate.Amount
                 ).SumAsync(cancellationToken);
 
-                var endingCredits = await (
+                var periodCredits = await (
                     from ate in _context.AcctgTransEntries
                     join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
                     where ate.OrganizationPartyId == request.OrganizationPartyId
@@ -181,6 +199,7 @@ public class GetGlAccountTransactionDetails
                           && act.IsPosted == "Y"
                           && ate.DebitCreditFlag == "C"
                           && act.GlFiscalTypeId == "ACTUAL"
+                          && (!hasOpeningBalanceEntry || act.TransactionDate >= periodStart)
                           && act.TransactionDate <= periodEnd
                     select ate.Amount
                 ).SumAsync(cancellationToken);
@@ -193,12 +212,12 @@ public class GetGlAccountTransactionDetails
                     ? openingDebits - openingCredits
                     : openingCredits - openingDebits);
 
-                decimal endingBalance = (decimal)(isDebit
-                    ? endingDebits - endingCredits
-                    : endingCredits - endingDebits);
+                decimal postedDebits = (decimal)periodDebits;
+                decimal postedCredits = (decimal)periodCredits;
 
-                decimal postedDebits = (decimal)(endingDebits - openingDebits);
-                decimal postedCredits = (decimal)(endingCredits - openingCredits);
+                decimal endingBalance = isDebit
+                    ? openingBalance + postedDebits - postedCredits
+                    : openingBalance + postedCredits - postedDebits;
 
                 // 8. Calculate running balance for each transaction
                 decimal runningBalance = openingBalance;
