@@ -225,7 +225,8 @@ public class ApproveSalesRequest
                 };
                 await _acctgTransService.CreateAcctgTransEntry(debitEntry);
 
-                // Credit: Revenue from Apartment Sales
+                // Credit: Customer Advances (250120) - a liability, not revenue.
+                // Full price is booked as an advance since revenue isn't recognized until the unit is delivered.
                 var creditEntry = new AcctgTransEntry
                 {
                     AcctgTransId = acctgTransId,
@@ -235,7 +236,7 @@ public class ApproveSalesRequest
                     AcctgTransEntryTypeId = "_NA_",
                     Amount = totalPrice,
                     ReconcileStatusId = "AES_NOT_RECONCILED",
-                    Description = $"Revenue - apartment {sr.ProductId} ({apartment.ApartmentName}) - SR {sr.SalesRequestId}",
+                    Description = $"Customer advance - apartment {sr.ProductId} ({apartment.ApartmentName}) - SR {sr.SalesRequestId}",
                     OrganizationPartyId = companyPartyId,
                     PartyId = sr.FromPartyId,
                     ProductId = sr.ProductId,
@@ -281,7 +282,8 @@ public class ApproveSalesRequest
                     };
                     await _acctgTransService.CreateAcctgTransEntry(debitEntry);
 
-                    // Credit: Revenue from Apartment Sales
+                    // Credit: reduce the customer's Accounts Receivable balance - the amount moves to
+                    // "Cheques Under Collection" (debited above), not revenue.
                     creditEntry = new AcctgTransEntry
                     {
                         AcctgTransId = acctgTransId,
@@ -291,7 +293,7 @@ public class ApproveSalesRequest
                         AcctgTransEntryTypeId = "_NA_",
                         Amount = totalPrice,
                         ReconcileStatusId = "AES_NOT_RECONCILED",
-                        Description = $"Apartment sale revenue - {apartment.ApartmentName}",
+                        Description = $"Receivable reclassified to cheques under collection - {apartment.ApartmentName}",
                         OrganizationPartyId = companyPartyId,
                         PartyId = sr.FromPartyId,
                         ProductId = sr.ProductId,

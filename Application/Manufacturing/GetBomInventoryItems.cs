@@ -29,7 +29,6 @@ public class GetBomInventoryItems
         {
             try
             {
-                // REFACTOR: Validate WorkEffortId exists before querying.
                 // Business: Ensures valid WorkEffortId to prevent unnecessary queries.
                 // Technical: Reduces database load and improves error handling.
                 var workEffortExists = await _context.WorkEfforts
@@ -40,7 +39,6 @@ public class GetBomInventoryItems
                     return Result<List<BomInventoryItemDto>>.Failure("WorkEffort not found");
                 }
 
-                // REFACTOR: Debug intermediate steps.
                 // Purpose: Log record counts to identify where results drop to 0.
                 // Benefit: Pinpoints query failure point.
                 var step1 = await _context.WorkEffortGoodStandards
@@ -63,7 +61,6 @@ public class GetBomInventoryItems
                         w => w.ProductId,
                         i => i.ProductId,
                         (w, i) => new { w.ProductId, w.EstimatedQuantity, i.InventoryItemId, i.AvailableToPromiseTotal })
-                    // REFACTOR: Join with Products table to include ProductName.
                     // Business: Provides meaningful product names for BOM components in the UI.
                     // Technical: Adds ProductName without Arabic localization.
                     .Join(_context.Products,
@@ -89,15 +86,11 @@ public class GetBomInventoryItems
                             AvailableToPromiseTotal = (decimal)x.AvailableToPromiseTotal,
                             ProductFeatureId = x.ProductFeatureId,
                             ColorDescription = pf != null ? (request.Language == "ar" ? pf.DescriptionArabic : pf.Description) : "No Color",
-                            // REFACTOR: Select ProductName directly.
-                            // Business: Returns ProductName without localization, as ProductNameArabic is no longer used.
-                            // Technical: Simplifies query by removing language-based selection for ProductName.
                             ProductName = x.ProductName ?? "No Name"
                         })
                     .Where(x => x.AvailableToPromiseTotal > 0)
                     .ToListAsync(cancellationToken);
 
-                // REFACTOR: Log successful retrieval.
                 // Business: Confirms successful fetch of BOM components.
                 // Technical: Adds traceability for debugging and monitoring.
                 _logger.LogInformation(
@@ -125,9 +118,6 @@ public class GetBomInventoryItems
         public decimal AvailableToPromiseTotal { get; set; }
         public string ProductFeatureId { get; set; }
         public string ColorDescription { get; set; }
-        // REFACTOR: Add ProductName property to DTO.
-        // Business: Allows frontend to display human-readable product names.
-        // Technical: Stores ProductName from Products table without localization.
         public string ProductName { get; set; }
     }
 }

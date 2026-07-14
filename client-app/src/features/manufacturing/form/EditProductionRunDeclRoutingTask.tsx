@@ -1,4 +1,4 @@
-import { useState } from "react";
+import {useCallback, useRef, useState} from "react";
 import {
   Box,
   Button,
@@ -7,7 +7,7 @@ import {
   Paper,
   Typography,
 } from "@mui/material";
-import { Field, Form, FormElement } from "@progress/kendo-react-form";
+import {Field, Form, FormElement, KeyValue} from "@progress/kendo-react-form";
 import FormNumericTextBox from "../../../app/common/form/FormNumericTextBox";
 import FormDatePicker from "../../../app/common/form/FormDatePicker";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
@@ -16,6 +16,8 @@ import { WorkEffort } from "../../../app/models/manufacturing/workEffort";
 import { useUpdateProductionRunTaskMutation } from "../../../app/store/apis";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import { useAppSelector } from "../../../app/store/configureStore";
+import ModalContainer from "../../../app/common/modals/ModalContainer";
+import ReserveBomModalWithEdits from "./ReserveBomModalWithEdits";
 
 interface Props {
   workEffort: WorkEffort | undefined;
@@ -27,6 +29,18 @@ interface Props {
 const minutesToMillis = (minutes: number) => minutes * 60000;
 // Utility function to convert milliseconds to minutes
 const millisToMinutes = (millis: number) => (millis / 60000).toFixed(2);
+
+const quantityValidator = (values: any, quantityToProduce: number): KeyValue<string> | undefined => {
+  const addQuantityProduced = values.addQuantityProduced || 0;
+  const addQuantityRejected = values.addQuantityRejected || 0;
+  const total = addQuantityProduced + addQuantityRejected;
+  if (total !== quantityToProduce && (addQuantityProduced > 0 || addQuantityRejected > 0)) {
+    return {
+      VALIDATION_SUMMARY: "The sum of Added Quantity Produced and Added Quantity Rejected must equal Quantity to Produce."
+    };
+  }
+  return undefined;
+};
 
 export default function EditProductionRunDeclRoutingTask({
   workEffort,
@@ -40,6 +54,20 @@ export default function EditProductionRunDeclRoutingTask({
     useUpdateProductionRunTaskMutation();
   const { getTranslatedLabel } = useTranslationHelper();
   const {language} = useAppSelector(state => state.localization)
+  const formRef = useRef<any>();
+  const [showReserveModal, setShowReserveModal] = useState(false);
+  const memoizedOnCloseReserve = useCallback(() => setShowReserveModal(false), []);
+
+
+  const initialValues = {
+    ...productionRun,
+    addQuantityProduced: 0,
+    addQuantityRejected: 0,
+    addSetupTime: 0,
+    addTaskTime: 0,
+    addTaskTime: 0,
+    noteId: ""
+  };
 
   const handleSubmit = async (data: any) => {
     if (!data.isValid) {
@@ -67,16 +95,31 @@ export default function EditProductionRunDeclRoutingTask({
     }
   };
 
+  const handleQuantityChange = (field: string, value: number, formRenderProps: any) => {
+    const quantityToProduce = productionRun?.quantityToProduce || 0;
+    const otherField = field === "addQuantityProduced" ? "addQuantityRejected" : "addQuantityProduced";
+    const otherValue = Math.max(0, quantityToProduce - value);
+    formRenderProps.onChange(otherField, { value: otherValue });
+  };
+
+
   console.log("workEffort", workEffort);
 
   return (
     <>
       <Paper elevation={5} className="div-container-withBorderCurved">
         <Form
-          initialValues={productionRun}
-          onSubmitClick={(values) => handleSubmit(values)}
+            ref={formRef}
+            initialValues={initialValues}
+            validator={(values) => quantityValidator(values, productionRun?.quantityToProduce || 0)}
+            onSubmitClick={(values) => handleSubmit(values)}
           render={(formRenderProps) => (
             <FormElement>
+              {formRenderProps.visited && formRenderProps.errors && formRenderProps.errors.VALIDATION_SUMMARY && (
+                  <div className={"k-messagebox k-messagebox-error"}>
+                    {formRenderProps.errors.VALIDATION_SUMMARY}
+                  </div>
+              )}
               <fieldset className={"k-form-fieldset"}>
                 <Grid
                   container
@@ -410,6 +453,7 @@ export default function EditProductionRunDeclRoutingTask({
                                 name={"addQuantityProduced"}
                                 component={FormNumericTextBox}
                                 min={0}
+                                onChange={(e) => handleQuantityChange("addQuantityProduced", e.value || 0, formRenderProps)}
                               />
                             </Box>
                           </Box>
@@ -465,6 +509,7 @@ export default function EditProductionRunDeclRoutingTask({
                                 name={"addQuantityRejected"}
                                 component={FormNumericTextBox}
                                 min={0}
+                                onChange={(e) => handleQuantityChange("addQuantityRejected", e.value || 0, formRenderProps)}
                               />
                             </Box>
                           </Box>
@@ -514,6 +559,16 @@ export default function EditProductionRunDeclRoutingTask({
                     </Grid>
                     <Grid item>
                       <Button
+                          variant="contained"
+                          color="secondary"
+                          onClick={() => setShowReserveModal(true)}
+                          disabled={isLoading || productionRun?.currentStatusId !== "PRUN_RUNNING"}
+                      >
+                        {getTranslatedLabel("manufacturing.jobshop.prodruntasks.list.reserveBOM", "Reserve Additional Materials")}
+                      </Button>
+                    </Grid>
+                    <Grid item>
+                      <Button
                         onClick={closeModal}
                         color="error"
                         variant="contained"
@@ -551,6 +606,14 @@ export default function EditProductionRunDeclRoutingTask({
           )}
         />
       </Paper>
+      {showReserveModal && productionRun && (
+          <ModalContainer show={showReserveModal} onClose={memoizedOnCloseReserve} width={800}>
+            <ReserveBomModalWithEdits
+                workEffortId={productionRun.workEffortId}
+                onClose={memoizedOnCloseReserve}
+            />
+          </ModalContainer>
+      )}
     </>
   );
 }

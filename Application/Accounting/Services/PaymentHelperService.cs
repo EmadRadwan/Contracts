@@ -74,7 +74,7 @@ public class PaymentHelperService : IPaymentHelperService
     {
         // get the next sequence for the PaymentId
         var stamp = DateTime.UtcNow;
-        var newPaymentSequence = await _utilityService.GetNextSequence("Payment");
+        var newPaymentSequence = await _utilityService.GetNextPaymentSequence(parameters.PaymentTypeId);
 
         // Determine the organization partyId by checking PartyRole for INTERNAL_ORGANIZATION
         var partyIdsToCheck = new[] { parameters.PartyIdFrom, parameters.PartyIdTo };
@@ -927,8 +927,10 @@ public class PaymentHelperService : IPaymentHelperService
         try
         {
             // Step 1: Create Payment
+            var newPaymentSequence = await _utilityService.GetNextPaymentSequence(request.PaymentTypeId);
             var payment = new Payment
             {
+                PaymentId = newPaymentSequence,
                 PaymentTypeId = request.PaymentTypeId,
                 PaymentMethodTypeId = "EXT_BILLACT",
                 PartyIdFrom = request.PartyIdFrom,

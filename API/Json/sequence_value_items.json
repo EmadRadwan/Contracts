@@ -214,6 +214,14 @@
     "CREATED_TX_STAMP": null
   },
   {
+    "SEQ_NAME": "PaymentReceipt",
+    "SEQ_ID": 49999,
+    "LAST_UPDATED_STAMP": "2026-07-14 00:00:00.000",
+    "LAST_UPDATED_TX_STAMP": null,
+    "CREATED_STAMP": "2026-07-14 00:00:00.000",
+    "CREATED_TX_STAMP": null
+  },
+  {
     "SEQ_NAME": "PaymentApplication",
     "SEQ_ID": 10480,
     "LAST_UPDATED_STAMP": "2022-05-27 12:23:42.217",

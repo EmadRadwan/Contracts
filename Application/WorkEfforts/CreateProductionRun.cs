@@ -39,7 +39,8 @@ namespace Application.Manufacturing
                         request.CreateProductionRunDto.FacilityId,
                         request.CreateProductionRunDto.RoutingId,
                         request.CreateProductionRunDto.WorkEffortName,
-                        request.CreateProductionRunDto.Description
+                        request.CreateProductionRunDto.Description,
+                        request.CreateProductionRunDto.ProductFeatureId 
                     ); 
                     
                     await _context.SaveChangesAsync(cancellationToken);

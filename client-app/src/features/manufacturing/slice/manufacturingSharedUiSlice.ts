@@ -25,7 +25,8 @@ export const manufacturingSharedSlice = createSlice({
         setJobRunUnderProcessing(state, action: PayloadAction<WorkEffort | undefined>) {
             const updatedJobRunUnderProcessing = { ...state.jobRunUnderProcessing, ...action.payload };
 
-            state.jobRunUnderProcessing = updatedJobRunUnderProcessing
+            state.jobRunUnderProcessing = updatedJobRunUnderProcessing;
+            console.log("Updated jobRunUnderProcessing:", state.jobRunUnderProcessing);
         },
         clearJobRunUnderProcessing(state, action: PayloadAction<WorkEffort | undefined>) {
             state.jobRunUnderProcessing = undefined;

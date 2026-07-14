@@ -4,6 +4,7 @@ CREATE USER 'powerbi_user'@'%' IDENTIFIED BY 'baba1934';
 
 -- Give access ONLY to this view
 GRANT SELECT ON InventoryItemsDetails TO 'powerbi_user'@'%';
+GRANT SELECT ON Dim_CustomTimePeriod TO 'powerbi_user'@'%';
 GRANT SELECT ON DimApartments TO 'powerbi_user'@'%';
 GRANT SELECT ON DimContractors TO 'powerbi_user'@'%';
 GRANT SELECT ON DimEmployees TO 'powerbi_user'@'%';

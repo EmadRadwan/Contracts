@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Application.Core;
 using Application.Manufacturing;
 using Application.WorkEfforts;
+using Microsoft.EntityFrameworkCore;
 using Persistence;
 
 namespace Application.WorkEfforts
@@ -47,6 +48,26 @@ namespace Application.WorkEfforts
                     {
                         await transaction.RollbackAsync(cancellationToken);
                         return Results<IssueProductionRunTaskResult>.Failure(result.ErrorMessage, result.ErrorCode);
+                    }
+                    
+                    var affectedRecords = _context.ChangeTracker
+                        .Entries()
+                        .Where(e => e.State == EntityState.Added ||
+                                    e.State == EntityState.Modified ||
+                                    e.State == EntityState.Deleted)
+                        .Select(e => new ChangeRecord
+                        {
+                            TableName = e.Entity.GetType().Name,
+                            PKValues = string.Join(", ", e.Properties
+                                .Where(p => p.Metadata.IsPrimaryKey())
+                                .Select(p => $"{p.Metadata.Name}: {p.CurrentValue}")),
+                            Operation = e.State.ToString()
+                        })
+                        .ToList();
+       
+                    foreach (var record in affectedRecords)
+                    {
+                        Console.WriteLine(record);
                     }
                     
                     await _context.SaveChangesAsync(cancellationToken);

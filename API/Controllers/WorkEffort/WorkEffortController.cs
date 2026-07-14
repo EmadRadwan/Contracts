@@ -127,10 +127,16 @@ public class WorkEffortController : BaseApiController
     [HttpPut("issueMaterialsForCertificate", Name = "IssueMaterialsForCertificate")]
     public async Task<IActionResult> IssueMaterialsForCertificate([FromBody] IssueMaterialsForCertificateParams issueParams)
     {
-        return HandleResults(await Mediator.Send(new IssueMaterialsForCertificate.Command 
-        { 
-            WorkEffortId = issueParams.WorkEffortId 
+        return HandleResults(await Mediator.Send(new IssueMaterialsForCertificate.Command
+        {
+            WorkEffortId = issueParams.WorkEffortId
         }));
+    }
+
+    [HttpPost("reserveBom", Name = "ReserveBomWithSelectedItems")]
+    public async Task<IActionResult> ReserveBomWithSelectedItems([FromBody] ReserveBomWithSelectedItems.ReserveBomWithSelectedItemsParams reserveBomParams)
+    {
+        return HandleResult(await Mediator.Send(new ReserveBomWithSelectedItems.Command { ReserveBomParams = reserveBomParams }));
     }
 
     [HttpPut("reserveProductionRunTask", Name = "ReserveProductionRunTask")]
@@ -541,6 +547,33 @@ public class WorkEffortController : BaseApiController
         var language = GetLanguage();
         var result = await Mediator.Send(new GetBomInventoryItems.Query
             { WorkEffortId = workEffortId, Language = language });
+        return HandleResult(result);
+    }
+
+    [HttpGet("{workEffortId}/inventoryItemsWithEdits")]
+    public async Task<IActionResult> GetInventoryItemsWithEdits(string workEffortId)
+    {
+        var language = GetLanguage();
+        var result = await Mediator.Send(new GetInventoryItemsWithEdits.Query
+            { WorkEffortId = workEffortId, Language = language });
+        return HandleResult(result);
+    }
+
+    [HttpPost("issueReservations", Name = "IssueProductionRunReservations")]
+    public async Task<IActionResult> IssueProductionRunReservations([FromBody] IssueProductionRunReservationsParams issueParams)
+    {
+        return HandleResult(await Mediator.Send(new IssueProductionRunReservations.Command { IssueParams = issueParams }));
+    }
+
+    [HttpGet("{workEffortId}/getReservationItems", Name = "GetReservationItems")]
+    public async Task<IActionResult> GetReservationItems(string workEffortId)
+    {
+        var language = GetLanguage();
+        var result = await Mediator.Send(new ListWorkEffortReservations.Query
+        {
+            WorkEffortId = workEffortId,
+            Language = language
+        });
         return HandleResult(result);
     }
 }

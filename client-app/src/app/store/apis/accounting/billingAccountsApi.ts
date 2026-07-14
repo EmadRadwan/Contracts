@@ -95,10 +95,9 @@ const billingAccountsApi = createApi({
                 invalidatesTags: ["BillingAccounts"] // optional: refresh list after create
             }),
             fetchBalancesForVendorAndProject: builder.query<
-                { initialBalance: number; remainingBalance: number },
+                { initialBalance: number; usedBalance: number; remainingBalance: number; message?: string },
                 { partyId: string; projectId: string }
                 >({
-                // The real endpoint will be added later – placeholder for now
                 query: ({ partyId, projectId }) =>
                     `/billingAccounts/getBalances?partyId=${partyId}&projectId=${projectId}`,
             }),

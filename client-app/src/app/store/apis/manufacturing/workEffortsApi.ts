@@ -33,7 +33,9 @@ const workEffortsApi = createApi({
         "WorkEffort",
         "WorkEffortGoodStandards",
         "IssuedMaterials",
+        "Reservations"
     ],
+    refetchOnMountOrArgChange: true,
     endpoints(builder) {
         return {
             fetchProductionRuns: builder.query<ListResponse<WorkEffort>,
@@ -68,7 +70,7 @@ const workEffortsApi = createApi({
                         totalCount: totalCount,
                     };
                 },
-                providesTags: ["ProductionRuns"],
+                providesTags: ["Reservations"],
             }),
             fetchRoutings: builder.query<ListResponse<WorkEffort>,
                 State>({
@@ -120,11 +122,11 @@ const workEffortsApi = createApi({
                 },
             }),
             fetchProductionRunTasks: builder.query<any, any>({
-                providesTags: ["RoutingTasks"], 
+                providesTags: ["RoutingTasks", "Reservations"], 
                 query: (workEffortId) => ({
                     url: `/workEffort/${workEffortId}/getRoutingTasksForProductionRun`,
                     method: "GET",
-                })
+                }),
             }),
             fetchProductionRunTasksSimple: builder.query<any, any>({
                 providesTags: ["RoutingTasks"], 
@@ -451,6 +453,29 @@ const workEffortsApi = createApi({
             getBomInventoryItems: builder.query<BomInventoryItem[], string>({
                 query: (workEffortId) => `/workEffort/${workEffortId}/inventoryItems`,
             }),
+            getBomInventoryItemsWithEdits: builder.query<BomInventoryItem[], string>({
+                query: (workEffortId) => `/workEffort/${workEffortId}/inventoryItemsWithEdits`,
+            }),
+            reserveBomWithSelectedItems: builder.mutation<ReserveBomWithSelectedItemsResult, { reserveBomParams: ReserveBomWithSelectedItemsParams }>({
+                query: ({ reserveBomParams }) => ({
+                    url: '/workEffort/reserveBom',
+                    method: 'POST',
+                    body: reserveBomParams,
+                }),
+                invalidatesTags: ['RoutingTasks'],
+            }),
+            issueProductionRunReservations: builder.mutation<IssueProductionRunReservationsResult, { issueParams: IssueProductionRunReservationsParams }>({
+                query: ({ issueParams }) => ({
+                    url: '/workEffort/issueReservations',
+                    method: 'POST',
+                    body: issueParams,
+                }),
+                invalidatesTags: ['Reservations'],
+            }),
+            getReservationItems: builder.query<ReservationItem[], string>({
+                query: (workEffortId) => `/workEffort/${workEffortId}/GetReservationItems`,
+                providesTags: ['ReservationItems'],
+            }),
         };
     },
 });
@@ -472,6 +497,34 @@ export const {
     useDeleteWorkEffortAssocMutation, useUpdateWorkEffortAssocMutation,
     useCreateRoutingProductLinkMutation, useUpdateRoutingProductLinkMutation, 
     useDeleteRoutingProductLinkMutation,
-    useGetRoutingProductLinksQuery, useGetWorkEffortQuery, useGetBomInventoryItemsQuery
+    useGetRoutingProductLinksQuery, useGetWorkEffortQuery,
+    useGetBomInventoryItemsQuery, useReserveBomWithSelectedItemsMutation,
+    useIssueProductionRunReservationsMutation, useGetReservationItemsQuery, useGetBomInventoryItemsWithEditsQuery,
 } = workEffortsApi;
 export {workEffortsApi};
+
+export interface BomInventoryItem {
+    productId: string;
+    estimatedQuantity: number;
+    inventoryItemId: string;
+    availableToPromiseTotal: number;
+    productFeatureId: string | null;
+    colorDescription: string;
+    productName: string;
+}
+
+interface BomReservationItem {
+    productId: string;
+    inventoryItemId: string;
+    quantity: number;
+}
+
+interface ReserveBomWithSelectedItemsParams {
+    workEffortId: string;
+    items: BomReservationItem[];
+}
+
+interface ReserveBomWithSelectedItemsResult {
+    success: boolean;
+    message: string;
+}

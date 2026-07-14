@@ -1,4 +1,5 @@
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
+import {toast} from "react-toastify";
 import {FormComboBoxVirtualParty} from "../../../../app/common/form/FormComboBoxVirtualParty";
 import {
     createBankTransferAllowedValidator, createChequeFieldsValidator,
@@ -57,6 +58,8 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
     const [selectedProject, setSelectedProject] = useState<any>(null);
 
     const [currentPaymentTypeId, setCurrentPaymentTypeId] = useState<string>("");
+    const [currentAmount, setCurrentAmount] = useState<number>(0);
+    const balanceToastShownRef = useRef(false);
     const [triggerBalanceFetch, {data: balanceData, isFetching: balanceLoading}] =
         useLazyFetchBalancesForVendorAndProjectQuery();
 
@@ -93,6 +96,24 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
             stableTrigger(partyId, projectId);
         }
     }, [currentPaymentTypeId, selectedParty, selectedProject, stableTrigger]);
+
+    const hasBillingAccountIssueForToast =
+        needsBalanceCheck(currentPaymentTypeId) &&
+        !!balanceData &&
+        balanceData.initialBalance > 0 &&
+        currentAmount > balanceData.remainingBalance;
+
+    useEffect(() => {
+        if (hasBillingAccountIssueForToast) {
+            if (!balanceToastShownRef.current) {
+                const message = validatePaymentAmount(currentAmount, currentPaymentTypeId, balanceData);
+                if (message) toast.error(message);
+                balanceToastShownRef.current = true;
+            }
+        } else {
+            balanceToastShownRef.current = false;
+        }
+    }, [hasBillingAccountIssueForToast]);
 
 
     console.log("useEffect currentPaymentTypeId", currentPaymentTypeId);
@@ -341,6 +362,10 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                                 )}
                                                 component={FormNumericTextBox}
                                                 validator={(value) => requiredValidator(value) || amountValidator(value, valueGetter)}
+                                                onChange={(e: any) => {
+                                                    onChange('amount', {value: e.value});
+                                                    setCurrentAmount(e.value ?? 0);
+                                                }}
                                             />
                                         </Grid>
                                         <Grid item xs={2}>
@@ -418,7 +443,16 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                     </Grid>
                                 </Grid>
                                 
-                                {shouldCheckBalance && hasPartyAndProject && (!balanceData || balanceData.initialBalance > 0) && (
+                                {shouldCheckBalance && !hasPartyAndProject && (
+                                    <Grid item xs={12}>
+                                        <Alert severity="warning">
+                                            {!selectedProject
+                                                ? "الرجاء اختيار المشروع للتحقق من الرصيد المتاح لهذا النوع من الدفعات"
+                                                : "الرجاء تحديد الطرف للتحقق من الرصيد المتاح لهذا النوع من الدفعات"}
+                                        </Alert>
+                                    </Grid>
+                                )}
+                                {shouldCheckBalance && hasPartyAndProject && (
                                     <Grid item xs={12}>
                                         <Box sx={{
                                             p: 2,
@@ -429,41 +463,47 @@ const NewPaymentOut: React.FC<NewPaymentOutProps> = ({
                                             {balanceLoading ? (
                                                 <Skeleton height={80}/>
                                             ) : balanceData ? (
-                                                <Grid container spacing={2}>
-                                                    <Grid item xs={4}>
-                                                        <Typography variant="body2" color="text.secondary">السقف
-                                                            المتاح</Typography>
-                                                        <Typography variant="h6" color="success.main"
-                                                                    fontWeight="bold">
-                                                            {balanceData.initialBalance.toLocaleString("ar-EG")} ج.م
-                                                        </Typography>
-                                                    </Grid>
-                                                    <Grid item xs={4}>
-                                                        <Typography variant="body2"
-                                                                    color="text.secondary">المستخدم</Typography>
-                                                        <Typography variant="h6" color="warning.main">
-                                                            {balanceData.usedBalance.toLocaleString("ar-EG")} ج.م
-                                                        </Typography>
-                                                    </Grid>
-                                                    <Grid item xs={4}>
-                                                        <Typography variant="body2"
-                                                                    color="text.secondary">المتبقي</Typography>
-                                                        <Typography variant="h6"
-                                                                    color={balanceData.remainingBalance > 0 ? "primary" : "error"}
-                                                                    fontWeight="bold">
-                                                            {balanceData.remainingBalance.toLocaleString("ar-EG")} ج.م
-                                                        </Typography>
-                                                    </Grid>
-                                                    {amount > balanceData.remainingBalance && (
-                                                        <Grid item xs={12}>
-                                                            <Alert severity="error">
-                                                                المبلغ المطلوب
-                                                                ({amount.toLocaleString("ar-EG")} ج.م) يتجاوز الرصيد
-                                                                المتاح
-                                                            </Alert>
+                                                balanceData.initialBalance > 0 ? (
+                                                    <Grid container spacing={2}>
+                                                        <Grid item xs={4}>
+                                                            <Typography variant="body2" color="text.secondary">السقف
+                                                                المتاح</Typography>
+                                                            <Typography variant="h6" color="success.main"
+                                                                        fontWeight="bold">
+                                                                {balanceData.initialBalance.toLocaleString("ar-EG")} ج.م
+                                                            </Typography>
                                                         </Grid>
-                                                    )}
-                                                </Grid>
+                                                        <Grid item xs={4}>
+                                                            <Typography variant="body2"
+                                                                        color="text.secondary">المستخدم</Typography>
+                                                            <Typography variant="h6" color="warning.main">
+                                                                {balanceData.usedBalance.toLocaleString("ar-EG")} ج.م
+                                                            </Typography>
+                                                        </Grid>
+                                                        <Grid item xs={4}>
+                                                            <Typography variant="body2"
+                                                                        color="text.secondary">المتبقي</Typography>
+                                                            <Typography variant="h6"
+                                                                        color={balanceData.remainingBalance > 0 ? "primary" : "error"}
+                                                                        fontWeight="bold">
+                                                                {balanceData.remainingBalance.toLocaleString("ar-EG")} ج.م
+                                                            </Typography>
+                                                        </Grid>
+                                                        {amount > balanceData.remainingBalance && (
+                                                            <Grid item xs={12}>
+                                                                <Alert severity="error">
+                                                                    المبلغ المطلوب
+                                                                    ({amount.toLocaleString("ar-EG")} ج.م) يتجاوز الرصيد
+                                                                    المتاح
+                                                                </Alert>
+                                                            </Grid>
+                                                        )}
+                                                    </Grid>
+                                                ) : (
+                                                    <Alert severity="info">
+                                                        {balanceData.message || "لا يوجد حساب دفع مُعيَّن لهذا المورد على المشروع المحدد."}
+                                                    </Alert>
+                                                )
                                             ) : (
                                                 <Typography color="text.secondary">جاري تحميل بيانات
                                                     الحساب...</Typography>

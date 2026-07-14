@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, CircularProgress, Button, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
-import { useGetBomInventoryItemsQuery, useReserveProductionRunTaskMutation } from "../../../app/store/apis";
+import { useGetBomInventoryItemsQuery, useReserveBomWithSelectedItemsMutation } from "../../../app/store/apis";
 
 interface Props {
     workEffortId: string;
     onClose: () => void;
-    language: string;
-    reserveTaskQoh: (dataItem: { workEffortId: string }) => Promise<void>;
 }
 
 interface BomInventoryItem {
@@ -20,63 +18,92 @@ interface BomInventoryItem {
     productName: string;
 }
 
-export default function ReserveBomModal({ workEffortId, onClose, language, reserveTaskQoh }: Props) {
-    const { getTranslatedLabel } = useTranslationHelper();
-    const [selections, setSelections] = useState<{ [productId: string]: string }>({});
-    const [error, setError] = useState<string | null>(null);
-    const { data: components = [], isLoading, error: fetchError } = useGetBomInventoryItemsQuery(workEffortId);
-    const [reserveProductionRunTask, { isLoading: isReserving }] = useReserveProductionRunTaskMutation();
+interface Selection {
+    productId: string;
+    inventoryItemId: string;
+}
 
+export default function ReserveBomModal({ workEffortId, onClose }: Props) {
+    const { getTranslatedLabel } = useTranslationHelper();
+    const [selections, setSelections] = useState<Selection[]>([]);
+    const [error, setError] = useState<string | null>(null);
+
+    const { data: components = [], isLoading, error: fetchError } = useGetBomInventoryItemsQuery(workEffortId);
+    const [reserveBom, { isLoading: isReserving, error: mutationError }] = useReserveBomWithSelectedItemsMutation();
+
+    // Purpose: Store user-selected inventoryItemIds without editable quantities
+    // Benefit: Simplifies state by using fixed estimatedQuantity from components
     useEffect(() => {
         if (components.length) {
-            const initialSelections = components.reduce((acc: { [key: string]: string }, item: BomInventoryItem) => {
-                if (!acc[item.productId]) acc[item.productId] = item.inventoryItemId;
+            const initialSelections = components.reduce((acc: Selection[], item: BomInventoryItem) => {
+                if (!acc.some(sel => sel.productId === item.productId)) {
+                    acc.push({
+                        productId: item.productId,
+                        inventoryItemId: item.inventoryItemId,
+                    });
+                }
                 return acc;
-            }, {});
+            }, []);
             setSelections(initialSelections);
         }
     }, [components]);
 
+    // Purpose: Update selections for inventoryItemId, removing quantity handling
+    // Benefit: Streamlines interaction to focus on inventory item selection
     const handleSelectionChange = (productId: string, inventoryItemId: string) => {
-        setSelections(prev => ({ ...prev, [productId]: inventoryItemId }));
+        setSelections(prev =>
+            prev.map(sel =>
+                sel.productId === productId ? { ...sel, inventoryItemId } : sel
+            )
+        );
     };
 
+    // Purpose: Send user-selected inventoryItemIds with fixed quantities to reserveBom endpoint
+    // Benefit: Aligns with REST API and backend handler, removes quantity editing
     const handleSubmit = async () => {
         setError(null);
-        const componentsPayload = Object.entries(selections).map(([productId, inventoryItemId]) => {
-            const component = components.find(c => c.productId === productId && c.inventoryItemId === inventoryItemId);
-            return {
-                productId,
-                inventoryItemId,
-                quantity: component?.estimatedQuantity || 0,
-            };
-        });
+        const invalidSelections = selections.some(sel => !sel.inventoryItemId);
+        if (invalidSelections) {
+            setError('Please select an inventory item for each component.');
+            return;
+        }
 
         try {
-            await reserveProductionRunTask({
-                workEffortId,
-                requireInventory: 'Y',
-                components: componentsPayload,
+            const response = await reserveBom({
+                reserveBomParams: {
+                    workEffortId,
+                    items: selections.map(sel => {
+                        const component = components.find(c => c.productId === sel.productId);
+                        return {
+                            productId: sel.productId,
+                            inventoryItemId: sel.inventoryItemId,
+                            quantity: component?.estimatedQuantity || 0,
+                        };
+                    }),
+                    isAdditionalMaterials: false, // REFACTOR: Explicitly set to false for full BOM reservation
+                },
             }).unwrap();
-            await reserveTaskQoh({ workEffortId });
-            onClose();
+
+            if (response.success) {
+                onClose();
+            } else {
+                setError(response.message);
+            }
         } catch (err: any) {
-            setError(err.message || 'Failed to reserve materials');
+            setError(err.data?.message || 'Failed to reserve materials');
         }
     };
 
-    // REFACTOR: Group components by productId for dropdowns.
-    // Purpose: Organizes data for displaying inventory items per product.
-    // Benefit: Simplifies rendering of dropdowns for each product.
+    // Purpose: Organizes data for rendering one dropdown per product
+    // Benefit: Simplifies UI and ensures one selection per BOM component
     const groupedComponents = components.reduce((acc: { [key: string]: BomInventoryItem[] }, item) => {
         acc[item.productId] = acc[item.productId] || [];
         acc[item.productId].push(item);
         return acc;
     }, {});
 
-    // REFACTOR: Create pairs of products for two dropdowns per row.
-    // Purpose: Arranges 7 products into rows with two dropdowns each (last row with one).
-    // Benefit: Improves UI by reducing vertical space and enhancing readability.
+    // Purpose: Maintains compact layout with two dropdowns per row
+    // Benefit: Preserves existing UI structure for readability
     const productPairs = [];
     const productEntries = Object.entries(groupedComponents);
     for (let i = 0; i < productEntries.length; i += 2) {
@@ -93,38 +120,44 @@ export default function ReserveBomModal({ workEffortId, onClose, language, reser
             {!isLoading && !fetchError && (
                 <>
                     {productPairs.map((pair, index) => (
-                        // REFACTOR: Use flexbox to display two dropdowns per row.
-                        // Purpose: Places two products side by side to optimize space for 7 BOM elements.
-                        // Benefit: Reduces scrolling and improves user experience with compact layout.
                         <Box key={index} sx={{ display: 'flex', gap: 2, my: 2, flexWrap: 'wrap' }}>
-                            {pair.map(([productId, items]) => (
-                                <Box key={productId} sx={{ flex: '1 1 45%', minWidth: 200 }}>
-                                    <FormControl fullWidth>
-                                        <InputLabel>{`Product: ${items[0].productName}`}</InputLabel>
-                                        <Select
-                                            value={selections[productId] || ''}
-                                            onChange={e => handleSelectionChange(productId, e.target.value)}
-                                            label={`Product: ${items[0].productName}`}
-                                        >
-                                            {items.map(item => (
-                                                <MenuItem key={item.inventoryItemId} value={item.inventoryItemId}>
-                                                    {item.colorDescription} (Available: {item.availableToPromiseTotal})
-                                                </MenuItem>
-                                            ))}
-                                        </Select>
-                                    </FormControl>
-                                    <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
-                                        Quantity Needed: {items[0].estimatedQuantity}
-                                    </Typography>
-                                </Box>
-                            ))}
-                            {/* Add empty placeholder for odd number of products */}
-                            {pair.length === 1 && (
-                                <Box sx={{ flex: '1 1 45%', minWidth: 200 }} />
-                            )}
+                            {pair.map(([productId, items]) => {
+                                const selection = selections.find(sel => sel.productId === productId);
+                                // Purpose: Visually indicate when multiple color options are available
+                                // Benefit: Alerts users to choose from multiple inventory items
+                                const hasMultipleItems = items.length > 1;
+                                const highlightStyle = hasMultipleItems
+                                    ? { border: '2px solid #FFD700', backgroundColor: '#FFF9C4' }
+                                    : {};
+
+                                return (
+                                    <Box key={productId} sx={{ flex: '1 1 45%', minWidth: 200 }}>
+                                        <FormControl fullWidth sx={highlightStyle}>
+                                            <InputLabel>{`Product: ${items[0].productName}`}</InputLabel>
+                                            <Select
+                                                value={selection?.inventoryItemId || ''}
+                                                onChange={e => handleSelectionChange(productId, e.target.value)}
+                                                label={`Product: ${items[0].productName}`}
+                                            >
+                                                <MenuItem value="">Select Inventory Item</MenuItem>
+                                                {items.map(item => (
+                                                    <MenuItem key={item.inventoryItemId} value={item.inventoryItemId}>
+                                                        {item.colorDescription} (Available: {item.availableToPromiseTotal})
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                        <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
+                                            Quantity Needed: {items[0].estimatedQuantity}
+                                        </Typography>
+                                    </Box>
+                                );
+                            })}
+                            {pair.length === 1 && <Box sx={{ flex: '1 1 45%', minWidth: 200 }} />}
                         </Box>
                     ))}
                     {error && <Typography color="error">{error}</Typography>}
+                    {mutationError && <Typography color="error">{mutationError.message}</Typography>}
                     <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
                         <Button onClick={onClose} disabled={isLoading || isReserving} sx={{ mr: 1 }}>
                             {getTranslatedLabel("general.cancel", "Cancel")}

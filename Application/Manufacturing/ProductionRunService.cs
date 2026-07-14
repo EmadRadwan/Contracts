@@ -27,7 +27,8 @@ public interface IProductionRunService
         string facilityId,
         string routingId = null,
         string workEffortName = null,
-        string description = null);
+        string description = null,
+        string productFeatureId = null);
 
     Task<UpdateProductionRunResponse> UpdateProductionRun(
         string productionRunId,
@@ -83,6 +84,8 @@ public interface IProductionRunService
 
     Task<ProductionRunTaskReturnMaterialResult> ProductionRunTaskReturnMaterial(
         string workEffortId, string productId, decimal quantity, string lotId = null, string uomId = null);
+
+    Task AssignInventoryToWorkEffort(WorkEffortInventoryAssign input);
 }
 
 public class ProductionRunService : IProductionRunService
@@ -134,7 +137,8 @@ public class ProductionRunService : IProductionRunService
         string facilityId,
         string routingId = null,
         string workEffortName = null,
-        string description = null)
+        string description = null,
+        string productFeatureId = null)
     {
         try
         {
@@ -189,7 +193,7 @@ public class ProductionRunService : IProductionRunService
                 Description = description,
                 FacilityId = facilityId,
                 EstimatedStartDate = startDate,
-                QuantityToProduce = prQuantity
+                QuantityToProduce = prQuantity,
             });
             loggerForTransaction.Information("Production run header created with ProductionRunId {ProductionRunId}",
                 productionRunId);
@@ -320,6 +324,7 @@ public class ProductionRunService : IProductionRunService
                 ?.FacilityName;
             response.CurrentStatusDescription = "Created";
             response.EstimatedCompletionDate = startDate;
+            response.ProductFeatureId = productFeatureId;
 
             loggerForTransaction.Information("Production run created successfully with ID {ProductionRunId}",
                 productionRunId);
@@ -1099,11 +1104,14 @@ public class ProductionRunService : IProductionRunService
                 }
 
                 // Update the task status
-                await _workEffortService.UpdateWorkEffort(taskId, new Dictionary<string, object>
-                {
-                    { "currentStatusId", "PRUN_RUNNING" }
-                });
+                var currentTime = DateTime.UtcNow;
 
+                var updateResult = await _workEffortService.UpdateWorkEffort(taskId, new Dictionary<string, object>
+                {
+                    { "currentStatusId", "PRUN_RUNNING" },
+                    { "actualStartDate", currentTime }
+                });
+                
                 // Update main production run status to 'PRUN_RUNNING' if it's not already running
                 if (productionRun.CurrentStatusId != "PRUN_RUNNING")
                 {
@@ -1136,11 +1144,28 @@ public class ProductionRunService : IProductionRunService
                         await IssueProductionRunTask(taskId);
                     }
                 }
+                
+                var completionTime = DateTime.UtcNow;
+                double? calculatedActualMilliSeconds = theTask.ActualMilliSeconds;
+                if (theTask.ActualStartDate.HasValue)
+                {
+                    var duration = completionTime - theTask.ActualStartDate.Value;
+                    calculatedActualMilliSeconds = duration.TotalMilliseconds;
+                }
+                else
+                {
+                    // REFACTOR: Added fallback to EstimatedMilliSeconds if ActualStartDate is missing, ensuring ActualMilliSeconds is always set. Logs a warning for debugging, improving robustness for edge cases where PRUN_RUNNING call was skipped or failed.
+                    calculatedActualMilliSeconds = theTask.EstimatedMilliSeconds ?? 0.0;
+                    // Log warning: $"ActualStartDate not set for task {taskId}; using EstimatedMilliSeconds ({calculatedActualMilliSeconds})."
+                }
+
 
                 // Update the task status
-                await _workEffortService.UpdateWorkEffort(taskId, new Dictionary<string, object>
+                var updateResult = await _workEffortService.UpdateWorkEffort(taskId, new Dictionary<string, object>
                 {
-                    { "currentStatusId", "PRUN_COMPLETED" }
+                    { "currentStatusId", "PRUN_COMPLETED" },
+                    { "ActualMilliSeconds", calculatedActualMilliSeconds },
+                    { "ActualCompletionDate", completionTime }
                 });
 
                 // Ensure default values for null quantities
@@ -2915,6 +2940,22 @@ public class ProductionRunService : IProductionRunService
         decimal quantityRejected = theTask.QuantityRejected ?? 0m;
         decimal totalQuantityProduced = quantityProduced + addQuantityProduced;
         decimal totalQuantityRejected = quantityRejected + addQuantityRejected;
+
+        if (addQuantityProduced > 0 || addQuantityRejected > 0)
+        {
+            // REFACTOR: Calculate cumulative rejected quantities and update subsequent tasks
+            // Purpose: Adjust QuantityToProduce for tasks after the current one based on cumulative rejections
+            // Benefit: Reflects business logic where rejected quantities reduce available units for subsequent tasks
+            var currentTaskIndex = tasks.FindIndex(t => t.WorkEffortId == workEffortId);
+            decimal cumulativeRejected = tasks.Take(currentTaskIndex + 1)
+                .Sum(t => t.QuantityRejected ?? 0m) + addQuantityRejected; // Include current task's new rejection
+
+            var originalQuantityToProduce = productionRun.QuantityToProduce ?? 0m; // Use production run's original quantity
+            foreach (var task in tasks.Skip(currentTaskIndex + 1)) // Update subsequent tasks
+            {
+                task.QuantityToProduce = Math.Max(0, originalQuantityToProduce - cumulativeRejected); // Prevent negative quantities
+            }
+        }
 
         // Handle component issuance if required
         if (issueRequiredComponents && addQuantityProduced > 0)

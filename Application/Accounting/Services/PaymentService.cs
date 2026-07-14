@@ -109,7 +109,7 @@ public class PaymentService : IPaymentService
             };
             _context.OrderStatuses.Add(orderPaymentReceivedStatus);
 
-            newPaymentSequence = await _utilityService.GetNextSequence("Payment");
+            newPaymentSequence = await _utilityService.GetNextPaymentSequence("CUSTOMER_PAYMENT");
 
             var newPayment = new Payment
             {
@@ -164,7 +164,7 @@ public class PaymentService : IPaymentService
             };
             _context.OrderStatuses.Add(orderPaymentReceivedStatus);
 
-            newPaymentSequence = await _utilityService.GetNextSequence("Payment");
+            newPaymentSequence = await _utilityService.GetNextPaymentSequence("CUSTOMER_PAYMENT");
             var newPayment = new Payment
             {
                 PaymentId = newPaymentSequence,
@@ -198,7 +198,7 @@ public class PaymentService : IPaymentService
     {
         var stamp = DateTime.UtcNow;
         // Get the next sequence for the PaymentId
-        var newPaymentSequence = await _utilityService.GetNextSequence("Payment");
+        var newPaymentSequence = await _utilityService.GetNextPaymentSequence("VENDOR_PAYMENT");
         var payment = new Payment
         {
             PaymentId = newPaymentSequence,

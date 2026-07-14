@@ -1,3 +1,4 @@
+import './promiseWithResolversPolyfill';
 import {createRoot} from 'react-dom/client';
 import "semantic-ui-css/semantic.min.css";
 import "react-toastify/dist/ReactToastify.min.css";

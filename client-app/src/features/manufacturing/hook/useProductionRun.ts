@@ -98,7 +98,6 @@ const useProductionRun = ({
         const errorCode = error?.data?.errorCode || ERROR_CODES.DEFAULT;
         let errorMessage = error?.data?.errorMessage || defaultMessage;
 
-        // REFACTOR: Customize error message for INSUFFICIENT_INVENTORY
         if (errorCode === ERROR_CODES.INSUFFICIENT_INVENTORY && error?.data?.value?.insufficientItems) {
             const items = error.data.value.insufficientItems;
             errorMessage = `${errorMessages[language][ERROR_CODES.INSUFFICIENT_INVENTORY]}: ` +
@@ -133,6 +132,7 @@ const useProductionRun = ({
                     facilityId: newProductionRun.facilityId,
                     facilityName: createdProductionRun.facilityName,
                     quantityToProduce: newProductionRun.quantityToProduce,
+                    productFeatureId: newProductionRun.productFeatureId, // Include the selected color
                 };
 
                 dispatch(setJobRunUnderProcessing(workEffort));
@@ -162,6 +162,7 @@ const useProductionRun = ({
                     facilityId: existingProductionRun.facilityId,
                     facilityName: updatedProductionRun.facilityName,
                     quantityToProduce: updatedProductionRun.quantity,
+                    productFeatureId: existingProductionRun.productFeatureId, // Include the updated color
                 };
 
                 dispatch(setJobRunUnderProcessing(workEffort));
@@ -235,6 +236,7 @@ const useProductionRun = ({
             }
             if (createdProductionRun) {
                 console.log('createdProductionRun from Start', createdProductionRun);
+                console.log('jobRunUnderProcessing from Start', jobRunUnderProcessing);
 
                 const workEffort = {
                     actualStartDate: createdProductionRun.mainProductionRunStartDate,
@@ -391,6 +393,7 @@ const useProductionRun = ({
             facilityId: data.values.facilityId,
             description: data.values.description,
             routingId: data.values.routingId,
+            productFeatureId: data.values.productFeatureId, // Include the selected color
         };
 
         
@@ -408,6 +411,7 @@ const useProductionRun = ({
               quantity: data.values.quantityToProduce,
               facilityId: data.values.facilityId,
               description: data.values.description,
+                productFeatureId: data.values.productFeatureId, // Include the updated color
             };
             await updateProductionRun(editProductionRun);
         }

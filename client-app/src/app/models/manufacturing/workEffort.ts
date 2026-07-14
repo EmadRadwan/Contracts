@@ -8,7 +8,6 @@ export interface WorkEffort {
     currentStatusId?: string;
     currentStatusDescription?: string;
     lastStatusUpdate?: Date;
-    glAccountId?: string;
     workEffortPurposeTypeId?: string;
     workEffortParentId?: string;
     scopeEnumId?: string;
@@ -57,6 +56,4 @@ export interface WorkEffort {
     addQuantityProduced?: number;
     addSetupTime?: number;
     addTaskTime?: number;
-    operatingExpenseGlAccountId?: string;
-    operatingExpenseGlAccountName?: string;
 }

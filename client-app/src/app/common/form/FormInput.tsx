@@ -94,6 +94,10 @@ const FormInput = (fieldRenderProps: FieldRenderProps) => {
                     {...others}
                 />
                 {
+                    showValidationMessage &&
+                    <Error id={errorId}>{validationMessage}</Error>
+                }
+                {
                     showHint &&
                     <NotificationGroup style={position.bottomRight}>
                         <Notification type={{style: 'info', icon: true}} closable={false}>

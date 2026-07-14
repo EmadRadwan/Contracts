@@ -13,6 +13,7 @@ public interface IUtilityService
 {
     Task<string> GetNextSequence(string sequenceName);
     Task<string> GetNextOrderSequence(string orderTypeId);
+    Task<string> GetNextPaymentSequence(string paymentTypeId);
     Task<OrderRole> GetOrderRole(string orderId, string roleTypeId);
     Task<OrderRole> CreateOrderRole(string orderId, string roleTypeId, string partyId);
     OrderRole UpdateOrderRole(string orderId, string roleTypeId, string partyId);
@@ -160,6 +161,45 @@ public class UtilityService : IUtilityService
             // Wrap the original exception in a GetNextSequenceException and re-throw it
             throw new GetNextSequenceException($"Failed to get next sequence. Order type ID: {orderTypeId}.", ex);
         }
+    }
+
+    /// <summary>
+    /// Returns the next PaymentId, prefixed "I" for incoming (RECEIPT-derived) payment types
+    /// or "O" for outgoing (DISBURSEMENT-derived) payment types. Each direction has its own
+    /// SequenceValueItem row ("PaymentReceipt" for incoming, "Payment" for outgoing) so the two
+    /// number ranges never collide.
+    /// </summary>
+    public async Task<string> GetNextPaymentSequence(string paymentTypeId)
+    {
+        var isDisbursement = await IsDisbursementPaymentType(paymentTypeId);
+
+        if (isDisbursement)
+        {
+            var newSequence = await GetNextSequence("Payment");
+            return "O" + newSequence;
+        }
+
+        var newReceiptSequence = await GetNextSequence("PaymentReceipt");
+        return "I" + newReceiptSequence;
+    }
+
+    private async Task<bool> IsDisbursementPaymentType(string paymentTypeId)
+    {
+        var currentTypeId = paymentTypeId;
+
+        while (!string.IsNullOrEmpty(currentTypeId))
+        {
+            if (currentTypeId == "DISBURSEMENT") return true;
+            if (currentTypeId == "RECEIPT") return false;
+
+            var paymentType = await _context.PaymentTypes
+                .FirstOrDefaultAsync(pt => pt.PaymentTypeId == currentTypeId);
+            currentTypeId = paymentType?.ParentTypeId;
+        }
+
+        _logger.LogWarning(
+            $"Could not resolve DISBURSEMENT/RECEIPT ancestry for PaymentTypeId: {paymentTypeId}. Defaulting to RECEIPT (incoming).");
+        return false;
     }
 
     public async Task<OrderRole> CreateOrderRole(

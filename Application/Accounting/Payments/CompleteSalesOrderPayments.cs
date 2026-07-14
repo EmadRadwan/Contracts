@@ -1,3 +1,4 @@
+using Application.Core;
 using Application.Interfaces;
 using Domain;
 using FluentValidation;
@@ -27,11 +28,13 @@ public class CompleteSalesOrderPayments
     {
         private readonly DataContext _context;
         private readonly IUserAccessor _userAccessor;
+        private readonly IUtilityService _utilityService;
 
-        public Handler(DataContext context, IUserAccessor userAccessor)
+        public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService)
         {
             _userAccessor = userAccessor;
             _context = context;
+            _utilityService = utilityService;
         }
 
         public async Task<Result<PaymentsDto>> Handle(Command request, CancellationToken cancellationToken)
@@ -141,7 +144,7 @@ public class CompleteSalesOrderPayments
                             var paymentApplication = new PaymentApplication
                             {
                                 PaymentApplicationId = newPaymentApplicationSequence.ToString(),
-                                PaymentId = savedPayment.ToString(),
+                                PaymentId = savedPayment.PaymentId,
                                 AmountApplied = savedPayment.Amount,
                                 InvoiceId = request.PaymentsDto.InvoiceId,
                                 LastUpdatedStamp = stamp,
@@ -153,13 +156,8 @@ public class CompleteSalesOrderPayments
                     // new payment
                     else
                     {
-                        // get payment record sequence from sequence value item 
-                        var paymentSequenceRecord = await _context.SequenceValueItems
-                            .Where(x => x.SeqName == "Payment").SingleOrDefaultAsync();
-                        // increment payment sequence
-                        var newPaymentSequence = paymentSequenceRecord.SeqId + 1;
-                        // update payment sequence
-                        paymentSequenceRecord.SeqId = newPaymentSequence;
+                        // get next PaymentId (prefixed "I" for this incoming CUSTOMER_PAYMENT)
+                        var newPaymentSequence = await _utilityService.GetNextPaymentSequence("CUSTOMER_PAYMENT");
 
                         // get order payment preference sequence from sequence value item
                         var orderPaymentPreferenceSequenceRecord = await _context.SequenceValueItems
@@ -196,7 +194,7 @@ public class CompleteSalesOrderPayments
 
                         var newPayment = new Payment
                         {
-                            PaymentId = newPaymentSequence.ToString(),
+                            PaymentId = newPaymentSequence,
                             PaymentTypeId = "CUSTOMER_PAYMENT",
                             PaymentMethodTypeId = updatedPayment.PaymentMethodTypeId,
                             PaymentPreferenceId = newOrderPaymentPreferenceSequence.ToString(),
@@ -226,7 +224,7 @@ public class CompleteSalesOrderPayments
                         var paymentApplication = new PaymentApplication
                         {
                             PaymentApplicationId = newPaymentApplicationSequence.ToString(),
-                            PaymentId = newPaymentSequence.ToString(),
+                            PaymentId = newPaymentSequence,
                             AmountApplied = newPayment.Amount,
                             InvoiceId = request.PaymentsDto.InvoiceId,
                             LastUpdatedStamp = stamp,

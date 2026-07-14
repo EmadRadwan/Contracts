@@ -6,7 +6,8 @@ import {requiredValidator} from "../../../app/common/form/Validators";
 import FormInput from "../../../app/common/form/FormInput";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
 import {
-     useFetchProductionRunTasksSimpleQuery, useFetchProductQuantityUomQuery,
+    useFetchProductFeatureColorsQuery,
+    useFetchProductionRunTasksSimpleQuery, useFetchProductQuantityUomQuery,
     useFetchProductRoutingsQuery, useFetchRowMaterialFacilitiesQuery,
 } from "../../../app/store/apis";
 import {MemoizedFormDropDownList} from "../../../app/common/form/MemoizedFormDropDownList";
@@ -58,6 +59,7 @@ export default function CreateProductionRunEditForm({cancelEdit, editMode}: Prop
 
 
     const { data: productionRunTasksData } = useFetchProductionRunTasksSimpleQuery(productionRun?.workEffortId, { skip: !productionRun?.workEffortId });
+    const { data: productFeatureColors } = useFetchProductFeatureColorsQuery(undefined);
 
     useEffect(() => {
         if (productionRunTasksData) {
@@ -66,13 +68,14 @@ export default function CreateProductionRunEditForm({cancelEdit, editMode}: Prop
         }
     }, [productionRunTasksData]);
 
-    
+
     const [formValues, setFormValues] = useState({
         productName: "",
         productId: "",
         quantityToProduce: 0,
         estimatedStartDate: new Date(),
         facilityId: "",
+        productFeatureId: "",
     });
 
     const [isLoading, setIsLoading] = useState(false);
@@ -286,7 +289,20 @@ export default function CreateProductionRunEditForm({cancelEdit, editMode}: Prop
         },
         [],
     );
-    
+
+    const mapProductFeatureColors = (productFeatureColors: any[]) => {
+        return productFeatureColors
+            .filter((color) => color.productColorId !== "COLOR_NO_COLOR")
+            .map((color) => ({
+                ...color,
+                colorFeatureId: color.productColorId,
+                productColorId: undefined,
+            }));
+    };
+
+    const transformedColors = mapProductFeatureColors(productFeatureColors ?? []);
+
+
     console.log('productionRun from Edit form ', productionRun)
     console.log('jobRunUnderProcessing from Edit form ', jobRunUnderProcessing);
     console.log('showTasksList:', showTasksList)
@@ -493,6 +509,18 @@ export default function CreateProductionRunEditForm({cancelEdit, editMode}: Prop
                             </Grid>
                         </Grid>
                         <Grid item container xs={10} spacing={2} alignItems={"flex-end"}>
+                            <Grid item xs={5}>
+                                <Field
+                                    id={"productFeatureId"}
+                                    name={"productFeatureId"}
+                                    label={getTranslatedLabel("manufacturing.jobshop.edit.color", "Color")}
+                                    component={MemoizedFormDropDownList}
+                                    dataItemKey={"colorFeatureId"}
+                                    textField={"description"}
+                                    data={transformedColors}
+                                    onChange={(e) => handleFieldChange("productFeatureId", e.value)}
+                                />
+                            </Grid>
                             <Grid item xs={5}>
                                 <Field
                                     id={"workEffortName"}

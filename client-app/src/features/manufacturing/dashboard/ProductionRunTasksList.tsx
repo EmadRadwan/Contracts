@@ -1,5 +1,14 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { Button, CircularProgress, Typography } from "@mui/material";
+import {
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+  Typography
+} from "@mui/material";
 import {
   Grid,
   GridColumn as Column,
@@ -8,14 +17,13 @@ import {
   GridToolbar,
 } from "@progress/kendo-react-grid";
 import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
-import { useFetchProductionRunTasksQuery } from "../../../app/store/apis";
+import {useFetchProductionRunTasksQuery, useUpdateProductionRunTaskMutation} from "../../../app/store/apis";
 import { handleDatesArray } from "../../../app/util/utils";
 import { ProductionRunRoutingTask } from "../../../app/models/manufacturing/productionRunRoutingTask";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
 import ModalContainer from "../../../app/common/modals/ModalContainer";
 import EditProductionRunDeclRoutingTask from "../form/EditProductionRunDeclRoutingTask";
 import { WorkEffort } from "../../../app/models/manufacturing/workEffort";
-import ProductionRunDeclareAndProduceTop from "../form/ProductionRunDeclareAndProduceTop";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import { useAppSelector } from "../../../app/store/configureStore";
 import ProductionRunDeclareAndProduceTopDiscreate from "../form/ProductionRunDeclareAndProduceTopDiscreate";
@@ -33,6 +41,7 @@ interface Props {
 }
 
 const millisToMinutes = (millis: number) => (millis / 60000).toFixed(2);
+const minutesToMillis = (minutes: number) => minutes * 60000;
 
 export default function ProductionRunTasksList({
   productionRunId, productId,
@@ -61,6 +70,12 @@ export default function ProductionRunTasksList({
   const [reservedBOM, setReservedBOM] = useState<string | null>(null);
   const [showActionColumn, setShowActionColumn] = useState(true); // <-- SPECIAL REMARK: New state to control rendering of the first column
   const [showReserveModal, setShowReserveModal] = useState(false);
+
+  const [openTimeDialog, setOpenTimeDialog] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<ProductionRunRoutingTask | null>(null);
+  const [newActualMinutes, setNewAbsoluteMinutes] = useState<string>("");
+  const [inputError, setInputError] = useState<string>("");
+  const [updateProductionRunTask, { isLoading: isUpdating, isError, error }] = useUpdateProductionRunTaskMutation();
 
   //console.log('productId  from ProductionRunTasksList.tsx', productId);
   const { data: productionRunDetailsData, isLoading } =
@@ -137,7 +152,6 @@ export default function ProductionRunTasksList({
     }
 
     if (buttonType === "reserve") {
-      // REFACTOR: Open modal instead of calling reserveTaskQoh directly.
       // Purpose: Allows user to select colors before reserving materials.
       // Benefit: Prevents immediate backend call and shows ReserveBomModal.
       setSelectedWorkEffort(dataItem as WorkEffort);
@@ -389,16 +403,105 @@ export default function ProductionRunTasksList({
     );
   };
 
-/*  const TimeDisplayCell = (props: any) => (
-    <td>
-        <span >{props.dataItem[props.field] || 0} {getTranslatedLabel("general.ms", "ms")}</span> / <span >{millisToMinutes(props.dataItem[props.field])} {getTranslatedLabel("general.mins", "mins")}</span>
-    </td>
-);*/
-  const TimeDisplayCell = (props: any) => (
-    <td>
-         <span >{millisToMinutes(props.dataItem[props.field])} {getTranslatedLabel("general.mins", "mins")}</span>
-    </td>
-);
+
+
+  const TimeDisplayCell = (props: any) => {
+    const task: ProductionRunRoutingTask = props.dataItem;
+    const isActualMilliSeconds = props.field === "actualMilliSeconds";
+
+    const handleCellClick = () => {
+      if (isActualMilliSeconds) {
+        // REFACTOR: Restrict dialog to tasks in PRUN_RUNNING or PRUN_COMPLETED to align with backend validation, ensuring updates are only allowed in valid states.
+        if (task.currentStatusId === "PRUN_RUNNING" || task.currentStatusId === "PRUN_COMPLETED") {
+          setSelectedTask(task);
+          setNewAbsoluteMinutes(millisToMinutes(task.actualMilliSeconds));
+          setInputError("");
+          setOpenTimeDialog(true);
+        } else {
+          setInputError(
+              getTranslatedLabel(
+                  "manufacturing.jobshop.prodruntasks.list.invalidStatus",
+                  "Task must be Running or Completed to update run time."
+              )
+          );
+        }
+      }
+    };
+
+    return (
+        <td>
+        <span
+            style={
+              isActualMilliSeconds && (task.currentStatusId === "PRUN_RUNNING" || task.currentStatusId === "PRUN_COMPLETED")
+                  ? { cursor: "pointer", color: "#1976d2", textDecoration: "underline" }
+                  : {}
+            }
+            onClick={isActualMilliSeconds ? handleCellClick : undefined}
+        >
+          {millisToMinutes(props.dataItem[props.field])} {getTranslatedLabel("general.mins", "mins")}
+        </span>
+        </td>
+    );
+  };
+
+  const handleDialogClose = () => {
+    setOpenTimeDialog(false);
+    setSelectedTask(null);
+    setNewAbsoluteMinutes("");
+    setInputError("");
+  };
+
+  const handleDialogSubmit = async () => {
+    const value = parseFloat(newActualMinutes);
+    if (isNaN(value) || value < 0) {
+      setInputError(
+          getTranslatedLabel("manufacturing.jobshop.prodruntasks.list.invalidTime", "Please enter a positive number.")
+      );
+      return;
+    }
+    const newMilliSeconds = minutesToMillis(value);
+    const currentMilliSeconds = selectedTask?.actualMilliSeconds ?? 0;
+    // Calculate addTaskTime as the difference to align with UpdateProductionRunTask's additive logic
+    const addTaskTime = newMilliSeconds - currentMilliSeconds;
+
+    try {
+      await updateProductionRunTask({
+        productionRunId: productionRunId!,
+        productionRunTaskId: selectedTask!.workEffortId,
+        addTaskTime,
+        // Set unused fields to null or defaults to avoid unintended updates
+        fromDate: null,
+        toDate: null,
+        addSetupTime: null,
+        addQuantityProduced: null,
+        addQuantityRejected: null,
+        comments: null,
+        issueRequiredComponents: false,
+      }).unwrap();
+      // Update local state to reflect the new value immediately
+      setProductionRunTasks((prev) =>
+          prev.map((task) =>
+              task.workEffortId === selectedTask!.workEffortId
+                  ? { ...task, actualMilliSeconds: newMilliSeconds }
+                  : task
+          )
+      );
+      handleDialogClose();
+    } catch (err: any) {
+      setInputError(
+          err?.data?.message ||
+          getTranslatedLabel(
+              "manufacturing.jobshop.prodruntasks.list.updateError",
+              "Failed to update run time."
+          )
+      );
+    }
+  };
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setNewAbsoluteMinutes(event.target.value);
+    setInputError("");
+  };
 
   const memoizedOnClose = useCallback(() => setShowDeclareForm(false), []);
   const memoizedOnClose2 = useCallback(() => setShowProduceForm(false), []);
@@ -483,9 +586,9 @@ export default function ProductionRunTasksList({
               "manufacturing.jobshop.prodruntasks.list.currentStatusDescription",
               "Status"
             )}
-            width={100}
+            width={120}
           />
-          <Column
+          {/*<Column
             field="fixedAssetName"
             title={getTranslatedLabel(
               "manufacturing.jobshop.prodruntasks.list.fixedAssetName",
@@ -501,7 +604,7 @@ export default function ProductionRunTasksList({
             )}
             width={200}
             format="{0: dd/MM/yyyy}"
-          />
+          />*/}
           <Column
             field="actualSetupMillis"
             title={getTranslatedLabel(
@@ -520,14 +623,22 @@ export default function ProductionRunTasksList({
             width={200}
             cell={TimeDisplayCell}
           />
-         {/* <Column
+          <Column
+            field="quantityToProduce"
+            title={getTranslatedLabel(
+              "manufacturing.jobshop.prodruntasks.list.quantityToProduced",
+              "Quantity To Produced"
+            )}
+            width={150}
+          />
+          <Column
             field="quantityProduced"
             title={getTranslatedLabel(
               "manufacturing.jobshop.prodruntasks.list.quantityProduced",
               "Quantity Produced"
             )}
             width={150}
-          />*/}
+          />
         </Grid>
       )}
 
@@ -564,11 +675,43 @@ export default function ProductionRunTasksList({
             <ReserveBomModal
                 workEffortId={selectedWorkEffort.workEffortId}
                 onClose={memoizedOnCloseReserve}
-                language={language}
-                reserveTaskQoh={reserveTaskQoh!}
             />
           </ModalContainer>
       )}
+
+      <Dialog open={openTimeDialog} onClose={handleDialogClose} maxWidth="xs" fullWidth>
+        <DialogTitle>
+          {getTranslatedLabel("manufacturing.jobshop.prodruntasks.list.updateRunTime", "Update Actual Run Time")}
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+              autoFocus
+              margin="dense"
+              label={getTranslatedLabel("manufacturing.jobshop.prodruntasks.list.runTimeMinutes", "Run Time (minutes)")}
+              type="number"
+              fullWidth
+              value={newActualMinutes}
+              onChange={handleInputChange}
+              error={!!inputError}
+              helperText={inputError}
+              inputProps={{ min: 0, step: "0.01" }}
+              disabled={isUpdating}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDialogClose} disabled={isUpdating}>
+            {getTranslatedLabel("general.cancel", "Cancel")}
+          </Button>
+          <Button onClick={handleDialogSubmit} variant="contained" color="primary" disabled={isUpdating}>
+            {isUpdating ? (
+                <CircularProgress size={24} />
+            ) : (
+                getTranslatedLabel("general.save", "Save")
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </Fragment>
   );
 }

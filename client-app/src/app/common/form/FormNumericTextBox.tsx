@@ -1,7 +1,7 @@
 import React from 'react';
 import {FieldRenderProps, FieldWrapper} from '@progress/kendo-react-form';
 import {NumericTextBox} from '@progress/kendo-react-inputs';
-import {Label} from '@progress/kendo-react-labels';
+import {Error, Label} from '@progress/kendo-react-labels';
 import {Notification, NotificationGroup} from "@progress/kendo-react-notification";
 
 
@@ -89,6 +89,10 @@ const FormNumericTextBox = (fieldRenderProps: FieldRenderProps) => {
                 min={min}
                 {...others}
             />
+            {
+                showValidationMessage &&
+                <Error id={errorId}>{validationMessage}</Error>
+            }
             {
                 showHint &&
                 <NotificationGroup style={position.bottomRight}>

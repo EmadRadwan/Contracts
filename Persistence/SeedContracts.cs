@@ -534,6 +534,22 @@ public class SeedContracts
             await context.SaveChangesAsync();
         }
 
+        // Separate incoming-payment sequence (PaymentId prefixed "I"), starting at 50000.
+        // Runs independently of the block above so it also applies to databases that were
+        // already seeded before this sequence existed (the block above only runs on an empty table).
+        if (!await context.SequenceValueItems.AnyAsync(x => x.SeqName == "PaymentReceipt"))
+        {
+            var stamp = DateTime.UtcNow;
+            context.SequenceValueItems.Add(new SequenceValueItem
+            {
+                SeqName = "PaymentReceipt",
+                SeqId = 49999,
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            });
+            await context.SaveChangesAsync();
+        }
+
         if (!context.GoodIdentificationTypes.Any())
         {
             var path = Path.Combine(Directory.GetCurrentDirectory(), "Json/good_identification_types.json");
@@ -2607,6 +2623,146 @@ public class SeedContracts
         }
         */
 
+        // Manufacturing demo data: a garment routing + BOM + component stock, so the
+        // Manufacturing module has something to show. IDs are prefixed with "MFGDEMO-"
+        // since this DB already has live Products/WorkEfforts using plain numeric IDs
+        // (e.g. project WorkEfforts) — the prefix guarantees no collision regardless of
+        // where those counters currently are, without needing to inspect live data.
+        {
+            const string demoPrefix = "MFGDEMO-";
+            string Remap(string id) => demoPrefix + id;
+
+            var demoFacilityId = Remap("FACILITY");
+            if (!await context.Facilities.AnyAsync(f => f.FacilityId == demoFacilityId))
+            {
+                context.Facilities.Add(new Facility
+                {
+                    FacilityId = demoFacilityId,
+                    FacilityTypeId = "MAIN_STORE",
+                    FacilityName = "Manufacturing Demo Facility",
+                    CreatedStamp = nowDateTime,
+                    LastUpdatedStamp = nowDateTime
+                });
+                await context.SaveChangesAsync();
+            }
+
+            var demoCategoriesPath = Path.Combine(Directory.GetCurrentDirectory(), "Json/product_categories_clothes.json");
+            var demoCategories = JsonConvert.DeserializeObject<List<ProductCategory>>(File.ReadAllText(demoCategoriesPath));
+            var existingCategoryIds = await context.ProductCategories.Select(c => c.ProductCategoryId).ToListAsync();
+            var newCategories = demoCategories.Where(c => !existingCategoryIds.Contains(c.ProductCategoryId)).ToList();
+            if (newCategories.Any())
+            {
+                await context.ProductCategories.AddRangeAsync(newCategories);
+                await context.SaveChangesAsync();
+            }
+
+            var demoTaxAuthPath = Path.Combine(Directory.GetCurrentDirectory(), "Json/tax_authority_categories_clothes.json");
+            var demoTaxAuthCategories = JsonConvert.DeserializeObject<List<TaxAuthorityCategory>>(File.ReadAllText(demoTaxAuthPath));
+            var existingTaxAuthKeys = (await context.TaxAuthorityCategories
+                    .Select(t => new { t.TaxAuthGeoId, t.TaxAuthPartyId, t.ProductCategoryId }).ToListAsync())
+                .Select(t => $"{t.TaxAuthGeoId}|{t.TaxAuthPartyId}|{t.ProductCategoryId}")
+                .ToHashSet();
+            var newTaxAuthCategories = demoTaxAuthCategories
+                .Where(t => !existingTaxAuthKeys.Contains($"{t.TaxAuthGeoId}|{t.TaxAuthPartyId}|{t.ProductCategoryId}"))
+                .ToList();
+            if (newTaxAuthCategories.Any())
+            {
+                await context.TaxAuthorityCategories.AddRangeAsync(newTaxAuthCategories);
+                await context.SaveChangesAsync();
+            }
+
+            var demoFinishedGoodId = Remap("11");
+            if (!await context.Products.AnyAsync(p => p.ProductId == demoFinishedGoodId))
+            {
+                var demoProductsPath = Path.Combine(Directory.GetCurrentDirectory(), "Json/products_clothes.json");
+                var demoProducts = JsonConvert.DeserializeObject<List<Product>>(File.ReadAllText(demoProductsPath));
+                foreach (var product in demoProducts) product.ProductId = Remap(product.ProductId);
+                await context.Products.AddRangeAsync(demoProducts);
+                await context.SaveChangesAsync();
+
+                var demoAssocsPath = Path.Combine(Directory.GetCurrentDirectory(), "Json/product_assocs_clothes.json");
+                var demoAssocs = JsonConvert.DeserializeObject<List<ProductAssoc>>(File.ReadAllText(demoAssocsPath));
+                foreach (var assoc in demoAssocs)
+                {
+                    assoc.ProductId = Remap(assoc.ProductId);
+                    assoc.ProductIdTo = Remap(assoc.ProductIdTo);
+                }
+                await context.ProductAssocs.AddRangeAsync(demoAssocs);
+
+                var demoWorkEffortsPath = Path.Combine(Directory.GetCurrentDirectory(), "Json/workefforts_clothes.json");
+                var demoWorkEfforts = JsonConvert.DeserializeObject<List<WorkEffort>>(File.ReadAllText(demoWorkEffortsPath));
+                foreach (var we in demoWorkEfforts)
+                {
+                    we.WorkEffortId = Remap(we.WorkEffortId);
+                    if (!string.IsNullOrEmpty(we.WorkEffortParentId)) we.WorkEffortParentId = Remap(we.WorkEffortParentId);
+                    we.FacilityId = demoFacilityId;
+                }
+                await context.WorkEfforts.AddRangeAsync(demoWorkEfforts);
+
+                var demoWorkEffortAssocsPath = Path.Combine(Directory.GetCurrentDirectory(), "Json/workeffort_assocs_clothes.json");
+                var demoWorkEffortAssocs = JsonConvert.DeserializeObject<List<WorkEffortAssoc>>(File.ReadAllText(demoWorkEffortAssocsPath));
+                foreach (var wea in demoWorkEffortAssocs)
+                {
+                    wea.WorkEffortIdFrom = Remap(wea.WorkEffortIdFrom);
+                    wea.WorkEffortIdTo = Remap(wea.WorkEffortIdTo);
+                }
+                await context.WorkEffortAssocs.AddRangeAsync(demoWorkEffortAssocs);
+
+                var demoGoodStandardsPath = Path.Combine(Directory.GetCurrentDirectory(), "Json/workeffort_good_standards_clothes.json");
+                var demoGoodStandards = JsonConvert.DeserializeObject<List<WorkEffortGoodStandard>>(File.ReadAllText(demoGoodStandardsPath));
+                foreach (var wgs in demoGoodStandards)
+                {
+                    wgs.WorkEffortId = Remap(wgs.WorkEffortId);
+                    wgs.ProductId = Remap(wgs.ProductId);
+                }
+                await context.WorkEffortGoodStandards.AddRangeAsync(demoGoodStandards);
+
+                // References existing FOH_GENERAL / FOH_UTILITY_HOUR cost component reference data
+                var demoCostCalcsPath = Path.Combine(Directory.GetCurrentDirectory(), "Json/workeffort_cost_calcs_clothes.json");
+                var demoCostCalcs = JsonConvert.DeserializeObject<List<WorkEffortCostCalc>>(File.ReadAllText(demoCostCalcsPath));
+                foreach (var wcc in demoCostCalcs) wcc.WorkEffortId = Remap(wcc.WorkEffortId);
+                await context.WorkEffortCostCalcs.AddRangeAsync(demoCostCalcs);
+
+                await context.SaveChangesAsync();
+
+                // On-hand stock for the raw-material components so reservation/issuance has something to work with
+                var rawMaterialIds = demoProducts.Where(p => p.ProductTypeId == "RAW_MATERIAL").Select(p => p.ProductId).ToList();
+                var seq = 1;
+                foreach (var rawMaterialId in rawMaterialIds)
+                {
+                    var demoInventoryItemId = Remap($"INV-{seq}");
+                    context.InventoryItems.Add(new InventoryItem
+                    {
+                        InventoryItemId = demoInventoryItemId,
+                        InventoryItemTypeId = "NON_SERIAL_INV_ITEM",
+                        ProductId = rawMaterialId,
+                        OwnerPartyId = "Company",
+                        FacilityId = demoFacilityId,
+                        QuantityOnHandTotal = 500,
+                        AvailableToPromiseTotal = 500,
+                        AccountingQuantityTotal = 500,
+                        UnitCost = 10,
+                        CurrencyUomId = "EGP",
+                        CreatedStamp = nowDateTime,
+                        LastUpdatedStamp = nowDateTime
+                    });
+                    context.InventoryItemDetails.Add(new InventoryItemDetail
+                    {
+                        InventoryItemId = demoInventoryItemId,
+                        InventoryItemDetailSeqId = "1",
+                        QuantityOnHandDiff = 500,
+                        AvailableToPromiseDiff = 500,
+                        AccountingQuantityDiff = 500,
+                        EffectiveDate = nowDateTime,
+                        CreatedStamp = nowDateTime,
+                        LastUpdatedStamp = nowDateTime
+                    });
+                    seq++;
+                }
+                await context.SaveChangesAsync();
+            }
+        }
+
 
 //---------------------------------Product Promo---------------------------------
         /*
@@ -2916,7 +3072,8 @@ public class SeedContracts
                 "CRM_View",
                 "CRM_Leads_View", "CRM_Leads_Create", "CRM_Leads_Edit", "CRM_Leads_Delete",
                 "CRM_Contacts_View", "CRM_Contacts_Create", "CRM_Contacts_Edit", "CRM_Contacts_Delete",
-                "ApproveEmployeeAdvance", "DeleteEmployeeAdvance"
+                "ApproveEmployeeAdvance", "DeleteEmployeeAdvance",
+                "Manufacturing_View"
             };
 
             foreach (var role in requiredRoles)

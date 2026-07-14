@@ -9,4 +9,5 @@ public class CreateProductionRunDto
     public string? RoutingId { get; set; }
     public string? WorkEffortName { get; set; }
     public string? Description { get; set; }
+    public string? ProductFeatureId { get; set; }
 }

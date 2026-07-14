@@ -11,4 +11,5 @@ public class CreateProductionRunResponse
     public string FacilityName { get; set; }
     public DateTime EstimatedCompletionDate { get; set; }
     public DateTime EstimatedStartDate { get; set; }
+    public string ProductFeatureId { get; set; }
 }

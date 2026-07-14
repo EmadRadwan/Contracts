@@ -59,6 +59,7 @@ public class GetPaymentForReport
                             Amount = pyt.Amount,
                             CurrencyUomId = pyt.CurrencyUomId ?? "EGP",
                             PaymentMethodId = pyt.PaymentMethodId,
+                            IsBankTransfer = pyt.IsBankTransfer,
                             PaymentMethodDescription = pmt.Description,
                             ChequeNumber = pyt.ChequeNumber,
                             ChequeDate = pyt.ChequeDate,
@@ -90,6 +91,7 @@ public class PaymentReportDto
     public decimal Amount { get; set; }
     public string CurrencyUomId { get; set; } = "EGP";
     public string PaymentMethodId { get; set; } = string.Empty;
+    public bool? IsBankTransfer { get; set; }
     public string PaymentMethodDescription { get; set; } = string.Empty;
     public string? ChequeNumber { get; set; }
     public DateOnly? ChequeDate { get; set; }

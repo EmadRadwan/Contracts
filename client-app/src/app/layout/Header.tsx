@@ -5,6 +5,7 @@ import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import ReceiptOutlinedIcon from '@mui/icons-material/ReceiptOutlined';
 import HomeWork from '@mui/icons-material/HomeWork';
+import BuildCircleOutlinedIcon from '@mui/icons-material/BuildCircleOutlined';
 import { AppBar, Box, List, ListItem, ListItemIcon, ListItemText, Toolbar, Typography, } from "@mui/material";
 import SignedInMenu from "./SignedInMenu";
 import { useAppDispatch, useAppSelector } from "../store/configureStore";
@@ -35,6 +36,7 @@ const moduleRoleMap: Record<string, string> = {
     sales: "Sales_View",
     crm: "CRM_View",
     hr: "HR_View",
+    manufacturing: "Manufacturing_View",
 };
 
 const midLinks = [
@@ -52,6 +54,7 @@ const midLinks = [
     { title: "CRM", path: "/sales-opportunities", key: "crm", icon: <ManageAccountsIcon sx={{ color: "#fabd52" }} /> },
 ,
     { title: "hr", path: "/humanResources", key: "hr", icon: <SupervisorAccountIcon sx={{ color: "#fabd52" }} /> },
+    { title: "manufacturing", path: "/manufacturingDashboard", key: "manufacturing", icon: <BuildCircleOutlinedIcon sx={{ color: "#03A9F4" }} /> },
 
 ];
 

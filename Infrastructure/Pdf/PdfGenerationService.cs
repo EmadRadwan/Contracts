@@ -28,8 +28,8 @@ namespace Infrastructure.Pdf
             var paymentMethodId = data.PaymentMethodId?.ToUpperInvariant() ?? "";
             var paymentMethod = data.PaymentMethodDescription?.ToUpperInvariant() ?? "";
             bool isCash = paymentMethodId.Contains("CASH") || paymentMethod.Contains("نقد");
-            bool isCheque = !isCash;
-            bool isBankTransfer = false;
+            bool isBankTransfer = !isCash && data.IsBankTransfer == true;
+            bool isCheque = !isCash && !isBankTransfer;
             // Get currency suffix
             string currencySuffix = GetCurrencySuffix(data.CurrencyUomId);
             string amountInWords = ConvertAmountToArabicWords(data.Amount, currencySuffix);
@@ -229,7 +229,7 @@ namespace Infrastructure.Pdf
                         {
                             r.RelativeItem().BorderBottom(1).BorderColor(Colors.Grey.Medium);
                             r.AutoItem().AlignMiddle().BorderBottom(1).BorderColor(Colors.Grey.Medium)
-                                .Text(isCheque ? (data.PaymentMethodDescription ?? "") : "").FontSize(13)
+                                .Text(isBankTransfer ? (data.PaymentMethodDescription ?? "") : "").FontSize(13)
                                 .FontFamily("Lato", "Noto Sans Arabic");
                             r.AutoItem().AlignMiddle().Text(" : تحويل ( بنكى ، اون لاين )").FontSize(13)
                                 .FontFamily("Lato", "Noto Sans Arabic");
