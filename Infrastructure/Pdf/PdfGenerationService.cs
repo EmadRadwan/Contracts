@@ -136,8 +136,9 @@ namespace Infrastructure.Pdf
                                 .FontSize(13);
                             r.AutoItem().PaddingLeft(12).AlignMiddle().Text("جنيه").FontSize(13)
                                 .FontFamily("Lato", "Noto Sans Arabic");
-                            r.AutoItem().PaddingHorizontal(7).Border(1).BorderColor(Colors.Grey.Medium).Padding(4)
-                                .Text(ToArabicNumerals(((int)data.Amount).ToString("N0"))).FontSize(13);
+                            r.AutoItem().MaxWidth(200).PaddingHorizontal(7).Border(1).BorderColor(Colors.Grey.Medium).Padding(4)
+                                .Text(ToArabicNumerals(((int)data.Amount).ToString("N0"))).FontSize(13)
+                                .WrapAnywhere();
                         });
 
                         // ===== RECIPIENT ROW =====
@@ -181,9 +182,9 @@ namespace Infrastructure.Pdf
                         // ===== AMOUNT IN WORDS ROW =====
                         mainCol.Item().PaddingTop(12).Row(r =>
                         {
-                            r.RelativeItem().BorderBottom(1).BorderColor(Colors.Grey.Medium);
-                            r.AutoItem().AlignMiddle().BorderBottom(1).BorderColor(Colors.Grey.Medium)
-                                .Text(amountInWords).FontSize(14).FontFamily("Lato", "Noto Sans Arabic");
+                            r.RelativeItem().AlignMiddle().AlignRight().BorderBottom(1).BorderColor(Colors.Grey.Medium)
+                                .Text(amountInWords).FontSize(14).FontFamily("Lato", "Noto Sans Arabic")
+                                .WrapAnywhere();
                             r.AutoItem().AlignMiddle().Text(" : فقط وقدره").FontSize(14)
                                 .FontFamily("Lato", "Noto Sans Arabic");
                         });
@@ -218,9 +219,10 @@ namespace Infrastructure.Pdf
                             r.AutoItem().Text(" حق  ").FontSize(13).FontFamily("Lato", "Noto Sans Arabic");
 
                             // Cheque number
-                            r.AutoItem().BorderBottom(1).BorderColor(Colors.Grey.Medium).PaddingHorizontal(14)
+                            r.AutoItem().MaxWidth(200).BorderBottom(1).BorderColor(Colors.Grey.Medium).PaddingHorizontal(14)
                                 .Text(ToArabicNumerals(data.ChequeNumber ?? "")).FontSize(13)
-                                .FontFamily("Lato", "Noto Sans Arabic");
+                                .FontFamily("Lato", "Noto Sans Arabic")
+                                .WrapAnywhere();
                             r.AutoItem().Text(" رقم").FontSize(13).FontFamily("Lato", "Noto Sans Arabic");
                         });
 
@@ -228,9 +230,10 @@ namespace Infrastructure.Pdf
                         mainCol.Item().PaddingTop(12).Row(r =>
                         {
                             r.RelativeItem().BorderBottom(1).BorderColor(Colors.Grey.Medium);
-                            r.AutoItem().AlignMiddle().BorderBottom(1).BorderColor(Colors.Grey.Medium)
+                            r.AutoItem().AlignMiddle().MaxWidth(200).BorderBottom(1).BorderColor(Colors.Grey.Medium)
                                 .Text(isBankTransfer ? (data.PaymentMethodDescription ?? "") : "").FontSize(13)
-                                .FontFamily("Lato", "Noto Sans Arabic");
+                                .FontFamily("Lato", "Noto Sans Arabic")
+                                .WrapAnywhere();
                             r.AutoItem().AlignMiddle().Text(" : تحويل ( بنكى ، اون لاين )").FontSize(13)
                                 .FontFamily("Lato", "Noto Sans Arabic");
                         });
