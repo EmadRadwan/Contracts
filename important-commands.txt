@@ -327,5 +327,7 @@ dotnet ef migrations add AddSalesCommissionAndProjectCommissionRate --project Pe
 
 PdfGenerationService
 
+✳ Review previous session history
+
   
   

@@ -245,20 +245,32 @@ public class UpdatePayment
                 var response = new PaymentDto
                 {
                     PaymentId = updatedPayment.PaymentId,
+                    PaymentTypeId = updatedPayment.PaymentTypeId,
+                    PaymentTypeDescription = paymentType?.Description,
+                    PaymentMethodTypeId = updatedPayment.PaymentMethodTypeId,
                     StatusId = updatedPayment.StatusId,
                     StatusDescription = "Not Paid", // Adjust if you have proper status logic
                     Amount = updatedPayment.Amount,
                     IsBankTransfer = updatedPayment.IsBankTransfer,
+                    IsCollectionDate = dto.IsCollectionDate,
                     PaymentMethodId = updatedPayment.PaymentMethodId,
-                    PaymentTypeId = updatedPayment.PaymentTypeId,
                     EffectiveDate = updatedPayment.EffectiveDate,
+                    PartyIdFrom = updatedPayment.PartyIdFrom,
                     PartyIdFromName = fromParty,
+                    PartyIdTo = updatedPayment.PartyIdTo,
                     PartyIdToName = toParty,
+                    RoleTypeIdTo = updatedPayment.RoleTypeIdTo,
                     OverrideGlAccountId = updatedPayment.OverrideGlAccountId,
                     ChequeNumber = updatedPayment.ChequeNumber,
                     ChequeDate = updatedPayment.ChequeDate,
                     PaymentRefNum = updatedPayment.PaymentRefNum,
-                    Comments = updatedPayment.Comments
+                    Comments = updatedPayment.Comments,
+                    CurrencyUomId = updatedPayment.CurrencyUomId,
+                    ActualCurrencyAmount = updatedPayment.ActualCurrencyAmount,
+                    ActualCurrencyUomId = updatedPayment.ActualCurrencyUomId,
+                    FinAccountTransId = finAccountTransId,
+                    ProjectId = updatedPayment.WorkEffortId,
+                    CostCenterId = updatedPayment.CostCenterId
                 };
 
                 return Results<PaymentDto>.Success(response);

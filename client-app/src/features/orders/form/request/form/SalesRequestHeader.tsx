@@ -89,6 +89,8 @@ export const SalesRequestHeader: React.FC<SalesRequestHeaderProps> = React.memo(
                                 disabled={disabledActions}
                                 onSalesRequestUpdated={onSalesRequestUpdated}
                                 onSalesRequestDeleted={onSalesRequestDeleted}
+                                fromPartyName={salesRequest?.fromPartyName}
+                                apartmentName={salesRequest?.apartmentName}
                             />
                         </Can>
                     )}

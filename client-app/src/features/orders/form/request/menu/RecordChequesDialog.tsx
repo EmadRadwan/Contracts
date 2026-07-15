@@ -1,0 +1,180 @@
+import React, { useEffect, useState } from "react";
+import {
+    Alert,
+    Autocomplete,
+    Box,
+    Button,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    TextField,
+    Typography,
+} from "@mui/material";
+import { Grid as KendoGrid, GridColumn as Column, GridCellProps } from "@progress/kendo-react-grid";
+import { toast } from "react-toastify";
+import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHelper";
+import {
+    ChequeablePaymentDto,
+    useGetChequeablePaymentsQuery,
+    useRecordSalesRequestChequesMutation,
+} from "../../../../../app/store/apis/salesRequestApi";
+import { useFetchPaymentMethodsQuery } from "../../../../../app/store/apis/payment/paymentsApi";
+
+interface PaymentMethodOption {
+    paymentMethodId: string;
+    description?: string;
+}
+
+interface ChequeRow extends ChequeablePaymentDto {
+    chequeNumber: string;
+}
+
+interface RecordChequesDialogProps {
+    open: boolean;
+    onClose: () => void;
+    salesRequestId: string;
+    fromPartyName?: string | null;
+    apartmentName?: string | null;
+}
+
+export const RecordChequesDialog: React.FC<RecordChequesDialogProps> = ({
+    open,
+    onClose,
+    salesRequestId,
+    fromPartyName,
+    apartmentName,
+}) => {
+    const { getTranslatedLabel } = useTranslationHelper();
+    const t = (key: string, fallback: string) => getTranslatedLabel(`salesRequest.cheques.${key}`, fallback);
+
+    const { data: chequeablePayments, isFetching, isError } = useGetChequeablePaymentsQuery(salesRequestId, {
+        skip: !open,
+    });
+    const { data: paymentMethods } = useFetchPaymentMethodsQuery(undefined, { skip: !open });
+    const [recordCheques, { isLoading: isSaving }] = useRecordSalesRequestChequesMutation();
+
+    const [rows, setRows] = useState<ChequeRow[]>([]);
+    const [bank, setBank] = useState<PaymentMethodOption | null>(null);
+
+    useEffect(() => {
+        if (chequeablePayments) {
+            setRows(chequeablePayments.map((p) => ({ ...p, chequeNumber: "" })));
+        }
+    }, [chequeablePayments]);
+
+    useEffect(() => {
+        if (!open) {
+            setBank(null);
+        }
+    }, [open]);
+
+    const handleChequeNumberChange = (paymentId: string, value: string) => {
+        setRows((prev) =>
+            prev.map((r) => (r.paymentId === paymentId ? { ...r, chequeNumber: value } : r))
+        );
+    };
+
+    const chequeNumberCell = (props: GridCellProps) => {
+        const row = props.dataItem as ChequeRow;
+        return (
+            <td>
+                <input
+                    className="k-input k-input-md k-rounded-md k-input-solid"
+                    style={{ width: "100%" }}
+                    value={row.chequeNumber}
+                    onChange={(e) => handleChequeNumberChange(row.paymentId, e.target.value)}
+                    placeholder={t("chequeNumberPlaceholder", "Cheque #")}
+                />
+            </td>
+        );
+    };
+
+    const readyRows = rows.filter((r) => r.chequeNumber.trim().length > 0);
+    const canSave = !!bank && readyRows.length > 0 && !isSaving;
+
+    const handleSave = async () => {
+        if (!bank) {
+            toast.error(t("bankRequired", "Please select the bank"));
+            return;
+        }
+
+        try {
+            await recordCheques({
+                salesRequestId,
+                cheques: readyRows.map((r) => ({
+                    paymentId: r.paymentId,
+                    paymentMethodId: bank.paymentMethodId,
+                    chequeNumber: r.chequeNumber.trim(),
+                    chequeDate: r.dueDate ?? "",
+                    amount: r.amount,
+                })),
+            }).unwrap();
+
+            toast.success(t("saved", "Cheques recorded"));
+            onClose();
+        } catch (err: any) {
+            toast.error(err?.data?.title ?? t("saveError", "Failed to record cheques"));
+        }
+    };
+
+    return (
+        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+            <DialogTitle>{t("title", "Record Received Cheques")}</DialogTitle>
+            <DialogContent>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {fromPartyName} — {apartmentName}
+                </Typography>
+
+                <Box sx={{ mb: 2, maxWidth: 320 }}>
+                    <Autocomplete
+                        options={(paymentMethods ?? []) as PaymentMethodOption[]}
+                        getOptionLabel={(option) => option.description ?? option.paymentMethodId}
+                        isOptionEqualToValue={(option, value) => option.paymentMethodId === value.paymentMethodId}
+                        value={bank}
+                        onChange={(_, value) => setBank(value)}
+                        renderInput={(params) => (
+                            <TextField {...params} label={t("bank", "Bank *")} size="small" />
+                        )}
+                    />
+                </Box>
+
+                {isFetching ? (
+                    <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+                        <CircularProgress size={28} />
+                    </Box>
+                ) : isError ? (
+                    <Alert severity="error">{t("loadError", "Failed to load chequeable installments")}</Alert>
+                ) : rows.length === 0 ? (
+                    <Alert severity="info">{t("none", "No installments are pending a cheque.")}</Alert>
+                ) : (
+                    <KendoGrid data={rows} style={{ maxHeight: 400 }}>
+                        <Column field="dueDate" title={t("dueDate", "Due Date")} width="120px" />
+                        <Column field="comments" title={t("description", "Description")} />
+                        <Column field="amount" title={t("amount", "Amount")} format="{0:n2}" width="120px" />
+                        <Column
+                            field="chequeNumber"
+                            title={t("chequeNumber", "Cheque Number")}
+                            cell={chequeNumberCell}
+                            width="160px"
+                        />
+                    </KendoGrid>
+                )}
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={onClose} disabled={isSaving}>
+                    {getTranslatedLabel("general.cancel", "Cancel")}
+                </Button>
+                <Button
+                    variant="contained"
+                    onClick={handleSave}
+                    disabled={!canSave}
+                    startIcon={isSaving ? <CircularProgress size={16} /> : null}
+                >
+                    {t("save", "Save")}
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
+};

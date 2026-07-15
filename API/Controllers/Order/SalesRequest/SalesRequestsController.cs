@@ -66,6 +66,20 @@ public class SalesRequestsController : BaseApiController
         return Ok(installments);
     }
 
+    [HttpGet("{id}/chequeable-payments")]
+    public async Task<IActionResult> GetChequeablePayments(string id)
+    {
+        var payments = await Mediator.Send(new ListChequeableSalesRequestPayments.Query { SalesRequestId = id });
+        return Ok(payments);
+    }
+
+    [HttpPost("{id}/cheques")]
+    public async Task<IActionResult> RecordCheques(string id, [FromBody] RecordSalesRequestCheques.Command command)
+    {
+        command.SalesRequestId = id;
+        return HandleResult(await Mediator.Send(command));
+    }
+
     [HttpGet("by-date-range")]
     public async Task<ActionResult<List<SalesRequestRecord>>> GetSalesRequestsByDateRange(
         [FromQuery] string fromDate,

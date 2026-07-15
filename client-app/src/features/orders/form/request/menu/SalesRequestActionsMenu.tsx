@@ -20,6 +20,7 @@ import {
     MenuItem
 } from "@mui/material";
 import {Can} from "../../../../account/Can";
+import {RecordChequesDialog} from "./RecordChequesDialog";
 
 interface SalesRequestActionsMenuProps {
     salesRequestId: string | undefined;
@@ -27,13 +28,16 @@ interface SalesRequestActionsMenuProps {
     disabled: boolean;
     onSalesRequestUpdated?: (updated: SalesRequest) => void;
     onSalesRequestDeleted?: () => void;
+    fromPartyName?: string | null;
+    apartmentName?: string | null;
 }
 
 export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = ({
                                                                              salesRequestId,
                                                                              currentStatusId,
                                                                              disabled,
-                                                                             onSalesRequestUpdated, onSalesRequestDeleted
+                                                                             onSalesRequestUpdated, onSalesRequestDeleted,
+                                                                             fromPartyName, apartmentName
                                                                          }) => {
     const {getTranslatedLabel} = useTranslationHelper();
     const [approveSR, {isLoading}] = useApproveSalesRequestMutation();
@@ -41,6 +45,7 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
     const [resetSR, { isLoading: isResetting }] = useResetSalesRequestMutation();
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);  // ← NEW: Confirmation state
     const [confirmResetOpen, setConfirmResetOpen] = useState(false);
+    const [recordChequesOpen, setRecordChequesOpen] = useState(false);
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
@@ -109,8 +114,14 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
         }
     };
 
+    const handleRecordChequesClick = () => {
+        setRecordChequesOpen(true);
+        handleClose();
+    };
+
     const isApproveDisabled = !salesRequestId || currentStatusId === "SALES_REQUEST_APPROVED";
     const isResetDisabled = !salesRequestId || currentStatusId !== "SALES_REQUEST_APPROVED";
+    const isRecordChequesDisabled = !salesRequestId || currentStatusId !== "SALES_REQUEST_APPROVED";
 
     return (
         <>
@@ -133,6 +144,10 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
             >
                 <MenuItem onClick={handleApprove} disabled={isApproveDisabled || isLoading}>
                     {getTranslatedLabel('salesRequest.form.approve', 'Approve Sales Request')}
+                </MenuItem>
+
+                <MenuItem onClick={handleRecordChequesClick} disabled={isRecordChequesDisabled}>
+                    {getTranslatedLabel('salesRequest.cheques.action', 'Record Received Cheques')}
                 </MenuItem>
 
                 <Can perform="ResetSalesRequest">
@@ -228,6 +243,16 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {salesRequestId && (
+                <RecordChequesDialog
+                    open={recordChequesOpen}
+                    onClose={() => setRecordChequesOpen(false)}
+                    salesRequestId={salesRequestId}
+                    fromPartyName={fromPartyName}
+                    apartmentName={apartmentName}
+                />
+            )}
         </>
     );
 };

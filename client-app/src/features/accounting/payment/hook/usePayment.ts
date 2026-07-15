@@ -146,7 +146,12 @@ export default function usePayment({
       updated: Partial<Payment>,
       newStatusId?: string
   ) => {
-    const full = { ...payment, ...updated } as Payment;
+    // Guard against incomplete API responses (null/undefined fields) clobbering
+    // known-good values already held in `payment` when merged.
+    const sanitizedUpdate = Object.fromEntries(
+        Object.entries(updated).filter(([, value]) => value !== null && value !== undefined)
+    ) as Partial<Payment>;
+    const full = { ...payment, ...sanitizedUpdate } as Payment;
     dispatch(setSelectedPayment(full));
     if (newStatusId) {
       const mode = statusToEditMode[newStatusId] ?? 2;

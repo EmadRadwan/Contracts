@@ -40,6 +40,7 @@ const salesRequestApi = createApi({
         "SalesRequest",           // For individual sales requests + list
         "SalesRequestInstallments", // Specific to installments per SR
         "ReserveRequest",         // For reserve requests
+        "SalesRequestChequeablePayments", // Installments/deposit still pending a cheque
     ],
 
     endpoints(builder) {
@@ -191,6 +192,25 @@ const salesRequestApi = createApi({
                 }),
                 providesTags: ['SalesRequest'],
             }),
+
+            // -----------------------------------------------------------------
+            // CHEQUES – attach received-cheque details to not-yet-collected Payments
+            // -----------------------------------------------------------------
+            getChequeablePayments: builder.query<ChequeablePaymentDto[], string>({
+                query: (salesRequestId) => `salesRequests/${salesRequestId}/chequeable-payments`,
+                providesTags: ["SalesRequestChequeablePayments"],
+            }),
+            recordSalesRequestCheques: builder.mutation<
+                ChequeablePaymentDto[],
+                { salesRequestId: string; cheques: ChequeEntryDto[] }
+                >({
+                query: ({ salesRequestId, cheques }) => ({
+                    url: `salesRequests/${salesRequestId}/cheques`,
+                    method: "POST",
+                    body: { salesRequestId, cheques },
+                }),
+                invalidatesTags: ["SalesRequestChequeablePayments"],
+            }),
         };
     },
 });
@@ -210,6 +230,8 @@ export const {
     useAddReserveRequestMutation,
     useUpdateReserveRequestMutation, useGetSalesRequestInstallmentsQuery,
     useLazyFetchSalesRequestsByDateRangeQuery,
+    useGetChequeablePaymentsQuery,
+    useRecordSalesRequestChequesMutation,
 } = salesRequestApi;
 
 export { salesRequestApi };
@@ -231,6 +253,22 @@ export interface InstallmentCalcResult {
 }
 
 
+
+export interface ChequeablePaymentDto {
+    paymentId: string;
+    paymentTypeId?: string | null;
+    dueDate?: string | null; // YYYY-MM-DD
+    amount: number;
+    comments?: string | null;
+}
+
+export interface ChequeEntryDto {
+    paymentId: string;
+    paymentMethodId: string;
+    chequeNumber: string;
+    chequeDate: string; // YYYY-MM-DD
+    amount: number;
+}
 
 interface CalculatorResponse {
     cashPricePerM2: number;

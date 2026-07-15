@@ -367,6 +367,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                         visited, values,
                         valueGetter,
                         onChange,
+                        modified,
                     } = formRenderProps;
 
                     const amount = valueGetter("amount") || 0;
@@ -377,7 +378,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                         balanceData.initialBalance > 0 &&
                         amount > balanceData.remainingBalance;
 
-                    const isSubmitDisabled = !valid || isFormDisabled || balanceLoading || hasBillingAccountIssue;
+                    const isSubmitDisabled = !modified || !valid || isFormDisabled || balanceLoading || hasBillingAccountIssue;
 
                     const handleProjectChange = (event: any) => {
                         const selectedProject = event.value;

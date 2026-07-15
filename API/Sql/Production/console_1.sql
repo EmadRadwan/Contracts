@@ -1,5 +1,73 @@
-INSERT INTO SEQUENCE_VALUE_ITEM (SEQ_NAME, SEQ_ID, LAST_UPDATED_STAMP, LAST_UPDATED_TX_STAMP, CREATED_STAMP, CREATED_TX_STAMP)
-SELECT 'PaymentReceipt', 49999, NOW(), NULL, NOW(), NULL
-WHERE NOT EXISTS (
-    SELECT 1 FROM SEQUENCE_VALUE_ITEM WHERE SEQ_NAME = 'PaymentReceipt'
-);
+INSERT INTO PAYMENT_METHOD (
+    PAYMENT_METHOD_ID,
+    PAYMENT_METHOD_TYPE_ID,
+    PARTY_ID,
+    GL_ACCOUNT_ID,
+    FIN_ACCOUNT_ID,
+    DESCRIPTION,
+    FROM_DATE,
+    THRU_DATE,
+    LAST_UPDATED_STAMP,
+    LAST_UPDATED_TX_STAMP,
+    CREATED_STAMP,
+    CREATED_TX_STAMP
+) VALUES (
+             'NBE_CHECKING',
+             'COMPANY_CHECK',
+             'Company',
+             '113300',
+             'NBE_CHECKING',
+             'البنك الاهلي المصري NBE',
+             NOW(),
+             NULL,
+             NOW(),
+             NOW(),
+             NOW(),
+             NOW()
+         );
+
+INSERT INTO FIN_ACCOUNT (
+    FIN_ACCOUNT_ID,
+    FIN_ACCOUNT_TYPE_ID,
+    STATUS_ID,
+    FIN_ACCOUNT_NAME,
+    FIN_ACCOUNT_CODE,
+    FIN_ACCOUNT_PIN,
+    CURRENCY_UOM_ID,
+    ORGANIZATION_PARTY_ID,
+    OWNER_PARTY_ID,
+    POST_TO_GL_ACCOUNT_ID,
+    FROM_DATE,
+    THRU_DATE,
+    IS_REFUNDABLE,
+    REPLENISH_PAYMENT_ID,
+    REPLENISH_LEVEL,
+    ACTUAL_BALANCE,
+    AVAILABLE_BALANCE,
+    LAST_UPDATED_STAMP,
+    LAST_UPDATED_TX_STAMP,
+    CREATED_STAMP,
+    CREATED_TX_STAMP
+) VALUES (
+             'NBE_CHECKING',
+             'BANK_ACCOUNT',
+             'FNACT_ACTIVE',
+             'البنك الاهلي المصري NBE',
+             NULL,
+             NULL,
+             'EGP',
+             'Company',
+             'Company',
+             '113300',
+             NULL,
+             NULL,
+             'Y',
+             NULL,
+             0.000,
+             0.000,
+             0.000,
+             NOW(),
+             NOW(),
+             NOW(),
+             NOW()
+         );
