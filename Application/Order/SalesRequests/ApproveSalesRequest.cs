@@ -245,63 +245,13 @@ public class ApproveSalesRequest
                 };
                 await _acctgTransService.CreateAcctgTransEntry(creditEntry);
 
-                if (sr.IsChequesDelivered == true)
-                {
-                    acctgTransParams = new CreateAcctgTransParams
-                    {
-                        AcctgTransTypeId = "APARTMENT_SALE_CHEQUE", // or "APARTMENT_SALE" if you add it later
-                        TransactionDate = sr.SaleDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
-                        IsPosted = "Y",
-                        Description = $"Apartment Sale - SR {sr.SalesRequestId} - {apartment.ApartmentName}",
-                        GlFiscalTypeId = "ACTUAL",
-                        SalesRequestId = sr.SalesRequestId,
-                        PartyId = sr.FromPartyId,
-                        WorkEffortId = sr.Product.ProjectId
-                    };
-
-                    acctgTransId = await _acctgTransService.CreateAcctgTrans(acctgTransParams);
-
-                    seq = 0;
-
-                    // Debit: Accounts Receivable - Customer owes full amount
-                    debitEntry = new AcctgTransEntry
-                    {
-                        AcctgTransId = acctgTransId,
-                        AcctgTransEntrySeqId = (++seq).ToString().PadLeft(3, '0'), // "001"
-                        GlAccountId = "124410",
-                        DebitCreditFlag = "D",
-                        AcctgTransEntryTypeId = "_NA_",
-                        Amount = totalPrice,
-                        ReconcileStatusId = "AES_NOT_RECONCILED",
-                        Description = $"Apartment sale receivable - {apartment.ApartmentName}",
-                        OrganizationPartyId = companyPartyId,
-                        ProductId = sr.ProductId,
-                        PartyId = sr.FromPartyId,
-                        CreatedStamp = stamp,
-                        LastUpdatedStamp = stamp
-                    };
-                    await _acctgTransService.CreateAcctgTransEntry(debitEntry);
-
-                    // Credit: reduce the customer's Accounts Receivable balance - the amount moves to
-                    // "Cheques Under Collection" (debited above), not revenue.
-                    creditEntry = new AcctgTransEntry
-                    {
-                        AcctgTransId = acctgTransId,
-                        AcctgTransEntrySeqId = (++seq).ToString().PadLeft(3, '0'), // "002"
-                        GlAccountId = receivableGlAccountId,
-                        DebitCreditFlag = "C",
-                        AcctgTransEntryTypeId = "_NA_",
-                        Amount = totalPrice,
-                        ReconcileStatusId = "AES_NOT_RECONCILED",
-                        Description = $"Receivable reclassified to cheques under collection - {apartment.ApartmentName}",
-                        OrganizationPartyId = companyPartyId,
-                        PartyId = sr.FromPartyId,
-                        ProductId = sr.ProductId,
-                        CreatedStamp = stamp,
-                        LastUpdatedStamp = stamp
-                    };
-                    await _acctgTransService.CreateAcctgTransEntry(creditEntry);
-                }
+                // NOTE: The lump-sum "IsChequesDelivered" reclass to 124410 Cheques Under
+                // Collection used to be posted here, against the full contract price, the
+                // moment the sales request was approved. That assumed the entire contract
+                // would be cheque-paid, which the client's cheque-collection design flagged
+                // as wrong. That reclass now happens in RecordSalesRequestCheques.cs, at the
+                // moment cheques are actually physically received, using the real cheque
+                // amounts recorded rather than the total contract price.
 
                     // Create accounting transaction for Maintenance / Security Deposit
                     if (sr.MaintenanceDeposit > 0)

@@ -1,5 +1,8 @@
 using Application.Accounting.Payments;
 using Application.Accounting.Services;
+using Application.Accounting.Services.Models;
+using Application.Catalog.ProductStores;
+using Domain;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -8,11 +11,13 @@ using Persistence;
 namespace Application.Order.SalesRequests;
 
 // Attaches physically-received cheque details (bank, cheque number, cheque date, amount)
-// onto existing not-yet-collected installment/maintenance Payments for a Sales Request.
-//
-// Deliberately does NOT post any GL entries - that refactor (replacing the lump-sum
-// "IsChequesDelivered" posting in ApproveSalesRequest.cs with one 124410 debit per cheque)
-// is a separate follow-up task. This command only records which cheques were received.
+// onto existing not-yet-collected installment/maintenance Payments for a Sales Request,
+// and posts the reclass entry for the cheques actually handed over:
+//   Debit  124410 Cheques Under Collection (one line per cheque)
+//   Credit Customer receivable account (one line, sum of the cheques recorded)
+// This replaces the old lump-sum "IsChequesDelivered" posting that used to fire at
+// ApproveSalesRequest.cs time against the full contract price - that assumption was wrong
+// per the client's cheque-collection design, since not every installment ends up cheque-paid.
 public class RecordSalesRequestCheques
 {
     public class ChequeEntry
@@ -51,11 +56,37 @@ public class RecordSalesRequestCheques
     {
         private readonly DataContext _context;
         private readonly IPaymentHelperService _paymentHelperService;
+        private readonly IAcctgTransService _acctgTransService;
+        private readonly IProductStoreService _productStoreService;
 
-        public Handler(DataContext context, IPaymentHelperService paymentHelperService)
+        public Handler(
+            DataContext context,
+            IPaymentHelperService paymentHelperService,
+            IAcctgTransService acctgTransService,
+            IProductStoreService productStoreService)
         {
             _context = context;
             _paymentHelperService = paymentHelperService;
+            _acctgTransService = acctgTransService;
+            _productStoreService = productStoreService;
+        }
+
+        // Mirrors ApproveSalesRequest.Handler.GetReceivableGlAccountId
+        private async Task<string> GetReceivableGlAccountId(
+            string organizationPartyId,
+            string customerPartyId,
+            CancellationToken ct)
+        {
+            var partyGlAccount = await _context.PartyGlAccounts
+                .Where(pga =>
+                    pga.OrganizationPartyId == organizationPartyId &&
+                    pga.PartyId == customerPartyId &&
+                    pga.RoleTypeId == "BILL_TO_CUSTOMER" &&
+                    pga.GlAccountTypeId == "ACCOUNTS_RECEIVABLE")
+                .Select(pga => pga.GlAccountId)
+                .FirstOrDefaultAsync(ct);
+
+            return partyGlAccount ?? "121100";
         }
 
         public async Task<Result<List<ListChequeableSalesRequestPayments.ChequeablePaymentDto>>> Handle(
@@ -147,6 +178,65 @@ public class RecordSalesRequestCheques
                         ChequeNumber = cheque.ChequeNumber,
                         ChequeDate = cheque.ChequeDate,
                         Amount = cheque.Amount
+                    });
+                }
+
+                // Post the reclass entry for each cheque physically received:
+                // Debit 124410 Cheques Under Collection / Credit the customer's receivable
+                // account, using the cheque's actual amount. One AcctgTrans per cheque (with
+                // PaymentId set) rather than one shared batch transaction, so that a later
+                // switch away from this specific cheque (see UpdatePayment.cs) can find and
+                // reverse exactly this posting without touching the other cheques in the batch.
+                var companyPartyId = await _productStoreService.GetProductStorePayToPartId();
+                var receivableGlAccountId = await GetReceivableGlAccountId(companyPartyId, sr.FromPartyId!, ct);
+                var stamp = DateTime.UtcNow;
+
+                foreach (var cheque in request.Cheques)
+                {
+                    var acctgTransId = await _acctgTransService.CreateAcctgTrans(new CreateAcctgTransParams
+                    {
+                        AcctgTransTypeId = "APARTMENT_SALE_CHEQUE",
+                        TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                        IsPosted = "Y",
+                        Description = $"Cheque #{cheque.ChequeNumber} received - SR {sr.SalesRequestId}",
+                        GlFiscalTypeId = "ACTUAL",
+                        SalesRequestId = sr.SalesRequestId,
+                        PaymentId = cheque.PaymentId,
+                        PartyId = sr.FromPartyId
+                    });
+
+                    await _acctgTransService.CreateAcctgTransEntry(new AcctgTransEntry
+                    {
+                        AcctgTransId = acctgTransId,
+                        AcctgTransEntrySeqId = "001",
+                        GlAccountId = "124410",
+                        DebitCreditFlag = "D",
+                        AcctgTransEntryTypeId = "_NA_",
+                        Amount = cheque.Amount,
+                        ReconcileStatusId = "AES_NOT_RECONCILED",
+                        Description = $"Cheque #{cheque.ChequeNumber} received - SR {sr.SalesRequestId}",
+                        OrganizationPartyId = companyPartyId,
+                        ProductId = sr.ProductId,
+                        PartyId = sr.FromPartyId,
+                        CreatedStamp = stamp,
+                        LastUpdatedStamp = stamp
+                    });
+
+                    await _acctgTransService.CreateAcctgTransEntry(new AcctgTransEntry
+                    {
+                        AcctgTransId = acctgTransId,
+                        AcctgTransEntrySeqId = "002",
+                        GlAccountId = receivableGlAccountId,
+                        DebitCreditFlag = "C",
+                        AcctgTransEntryTypeId = "_NA_",
+                        Amount = cheque.Amount,
+                        ReconcileStatusId = "AES_NOT_RECONCILED",
+                        Description = $"Cheque #{cheque.ChequeNumber} received, reclassified from receivable - SR {sr.SalesRequestId}",
+                        OrganizationPartyId = companyPartyId,
+                        ProductId = sr.ProductId,
+                        PartyId = sr.FromPartyId,
+                        CreatedStamp = stamp,
+                        LastUpdatedStamp = stamp
                     });
                 }
 

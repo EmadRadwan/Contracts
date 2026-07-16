@@ -24,8 +24,22 @@ import { useFetchPaymentMethodsQuery } from "../../../../../app/store/apis/payme
 
 interface PaymentMethodOption {
     paymentMethodId: string;
+    paymentMethodTypeId?: string;
     description?: string;
 }
+
+const BANK_PAYMENT_METHOD_TYPE_IDS = ["PERSONAL_CHECK", "COMPANY_CHECK", "CERTIFIED_CHECK"];
+
+const generateChequeNumbers = (start: string, count: number): string[] => {
+    const match = start.match(/^(.*?)(\d+)$/);
+    if (!match) {
+        return Array.from({ length: count }, (_, i) => (i === 0 ? start : `${start}${i}`));
+    }
+    const [, prefix, digits] = match;
+    const width = digits.length;
+    const startNum = parseInt(digits, 10);
+    return Array.from({ length: count }, (_, i) => `${prefix}${String(startNum + i).padStart(width, "0")}`);
+};
 
 interface ChequeRow extends ChequeablePaymentDto {
     chequeNumber: string;
@@ -57,6 +71,11 @@ export const RecordChequesDialog: React.FC<RecordChequesDialogProps> = ({
 
     const [rows, setRows] = useState<ChequeRow[]>([]);
     const [bank, setBank] = useState<PaymentMethodOption | null>(null);
+    const [startingChequeNumber, setStartingChequeNumber] = useState("");
+
+    const banks = ((paymentMethods ?? []) as PaymentMethodOption[]).filter((pm) =>
+        BANK_PAYMENT_METHOD_TYPE_IDS.includes(pm.paymentMethodTypeId ?? "")
+    );
 
     useEffect(() => {
         if (chequeablePayments) {
@@ -67,6 +86,7 @@ export const RecordChequesDialog: React.FC<RecordChequesDialogProps> = ({
     useEffect(() => {
         if (!open) {
             setBank(null);
+            setStartingChequeNumber("");
         }
     }, [open]);
 
@@ -74,6 +94,12 @@ export const RecordChequesDialog: React.FC<RecordChequesDialogProps> = ({
         setRows((prev) =>
             prev.map((r) => (r.paymentId === paymentId ? { ...r, chequeNumber: value } : r))
         );
+    };
+
+    const handleGenerateChequeNumbers = () => {
+        if (!startingChequeNumber.trim() || rows.length === 0) return;
+        const generated = generateChequeNumbers(startingChequeNumber.trim(), rows.length);
+        setRows((prev) => prev.map((r, i) => ({ ...r, chequeNumber: generated[i] })));
     };
 
     const chequeNumberCell = (props: GridCellProps) => {
@@ -127,17 +153,33 @@ export const RecordChequesDialog: React.FC<RecordChequesDialogProps> = ({
                     {fromPartyName} — {apartmentName}
                 </Typography>
 
-                <Box sx={{ mb: 2, maxWidth: 320 }}>
+                <Box sx={{ mb: 2, display: "flex", gap: 2, flexWrap: "wrap" }}>
                     <Autocomplete
-                        options={(paymentMethods ?? []) as PaymentMethodOption[]}
+                        options={banks}
                         getOptionLabel={(option) => option.description ?? option.paymentMethodId}
                         isOptionEqualToValue={(option, value) => option.paymentMethodId === value.paymentMethodId}
                         value={bank}
                         onChange={(_, value) => setBank(value)}
+                        sx={{ minWidth: 260 }}
                         renderInput={(params) => (
                             <TextField {...params} label={t("bank", "Bank *")} size="small" />
                         )}
                     />
+
+                    <TextField
+                        label={t("startingChequeNumber", "Starting Cheque Number")}
+                        size="small"
+                        value={startingChequeNumber}
+                        onChange={(e) => setStartingChequeNumber(e.target.value)}
+                        sx={{ minWidth: 220 }}
+                    />
+                    <Button
+                        variant="outlined"
+                        onClick={handleGenerateChequeNumbers}
+                        disabled={!startingChequeNumber.trim() || rows.length === 0}
+                    >
+                        {t("generate", "Generate")}
+                    </Button>
                 </Box>
 
                 {isFetching ? (

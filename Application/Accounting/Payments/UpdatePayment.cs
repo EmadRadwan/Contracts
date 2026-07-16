@@ -1,4 +1,6 @@
 using Application.Accounting.Services;
+using Application.Accounting.Services.Models;
+using Application.Catalog.ProductStores;
 using Application.Core;
 using Domain;
 using FluentValidation;
@@ -30,6 +32,8 @@ public class UpdatePayment
         private readonly IFinAccountService _finAccountService;
         private readonly IPaymentHelperService _paymentHelperService;
         private readonly IGeneralLedgerService _generalLedgerService;
+        private readonly IAcctgTransService _acctgTransService;
+        private readonly IProductStoreService _productStoreService;
         private readonly ILogger<Handler> _logger;
 
         public Handler(
@@ -37,13 +41,35 @@ public class UpdatePayment
             IFinAccountService finAccountService,
             IPaymentHelperService paymentHelperService,
             IGeneralLedgerService generalLedgerService,
+            IAcctgTransService acctgTransService,
+            IProductStoreService productStoreService,
             ILogger<Handler> logger)
         {
             _context = context;
             _finAccountService = finAccountService;
             _paymentHelperService = paymentHelperService;
             _generalLedgerService = generalLedgerService;
+            _acctgTransService = acctgTransService;
+            _productStoreService = productStoreService;
             _logger = logger;
+        }
+
+        // Mirrors ApproveSalesRequest.Handler.GetReceivableGlAccountId / RecordSalesRequestCheques.Handler.GetReceivableGlAccountId
+        private async Task<string> GetReceivableGlAccountId(
+            string organizationPartyId,
+            string customerPartyId,
+            CancellationToken ct)
+        {
+            var partyGlAccount = await _context.PartyGlAccounts
+                .Where(pga =>
+                    pga.OrganizationPartyId == organizationPartyId &&
+                    pga.PartyId == customerPartyId &&
+                    pga.RoleTypeId == "BILL_TO_CUSTOMER" &&
+                    pga.GlAccountTypeId == "ACCOUNTS_RECEIVABLE")
+                .Select(pga => pga.GlAccountId)
+                .FirstOrDefaultAsync(ct);
+
+            return partyGlAccount ?? "121100";
         }
 
         public async Task<Results<PaymentDto>> Handle(Command request, CancellationToken cancellationToken)
@@ -168,6 +194,85 @@ public class UpdatePayment
                 };
 
                 var updatedPayment = await _paymentHelperService.UpdatePayment(updatePaymentParam);
+
+                // ────────────────────────────────────────────────────────────────
+                // 2b. Reverse the "cheque received" reclass (124410) if a previously
+                //     recorded cheque on an apartment installment is being cleared before
+                //     the payment is actually received (e.g. customer decides to pay this
+                //     installment in cash instead - see RecordSalesRequestCheques.cs for
+                //     the original 124410 reclass this undoes).
+                // ────────────────────────────────────────────────────────────────
+                bool chequeBeingClearedPreReceipt =
+                    !string.IsNullOrEmpty(original.SalesRequestId) &&
+                    !string.IsNullOrEmpty(original.ChequeNumber) &&
+                    string.IsNullOrEmpty(dto.ChequeNumber) &&
+                    original.StatusId == "PMNT_NOT_PAID";
+
+                if (chequeBeingClearedPreReceipt)
+                {
+                    var outstandingChequeAmount = await _context.AcctgTransEntries
+                        .Where(e => e.AcctgTrans.PaymentId == dto.PaymentId &&
+                                    e.AcctgTrans.AcctgTransTypeId == "APARTMENT_SALE_CHEQUE" &&
+                                    e.GlAccountId == "124410")
+                        .SumAsync(e => e.DebitCreditFlag == "D" ? e.Amount : -e.Amount, cancellationToken);
+
+                    if (outstandingChequeAmount > 0)
+                    {
+                        var reversalCompanyPartyId = await _productStoreService.GetProductStorePayToPartId();
+                        var reversalReceivableGlAccountId = await GetReceivableGlAccountId(
+                            reversalCompanyPartyId, original.PartyIdFrom, cancellationToken);
+
+                        var reversalAcctgTransId = await _acctgTransService.CreateAcctgTrans(new CreateAcctgTransParams
+                        {
+                            AcctgTransTypeId = "APARTMENT_SALE_CHEQUE",
+                            TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                            IsPosted = "Y",
+                            Description = $"Cheque #{original.ChequeNumber} reversed (payment method changed) - Payment {dto.PaymentId}",
+                            GlFiscalTypeId = "ACTUAL",
+                            SalesRequestId = original.SalesRequestId,
+                            PaymentId = dto.PaymentId,
+                            PartyId = original.PartyIdFrom
+                        });
+
+                        var reversalStamp = DateTime.UtcNow;
+
+                        await _acctgTransService.CreateAcctgTransEntry(new AcctgTransEntry
+                        {
+                            AcctgTransId = reversalAcctgTransId,
+                            AcctgTransEntrySeqId = "001",
+                            GlAccountId = reversalReceivableGlAccountId,
+                            DebitCreditFlag = "D",
+                            AcctgTransEntryTypeId = "_NA_",
+                            Amount = outstandingChequeAmount,
+                            ReconcileStatusId = "AES_NOT_RECONCILED",
+                            Description = $"Reverse cheque reclass - cheque #{original.ChequeNumber} no longer applies - Payment {dto.PaymentId}",
+                            OrganizationPartyId = reversalCompanyPartyId,
+                            PartyId = original.PartyIdFrom,
+                            CreatedStamp = reversalStamp,
+                            LastUpdatedStamp = reversalStamp
+                        });
+
+                        await _acctgTransService.CreateAcctgTransEntry(new AcctgTransEntry
+                        {
+                            AcctgTransId = reversalAcctgTransId,
+                            AcctgTransEntrySeqId = "002",
+                            GlAccountId = "124410",
+                            DebitCreditFlag = "C",
+                            AcctgTransEntryTypeId = "_NA_",
+                            Amount = outstandingChequeAmount,
+                            ReconcileStatusId = "AES_NOT_RECONCILED",
+                            Description = $"Reverse cheque reclass - cheque #{original.ChequeNumber} no longer applies - Payment {dto.PaymentId}",
+                            OrganizationPartyId = reversalCompanyPartyId,
+                            PartyId = original.PartyIdFrom,
+                            CreatedStamp = reversalStamp,
+                            LastUpdatedStamp = reversalStamp
+                        });
+
+                        _logger.LogInformation(
+                            "Reversed cheque reclass of {Amount} for payment {PaymentId} (cheque #{ChequeNumber} cleared before receipt)",
+                            outstandingChequeAmount, dto.PaymentId, original.ChequeNumber);
+                    }
+                }
 
                 // ────────────────────────────────────────────────────────────────
                 // 3. Handle Postdated Cheque Accounting Transaction (CHECK_ISSUED)

@@ -5475,16 +5475,22 @@ public class GeneralLedgerService : IGeneralLedgerService
             }
 
             // Determine credit GL account
+            // Keyed off this specific payment's own ChequeNumber (set by RecordSalesRequestCheques
+            // when the cheque was physically received - see 124410 reclass posted there), not the
+            // sales-request-wide IsChequesDelivered flag. This way a cheque-registered installment
+            // that the customer later pays in cash instead (paymentMethodId switched to CASH,
+            // ChequeNumber cleared, in EditPaymentForm before receipt) correctly credits the
+            // customer's receivable account instead of Cheques Under Collection.
             string creditGlAccountId;
 
-            if (payment.SalesRequest.IsChequesDelivered == true)
+            if (!string.IsNullOrEmpty(payment.ChequeNumber))
             {
-                // For delivered cheques → always use Cheques Under Collection
+                // Collecting a cheque that was already reclassified to Cheques Under Collection
                 creditGlAccountId = "124410";
             }
             else
             {
-                // For normal receivable → try party-specific → fallback to default
+                // Direct receipt (cash/bank transfer) → reduce the customer's receivable directly
                 creditGlAccountId = await GetCustomerReceivableGlAccountId(
                     organizationPartyId: companyPartyId,
                     customerPartyId: payment.PartyIdFrom,
@@ -5562,9 +5568,9 @@ public class GeneralLedgerService : IGeneralLedgerService
 
             _logger.LogInformation(
                 "Accounting transaction {AcctgTransId} created for apartment incoming {PaymentType} payment {PaymentId}. " +
-                "Debit: {DebitDesc} | Credit GL {CreditGlAccountId} (IsChequesDelivered: {IsChequesDelivered})",
+                "Debit: {DebitDesc} | Credit GL {CreditGlAccountId} (ChequeNumber: {ChequeNumber})",
                 acctgTransId, paymentTypeDescription, paymentId,
-                debitDescription, creditGlAccountId, payment.SalesRequest.IsChequesDelivered);
+                debitDescription, creditGlAccountId, payment.ChequeNumber);
 
             return acctgTransId;
         }
